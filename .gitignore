@@ -1,0 +1,16 @@
+# 上游参考代码（DataMind 为组织内部仓库，禁止提交）
+vendor/
+
+# 密钥
+.env
+
+# Python
+__pycache__/
+.venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
