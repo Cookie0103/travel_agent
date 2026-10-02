@@ -1,212 +1,260 @@
 # 02 Agent 架构与实现设计
 
-本文定义执行契约；领域字段见 [03](03-数据工具与外部API.md)，测试判定见 [05](05-评测与验收.md)，上游依据见 [06](06-来源与待验证事项.md)。
+本文说明 Agent 怎么运行：一次请求经过哪些模块，状态存在哪里，出错时怎么办。
+领域字段见 [03](03-数据工具与外部API.md)，测试标准见 [05](05-评测与验收.md)，上游依据见 [06](06-来源与待验证事项.md)。
 
-## 1. 沿用哪些设计，改造哪些代码
+## 0. 先读这 6 个概念
 
-一个主 Agent 持有对话，配合 Skills、执行器、业务后端和展示工具；不按内容/酒店/路线分发多个 Agent。M3 的受限规划契约见第 9 节。
+| 概念 | 一句话解释 | 例子 |
+| --- | --- | --- |
+| TravelRequest | 用户当前的旅行条件，结构化存储，带版本号 `revision` | `{city: 京都, nights: 2, adults: 2, child_ages: [6], revision: 3}` |
+| Evidence | 一条有来源、有时效的事实 | 「某酒店 11/3 两晚总价 ¥42,000」，来源 fixture，有效到 11/1 |
+| Itinerary / PlanPatch | 行程，以及对行程的一次局部修改 | 「把第 2 天 14:00 的 item_7 换成 place_32」 |
+| TaskRun | 一次用户消息引发的一次 Agent 执行，有状态和断点 | `running`，已完成 3 步，断点在第 4 步 |
+| Booking | 一次模拟预订，是一个状态机 | `quoted → held → confirmed → booked`（或 `failed` / `unknown`） |
+| Trace | 一次执行中每次模型调用和工具调用的记录 | 在 Langfuse 里看到的时间线 |
 
-| 上游落点 | 本项目处理 |
-| --- | --- |
-| `commerce_common/skills.py`、prompt 分层 | 优先复用小模块；业务 skill 自写，使用固定名称索引 |
-| `execution.py`、`presentation.py`、事件契约 | 参考执行框架，适配旅行结果及错误；保留对应不变量测试 |
-| Shopping Messages `orchestrator.py` | 阅读并保留有界工具循环思路；替换购物预取、prompt、注册、grounding、结束条件与宿主状态 |
-| `StorefrontBackend` / Product / cart | 建立独立 TravelServices 与领域对象，文章不伪装成带价格的商品 |
-| travel 的 `itinerary.py` | 学习 ID 补全和组件扩展；重新实现无副作用的旅行展示 |
-| `MemoryStore` / `DelegateExtension` | 契约参考；持久化、模型配置和旅行权限由本项目落实 |
-| 示例 host/session | 不继承其“版本冲突后旧任务强行写回”策略；采用下面的事务协议 |
-| Merchant stage/apply | 借鉴预览与宿主确认模式；第一版只用于保存行程变更 |
-
-M0 复用清单记录 commit、原文件/符号、保留/替换行为、测试与许可；复制代码保留原许可通知。
-
-上游购物车会话锁不保护旅行工具或跨 worker 写入；本项目调度和提交遵循第 3、6 节。
-
-## 2. 分层与主调用链
+## 1. 一次请求的主调用链
 
 ```text
-Next.js → FastAPI → TaskHost / PostgreSQL
-                         ↓ worker
-                    TravelAgent
-                  ↙             ↘
-       ModelProvider          ToolExecutor
-         DeepSeek          → TravelServices → Adapters
-                                  ↓
-                        Evidence / Validator / Plans
-                                  ↓
-                      已提交事件 → SSE → 白名单组件
+用户在网页发消息
+  → FastAPI：消息去重，创建 TaskRun，返回 run_id
+  → Agent Runtime（后台 asyncio 任务）
+      ┌─ 组装上下文：system prompt + 工具列表 + 当前 TravelRequest + 近期消息
+      ├─ 调模型（ModelProvider）
+      ├─ 模型要调工具 → ToolExecutor 校验 → 执行 → 结果写库、登记 Evidence
+      ├─ 模型提出行程 → Validator 校验 → 不通过就把冲突反馈给模型修正
+      └─ 每完成一步：写断点、写事件
+  → SSE 把事件推给网页
+用户点「确认」/「预订」→ 走独立的 API，不经过模型
 ```
 
-API 管身份和收发，TaskHost 管生命周期，模型选择行动，Executor 校验调用，领域服务保证业务不变量。
+分工原则：**模型决定下一步做什么；代码保证做的事是对的。**
+- API 负责身份和收发；
+- Runtime 负责循环和上下文；
+- ToolExecutor 负责工具调用合不合法；
+- Domain 负责业务规则（预算、营业时间、预订状态）。
 
-researching/drafting/validating 是进度，不强制依次执行；工具前置条件见 03。
+## 2. 从 Commerce Agents 沿用什么、改什么
 
-## 3. 单轮循环与 Skills
-
-1. 接收用户消息，绑定 principal、session、turn_seq，创建 TaskRun；重复消息 ID 返回原 run。
-2. 加载结构化旅行条件、有效证据、必要近期消息、已加载 skill 和运行预算。
-3. 主模型可澄清、调用工具或提出方案；明确的新条件通过 `update_travel_request` 提交 patch。
-4. 执行器检查 schema → 前置条件 → ownership → evidence → 当前执行资格 → 预算。
-5. 完整工具参数通过校验后执行；结果持久化、登记证据、配对回传模型。
-6. 展示与保存草稿经过校验；失败反馈具体冲突，允许有限次修正。
-7. 无待处理工具且结果完成，或达到执行上限时结束；区分 completed/partial/awaiting_user，建议按钮不作为完成标志。
-
-默认串行；只有注册为独立读取、使用同一已提交 request snapshot 的调用可有界并发。写操作形成屏障，依赖新条件的读取等待提交。
-
-| 内容 | 放置位置 |
+| 上游 | 本项目怎么处理 |
 | --- | --- |
-| 常用规则、事实引用、未知处理、硬条件优先 | 固定 system prompt |
-| 工具输入、返回语义和前置条件 | 工具描述与 schema |
-| 低频酒店退款比较、复杂局部改程步骤 | `hotel-comparison`、`itinerary-revision` Skills |
-| 身份、来源、费用上限、版本与写入条件 | 执行器和领域代码 |
+| `shopping_agent_runtime/orchestrator.py` 的有界工具循环 | 沿用思路：循环上限、最后一轮强制不调工具、中断时补齐未配对的工具结果。替换购物相关的预取、prompt 和结束条件 |
+| `commerce_common/execution.py`、`presentation.py` | 参考统一执行入口和「模型给 ID、服务端补数据」的展示方式 |
+| `shopping_agent/gates.py` | 沿用「代码守门」思路：只能用本次会话查到过的 ID，预订必须有页面确认标记 |
+| `commerce_common/skills.py`、`prompt_assembly.py` | 沿用：静态 prompt 和工具列表固定不变，动态内容单独一段 |
+| `examples/travel/api/itinerary.py` | 学习按 ID 补全行程卡片；注意它在补全时会调用 `note_trip_plan` 写后端（itinerary.py:171-173），本项目把展示和写入分开 |
+| `examples/demo_common/host.py` | **不沿用**它的冲突策略：旧 turn 会用新版本号覆盖写入（host.py:209-210）。本项目用条件更新，新请求优先 |
+| `merchant_agent` 的 stage/apply | 借鉴「先预览、再由页面确认、最后执行」，用于保存行程和预订 |
+| 购物车会话锁 | 只在单进程内有效，不能保护本项目的写入；本项目靠数据库条件更新 |
 
-`load_skill` 只接受可信注册名；同一 skill 每个上下文段加载一次，记录版本和指纹。Skill 不创建 Agent 或授予权限。
+复制上游代码时保留 Apache-2.0 许可声明，并在 `docs/reuse.md` 记录来源文件和 commit。
 
-工具列表按部署能力和角色固定排序；缺参数返回 missing_fields，永久不可用能力从配置关闭。静态前缀与动态状态分离，缓存收益实测。
+## 3. 单轮循环
 
-## 4. 模型协议与上下文
+1. 收到用户消息，按 `client_message_id` 去重；重复消息直接返回原来的 run_id。
+2. 加载上下文：当前 TravelRequest、有效 Evidence、近期消息、已加载的 Skill。
+3. 调模型。模型可以：追问用户、调用工具，或者提出行程。用户说出新条件时，模型调用 `update_travel_request` 提交修改。
+4. 工具调用先过 ToolExecutor 检查，顺序是：参数 schema → 前置条件 → 是否属于当前用户 → 引用的 Evidence 是否有效 → 是否超出预算。
+5. 工具执行完，结果写库，和对应的工具调用配对后交回模型。
+6. 结束条件满足任一即停：模型给出最终回答且没有待执行工具；达到轮次上限（最后一轮强制不调工具，让模型收尾）；用户取消。结束状态分 `completed` / `partial` / `awaiting_user`。
 
-M0 先测 DeepSeek Anthropic 兼容接口，不满足时再测 Chat Completions；最终只维护一种接口。主循环、摘要、记忆与委派共用 ProviderConfig，并冻结思考模式与强制工具行为。
+**并发**：默认逐个执行工具。只有标记为「只读且互不依赖」的工具可以并行。写操作执行时，其他工具等待。
+
+### 3.1 反思循环：生成 → 校验 → 修复
+
+这是本项目最核心的 Agent 机制：
+
+```text
+模型提出行程 → validate_itinerary（纯代码）
+  ├─ 全部通过 → 进入确认流程
+  ├─ 有 conflict（如两个景点间隔不够、闭馆）→ 把具体冲突作为工具结果交回模型 → 模型修正 → 再校验
+  └─ 最多修正 N 轮（默认 3）；仍不通过就展示部分结果，并说明冲突在哪
+```
+
+为什么修正次数要设上限：模型可能在两个互相冲突的约束之间来回改。到了上限就停下，把冲突交给用户决定。
+
+### 3.2 什么放在哪里
+
+| 内容 | 位置 | 理由 |
+| --- | --- | --- |
+| 通用规则：事实必须有来源、硬条件优先、未知要说明 | 固定 system prompt | 每轮都要用 |
+| 工具的用途、参数、前置条件 | 工具描述和 schema | 模型选工具时看 |
+| 低频的复杂步骤：酒店退款比较、局部改程 | Skills：`hotel-comparison`、`itinerary-revision` | 需要时才加载，节省上下文 |
+| 身份、来源、预算上限、版本、预订确认 | 代码（执行器和领域层） | 不能靠模型「尽量遵守」 |
+
+`load_skill` 只接受注册过的名称，同一个 Skill 在一段上下文里只加载一次。Skill 只是指令，不授予任何权限。
+
+### 3.3 展示卡片
+
+酒店比较、行程时间轴等卡片由 `present_travel_result` 工具触发：模型只传组件类型和对象 ID，服务端按 ID 填入价格、名称和来源。保留这个工具而不是由代码自动渲染，是为了让模型决定「什么时候给用户看什么」，这和上游的设计一致。代价是多一轮工具调用，这个代价在评测里统计。
+
+## 4. 模型协议
+
+### 4.1 中立消息格式
+
+数据库里存的是**中立格式**的消息，不存某一家供应商的原始格式：
 
 ```python
-# 拟建内部契约，不是供应商 SDK 原签名
+# 本项目内部契约（不是任何 SDK 的原签名）
+class Message:
+    role: Literal["user", "assistant", "tool"]
+    text: str | None
+    tool_calls: list[ToolCall]      # 名称、参数、call_id
+    tool_results: list[ToolResult]  # call_id、status、内容
+    usage: Usage | None
+    provider_meta: dict             # 某家专有的字段（如 thinking 块），换模型时可以丢弃
+
 class ModelProvider(Protocol):
     def stream(self, request: ModelRequest) -> AsyncIterator[ModelEvent]: ...
-
-# ModelRequest: messages_wire, tool_specs, config, limits
-# ModelEvent: text_delta / tool_call_ready / usage / response_completed / error
-# response_completed 含完整 assistant_message_wire、stop_reason 和 provider 元数据
+    # ModelEvent：text_delta / tool_call_ready / usage / completed / error
 ```
 
-必须分开保存：
-- **模型续接消息**：工具 ID、结果、供应商要求的 thinking/continuation 字段，schema 版本齐全。
-- **UI/Trace 事件**：进度、参数摘要、耗时、用量、错误和最终卡片；不向用户输出内部推理内容。
-- **领域状态**：TravelRequest、计划版本与证据，不依赖自由文本摘要恢复。
+每个供应商写一对转换函数（中立格式 ↔ 供应商格式）。第一版实现 `AnthropicProvider`（DeepSeek 和 Claude 共用，只是 base_url 和模型名不同）；做模型对比时再加 `OpenAIProvider`。
 
-未完成 JSON 或截断轮次不能派发写操作；下一次模型请求前，工具调用必须配对结果。完整消息包含供应商续接字段，不能只由 text/tool 事件重建；协议测试覆盖见 05 的 R01–R02、R12–R13。
+**为什么这样设计**：如果直接存 DeepSeek 的原始消息，切到 Claude 时旧会话里的专有字段会出错。存中立格式，换模型时只丢 `provider_meta`。这是面试时可以讲的一个取舍。
 
-压缩只在完整轮次边界进行：先裁剪大工具结果，再摘要旧对话；保留当前请求、待办、必要近期消息、skill 版本、证据引用及合法调用配对。重建上下文段须使用已验证的供应商消息形式。
+### 4.2 DeepSeek 兼容接口的已知差异（M0 必须逐项实测）
 
-当前旅行条件优先于长期偏好。长期记忆在 M3 加入：用户可查看/修改/删除；提取写入在同一数据库事务中比较记忆 generation，避免清空后旧任务回写。不将工具文本提取成用户偏好。
+DeepSeek 提供 Anthropic 兼容接口（`https://api.deepseek.com/anthropic`），但不是全部字段都支持。官方文档列出的差异，以及对本项目的影响：
 
-## 5. 运行状态与 API
+| 差异 | 影响 | 处理 |
+| --- | --- | --- |
+| `tool_result.is_error` 被忽略 | 模型分不清「查无结果」和「接口失败」 | 在工具结果正文里放 `status` 字段，不依赖 `is_error` |
+| 思考模式下强制指定工具会报 400（Chat Completions 文档写明；Anthropic 兼容接口文档未说明，待实测） | 上游第 0 轮会强制调工具（orchestrator.py:171） | 强制工具的那一轮关闭思考模式，或改为服务端预取 |
+| 思考模式 + 工具时，之前的推理内容必须原样回传（Chat Completions 文档写明；Anthropic 兼容接口待实测） | 漏传会报 400 | 推理内容存进 `provider_meta`，续接时带上 |
+| `cache_control` 被忽略 | Anthropic 的 prompt 缓存在 DeepSeek 上无效 | 缓存收益只在 Claude 上测；DeepSeek 有自己的自动前缀缓存，看 `prompt_cache_hit_tokens` |
+| `disable_parallel_tool_use` 被忽略 | 模型可能一次返回多个工具调用 | 由 ToolExecutor 控制并发，不依赖这个参数 |
+| `claude-*` 模型名会被静默映射到 DeepSeek 模型 | 以为在用某个模型，实际不是 | 配置里写明 DeepSeek 模型名，并记录响应中返回的实际模型 |
+| `budget_tokens`、`mcp_servers`、`document` 块等不支持 | 不能用这些特性 | 本项目不依赖它们 |
 
-下表只定义运行对象；TravelRequest、计划和证据字段统一见 03。
+M0 的退出条件：用真实 DeepSeek 跑通一次多轮工具往返，以上每一项都有测试结果记录。
 
-| 对象 | 关键字段与职责 |
-| --- | --- |
-| Conversation | owner、turn_seq、current_run_id、messages；控制哪次回复当前可见 |
-| TaskRun | run_id、input_revision、attempt、status、lease_until、budget、checkpoint、last_event_seq、queue_expires_at、deadline_at、next_attempt_at |
-| TaskStep | run_id、逻辑 step_id、attempt、工具参数摘要/指纹、状态、结果引用 |
+## 5. 上下文与记忆
 
-TaskRun 生命周期：queued → running → completed/partial/awaiting_user/awaiting_approval/failed/cancelled/expired。等待用户的 run 不占 worker；用户下一次输入产生新 run，并关联旧任务。进程故障的 running run 可在租约过期后重新领取，attempt 递增。
+- **三类数据分开存**：
+  - 模型续接用的消息（中立格式，工具调用必须配对完整）；
+  - 给用户和 Trace 看的事件（进度、耗时、卡片，不展示模型内部推理）；
+  - 领域状态（TravelRequest、行程版本、Evidence）。
+- **旅行条件不靠聊天记录**：条件存在 TravelRequest 里，每次修改 `revision` 加 1。压缩上下文时只压缩历史消息，不压缩条件。这样长对话后条件也不会丢。
+- **压缩规则**：只在完整轮次之间压缩；先裁剪过长的工具结果，再摘要旧对话；保留当前条件、待办事项、Evidence 引用，以及所有未完成的工具调用配对。
+- **长期偏好（B 档）**：比如「不喜欢太早起床」。用户可以查看、修改、删除。当前旅行条件优先于长期偏好。只从用户自己说的话提取偏好，不从工具结果或攻略文本里提取（防止文章里藏的指令写进记忆）。
 
-每条新消息递增 turn_seq，替换当前生成任务；纯解释提问不递增 TravelRequest.revision，也不自动让报价失效。条件 patch 提交时原子更新 request 与当前 run 的 input_revision；同一批旧 snapshot 读取结果不能沿用。
+## 6. 状态与可靠执行
 
-| 拟建 API | 语义 |
-| --- | --- |
-| POST /sessions/{id}/messages | client_message_id 去重；返回 run_id；身份由服务端认证绑定 |
-| GET /runs/{id} | 读取自己的任务状态与已提交快照，供 SSE 回退恢复 |
-| GET /runs/{id}/events | SSE 订阅；Last-Event-ID 重放已提交事件 |
-| POST /runs/{id}/cancel | 标记取消，撤销提交资格；重复取消幂等 |
-| GET /plans/{id} | 读取自己的计划版本与待刷新提示 |
-| POST /plan-drafts/{id}/confirm | 绑定 draft/base_version/revision，检查后事务保存 |
-| GET/PATCH/DELETE /preferences | M3 的个人记忆查看、修改与删除；写入比较 generation |
+本项目只做 **Agent 特有** 的可靠性。任务队列的多 worker 竞争、压测等放在后端项目里做。
 
-接口/工具均校验服务端身份与 owner；两个测试用户必须隔离。
+### 6.1 任务断点与恢复
 
-## 6. 事务、幂等与任务恢复
+- 第一版用单进程：FastAPI 进程内用 asyncio 后台任务执行 TaskRun。
+- 每完成一个工具调用，就在同一个数据库事务里写入：工具结果、模型续接状态、事件、断点。
+- 服务重启时，扫描状态为 `running` 的 TaskRun，按情况恢复：
+  - 模型响应没有完整保存：丢弃半成品，重新请求模型（多花的 token 照实记账）；
+  - 只读工具已完成：Evidence 仍有效就复用，否则重新查询；
+  - 写操作已提交：读出保存的结果，不再执行一次；
+  - 预订状态不明：不自动重试，走 §6.3 的对账流程。
+- SSE 只负责推送，断线不影响任务执行。重连时用 `Last-Event-ID` 补发事件；缺口太大就返回完整快照。**重连绝不重新调用模型或工具。**
 
-先用 PostgreSQL + 一个 worker：SQL 条件领取 queued/租约过期任务，递增 attempt 并续租；隔离重启前的迟到调用。固定执行槽位测并发请求与排队，多 worker 单独对比。
+> 为什么不做多 worker、租约竞争：这是通用后端问题，后端项目专门处理。ADR 里写明「如果要多 worker，需要加租约和 attempt 号，旧 worker 的写入用条件更新拒绝」。
 
-一次结果提交必须同时匹配：当前 run、attempt、未取消状态、有效租约、预期 request revision；修改计划还必须匹配 base_version。按固定锁顺序在短事务中检查并更新，不能先在 Python 检查、再无条件写 DB。
+### 6.2 保存行程：条件更新
 
-| 操作 | 同一事务中完成 |
-| --- | --- |
-| 接收消息 | 幂等消息记录、turn_seq、current_run、旧 run 取消及 queued 事件 |
-| 更新旅行条件 | RequestPatch、revision、当前 run 绑定、需失效的证据标记 |
-| 提交工具结果 | 当前执行资格检查、step 结果、允许保存的证据、模型续接状态、事件与 checkpoint |
-| 用户确认计划 | owner/版本/过期校验、计划新版本、草稿状态、幂等结果与事件 |
+用户点确认时，在一个事务里检查：草稿属于当前用户、草稿未过期、`base_version` 等于当前行程版本、`request_revision` 没变。全部满足才保存新版本。
 
-业务事件写入 events 表后才发布。事件表兼作重放来源，暂不引入额外消息队列。数据库事务不跨越模型或外部 API 调用。
+- 检查和写入必须在同一条 SQL 或同一个事务里完成，不能先在 Python 里查、再无条件写。
+- 幂等键 = 用户 + 草稿 ID。同一个键重复确认，返回第一次的结果。
 
-确认是独立宿主事务，检查身份、草稿状态/有效期、base_version 与 request_revision，不依赖已结束的 worker 租约。幂等键绑定 principal + draft_id + 操作：同键同指纹返回原版本，不同指纹返回 conflict。任务恢复不代替用户确认。
-
-恢复按故障位置处理：
-- 模型响应尚未完整保存：丢弃半成品，可重新请求，记录重复用量；不要求模型输出逐字一致。
-- 读取已完成：证据仍有效则复用，否则刷新；在租约/attempt 变更后重新绑定。
-- 本地写入已提交、进程随后退出：读取事务内保存的幂等结果，不再次写入。
-- 数据库没有提交：从最后完整 checkpoint 重试允许重试的步骤。
-- 外部副作用状态不明：不自动重试；第一版没有外部预订写入。
-
-SSE 连接不驱动任务生命周期。持久化业务事件和最终文本；细粒度临时文本可不持久化，重连用完整快照替换临时内容。序号缺口或超出保留窗口返回 snapshot_required，前端读取快照后续订阅。重连绝不重新发起工具调用。
-
-## 7. 预算、Trace 与失败归因
-
-执行前预留调用预算，主模型、摘要、记忆提取、子任务和重试共享同一任务账本。预留与结算原子处理；超时无 usage 的调用记未知/估计消耗，不立即释放成可再次花费的额度。限制模型轮次、工具次数、并发、输出和总期限；重试只有一个责任层。
-
-Trace 支持从失败现象找到首个偏离点，关联证据、修复与回归。
-
-| 记录 | 最小内容 |
-| --- | --- |
-| 关联与配置 | trace/span/parent_span、session/turn/run/attempt、request revision、case_id、模型/prompt/skill/schema/数据版本 |
-| 输入与选择 | 条件 patch 前后值及用户轮次、模型可见上下文的受控引用/指纹、工具名称/参数摘要、Skills 和压缩变更 |
-| 工具与证据 | tool_call/step ID、供应商请求 ID、每次重试/错误码、evidence ID/有效期/条件指纹、校验报告 |
-| 提交与产物 | 预期/实际版本、资格检查结果、draft/plan ID、状态 diff、确认或取消事件、最终结果引用 |
-| 时序与费用 | 接收/准入/领取/首进度/首有效结果/结束时间，预算预留和结算、usage、费用及未知项 |
-
-业务状态、关键事件和提交审计同事务；失败后另记拒绝诊断。模型/工具 span 可异步写，标明丢失/采样；评测保留完整允许记录。哈希仅校验一致性，复现还需受控快照或 fixture。
-
-模型协议原文、脱敏调试记录与用户进度分开；不展示内部推理，不存密钥或禁止留存的内容，无法重建时注明缺口。
-
-归因记录 `primary_cause + contributing_causes + evidence_refs + confidence/status`。最小分类：`request_understanding`、`tool_selection_or_args`、`supplier_failure`、`stale_evidence`、`state_commit`；另有 `context_loss`、`planner_constraint`、`runtime_or_capacity` 和 `unknown`。分类是证据支持的诊断，不能仅凭最后一个异常由模型猜测。
-
-已恢复的 429、被拒绝的旧 attempt 不直接算最终失败根因；结合前后状态区分故障与保护生效。归因用例和评分见 05 第 6 节。
-
-工具错误仍统一为 validation、blocked、unavailable、timeout、rate_limited、provider_error、conflict、cancelled。错误码描述执行结果，归因标签描述任务为什么失败，两者不混用；零结果是成功读取的空集合。
-
-## 8. 有界执行与过载处理
-
-配置 worker/执行槽位、全局/每用户队列上限、供应商并发/速率、等待上限、任务绝对期限和日预算；初期使用 PostgreSQL 队列。
-
-1. **准入**：先识别重复 message ID，返回原任务；新消息在短事务中预留队列容量。容量不够时不创建任务、不取消用户原任务；多 API 实例不能靠进程内计数控制全局容量。
-2. **拒绝**：用户请求限额返回 429，服务队列容量不足返回 503，均给 Retry-After。接收成功返回 run_id 与 queued；即时 ACK 不当作首个有效反馈。
-3. **等待**：排队不占模型并发额度；超过等待上限变为 expired，用户取消后不再领取。过期/取消与领取竞争使用同一条件更新，并释放容量。
-4. **供应商限流**：尊重 Retry-After，退避加抖动；受次数、总期限和预算限制。长等待在事务中保存 checkpoint/next_attempt_at 并从 running 回到 queued、释放租约和执行槽位；再次领取递增 attempt。逻辑 step_id、累计重试次数和预算账本保持不变，不能创建无限新任务或重置额度。
-5. **降级**：不可用的信息标缺失，允许返回部分成果；过期报价不当新事实。终止后释放槽位及未使用预留；未知 usage 仍保守记账。迟到调用检查资格，崩溃后对账预算与容量。
-
-SSE 重连不重复排队；流量恢复后队列应排空并继续服务。负载与指标见 05 第 7 节。
-
-## 9. 受限规划子 Agent 实验
-
-M3 必做实验，默认 `planner_delegate_enabled=false`；子 Agent 只提出行程候选，主 Agent 负责对话、条件和展示。开启条件见 05 第 5 节。
-
-| 项目 | 契约 |
-| --- | --- |
-| 输入 | 任务 ID、冻结的 request revision、当前 plan/base_version、候选及有效 evidence refs、硬/软条件、锁定项、剩余预算/期限 |
-| 允许能力 | `estimate_routes`、`validate_itinerary` 的只读受限入口；只操作传入候选与快照，不再查另一批更丰富资料 |
-| 输出 | 结构化 proposal/PlanPatch、证据引用、assumptions、未解决冲突；所有输出均视为待校验建议 |
-| 禁止能力 | 改条件、写计划/偏好、创建正式草稿、展示给用户、获取主对话之外的数据、嵌套委派 |
-| 控制 | 最多一个子任务、深度 1；ProviderConfig 与主循环一致；总账本预留子预算及主 Agent 收尾额度，重试不能绕过限制 |
-| 接受结果 | 主端重新查 revision/attempt/期限、schema、候选引用及约束，再进入原有草稿确认链；子结果不能自证正确 |
-| 超时与恢复 | 父任务取消或失效则取消子任务，拒绝晚到结果；完成结果可从 checkpoint 复用。中断重算仍计预算；主端只在预算/期限内回退，否则保留部分成果 |
-
-采用直接 Python 调用，通过父 span 关联模型、工具和预算；不新建可写用户会话，不提供数据库写权限或通用 executor，只注入只读白名单。对照方法见 05。
-
-## 10. 独立扩展与拟建目录
-
-可选 MCP 仍经过同一执行器；运营 Agent 属于独立业务入口。扩展条件统一见 04。
+### 6.3 模拟预订：状态机 + 幂等 + 对账
 
 ```text
-apps/web/                 页面、SSE、组件
-backend/api/              认证、消息、确认、查询
-backend/agent/            loop、prompt、skills、context
-backend/providers/        选定的 DeepSeek 协议
-backend/tools/            registry、executor、schema
-backend/domain/           request、offer、evidence、plan
-backend/services/         task_host、validator、memory
-backend/adapters/         fixtures、已连接的数据服务
-backend/persistence/      migrations、repositories、transactions
-tests/                    协议、领域、事务、交互
-eval/                     快照任务、graders、实验配置
-docs/                     工程日志、重要 ADR、复用清单
+quoted ──hold──▶ held ──用户点确认──▶ confirmed ──下单──▶ booked
+                  │                       │                │
+              过期释放                  失败 ──▶ failed     │
+                                          └─超时/无响应─▶ unknown ──对账──▶ booked / failed
+```
+
+关键规则：
+1. **模型不能直接下单。** `hold_hotel` 是模型可调用的工具；`book` 只能由用户点击页面上的确认按钮触发（`POST /bookings/{id}/confirm`）。模型在对话里说「已确认」不算数。这个设计参考上游的 gates：审批标记只能由页面设置。
+2. **幂等**：每次下单请求带一个 `client_ref`（预订 ID 生成，固定不变）。假供应商对同一个 `client_ref` 只创建一个订单。用户重复点击，或服务重启后重发，都不会重复下单。
+3. **状态不明时不盲目重试**：下单超时，不知道供应商那边成没成功，就进入 `unknown`，然后用 `client_ref` 查询供应商（对账），根据结果转到 `booked` 或 `failed`。
+4. **限流与重试**：供应商返回 429 时按 `Retry-After` 等待；重试次数和总时长都有上限。重试只在一层做（预订服务内部），模型不负责重试。
+5. **hold 过期**：hold 有有效期（如 15 分钟），过期自动释放。用户过期后再确认，提示重新报价。
+
+## 7. API
+
+| API | 说明 |
+| --- | --- |
+| `POST /sessions/{id}/messages` | 发消息；`client_message_id` 去重；返回 `run_id` |
+| `GET /runs/{id}` | 读任务状态和当前快照（SSE 断开时用） |
+| `GET /runs/{id}/events` | SSE 订阅；支持 `Last-Event-ID` 补发 |
+| `POST /runs/{id}/cancel` | 取消；重复取消没有副作用 |
+| `GET /plans/{id}` | 读行程及版本，标出需要刷新的报价 |
+| `POST /plan-drafts/{id}/confirm` | 确认保存行程（§6.2） |
+| `POST /bookings/{id}/confirm` | 用户确认预订（§6.3） |
+| `GET /bookings/{id}` | 查预订状态 |
+| `GET/PATCH/DELETE /preferences` | 查看、修改、删除长期偏好（B 档） |
+
+所有接口和工具都检查当前用户是否拥有该资源。测试中至少用两个用户验证互相看不到对方数据。
+
+## 8. Trace、预算与失败归因
+
+### 8.1 Trace
+
+用 OpenTelemetry 记录，发送到自托管的 Langfuse 查看：
+- 一次 TaskRun 是一个 trace；
+- 每次模型调用、工具调用、校验、预订操作各是一个 span；
+- span 上记录：模型名（实际返回的）、token 用量、耗时、工具参数摘要、结果状态、TravelRequest 的 revision、关联的 Evidence ID。
+
+不存 API 密钥，不存模型的内部推理原文。
+
+### 8.2 预算
+
+- 每个 TaskRun：模型轮次、工具调用次数、总 token 都有上限。
+- 每天：总费用上限，超过就拒绝新任务。
+- 超时没有返回 usage 的调用，按估计值记账，不当成零。
+
+> 更复杂的预算预留与结算、准入控制（429/503）放到 C 档，只写 ADR。
+
+### 8.3 失败归因
+
+工具错误码描述「这次调用发生了什么」：`validation`、`blocked`、`unavailable`、`timeout`、`rate_limited`、`provider_error`、`conflict`、`cancelled`。查无结果不是错误，是一个成功返回的空列表。
+
+归因标签描述「任务为什么失败」，用 5 类：
+- `request_understanding`：理解错了用户条件；
+- `tool_selection_or_args`：选错工具或传错参数；
+- `supplier_failure`：供应商出错；
+- `stale_evidence`：用了过期的事实；
+- `state_commit`：状态写入出错。
+
+归因要有 Trace 证据支持，证据不够就标 `unknown`。注入故障只用来验证归因流程本身能用；简历和面试讲的是真实 dev 用例中出现的失败。
+
+## 9. 编排对照实验
+
+### 9.1 固定流程 vs 模型自主选工具（B 档，必做）
+
+- **A 组**：代码写死流程：抽取条件 → 搜景点 → 查酒店 → 排行程 → 校验。模型只负责每一步内部的生成。
+- **B 组**：本项目的主设计，由模型自己决定调用哪些工具、按什么顺序。
+
+同模型、同数据、同用例，比较完成率、工具调用次数、token 和延迟。目的是回答「这个场景到底需不需要 Agent 自主编排，在哪类任务上值得」。
+
+### 9.2 受限规划子 Agent（C 档，只写 ADR）
+
+写清楚：如果加一个只负责排行程的子 Agent，它的输入、只读权限、预算如何从父任务扣除、结果如何由主 Agent 重新校验，以及什么证据出现时才值得加。是否实现，由 9.1 的结果决定。
+
+## 10. 目录（拟建）
+
+```text
+apps/web/              演示前端
+backend/api/           接口
+backend/agent/         循环、prompt、skills、上下文
+backend/providers/     中立消息格式与各供应商适配
+backend/tools/         工具注册、执行器、schema
+backend/domain/        request、evidence、itinerary、booking、validator
+backend/mcp/           只读工具的 MCP server
+backend/persistence/   迁移、仓储、事务
+mock_supplier/         假酒店供应商（可注入故障）
+data/                  Wikivoyage / OSM 导入脚本与快照
+tests/                 协议、领域、事务、集成
+eval/                  用例、评分器、实验配置、报告
+docs/                  工程日志、ADR、复用记录
 ```
