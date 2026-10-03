@@ -16,6 +16,7 @@ from backend.providers.claude_agent.checkpoints import Checkpoints
 from backend.providers.claude_agent.database_tools import DatabaseTools, database_tools
 from backend.providers.claude_agent.events import save_event
 from backend.providers.claude_agent.runtime import ClaudeRuntime, RuntimeConfig
+from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition, ToolExecutor
 from backend.tools.search import DEFINITIONS, SearchExecutor
 from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
@@ -102,6 +103,20 @@ async def run_prompts(
         assert isinstance(prompt, str)
         if index:
             context = replace(context, run_id=uuid4())
+            if isinstance(executor, DatabaseTools):
+                snapshot, current_revision, current_preferences = await executor.context_snapshot(
+                    context
+                )
+                if (revision, preference_revision) != (current_revision, current_preferences):
+                    reference_id = None
+                revision, preference_revision = current_revision, current_preferences
+                # 每个用户轮次重新注入事实并建立独立工具限额；SDK负责旧消息和压缩。
+                executor = DatabaseTools(
+                    executor.loop, executor.travel.database, executor.supplier_url
+                )
+                agent.runtime = ClaudeRuntime(
+                    replace(config, system_prompt=travel_prompt() + snapshot), definitions, executor
+                )
         result = await agent.run(context, prompt, emit, reference_id=reference_id)
         results.append(asdict(result))
         if result.outcome.code:
@@ -140,6 +155,8 @@ def main() -> None:
         if not isinstance(value, dict):
             raise ValueError("invalid input")
         result = asyncio.run(run({str(k): v for k, v in value.items()}, Path(sys.argv[1])))
+    except ServiceError as error:
+        result = {"status": "error", "code": error.code, "reason": "business_snapshot_unavailable"}
     except Exception:
         result = {"status": "error", "code": "provider_error", "reason": "worker_failure"}
     print(json.dumps(result, ensure_ascii=False, default=str))

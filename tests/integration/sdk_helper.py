@@ -24,6 +24,8 @@ def run_database_worker(
     *,
     max_attempts: int = 4,
     supplier_url: str | None = None,
+    auto_compact_percent: int | None = None,
+    prompts: list[str] | None = None,
 ) -> tuple[dict[str, object], Guard]:
     guard = Guard(
         Settings("offline-only", "deepseek-flash", Decimal(5), Decimal(0)),
@@ -43,6 +45,8 @@ def run_database_worker(
             guard.token,
             "deepseek-flash",
         )
+        if auto_compact_percent is not None:
+            env["CLAUDE_AUTOCOMPACT_PCT_OVERRIDE"] = str(auto_compact_percent)
         version = run_process([str(cli), "--version"], worker, env, timeout=10)
         report = invoke_worker(
             cli,
@@ -50,7 +54,7 @@ def run_database_worker(
             env,
             module="backend.providers.claude_agent.worker",
             payload={
-                "prompts": [prompt],
+                "prompts": prompts if prompts is not None else [prompt],
                 "user_id": str(context.user_id),
                 "session_id": str(context.session_id),
                 "run_id": str(context.run_id),

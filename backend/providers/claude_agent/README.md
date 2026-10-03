@@ -19,3 +19,5 @@ GuardedRuntime将API事件/取消接到同一live入口；父进程验证后才�
 DatabaseTools用Selector线程运行数据库工具，SDK进程保留Windows Proactor。
 私有事件文件只用于跨进程传递；UI读取PostgreSQL中的已提交应用事件。
 业务快照与revision同次读取；轮次中条件变化不保存续接指针。指针只由worker管理。
+每个追加用户轮次刷新快照并重建工具作用域；版本变化时新建SDK会话。
+compact_boundary只转为context_compacted事件，不复制摘要或改写SDK历史。

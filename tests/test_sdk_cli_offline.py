@@ -118,6 +118,6 @@ def test_real_sdk_and_cli_call_only_synthetic_tool_offline(
         guard.failures,
     )
     if invalid_argument:
-        assert report["code"] == "tool_roundtrip_missing"
+        assert report["code"] == "tool_roundtrip_missing", report
     assert guard.attempts == 2
     assert guard.failures == []

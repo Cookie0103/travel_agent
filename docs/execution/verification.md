@@ -20,7 +20,7 @@
 | R10 供应商失败 | 正常预订、有界429重试 | 429/500/实际超时/损坏响应/关联错误/非法Retry-After，终态分类 | tests/test_supplier_adapter.py；tests/integration/test_bookings.py；test_supplier.py；test_recovery.py | 单进程恢复已验证；多worker明确不在实现范围 |
 | R11 丢响应对账 | 实际HTTP断传输unknown→查询→booked | 查询500、暂时查无保持unknown、过期锁内缺席证明、不重复下单 | tests/integration/test_bookings.py；test_supplier.py；test_recovery.py | 业务进程强制退出后0/1订单核对已验证 |
 | R12 恢复与SSE | 启动只读裁决partial/cancelled，SSE补发；patch/stage稳定业务结果 | API/业务子进程真实kill、供应商提交前/后、条件版本/证据过期/默认参数差异、事务回滚 | tests/integration/test_recovery.py；test_api_restart.py；test_sdk_recovery.py；tests/test_operation_keys.py | HTTP/API重启、浏览器断线刷新/原消息重试/只读SSE复连与401入口已验证；未完成SDK轮次安全新建而非透明恢复 |
-| R13 上下文 | 当前条件/正式plan指针/近期引用注入 | 长历史压缩、旧Evidence、Skill与工具配对 | tests/integration/test_sdk_database.py；M3.1 | 压缩故障与长对话完整实验 |
+| R13 上下文 | 当前条件/正式plan指针/近期引用注入、原生自动压缩后SDK续接规划校验 | 长历史有界、旧Evidence、Skill/工具配对、快照读取失败零请求、摘要接口失败不保存完成指针、轮间版本变化 | tests/integration/test_sdk_database.py；test_sdk_context.py；docs/review/M3.md | 实际CLI/PG机制已测；脚本摘要与人工usage触发不能证明真实模型压缩质量 |
 | R14 偏好 | 认证用户查看/部分修改/清空、保留墓碑版本 | 两用户、旧版本/竞争、首次空删除、非法字段、攻略不能写入、旧SDK及旧回答隔离 | tests/integration/test_preferences.py；test_sdk_preferences.py；tests/test_checkpoints.py；docs/review/M3.md | PG/实际CLI/浏览器保存刷新清空已验证，独立两P2关闭；真实模型偏好效果仍需评测 |
 | R15 注入隔离 | 正常搜索/业务流程 | 恶意攻略不扩权限、无Shell/文件/偏好写入 | tests/test_sdk_guard.py；tests/integration/test_travel_tools.py | 偏好完成后补正常/恶意对照 |
 | R16 确认边界 | 模型只暂存，用户独立确认保存/模拟订单 | 模型无下单工具、伪造user_confirmed、越权确认 | tests/integration/test_sdk_plans.py；test_sdk_bookings.py；test_bookings.py | 本地SDK暂留后订单为零与API确认已验证；真实模型恶意对照待M3 |

@@ -21,6 +21,7 @@ type EventKind = Literal[
     "tool_started",
     "tool_finished",
     "presentation",
+    "context_compacted",
     "completed",
     "failed",
     "cancelled",

@@ -21,6 +21,7 @@ class DatabaseTools:
         self, loop: asyncio.AbstractEventLoop, database: Database, supplier_url: str | None = None
     ) -> None:
         self.loop = loop
+        self.supplier_url = supplier_url
         self.travel = TravelService(database)
         self.executor = TravelToolExecutor(self.travel)
         self.executor.bookings.supplier = SupplierClient(supplier_url)

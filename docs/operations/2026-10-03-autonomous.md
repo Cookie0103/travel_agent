@@ -324,3 +324,17 @@
 - 专项5通过（6.87秒）：官方Client legacy/auto、真实PG、真实TCP正常→工具故障、401/404归属、非法/未知工具、空结果、缺实体、DB503、64KiB上限。结构化/文本结果及is_error一致。
 - SDK :*只按前缀匹配；额外urlsplit严格本机host、有效port、无userinfo/path/query/fragment/空白，伪端口后缀回归通过。保留SDK安全设置，未关闭保护。独立复核无可复现P1/P2，无复制协议/新增依赖或模型费用。
 - check178/3契约/10地图通过；完整405 passed/2 live deselected（99.65秒）。普通本地提交后继续M3.1，不等用户review。MCP独立服务入口已写包README，未对公网发布。
+
+- f9eb345保存M3.3，普通check/test钩子通过，无push。
+
+### M3.1 上下文与原生压缩
+
+- 核对锁定SDK/CLI公共事件、hooks和文档中的CLAUDE_AUTOCOMPACT_PCT_OVERRIDE；临时离线探针实际收到auto触发和compact_boundary，SDK两轮均成功。只在测试环境使用5%阈值/人工40000 input usage，不改生产配置或原生历史。
+- worker每用户轮重读PG快照、版本变化新SDK会话、重建run工具作用域；SystemMessage转换context_compacted事件；PG快照失败收敛安全错误、零HTTP。
+- 专项原16通过（19.08秒）；第一次全表410通过/1契约失败（115.63秒），新增事件未同步OpenAPI。执行dev web-generate生成后端契约与TS，未删除失败断言。
+- 扩展压缩后继续规划测试：复用已入库destinations再次插入同Evidence违反唯一键，移除重复seed；验证状态应为领域verified而非complete，按契约修正。人工5%再次压缩产生Read子集被守卫拒绝，调查后保持保护，续接使用默认阈值；不放开文件工具。
+- 当前专项17通过（19.58秒），包含实际CLI压缩→保存→续接validate_itinerary、工具配对、过期排除、长历史、摘要503、DB不可用、轮间条件变化。check179/3契约/10地图通过；web-check类型/lint/10测试/build通过，无模型费用。独立审查与完整重跑仍待结果。
+
+- 独立只读复核无P1/P2、无必须处理P3；完整重跑411 passed/2 live deselected（116.85秒），契约失败关闭。M3.1工程机制验收通过，真实模型压缩质量保持未验；普通提交后自动继续M3.4。
+
+- 普通提交钩子静态通过、完整410通过/1旧SDK非法参数测试失败（115.77秒），worker_exit而非预期tool_roundtrip_missing。单独重跑原2用例均通过（3.11秒），目前未复现根因；补失败断言的安全结构化report诊断（不含stderr/密钥），保留原期望。重跑正常钩子，不能把第一次失败当从未发生。

@@ -84,6 +84,10 @@ travel/api/main.py：MockTravel + ShoppingAgent + itinerary 展示扩展
 
 2026-10-03：[官方MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)与安装2.3一致；使用Server的on_list_tools/on_call_tool及StreamableHTTPSessionManager，不使用已变更的旧v1装饰器。schema复用本项目定义，协议交SDK；Client和streamable_http_client用于实际HTTP回归。来源阅读用于选接口，不复制上游应用代码。
 
+## M3.1 上下文能力核查
+
+2026-10-03：锁定SDK公开SystemMessage支持compact_boundary；当前Python接口没有compact()，不套用新版CLI独有PostCompact能力。[官方环境变量](https://code.claude.com/docs/en/settings#environment-variables)中的CLAUDE_AUTOCOMPACT_PCT_OVERRIDE只用于本地机制测试。实际CLI完成自动压缩并续接规划，应用仅观察事件、读取PG快照，不实现摘要器或改写消息。真实模型摘要效果另验。
+
 ## M0.1 当时边界（历史）
 
 - 没有调用 DeepSeek、Claude 或其他 LLM API；没有做协议实测。

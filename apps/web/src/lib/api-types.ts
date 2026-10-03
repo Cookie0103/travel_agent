@@ -1314,7 +1314,7 @@ export interface components {
         /** @enum {string} */
         UiErrorCode: "validation" | "blocked" | "unavailable" | "timeout" | "rate_limited" | "provider_error" | "conflict" | "cancelled";
         /** @enum {string} */
-        UiEventKind: "started" | "text" | "tool_started" | "tool_finished" | "presentation" | "completed" | "failed" | "cancelled" | "partial" | "awaiting_user";
+        UiEventKind: "started" | "text" | "tool_started" | "tool_finished" | "presentation" | "context_compacted" | "completed" | "failed" | "cancelled" | "partial" | "awaiting_user";
         /**
          * RunContext
          * @description 由服务端生成的业务 ID；不能把 SDK session_id 当成用户身份。

@@ -9,6 +9,7 @@ from claude_agent_sdk import (
     ClaudeAgentOptions,
     ClaudeSDKClient,
     ResultMessage,
+    SystemMessage,
     TextBlock,
     ToolUseBlock,
 )
@@ -95,6 +96,8 @@ class ClaudeRuntime:
     ) -> RuntimeOutcome:
         allowed = {sdk_tool_name(d.name) for d in self.definitions}
         async for message in client.receive_response():
+            if isinstance(message, SystemMessage) and message.subtype == "compact_boundary":
+                emit(RuntimeEvent(context, "context_compacted"))
             if isinstance(message, AssistantMessage):
                 if (
                     message.error
