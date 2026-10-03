@@ -158,6 +158,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         "web-generate",
         "web-check",
         "web",
+        "stack-up",
+        "stack-status",
+        "stack-down",
     ):
         commands.add_parser(name)
     evaluation = commands.add_parser("eval-dev")
@@ -204,6 +207,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return run_command([python, "-m", "mock_supplier.server"], timeout=None)
         case "web" | "web-setup" | "web-check" | "web-generate":
             return web(args.command)
+        case "stack-up" | "stack-status" | "stack-down":
+            return run_command([python, "-m", "scripts.stack", args.command], timeout=None)
     return 2
 
 

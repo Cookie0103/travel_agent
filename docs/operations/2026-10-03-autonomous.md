@@ -389,3 +389,15 @@
 - 新配置实际20261003T102859Z-aad86cc3，6HTTP/.211342 CNY，SDK success但原规则tool_selection/tool_success失败，未完成validate/stage/present。guard无失败；同轮19次工具开始，其中16后被执行器拒绝。累计42/.593844，无未结预占。第一次解读详情blocked怀疑结果过大，检查私有实际调用与PG目录后否定：模型传的是两个Evidence UUID，服务端按目录ID查无。公开说明已纠正，不按猜测改详情裁剪。
 - 提高SDK max_turns到12的尝试未显示改善：实际6HTTP已结束/16工具先耗完，不继续扩大工具/HTTP保护。SDK轮数回退原6；APIHTTP12仍用于已证明旧4不足的六HTTP酒店流程，与模型质量优化分开。增加参数schema/工具说明区分目录ID与Evidence UUID，业务快照从共享executor.max_calls告知16次总限额及避免重复搜索。原查无/上限断言保留，PG反例验证错UUID拒绝后正确ID可读取。46实际CLI/PG专项通过；不将同一个dev输入的两次失败计成两个独立坏例。
 - M4规格已按既定plan写入tasks/M4.md并发起独立审查，当前尚无M4实现。核对Langfuse当前v4官方栈仍需Redis等，沿用ADR000/005既定Cloud替代，不引入第二runtime或自托管栈；UI缺凭据不伪造通过。
+
+- 正常提交静态/完整钩子通过，4af55d3保存16文件M3.6工程增量，不标三真实坏例全验收。即将同原dev规划做一次ID说明修复后回归，最多12真实HTTP；此次是有代码修复依据的新实验，失败不自动重试。独立M4规格指出历史30条不能改名未见test、应构造业务初始状态/禁止副作用检查，已补规格；120案例运行必然超过100真实HTTP授权，完整统计仍未验。
+
+- ID修复原例20261003T103737Z-8a0dc661实际9HTTP/.340634 CNY；所有14工具反馈无错误，但11次搜索、路线/校验后尚未暂存，4响应max_tokens，SDK最终incomplete_output。不能把schema语义说明修复当整例通过；不自动重试。累计51/.934478，无未结预占，余49次；下一步继续可隔离M4离线交付。
+- ADR009先记录独立离线容器方案，首次生成.cache/demo.env专用随机密码（值未输出），默认离线且不复制.env。Docker读取初次沙箱pipe拒绝后按授权升级只读核对：28.5.1/约16GB；启动独立travel-agent-demo，未操作其他容器/开发PG。构建官方Python/Node/uv与既有lock，镜像只在本地。初次测试运行处于升级环境旧pytest临时目录ACL，2fixture错误尚待新项目临时目录重跑，不填通过；Compose提示共享后端镜像pull失败后转入本地构建，后续将修正构建顺序。
+
+### M4.1 独立容器交付
+
+- 新项目临时目录重跑stack专项2通过；共享镜像先build再up修复pull顺序。首次专用PG卷/运行卷启动bootstrap0、四服务健康；实际HTTPsmoke比较/生成/局部修改/确认幂等/模拟订单/用户隔离/非法版本与live拒绝通过。down不删卷，再up重建、--verify只读GET/SSE恢复同计划V2与订单通过。未删除旧开发数据或产生模型请求。
+- 初次stdout中文受CP936，smoke入口复用configure_environment修复；初次ruff未用Path导入已修。最终check193/3分层/10地图、web type/lint/10测试/build通过；完整473 passed/2 live deselected（132.44秒）。新补4项daemon/build失败及down保护回归，正常钩子待重跑。
+- browser-act命令不可用，未安装新的全局工具；使用现有内置浏览器进行3100端到端生成/确认/刷新正式V1，截图m41-container-restored.jpg。无模型调用/真实订单。
+- 独立审查唯一P2嵌套dotenv未排除，补递归规则；六个合成文件实际Docker COPY/RUN断言排除且source保留。首次沙箱临时目录ACL导致Docker拒读，项目内新升级测试上下文通过，不读取真实env/修改系统ACL。CI补固定CLI及容器重建烟测，仅配置、未远端运行。

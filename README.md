@@ -4,7 +4,7 @@
 
 目标技术栈：Python / FastAPI / PostgreSQL / Next.js；Claude Agent SDK 负责 runtime，自写旅行 tools 与业务规则；DeepSeek 兼容线路与 Claude 原生线路分别验证；MCP；OpenTelemetry + Langfuse。
 
-**现在可以运行旅行查询 CLI 和基础会话 API。** 默认离线演示会查询景点和攻略，并显示测试来源；正式模式使用 Claude Agent SDK。API 已接 PostgreSQL，前端与行程规划仍在开发。
+**现在可以运行网页工作台、旅行工具和模拟预订。** 默认离线演示使用固定脚本与真实业务数据库；真实模式使用 Claude Agent SDK。真实模型完整规划效果、完整多次评测及部分外部验收仍未通过，不能把免费演示当模型能力证明。
 当前进度只看 [长程执行计划](docs/execution/travel-agent.md)；阶段性验证自动继续，用户最终集中运行与学习。开发顺序见 [M0 规格](docs/tasks/M0.md)，历史记录从 [文档目录](docs/README.md) 进入。
 
 CLI默认仍用人工 fixtures。数据库已导入 [Wikivoyage](https://en.wikivoyage.org/)（CC BY-SA 4.0）20段攻略与 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）146个地点对象；快照有历史和缺失信息，不能当实时事实。酒店与预订均为模拟。
@@ -37,7 +37,7 @@ uv run --env-file .env python -m backend.cli --live "京都有哪些室内景点
 | data | 景点和攻略数据文件、测试样本、导入程序；数据库表定义和读写放 backend/persistence |
 | scripts | 开发辅助命令：安装环境、检查代码、启动测试、下载参考代码 |
 | tests| 自动测试代码；scripts/dev.py 只是帮你启动这些测试 |
-| mock_supplier | 以后模拟酒店供应商：正常查询/下单，以及超时、重复请求等故障 |
+| mock_supplier | 模拟酒店供应商：正常查询/下单，以及超时、重复请求等故障 |
 | eval | 评测 Agent 工具选择和结果，保存改编用例；私有运行结果在.cache/eval |
 | docs | 实际工作的说明、报告和操作日志 |
 | plan | 设计方案、架构和任务计划 |
@@ -78,6 +78,18 @@ dev test 每次使用新的 .cache/pytest-runs/run-* 保存临时文件和缓存
 ## 工作台启动
 
 在项目PostgreSQL已启动/迁移/导入快照后，分别运行`uv run python scripts/dev.py api`与`uv run python scripts/dev.py web`，打开http://127.0.0.1:3000。首次需`dev web-setup`安装前端依赖；完整命令见[工作台说明](apps/web/README.md)。默认免费离线演示，真实模式必须显式启用并通过预算。
+
+也可以使用独立容器演示，需 uv 和已启动的 Docker Desktop：
+
+```text
+uv run python scripts/dev.py stack-up
+uv run python scripts/dev.py stack-status
+uv run python -m scripts.smoke_demo
+uv run python scripts/dev.py stack-down
+```
+
+打开 http://127.0.0.1:3100，创建演示会话、保存条件，再比较酒店或生成行程。专用 API/供应商/PG 端口为8100/8101/5544，均仅本机；与原开发数据库隔离。首次构建需下载锁定依赖；自动迁移/导入快照。停止保留演示数据，再次启动后可运行 `uv run python -m scripts.smoke_demo --verify` 只读检查上次烟测结果。
+专用密码在忽略的.cache/demo.env生成，不需要配置模型key；镜像没有启用真实模型或安装Claude CLI。当前容器用于离线业务演示，真实SDK走已核定宿主入口与原预算账本。不要删除专用密码后继续复用原卷。Langfuse沿用Cloud方案，缺项目凭据的UI验收仍待完成；详见[容器交付记录](docs/review/M4.md)。
 
 ## 模型预算配置
 
