@@ -22,7 +22,7 @@
 | R12 恢复与SSE | 启动只读裁决partial/cancelled，SSE补发；patch/stage稳定业务结果 | API/业务子进程真实kill、供应商提交前/后、条件版本/证据过期/默认参数差异、事务回滚 | tests/integration/test_recovery.py；test_api_restart.py；test_sdk_recovery.py；tests/test_operation_keys.py | HTTP/API重启、浏览器断线刷新/原消息重试/只读SSE复连与401入口已验证；未完成SDK轮次安全新建而非透明恢复 |
 | R13 上下文 | 当前条件/正式plan指针/近期引用注入、原生自动压缩后SDK续接规划校验 | 长历史有界、旧Evidence、Skill/工具配对、快照读取失败零请求、摘要接口失败不保存完成指针、轮间版本变化 | tests/integration/test_sdk_database.py；test_sdk_context.py；docs/review/M3.md | 实际CLI/PG机制已测；脚本摘要与人工usage触发不能证明真实模型压缩质量 |
 | R14 偏好 | 认证用户查看/部分修改/清空、保留墓碑版本 | 两用户、旧版本/竞争、首次空删除、非法字段、攻略不能写入、旧SDK及旧回答隔离 | tests/integration/test_preferences.py；test_sdk_preferences.py；tests/test_checkpoints.py；docs/review/M3.md | PG/实际CLI/浏览器保存刷新清空已验证，独立两P2关闭；真实模型偏好效果仍需评测 |
-| R15 注入隔离 | 正常搜索/业务流程 | 恶意攻略不扩权限、无Shell/文件/偏好写入 | tests/test_sdk_guard.py；tests/integration/test_travel_tools.py | 偏好完成后补正常/恶意对照 |
+| R15 注入隔离 | 正常搜索/攻略实际SDK回填完成 | 恶意攻略不扩权限、无Shell/文件/偏好写入 | tests/test_sdk_guard.py；tests/integration/test_sdk_article_injection.py；test_travel_tools.py；test_preferences.py | 实际CLI/PG正常与恶意脚本成对已验；不冒充真实模型抗注入统计 |
 | R16 确认边界 | 模型只暂存，用户独立确认保存/模拟订单 | 模型无下单工具、伪造user_confirmed、越权确认 | tests/integration/test_sdk_plans.py；test_sdk_bookings.py；test_bookings.py | 本地SDK暂留后订单为零与API确认已验证；真实模型恶意对照待M3 |
 | R17 失败归因 | 正常Trace与工具span、API提交事件导出 | 写盘故障不影响结果、未知字段名脱敏、partial/awaiting_user状态 | tests/test_tracing.py；tests/integration/test_run_trace.py；docs/evidence/m26-failure-regression-2026-10-03.json | 五类实际注入/unknown及三个不同真实输入矩阵已有；scope正常邻例数据失败/规划质量partial仍开放 |
 | R19 对外只读MCP | 官方客户端legacy/auto、四查询与直接handlers同事实/来源 | 鉴权、跨用户、非法/未知工具、空结果、DB/工具故障、Host/Origin/请求大小 | tests/integration/test_mcp_server.py；docs/review/M3.md | 真实TCP/PG及独立复核通过；仅本机演示Bearer，不声称企业OAuth/公网部署 |
@@ -83,3 +83,5 @@ CI恢复：558e7d2两事件37130689536/37130692016的Python/web/docker-demo全su
 M1.8页面缺口追加：integration/test_article_pages真实独立PG验证20公开攻略与各详情/归属来源一致、unknown404/长ID422/空库及依赖503、公开阅读不创建User/Session/TaskRun/Evidence。前端新HTTPS链接失败输入与持久plan_id首读失败重试；现有旧代响应/微任务用例保留。浏览器实际验证带编码ID修复、攻略引用不发送、匿名空页、确认V1正式页以及自有API断线500→恢复/重读同V1。卸载登录延迟未做浏览器注入，不把helper测试叫完整hook测试。证据m18-pages-2026-10-04。
 
 CI竞态原失败保存：bf6dc52 push两个评审未经许可工具时guard HTTP2（原要求1），同HEAD PR通过；新增守卫响应allowlist无需依赖SDK回调，原两种rubric×3实际CLI断言未修改。test_sdk_guard追加违规名完整usage结算后拒绝/下一请求不转发与非法名保留预占三反例；63相关专项Passed。所有已计费用保留，不以拒绝违规结果退款。完整钩子和新CI尚待。
+
+R15追加：test_sdk_article_injection真实SDK/CLI+PG、本地脚本normal/injected成对；marker只从get_article的tool_result回填，不入system。normal2HTTP完成/checkpoint；injected2HTTP后Bash越权被blocked，费用不重放、无checkpoint，完整Preferences/请求revision/本人Plan与Booking均不变；finally恢复原article避免污染。25相关专项Passed7.39秒，独立无P1/P2，P3明确拒绝根因已补；不是模型抗注入效果。7d1d0f6完整默认钩子Passed且pushSHA核验一致；系统进程CIM只读查询遭默认ACL拒绝，未扩大权限，普通进程摘要确认仍在正常验证。

@@ -34,16 +34,14 @@
 
 ## 当前恢复点
 
-- 分支：batch/2026-10-03-travel-autonomous，起点 1d75f79，承接已有工程和 SDK 设计。
-- 远端：origin=https://github.com/Cookie0103/travel_agent.git。首轮push已成功，开发分支远端HEAD=2333ebca7ca33945aba68636776a97beae8cceb3，与本地一致（ahead/behind均0）。包含此前39个本地提交及本轮文档提交；原历史“未push”为当时事实，不改写。随后完成的Mx.x验证/审查后自动commit/push。
-- 当前：保留M0/M1/M2原提交，M3.2已保存3590b2c、M3.3已保存f9eb345、M3.1已保存0861da7、M3.4已保存da68f86、M3.5已保存f792c85（正常静态/完整钩子通过）。M3.5工程线路已验、真实Claude未授权/未测。M3.6真实完整规划原4HTTP基线失败并保存Trace；上限截断不计模型选工具根因，保留原失败、不自动付费重试。
-- 最新功能保存9eb653a（正常check/完整默认Python钩子通过）：承接fd17edc/8a41caa/71bd308/99da71b，补逐调用参数评审/首次进度指标及同SDK B0/单因素配置；两指标P2已修并独立关闭。M4离线容器/HTTP/恢复/浏览器与冻结60条/离线40×3证据保留。SDK真实规划规则通过且展示6项，但7 verified/13 unknown、未选住宿/未正式确认，不算完整质量；真人配对0。
-- full批次结束账本：**488 HTTP / 11.442662 CNY保守估计**、未结0；同UTC日含旧探针0.10后11.542662/15CNY。B0随后继续追加，以`.cache/model-budget/deepseek.jsonl`为实时依据，旧100次许可不再适用；不把此批次边界数字当新实时余额。
-- 当前：完整真实full/B3原40test×3已结束，94/120规则通过、0error/not_run，原manifest全部源码哈希结束核对一致；407HTTP/9.363264CNY，独立身份120、安全三断言120/120，临时库正常清理。证据docs/evidence/m42-model-repeat-2026-10-03.json。B0同版本批次`.cache/eval/20261003T142321Z-d7e13464`已结束，17/120规则通过，120HTTP/0.646906CNY；开始前后原161源码hash相同，生产修改在结束核对后应用。原已付费批次不重启。首轮启动被自动审批拒绝具体载荷授权；用户随后明确批准这40自写文本外发及对照，原命令直接重新审批后启动，首次拒绝0请求/费用。
-- CI：首次push及pull_request事件，web/docker-demo已actual success；Linux Python静态11属性错误已本地同样复现，测试尚未跑。平台保护已应用，保持Windows原清理语义；新增两非Windows拒绝反例，原代码红色，修后8生命周期测试通过2.82秒。dev check扩为win32/linux/darwin，三平台各216源码strict、ruff/format/3分层/10地图全部通过，独立无P1/P2。已保存并push558e7d2，正常静态/完整离线钩子Passed；push37130689536与PR37130692016的Python/web/docker-demo均实际success，不改原评测成绩。当前离线比较增量待最终钩子/commit/push。
-- 未满足：三个真实坏例的完整邻近正常回归/规划质量、真实语义/人工评分及其他模型对照、Claude凭据、Cloud UI与真人校准；自动事件的参数语义/纯文本首进度仍unknown，不能冒充全量质量。最新web-check type/lint/10测试/build通过；偶发PG持久化/初始化失败根因未确认，脱敏SQLSTATE诊断不代表已修根因。首轮远端Python失败原证据保留，558e7d2复跑全部success。PG0010；离线镜像/旧状态只读/新会话完整烟测已验，最新构建源码范围80a308d。
-
-
+- 分支：batch/2026-10-03-travel-autonomous；既有origin=https://github.com/Cookie0103/travel_agent.git。
+- 最新已保存并普通push：**7d1d0f60b5fc3c18ed46ca758f8be81d7d233684**。本地与ls-remote完整SHA一致，提交时工作区clean，正常静态/完整默认Python钩子Passed；不合并main。前序558e7d2、bf6dc52和39历史增量均保留。
+- M1.8原工作台与本次攻略列表/全文→显式ID引用、独立正式页已实现并验证；最终web-check类型/lint/12测试/build Passed，实际浏览器V1及API停止后失败→恢复重读V1已验。原演示状态smoke --verify在最终构建后Passed、专用卷保留。两独立P2已关闭；迟到登录浏览器注入尚未做，现有Promise/微任务与源码审查范围明确。
+- full/B3及B0原40test×3各已完成，分别94/120与17/120规则通过，0error/not_run；原失败与161源码/数据/用例hash保留。bf6dc52原记录比较120完整配对/精确费用差已保存，不把结构规则说成语义质量。
+- 真实账本仍**608HTTP/12.089568CNY**，同UTC账日10-03含旧探针0.10后**12.189568/15、余额2.810432**，未结0。JST已10-04不等于UTC额度重置；无新付费请求。
+- CI：558e7d2两事件全部success。bf6dc52 PR37131409211全success，push37131407069两个原无工具评审断言暴露SDK回调竞态（HTTP2而应1），其余683passed/1已有平台skip/2live deselected、web/docker-demo success。7d1d0f6已修响应allowlist，63专项与原完整钩子Passed；新CI37132750339/37132753268仍运行，不预报成功。
+- 当前未提交：R15 actualSDK/CLI+PG正常/恶意攻略回填成对回归；25相关专项Passed7.39秒，独立无P1/P2，P3已加强blocked及Bash断言。下一步正常完整钩子→提交/push并核验CI；只读验收审查继续定位A档可离线缺口。
+- 未满足：其他模型/配置完整统计对照、参数/事实语义全量及真人校准、Claude真实API与Cloud页面、M3.6邻近正常/规划质量及历史阈值预声明偏差。已有三真实坏例不当全部闭环。C依plan04在A完整前不开始；总Goal不标完成。
 
 ## 进度
 
@@ -65,7 +63,7 @@
 | M1.5 | verified | 6虚构酒店/12报价组合、刷新与同口径比较卡片 | 5415e60；282完整测试/check125文件与文档地图通过，6.1-sol high复核无P1/P2 |
 | M1.6 | verified | 纯行程校验/估算路线/SDK修复反馈 | 3dd92c0；302完整测试/check132文件；实际SDK离线修复/上限、真实PG；独立审查两项P2已关闭 |
 | M1.7 | verified | 稳定item_id局部修改、草稿/差异、确认幂等 | e40c259；320完整测试/check139文件，真实PG竞争/回滚、实际SDK离线stage/present，独立P2已关闭 |
-| M1.8 | in_progress（补齐页面） | 原工作台已验；补攻略列表/详情→引用与独立正式行程页 | d239cc7旧流程保留；本次API/浏览器已验，完整钩子/新CI待验 |
+| M1.8 | verified（7d1d0f6；新CI待验） | 攻略列表/详情→引用、工作台、独立正式行程页 | API/实际浏览器断线重试/12前端专项与正常完整钩子Passed，独立问题已关闭 |
 | M1.9 | verified（0b6fd8c） | 完整演示和30条回归 | R01–R08与页面证据 |
 | M2.1–M2.6 | verified（4a12656） | 模拟预订、对账、重启与断线恢复 | R09–R12，真实PG/HTTP/浏览器；真实失败小样本前后证据 |
 | M3.1–M3.6 | M3.1/M3.2/M3.3 verified / M3.4 partial（da68f86）/ M3.5 partial（f792c85）/ M3.6 partial（aab5972，三个真实输入记录已有、邻例/质量未完全通过） | 上下文/偏好、对外 MCP、编排对照、坏例修复 | R13–R17/R19；授权范围内模型实验；真实压缩质量未计入机制验收 |
@@ -269,3 +267,5 @@ aab5972正常静态/完整默认Python提交钩子通过，代码已本地保存
 - bf6dc52远端CI：PR 37131409211全success，push37131407069 Python有2原unauthorized_tool断言失败（actual2HTTP而应1），683passed/1已有平台skip/2live deselected，web/docker-demo success。未删除/降低断言。守卫复用SSE解析收集工具名，完整usage照实结算后拒绝越权响应、failures阻止下一转发，避免SDK回调竞态；3非法名保留全部预占。63相关测试11.57秒Passed，独立无P1/P2。最终完整钩子/push/新CI继续；当日真实账本仍608HTTP/12.189568CNY含旧探针、未结0，未消费新费。
 
 - 最终web-check曾因JSX位于decode的try/catch触发React lint；改为只解码字符串、JSX在捕获外，未禁用规则。最终type/lint/12测试/build全部Passed；源码冻结后按原提交钩子完整验证，最终演示栈重建与原状态只读验证继续。
+
+- 7d1d0f6正常check/完整默认离线Python钩子Passed并push；本地/远端SHA完全一致。最终同一生产构建攻略详情/正式V1复验与原smoke --verify Passed。R15正常和恶意攻略真实get_article回填至第二HTTP已验；恶意脚本请求Bash被守卫拒绝，无成功checkpoint、偏好/条件/正式plan/booking不变；正常完成有checkpoint。25相关PG/Guard专项Passed7.39秒，独立无P1/P2，非阻断P3已加强明确blocked+最后Bash观察，未当模型抗注入统计。下一完整钩子/提交push继续。

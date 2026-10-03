@@ -18,9 +18,9 @@
     "article_api": "11 passed, 680 deselected, 5.52s; real temporary PostgreSQL",
     "frontend": "Final TypeScript, ESLint, Prettier, 12 native Node tests and Next production build passed; zero skipped",
     "guard": "63 passed, 11.57s; original actual CLI no-tool rubric assertions retained",
-    "static": "219 files, three platform strict types, ruff/format, three layer contracts, ten document maps passed before final guard change",
-    "final_hooks": "pending",
-    "remote_ci": "bf6dc52 push Python failed at two original unauthorized_tool attempt assertions; same HEAD PR all succeeded. New guard fix pending push."
+    "static": "Final 219 files three-platform strict types, ruff/format, three layer contracts, ten document maps Passed in normal commit hooks",
+    "final_hooks": "7d1d0f6 normal dev check + complete default offline Python hooks Passed; no bypass",
+    "remote_ci": "7d1d0f6 push37132750339/PR37132753268 running at record update; prior bf6dc52 failure retained and corrected"
   },
   "independent_review": {
     "closed_p2": [
@@ -44,5 +44,7 @@
     "apps/web/src/components/saved-trip.tsx": "e5a4ca7f723ca6424a26d1fd08430a5aabff5e46a41180c1fce2bbb2f181913d",
     "backend/services/catalog.py": "16a1f192521cd4a13ec92d30863a8369278ad2ee8a02f3f3d1c1391dc6935094",
     "backend/api/app.py": "2d8bafe1a2b377c15183c46e8967a92756a3a86371a57e7254293d380db46402"
-  }
+  },
+  "saved_commit": "7d1d0f60b5fc3c18ed46ca758f8be81d7d233684",
+  "push": "confirmed by exact ls-remote SHA"
 }

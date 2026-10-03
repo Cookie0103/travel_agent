@@ -511,3 +511,5 @@ B0原命令首次自动审批拒绝“具体测试载荷外发未明确授权”
 - bf6dc52实际两CI一成功一失败；push Python683通过2失败，违规工具评审实际多发HTTP受SDK回调时序影响。原attempts==1断言保留；守卫先按最终usage结算已发生费用，再阻止非法工具响应/后续联网，无效名称不释放预占。63专项11.57秒绿，独立无P1/P2；失败账簿未清空，不用重复CI隐藏波动，最终hooks/push待验。
 
 - 最终web-check曾因JSX位于decode的try/catch触发React lint；改为只解码字符串、JSX在捕获外，未禁用规则。最终type/lint/12测试/build全部Passed；源码冻结后按原提交钩子完整验证，最终演示栈重建与原状态只读验证继续。
+
+R15追加：test_sdk_article_injection真实SDK/CLI+PG、本地脚本normal/injected成对；marker只从get_article的tool_result回填，不入system。normal2HTTP完成/checkpoint；injected2HTTP后Bash越权被blocked，费用不重放、无checkpoint，完整Preferences/请求revision/本人Plan与Booking均不变；finally恢复原article避免污染。25相关专项Passed7.39秒，独立无P1/P2，P3明确拒绝根因已补；不是模型抗注入效果。7d1d0f6完整默认钩子Passed且pushSHA核验一致；系统进程CIM只读查询遭默认ACL拒绝，未扩大权限，普通进程摘要确认仍在正常验证。
