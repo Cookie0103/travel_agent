@@ -10,10 +10,12 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from backend.domain.execution import RunContext
+from backend.domain.itinerary import ItineraryProposal, RouteInput
 from backend.domain.travel_request import RequestPatch
 from backend.services.catalog import CatalogResult, CatalogService
 from backend.services.common import ServiceError
 from backend.services.hotels import HotelService, cards
+from backend.services.planning import PlanningService
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolDefinition, ToolResult
 from backend.tools.search import DEFINITIONS as SEARCH_DEFINITIONS
@@ -91,6 +93,16 @@ DEFINITIONS = (
         RefreshOfferInput.model_json_schema(),
     ),
     ToolDefinition(
+        "estimate_routes",
+        "按当前交通方式查询自制路段估算；起终点用当前place证据ID，未覆盖保持unknown。",
+        RouteInput.model_json_schema(),
+    ),
+    ToolDefinition(
+        "validate_itinerary",
+        "检查引用证据的行程；冲突需修正，未知保留警告。首次校验后最多修复3轮，不能改写报告。",
+        ItineraryProposal.model_json_schema(),
+    ),
+    ToolDefinition(
         "present_travel_result",
         "只提供本会话的报价ID；服务端补齐卡片并比较含税费总价。",
         PresentationInput.model_json_schema(),
@@ -107,6 +119,8 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "search_hotel_offers": HotelSearchInput,
     "refresh_hotel_offer": RefreshOfferInput,
     "present_travel_result": PresentationInput,
+    "estimate_routes": RouteInput,
+    "validate_itinerary": ItineraryProposal,
 }
 
 
@@ -114,7 +128,9 @@ class TravelToolExecutor:
     def __init__(self, travel: TravelService, *, max_calls: int = 16) -> None:
         self.travel, self.catalog = travel, CatalogService(travel)
         self.hotels = HotelService(travel)
+        self.planning = PlanningService(travel)
         self.calls, self.max_calls = 0, max_calls
+        self.validations = 0
         self.loaded_skills: set[str] = set()
         # 第一版全部串行（读并发上限1），避免为尚不存在的并行收益实现读写锁。
         self.lock = asyncio.Lock()
@@ -157,6 +173,35 @@ class TravelToolExecutor:
                 return ToolResult({}, code="unavailable", suggestion="本地业务数据暂不可用")
 
     async def _dispatch(self, context: RunContext, name: str, parsed: BaseModel) -> ToolResult:
+        if isinstance(parsed, RouteInput):
+            records = await self.planning.routes(context, parsed)
+            return ToolResult(
+                {
+                    "routes": [
+                        {
+                            **record.value,
+                            "evidence_id": str(record.evidence_id),
+                            "source_ref": record.source_ref,
+                            "content_version": record.content_version,
+                        }
+                        for record in records
+                        if isinstance(record.value, dict)
+                    ]
+                },
+                evidence_ids=tuple(str(record.evidence_id) for record in records),
+                warnings=("自制双向路段估算，非实时路线或票价；费用按全员估算，无儿童折扣",),
+            )
+        if isinstance(parsed, ItineraryProposal):
+            if self.validations >= 4:
+                return ToolResult(
+                    {}, code="blocked", suggestion="首次校验和3轮修复已用完，请说明仍存冲突或未知"
+                )
+            # 无效证据也消耗一次，避免用参数错误绕过修复上限。
+            self.validations += 1
+            report = await self.planning.validate(context, parsed)
+            return ToolResult(
+                {**report.feedback(), "repair_rounds_remaining": 4 - self.validations}
+            )
         if isinstance(parsed, HotelSearchInput | RefreshOfferInput | PresentationInput):
             return await self._hotel_result(context, parsed)
         if isinstance(parsed, RequestPatch):

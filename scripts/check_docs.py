@@ -1,6 +1,8 @@
 """轻量文档地图检查：入口保持短、仓库内链接存在；不扫描历史日志或私有缓存。"""
 
+import io
 import re
+import sys
 from pathlib import Path
 from urllib.parse import unquote, urlsplit
 
@@ -41,6 +43,8 @@ def check_documents(root: Path, documents: tuple[str, ...] = DOCUMENTS) -> list[
 
 
 def main() -> int:
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8")
     errors = check_documents(ROOT)
     for error in errors:
         print(error)

@@ -16,7 +16,7 @@
 
 ## 1. 一次请求的主调用链
 
-2026-10-03 用户确认：**Claude Agent SDK 负责通用运行时，旅行业务和工具由本项目实现；commerce-agents 用来理解机制和参考接入。** 决策记录见 [ADR-003](../../docs/adr/003-claude-agent-sdk-runtime.md)。本页为目标架构，SDK 尚未接入。
+2026-10-03 用户确认：**Claude Agent SDK 负责通用运行时，旅行业务和工具由本项目实现；commerce-agents 用来理解机制和参考接入。** 决策记录见 [ADR-003](../../docs/adr/003-claude-agent-sdk-runtime.md)。本页为目标架构，实际实施状态见[执行计划](../../docs/execution/travel-agent.md)。
 
 ```text
 用户发消息 → FastAPI：身份检查、消息去重、创建 TaskRun

@@ -21,12 +21,15 @@ def run_database_worker(
     directory: Path,
     forward: Forward,
     prompt: str,
+    *,
+    max_attempts: int = 4,
 ) -> tuple[dict[str, object], Guard]:
     guard = Guard(
         Settings("offline-only", "deepseek-flash", Decimal(5), Decimal(0)),
         Budget(directory / "ledger", directory / "old", Decimal(5)),
         forward,
         allowed_tools=frozenset(sdk_tool_name(d.name) for d in DEFINITIONS),
+        max_attempts=max_attempts,
     )
     with serve(guard) as endpoint:
         cli = find_cli(os.environ)
