@@ -24,6 +24,7 @@ from backend.domain.hotels import HotelOffer
 from backend.domain.itinerary import RouteEstimate
 from backend.domain.travel_request import TravelRequest
 from eval.suites import load_suite
+from scripts.dev import configure_environment
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -259,6 +260,7 @@ def assess_content(answer: AnswerRecord, review: ContentReview) -> dict[str, obj
 
 
 def main() -> int:
+    configure_environment()
     parser = argparse.ArgumentParser(description=__doc__)
     source = parser.add_mutually_exclusive_group(required=True)
     source.add_argument("--answer", type=Path, help="独立快照JSON；不冒充原评测运行")

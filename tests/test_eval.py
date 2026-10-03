@@ -1,6 +1,8 @@
 """评测规则保护失败样本；离线与真实模型的分母、标签及费用入口不能混淆。"""
 
 import json
+import os
+import subprocess
 import sys
 from dataclasses import replace
 from pathlib import Path
@@ -13,6 +15,45 @@ from eval.cases import Case, load_cases
 from eval.graders import Observation, grade, response_matches
 from eval.run import ROOT, run_cases
 from eval.run import main as eval_main
+
+
+@pytest.mark.parametrize(
+    "module,arguments,expected",
+    [
+        ("eval.judge", ["missing"], "评审输入/运行不可用"),
+        ("eval.persona", ["missing", "--kind", "content"], "校准记录格式错误"),
+        ("eval.content", ["--answer", "missing", "--review", "missing"], "内容评审未完成"),
+        (
+            "eval.assess",
+            [
+                "--events",
+                "missing",
+                "--actual",
+                "missing",
+                "--expected",
+                "missing",
+                "--case-id",
+                "kyoto-matcha",
+            ],
+            "评分未完成",
+        ),
+    ],
+)
+def test_private_evaluation_cli_emits_utf8_failure_without_shell_configuration(
+    module: str,
+    arguments: list[str],
+    expected: str,
+) -> None:
+    result = subprocess.run(
+        [sys.executable, "-m", module, *arguments],
+        cwd=ROOT,
+        env={**os.environ, "PYTHONUTF8": "0", "PYTHONIOENCODING": "ascii"},
+        capture_output=True,
+        timeout=15,
+        check=False,
+    )
+    assert result.returncode == 1 and expected in result.stdout.decode("utf-8")
+    assert result.stderr == b""
 
 
 def example(**changes: object) -> Case:

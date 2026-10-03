@@ -455,3 +455,9 @@ M0.7自动评审补齐：ADR011/共享rubric/唯一SDK私有开关/零工具/Gua
 fd17edc正常静态/完整默认Python钩子通过，保存事实/人工内容评审。继续复用同一评审SDK循环加入content三维rubric，严格QualityScore与HumanQuality共享字段，分数/真人记录分离；非法kind/混量表/已评分输入收费前拒绝。实际本机SDK零工具合法/非法JSON/越权工具扩展两种rubric，原persona断言保留。78相关测试13.93秒通过，mypy导入共享helper一次错误定位后修正，check216/3契约/10地图通过。补已评分样本后填真人分的离线CLI，0重新调用；说明集中docs/evaluation.md，包README短地图。无新依赖/runtime/实际模型费用，累计80/2.076890；窄独立复核和完整钩子待执行。
 
 内容辅助评分窄独立复核无P1/P2，离线校准与文档两跟进关闭；78专项与check216通过。准备正常本地提交，完整默认Python钩子期间不改跟踪文件；未产生真实模型新费用，实际校准未满足。
+
+80a308d正常check/完整默认Python提交钩子通过。M3.6只读审计确认三个不同真实输入，集中补原Trace/根因已知与未知/修复commit/原例与邻例；关键git blob字节hash核对scope三个文件全匹配，planning tools/database_tools/runtime匹配、persona全文件不匹配已明确限制，不冒充全工作树相同。保留抹茶邻例失败和规划partial；无效轮数实验参数撤回不是git revert；阈值预声明历史缺失不倒填。dev check216再次通过。stack-up重建保留原卷，旧只读smoke与新独立会话core_flows均passed；私有state先备份，不公开令牌。Next容器生产build/类型通过，基础digest未变、实际Python3.12.15，0实际模型HTTP。窄文档复核进行，之后正常本地保存，不跳钩子。
+
+内容辅助1条原dev真实回答准备：初次load_cases缺参数、第二次误猜文件名本地失败，均0请求；核对rg实际travel_m1后原Case/text与source hash落盘，prepare0请求；已授权范围内live一次1HTTP/0.002508、scored/temp0/零工具，真人0/pending，累计81/2.079398无未结预占。私有原回答/理由不打印，公共证据m34-content-judge。首次CLI中文乱码，强制ASCII四子进程反例均UnicodeEncodeError；复用既有configure_environment至四main，92相关16.62秒/check216通过，已评分样本离线输出中文正常、未修改输入/重新请求。README/测试矩阵/集中记录同步，独立窄复核中，后续正常保存钩子。此前读取无关.cache目录遇到旧沙箱目录ACL拒绝，仅只读失败，未改ACL/删除现场。
+
+最后两个窄独立审查均无P1/P2：M3真实坏例来源/边界及UTF8共享初始化已复核。92相关测试16.62秒/check216通过，真实内容单样本scored但真人0/pending；准备正常本地提交，完整默认钩子期间不改跟踪文件。Goal仍未标complete，外部/方法/模型质量缺口保留。

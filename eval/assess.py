@@ -11,6 +11,7 @@ from backend.domain.execution import RuntimeEvent
 from eval.diagnostics import ArgumentFact
 from eval.metrics import tool_call_accuracy
 from eval.suites import load_suite
+from scripts.dev import configure_environment
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -44,6 +45,7 @@ def assess(
 
 
 def main() -> int:
+    configure_environment()
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--events", type=Path, required=True, help="私有events JSONL")
     parser.add_argument("--actual", type=Path, required=True, help="实际ArgumentFact JSON数组")

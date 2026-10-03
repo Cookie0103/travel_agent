@@ -19,6 +19,7 @@ from backend.providers.probe.settings import ProbeError
 from eval.content import QualityScore
 from eval.persona import JudgeScore, Sample, calibration, content_calibration
 from eval.run import manifest
+from scripts.dev import configure_environment
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -177,6 +178,7 @@ def evaluate(samples: list[Sample], root: Path, *, kind: JudgeKind = "persona") 
 
 
 def main() -> int:
+    configure_environment()
     parser = argparse.ArgumentParser(description="固定温度语气/内容评审；默认准备，--live才收费")
     parser.add_argument("samples", type=Path)
     parser.add_argument("--live", action="store_true")

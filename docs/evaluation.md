@@ -40,4 +40,6 @@ ContentReview按原case/context/answer_sha256绑定；reviewer记录实际独立
 
 required_facts是依据原需求/既定状态独立列出的必需事实清单（entity_id/field_path/value/certainty），不从被测回答反推。claims_complete与requirements_complete只有经核验才填true；漏事实降低覆盖率，不完整或仍有未解决Evidence则总比率null；零断言分母不是100%。unknown陈述不充当确定事实，明确估算的正确陈述仍计入事实分母。输出仅hash/计数/固定理由标签，无陈述/来源/评审人；绑定不证明标注独立性，Evidence一致性也不代表现实数据独立核验。
 
-human_quality只接收真人提供的relevance/explanation/tradeoffs各0–5、reason与rater；未提供不生成分数。0=该项缺失/明显错误，3=基本可用但有关键遗漏，5=完整满足：相关性对应当前需求与硬条件，解释说明来源/unknown及选择原因，取舍说明冲突/可选调整且不偷偷放宽条件。内容辅助评审使用 `uv run python -m eval.judge <私有Sample.jsonl> --kind content`，默认只准备；显式--live仍受原累计/每日额度约束，同一固定温度零工具SDK入口，只将三维rubric与严格输出模型换为QualityScore。模型分和human_quality分别保存，不能用模型分代替真人或事实证据。已有评分补入实际真人human_quality后，运行 `uv run python -m eval.persona <samples.jsonl> --kind content` 离线分别计算三维校准，不再次调用模型。实际内容模型评分、人工抽查和校准仍待验证，不能将本机SDK工程测试当整体模型质量验收。
+human_quality只接收真人提供的relevance/explanation/tradeoffs各0–5、reason与rater；未提供不生成分数。0=该项缺失/明显错误，3=基本可用但有关键遗漏，5=完整满足：相关性对应当前需求与硬条件，解释说明来源/unknown及选择原因，取舍说明冲突/可选调整且不偷偷放宽条件。内容辅助评审使用 `uv run python -m eval.judge <私有Sample.jsonl> --kind content`，默认只准备；显式--live仍受原累计/每日额度约束，同一固定温度零工具SDK入口，只将三维rubric与严格输出模型换为QualityScore。模型分和human_quality分别保存，不能用模型分代替真人或事实证据。已有评分补入实际真人human_quality后，运行 `uv run python -m eval.persona <samples.jsonl> --kind content` 离线分别计算三维校准，不再次调用模型。实际内容单样本已验证入口，完整模型统计、人工抽查和校准仍待验证，不能将本机SDK工程测试当整体模型质量验收。
+
+评测CLI复用scripts.dev编码初始化，Windows无需手动设置PYTHONUTF8；输出和私有文件保持UTF-8。初始化不读取密钥、不修改评分输入，不产生请求。

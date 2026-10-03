@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from backend.agent.persona import RUBRIC as RUBRIC
 from backend.agent.persona import load_persona, persona_judge_prompt
 from eval.content import HumanQuality, QualityScore
+from scripts.dev import configure_environment
 
 
 class JudgeScore(BaseModel):
@@ -126,6 +127,7 @@ def content_calibration(samples: list[Sample]) -> dict[str, object]:
 
 
 def main() -> int:
+    configure_environment()
     parser = argparse.ArgumentParser(description="读取真实人工/评审记录计算校准；本入口不调用模型")
     parser.add_argument("samples", type=Path)
     parser.add_argument("--kind", choices=["persona", "content"], default="persona")

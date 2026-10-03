@@ -24,7 +24,7 @@
 | R14 偏好 | 认证用户查看/部分修改/清空、保留墓碑版本 | 两用户、旧版本/竞争、首次空删除、非法字段、攻略不能写入、旧SDK及旧回答隔离 | tests/integration/test_preferences.py；test_sdk_preferences.py；tests/test_checkpoints.py；docs/review/M3.md | PG/实际CLI/浏览器保存刷新清空已验证，独立两P2关闭；真实模型偏好效果仍需评测 |
 | R15 注入隔离 | 正常搜索/业务流程 | 恶意攻略不扩权限、无Shell/文件/偏好写入 | tests/test_sdk_guard.py；tests/integration/test_travel_tools.py | 偏好完成后补正常/恶意对照 |
 | R16 确认边界 | 模型只暂存，用户独立确认保存/模拟订单 | 模型无下单工具、伪造user_confirmed、越权确认 | tests/integration/test_sdk_plans.py；test_sdk_bookings.py；test_bookings.py | 本地SDK暂留后订单为零与API确认已验证；真实模型恶意对照待M3 |
-| R17 失败归因 | 正常Trace与工具span、API提交事件导出 | 写盘故障不影响结果、未知字段名脱敏、partial/awaiting_user状态 | tests/test_tracing.py；tests/integration/test_run_trace.py；docs/evidence/m26-failure-regression-2026-10-03.json | 已有真实scope失败前后证据；M3补5类注入/unknown与其余坏例 |
+| R17 失败归因 | 正常Trace与工具span、API提交事件导出 | 写盘故障不影响结果、未知字段名脱敏、partial/awaiting_user状态 | tests/test_tracing.py；tests/integration/test_run_trace.py；docs/evidence/m26-failure-regression-2026-10-03.json | 五类实际注入/unknown及三个不同真实输入矩阵已有；scope正常邻例数据失败/规划质量partial仍开放 |
 | R19 对外只读MCP | 官方客户端legacy/auto、四查询与直接handlers同事实/来源 | 鉴权、跨用户、非法/未知工具、空结果、DB/工具故障、Host/Origin/请求大小 | tests/integration/test_mcp_server.py；docs/review/M3.md | 真实TCP/PG及独立复核通过；仅本机演示Bearer，不声称企业OAuth/公网部署 |
 | 酒店比较/刷新 | 同入住口径、并列最低、服务端报价 | 缺人数/税费、不匹配、过期、无库存 | tests/test_hotels.py；tests/integration/test_hotels.py；test_sdk_hotels.py | 网页过期与恢复 |
 | M1.8工作台 | 条件→比较→草稿→确认→局部改程 | 类型、SSE分块、错误显示、失效确认、锁定拒绝 | 前端类型/lint/build、PG链路、真实浏览器 | 类型/lint/build/10前端测试、PG全链与浏览器正常/失效/锁定/刷新通过；M2实际丢响应与重启恢复已验 |
@@ -39,7 +39,7 @@ M3.5供应商/原币种：test_sdk_providers覆盖显式选择/无key不回退�
 
 M4.1容器：tests/test_stack.py覆盖密码重用/损坏不覆盖、Docker不可用/构建失败不启动、停止保留卷。实际独立Compose从新卷初始化、Next同源代理→认证→条件→比较→草稿→局部修改→确认→模拟预订与重复确认、隔离/非法版本/禁止live、停止重建后只读计划/订单/SSE恢复。合成嵌套dotenv实际构建排除；浏览器确认刷新V1及截图见[M4](../review/M4.md)。容器默认离线，不代替真实模型与Langfuse UI；远端CI尚未运行。
 
-M3.6归因：tests/test_diagnostics.py 与 integration/test_diagnostics.py 使用实际工具/PG/本机供应商HTTP注入五类单根因，并验证正常、已恢复、completed但业务规则失败、错run/调用、重复/乱序、缺失/矛盾附件、合法参数反证与私密字段不导出。eval默认缺事实附件的失败标unknown；注入不是三真实dev坏例验收。integration/test_travel_tools.py覆盖最大8条真实目录搜索与完整详情/证据保留；test_live_business.py通过真实SDK/CLI、PG和本机六HTTP酒店链路检验API入口，合成费用写测试临时账本。实测规划同输入三次与最后规则通过已留证据；其余不同dev坏例矩阵继续审计。
+M3.6归因：tests/test_diagnostics.py 与 integration/test_diagnostics.py 使用实际工具/PG/本机供应商HTTP注入五类单根因，并验证正常、已恢复、completed但业务规则失败、错run/调用、重复/乱序、缺失/矛盾附件、合法参数反证与私密字段不导出。eval默认缺事实附件的失败标unknown；注入不是三真实dev坏例验收。integration/test_travel_tools.py覆盖最大8条真实目录搜索与完整详情/证据保留；test_live_business.py通过真实SDK/CLI、PG和本机六HTTP酒店链路检验API入口，合成费用写测试临时账本。实测规划同输入三次与最后规则通过已留证据；不同dev坏例矩阵已集中review/M3；正常邻例/完整模型质量仍未满足。
 
 - Python：dev check（ruff、format、mypy strict、分层、文档地图）、dev test（默认不付费；真实PG必须可用）。
 - 前端：生成契约一致性、TypeScript、官方Next ESLint、Prettier、生产build；浏览器宽/窄布局与核心流程操作。
@@ -60,6 +60,10 @@ M0.7：test_persona_judge覆盖原旅行bytes不变、实际temp0、采样/工�
 
 ADR012对照配置：test_evaluation_variants覆盖共享注册表、非法配置收费前拒绝、数据库要求、workflow/judge/多轮冲突、FixtureRuntime不能冒充效果；integration/test_evaluation_variants用实际SDK/CLI+真实PG核对schema/偏好/快照/无checkpoint/业务不改，并验证首次校验后修复阻止、原候选可暂存、conflict可展示而用户确认拒绝且正式V0。新增no_compaction及B2：同人工usage/阈值原生自动压缩与关闭两分支；test_claude_runtime覆盖未知SDK/CLI在初始化前拒绝、意外压缩中断且无session ref。零工具公开状态探针只证实锁定版本能力；带工具不逐轮探测，不放宽费用。B2同时关闭偏好和压缩是组合基线，与单因素区分。真实模型压缩质量和统计对照仍未满足。
 
-内容评审增量：test_eval_content覆盖原case/context/hash/原文位置绑定、正确/错值/typed bool、过期/版本/来源/外国或重复附件、未完整标注/漏必需事实、显式unknown、估算不能冒充确定值、真人分非法与缺失、脱敏CLI及原results/manifest/attempt一致性（改原文/身份、重复、坏manifest、无捕获）。integration/test_eval_content用真实PG捕获本人事实/保留失效报价与旧revision、拒绝跨用户，实际目录name/opening_hours和酒店card.total/缺税/错值评分，捕获依赖失败使验证不完整并停止后续而保留HTTP计数。独立两P2（整对象错判子字段、未解决unknown陈述仍完美准确率）均已补反例复核关闭。机制已验不代替实际语义/人工校准；通用内容LLM辅助入口已补，实际内容模型统计/人工配对仍未满足。
+内容评审增量：test_eval_content覆盖原case/context/hash/原文位置绑定、正确/错值/typed bool、过期/版本/来源/外国或重复附件、未完整标注/漏必需事实、显式unknown、估算不能冒充确定值、真人分非法与缺失、脱敏CLI及原results/manifest/attempt一致性（改原文/身份、重复、坏manifest、无捕获）。integration/test_eval_content用真实PG捕获本人事实/保留失效报价与旧revision、拒绝跨用户，实际目录name/opening_hours和酒店card.total/缺税/错值评分，捕获依赖失败使验证不完整并停止后续而保留HTTP计数。独立两P2（整对象错判子字段、未解决unknown陈述仍完美准确率）均已补反例复核关闭。机制已验不代替实际语义/人工校准；通用内容LLM辅助入口已补，内容真实单样本入口已验；实际内容模型统计/人工配对仍未满足。
 
 内容辅助评审：test_content_judge验证三维严格类型/错用语气JSON/缺或非法kind启动前拒绝、真实温度与工具证明不足不评分、真人三维原样保留、每维独立校准、已评分离线补真人记录而不重付费。test_persona_judge原实际SDK三分支扩展到两种rubric（合法JSON/坏JSON/未授权工具），原语气断言保留。共享同一执行循环/预算/SDK/Guard，无第二runtime；合成配对仅测试统计，不当实际真人验收。
+
+M3.6逐案例矩阵及来源hash核对集中review/M3：箱根/冲绳共享59cf7b3修复、规划99da71b修复，同输入多次只算一例；范围批次抹茶邻例失败原样保留。无效SDK轮数实验撤回有原记录与默认代码证据；模型阈值优化前预声明未找到，按历史偏差记录，不补造已通过条件。
+
+Windows评测CLI：test_eval强制非UTF8/ASCII环境启动四个真实子进程，失败输入仍返回脱敏中文/退出1、不吐Unicode traceback；复用既有configure_environment而不要求用户设shell变量。首次四失败保留定位记录，修后92相关通过。内容辅助入口一次真实模型三维JSON已验，n=1/真人0不是质量统计；证据m34-content-judge。
