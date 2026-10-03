@@ -105,6 +105,7 @@ def run_live(
             grant_accounted=str(charge),
             run_accounted=str(charge - before_charge),
             guard_failures=guard.failures,
+            guard_failure_details=guard.failure_details,
         )
         if settings.currency == "CNY":
             report.update(

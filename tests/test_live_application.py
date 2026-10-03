@@ -83,6 +83,39 @@ def test_application_rejects_cross_run_report() -> None:
     assert application.outcome(report, context).code == "blocked"
 
 
+def test_application_business_limit_and_compaction_event_reach_parent(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    context = RunContext(uuid4())
+    forwarded: list[RuntimeEvent] = []
+
+    def operation(*args: object, **kwargs: object) -> dict[str, object]:
+        assert kwargs["max_attempts"] == 12
+        emit = kwargs["emit"]
+        assert callable(emit)
+        for kind in ("started", "context_compacted", "completed"):
+            emit(RuntimeEvent(context, TypeAdapter(EventKind).validate_python(kind)))
+        return {
+            "status": "success",
+            "results": [asdict(RunResult(context, RuntimeOutcome(text="ok")))],
+        }
+
+    from pydantic import TypeAdapter
+
+    from backend.domain.execution import EventKind
+
+    monkeypatch.setattr(application, "run_live", operation)
+
+    async def exercise() -> None:
+        runtime = application.GuardedRuntime(tmp_path, "offline-dsn")
+        result = await runtime.execute(context, "test", None, forwarded.append, asyncio.Event())
+        assert result.code is None
+        await asyncio.sleep(0)
+        assert [e.kind for e in forwarded] == ["context_compacted"]
+
+    asyncio.run(exercise())
+
+
 @pytest.mark.parametrize("limit", [0, -1, 13, True])
 def test_invalid_request_limit_stops_before_loading_credentials(
     limit: int, tmp_path: Path, monkeypatch: pytest.MonkeyPatch

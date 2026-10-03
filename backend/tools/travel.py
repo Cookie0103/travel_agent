@@ -29,7 +29,11 @@ from backend.tools.search import ContentSearchInput, PlaceSearchInput
 
 class EntityInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
-    entity_id: str = Field(min_length=1, max_length=100)
+    entity_id: str = Field(
+        min_length=1,
+        max_length=100,
+        description="搜索返回的place_id或article_id；不是evidence_id。证据UUID仅用于行程/路线引用。",
+    )
 
 
 class SkillInput(BaseModel):
@@ -73,12 +77,12 @@ DEFINITIONS = (
     *SEARCH_DEFINITIONS,
     ToolDefinition(
         "get_article",
-        "按search_content返回的article_id读取原文和来源。",
+        "按search_content返回的article_id读取原文和来源；不能传evidence_id。",
         EntityInput.model_json_schema(),
     ),
     ToolDefinition(
         "get_place_facts",
-        "按search_places返回的place_id读取属性；缺字段保持未知。",
+        "按search_places返回的place_id读取属性；不能传evidence_id；缺字段保持未知。",
         EntityInput.model_json_schema(),
     ),
     ToolDefinition(
@@ -291,7 +295,7 @@ class TravelToolExecutor:
             assert isinstance(parsed, EntityInput)
             collection = "places" if name == "get_place_facts" else "articles"
             result = await self.catalog.get(context, collection, parsed.entity_id)
-        return catalog_result(result)
+        return catalog_result(result, summary=isinstance(parsed, ContentSearchInput))
 
     def _take_validation(self, proposal: ItineraryProposal, *, staging: bool = False) -> None:
         # 不变量：最后已校验候选仍可暂存并重新检查，不增加修复次数。
@@ -333,9 +337,13 @@ class TravelToolExecutor:
         )
 
 
-def catalog_result(result: CatalogResult) -> ToolResult:
+def catalog_result(result: CatalogResult, *, summary: bool = False) -> ToolResult:
     rows = [
-        {**row, "evidence_id": str(record.evidence_id), "evidence_status": record.status}
+        {
+            **(catalog_summary(row) if summary else row),
+            "evidence_id": str(record.evidence_id),
+            "evidence_status": record.status,
+        }
         for row, record in zip(result.rows, result.evidence, strict=True)
     ]
     return ToolResult(
@@ -345,6 +353,28 @@ def catalog_result(result: CatalogResult) -> ToolResult:
         evidence_ids=tuple(str(e.evidence_id) for e in result.evidence),
         warnings=("历史快照非实时事实；缺失字段未知；证据可追溯不等于信息已实时核实",),
     )
+
+
+def catalog_summary(row: dict[str, object]) -> dict[str, object]:
+    """搜索返回ID/来源与短摘要；完整字段和逐字段来源仍在PG，由详情工具读取。"""
+    fields = {
+        "city",
+        "place_id",
+        "article_id",
+        "name",
+        "title",
+        "category",
+        "latitude",
+        "longitude",
+        "coordinate_kind",
+        "indoor",
+        "source",
+    }
+    result = {key: value for key, value in row.items() if key in fields}
+    text = row.get("text")
+    if isinstance(text, str):
+        result.update(text=text[:600], text_truncated=len(text) > 600)
+    return result
 
 
 def bounded_plan(result: ToolResult) -> ToolResult:

@@ -22,7 +22,7 @@ Forward = Callable[[bytes], tuple[int, bytes]]
 
 @dataclass
 class Guard:
-    """每次实验额外限制四次实际请求；累计限制由 Budget 管理。"""
+    """每轮按入口限制实际HTTP尝试；跨轮累计限制由Budget独立管理。"""
 
     settings: Settings = field(repr=False)
     budget: Budget

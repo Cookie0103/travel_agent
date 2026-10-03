@@ -44,6 +44,9 @@ class DatabaseTools:
         assert isinstance(request, dict) and isinstance(request["revision"], int)
         assert isinstance(preferences, dict) and isinstance(preferences["revision"], int)
         return (
+            f"\n每个用户轮次最多{self.executor.max_calls}次工具调用；失败也计数。"
+            "找到相关结果后不要重复搜索，保留调用次数完成用户要求的校验/暂存/展示。"
+            "目录详情使用place_id/article_id，行程与路线使用evidence_id，不互换。"
             "\n服务端业务状态与有界回顾（以当前revision为准）：\n"
             + json.dumps(state, ensure_ascii=False),
             request["revision"],

@@ -78,6 +78,50 @@ def test_tool_arguments_and_registry_cannot_grant_write_permissions(
     runner.run(exercise())
 
 
+def test_maximum_catalog_search_is_bounded_and_details_remain_complete(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """实际dev寺/limit8曾整条blocked；搜索摘要不丢ID/来源，PG完整事实可再读取。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        async with transaction(travel.database) as db:
+            await import_catalog(db, load_snapshot())
+        executor = TravelToolExecutor(travel)
+        for name, query, collection, detail, identity in (
+            ("search_places", "寺", "places", "get_place_facts", "place_id"),
+            ("search_content", "", "articles", "get_article", "article_id"),
+        ):
+            result = await executor.execute(
+                context, name, {"city": "京都", "query": query, "limit": 8}
+            )
+            assert result.code is None and not result.empty
+            rows = result.data[collection]
+            assert isinstance(rows, list) and len(rows) == 8
+            assert len(result.evidence_ids) == 8
+            assert all(row["source"]["source_ref"] and row["evidence_id"] for row in rows)
+            assert all("field_sources" not in row for row in rows)
+            mistaken = await executor.execute(
+                context, detail, {"entity_id": rows[0]["evidence_id"]}
+            )
+            assert mistaken.code == "blocked" and mistaken.empty is False
+            complete = await executor.execute(context, detail, {"entity_id": rows[0][identity]})
+            assert complete.code is None
+            records = await travel.resolve_evidence(context, [UUID(complete.evidence_ids[0])])
+            value = records[0].value
+            assert isinstance(value, dict)
+            details = complete.data[collection]
+            assert isinstance(details, list)
+            assert details[0]["source"] == value["source"]
+            if collection == "places":
+                assert "field_sources" in details[0]
+                assert rows[0]["coordinate_kind"] == value["coordinate_kind"]
+            else:
+                assert details[0]["text"] == value["text"]
+
+    runner.run(exercise())
+
+
 def test_tool_calls_are_serialized_and_failures_count_toward_limit(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:

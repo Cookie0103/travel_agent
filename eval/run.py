@@ -30,6 +30,7 @@ from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
 from backend.tools.workflow import WORKFLOWS, WorkflowName
 from eval.cases import Case, load_cases
 from eval.database import DATA_VERSION, DatabaseEvaluation, database_evaluation, selector_runner
+from eval.diagnostics import diagnose
 from eval.graders import Observation, grade
 from eval.persona import rules as persona_rules
 
@@ -219,6 +220,7 @@ async def run_case(
     except (ProbeError, ServiceError, ValueError, OSError):
         return {"case_id": case.case_id, "status": "error", "reason": "runtime_unavailable"}
     checks = grade(case, actual)
+    trace_id = report.get("trace_id")
     return {
         "case_id": case.case_id,
         "status": "error"
@@ -227,6 +229,14 @@ async def run_case(
         if all(checks.values())
         else "failed",
         "checks": checks,
+        "diagnosis": asdict(
+            diagnose(
+                actual.events,
+                (),
+                business_passed=all(checks.values()),
+                trace_id=trace_id if isinstance(trace_id, str) else None,
+            )
+        ),
         "persona_checks": persona_rules(
             actual.text, emotional=case.case_id.startswith("emotional-")
         ),

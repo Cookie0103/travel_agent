@@ -50,7 +50,13 @@ class GuardedRuntime:
 
         def forward(event: RuntimeEvent) -> None:
             # 外层Agent产生唯一started/终态；worker同类事件仍保留在私有运行证据中。
-            if event.kind in {"text", "tool_started", "tool_finished", "presentation"}:
+            if event.kind in {
+                "text",
+                "tool_started",
+                "tool_finished",
+                "presentation",
+                "context_compacted",
+            }:
                 loop.call_soon_threadsafe(emit, event)
 
         operation = asyncio.create_task(
@@ -62,6 +68,7 @@ class GuardedRuntime:
                 database_dsn=self.database_dsn,
                 emit=forward,
                 cancelled=stop,
+                max_attempts=12,
             )
         )
         watcher = asyncio.create_task(cancelled.wait())

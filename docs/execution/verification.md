@@ -37,6 +37,8 @@ M3.5供应商/原币种：test_sdk_providers覆盖显式选择/无key不回退�
 
 ## 交付检查
 
+M3.6归因：tests/test_diagnostics.py 与 integration/test_diagnostics.py 使用实际工具/PG/本机供应商HTTP注入五类单根因，并验证正常、已恢复、completed但业务规则失败、错run/调用、重复/乱序、缺失/矛盾附件、合法参数反证与私密字段不导出。eval默认缺事实附件的失败标unknown；注入不是三真实dev坏例验收。integration/test_travel_tools.py覆盖最大8条真实目录搜索与完整详情/证据保留；test_live_business.py通过真实SDK/CLI、PG和本机六HTTP酒店链路检验API入口，合成费用写测试临时账本。实测规划上限实验与其余坏例仍待记录。
+
 - Python：dev check（ruff、format、mypy strict、分层、文档地图）、dev test（默认不付费；真实PG必须可用）。
 - 前端：生成契约一致性、TypeScript、官方Next ESLint、Prettier、生产build；浏览器宽/窄布局与核心流程操作。
 - 跨模块：API→Agent/SDK→工具→真实PG→持久事件→浏览器；模拟供应商与恢复故障不能只mock数据库。

@@ -369,3 +369,23 @@
 
 - 首次完整447通过/2 live默认排除（126.78秒），后续新增CLI/Trace回归后第二次447通过/3失败（128.20秒）：旧压缩/轮间快照脚本使用仅含空messages的内部阶段控制，响应构造新增model索引触发KeyError，并非SDK随机失效。共享脚本保持默认DeepSeek模型兼容旧内部控制，实际出站仍被Guard严格核对；原压缩/快照断言不变。对应8实际CLI/PG回归通过（23.65秒）。
 - 第二轮独立P3发现USD报告旧CNY字段可能被重贴币种；集中_amount复用于report/write_trace/逐请求，跨币种、双字段不一致/NaN/负值均拒绝。3原例回归加入，Trace+providers33通过（1.50秒），静态185/3契约/10地图再次通过；独立复核关闭，无剩余P1/P2。未产生任何真实请求，费用保持32/.301908。最终完整由正常提交钩子重跑，提交结果待记录。
+
+- 正常静态/完整钩子通过，f792c85保存27文件，未推送。M3.5工程线路通过，真实Claude调用/跨模型对照仍未授权/未验。
+
+### M3.6 实际规划失败与归因
+
+- 执行原dev plan-complete-control，uv run --env-file .env python -m eval.run --database --live --case-id plan-complete-control --max-attempts 4；既有5元/100次授权内，失败不自动重试。私有20261003T101205Z-4c84bf1a保存manifest/attempts/results/Trace；4HTTP、0.080594 CNY，原规则error，未完成facts/路线/校验/暂存。累计重新核对36次/.382502，无未结预占。
+- 观察update条件成功，后续多次search、含一次blocked工具反馈；父HTTP4次守门blocked，SDK转为invalid_assistant_message。现有证据证明执行被上限截断，不能把它猜成工具/供应商根因，更不能声称提高上限等于模型修复；原基线保留，后续是不同配置实验。
+- 独立规格审查同意最小eval纯函数/事实附件，要求按业务验收而非completed判成功、附件绑定同run与tool_call_id/事件位置/当时版本、恢复后成功不误归因、矛盾/错配/证据不足unknown、固定公共依据白名单不泄私密。五注入不能替代三真实dev坏例及实际无效优化回退。
+
+- 实际blocked搜索定位为8条目录完整payload超过既有8000字符限制，重复逐字段来源占大头。搜索列表仅保留ID/短摘要/来源与Evidence引用；完整PG证据及详情不裁剪，不提高返回上限。原查询与最大8条攻略/详情回归通过。
+- 新增eval纯诊断函数及五类实际工具/PG/本机HTTP注入，公共结果仅固定cause/basis/位置/Trace ID；未捕获事实的实际失败仍unknown。API只转发原生压缩事件，业务入口显式最多12HTTP/SDK12轮，探针与评测默认4不变，工具16次、费用全程/每日边界不变；这不是模型效果改善证据。
+- 专项首次失效证据字段假设及类型已修，保留业务原行为。混合显式测试文件路径出现fixture不存在：已检查pytest9.1.1 _matchfactories的node对象匹配，同目录后续collector与首次fixture父节点不同；统一tests根目录按-k选择40 passed/433 deselected（11.66秒），没有删测试/跳过PG。尝试包标记未解决，撤回无效组织变更。六HTTP实际CLI测试最初临时根误当源码PYTHONPATH；仅测试worker环境指向真实源码，账本/会话继续隔离临时目录。
+- 静态189文件、3分层契约、10文档入口通过；前端type/lint/10测试/build通过。完整Python回归在运行，独立变更审查已发起；尚未提交或新付费实验。
+
+- 完整471 passed/2 live deselected（133.17秒）；随后独立P2发现无关过期证据可误归因，已仅接受hold_hotel实际报价引用/当时版本，追加原误归因/错报价/错版本反例unknown。P3搜索摘要补coordinate_kind估算标记。静态与40专项再次通过（11.54秒），独立复核两项关闭；最终完整由正常提交钩子再验证。
+- 接下来执行一次不同配置实验：同原plan-complete-control、修复后的搜索摘要、max-attempts12。保留4HTTP原基线，不自动重试失败；最多12真实HTTP，仍由5 CNY/100次/每日三边界约束。仅检验新配置是否完成原规则，不把提高上限当模型质量改善。
+
+- 新配置实际20261003T102859Z-aad86cc3，6HTTP/.211342 CNY，SDK success但原规则tool_selection/tool_success失败，未完成validate/stage/present。guard无失败；同轮19次工具开始，其中16后被执行器拒绝。累计42/.593844，无未结预占。第一次解读详情blocked怀疑结果过大，检查私有实际调用与PG目录后否定：模型传的是两个Evidence UUID，服务端按目录ID查无。公开说明已纠正，不按猜测改详情裁剪。
+- 提高SDK max_turns到12的尝试未显示改善：实际6HTTP已结束/16工具先耗完，不继续扩大工具/HTTP保护。SDK轮数回退原6；APIHTTP12仍用于已证明旧4不足的六HTTP酒店流程，与模型质量优化分开。增加参数schema/工具说明区分目录ID与Evidence UUID，业务快照从共享executor.max_calls告知16次总限额及避免重复搜索。原查无/上限断言保留，PG反例验证错UUID拒绝后正确ID可读取。46实际CLI/PG专项通过；不将同一个dev输入的两次失败计成两个独立坏例。
+- M4规格已按既定plan写入tasks/M4.md并发起独立审查，当前尚无M4实现。核对Langfuse当前v4官方栈仍需Redis等，沿用ADR000/005既定Cloud替代，不引入第二runtime或自托管栈；UI缺凭据不伪造通过。
