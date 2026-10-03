@@ -5,8 +5,31 @@ import {
   planUnavailable,
   expiredHotels,
   bookingCanConfirm,
+  partyLabel,
 } from "../src/lib/availability.ts";
 import type { Plan, Hotels, Booking } from "../src/lib/api";
+
+test("quote party includes original children and rooms independently of current conditions", () => {
+  const original = { adults: 2, child_ages: [0, 8, 17], rooms: 2 };
+  const edited = { adults: 1, child_ages: [5], rooms: 1 };
+  assert.equal(partyLabel(original), "2成人 · 3名儿童（0、8、17岁） · 2间房");
+  assert.equal(partyLabel(edited), "1成人 · 1名儿童（5岁） · 1间房");
+  assert.deepEqual(original.child_ages, [0, 8, 17]);
+  assert.equal(
+    partyLabel({ adults: 2, child_ages: [], rooms: 1 }),
+    "2成人 · 无儿童 · 1间房",
+  );
+});
+
+test("missing or invalid child ages are unknown rather than no children", () => {
+  for (const ages of [undefined, null, "8", [true], [18], [-1], [1.5]]) {
+    assert.equal(
+      partyLabel({ adults: 2, child_ages: ages, rooms: 1 }),
+      "2成人 · 儿童信息未知 · 1间房",
+    );
+  }
+  assert.equal(partyLabel({}), "成人数未知 · 儿童信息未知 · 间房数未知");
+});
 
 test("expiry boundary, changed conditions and stale evidence prevent confirmation", () => {
   const plan = {

@@ -35,12 +35,12 @@
 ## 当前恢复点
 
 - 分支：batch/2026-10-03-travel-autonomous；既有origin=https://github.com/Cookie0103/travel_agent.git。
-- 最新已保存并普通push：**7d1d0f60b5fc3c18ed46ca758f8be81d7d233684**。本地与ls-remote完整SHA一致，提交时工作区clean，正常静态/完整默认Python钩子Passed；不合并main。前序558e7d2、bf6dc52和39历史增量均保留。
+- 最新已保存并普通push：**24b5dcb398851dc20e7b622b44e6ab81206e639a**。本地与ls-remote完整SHA一致，提交时工作区clean，正常静态/完整默认Python钩子Passed；不合并main。前序558e7d2、bf6dc52和39历史增量均保留。
 - M1.8原工作台与本次攻略列表/全文→显式ID引用、独立正式页已实现并验证；最终web-check类型/lint/12测试/build Passed，实际浏览器V1及API停止后失败→恢复重读V1已验。原演示状态smoke --verify在最终构建后Passed、专用卷保留。两独立P2已关闭；迟到登录浏览器注入尚未做，现有Promise/微任务与源码审查范围明确。
 - full/B3及B0原40test×3各已完成，分别94/120与17/120规则通过，0error/not_run；原失败与161源码/数据/用例hash保留。bf6dc52原记录比较120完整配对/精确费用差已保存，不把结构规则说成语义质量。
 - 真实账本仍**608HTTP/12.089568CNY**，同UTC账日10-03含旧探针0.10后**12.189568/15、余额2.810432**，未结0。JST已10-04不等于UTC额度重置；无新付费请求。
-- CI：558e7d2两事件全部success。bf6dc52 PR37131409211全success，push37131407069两个原无工具评审断言暴露SDK回调竞态（HTTP2而应1），其余683passed/1已有平台skip/2live deselected、web/docker-demo success。7d1d0f6已修响应allowlist，63专项与原完整钩子Passed；新CI37132750339/37132753268仍运行，不预报成功。
-- 当前未提交：R15 actualSDK/CLI+PG正常/恶意攻略回填成对回归；25相关专项Passed7.39秒，独立无P1/P2，P3已加强blocked及Bash断言。下一步正常完整钩子→提交/push并核验CI；只读验收审查继续定位A档可离线缺口。
+- CI：558e7d2两事件全部success。bf6dc52 PR37131409211全success，push37131407069两个原无工具评审断言暴露SDK回调竞态（HTTP2而应1），其余683passed/1已有平台skip/2live deselected、web/docker-demo success。7d1d0f6已修响应allowlist，63专项与原完整钩子Passed；新CI37132750339/37132753268全部success，Python693passed/1已有平台skip/2live deselected；R15下一提交CI待验。
+- 当前未提交：M1.5/M2.2原报价儿童信息显示，14前端检查和实际浏览器旧报价保持已验，独立无P1/P2，待正常完整钩子/commit/push。随后补约束/预订/恢复分项观测与报告；R15已保存24b5dcb。
 - 未满足：其他模型/配置完整统计对照、参数/事实语义全量及真人校准、Claude真实API与Cloud页面、M3.6邻近正常/规划质量及历史阈值预声明偏差。已有三真实坏例不当全部闭环。C依plan04在A完整前不开始；总Goal不标完成。
 
 ## 进度
@@ -269,3 +269,7 @@ aab5972正常静态/完整默认Python提交钩子通过，代码已本地保存
 - 最终web-check曾因JSX位于decode的try/catch触发React lint；改为只解码字符串、JSX在捕获外，未禁用规则。最终type/lint/12测试/build全部Passed；源码冻结后按原提交钩子完整验证，最终演示栈重建与原状态只读验证继续。
 
 - 7d1d0f6正常check/完整默认离线Python钩子Passed并push；本地/远端SHA完全一致。最终同一生产构建攻略详情/正式V1复验与原smoke --verify Passed。R15正常和恶意攻略真实get_article回填至第二HTTP已验；恶意脚本请求Bash被守卫拒绝，无成功checkpoint、偏好/条件/正式plan/booking不变；正常完成有checkpoint。25相关PG/Guard专项Passed7.39秒，独立无P1/P2，非阻断P3已加强明确blocked+最后Bash观察，未当模型抗注入统计。下一完整钩子/提交push继续。
+
+- 24b5dcb R15正常完整check/test钩子Passed、普通push远端SHA一致；7d1d0f6两新CI37132750339/37132753268全部success，Linux Python693passed/1已有平台skip/2live deselected，158.64秒。
+- 验收审查发现M1.5/M2.2卡片漏报价儿童信息，现复用partyLabel读取card.stay/booking.offer.request；未知不当无儿童，不改价格或报价。14前端专项/type/lint/build Passed，独立无P1/P2。实际浏览器原比较及held报价2成人/儿童0,8/2房；当前改成儿童5/1房，旧held仍显示原人数、旧条件警告、确认disabled。旧正式V1酒店仍无儿童/1房。只有模拟hold，不确认下单；原state smoke --verify Passed。证据m15-party-display-2026-10-04，最终正常完整钩子/push继续。
+- 下一离线缺口：plan05约束/预订/恢复分项统计需复用原校验与业务观测添加报告，partial/unknown/conflict分开，不把valid_draft布尔当全部硬条件满足；无真实恢复观测保持未测，旧记录缺项unknown，不重付费或改变冻结期待。

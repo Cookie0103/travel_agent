@@ -513,3 +513,7 @@ B0原命令首次自动审批拒绝“具体测试载荷外发未明确授权”
 - 最终web-check曾因JSX位于decode的try/catch触发React lint；改为只解码字符串、JSX在捕获外，未禁用规则。最终type/lint/12测试/build全部Passed；源码冻结后按原提交钩子完整验证，最终演示栈重建与原状态只读验证继续。
 
 R15追加：test_sdk_article_injection真实SDK/CLI+PG、本地脚本normal/injected成对；marker只从get_article的tool_result回填，不入system。normal2HTTP完成/checkpoint；injected2HTTP后Bash越权被blocked，费用不重放、无checkpoint，完整Preferences/请求revision/本人Plan与Booking均不变；finally恢复原article避免污染。25相关专项Passed7.39秒，独立无P1/P2，P3明确拒绝根因已补；不是模型抗注入效果。7d1d0f6完整默认钩子Passed且pushSHA核验一致；系统进程CIM只读查询遭默认ACL拒绝，未扩大权限，普通进程摘要确认仍在正常验证。
+
+- 24b5dcb R15正常完整check/test钩子Passed、普通push远端SHA一致；7d1d0f6两新CI37132750339/37132753268全部success，Linux Python693passed/1已有平台skip/2live deselected，158.64秒。
+- 验收审查发现M1.5/M2.2卡片漏报价儿童信息，现复用partyLabel读取card.stay/booking.offer.request；未知不当无儿童，不改价格或报价。14前端专项/type/lint/build Passed，独立无P1/P2。实际浏览器原比较及held报价2成人/儿童0,8/2房；当前改成儿童5/1房，旧held仍显示原人数、旧条件警告、确认disabled。旧正式V1酒店仍无儿童/1房。只有模拟hold，不确认下单；原state smoke --verify Passed。证据m15-party-display-2026-10-04，最终正常完整钩子/push继续。
+- 下一离线缺口：plan05约束/预订/恢复分项统计需复用原校验与业务观测添加报告，partial/unknown/conflict分开，不把valid_draft布尔当全部硬条件满足；无真实恢复观测保持未测，旧记录缺项unknown，不重付费或改变冻结期待。

@@ -1,0 +1,23 @@
+{
+  "date": "2026-10-04 JST",
+  "scope": "M1.5/M2.2 immutable hotel party display; actual local browser/API/PG",
+  "base_commit": "24b5dcb398851dc20e7b622b44e6ab81206e639a",
+  "paid_http_requests": 0,
+  "verification": {
+    "frontend": "14 tests, type/lint/production build Passed; zero skipped",
+    "independent_review": "No P1/P2; quote fields only, shared helper, no current-form or price inference",
+    "normal": "Three comparison cards show 2 adults, children ages0/8, 2 rooms; held booking shows same original party and confirmation enabled",
+    "changed_conditions": "User edits to one child age5 and one room; held quote still shows ages0/8 and2 rooms, stale warning visible, confirmation disabled",
+    "historical_plan": "Prior formal V1 lodging shows its own no-children and1-room party",
+    "invalid": "Missing/null/string/bool/negative/over17/fraction child ages all unknown, not no-children; legal0/17 and empty[] covered",
+    "smoke": "Prior original demo state read-only verification Passed after current stack rebuild",
+    "order": "Only local hold created for this browser test; booking confirmation not clicked",
+    "final_hooks": "pending",
+    "remote_ci": "previous7d1d0f6 push/PR all success, Python693passed/1existing platform skipped/2live deselected in158.64s; new R15 CI pending"
+  },
+  "source_sha256": {
+    "apps/web/src/lib/availability.ts": "63095a5fe27756dde23e8663843c1891b86a519b50478a7fd984683d1640aae0",
+    "apps/web/src/components/results.tsx": "03cc2d2af65b6056597e6b9311424c1ef6fbcd4fb267c4828d852f9f6d5ce946",
+    "apps/web/src/components/bookings.tsx": "604ec565f62e4ef50a114a8c61d5c3b07a1615004099a276cd27cb02a7c71470"
+  }
+}

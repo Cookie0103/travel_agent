@@ -1,5 +1,22 @@
 /** UI expiry guards mirror server timestamps; confirmation still rechecks in the transaction. */
 import type { Plan, Hotels, Booking } from "./api";
+
+export function partyLabel(stay: Record<string, unknown>): string {
+  const count = (value: unknown, label: string) =>
+    typeof value === "number" && Number.isInteger(value) && value > 0
+      ? `${value}${label}`
+      : `${label}数未知`;
+  const ages = stay.child_ages;
+  const children =
+    Array.isArray(ages) &&
+    ages.every((age) => Number.isInteger(age) && age >= 0 && age <= 17)
+      ? ages.length
+        ? `${ages.length}名儿童（${ages.join("、")}岁）`
+        : "无儿童"
+      : "儿童信息未知";
+  return `${count(stay.adults, "成人")} · ${children} · ${count(stay.rooms, "间房")}`;
+}
+
 export function planUnavailable(plan: Plan, now: number): boolean {
   return (
     plan.expired ||

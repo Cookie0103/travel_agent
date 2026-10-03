@@ -1,7 +1,7 @@
 /** Render canonical business cards; money, provenance and conflicts come from the server. */
 "use client";
 import { useEffect, useState } from "react";
-import { planUnavailable, expiredHotels } from "@/lib/availability";
+import { planUnavailable, expiredHotels, partyLabel } from "@/lib/availability";
 import type { Hotels, Plan } from "@/lib/api";
 import type { components } from "@/lib/api-types";
 const date = (value: string) =>
@@ -33,7 +33,7 @@ function Hotel({ card }: { card: components["schemas"]["UiHotelCard"] }) {
       <p>{card.room_type}</p>
       <p className="small">
         {String(card.stay.start_date)} — {String(card.stay.end_date)} ·{" "}
-        {String(card.stay.adults)}成人 · {String(card.stay.rooms)}间房
+        {partyLabel(card.stay)}
       </p>
       <strong className="price">
         {card.total === null ? "总价未知" : `¥ ${card.total}`}

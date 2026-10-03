@@ -2,7 +2,7 @@
 "use client";
 import type { Booking } from "@/lib/api";
 import { useClock } from "./results";
-import { bookingCanConfirm } from "@/lib/availability";
+import { bookingCanConfirm, partyLabel } from "@/lib/availability";
 
 const labels: Record<Booking["status"], string> = {
   quoted: "暂留结果待核对",
@@ -47,8 +47,8 @@ export function Bookings({
             </p>
             <p>
               {booking.offer.request.start_date} —{" "}
-              {booking.offer.request.end_date} · {booking.offer.request.adults}
-              成人 · {booking.offer.request.rooms}间房
+              {booking.offer.request.end_date} ·{" "}
+              {partyLabel(booking.offer.request)}
             </p>
             <p>
               {booking.offer.refundable ? "可退报价" : "不可退报价"} ·{" "}
