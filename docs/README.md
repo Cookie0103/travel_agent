@@ -1,11 +1,12 @@
 # 文档目录：先看哪一份
 
-当前已改为 Claude Agent SDK 路线，先看 [本次调整说明](review/M0-sdk-route.md)；实际 SDK 尚未接入。
+当前采用 Claude Agent SDK 路线并进入长程自主开发。**只需看 [执行计划](execution/travel-agent.md)** 就能知道当前进度、决定、证据与下一步；阶段性材料无需逐项批准。
 想知道各个代码目录放什么，先看 [项目首页](../README.md)。
 
 | 你想了解什么 | 去哪里看 | 什么时候写 |
 | --- | --- | --- |
-| 一个任务具体做了什么 | [review/M0.1.md](review/M0.1.md) | 每个任务结束或停止时更新 |
+| 当前做到哪里、如何恢复 | [执行计划](execution/travel-agent.md) | 持续更新，唯一实时进度入口 |
+| 完整功能如何学习 | [review/](review/) | 按里程碑汇总，最终集中学习 |
 | 一整批完成了哪些任务 | [review/batch/](review/batch/) | 每批结束时一份总结 |
 | 什么问题让工作停下了 | [blocked/](blocked/README.md) | 遇到阻塞才记录，不是每次测试一份 |
 | 实际执行过哪些步骤，如何恢复 | [operations/](operations/) | 边做边记录；JSONL 保存命令与输出 |
@@ -15,6 +16,8 @@
 | 参考了哪些上游思路 | [reuse.md](reuse.md) | 阅读上游后记录，不能当作本项目能力 |
 
 ## 本次可直接打开的记录
+
+- 2026-10-03：[长程工作流](execution/workflow.md)、[工程标准](execution/standards.md)、[操作日志](operations/2026-10-03-autonomous.md)。已取消逐任务人工关卡，保留自动验证与独立审查。
 
 - 2026-10-03：[SDK 路线说明](review/M0-sdk-route.md)、[ADR-003](adr/003-claude-agent-sdk-runtime.md)、[新版 M0 规格](tasks/M0.md)、[操作与恢复记录](operations/2026-10-03-agent-sdk-docs.md)。用户确认由 SDK 承担 runtime，自写业务与 tools；旧实测不算 SDK 验收。
 

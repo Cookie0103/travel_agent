@@ -49,18 +49,14 @@
 <p><code>agent-loop/web-hearing/README.md</code> → <code>src/loop.ts</code> → <code>src/turn-state-machine.ts</code> → <code>src/recommendation/article-recommender.ts</code> → <code>src/offer/jtb-offer-provider.ts</code>。</p>
 <p>读完说明：文章背景怎样进入条件；新输入如何保留/覆盖；何时推荐；搜索零结果怎么处理；供给是静态数据还是实时查询。再把这些转成自己的用例，不先阅读全部 LINE、Managed Agents 或 Viewer 代码。</p>
 <p><strong>另外必读两处：</strong><code>specs/011-media-travel-plan/data-model.md</code>（行程数据模型与校验规则，和本项目的 Itinerary / validator 直接对应）；<code>agent-loop/claude-managed/eval/tasks.json</code>（21 个评测任务，看它怎么写规则评分和 LLM 评审）。</p>
-<p>若某文件或原理看不懂，请继续追问 AI：要求它沿一个真实输入解释调用链并指向源码；不用先完成整仓逐行阅读。</p></section><section id="s4" aria-labelledby="h4"><div class="section-heading"><span class="section-number">04</span><div><h2 id="h4">每次开发怎么做</h2><p class="section-deck">每完成一个功能，经历一次判断、验证和复述。</p></div></div><h3 class="step-title">开始前：你先形成判断</h3>
-<p>让 AI 调查相关代码并给出简短设计。随后你用自己的话回答：</p>
-<ol><li>这个模块解决什么可观察的问题？</li><li>输入、输出和必须成立的条件是什么？</li><li>它读写哪些状态，和哪几个模块交互？</li><li>备选方案是什么，为什么当前选这个？</li><li>哪个最小实验能证明这个选择有效？</li></ol>
-<p>答不清时，先让 AI 解释该处或写最小探针，不急着生成大模块。重要取舍由你确认，普通实现细节交给 AI。</p>
-<h3 class="step-title">实现中：一次一个可验证增量</h3>
-<p>以计划保存为例：PlanPatch schema → validator → 数据库事务 → 确认 API → Agent 接入 → UI → 故障测试。每一步有可运行结果，不按任意代码行数拆分，也不一次实现整个框架。</p>
-<p>每个增量读三个位置：入口、关键状态读写、失败处理。查看 diff，自己先预测正常/异常输出，再运行验证。若实际与预测不符，先查 Trace 或断点，不直接让 AI 全量重写。</p>
-<h3 class="step-title">模块完成后：先复述，再整理</h3>
-<p>你脱离 AI 说明：问题、旧行为、选择、关键调用链、一个失败情形、验证结果。然后让 AI 基于你的回答和真实 diff 补充遗漏，并整理日志。</p>
-<p>代码完成与掌握程度分别记录：</p>
-<ul><li>实现：TODO / implementing / verified。</li><li>理解：能独立解释 / 需复习某点。</li><li>证据：commit、case_id、命令、结果或 trace。</li></ul>
-<p>不要求每个小改动都停下来写文章；在一个完整功能边界做一次复述和日志即可。</p></section><section id="s5" aria-labelledby="h5"><div class="section-heading"><span class="section-number">05</span><div><h2 id="h5">阶段与专项练习</h2><p class="section-deck">开发按计划推进，学习靠这些亲自完成的动作。</p></div></div><div class="table-wrap"><table><thead><tr><th scope="col">阶段</th><th scope="col">你必须亲自做</th><th scope="col">留下什么</th></tr></thead><tbody>
+<p>若某文件或原理看不懂，请继续追问 AI：要求它沿一个真实输入解释调用链并指向源码；不用先完成整仓逐行阅读。</p></section><section id="s4" aria-labelledby="h4"><div class="section-heading"><span class="section-number">04</span><div><h2 id="h4">每次开发怎么做</h2><p class="section-deck">先自主交付，再集中运行、学习和复述。</p></div></div><h3 class="step-title">开始前：一次确定目标和验收</h3>
+<p>用户定义产品目标、Claude Agent SDK 路线和验收标准，随后 agent 自主实施。用户不需要先读懂每个模块再批准。</p>
+<h3 class="step-title">实现中：自动验证与独立审查</h3>
+<p>agent 按依赖完成实现、测试、自审、独立审查、修复并保存提交，技术关卡通过后立即继续。新里程碑规格由 agent 补写，不因阶段结束或未合并 main 停工。进度、决定、证据与恢复点保存在 docs/execution/travel-agent.md。</p>
+<p>阶段报告留作记录，不要求用户逐项阅读。凭据、扩大费用、不可逆外部操作或实质产品决策才需要用户介入；其他工作继续。</p>
+<h3 class="step-title">最终交付后：集中运行、理解与复述</h3>
+<p>用户先跑完整演示，再按入口→工具→状态→失败恢复→评测阅读关键模块，复述取舍并重放一个故障。下一节的学习动作是交付后的学习清单，不是开发前置关卡。</p>
+<p>实现验证与个人掌握分别记录：代码和测试通过不等于用户已经理解；学习欠缺不让开发停下。面试故事只使用真实输入、代码、失败和验证证据。</p></section><section id="s5" aria-labelledby="h5"><div class="section-heading"><span class="section-number">05</span><div><h2 id="h5">阶段与专项练习</h2><p class="section-deck">开发按计划推进，学习靠这些亲自完成的动作。</p></div></div><div class="table-wrap"><table><thead><tr><th scope="col">阶段</th><th scope="col">你必须亲自做</th><th scope="col">留下什么</th></tr></thead><tbody>
 <tr><td data-label="阶段">M0</td><td data-label="你必须亲自做">对照 Messages 与 SDK 两条官方链路；理解 SDK + DeepSeek 的接入验收；在 CLI 跑通一次旅行工具往返，并在 Langfuse 里读懂 trace</td><td data-label="留下什么">源码阅读线、SDK 接入证据、ADR（为什么选择 SDK，哪些业务保证仍需自己实现）</td></tr>
 <tr><td data-label="阶段">M1</td><td data-label="你必须亲自做">用自己的旅行条件跑完整流程；先预测局部修改影响的字段，再看 diff/Trace</td><td data-label="留下什么">一条从用户输入到保存的工程日志</td></tr>
 <tr><td data-label="阶段">M2</td><td data-label="你必须亲自做">让假供应商“订单已创建但响应丢失”，先预测系统状态，再看对账结果；执行中杀进程，确认重启后不重复写入；从一个真实失败的 trace 找到第一个出错的位置</td><td data-label="留下什么">预订状态机图、故障步骤与状态前后值、一条归因 → 修复 → 回归记录</td></tr>
@@ -90,7 +86,7 @@
 代价：复杂度、延迟、成本或可扩展性的取舍。
 验证：实验/回归链接；什么结果出现时需要重新决策。</code></pre></div></details>
 <p>适合本项目的 ADR：模型协议与复用边界；旅行状态为何独立于聊天摘要；数据库条件提交；SSE 与 worker；证据过期；压缩策略；是否使用规划委派。</p>
-</section><section id="s7" aria-labelledby="h7"><div class="section-heading"><span class="section-number">07</span><div><h2 id="h7">复制协作提示</h2><p class="section-deck">按当前阶段选一条即可，不需要每轮全套执行。</p></div></div><article class="prompt-card"><div class="prompt-head"><h3>模块设计前：</h3><button type="button" class="copy-btn">复制提示词</button></div><blockquote>当前只做任务【ID/模块】。先读取相关源码，给出旧调用链、输入输出、状态读写、一个推荐方案和一个可行备选，以及最小验证方法。区分上游事实与新设计。先不要实现，先让我回答为什么选择这个方案。</blockquote></article>
+</section><section id="s7" aria-labelledby="h7"><div class="section-heading"><span class="section-number">07</span><div><h2 id="h7">复制协作提示</h2><p class="section-deck">按当前阶段选一条即可，不需要每轮全套执行。</p></div></div><article class="prompt-card"><div class="prompt-head"><h3>模块设计前：</h3><button type="button" class="copy-btn">复制提示词</button></div><blockquote>当前只做任务【ID/模块】。先读取相关源码，给出旧调用链、输入输出、状态读写、一个推荐方案和一个可行备选，以及最小验证方法。区分上游事实与新设计。既定架构内自主选择并记录理由，验证后继续；仅实质目标冲突再问我。</blockquote></article>
 <article class="prompt-card"><div class="prompt-head"><h3>开始一个增量：</h3><button type="button" class="copy-btn">复制提示词</button></div><blockquote>按已确定的方案完成【本次增量】，只改必要文件，保留已有行为。报告关键 diff、测试命令和实际结果、未验证部分。不要顺手扩展其他模块，也不要虚构运行结果。完成后给我四个理解问题，暂不提供答案。</blockquote></article>
 <article class="prompt-card"><div class="prompt-head"><h3>模块结束：</h3><button type="button" class="copy-btn">复制提示词</button></div><blockquote>先听我复述这个功能，检查我对调用链、状态、失败和取舍的理解。请用源码和运行证据纠正错误，不因为术语正确就判定掌握。我回答后再整理工程日志；无法确认的地方保留待验证。</blockquote></article>
 <article class="prompt-card"><div class="prompt-head"><h3>练习定位：</h3><button type="button" class="copy-btn">复制提示词</button></div><blockquote>从我已学过的模块选一个可逆故障场景，在隔离测试环境准备复现。先给现象和必要日志，不提前告诉根因。让我提出假设、查证和修复，再核对是否定位正确。将故障注入标为实验。</blockquote></article>

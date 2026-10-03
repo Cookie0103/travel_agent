@@ -5,7 +5,7 @@
 目标技术栈：Python / FastAPI / PostgreSQL / Next.js；Claude Agent SDK 负责 runtime，自写旅行 tools 与业务规则；DeepSeek 兼容线路与 Claude 原生线路分别验证；MCP；OpenTelemetry + Langfuse。
 
 **目前还不能使用这个旅行助手。** 已有工程骨架和旧 M0.2 的有限 Messages 探针（70 项离线测试、2 次真实请求的最小往返），没有旅行运行时、前端、HTTP 业务或数据库业务实现。
-2026-10-03 用户确认改用 Claude Agent SDK，本轮已更新文档，尚未安装/接入 SDK。先看 [新路线说明](docs/review/M0-sdk-route.md)，开发顺序见 [M0 规格](docs/tasks/M0.md)，全部记录从 [文档目录](docs/README.md) 进入。
+2026-10-03 用户确认改用 Claude Agent SDK，本轮已更新文档，尚未安装/接入 SDK。当前进度只看 [长程执行计划](docs/execution/travel-agent.md)；阶段性验证自动继续，用户最终集中运行与学习。开发顺序见 [M0 规格](docs/tasks/M0.md)，历史记录从 [文档目录](docs/README.md) 进入。
 
 数据来源：攻略来自 [Wikivoyage](https://en.wikivoyage.org/)（CC BY-SA），地点来自 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）。酒店与预订均为模拟数据。
 
@@ -72,7 +72,7 @@ dev test 每次使用新的 .cache/pytest-runs/run-* 保存临时文件和缓存
 0 表示禁用该线路；空白、非法或缺少预算时应拒绝真实调用。预算不能替代用户授权和本批调用次数上限。
 M0.2 探针已实现环境变量读取、按所选模型的人民币预算检查与本批请求计数；uv --env-file .env 负责加载配置。美元线路只有配置与账本隔离测试，尚无 Anthropic/OpenAI 真实调用实现。
 最小实测已成功，账本会拒绝重复运行；不要删除 .cache/m02-protocol 来重新获得次数。完整协议关卡尚未完成，详见 [实测矩阵](docs/protocol-deepseek.md)。
-SDK 路线不复用探针的两请求授权，也不能用 SDK 的美元估算代替人民币预算。新接入验收与费用边界见 [ADR-003](docs/adr/003-claude-agent-sdk-runtime.md)；本轮不改本地 .env。
+旧探针两请求授权已用完；本轮长程开发的 DeepSeek 整体额度见执行计划，同时遵守 .env 每日预算。SDK 美元估算不能代替人民币预算。新接入验收与费用边界见 [ADR-003](docs/adr/003-claude-agent-sdk-runtime.md)；本轮不改本地 .env。
 历史批次限制见 [M0.2 准备记录](docs/operations/2026-10-03-m02-preparation.md)。
 
 ## PostgreSQL 配置
@@ -93,4 +93,4 @@ PostgreSQL 是后台服务；需要图形管理界面时打开安装附带的 pg
 - [修复批次总结](docs/review/batch/2026-10-03-m0-repair.md)、[首次批次记录](docs/review/batch/2026-10-02-m0-core.md)。
 - [文档汇总](docs/README.md)、[阻塞记录汇总](docs/blocked/README.md)、[待审阅决定](docs/decisions-pending.md)、[上游复用清单](docs/reuse.md)。
 
-恢复前先检查 Git 状态；日志“开始”不代表成功。工程修复与 M0.2 增量保留在 batch/2026-10-03-m0-repair，等待用户审阅；SDK 路线按新 M0.2 重新验收；M0.3 及后续业务功能未开始。
+恢复前先检查 Git 状态；日志“开始”不代表成功。工程修复与旧探针增量已由 batch/2026-10-03-travel-autonomous 承接，按执行计划持续推进；旧批次和审阅记录保留作历史证据。

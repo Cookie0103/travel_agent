@@ -19,16 +19,16 @@
 
 ## 依赖与实施顺序
 
-本 ADR 允许后续 M0.2 引入 `claude-agent-sdk` 及其所需传递依赖；直接使用 MCP API 时声明与 SDK 兼容的 `mcp` 版本，不再预设 2.x。Python 3.12、uv、现有质量检查保留。安装时由 uv 更新锁文件，记录 SDK / 实际 CLI / MCP 版本和 Windows 进程依赖，本轮不安装。
+本 ADR 允许后续 M0.2 引入 `claude-agent-sdk` 及其所需传递依赖；直接使用 MCP API 时声明与 SDK 兼容的 `mcp` 版本，不再预设 2.x。Python 3.12、uv、现有质量检查保留。安装时由 uv 更新锁文件，记录 SDK / 实际 CLI / MCP 版本和 Windows 进程依赖，原文档调整轮未安装；长程实施中可按本 ADR 安装。
 
-M0.2 做 SDK 接入验证 → 审阅合并 → M0.3 固定适配边界 → 审阅合并 → M0.4 做旅行 CLI。M0.3 同步 import-linter 禁止其他层直接 import claude_agent_sdk；现在仅修改文档，不声称 CI 已检查尚未安装的 SDK。
+M0.2 做 SDK 接入验证 → 自动验证/独立审查 → M0.3 固定适配边界 → 自动验证/独立审查 → M0.4 做旅行 CLI。2026-10-03 用户已取消人工阶段确认，不需合并 main。M0.3 同步 import-linter 禁止其他层直接 import claude_agent_sdk；这是原文档轮的状态；实施后必须补上检查，不声称尚未运行的规则已生效。
 
 ## 代价与边界
 
 - SDK 会调用 Claude Code 进程，需要核实运行环境与版本；不是把现有 anthropic import 改名即可。
 - SDK session 与业务数据库不共享事务。幂等、版本冲突、确认、预订对账和恢复由我们实现，不能把 SDK 的 resume 或文件回滚当作数据库保证。
 - SDK 美元估算不代表 DeepSeek 人民币账单；max_turns 不保证 HTTP 请求次数。SDK 内部辅助调用/重试须纳入调用授权和预算，无法限制时拒绝 live。
-- 过去的两请求许可已使用完；本次文档调整不授权新的付费调用。保留 CNY / USD 独立账本，不借用余额。
+- 过去的两请求许可已使用完；后续长程开发获用户整体授权，具体供应商/次数/金额以 docs/execution/travel-agent.md 为准。保留 CNY / USD 独立账本，不借用余额。
 
 ## 备选与取舍
 

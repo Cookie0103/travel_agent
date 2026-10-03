@@ -16,13 +16,13 @@
 | 数据访问 | SQLAlchemy 2.x（async）+ psycopg 3 | 主流；一个驱动同时支持同步（迁移）和异步 |
 | 迁移 | Alembic | SQLAlchemy 官方配套 |
 | 测试 | pytest + pytest-asyncio | 标准 |
-| 静态检查 | ruff（lint + format）、mypy --strict、import-linter | 规则见 AGENTS.md §3.1 |
+| 静态检查 | ruff（lint + format）、mypy --strict、import-linter | 规则见 docs/execution/standards.md §3.1 |
 | Agent SDK | `claude-agent-sdk`（计划在 M0.2 引入）；`anthropic` 只保留原探针用途 | 02 §4、ADR-003 |
 | MCP | 与锁定 Agent SDK 兼容的版本，M0.2 核实 | 内部工具桥接；M3.3 对外只读服务 |
 | 可观测 | `opentelemetry-sdk` + Langfuse | 02 §8.1 |
 | 前端 | Next.js（App Router）+ TypeScript + pnpm | 演示用；不引入额外状态管理库 |
 | 运行环境 | docker compose | 一键启动 |
-| 任务入口 | `scripts/dev.py`（纯 Python） | 项目在 Windows 上执行，Makefile 和 bash 不可用；命令见 AGENTS.md §4 |
+| 任务入口 | `scripts/dev.py`（纯 Python） | 项目在 Windows 上执行，Makefile 和 bash 不可用；命令见 docs/execution/standards.md §4 |
 
 **版本号**：依赖在对应任务确实需要时安装并由工具写入锁文件；SDK、CLI 和 MCP 以组合兼容验证为准。已有锁文件本轮不改，升级单独 commit。
 
