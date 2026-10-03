@@ -16,13 +16,17 @@ from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity
 from backend.providers.claude_agent.checkpoints import Checkpoints
 from backend.providers.claude_agent.database_tools import DatabaseTools, database_tools
+from backend.providers.claude_agent.evaluation import (
+    EvaluationVariant,
+    evaluation_definitions,
+    validate_variant,
+)
 from backend.providers.claude_agent.events import save_event
 from backend.providers.claude_agent.runtime import ClaudeRuntime, RuntimeConfig
 from backend.providers.probe.settings import Provider
 from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition, ToolExecutor
 from backend.tools.search import DEFINITIONS, SearchExecutor
-from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
 from backend.tools.workflow import WorkflowName
 
 
@@ -50,6 +54,17 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         payload.get("workflow")
     )
     persona_judge = payload.get("persona_judge", False)
+    try:
+        variant: EvaluationVariant = TypeAdapter(EvaluationVariant).validate_python(
+            payload.get("evaluation_variant", "full")
+        )
+        validate_variant(
+            variant, database=isinstance(dsn, str), workflow=workflow, judge=bool(persona_judge)
+        )
+    except ValueError:
+        return {"status": "error", "code": "validation"}
+    if variant != "full" and len(prompts) != 1:
+        return {"status": "error", "code": "validation"}
     if type(persona_judge) is not bool or (
         persona_judge
         and (
@@ -65,22 +80,38 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         return await run_prompts(
             prompts, context, identity, cli, (), SearchExecutor(), persona_judge_prompt()
         )
+    definitions = evaluation_definitions(variant, database=isinstance(dsn, str))
+    if variant == "no_tools":
+        return await run_prompts(
+            prompts,
+            context,
+            identity,
+            cli,
+            definitions,
+            SearchExecutor(),
+            travel_prompt() + "\n本次纯模型对照没有工具或外部事实，不能声称已查询/校验/保存/预订。",
+            max_turns=12,
+        )
     if isinstance(dsn, str):
         supplier_url = payload.get("supplier_url")
         async with database_tools(
             dsn, supplier_url if isinstance(supplier_url, str) else None
         ) as executor:
-            snapshot, revision, preference_revision = await executor.context_snapshot(context)
+            if variant == "no_repairs":
+                executor.executor.max_validations = 1
+            snapshot, revision, preference_revision = await executor.context_snapshot(
+                context, include_preferences=variant != "no_preferences"
+            )
             system = travel_prompt() + snapshot
             return await run_prompts(
                 prompts,
                 context,
                 identity,
                 cli,
-                TRAVEL_DEFINITIONS,
+                definitions,
                 executor,
                 system,
-                checkpoints=Checkpoints(Path.cwd()),
+                checkpoints=Checkpoints(Path.cwd()) if variant == "full" else None,
                 revision=revision,
                 preference_revision=preference_revision,
                 workflow=workflow,
@@ -103,8 +134,11 @@ async def run_prompts(
     revision: int = 0,
     preference_revision: int = 0,
     workflow: WorkflowName | None = None,
+    max_turns: int = 6,
 ) -> dict[str, object]:
-    config = RuntimeConfig(identity, cli, Path.cwd(), system, workflow=workflow)
+    config = RuntimeConfig(
+        identity, cli, Path.cwd(), system, workflow=workflow, max_turns=max_turns
+    )
     if isinstance(executor, DatabaseTools):
         # 完整规划实测需8次工具往返+回答；保留3轮修复空间，HTTP/工具/费用边界不变。
         config = replace(config, max_turns=12)

@@ -1,6 +1,6 @@
 # Travel Agent 长程执行计划
 
-计划版本：2026-10-03 / v4。此文件是唯一实时执行进度与恢复入口，随每个增量更新。
+计划版本：2026-10-03 / v5。此文件是唯一实时执行进度与恢复入口，随每个增量更新。
 设计以 plan/01–06 为准；任务 ID 与依赖见 [04](../../plan/实操计划/04-开发任务计划.md)，执行方式见 [workflow](workflow.md)，强制标准见 [standards](standards.md)。
 
 ## 用户目标与完成定义
@@ -36,9 +36,9 @@
 
 - 分支：batch/2026-10-03-travel-autonomous，起点 1d75f79，承接已有工程和 SDK 设计。
 - 当前：保留M0/M1/M2原提交，M3.2已保存3590b2c、M3.3已保存f9eb345、M3.1已保存0861da7、M3.4已保存da68f86、M3.5已保存f792c85（正常静态/完整钩子通过）。M3.5工程线路已验、真实Claude未授权/未测。M3.6真实完整规划原4HTTP基线失败并保存Trace；上限截断不计模型选工具根因，保留原失败、不自动付费重试。
-- 当前恢复：M4.1独立离线Compose代码/HTTP烟测/重建只读恢复/浏览器确认刷新已通过，独立P2嵌套dotenv已修并实际合成构建验证。正常钩子通过，e427808已保存，继续M4.2冻结60条与业务初始状态/副作用评分；不等待用户review。M3.6原规划修复后9HTTP仍incomplete_output（4次max_tokens），原失败保留，不自动付费重试；三独立真实坏例、完整行程对照/重复统计、Claude/Cloud/人工验收仍开放。
+- 最新保存99da71b（正常check/完整默认Python钩子通过）：M4.1离线容器/HTTP/恢复/浏览器、M4.2冻结60条与离线40×3已验；SDK规划/展示契约修复后原dev实测规则通过且展示6项，但7 verified/13 unknown、未选住宿/未正式确认，不算完整质量。M0.7同SDK温度0评审一次合法JSON，真人配对0；集中学习/三段演示/表述审计稿已保存。
 - 本轮新授权消耗：**80 次 / 2.076890 CNY 保守估计**，无未结预占；以 `.cache/model-budget/deepseek.jsonl` 为准。剩余 20 次，费用仍需同时满足每日与全程限制；暂无后续付费重试。
-- 最新完整复跑511项通过（145.96秒），2项live默认排除；后续自动评审新增专项56通过，check204文件/3契约/10地图通过。最新web-check type/lint/10测试/build通过。正常提交钩子须包含新评审/诊断再全量执行；先前一次偶发持久化失败保留且根因未确认。远端CI未运行。PG0010。
+- 当前未提交指标/首次进度/私有参数评审与ADR012 B0/单因素配置。指标38专项/check209通过，两P2已独立复核关闭；对照65专项/check212通过，新增修复上限反例正在验证，随后正常全量钩子保存。三独立真实坏例、完整真实40×3/模型对照、Claude凭据、Cloud UI与真人校准仍开放。最新web-check type/lint/10测试/build通过；偶发PG持久化/初始化失败根因未确认，新增脱敏SQLSTATE诊断不代表已修根因。远端CI未运行。PG0010。
 
 
 ## 进度
@@ -164,3 +164,15 @@ M4.4–4.5集中材料：docs/review/learning.md/demos.md/resume-draft.md已形�
 独立autonomy_review对照plan/05发现可继续自主补齐的3项：逐次工具调用准确率（当前只有case级布尔/调用数，须保留语义参数unknown）；首次有意义进度延迟（当前仅总耗时，须排除启动/心跳、缺失null）；B0/B3与单因素控制（当前仅固定workflow/自主，须仍复用SDK与强制安全校验，SDK无可靠压缩关闭开关则明确限制）。不把这些伪装成外部阻塞；当前增量保存后继续。
 
 第二次正常钩子失败：540 passed/3 failed/2 excluded/1 error（149.73秒）。三处原parent故障测试工厂不接受新增temperature关键字，已恢复普通Guard调用兼容，仅评审serve前设置temperature0，原测试未改；初始化数据库一次unavailable仍未定位，common事务边界补共享脱敏异常类型/标准SQLSTATE日志。44相关9.62秒/11故障工作台6.53秒通过。无自动重试/调超时/跳过；正常钩子须再次完整验证。
+
+正常静态与完整默认Python钩子随后通过，本地提交99da71b保存SDK规划/展示契约、固定温度评审、脱敏数据库诊断及集中学习材料；未push。偶发数据库失败根因仍开放。
+
+当前未提交增量：eval/metrics复用已有事件配对与工具schema，逐调用选择/参数/unknown分别计数；工具成功本身不证明参数语义正确。首次进度使用同run有意义事件时间，缺失/异常时间为null；报告单列未知分母。34专项通过（2.75秒），check207文件/3契约/10地图通过，含真实PG“工具成功但日期不符用户目标”反例。默认评测暂未采集独立参数答案，不能声称自动语义准确率已验收；正在独立审查可用入口与口径。未新增真实费用（80HTTP/2.076890CNY）。下一步保存指标后继续同SDK的B0/单因素控制，压缩关闭开关未证实则保持未满足，不自行修改SDK转录。
+
+指标独立审查两P2已修：事件配对要求start/end同业务context且时间有序；缺指标的旧报告全量计数null、另列measured_subtotal。自动首次进度只计工具/卡片，未分类文本可能只是ACK，纯文本保持unknown。新增eval.assess读取私有事件/实际参数/独立参数答案离线评分，不修改原结果/期待、不输出参数；答案独立性须由评审负责，不把工具成功或模型自述当答案。38专项通过（2.74秒）；正常check/全量钩子与独立复核待执行。
+
+指标两P2已独立复核关闭，38专项再次2.80秒/check209通过。ADR012落实同SDK私有evaluation_variant：full默认原行为；no_tools/B0零工具、无DB快照/业务checkpoint；no_skills仅去load_skill；no_preferences只隔离当前持久偏好值，条件/历史墓碑保留；no_repairs保留首次/暂存/确认业务校验而不允许反馈后修复。nonfull禁止混workflow/judge/多轮，fresh SDK不跨配置resume。manifest记录实际schema/Skills/variant，FixtureRuntime不支持非full效果；no_compaction缺可靠锁定SDK开关在预算/库/SDK前拒绝，不修改transcript。未产生新真实费用。
+
+初次静态校验报类型/导入/格式错误均修复，无type ignore；首次65专项中64过/1新测试失败（29.21秒），根因为误以为冲突草稿不能暂存。原PlanService合同允许conflict暂存、最终确认拒绝，改新测试核对原合同，不改生产业务/旧测试。修正后65 passed/516 deselected（28.65秒），check212通过。实际CLI五种配置一HTTP脚本分别验证工具集合/偏好隔离/无DB B0/无checkpoint/条件与偏好不变；独立无P1/P2，建议补不同候选修复stage blocked/无新draft，已补并增加actualSDK blocked反馈三HTTP测试，正在验证。实际模型对照效果仍未验，不算B2压缩分离已完成。
+
+新增边界19 passed/563 deselected（14.71秒）、check212通过，原full修复上限提示不变，CLI配置choices复用同一Literal。离线实际eval.run --database --case-id kyoto-matcha产物20261003T123554Z-1041d8be：规则1/1、0模型HTTP；首次工具进度0.0秒为本机时钟同tick，不能叫模型零延迟，2工具均语义unknown/accuracy null。manifest full/fixture不适用压缩/不启用SDK持久resume；费用账本核对仍80/2.076890。仅设施重放，不是抹茶真实模型质量修复。独立补充复核/正常完整钩子后保存；未满足项保持开放。

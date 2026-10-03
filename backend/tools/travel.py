@@ -162,7 +162,11 @@ SCHEMAS: dict[str, type[BaseModel]] = {
 
 
 class TravelToolExecutor:
-    def __init__(self, travel: TravelService, *, max_calls: int = 16) -> None:
+    def __init__(
+        self, travel: TravelService, *, max_calls: int = 16, max_validations: int = 4
+    ) -> None:
+        if type(max_validations) is not int or max_validations not in {1, 4}:
+            raise ValueError("校验次数只允许默认4或单因素首次1")
         self.travel, self.catalog = travel, CatalogService(travel)
         self.hotels = HotelService(travel)
         self.planning = PlanningService(travel)
@@ -170,6 +174,7 @@ class TravelToolExecutor:
         self.bookings = BookingService(travel)
         self.calls, self.max_calls = 0, max_calls
         self.validations = 0
+        self.max_validations = max_validations
         self.last_validation: ItineraryProposal | None = None
         self.loaded_skills: set[str] = set()
         # 第一版全部串行（读并发上限1），避免为尚不存在的并行收益实现读写锁。
@@ -269,7 +274,10 @@ class TravelToolExecutor:
             report = await self.planning.validate(context, parsed)
             self.last_validation = parsed
             return ToolResult(
-                {**report.feedback(), "repair_rounds_remaining": 4 - self.validations}
+                {
+                    **report.feedback(),
+                    "repair_rounds_remaining": self.max_validations - self.validations,
+                }
             )
         if isinstance(parsed, HotelSearchInput | RefreshOfferInput | PresentationInput):
             return await self._hotel_result(context, parsed)
@@ -310,8 +318,13 @@ class TravelToolExecutor:
         if staging and proposal == self.last_validation:
             self.last_validation = None
             return
-        if self.validations >= 4:
-            raise ServiceError(429, "blocked", "首次校验和3轮修复已用完，请说明仍存冲突或未知")
+        if self.validations >= self.max_validations:
+            message = (
+                "首次校验和3轮修复已用完，请说明仍存冲突或未知"
+                if self.max_validations == 4
+                else "本次评测仅允许首次校验，不再修复；请说明仍存冲突或未知"
+            )
+            raise ServiceError(429, "blocked", message)
         self.validations += 1
 
     async def _hotel_result(

@@ -106,7 +106,7 @@ def diagnose(
         return Diagnosis(None, None, ("business_checks_passed",), trace)
     findings: list[Diagnosis] = []
     for fact in facts:
-        bound = _bind(events, fact)
+        bound = bind_call(events, fact)
         if bound is None:
             return unknown
         index, start, end = bound
@@ -122,10 +122,10 @@ def diagnose(
     return min(findings, key=lambda f: f.event_index if f.event_index is not None else len(events))
 
 
-def _bind(
+def bind_call(
     events: tuple[RuntimeEvent, ...], fact: Fact
 ) -> tuple[int, RuntimeEvent, RuntimeEvent] | None:
-    if fact.context != events[0].context:
+    if not events or fact.context != events[0].context:
         return None
     matches = [(i, e) for i, e in enumerate(events) if e.tool_call_id == fact.tool_call_id]
     if len(matches) != 2:
@@ -135,6 +135,11 @@ def _bind(
         start.kind != "tool_started"
         or end.kind != "tool_finished"
         or start.tool_name != end.tool_name
+        or start.context != fact.context
+        or end.context != fact.context
+        or start.occurred_at.utcoffset() is None
+        or end.occurred_at.utcoffset() is None
+        or start.occurred_at > end.occurred_at
     ):
         return None
     return index, start, end

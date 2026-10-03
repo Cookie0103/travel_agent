@@ -438,3 +438,9 @@ M0.7自动评审补齐：ADR011/共享rubric/唯一SDK私有开关/零工具/Gua
 真实语气评审结束：1HTTP/0.002122CNY、temperature0/零工具/合法分数、真人0配对/pending，原candidate/理由未公开。累计80/2.076890，无未结预占。56专项/check204与web-check通过。新故障测试FakeRuntime缺outcome类型问题已修后check过，独立复核无P1/P2；新增多prompt拒绝与actualSDK两错误分支。准备正常本地提交，不绕过失败检查。
 
 第二次提交钩子149.73秒：3旧工厂签名失败+1PG初始化error/540pass/2excluded。恢复普通Guard工厂调用兼容，temperature仅评审分支在serve前赋值，原parent断言未改；共同事务边界新增共享安全异常类型/标准SQLSTATE日志，不打印SQL/参数。44相关9.62秒与11相关6.53秒过，未知PG根因仍开放。独立Goal审计指出3离线实现缺口：逐调用指标/首进度延迟/B0B3单因素控制；当前保存后继续，不标只剩外部验收。
+
+后续正常钩子通过，99da71b保存M0.7/M3.6及学习材料。继续评测指标：复用bind_call/schema，合法但错误日期真实PG反例；首次进度/工具准确率与未知分母独立报告。独立审查复现两P2（跨run配对、旧报告缺指标显示零）后补同context/有序时间约束、全量null与已测小计。未分类文本ACK不计首次进度，单独validation错误码不证明参数错误；新增eval.assess私有参数评审入口及脱敏/不改附件反例。38专项通过2.80秒，check209通过；新增字符串行过长静态失败已缩短修复，无改断言/冻结期待，无真实模型新调用。正常全量钩子待运行，继续单因素控制。
+
+指标独立复核关闭两P2。ADR012先记录同SDK对照/压缩关闭未证实边界，随后实现共享variant工具集合、B0无事实/工具、Skill/偏好/修复分别关闭；不暴露给用户API、不加runtime或依赖。初次patch因format后上下文匹配失败，无修改，读取实际源码后完成；静态导入/长行/构造Literal类型与kwargs错误修复，无忽略类型。实际CLI五组测试与相关65专项首跑64过/1新测试误断言草稿conflict必须拒绝；按原stage允许展示/confirm拒绝合同修正新测试并加强正式V0核对，生产规则/旧测试未改。第二次65通过28.65秒/check212通过。独立无P1/P2并建议补首次后新候选stage blocked/无draft，已补真实PG断言与实际CLI no_repairs第一次conflict/第二次blocked反馈（本机3HTTP）。无模型API新费用，累计仍80/2.076890。
+
+补充19专项14.71秒/check212通过；离线实际eval.run --database --case-id kyoto-matcha保存20261003T123554Z-1041d8be，规则1/1但两工具语义unknown/accuracy null，0模型HTTP。首次进度0.0秒是本机时间同tick，fixture结果不当模型效果。核对持久预算累计80/2.076890不变；manifest fixture标不适用压缩/无SDK持久resume。准备正常完整钩子保存，不在钩子期间编辑跟踪文件。

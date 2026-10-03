@@ -12,7 +12,7 @@ import time
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TextIO
+from typing import TextIO, get_args
 from uuid import uuid4
 
 import psycopg
@@ -23,6 +23,11 @@ from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RunResult, RuntimeEvent
 from backend.persistence.database import configuration, database_url
 from backend.persistence.temporary import temporary_database
+from backend.providers.claude_agent.evaluation import (
+    EvaluationVariant,
+    evaluation_definitions,
+    validate_variant,
+)
 from backend.providers.claude_agent.live import check_evaluation_size, run_live
 from backend.providers.probe.settings import ProbeError
 from backend.services.common import ServiceError
@@ -34,6 +39,7 @@ from eval.cases import Case
 from eval.database import DATA_VERSION, DatabaseEvaluation, database_evaluation, selector_runner
 from eval.diagnostics import diagnose
 from eval.graders import Observation, grade
+from eval.metrics import first_progress_seconds, tool_call_accuracy
 from eval.persona import rules as persona_rules
 from eval.report import measured_summary
 from eval.suites import load_suite
@@ -49,7 +55,11 @@ async def observe(
     business: DatabaseEvaluation | None = None,
     workflow: WorkflowName | None = None,
     max_attempts: int = 4,
+    variant: EvaluationVariant = "full",
 ) -> tuple[Observation, dict[str, object]]:
+    validate_variant(variant, database=business is not None, workflow=workflow)
+    if variant != "full" and (not live or not business):
+        raise ValueError("单因素对照需要实际SDK和独立业务会话")
     if live:
         report = (
             await asyncio.to_thread(
@@ -61,6 +71,7 @@ async def observe(
                 workflow=workflow,
                 max_attempts=max_attempts,
                 supplier_url=business.supplier_url,
+                evaluation_variant=variant,
             )
             if business
             else run_live(case.input, context, ROOT)
@@ -89,7 +100,11 @@ async def run_cases(
     max_attempts: int = 4,
     repeats: int = 1,
     suite: dict[str, object] | None = None,
+    variant: EvaluationVariant = "full",
 ) -> dict[str, object]:
+    validate_variant(variant, database=business is not None, workflow=workflow)
+    if variant != "full" and (not live or not business):
+        raise ValueError("单因素对照需实际SDK和业务评测；FixtureRuntime不能模拟优化效果")
     if type(repeats) is not int or not 1 <= repeats <= 3:
         raise ValueError("重复次数必须为1至3")
     if not business and (
@@ -105,7 +120,10 @@ async def run_cases(
     (directory / "manifest.json").write_text(
         json.dumps(
             {
-                **manifest(cases, TRAVEL_DEFINITIONS if business else DEFINITIONS),
+                **manifest(cases, evaluation_definitions(variant, database=business is not None)),
+                "evaluation_variant": variant,
+                "automatic_compaction": "sdk_default" if live else "not_applicable_fixture",
+                "sdk_resume_enabled": live and business is not None and variant == "full",
                 "workflow": workflow or "autonomous",
                 "business_database": business is not None,
                 "database_name": business.sessions.database.engine.url.database
@@ -149,6 +167,7 @@ async def run_cases(
                     workflow=workflow,
                     max_attempts=max_attempts,
                     repeat_index=repeat_index,
+                    variant=variant,
                 )
                 if not stop
                 else {
@@ -192,6 +211,7 @@ async def run_cases(
         **measured_summary(rows, repeats),
         "data_version": DATA_VERSION if business else "kyoto-fixture-v1",
         "workflow": workflow or "autonomous",
+        "evaluation_variant": variant,
         "limitations": [
             "规则匹配不证明事实/相关性",
             "DB模式共享应用业务工具，搜索模式只含搜索fixture",
@@ -215,6 +235,7 @@ async def attempt_case(
     workflow: WorkflowName | None,
     max_attempts: int,
     repeat_index: int = 1,
+    variant: EvaluationVariant = "full",
 ) -> dict[str, object]:
     try:
         context = await business.prepare(case) if business else RunContext(uuid4())
@@ -223,7 +244,12 @@ async def attempt_case(
     # 不变量：先落盘实际PG身份与会话目录，再允许付费；未完成记录不可自动重试。
     attempts.write(
         json.dumps(
-            {"case_id": case.case_id, "repeat": repeat_index, "context": asdict(context)},
+            {
+                "case_id": case.case_id,
+                "repeat": repeat_index,
+                "context": asdict(context),
+                "evaluation_variant": variant,
+            },
             default=str,
         )
         + "\n"
@@ -237,6 +263,7 @@ async def attempt_case(
         business=business,
         workflow=workflow,
         max_attempts=max_attempts,
+        variant=variant,
     )
 
 
@@ -248,12 +275,24 @@ async def run_case(
     business: DatabaseEvaluation | None = None,
     workflow: WorkflowName | None = None,
     max_attempts: int = 4,
+    variant: EvaluationVariant = "full",
 ) -> dict[str, object]:
     start = time.perf_counter()
+    started_at = datetime.now(UTC)
+    if variant != "full":
+        validate_variant(variant, database=business is not None, workflow=workflow)
+        if not live or not business:
+            raise ValueError("单因素对照需要实际SDK和独立业务会话")
     try:
         actual, report = (
             await observe(
-                case, live, context, business=business, workflow=workflow, max_attempts=max_attempts
+                case,
+                live,
+                context,
+                business=business,
+                workflow=workflow,
+                max_attempts=max_attempts,
+                **({"variant": variant} if variant != "full" else {}),
             )
             if business
             else await observe(case, live, context)
@@ -290,6 +329,10 @@ async def run_case(
         ),
         "failed_checks": [k for k, value in checks.items() if not value],
         "elapsed_seconds": round(time.perf_counter() - start, 3),
+        "first_progress_seconds": first_progress_seconds(
+            started_at, datetime.now(UTC), context, actual.events
+        ),
+        "tool_call_accuracy": tool_call_accuracy(case, actual.events),
         "tools": [e.tool_name for e in actual.events if e.kind == "tool_started"],
         "tool_count": sum(e.kind == "tool_started" for e in actual.events),
         "text": actual.text,
@@ -387,6 +430,12 @@ def main() -> int:
     parser.add_argument("--case-id", action="append", help="只运行指定用例；不改变完整集")
     parser.add_argument("--database", action="store_true", help="使用本地PG与应用旅行工具")
     parser.add_argument("--workflow", choices=sorted(WORKFLOWS), help="固定工具阶段；默认自主选择")
+    parser.add_argument(
+        "--variant",
+        choices=get_args(EvaluationVariant.__value__),
+        default="full",
+        help="单因素对照；不支持的压缩关闭会启动前拒绝",
+    )
     parser.add_argument("--max-attempts", type=int, choices=range(1, 13), default=4)
     parser.add_argument(
         "--repeat",
@@ -419,6 +468,7 @@ def main() -> int:
                             max_attempts=arguments.max_attempts,
                             repeats=arguments.repeat,
                             suite=suite,
+                            variant=arguments.variant,
                         )
             return await run_cases(
                 cases,
@@ -428,6 +478,11 @@ def main() -> int:
                 suite=suite,
             )
 
+        validate_variant(
+            arguments.variant, database=arguments.database, workflow=arguments.workflow
+        )
+        if arguments.variant != "full" and (not arguments.live or not arguments.database):
+            raise ValueError("单因素对照需--live --database，不使用FixtureRuntime冒充模型")
         if not arguments.database and (arguments.workflow or arguments.max_attempts != 4):
             raise ValueError("固定流程或自定义请求上限需要--database")
         if arguments.live:

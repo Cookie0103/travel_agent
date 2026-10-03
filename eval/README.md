@@ -20,3 +20,14 @@ InitialState使用现有服务构造正式行程/锁、报价过期/条件失效
 规则失败仍输出报告并退出0；执行/规格/输出异常退出1，不能仅看退出码当业务通过。
 
 语气评审：`python -m eval.judge <私有JSONL>`默认只准备；显式--live复用同SDK/费用守卫、固定模型/temperature0/零工具。完整回答与评分私有，解析错误单列judge_error；运行异常停止余下样本，真人分不生成。校准/调用说明见[calibration](calibration/README.md)。
+## 工具参数与首次进度指标
+
+逐调用报告保留correct/incorrect/unknown；成功返回不能证明参数符合用户目标。缺少整个指标的旧报告全量计数为null，已测小计单列。首次进度自动只计实际工具事件和展示卡片，排除started/心跳及未分类文本ACK；纯文本回答未人工分类时该测量为unknown。
+
+独立参数评审复用同一指标函数，可运行 `uv run python -m eval.assess --events <私有events.jsonl> --actual <actual.json> --expected <expected.json> --case-id <原case_id>`。actual/expected是ArgumentFact JSON数组，包含context（user_id/session_id/run_id）、tool_call_id、arguments，事件为RuntimeEvent JSONL。实际参数从对应私有轨迹核对，答案依据用户输入/已知业务状态独立填写；不能抄实际参数、用模型自述或为失败改答案。允许多条合法路径，每条已审查调用给自己的完整答案；没有证据的调用继续unknown。附件留.cache，不加入提交/公共Trace。该命令只输出脱敏计数，不改既有规则结果或冻结集；自动事件报告本身没有完整参数语义答案。
+
+## 同一SDK对照
+
+实际模型评测可加 `--variant full|no_tools|no_skills|no_preferences|no_repairs`（需--database --live与既有授权）。full是当前完整配置；no_tools是B0，不给数据库事实或工具；其余分别只关闭按需Skill、当前持久偏好注入、校验后的修复轮次。非full单轮/fresh SDK，不与--workflow或语气评审混用；每例仍独立业务身份和原结果评分。反思关闭不跳过首次/最终校验，冲突草稿可展示但用户确认必须拒绝。manifest绑定实际variant/schema/Skills。FixtureRuntime不模拟这些效果，非full离线CLI拒绝；实际SDK+本机脚本/PG测试只证明配置机制。
+
+`no_compaction`尚无锁定SDK的可靠关闭能力，启动前拒绝，B2/B3压缩差异不能声称已测；不改写transcript。长期偏好关闭只隔离保存的偏好值，保留用户当前条件与合法近期对话/删除墓碑，不声称删除所有历史线索。详见[ADR012](../docs/adr/012-evaluation-variants.md)。

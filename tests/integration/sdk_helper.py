@@ -8,11 +8,11 @@ from backend.domain.execution import RunContext
 from backend.mcp.bridge import sdk_tool_name
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
+from backend.providers.claude_agent.evaluation import EvaluationVariant, evaluation_definitions
 from backend.providers.claude_agent.guard import Forward, Guard, serve
 from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.probe.settings import Settings
 from backend.services.travel import TravelService
-from backend.tools.travel import DEFINITIONS
 from backend.tools.workflow import WorkflowName
 
 
@@ -28,12 +28,15 @@ def run_database_worker(
     auto_compact_percent: int | None = None,
     prompts: list[str] | None = None,
     workflow: WorkflowName | None = None,
+    variant: EvaluationVariant = "full",
 ) -> tuple[dict[str, object], Guard]:
     guard = Guard(
         Settings("offline-only", "deepseek-flash", Decimal(5), Decimal(0)),
         Budget(directory / "ledger", directory / "old", Decimal(5)),
         forward,
-        allowed_tools=frozenset(sdk_tool_name(d.name) for d in DEFINITIONS),
+        allowed_tools=frozenset(
+            sdk_tool_name(d.name) for d in evaluation_definitions(variant, database=True)
+        ),
         max_attempts=max_attempts,
     )
     with serve(guard) as endpoint:
@@ -64,6 +67,7 @@ def run_database_worker(
                 "database_dsn": travel.database.engine.url.render_as_string(hide_password=False),
                 "supplier_url": supplier_url,
                 "workflow": workflow,
+                "evaluation_variant": variant,
             },
         )
     return report, guard

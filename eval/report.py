@@ -38,14 +38,8 @@ def measured_summary(rows: list[dict[str, object]], repeats: int) -> dict[str, o
         if isinstance(r["rule_pass_rate"], (int, float))
     ]
     attempted = [r for r in rows if r["status"] != "not_run"]
-    latency = [
-        float(r["elapsed_seconds"])
-        for r in attempted
-        if type(r.get("elapsed_seconds")) in {int, float}
-        and isinstance(r["elapsed_seconds"], (int, float))
-        and math.isfinite(r["elapsed_seconds"])
-        and r["elapsed_seconds"] >= 0
-    ]
+    latency = latency_values(attempted, "elapsed_seconds")
+    progress = latency_values(attempted, "first_progress_seconds")
     groups: dict[str, list[dict[str, object]]] = {}
     for row in attempted:
         currency = row.get("accounting_currency")
@@ -71,6 +65,9 @@ def measured_summary(rows: list[dict[str, object]], repeats: int) -> dict[str, o
         },
         "latency_seconds": distribution(latency),
         "latency_unknown_n": len(attempted) - len(latency),
+        "first_progress_seconds": distribution(progress),
+        "first_progress_unknown_n": len(attempted) - len(progress),
+        "tool_call_accuracy": tool_summary(attempted),
         "original_currency_cost": {
             currency: cost_summary(group) for currency, group in groups.items()
         },
@@ -84,6 +81,48 @@ def measured_summary(rows: list[dict[str, object]], repeats: int) -> dict[str, o
         "tokens": token_summary(attempted),
         "semantic_fact_quality": None,
         "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+    }
+
+
+def latency_values(rows: list[dict[str, object]], key: str) -> list[float]:
+    return [
+        float(value)
+        for row in rows
+        if isinstance(value := row.get(key), (int, float))
+        and type(value) is not bool
+        and math.isfinite(value)
+        and value >= 0
+    ]
+
+
+def tool_summary(rows: list[dict[str, object]]) -> dict[str, object]:
+    measured: list[dict[str, object]] = []
+    for row in rows:
+        value = row.get("tool_call_accuracy")
+        if (
+            isinstance(value, dict)
+            and all(
+                type(value.get(k)) is int and value[k] >= 0
+                for k in ("total", "correct", "incorrect", "unknown")
+            )
+            and value["total"] == value["correct"] + value["incorrect"] + value["unknown"]
+        ):
+            measured.append(value)
+    counts = {
+        k: sum(int(str(v[k])) for v in measured)
+        for k in ("total", "correct", "incorrect", "unknown")
+    }
+    complete = len(measured) == len(rows) and all(
+        v.get("events_consistent") is True for v in measured
+    )
+    return {
+        **{k: v if len(measured) == len(rows) else None for k, v in counts.items()},
+        "measured_subtotal": counts,
+        "unknown_cases": len(rows) - len(measured),
+        "accuracy": counts["correct"] / counts["total"]
+        if complete and counts["total"] and not counts["unknown"]
+        else None,
+        "scope": "all started calls; unknown semantic parameters remain unscored",
     }
 
 

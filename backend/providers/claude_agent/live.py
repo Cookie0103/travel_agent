@@ -12,6 +12,11 @@ from backend.domain.execution import RunContext, RuntimeEvent, error_code
 from backend.mcp.bridge import sdk_tool_name
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
+from backend.providers.claude_agent.evaluation import (
+    EvaluationVariant,
+    evaluation_definitions,
+    validate_variant,
+)
 from backend.providers.claude_agent.events import EventReader
 from backend.providers.claude_agent.guard import Guard, serve
 from backend.providers.claude_agent.http import forward_deepseek, forward_messages
@@ -19,8 +24,6 @@ from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.claude_agent.settings import load_runtime_settings
 from backend.providers.probe.ledger import exclusive
 from backend.providers.probe.settings import ProbeError, Settings
-from backend.tools.search import DEFINITIONS
-from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
 from backend.tools.workflow import WorkflowName
 
 
@@ -51,7 +54,17 @@ def run_live(
     max_attempts: int = 4,
     supplier_url: str | None = None,
     persona_judge: bool = False,
+    evaluation_variant: EvaluationVariant = "full",
 ) -> dict[str, object]:
+    try:
+        validate_variant(
+            evaluation_variant,
+            database=database_dsn is not None,
+            workflow=workflow,
+            judge=persona_judge,
+        )
+    except ValueError as error:
+        raise ProbeError("validation", str(error)) from None
     if (
         type(max_attempts) is not int
         or not 1 <= max_attempts <= 12
@@ -68,7 +81,11 @@ def run_live(
     directory = cache / "sessions" / str(context.user_id) / str(context.session_id)
     event_path = directory / f"events-{context.run_id}.jsonl"
     reader = EventReader(event_path, context, emit)
-    definitions = () if persona_judge else TRAVEL_DEFINITIONS if database_dsn else DEFINITIONS
+    definitions = (
+        ()
+        if persona_judge
+        else evaluation_definitions(evaluation_variant, database=database_dsn is not None)
+    )
     budget = runtime_budget(root, settings)
     budget.check_authorization()
     cli = find_cli(os.environ)
@@ -106,12 +123,13 @@ def run_live(
                     "run_id": str(context.run_id),
                     "database_dsn": database_dsn,
                     "supplier_url": None
-                    if persona_judge
+                    if persona_judge or evaluation_variant == "no_tools"
                     else supplier_url or os.environ.get("MOCK_SUPPLIER_URL"),
                     "cli_version": version.stdout.split()[0],
                     "workflow": workflow,
                     "provider": settings.provider,
                     "persona_judge": persona_judge,
+                    "evaluation_variant": evaluation_variant,
                 },
                 cancelled=cancelled,
                 progress=reader.drain,
