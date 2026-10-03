@@ -131,5 +131,21 @@
     "privacy": "No original user/session/run identifiers; fresh random UUID. No text/prompt/answer/parameter values/Evidence IDs/SDK session IDs/credential. Only tool names/schema keys/status/model/version/token/CNY aggregate.",
     "method": "Existing successful SDK report replayed through shared exporter; original event times/token/billing unchanged. Fresh random identity/tool IDs remove identifiers. Upload reads only reviewed redacted file; no original report read by network script. No new model request/cost.",
     "review_resolution": "Initial combined original-report upload rejected by automatic approval. Offline explicit whitelist proof then safer sanitized-only upload approved and read back. Original source/report not overwritten."
+  },
+  "local_read_timeout_followup": {
+    "scope": "real local OTLP HTTP timeout and PostgreSQL committed state, not Cloud latency or real model",
+    "collector_delay_seconds": 5,
+    "actual_exporter_timeout_seconds": 3,
+    "task_wait_limit_seconds": 10,
+    "test_asserted_elapsed_seconds": [
+      2.5,
+      10
+    ],
+    "shutdown_calls": 1,
+    "committed_run": "completed, error_code null, request revision2",
+    "local_trace_preserved": true,
+    "private_text_and_secret_absent": true,
+    "verification": "40 PG/SDK/trace tests passed20.21s; final7 trace tests passed7.44s",
+    "new_model_http": 0
   }
 }

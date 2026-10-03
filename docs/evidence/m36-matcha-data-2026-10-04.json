@@ -33,7 +33,8 @@
     "actual_sdk": "CLI+SDK, local scripted HTTP, real isolated PostgreSQL; exactly two search tools and two local HTTP requests, valid source-backed payloads",
     "original_files_unchanged": 6,
     "new_model_http": 0,
-    "independent_review": "quality_review: no P1/P2; source attribution, isolation, defaults, failure handling and reuse checked"
+    "independent_review": "quality_review: no P1/P2; source attribution, isolation, defaults, failure handling and reuse checked",
+    "normal_save": "ceb676ec837bd54b76dd9b9084b3ac2734ddbee5: original check/test hooks Passed, ordinary push exact remote SHA verified"
   },
   "failures_preserved": [
     "Initial new SDK assertion compared JSON escaped text with literal Chinese; changed new test to parse tool payload and validate exact fields; no old expectation or product code changed."
@@ -43,6 +44,49 @@
     "Original matcha baseline data failure remains in original results.",
     "New data cannot be compared with old results as identical data/version.",
     "Opening hours, indoor, current prices and queue time remain unknown.",
-    "Normal save hooks and one controlled model neighbor still pending; no overall completion claim."
-  ]
+    "Original neighbor tool-rule failure remains; scoped prompt clarification is being verified, no repeat of unchanged paid failure."
+  ],
+  "live_neighbor": {
+    "code_commit": "ceb676ec837bd54b76dd9b9084b3ac2734ddbee5",
+    "worktree_dirty": false,
+    "data_version": "catalog-sha256:27c344b3db1139f05036864905effc483af6aa402569c01009cb18317efa0742+hotel-fixture-v1+routes-fixture-v1",
+    "catalog_sha256": "ad24cc0238cdc469063f78ac59ab814aed8ea2fe299c18b5ad76cf6817e2ad8d",
+    "files_sha256": {
+      "manifest.json": "2771685a2592368c27917edc1bc6c30b2a37be9efbb0156e7fe2d9251e129f0f",
+      "attempts.jsonl": "2a83d273b91849164562e11c91d3358842b4390d12fc6a25b8b7bbd030d87ef0",
+      "results.jsonl": "1888ed4dbb6a759d2eac27a254096fc70b99fd058e0eaf53d8deaea37ab25ac6",
+      "summary.json": "ada1bb250c2b1a291edad9c5eb52da0c11b5ad3a755137b34ef74a96a019b5bd"
+    },
+    "case_id": "kyoto-matcha",
+    "repeat": 1,
+    "status": "failed",
+    "failed_checks": [
+      "no_unnecessary_tools"
+    ],
+    "tools": [
+      "search_places",
+      "search_content",
+      "search_places",
+      "get_article",
+      "update_travel_request"
+    ],
+    "http_attempts": 4,
+    "run_accounted_cny": "0.068974",
+    "identity": {
+      "provider": "deepseek",
+      "model": "deepseek-flash",
+      "sdk_version": "0.2.163",
+      "cli_version": "2.1.114"
+    },
+    "tokens": {
+      "input_tokens": 7131,
+      "cache_read_input_tokens": 21120,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 1559
+    },
+    "answer_mentions_real_place": true,
+    "answer_mentions_unknown": true,
+    "new_data_same_version_comparison": false,
+    "interpretation": "Data absence addressed in separate source-backed dev bundle; original two-tool contract still failed due get_article/update_travel_request; no expectations changed or success claimed."
+  }
 }

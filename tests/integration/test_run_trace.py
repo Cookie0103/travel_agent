@@ -4,6 +4,7 @@ import asyncio
 import json
 from collections.abc import Callable
 from pathlib import Path
+from time import perf_counter
 from uuid import uuid4
 
 import pytest
@@ -98,7 +99,14 @@ def test_committed_run_exports_metadata_or_preserves_result_on_disk_failure(
 
 
 @pytest.mark.parametrize(
-    "enabled,response_status", [(False, 200), (True, 200), (True, 400), (True, None)]
+    "enabled,response_status,delayed",
+    [
+        (False, 200, False),
+        (True, 200, False),
+        (True, 400, False),
+        (True, None, False),
+        (True, 200, True),
+    ],
 )
 def test_cloud_trace_is_explicit_and_failure_preserves_committed_run_and_local_trace(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
@@ -107,8 +115,9 @@ def test_cloud_trace_is_explicit_and_failure_preserves_committed_run_and_local_t
     caplog: pytest.LogCaptureFixture,
     enabled: bool,
     response_status: int | None,
+    delayed: bool,
 ) -> None:
-    """R17：真实PG与OTLP HTTP；缺配置/HTTP拒绝不能撤销已完成业务。"""
+    """R17：真实PG与OTLP HTTP；缺配置/拒绝/3秒读超时不能撤销业务。"""
     import base64
 
     runner, travel, context = travel_setup
@@ -131,6 +140,8 @@ def test_cloud_trace_is_explicit_and_failure_preserves_committed_run_and_local_t
         body = await request.body()
         assert b"local-secret" not in body and b"synthetic-private-interest" not in body
         received.append(ExportTraceServiceRequest.FromString(body))
+        if delayed:
+            await asyncio.sleep(5)
         return Response(status_code=response_status or 400)
 
     with serve_http(collector) as base_url:
@@ -156,7 +167,10 @@ def test_cloud_trace_is_explicit_and_failure_preserves_committed_run_and_local_t
                 context.session_id,
                 MessageInput(client_message_id=uuid4(), text="synthetic-private-interest"),
             )
-            await asyncio.gather(*tuple(service.tasks.values()))
+            started = perf_counter()
+            await asyncio.wait_for(asyncio.gather(*tuple(service.tasks.values())), timeout=10)
+            if delayed:
+                assert 2.5 <= perf_counter() - started < 10
             final = await service.get(context.user_id, created.run_id)
             assert final.status == "completed" and final.error_code is None
             assert final.answer == "synthetic-private-interest"
@@ -171,7 +185,7 @@ def test_cloud_trace_is_explicit_and_failure_preserves_committed_run_and_local_t
                 "agent.fixture",
                 "tool.update_travel_request",
             }
-            if enabled and response_status == 200:
+            if enabled and response_status == 200 and not delayed:
                 spans = [
                     span
                     for item in received
@@ -185,9 +199,12 @@ def test_cloud_trace_is_explicit_and_failure_preserves_committed_run_and_local_t
                 }
                 assert "TaskRun Trace unavailable" not in caplog.text
             else:
-                assert len(received) == (1 if enabled and response_status == 400 else 0)
+                assert len(received) == (
+                    1 if enabled and (response_status == 400 or delayed) else 0
+                )
                 assert ("TaskRun Trace unavailable" in caplog.text) == enabled
             assert "local-secret" not in caplog.text
+            assert "synthetic-private-interest" not in caplog.text
             assert len(closed) == (1 if enabled and response_status is not None else 0)
 
         runner.run(exercise())

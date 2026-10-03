@@ -104,3 +104,5 @@ M0.5/M4.1 API观测追加：test_run_trace真实PG+本机OTLP HTTP覆盖显式�
 原错误契约恢复后21个实际SDK context/recovery与连接诊断回归Passed（34.40s）；worker.py与HEAD净diff=0，原精确字典断言保留。日志为症状标签、不触发重试，间歇PG/恢复根因仍待证据；随后正常全量关卡继续。
 
 M3.6 ADR013实现独立来源补充包与固定catalog.json可选导入；默认原166不变，legacy dev显式选择/随机临时库/完整目录不一致409拒绝，实际版本绑定manifestSHA。55专项Passed17.38s，224文件三平台strict/ruff/格式/3契约/10地图Passed，原六基准hash不变。新SDK测试首次只因JSON转义文本断言失败，改新测试解析实际工具payload核对原名/来源，未改生产或原Case。实际SDK本机2HTTP仅两搜索工具，0真实模型新费；独立审查/原保存钩子与一次受控模型邻例待执行，原失败保留。
+
+离线补验：R17真实本机OTLP收到protobuf后延迟5s，原3s exporter读超时、有界10s、关闭一次，PG completed/revision2/本地Trace保留，secret/正文未进日志。40实际PG/SDK/Trace专项Passed20.21s，最终7TracePassed7.44s；224三平台strict/原静态Passed。原full第一轮前4例11调用：私有CLI参数严格绑定4个非空唯一EvidenceID，独立autonomy_review依据原需求/目录标注4合法路径，eval.assess实际4正确/7unknown，总accuracy=null、真人0/新模型0；其余379全量不外推，原成绩未改。见m42-parameter-review-first4与m05 timeout evidence。4fd9923两CI全success；ceb676e一CI success/另运行中，未提前标全绿。
