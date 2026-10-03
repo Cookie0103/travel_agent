@@ -40,6 +40,18 @@ def test_request_limit_is_not_model_turn_limit(tmp_path: Path) -> None:
         budget.reserve(Decimal("0.001"), NOW)
 
 
+def test_full_test_repeats_rejected_before_any_budget_reservation(tmp_path: Path) -> None:
+    budget = Budget(tmp_path / "new.jsonl", tmp_path / "old", Decimal(5))
+    with pytest.raises(ProbeError, match="不足完整评测"):
+        budget.check_minimum_requests(40 * 3)
+    assert not budget.path.exists()
+    budget.check_minimum_requests(100)
+    budget.reserve(Decimal("0.001"), NOW)
+    with pytest.raises(ProbeError, match="不足完整评测"):
+        budget.check_minimum_requests(100)
+    assert budget.totals() == (1, Decimal("0.001"))
+
+
 @pytest.mark.parametrize("content", ["{", '{"charge_cny":"0"}', "\ufffd"])
 def test_corrupt_ledger_refuses_to_reset(tmp_path: Path, content: str) -> None:
     path = tmp_path / "new.jsonl"

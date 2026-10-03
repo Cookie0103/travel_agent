@@ -47,3 +47,5 @@ M3.6归因：tests/test_diagnostics.py 与 integration/test_diagnostics.py 使�
 - CI：配置与本地对应检查分别记录；未push/未远端执行不写CI成功。
 - 审查：每个增量独立审查，修复重大问题并复核；检查重复规则/接口、过度抽象与失败路径。
 - 未满足项保持开放；外部权限、预算不足或人工校准缺失不得包装为全部完成。
+
+M4.2评测设施：test_eval_suites保护冻结前拒绝、hash/20/40/历史不改与正常对照；test_eval_report保护独立三轮、异常后停止所有轮次、分母/原币种/未知token与HTTP。integration/test_eval_state用真实PG/HTTP验证正式plan/setup隔离、精准改程及错误目标/幅度、锁/历史/偏好改写、expired/stale报价刷新、未知税本轮卡片、500/429/实际超时、unknown不重复下单、禁止副作用、本次专用库。规则机制与离线重复不计真实模型三次统计。

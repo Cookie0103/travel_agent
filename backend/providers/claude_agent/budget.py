@@ -46,6 +46,15 @@ class Budget:
         if amount <= 0 or count <= 0:
             raise ProbeError("blocked", "美元累计金额和次数授权均为0；日预算不能授予调用权限")
 
+    def check_minimum_requests(self, minimum: int) -> None:
+        """只做必要条件预检；实际费用/辅助调用仍逐HTTP预占，不承诺整集足够。"""
+        if type(minimum) is not int or minimum < 1:
+            raise ProbeError("validation", "计划请求数必须为正整数")
+        self.check_authorization()
+        used, _ = self.totals()
+        if used + minimum > LIMITS[self.currency][1]:
+            raise ProbeError("blocked", "即使每案例只请求一次，累计授权也不足完整评测")
+
     def entries(self) -> list[Entry]:
         if not self.path.exists():
             return []

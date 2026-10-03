@@ -5,15 +5,19 @@ import hashlib
 import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
-from dataclasses import asdict
+from dataclasses import asdict, replace
+from uuid import UUID, uuid4
 
 from sqlalchemy import URL
 
+from backend.adapters.local_http import serve_http
+from backend.adapters.supplier import SupplierClient
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RuntimeEvent
 from backend.domain.travel_request import RequestPatch
 from backend.persistence.catalog import import_catalog, load_catalog
+from backend.persistence.database import Database
 from backend.services.common import ServiceError, transaction
 from backend.services.sessions import DemoLogin, SessionService
 from backend.services.travel import TravelService
@@ -23,6 +27,8 @@ from backend.tools.workflow import OrderedTools, WorkflowName
 from data.import_catalog import load_snapshot
 from eval.cases import Case, InitialState
 from eval.graders import Observation
+from eval.state import StateSnapshot, business_checks, prepare_state, snapshot
+from mock_supplier.scenarios import SupplierScenario
 
 DATA_VERSION = "kyoto-snapshot-v1+hotel-fixture-v1+routes-fixture-v1"
 
@@ -34,11 +40,19 @@ class DatabaseEvaluation:
         self.sessions = SessionService(url, demo_enabled=True)
         self.travel = TravelService(self.sessions.database)
         self.catalog_sha256: str | None = None
+        self.supplier_url: str | None = None
+        self.scenario: SupplierScenario | None = None
+        self.baselines: dict[UUID, StateSnapshot] = {}
 
     async def prepare(self, case: Case) -> RunContext:
-        if case.fault or case.data_version != "kyoto-fixture-v1":
-            raise ValueError("尚不支持此评测故障或数据版本")
-        conditions = InitialState.model_validate(case.initial_state).request
+        if case.data_version != "kyoto-fixture-v1":
+            raise ValueError("尚不支持此评测数据版本")
+        state = InitialState.model_validate(case.initial_state)
+        if (state.booking != "none" or case.fault) and not self.supplier_url:
+            raise ValueError("预订/故障评测需要专用本机供应商")
+        if self.scenario:
+            self.scenario.fault = None
+        conditions = state.request
         identity = await self.sessions.create_demo_user(DemoLogin(display_name="本地评测"))
         session = await self.sessions.new_session(identity.user_id)
         context = RunContext(identity.user_id, session.session_id)
@@ -47,12 +61,33 @@ class DatabaseEvaluation:
             await self.travel.patch_request(
                 context, RequestPatch.model_validate({"expected_revision": 0, "set": fields})
             )
+        await prepare_state(
+            self.travel, context, state, self.supplier_url or "http://127.0.0.1:8001"
+        )
+        context = replace(context, run_id=uuid4())
+        self.baselines[context.run_id] = await snapshot(self.travel, context)
+        if self.scenario:
+            self.scenario.fault = case.fault
+            self.scenario.attempts.clear()
         return context
+
+    async def checks(self, case: Case, context: RunContext, actual: Observation) -> dict[str, bool]:
+        return await business_checks(
+            self.travel,
+            context,
+            case,
+            self.baselines[context.run_id],
+            actual.events,
+            tuple(self.scenario.attempts) if self.scenario else (),
+        )
 
     async def observe(
         self, case: Case, context: RunContext, workflow: WorkflowName | None
     ) -> tuple[Observation, dict[str, object]]:
-        executor: ToolExecutor = TravelToolExecutor(self.travel)
+        travel_executor = TravelToolExecutor(self.travel)
+        if self.supplier_url:
+            travel_executor.bookings.supplier = SupplierClient(self.supplier_url)
+        executor: ToolExecutor = travel_executor
         if workflow:
             executor = OrderedTools(executor, workflow)
         runtime = FixtureRuntime(executor)
@@ -67,7 +102,9 @@ class DatabaseEvaluation:
 
 
 @asynccontextmanager
-async def database_evaluation(url: URL) -> AsyncIterator[DatabaseEvaluation]:
+async def database_evaluation(
+    url: URL, *, supplier: bool = False
+) -> AsyncIterator[DatabaseEvaluation]:
     evaluation = DatabaseEvaluation(url)
     try:
         await evaluation.sessions.health()
@@ -89,7 +126,13 @@ async def database_evaluation(url: URL) -> AsyncIterator[DatabaseEvaluation]:
             evaluation.catalog_sha256 = hashlib.sha256(
                 json.dumps(actual, sort_keys=True, ensure_ascii=False).encode()
             ).hexdigest()
-        yield evaluation
+        if supplier:
+            evaluation.scenario = SupplierScenario(Database(url))
+            with serve_http(evaluation.scenario.app) as endpoint:
+                evaluation.supplier_url = endpoint
+                yield evaluation
+        else:
+            yield evaluation
     finally:
         await evaluation.sessions.close()
 

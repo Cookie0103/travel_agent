@@ -214,6 +214,7 @@ class TravelToolExecutor:
             booking = await self.bookings.hold(context, parsed)
             return ToolResult(
                 booking.card(),
+                evidence_ids=(str(booking.evidence_id),),
                 warnings=("仅模拟暂留，不是订单；只允许用户在页面独立确认预订",),
             )
         if isinstance(parsed, StageInput):

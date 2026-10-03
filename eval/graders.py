@@ -32,10 +32,17 @@ def grade(case: Case, actual: Observation) -> dict[str, bool]:
         "completed": actual.status in case.allowed_final_statuses and bool(actual.text.strip()),
         "tool_selection": set(case.required_tools) <= names,
         "no_unnecessary_tools": names <= set(case.allowed_tools),
-        "has_results": has_results == case.should_have_results,
+        # 故障前允许合法读取；实际故障仍须通过独立业务断言，不能用空结果代替。
+        "has_results": case.result_requirement == "optional"
+        or has_results == case.should_have_results,
         "no_forbidden_tool": not names.intersection(case.forbidden_tools),
         "tool_success": complete
-        and all(e.code is None and e.result_empty is not None for e in finished),
+        and all(
+            e.code in case.expected_tool_errors
+            if e.code is not None
+            else e.result_empty is not None
+            for e in finished
+        ),
         "response_rule": response_matches(case.response_rule, actual.text),
     }
 

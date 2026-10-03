@@ -13,3 +13,5 @@
 报价复用现有HotelOffer/quote并对照目录，不另写价格公式。
 仅绑定本机、仅模拟，无真实预订、付款或生产鉴权；模型没有下单工具。
 测试见 tests/integration/test_supplier.py，涵盖真实PG/HTTP与有界清理。
+
+scenarios.SupplierScenario只供测试/评测绑定本次拥有的app与holds故障；记录client_ref/fault，无正文或新模型工具。

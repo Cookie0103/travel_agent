@@ -15,24 +15,28 @@ from pathlib import Path
 from typing import TextIO
 from uuid import uuid4
 
+import psycopg
 from pydantic import TypeAdapter
 
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RunResult, RuntimeEvent
 from backend.persistence.database import configuration, database_url
-from backend.providers.claude_agent.live import run_live
+from backend.persistence.temporary import temporary_database
+from backend.providers.claude_agent.live import check_evaluation_size, run_live
 from backend.providers.probe.settings import ProbeError
 from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition
 from backend.tools.search import DEFINITIONS, SearchExecutor
 from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
 from backend.tools.workflow import WORKFLOWS, WorkflowName
-from eval.cases import Case, load_cases
+from eval.cases import Case
 from eval.database import DATA_VERSION, DatabaseEvaluation, database_evaluation, selector_runner
 from eval.diagnostics import diagnose
 from eval.graders import Observation, grade
 from eval.persona import rules as persona_rules
+from eval.report import measured_summary
+from eval.suites import load_suite
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -56,6 +60,7 @@ async def observe(
                 database_dsn=business.dsn(),
                 workflow=workflow,
                 max_attempts=max_attempts,
+                supplier_url=business.supplier_url,
             )
             if business
             else run_live(case.input, context, ROOT)
@@ -82,9 +87,18 @@ async def run_cases(
     business: DatabaseEvaluation | None = None,
     workflow: WorkflowName | None = None,
     max_attempts: int = 4,
+    repeats: int = 1,
+    suite: dict[str, object] | None = None,
 ) -> dict[str, object]:
+    if type(repeats) is not int or not 1 <= repeats <= 3:
+        raise ValueError("重复次数必须为1至3")
     if not business and (
-        workflow or max_attempts != 4 or any(case.initial_state for case in cases)
+        workflow
+        or max_attempts != 4
+        or any(
+            case.initial_state or case.fault or case.business_checks or case.expected_tool_errors
+            for case in cases
+        )
     ):
         raise ValueError("固定流程或初始业务条件需要--database")
     directory.mkdir(parents=True, exist_ok=False)
@@ -94,9 +108,14 @@ async def run_cases(
                 **manifest(cases, TRAVEL_DEFINITIONS if business else DEFINITIONS),
                 "workflow": workflow or "autonomous",
                 "business_database": business is not None,
+                "database_name": business.sessions.database.engine.url.database
+                if business
+                else None,
                 "catalog_sha256": business.catalog_sha256 if business else None,
                 "data_version": DATA_VERSION if business else "kyoto-fixture-v1",
                 "max_http_attempts_per_case": max_attempts if live else 0,
+                "repetitions": repeats,
+                "evaluation_suite": suite,
             },
             ensure_ascii=False,
             indent=2,
@@ -118,7 +137,9 @@ async def run_cases(
         (directory / "results.jsonl").open("w", encoding="utf-8", newline="\n") as handle,
         (directory / "attempts.jsonl").open("w", encoding="utf-8", newline="\n") as attempts,
     ):
-        for case in cases:
+        for repeat_index, case in (
+            (index, case) for index in range(1, repeats + 1) for case in cases
+        ):
             row: dict[str, object] = (
                 await attempt_case(
                     case,
@@ -127,6 +148,7 @@ async def run_cases(
                     business=business,
                     workflow=workflow,
                     max_attempts=max_attempts,
+                    repeat_index=repeat_index,
                 )
                 if not stop
                 else {
@@ -135,9 +157,21 @@ async def run_cases(
                     "reason": "prior_runtime_error",
                 }
             )
+            row["repeat"] = repeat_index
             rows.append(row)
             passed += int(row["status"] == "passed")
-            stop |= row["status"] == "error"
+            checks = row.get("checks")
+            stop |= row["status"] == "error" or (
+                isinstance(checks, dict)
+                and any(
+                    checks.get(key) is False
+                    for key in (
+                        "no_unconfirmed_plan_save",
+                        "no_new_supplier_order",
+                        "no_implicit_preference_write",
+                    )
+                )
+            )
             handle.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
             handle.flush()
             os.fsync(handle.fileno())
@@ -153,7 +187,9 @@ async def run_cases(
         "errors": sum(r["status"] == "error" for r in rows),
         "not_run": sum(r["status"] == "not_run" for r in rows),
         "rule_pass_rate": passed / evaluated if evaluated else None,
-        "repetitions": 1,
+        "repetitions": repeats,
+        "expected_attempts": len(cases) * repeats,
+        **measured_summary(rows, repeats),
         "data_version": DATA_VERSION if business else "kyoto-fixture-v1",
         "workflow": workflow or "autonomous",
         "limitations": [
@@ -178,6 +214,7 @@ async def attempt_case(
     business: DatabaseEvaluation | None,
     workflow: WorkflowName | None,
     max_attempts: int,
+    repeat_index: int = 1,
 ) -> dict[str, object]:
     try:
         context = await business.prepare(case) if business else RunContext(uuid4())
@@ -185,7 +222,11 @@ async def attempt_case(
         return {"case_id": case.case_id, "status": "error", "reason": "business_setup_failed"}
     # 不变量：先落盘实际PG身份与会话目录，再允许付费；未完成记录不可自动重试。
     attempts.write(
-        json.dumps({"case_id": case.case_id, "context": asdict(context)}, default=str) + "\n"
+        json.dumps(
+            {"case_id": case.case_id, "repeat": repeat_index, "context": asdict(context)},
+            default=str,
+        )
+        + "\n"
     )
     attempts.flush()
     os.fsync(attempts.fileno())
@@ -220,11 +261,18 @@ async def run_case(
     except (ProbeError, ServiceError, ValueError, OSError):
         return {"case_id": case.case_id, "status": "error", "reason": "runtime_unavailable"}
     checks = grade(case, actual)
+    verification_failed = False
+    if business:
+        try:
+            checks.update(await business.checks(case, context, actual))
+        except (ServiceError, ValueError, OSError):
+            checks["business_verification_available"] = False
+            verification_failed = True
     trace_id = report.get("trace_id")
     return {
         "case_id": case.case_id,
         "status": "error"
-        if actual.status != "completed"
+        if verification_failed or actual.status not in case.allowed_final_statuses
         else "passed"
         if all(checks.values())
         else "failed",
@@ -303,11 +351,11 @@ def manifest(
     ).stdout.strip()
     files = sorted(
         p
-        for folder in ("backend", "data", "eval")
+        for folder in ("backend", "data", "eval", "mock_supplier")
         for p in (ROOT / folder).rglob("*")
         if p.suffix in {".py", ".md", ".json", ".jsonl"} and "__pycache__" not in p.parts
     )
-    files += [ROOT / "pyproject.toml", ROOT / "uv.lock"]
+    files += [ROOT / "pyproject.toml", ROOT / "uv.lock", ROOT / "backend/persistence/alembic.ini"]
     return {
         "created_at": datetime.now(UTC).isoformat(),
         "code_commit": commit,
@@ -332,6 +380,7 @@ def main() -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="旅行任务规则评测；默认离线，不把规则分当模型质量")
     parser.add_argument("--split", choices=["dev", "test"], default="dev")
+    parser.add_argument("--suite", choices=["legacy", "frozen"], default="legacy")
     parser.add_argument(
         "--live", action="store_true", help="使用显式供应商；须有独立授权且产生费用"
     )
@@ -339,15 +388,18 @@ def main() -> int:
     parser.add_argument("--database", action="store_true", help="使用本地PG与应用旅行工具")
     parser.add_argument("--workflow", choices=sorted(WORKFLOWS), help="固定工具阶段；默认自主选择")
     parser.add_argument("--max-attempts", type=int, choices=range(1, 13), default=4)
+    parser.add_argument(
+        "--repeat",
+        type=int,
+        choices=range(1, 4),
+        default=1,
+        help="预先定义独立重复；失败/安全异常后不重新付费",
+    )
     arguments = parser.parse_args()
     try:
-        cases = load_cases(
-            tuple(
-                ROOT / "eval" / "cases" / name
-                for name in ("datamind_adapted.jsonl", "travel_m1.jsonl")
-            ),
-            arguments.split,
-        )
+        cases, suite = load_suite(ROOT, arguments.suite, arguments.split)
+        if arguments.suite == "frozen" and not arguments.database:
+            raise ValueError("冻结评测需要--database")
         if arguments.case_id:
             if set(arguments.case_id) - {c.case_id for c in cases}:
                 raise ValueError("case_id 不存在")
@@ -356,23 +408,41 @@ def main() -> int:
 
         async def evaluate() -> dict[str, object]:
             if arguments.database:
-                async with database_evaluation(database_url(configuration())) as business:
-                    return await run_cases(
-                        cases,
-                        ROOT / ".cache" / "eval" / name,
-                        live=arguments.live,
-                        business=business,
-                        workflow=arguments.workflow,
-                        max_attempts=arguments.max_attempts,
-                    )
-            return await run_cases(cases, ROOT / ".cache" / "eval" / name, live=arguments.live)
+                with temporary_database(database_url(configuration()), "eval") as target:
+                    async with database_evaluation(target, supplier=True) as business:
+                        return await run_cases(
+                            cases,
+                            ROOT / ".cache" / "eval" / name,
+                            live=arguments.live,
+                            business=business,
+                            workflow=arguments.workflow,
+                            max_attempts=arguments.max_attempts,
+                            repeats=arguments.repeat,
+                            suite=suite,
+                        )
+            return await run_cases(
+                cases,
+                ROOT / ".cache" / "eval" / name,
+                live=arguments.live,
+                repeats=arguments.repeat,
+                suite=suite,
+            )
 
         if not arguments.database and (arguments.workflow or arguments.max_attempts != 4):
             raise ValueError("固定流程或自定义请求上限需要--database")
+        if arguments.live:
+            check_evaluation_size(ROOT, len(cases) * arguments.repeat)
         with selector_runner() as runner:
             summary = runner.run(evaluate())
-    except (ServiceError, ValueError, OSError, subprocess.SubprocessError):
-        print("评测未完成：用例规格或输出目录不可用。")
+    except (
+        ProbeError,
+        ServiceError,
+        ValueError,
+        OSError,
+        subprocess.SubprocessError,
+        psycopg.Error,
+    ):
+        print("评测未完成：请检查用例冻结状态、本地数据库、输出目录或调用授权/预算。")
         return 1
     return 1 if summary["errors"] else 0
 

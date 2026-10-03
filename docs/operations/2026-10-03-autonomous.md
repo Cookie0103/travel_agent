@@ -401,3 +401,15 @@
 - 初次stdout中文受CP936，smoke入口复用configure_environment修复；初次ruff未用Path导入已修。最终check193/3分层/10地图、web type/lint/10测试/build通过；完整473 passed/2 live deselected（132.44秒）。新补4项daemon/build失败及down保护回归，正常钩子待重跑。
 - browser-act命令不可用，未安装新的全局工具；使用现有内置浏览器进行3100端到端生成/确认/刷新正式V1，截图m41-container-restored.jpg。无模型调用/真实订单。
 - 独立审查唯一P2嵌套dotenv未排除，补递归规则；六个合成文件实际Docker COPY/RUN断言排除且source保留。首次沙箱临时目录ACL导致Docker拒读，项目内新升级测试上下文通过，不读取真实env/修改系统ACL。CI补固定CLI及容器重建烟测，仅配置、未远端运行。
+
+- e427808正常check/test钩子通过保存M4.1；stack六项专项通过。M4.2沿用现有服务构造初始业务状态，新增专用评测库与共享临时PG/本机HTTP启动设施；故障只在本次拥有的供应商/holds接口注入，setup unknown订单仅/orders丢响应。当前模型仅hold工具，无reconcile工具，已纠正方案为unknown安全解释/独立用户API对账，不能宣称模型自动对账。静态197文件通过；新增源码尚未完成测试/审查，旧eval专项运行中。未产生模型请求。
+
+- M4.2旧eval/预算/配置专项60项通过后扩展冻结候选、重复3次/分母/原币种/token/时延及最低授权预检。静态202文件通过；下一批69专项通过20.85秒。没有模型请求，51/.934478不变。
+- 初始新增PG测试输入误用了预算对象/非现有字段，以及过期报价quoted_at不早于expires_at；按既有TravelConditions/HotelOffer契约修正setup，未改产品断言，10PG专项通过。
+- 独立两P2已修：setup既有held不能计本轮成功，无关timeout不能计实际供应商故障；按本轮配对事件/Evidence+real client_ref/fault绑定，并补零调用/幂等缓存/错run/重复end反例。P3补mock_supplier源hash。
+- 候选60例独立审查另外三P2：解释允许读却期待无结果、室内快照全未知却强求查询有结果、单项patch未定位第二天下午/+1h。改候选明确只读与空结果任务，新增精准结构断言，历史期待不动；复核关闭，尚未冻结。新增错误目标反例首先误选第一天上午延后，原路线11点离开而结束迟于11导致合法validator冲突，不能作为“有效单项”的反例；改为第三天下午+1h，仍保留有效单项应通过/精准目标必须失败的原断言，不跳过/降低检查。
+
+- 三P2复核关闭后72专项通过（21.50秒）、check202/3契约/10地图通过。20/40冻结travel-eval-v1，hash 5a433b621c43f62d17f98c6902d8e889b31c451fe02aa67145b5c142aa97558b；旧19Case完整相等/40无历史ID。
+- 实际离线评测20261003T112436Z-6dc4c45b：40×3=120、0errors/0not_run/0HTTP，每轮3/40规则通过共9/120。替身只搜索，失败规则原样保存，不当模型质量；专用库正常退出已查询确认移除，父库保留。全量真实最低120授权预检blocked，账本hash不变。公共证据m42-offline-repeat-2026-10-03.json无回答/密钥/DSN。
+
+- 完整Python506 passed/2 live deselected（140.03秒），专项和独立复核通过。准备正常本地提交，不push；下一步真实SDK本机离线复现轮数/截断语义，未发起新付费请求。
