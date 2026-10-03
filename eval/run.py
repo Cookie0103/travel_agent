@@ -24,6 +24,7 @@ from backend.providers.probe.settings import ProbeError
 from backend.tools.search import DEFINITIONS, SearchExecutor
 from eval.cases import Case, load_cases
 from eval.graders import Observation, grade
+from eval.persona import rules as persona_rules
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -128,6 +129,9 @@ async def run_case(case: Case, context: RunContext, *, live: bool) -> dict[str, 
         if all(checks.values())
         else "failed",
         "checks": checks,
+        "persona_checks": persona_rules(
+            actual.text, emotional=case.case_id.startswith("emotional-")
+        ),
         "failed_checks": [k for k, value in checks.items() if not value],
         "elapsed_seconds": round(time.perf_counter() - start, 3),
         "tools": [e.tool_name for e in actual.events if e.kind == "tool_started"],

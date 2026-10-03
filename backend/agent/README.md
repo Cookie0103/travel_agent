@@ -5,3 +5,5 @@
 `Runtime` 只定义本项目需要的执行接口；`FakeRuntime` 用于离线业务测试。
 模型与工具往返不在这一层实现，交给 Claude Agent SDK。
 M0.3 的引用表只在进程内有效，不能当成数据库业务恢复。
+persona.md 是中性角色草案；persona.py 读取同一规则供 SDK prompt 和 eval 使用。
+旅行范围/工具选择指导写进 prompt，但权限/来源/费用等硬边界仍由代码检查。

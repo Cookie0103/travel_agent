@@ -109,3 +109,17 @@
 - 只读核对私有报告/账本：新增11次/0.055462 CNY，总16次/0.076132，无未结预占。失败属于范围说明不够明确导致无效检索，未扩大次数限制或改断言；下步随中性prompt补明确范围再回归。
 - 导出docs/evidence/m06-baseline-2026-10-03.json，不含正文、私有session ID或密钥；保留版本hash/规则失败/用量。真实基线为partial，不能把1/2弱规则分当21条任务成功率。
 - 准备M1规格时只读核对Docker：沙箱管道访问拒绝，按已有授权提升只读检查后确认Docker28.5.1运行、无运行容器。未改本机PostgreSQL或启动新库。
+- M0.6正常钩子通过，提交b83edc3。
+
+## M0.7 与 M1 环境准备
+
+- 中性persona.md由Pydantic读取，同一规格供SDK prompt与语气规则共享；加入范围明确说明/缺信息澄清/空结果有限放宽指导，业务权限仍在代码。
+- 评审rubric/JSON解析/真人配对计算已有失败测试；当前没有真人分，也未执行固定温度0 LLM judge，记docs/blocked/persona-calibration.md，不阻塞业务。
+- check76文件/3契约通过，dev test193 passed/2 deselected（12.19秒）；独立审查无阻塞，建议评审带原用户输入，已补并7专项通过。
+- 在授权内只回归两个坏例加京都正例：`.cache/eval/20261003T053049Z-d759aa44`。箱根/冲绳各1次不查询工具并说明范围，通过；京都抹茶3请求、两类工具均执行但无结果，失败保留。不能由此宣称总体质量提升；fixture无抹茶/甜品/餐厅相关字段，待M1数据补充。
+- 新增5次/0.022318 CNY，总21次/0.098450，全部结算。导出不含正文的m07-scope-regression证据。暂停额外模型实验，继续业务代码。
+- M1规格独立审查后补基础TaskRun/持久事件/取消交付、Evidence适用revision和路段失效、确认返回同一结果及conflict/unknown边界。
+- DB变量均为空；核对5434可用后只填写.env的POSTGRES_USER/DB/PORT和随机密码，未改LLM或其他已有配置，不输出密码，DATABASE_URL留空由后续配置派生。
+- 按ADR000 uv添加FastAPI0.142.2、SQLAlchemy2.1.3、psycopg3.3.6、Alembic1.20.0和uvicorn直接依赖。此项将随M1.1提交。
+- dev db-up成功：项目容器travel-agent-postgres-1健康，PostgreSQL17，127.0.0.1:5434，新建项目卷；未连接或改本机5432/5433的服务。
+- 核对官方SQLAlchemy每任务独立AsyncSession、psycopg Windows需SelectorLoop；SDK子进程仍使用独立运行环境，后续API使用线程启动现有同步live入口，不在DB事件循环里直接启动SDK。
