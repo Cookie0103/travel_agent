@@ -2,7 +2,7 @@
 
 当前状态（2026-10-04）：用户配置本地`.env`并授权验证，Japan项目认证200、一次离线查询OTLP上传成功；v2 observations读回200，4个span与本地ID/项目/Trace完全一致。[脱敏证据](../evidence/m05-langfuse-cloud-2026-10-04.json)。0模型请求，无正文/参数值外发，密钥与项目ID仅私有缓存。API/server显式开关的23相关真实PG/本机HTTP回归已通过。
 
-此前“缺配置”记录为历史。当前只剩页面显示未验：新建in-app浏览器tab出现“没有访问此Trace权限”和Sign In，原因是该浏览器会话未登录；API密钥不是网页登录凭据。没有代注册/修改账户或要求用户中断开发，其他工作继续。私有receipt保存实际Trace链接，用户自行登录所属项目后可查看。
+此前“缺配置”记录为历史。页面验收现已通过：复用用户已登录的Chrome，原Trace和明确chain/agent/tool分类的后续Trace均显示四个节点及completed状态，读回类型也完全匹配。初次匿名in-app会话曾显示访问权限错误/Sign In，作为历史失败保留；API密钥不是网页登录凭据。无账户修改，实际项目/Trace链接仅私有receipt。
 
 2026-10-03，M0.5：`.env` 中 Langfuse public key、secret key、base URL 均未配置（只核对是否为空，没有记录值）。
 自托管官方栈需要本项目已排除的 Redis 等组件，按 ADR-000/005 使用 Cloud 导出选项。
@@ -15,6 +15,8 @@
 
 API与CLI复用同一个OTel/OTLP HTTP导出器，不增加第二套观测框架。API先保存本地记录，再建立本轮独立云导出器；配置缺失/网络失败只记录脱敏告警，不撤销已提交的业务。Trace上传范围沿用ADR005：工具名称、参数键名、运行状态和版本等摘要，不上传聊天正文或参数值。离线API Trace没有真实模型usage，不据此宣称完整模型费用时间线。
 
-页面验收仍需用户拥有的Langfuse项目凭据，agent不代注册账号。凭据到位后可用一次免费本地业务运行验证上传及页面显示；不需要调用Claude或重新支付模型费用。
+当前无需补充凭据。真实认证、上传、读回与页面显示均已有证据；离线Trace没有模型子调用/token/实际模型账单，不扩张为这些验收。两个免费业务运行均未调用Claude或DeepSeek。
 
 当前官方依据：[Langfuse OTel配置与区域端点](https://langfuse.com/integrations/native/opentelemetry)、[OpenTelemetry Collector配置](https://opentelemetry.io/docs/collector/configuration/)。当前导出器已经发送v4 ingestion header，无需为追新增加Langfuse SDK。
+
+2026-10-04实际SDK Cloud补验：独立审查P2指出Fixture Trace不足覆盖M0.5 SDK信息。原成功SDK查询报告仅本地读取并保留SHA，明确移除正文/参数值/原身份及会话信息，以新随机ID代替；使用共享trace_report导出已核验白名单摘要。初次原报告+网络组合命令被自动审批拒绝，脱敏载荷及本地span字段证据完成后，仅读脱敏文件的上传获批；无旁路。真实认证/上传/四span精准读回/type匹配，已登录Chrome看到agent.sdk、两工具、deepseek-flash、19773tokens、原CLI/SDK版本及model_subcalls_observed=false；Input/Output为空。历史3HTTP/.042048CNY/token不改，0新模型请求/费用，实际项目链接仅私有receipt。不伪造模型子调用。

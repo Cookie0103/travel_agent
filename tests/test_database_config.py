@@ -2,10 +2,33 @@
 
 import pytest
 from sqlalchemy import URL, create_engine
+from sqlalchemy.exc import OperationalError
 from uvicorn import Config
 
 from backend.persistence.database import database_url
-from tests.integration.conftest import isolated_url
+from backend.persistence.temporary import isolated_url
+from backend.services.common import ServiceError, database_failure_reason
+
+
+@pytest.mark.parametrize(
+    "message,reason",
+    [
+        ("connection failed: timeout expired", "connection_timeout"),
+        ("connection refused", "connection_refused"),
+        ("server closed the connection unexpectedly", "connection_closed"),
+        ("password authentication failed", "authentication_failed"),
+        ("too many clients already", "connection_limit"),
+        ("private unexpected problem", "unknown"),
+    ],
+)
+def test_database_connection_diagnostics_never_return_private_exception(
+    message: str, reason: str
+) -> None:
+    original = OperationalError("private SQL", {"password": "secret-value"}, OSError(message))
+    wrapped = ServiceError(503, "unavailable", "数据库暂不可用")
+    wrapped.__context__ = original
+    assert database_failure_reason(original) == database_failure_reason(wrapped) == reason
+    assert "private" not in reason and "secret" not in reason
 
 
 def test_postgres_password_with_reserved_characters_round_trips() -> None:

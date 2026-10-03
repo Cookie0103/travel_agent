@@ -24,7 +24,7 @@ uv run --env-file .env python -m backend.cli --live "京都有哪些室内景点
 真实模式遵守最新授权：DeepSeek 每日最多15 CNY，同时取`.env`更低日预算，无累计金额/次数上限；每run HTTP/工具/修复次数仍有限。其他计费线路未授权。旧 CLI 暂拒绝 @/行首斜杠输入，避免文件展开。
 
 每次查询默认保存本地 OTel Trace：离线在 `.cache/traces/`，真实模式在私有 `.cache/sessions/`。
-配置 Langfuse 的 BASE_URL、PUBLIC_KEY、SECRET_KEY 后，可显式追加 `--trace-cloud` 导出摘要；不上传完整对话或工具结果。当前Japan项目已实际通过认证/上传/读回核对，页面需登录查看；见[真实接入证据](docs/evidence/m05-langfuse-cloud-2026-10-04.json)。
+配置 Langfuse 的 BASE_URL、PUBLIC_KEY、SECRET_KEY 后，可显式追加 `--trace-cloud` 导出摘要；不上传完整对话或工具结果。当前Japan项目已实际通过认证/上传/读回核对，已登录Chrome页面显示也通过核验；见[真实接入证据](docs/evidence/m05-langfuse-cloud-2026-10-04.json)。
 网页/API也支持：`uv run --env-file .env python -m backend.server --trace-cloud`。该开关只上传观测摘要，不启用真实模型；默认仍离线。OpenTelemetry无需独立API key，Langfuse的三项配置来自你自己的项目。云导出失败保留本地Trace和已提交业务结果，详细说明见[观测配置](docs/blocked/langfuse.md)。
 
 ## 目录放什么
@@ -90,7 +90,7 @@ uv run python scripts/dev.py stack-down
 ```
 
 打开 http://127.0.0.1:3100，创建演示会话、保存条件，再比较酒店或生成行程。专用 API/供应商/PG 端口为8100/8101/5544，均仅本机；与原开发数据库隔离。首次构建需下载锁定依赖；自动迁移/导入快照。停止保留演示数据，再次启动后可运行 `uv run python -m scripts.smoke_demo --verify` 只读检查上次烟测结果。
-专用密码在忽略的.cache/demo.env生成，不需要配置模型key；镜像没有启用真实模型或安装Claude CLI。当前容器用于离线业务演示，真实SDK走已核定宿主入口与原预算账本。不要删除专用密码后继续复用原卷。Langfuse沿用Cloud方案，真实上传/读回已验，宿主API显式启用；容器默认不传密钥，浏览器UI验收仍待登录。详见[容器交付记录](docs/review/M4.md)。
+专用密码在忽略的.cache/demo.env生成，不需要配置模型key；镜像没有启用真实模型或安装Claude CLI。当前容器用于离线业务演示，真实SDK走已核定宿主入口与原预算账本。不要删除专用密码后继续复用原卷。Langfuse沿用Cloud方案，真实上传/读回已验，宿主API显式启用；容器默认不传密钥，浏览器UI已验证。详见[容器交付记录](docs/review/M4.md)。
 
 ## 模型预算配置
 

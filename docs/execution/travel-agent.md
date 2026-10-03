@@ -20,11 +20,11 @@
 8. 验证/审查通过自动进入下一任务，不在milestone后等确认。只有真实产品需求冲突、缺credential/外部权限、高风险不可逆外部操作或无法合理决定的产品方向才升级；隔离后继续独立工作。
 9. 最终提供功能范围、主要命令/测试结果、证据、限制/风险与未满足项。有未满足项不得标记整项完成。
 
-模型额度、缺失Claude凭据、Langfuse页面、角色人工校准与完整多次评测如实保持开放；代码存在、脚本替身或小样本不能代替这些证据。
+模型额度、暂缓Claude实测、角色人工校准与其他完整多次评测如实保持开放；代码存在、脚本替身或小样本不能代替这些证据。
 
 ## 执行授权
 
-- 用户2026-10-04要求继续自主开发，**Claude真实调用暂缓，不作为本轮完成的前置条件**；保留已实现适配与历史缺口，不新增美元调用。Langfuse/OTel接入继续自主实现，Cloud UI仍须用户项目凭据；真人评分不由agent冒填，也不阻塞其他开发。
+- 用户2026-10-04要求继续自主开发，**Claude真实调用暂缓，不作为本轮完成的前置条件**；保留已实现适配与历史缺口，不新增美元调用。Langfuse/OTel接入继续自主实现，Cloud项目新凭据已验证可用；真人评分不由agent冒填，也不阻塞其他开发。
 - 用户授权连续推进，不因阶段完成、尚未合并 main 或学习材料未读而停下。允许独立审查 agent。
 - DeepSeek最新授权：**每日累计最多15.00 CNY，无累计金额/请求次数上限**（用户本次明确追加，替代旧5元/100次）。同时服从.env更低日预算；代码硬限15，即使.env更高也不能扩大许可。仍优先离线，不默认用尽额度。
 - 2026-10-03用户后续明确“次数没上限，一天总共不超过15元人民币”；不是通过有key或.env授予权限。USD授权仍0/0，其他计费供应商不得调用。
@@ -36,17 +36,19 @@
 ## 当前恢复点
 
 - 分支：batch/2026-10-03-travel-autonomous；既有origin=https://github.com/Cookie0103/travel_agent.git。
-- 最新业务代码已保存并普通push：**581870a64c0393c361dcad6e8062898b0832e75e**。本地与ls-remote完整SHA一致，提交时工作区clean，正常静态/完整默认Python钩子Passed；不合并main。前序558e7d2、bf6dc52和39历史增量均保留。
+- 最新业务代码已保存并普通push：**70072de580b8690aceeb98487e1fce69ee337a10**。本地与ls-remote完整SHA一致，提交时工作区clean，正常静态/完整默认Python钩子Passed；不合并main。前序558e7d2、bf6dc52和39历史增量均保留。
 - M1.8原工作台与本次攻略列表/全文→显式ID引用、独立正式页已实现并验证；最终web-check类型/lint/12测试/build Passed，实际浏览器V1及API停止后失败→恢复重读V1已验。原演示状态smoke --verify在最终构建后Passed、专用卷保留。两独立P2已关闭；迟到登录浏览器注入尚未做，现有Promise/微任务与源码审查范围明确。
 - full/B3及B0原40test×3各已完成，分别94/120与17/120规则通过，0error/not_run；原失败与161源码/数据/用例hash保留。bf6dc52原记录比较120完整配对/精确费用差已保存，不把结构规则说成语义质量。
-- 真实账本仍**608HTTP/12.089568CNY**，同UTC账日10-03含旧探针0.10后**12.189568/15、余额2.810432**，未结0。JST已10-04不等于UTC额度重置；无新付费请求。
+- 真实账本累计**648HTTP/12.162380CNY**，同UTC账日10-03含旧探针0.10后**12.262380/15、余额2.737620**，未结0。新增20内容/20语气评分40HTTP合计0.072812；JST已10-04不等于UTC额度重置。
 - CI：558e7d2两事件全部success。bf6dc52 PR37131409211全success，push37131407069两个原无工具评审断言暴露SDK回调竞态（HTTP2而应1），其余683passed/1已有平台skip/2live deselected、web/docker-demo success。7d1d0f6已修响应allowlist，63专项与原完整钩子Passed；新CI37132750339/37132753268全部success，Python693passed/1已有平台skip/2live deselected；24b5dcb两CI37133212223/37133214301与a1cbd73两CI37133743697/37133746081均全部success。
 - M4.2分项已保存581870a：116相关测试（实际PG/HTTP）Passed、222源码三平台strict/原静态关卡及正常完整离线提交钩子Passed，独立无P1/P2；普通push/full远端SHA已核验。原full/B0各120缺观测仍unknown，0新付费，两CI37134456437/37134458120全部success（实际Linux716passed/1已有平台skip/2live deselected，185.43秒）。
-- 当前M4.4材料：集中演示/阅读导航已更新并经独立审查（正常保存结果以Git HEAD/远端和CI为准），20条真人评审样本离线准备（17pass/3fail），0模型评分/0真人配对、两个评审prepare与两个离线统计均正确pending/null；原回答仅.cache、公共hash/选择说明无原文。固定前4原记录独立字段审阅复用eval.content：23字段匹配、两例缺Evidence，完整性均false/整体准确率null；0新调用，原记录hash不变。独立续查未见新的明确A/B产品代码缺口，未满足项继续单列。
-- M0.5/M4.1 Cloud实际接入：用户10-04配置并授权验证，Japan认证/OTLP上传/v2读回均成功，4个span与本地完全匹配，0模型HTTP。[证据](../evidence/m05-langfuse-cloud-2026-10-04.json)。API显式开关已实施/23专项通过；浏览器会话未登录仍只看到Sign In，UI不冒充通过，不阻塞其他任务。当前增量正常hooks/提交/push进行中。
-- 下一批评审预先约定：复用已离线准备的first20-v1原20回答，固定选择顺序/hash与既有rubric不改，先content后persona、各一次，不因低分/非法JSON重新付费评分。来源均仓库自写冻结旅行案例/原DeepSeek回答，非真人旅行资料；真实评审仍DeepSeek/temperature0/零工具/同SDK，按每日min(env,15)硬限，余额不足停止保留not_run。只准备模型侧评分，真人0、整体事实准确/全40代表性/真人校准保持未满足，不据这批结果调冻结test或倒填阈值。当前UTC日余额2.810432；不启动预计约9CNY的另一完整工具对照批次。
-- 当前观测提交第一次正常钩子未通过：新增shutdown spy类型缺失已显式Callable修正；完整720passed/1原恢复测试数据库OperationalError失败，15恢复/观测专项随后通过15.45s，根因仍待证据。二次原完整钩子继续，绝不绕过原断言。20内容评分19合法/1缺reason、20语气全部合法，真人仍0；实际模型费和证据将在本轮保存后集中更新，不补分或重跑失败。
-- 未满足：其他配置完整统计对照、参数/事实语义全量及真人校准、Cloud页面、M3.6邻近正常/规划质量及历史阈值预声明偏差。Claude真实API已按用户10-04要求暂缓；不当通过，也不阻塞本轮。已有三真实坏例不当全部闭环。C依plan04在A完整前不开始；总Goal不标完成。
+- 当前M4.4材料：集中演示/阅读导航已更新并经独立审查（正常保存结果以Git HEAD/远端和CI为准），20条真人评审样本离线准备（17pass/3fail），内容19合法/1缺reason、语气20合法；0真人配对、两个评审prepare与两个离线统计均正确pending/null；原回答仅.cache、公共hash/选择说明无原文。固定前4原记录独立字段审阅复用eval.content：23字段匹配、两例缺Evidence，完整性均false/整体准确率null；0新调用，原记录hash不变。独立续查未见新的明确A/B产品代码缺口，未满足项继续单列。
+- M0.5/M4.1 Cloud实际接入：用户10-04配置并授权验证，Japan认证/OTLP上传/v2读回均成功，4个span与本地完全匹配，0模型HTTP。[证据](../evidence/m05-langfuse-cloud-2026-10-04.json)。API显式开关已实施/23专项通过；既有已登录Chrome页面四节点/completed已验，初次匿名会话失败保留。70072de正常hooks/提交/push已完成，两CI37159111962/37159114642全部success。后续显式chain/agent/tool分类也真实上传/读回/页面通过，25专项与静态通过，独立无P1/P2，当前保存中。
+- 下一批评审预先约定：复用已离线准备的first20-v1原20回答，固定选择顺序/hash与既有rubric不改，先content后persona、各一次，不因低分/非法JSON重新付费评分。来源均仓库自写冻结旅行案例/原DeepSeek回答，非真人旅行资料；真实评审仍DeepSeek/temperature0/零工具/同SDK，按每日min(env,15)硬限，余额不足停止保留not_run。只准备模型侧评分，真人0、整体事实准确/全40代表性/真人校准保持未满足，不据这批结果调冻结test或倒填阈值。当前UTC日余额2.737620；不启动预计约9CNY的另一完整工具对照批次。
+- 当前观测提交第一次正常钩子未通过：新增shutdown spy类型缺失已显式Callable修正；完整720passed/1原恢复测试数据库OperationalError失败，15恢复/观测专项随后通过15.45s，根因仍待证据。二次原完整钩子通过，70072de两CI全绿；原间歇OperationalError根因未证明解决，绝不绕过原断言。20内容评分19合法/1缺reason、20语气全部合法，真人仍0；费用已更新，模型侧脱敏证据保存，不补分或重跑失败。
+- 未满足：其他配置完整统计对照、参数/事实语义全量及真人校准、M3.6邻近正常/规划质量及历史阈值预声明偏差。Claude真实API已按用户10-04要求暂缓；不当通过，也不阻塞本轮。已有三真实坏例不当全部闭环。C依plan04在A完整前不开始；总Goal不标完成。
+
+- 下一步M3.6数据缺口：原fixture和166条快照均没有抹茶/甜品店。已在私有缓存获取真实OSM三对象及英文Wikivoyage东山条目；首Overpass超时后备用官方端点200。计划显式独立补充包与原导入/工具复用，排除同店重复/未验证礼品店，冲突营业时间和价格保持未知；原快照/冻结用例/旧失败不改，先离线和实际PG验证。
 
 ## 进度
 
@@ -58,7 +60,7 @@
 | 新 M0.2 | verified | SDK 接入与费用/工具/进程边界 | d2a1b13；SDK 0.2.163、MCP 2.3.0、CLI 2.1.114；123 离线测试，2 次 live 请求；见 [证据](../protocol-agent-sdk.md) |
 | M0.3 | verified | 应用边界、会话引用、MCP 桥接 | e2d848d；149 离线测试/独立审查通过；两项审查问题有回归保护 |
 | M0.4 | verified | 旅行搜索与 CLI | 727778b；20 景点/12 攻略 fixture；166 离线测试；SDK 本地续接及 3 次请求真实查询通过；[证据](../evidence/travel-query-2026-10-03.json) |
-| M0.5 | partial（真实Cloud上传/读回已验） | 本地 Trace 和显式云导出 | 真实认证/4 spans上传读回一致、23专项；[页面待浏览器登录](../blocked/langfuse.md)，不阻塞其他开发 |
+| M0.5 | verified（实际SDK Cloud与页面已验） | 本地 Trace 和显式云导出 | 真实认证/4 spans上传读回/Chrome页面一致、25专项；[观测记录](../blocked/langfuse.md)，实际SDK历史3HTTP/19773tokens/DeepSeek页面已验，模型子调用仍unknown |
 | M0.6 | partial | 21条初始用例、规则评分、版本与恢复记录 | 离线全表已运行；首次live 1通过/1规则失败/1限次错误/18未跑，见[真实证据](../evidence/m06-baseline-2026-10-03.json) |
 | M0.7 | partial | 中性角色草案和语气评测设施 | [范围坏例回归](../evidence/m07-scope-regression-2026-10-03.json)；[LLM/人工校准待办](../blocked/persona-calibration.md) |
 | M1.1 | verified | API、身份/会话、真实数据库与迁移、CI配置 | d2cfb12；205测试/独立复核；[HTTP实测](../evidence/m11-api-smoke-2026-10-03.json)；CI未远端运行 |
@@ -72,7 +74,7 @@
 | M1.9 | verified（0b6fd8c） | 完整演示和30条回归 | R01–R08与页面证据 |
 | M2.1–M2.6 | verified（4a12656） | 模拟预订、对账、重启与断线恢复 | R09–R12，真实PG/HTTP/浏览器；真实失败小样本前后证据 |
 | M3.1–M3.6 | M3.1/M3.2/M3.3 verified / M3.4 partial（da68f86）/ M3.5 partial（f792c85）/ M3.6 partial（aab5972，三个真实输入记录已有、邻例/质量未完全通过） | 上下文/偏好、对外 MCP、编排对照、坏例修复 | R13–R17/R19；授权范围内模型实验；真实压缩质量未计入机制验收 |
-| M4.1–M4.5 | M4.1 partial（离线容器/远端Docker已验，Cloud UI待凭据）；M4.2 partial（冻结/真实120测量已有，B0同版本120次已完成，语义/人工/其他对照未验） | 可启动交付、回归报告、演示与学习索引 | 构建、冻结集、最终独立审查；未测项明示 |
+| M4.1–M4.5 | M4.1 verified（离线容器/远端Docker与宿主Cloud UI已验）；M4.2 partial（冻结/真实120测量已有，B0同版本120次已完成，语义/人工/其他对照未验） | 可启动交付、回归报告、演示与学习索引 | 构建、冻结集、最终独立审查；未测项明示 |
 
 执行时把当前阶段展开为任务级进度，附 commit 和证据链接；不为用户制造逐项批准待办。
 
@@ -280,3 +282,15 @@ aab5972正常静态/完整默认Python提交钩子通过，代码已本地保存
 - 下一离线缺口：plan05约束/预订/恢复分项统计需复用原校验与业务观测添加报告，partial/unknown/conflict分开，不把valid_draft布尔当全部硬条件满足；无真实恢复观测保持未测，旧记录缺项unknown，不重付费或改变冻结期待。
 
 - 2026-10-04恢复：用户要求继续、Claude真实调用暂缓；Langfuse三个字段仅核对空值仍缺，OpenTelemetry无需单独key。宿主API新增显式trace_cloud复用原write_trace，先本地再云端，配置/HTTP失败保留业务终态；默认有key也不上传。首17unit Passed/6PG setup errors因Docker停机，已启动现有Docker Desktop和原postgres（健康，不删卷）；修复环境后23专项2.79秒，通过追加shutdown断言后23专项2.67秒。222源码三平台strict/ruff/格式/3契约/10地图Passed，独立无P1/P2；正常提交钩子/push将继续，不因阶段通过停下。实际网络超时/Cloud页面未验，0新模型HTTP、原账本不变；真人20准备保留0配对，不代填真人。
+
+2026-10-04实际SDK Cloud补验：独立审查P2指出Fixture Trace不足覆盖M0.5 SDK信息。原成功SDK查询报告仅本地读取并保留SHA，明确移除正文/参数值/原身份及会话信息，以新随机ID代替；使用共享trace_report导出已核验白名单摘要。初次原报告+网络组合命令被自动审批拒绝，脱敏载荷及本地span字段证据完成后，仅读脱敏文件的上传获批；无旁路。真实认证/上传/四span精准读回/type匹配，已登录Chrome看到agent.sdk、两工具、deepseek-flash、19773tokens、原CLI/SDK版本及model_subcalls_observed=false；Input/Output为空。历史3HTTP/.042048CNY/token不改，0新模型请求/费用，实际项目链接仅私有receipt。不伪造模型子调用。
+
+M0.5后续保存关卡尚未通过：第一次完整静态通过、722 passed/2 live deselected/1 no_compaction建用户OperationalError setup error（188.62s）；追加只读异常分类诊断后第二次722 passed/1原SDK恢复循环status=error（182.08s）。没有跳过、删除或降断言，尚未提交该观测分类增量；新增恢复断言安全输出mutation/code/reason以定位，正在实际SDK离线+真实PG专项验证。既有70072de已push/两CI全绿，Cloud与原20评分证据不丢失。原PG间歇根因仍unknown，不能靠重跑通过宣称解决。
+
+诊断续接：14个原实际SDK/本机HTTP/真实PG恢复与压缩专项Passed（39.10s），无新的间歇故障；44个数据库/RunService/Trace回归Passed（3.45s）。前两次混合路径专项先unit后integration时6项postgres_url fixture发现失败，原全部44按integration入口先收集后通过，非跳过/降断言。新增连接故障白名单日志与worker安全标签，未知仍unknown；API错误码、重试、超时和原恢复断言均不改变，不把诊断当根因修复。正常完整关卡将再次核验，分类未输出原异常/SQL/密码。
+
+第三次原完整关卡728 passed/1 expected-failure契约失败（190.40s）：新worker诊断额外字段违反原固定字典，原测试正确拦住，已撤回字段，不改原expected字典；诊断只保留白名单日志、恢复失败元组及私有只读stderr分类probe。数据库超时的确定性失败归为connection_timeout，不将它当先前间歇根因证据。下一步专项核验原错误契约与完整关卡，尚未提交。
+
+原错误契约恢复后21个实际SDK context/recovery与连接诊断回归Passed（34.40s）；worker.py与HEAD净diff=0，原精确字典断言保留。日志为症状标签、不触发重试，间歇PG/恢复根因仍待证据；随后正常全量关卡继续。
+
+第四次完整关卡728 passed/1 failed（191.07s）：私有只读probe通过PYTEST_ADDOPTS被独立marker子进程继承，子进程无backend模块，导致INTERNALERROR；不是生产失败。撤除本次hook环境的诊断插件，保留原测试/断言与生产白名单日志，正常完整关卡重验。本轮未再出现PG/SDK恢复故障，但仍不宣称间歇根因解决。

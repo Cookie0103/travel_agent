@@ -177,12 +177,17 @@ def _spans(
         "travel.mode": "offline" if identity.provider == "fake" else "live",
         "travel.model_subcalls_observed": False,
     }
-    root = tracer.start_span("travel.run", start_time=_ns(events[0]), attributes=attributes)
+    # 聚合执行不是单次模型生成；显式类型防止云端仅凭model字段误算调用/美元费用。
+    root = tracer.start_span(
+        "travel.run",
+        start_time=_ns(events[0]),
+        attributes={**attributes, "langfuse.observation.type": "chain"},
+    )
     runtime = tracer.start_span(
         "agent.fixture" if identity.provider == "fake" else "agent.sdk",
         context=set_span_in_context(root),
         start_time=_ns(events[0]),
-        attributes=attributes,
+        attributes={**attributes, "langfuse.observation.type": "agent"},
     )
     _usage(runtime, requests, http_attempts, accounted, currency)
     incomplete = _tool_spans(tracer, runtime, events)
@@ -219,6 +224,7 @@ def _tool_spans(tracer: Tracer, parent: Span, events: Sequence[RuntimeEvent]) ->
                 context=set_span_in_context(parent),
                 start_time=_ns(event),
                 attributes={
+                    "langfuse.observation.type": "tool",
                     "tool.name": str(event.tool_name),
                     "tool.call_id": str(event.tool_call_id),
                     "tool.argument_keys": event.argument_keys,

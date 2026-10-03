@@ -540,3 +540,23 @@ R15追加：test_sdk_article_injection真实SDK/CLI+PG、本地脚本normal/inje
 - 新建隐藏in-app tab访问本次Trace，实际页面要求Sign In/无访问权限，浏览器未登录；没有将API认证替代UI登录或伪造截图。真实API接入已可用，UI保持未验。新增公共证据只host/状态/计数/hash，不含key/项目ID/原文；README/blocked/执行/M4同步当前结论。无模型调用/费用账本未变。
 - 第一次正常commit被原钩子拒绝：strict新增shutdown spy调用未类型化；full离线720passed/1failed/2live deselected（190.99s），原进程stage后恢复并发测试OperationalError/sqlstate None，原断言未改。spy显式Callable声明修复，无type ignore；win32该文件strict Passed。Docker近期日志有正常重启恢复与负例密码认证失败，没有对应可证实服务崩溃，根因不称已定位。15恢复/观测专项15.45s全部通过；准备再次原完整钩子。
 - 预先固定20样本content一次20HTTP/0.035082CNY，19scored/1judge_error，test-hotel-policy缺reason；严格解析保留失败，不自动重试/补分。随后persona同20一次20合法评分；两类真人配对0/calibration pending。原输入/全部结果留私有，公共结果准备汇总；未调冻结期待或rubric。
+
+## 10-04观测页面、分类与原20模型评审续接（UTC10-03）
+
+70072de正常完整钩子/普通push/full远端SHA一致，两CI37159111962/37159114642 Python/web/docker-demo success。第一次新增shutdown类型/原恢复OperationalError失败和15专项通过记录保留。已登录Chrome原Trace四节点/completed确认，初次匿名IAB无权限只是历史。明确chain/agent/tool避免聚合误分类；25专项2.72秒/静态222三平台及独立无P1/P2，第二次真实四span/type精准读回与页面通过、0模型请求。密钥/项目/TraceID/rawDOM不进Git。
+
+原first20-v1固定顺序/hash：content先、persona后各一次，40实际DeepSeekHTTP/.072812CNY；19合法内容/1缺reason、20合法语气，真人0、校准pending/null，原失败保留/无付费重试。累计648/12.162380，UTC日加原探针.10为12.262380/15。原full/B0/冻结/原回答hash不改。
+
+M3.6正常邻例数据准备：原fixture/166快照无抹茶甜品。private.coffee读取超时后overpass-api.de真实抓取3对象成功；英文WikiAPI东山5352679成功，私有原文/hash留.cache。主店两个相近节点同店、另礼品店不足验证；营业时间与官方店页冲突，不填确定hours/价格。拟独立显式开发补充包，复用领域/导入/业务，未修改原基准。
+
+2026-10-04实际SDK Cloud补验：独立审查P2指出Fixture Trace不足覆盖M0.5 SDK信息。原成功SDK查询报告仅本地读取并保留SHA，明确移除正文/参数值/原身份及会话信息，以新随机ID代替；使用共享trace_report导出已核验白名单摘要。初次原报告+网络组合命令被自动审批拒绝，脱敏载荷及本地span字段证据完成后，仅读脱敏文件的上传获批；无旁路。真实认证/上传/四span精准读回/type匹配，已登录Chrome看到agent.sdk、两工具、deepseek-flash、19773tokens、原CLI/SDK版本及model_subcalls_observed=false；Input/Output为空。历史3HTTP/.042048CNY/token不改，0新模型请求/费用，实际项目链接仅私有receipt。不伪造模型子调用。
+
+M0.5后续保存关卡尚未通过：第一次完整静态通过、722 passed/2 live deselected/1 no_compaction建用户OperationalError setup error（188.62s）；追加只读异常分类诊断后第二次722 passed/1原SDK恢复循环status=error（182.08s）。没有跳过、删除或降断言，尚未提交该观测分类增量；新增恢复断言安全输出mutation/code/reason以定位，正在实际SDK离线+真实PG专项验证。既有70072de已push/两CI全绿，Cloud与原20评分证据不丢失。原PG间歇根因仍unknown，不能靠重跑通过宣称解决。
+
+诊断续接：14个原实际SDK/本机HTTP/真实PG恢复与压缩专项Passed（39.10s），无新的间歇故障；44个数据库/RunService/Trace回归Passed（3.45s）。前两次混合路径专项先unit后integration时6项postgres_url fixture发现失败，原全部44按integration入口先收集后通过，非跳过/降断言。新增连接故障白名单日志与worker安全标签，未知仍unknown；API错误码、重试、超时和原恢复断言均不改变，不把诊断当根因修复。正常完整关卡将再次核验，分类未输出原异常/SQL/密码。
+
+第三次原完整关卡728 passed/1 expected-failure契约失败（190.40s）：新worker诊断额外字段违反原固定字典，原测试正确拦住，已撤回字段，不改原expected字典；诊断只保留白名单日志、恢复失败元组及私有只读stderr分类probe。数据库超时的确定性失败归为connection_timeout，不将它当先前间歇根因证据。下一步专项核验原错误契约与完整关卡，尚未提交。
+
+原错误契约恢复后21个实际SDK context/recovery与连接诊断回归Passed（34.40s）；worker.py与HEAD净diff=0，原精确字典断言保留。日志为症状标签、不触发重试，间歇PG/恢复根因仍待证据；随后正常全量关卡继续。
+
+第四次完整关卡728 passed/1 failed（191.07s）：私有只读probe通过PYTEST_ADDOPTS被独立marker子进程继承，子进程无backend模块，导致INTERNALERROR；不是生产失败。撤除本次hook环境的诊断插件，保留原测试/断言与生产白名单日志，正常完整关卡重验。本轮未再出现PG/SDK恢复故障，但仍不宣称间歇根因解决。

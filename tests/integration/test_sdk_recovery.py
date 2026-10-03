@@ -76,7 +76,12 @@ def test_native_sdk_process_restart_and_snapshot_fallbacks(
         report, guard = run_database_worker(
             travel, replace(context, run_id=uuid4()), tmp_path, forward, "继续读取最新条件"
         )
-        assert report["status"] == "success" and not guard.failures
+        assert report["status"] == "success" and not guard.failures, (
+            mutation,
+            report.get("code"),
+            report.get("reason"),
+            guard.failures,
+        )
         assert report["checkpoint_persisted"] is True
         actual_id = sdk_id(report)
         assert report["resume_mode"] == ("sdk" if mutation == "none" else "business_snapshot")

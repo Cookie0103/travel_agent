@@ -17,6 +17,42 @@ from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity
 IDENTITY = RuntimeIdentity("fake", "scripted", "none", "none")
 
 
+@pytest.mark.parametrize(
+    "identity", [IDENTITY, RuntimeIdentity("deepseek", "deepseek-flash", "0.2.163", "2.1.114")]
+)
+def test_aggregate_execution_is_not_a_model_generation_or_dollar_cost(
+    tmp_path: Path, identity: RuntimeIdentity
+) -> None:
+    """R17：不把零模型离线或多HTTP聚合执行冒充单次generation。"""
+    path = tmp_path / "trace.jsonl"
+    write_trace(
+        path,
+        events(),
+        identity,
+        requests=[{"input_tokens": 7, "output_tokens": 2, "usage_cost_upper_cny": "0.01"}],
+        http_attempts=1,
+        accounted_cny=Decimal("0.01"),
+    )
+    spans = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    assert {s["attributes"]["langfuse.observation.type"] for s in spans} == {
+        "chain",
+        "agent",
+        "tool",
+    }
+    root = next(s for s in spans if s["name"] == "travel.run")
+    runtime = next(s for s in spans if s["name"].startswith("agent."))
+    assert root["attributes"]["langfuse.observation.type"] == "chain"
+    assert runtime["attributes"]["langfuse.observation.type"] == "agent"
+    assert runtime["attributes"]["travel.model_subcalls_observed"] is False
+    assert runtime["attributes"]["travel.currency"] == "CNY"
+    assert runtime["attributes"]["travel.run_accounted_cny"] == "0.01"
+    assert not any(
+        k in s["attributes"]
+        for s in spans
+        for k in ("gen_ai.usage.cost", "langfuse.observation.cost_details")
+    )
+
+
 def test_invalid_parameter_name_cannot_leak_into_observed_trace(tmp_path: Path) -> None:
     import asyncio
 

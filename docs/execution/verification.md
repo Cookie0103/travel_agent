@@ -28,7 +28,7 @@
 | R19 对外只读MCP | 官方客户端legacy/auto、四查询与直接handlers同事实/来源 | 鉴权、跨用户、非法/未知工具、空结果、DB/工具故障、Host/Origin/请求大小 | tests/integration/test_mcp_server.py；docs/review/M3.md | 真实TCP/PG及独立复核通过；仅本机演示Bearer，不声称企业OAuth/公网部署 |
 | 酒店比较/刷新 | 同入住口径、并列最低、服务端报价 | 缺人数/税费、不匹配、过期、无库存 | tests/test_hotels.py；tests/integration/test_hotels.py；test_sdk_hotels.py | 网页过期与恢复 |
 | M1.8工作台 | 条件→比较→草稿→确认→局部改程 | 类型、SSE分块、错误显示、失效确认、锁定拒绝 | 前端类型/lint/build、PG链路、真实浏览器 | 类型/lint/build/10前端测试、PG全链与浏览器正常/失效/锁定/刷新通过；M2实际丢响应与重启恢复已验 |
-| Trace/评测/角色 | 本地OTLP、规则评分/版本、角色草案 | 导出失败、模型费用守卫、规则坏例 | tests/test_tracing.py；test_eval.py；test_persona.py | 历史30/冻结60设施与离线三轮已验；Langfuse UI、实际多次模型统计、人工校准仍未满足 |
+| Trace/评测/角色 | 本地OTLP、规则评分/版本、角色草案 | 导出失败、模型费用守卫、规则坏例 | tests/test_tracing.py；test_eval.py；test_persona.py | 历史30/冻结60设施与离线三轮已验；Langfuse真实Cloud与页面已验；其他模型统计、人工校准仍未满足 |
 | M3.4 业务评测/固定流程 | 每案例新PG身份与条件、SDK/schema/数据相同、完整固定步骤 | 非法初始条件、目录漂移不覆盖、先fsync后付费、上限非法拒绝、空/失败阶段不推进、usage不全为unknown | tests/test_workflow.py；tests/integration/test_database_eval.py；docs/evidence/m34-hotel-comparison-2026-10-03.json | 酒店两组各n=1真实规则通过；完整行程对照、更多案例/重复和语义评分仍待验 |
 
 R18与C档实现按既定plan明确排除；C档仅交付ADR。新增主要功能同时补正常、分支、边界、输入和合理依赖故障，不只增加happy path。
@@ -93,4 +93,12 @@ R15追加：test_sdk_article_injection真实SDK/CLI+PG、本地脚本normal/inje
 
 M4.2业务分项追加：复用一次PG事后核对与get_draft当前身份/条件/正式版本重校验，保存完整check_counts，complete/partial/conflict/无候选/不可用分开；partial不算全部硬约束验证通过，覆盖不足时总比率null。模拟暂留/unknown/预期故障且无额外订单单列，冻结集没执行恢复目标仍unmeasured。新manifest版本与逐行字段/适用范围/摘要严格核对；旧paid记录不补造，原full/B0各120缺观测、规则94/17和费用未改变。116相关测试含实际PG/HTTP 28.55秒Passed；222源码三平台strict/ruff/格式/3分层契约/10地图Passed，独立无P1/P2。正常完整钩子/push继续；证据m42-business-metrics-2026-10-04，0新付费。
 
-M0.5/M4.1 API观测追加：test_run_trace真实PG+本机OTLP HTTP覆盖显式开关、默认有key不外发、200/400/缺secret。上传与本地trace_id一致、正文/secret不导出；三种失败/默认路径均保留completed/条件revision2、本地JSONL与无持久化失败。实际OTLP exporter.shutdown断言在200/400各一次；网络超时未实际注入，不当通过。23相关测试2.67秒Passed；222源码三平台strict/ruff/格式/3分层契约/10地图Passed。Cloud页面仍缺项目凭据，Claude实测依用户最新要求暂缓。
+M0.5/M4.1 API观测追加：test_run_trace真实PG+本机OTLP HTTP覆盖显式开关、默认有key不外发、200/400/缺secret。上传与本地trace_id一致、正文/secret不导出；三种失败/默认路径均保留completed/条件revision2、本地JSONL与无持久化失败。实际OTLP exporter.shutdown断言在200/400各一次；网络超时未实际注入，不当通过。23相关测试2.67秒Passed；222源码三平台strict/ruff/格式/3分层契约/10地图Passed。后续真实Cloud与Chrome页面已验；Claude实测依用户最新要求暂缓。
+
+2026-10-04观测后续：真实Japan认证/两次离线OTLP上传/v2精确四span读回与已登录Chrome页面/completed通过，0模型请求。第二次明确chain/agent/tool云端类型一致；25专项2.72秒、222文件三平台strict/原静态通过，独立无P1/P2。70072de正常完整钩子及两CI37159111962/37159114642全部success；第一次原恢复OperationalError失败仍保留，不宣称根因修复。原前20模型辅助评分：content19合法/1缺reason、persona20合法，40HTTP/.072812CNY，真人0/校准pending/null，不补分或改冻结test。
+
+2026-10-04实际SDK Cloud补验：独立审查P2指出Fixture Trace不足覆盖M0.5 SDK信息。原成功SDK查询报告仅本地读取并保留SHA，明确移除正文/参数值/原身份及会话信息，以新随机ID代替；使用共享trace_report导出已核验白名单摘要。初次原报告+网络组合命令被自动审批拒绝，脱敏载荷及本地span字段证据完成后，仅读脱敏文件的上传获批；无旁路。真实认证/上传/四span精准读回/type匹配，已登录Chrome看到agent.sdk、两工具、deepseek-flash、19773tokens、原CLI/SDK版本及model_subcalls_observed=false；Input/Output为空。历史3HTTP/.042048CNY/token不改，0新模型请求/费用，实际项目链接仅私有receipt。不伪造模型子调用。
+
+诊断续接：14个原实际SDK/本机HTTP/真实PG恢复与压缩专项Passed（39.10s），无新的间歇故障；44个数据库/RunService/Trace回归Passed（3.45s）。前两次混合路径专项先unit后integration时6项postgres_url fixture发现失败，原全部44按integration入口先收集后通过，非跳过/降断言。新增连接故障白名单日志与worker安全标签，未知仍unknown；API错误码、重试、超时和原恢复断言均不改变，不把诊断当根因修复。正常完整关卡将再次核验，分类未输出原异常/SQL/密码。
+
+原错误契约恢复后21个实际SDK context/recovery与连接诊断回归Passed（34.40s）；worker.py与HEAD净diff=0，原精确字典断言保留。日志为症状标签、不触发重试，间歇PG/恢复根因仍待证据；随后正常全量关卡继续。

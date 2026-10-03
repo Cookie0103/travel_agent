@@ -23,6 +23,22 @@ def database_error_details(error: BaseException) -> tuple[str, str | None]:
     )
 
 
+def database_failure_reason(error: BaseException) -> str:
+    """连接故障可能没有SQLSTATE；只记录白名单原因，不输出原异常或连接串。"""
+    original = getattr(error.__context__, "orig", None) or getattr(error, "orig", error)
+    message = str(original).casefold()
+    for reason, markers in (
+        ("connection_timeout", ("timeout expired", "connection timed out")),
+        ("connection_refused", ("connection refused",)),
+        ("connection_closed", ("server closed the connection", "connection reset")),
+        ("authentication_failed", ("password authentication failed",)),
+        ("connection_limit", ("too many clients", "too many connections")),
+    ):
+        if any(marker in message for marker in markers):
+            return reason
+    return "unknown"
+
+
 class ServiceError(RuntimeError):
     def __init__(self, status: int, code: ErrorCode, message: str) -> None:
         self.status, self.code = status, code
@@ -36,5 +52,10 @@ async def transaction(database: Database) -> AsyncIterator[AsyncSession]:
             yield db
     except (SQLAlchemyError, OSError) as error:
         kind, sqlstate = database_error_details(error)
-        LOGGER.error("Database transaction failed: error=%s sqlstate=%s", kind, sqlstate)
+        LOGGER.error(
+            "Database transaction failed: error=%s sqlstate=%s reason=%s",
+            kind,
+            sqlstate,
+            database_failure_reason(error),
+        )
         raise ServiceError(503, "unavailable", "数据库暂不可用") from None
