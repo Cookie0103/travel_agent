@@ -133,3 +133,14 @@
 - 独立审查发现测试URL query可能覆盖随机数据库/本机host；清空测试连接query，增加实际方言参数测试。无连接回归首次因方言附带类型适配context而全字典相等失败；改为精确路由断言并禁止hostaddr/service，未放宽隔离规则。7项专项通过。
 - check87文件/3分层契约通过；最终完整验证/独立复核待记录。无新增模型请求。
 - 最终dev test205 passed/2 deselected（17.60秒），独立复核无剩余P1/P2，准备正常本地提交。
+- M1.1正常提交钩子通过，保存d2cfb12。
+
+## M1.2 真实数据与营业时间
+
+- 核对Wikivoyage Copyleft（CC BY-SA4.0）、OSM Copyright（ODbL1.0）、MediaWiki revision与Overpass官方文档。单独保留数据许可，不把仓库代码许可应用于第三方数据。
+- 获取中文京都extract版本196315。主Overpass节点504；备用官方列表实例先返回40个节点，再取消输出截断并加入主要景点，最终146个对象/28个含opening_hours。无持续重试；公开原始文件/请求/UTC时间/hash写入data/snapshots。
+- 导入切20段攻略；Place/Article/Source共用Pydantic契约，JSONB目录保存完整来源，已有search继续负责匹配；不另写第二套搜索框架。M0 CLI仍fixture，M1.4接正式DB工具。
+- 营业时间支持星期列表/范围、固定时段、off、24/7、单规则跨午夜；复杂节假日/季节和交互跨午夜规则均unknown。缺indoor不按类别推断。
+- check94文件/3契约通过；专项首次15通过/1失败为测试错误假设原始数字ID顺序等于DB字符串排序，改按稳定ID逐条核对来源；最终16专项通过（0.57秒）。
+- dev db-migrate和python -m data.import_catalog在项目真实库成功，entries_processed166。数据库失败回滚/重复导入已由真实测试覆盖。独立审查/最终完整测试进行中，无新增模型费用。
+- 最终dev test221 passed/2 deselected（18.31秒）；独立审查无P1/P2，建议明确OSM的2026-06-01数据基准已采纳。M1.4接入时必须使用snapshot标记，不继承fixture警告。

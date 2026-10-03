@@ -1,9 +1,10 @@
-"""业务表映射；M1.1 只包含演示身份和会话，不把 SDK transcript 当数据库。"""
+"""业务表映射；身份/会话与公开快照独立存储，不把SDK transcript当数据库。"""
 
 from datetime import datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import DateTime, ForeignKey, MetaData, String, func
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -34,3 +35,14 @@ class SessionRow(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CatalogRow(Base):
+    """小规模只读目录；payload由Place/Article契约验证，保留来源与版本。"""
+
+    __tablename__ = "catalog_entries"
+
+    id: Mapped[str] = mapped_column(String(100), primary_key=True)
+    kind: Mapped[str] = mapped_column(String(10))
+    city: Mapped[str] = mapped_column(String(40), index=True)
+    payload: Mapped[dict[str, object]] = mapped_column(JSONB)

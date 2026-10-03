@@ -5,3 +5,6 @@
 会话SQL必须同时过滤id和user_id；令牌仅存摘要与过期时间。
 一事务一AsyncSession，不跨异步任务共享。API通过services访问本包。
 配置错误/SQL参数不输出密钥；.env默认读取数据库相关字段，环境变量优先。
+# 快照目录
+
+`catalog.import_catalog`在调用方事务中幂等更新，`load_catalog`返回已验证的公开快照给现有搜索函数。

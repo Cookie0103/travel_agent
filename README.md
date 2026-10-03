@@ -7,7 +7,7 @@
 **现在可以运行旅行查询 CLI 和基础会话 API。** 默认离线演示会查询景点和攻略，并显示测试来源；正式模式使用 Claude Agent SDK。API 已接 PostgreSQL，前端与行程规划仍在开发。
 当前进度只看 [长程执行计划](docs/execution/travel-agent.md)；阶段性验证自动继续，用户最终集中运行与学习。开发顺序见 [M0 规格](docs/tasks/M0.md)，历史记录从 [文档目录](docs/README.md) 进入。
 
-当前数据为人工编写的 fixtures，标签不代表实时事实，营业时间未知。后续攻略/地点快照计划来自 [Wikivoyage](https://en.wikivoyage.org/)（CC BY-SA）与 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）。酒店与预订均为模拟。
+CLI默认仍用人工 fixtures。数据库已导入 [Wikivoyage](https://en.wikivoyage.org/)（CC BY-SA 4.0）20段攻略与 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）146个地点对象；快照有历史和缺失信息，不能当实时事实。酒店与预订均为模拟。
 
 ## 运行最小查询
 
@@ -102,6 +102,7 @@ DATABASE_URL 可留空，由这些字段安全组合；如果填写则优先使�
 ```text
 uv run python scripts/dev.py db-up
 uv run python scripts/dev.py db-migrate
+uv run python -m data.import_catalog
 uv run python -m backend.server
 ```
 
