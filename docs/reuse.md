@@ -80,7 +80,11 @@ travel/api/main.py：MockTravel + ShoppingAgent + itinerary 展示扩展
 | examples/demo_common/host.py / write_back | 会话冲突后读取新版本再保存旧 turn | 不沿用；本项目要求条件更新，不能覆盖较新请求 |
 | commerce-common/testing.py / FakeClient | 脚本化响应、记录调用；响应耗尽即失败 | 参考离线脚本化测试策略；SDK 路线用 FakeRuntime，不复制 |
 
-## 边界
+## M3.3 SDK公共能力核查
+
+2026-10-03：[官方MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk)与安装2.3一致；使用Server的on_list_tools/on_call_tool及StreamableHTTPSessionManager，不使用已变更的旧v1装饰器。schema复用本项目定义，协议交SDK；Client和streamable_http_client用于实际HTTP回归。来源阅读用于选接口，不复制上游应用代码。
+
+## M0.1 当时边界（历史）
 
 - 没有调用 DeepSeek、Claude 或其他 LLM API；没有做协议实测。
 - 没有执行上游测试，因此不能声称上游运行通过。

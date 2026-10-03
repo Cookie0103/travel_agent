@@ -314,3 +314,13 @@
 - 新专项先失败3项：FakeRuntime成功缺sdk_session_id被原守卫判provider_error；补完整假会话ID，不改产品守卫。mypy拒绝SQL条件中的普通bool，改SQLAlchemy true()。重跑PG/实际CLI/版本13通过（9.83秒）、check176通过；实际CLI覆盖原空偏好和已保存偏好且旧回答已持久化。独立复核两P2关闭，无新增P1/P2。
 - 真实浏览器鼠标保存无效，键盘提交成功；截图证明旧conditions吸顶覆盖偏好表单，移除吸顶后鼠标保存/刷新/清除/重复清空通过，旅行条件仍rev0。网页版本0→1→2→3→4；最终空偏好rev4，截图m32-preferences-saved/deleted.jpg。不是把键盘成功冒充鼠标成功。
 - 最终dev test 400 passed/2 live deselected（91.94秒），dev web-check类型/lint/10测试/生产build通过；项目PG迁移0010。API70996、Next60844、供应商12178仍为本地测试进程。付费计数/金额无变化。普通提交后自动继续M3，不等用户验收。
+
+- 3590b2c保存M3.2；普通check/test钩子通过，31文件，无push，自动继续。
+
+### M3.3 对外只读MCP
+
+- 读官方MCP最新README与安装2.3公共Server回调/StreamableHTTPSessionManager/客户端API；旧装饰器接口不存在，不照抄v1。仅四个既定read工具，schema/TravelToolExecutor复用，逐HTTP Bearer与owned session URL，stateless/JSON；每call新执行器保持原run绑定不变量。
+- 首轮类型检查发现MCP2.3使用snake_case公共参数、ServiceError无message属性，按实际类型修。首次HTTP两失败因httpx2 base_url无末尾斜线，改URL.join；随后事实比较误把两次新Evidence UUID当同值，改为逐字段事实/来源比较并单独验证各自UUID绑定及PG可解析，不降低Evidence检查。
+- 专项5通过（6.87秒）：官方Client legacy/auto、真实PG、真实TCP正常→工具故障、401/404归属、非法/未知工具、空结果、缺实体、DB503、64KiB上限。结构化/文本结果及is_error一致。
+- SDK :*只按前缀匹配；额外urlsplit严格本机host、有效port、无userinfo/path/query/fragment/空白，伪端口后缀回归通过。保留SDK安全设置，未关闭保护。独立复核无可复现P1/P2，无复制协议/新增依赖或模型费用。
+- check178/3契约/10地图通过；完整405 passed/2 live deselected（99.65秒）。普通本地提交后继续M3.1，不等用户review。MCP独立服务入口已写包README，未对公网发布。

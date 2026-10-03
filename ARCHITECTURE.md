@@ -11,7 +11,7 @@
 | backend/persistence | SQLAlchemy表、仓储SQL、Alembic迁移；PostgreSQL事实来源 |
 | backend/agent | 应用运行契约、上下文策略、应用事件；默认离线替身明确标注 |
 | backend/providers | Claude SDK生命周期、隔离worker、费用边界及供应商适配 |
-| backend/tools / mcp | 单份工具schema/业务执行器；复用SDK的MCP桥接 |
+| backend/tools / mcp | 单份schema/业务执行器；SDK进程内桥接与server对外四个只读查询 |
 | backend/adapters | 脱敏Trace与外部观测导出 |
 | data / eval / scripts | 数据快照/fixture、评测、开发命令 |
 | apps/web / mock_supplier | 前端与模拟供应商位置；实施状态看执行计划 |
