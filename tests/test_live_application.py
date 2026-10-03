@@ -25,9 +25,16 @@ def test_parent_failure_never_publishes_worker_completed(
     guards: list[Guard] = []
 
     def guard(
-        settings: Settings, budget: Budget, forward: Forward, *, allowed_tools: frozenset[str]
+        settings: Settings,
+        budget: Budget,
+        forward: Forward,
+        *,
+        allowed_tools: frozenset[str],
+        max_attempts: int = 4,
     ) -> Guard:
-        created = Guard(settings, budget, forward, allowed_tools=allowed_tools)
+        created = Guard(
+            settings, budget, forward, allowed_tools=allowed_tools, max_attempts=max_attempts
+        )
         guards.append(created)
         return created
 
@@ -74,6 +81,18 @@ def test_application_rejects_cross_run_report() -> None:
     )
     report: dict[str, object] = {"status": "success", "results": [asdict(result)]}
     assert application.outcome(report, context).code == "blocked"
+
+
+@pytest.mark.parametrize("limit", [0, -1, 13, True])
+def test_invalid_request_limit_stops_before_loading_credentials(
+    limit: int, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    def forbidden(*args: object) -> Settings:
+        raise AssertionError("invalid limit must not reach credentials or model")
+
+    monkeypatch.setattr(live, "load_settings", forbidden)
+    with pytest.raises(ProbeError, match="validation"):
+        live.run_live("offline", RunContext(uuid4()), tmp_path, max_attempts=limit)
 
 
 def test_external_cancel_waits_for_cleanup_even_when_worker_raises(

@@ -29,6 +29,7 @@
 | 酒店比较/刷新 | 同入住口径、并列最低、服务端报价 | 缺人数/税费、不匹配、过期、无库存 | tests/test_hotels.py；tests/integration/test_hotels.py；test_sdk_hotels.py | 网页过期与恢复 |
 | M1.8工作台 | 条件→比较→草稿→确认→局部改程 | 类型、SSE分块、错误显示、失效确认、锁定拒绝 | 前端类型/lint/build、PG链路、真实浏览器 | 类型/lint/build/6前端测试、PG全链与浏览器正常/失效/锁定/刷新通过；丢响应实际故障待M2 |
 | Trace/评测/角色 | 本地OTLP、规则评分/版本、角色草案 | 导出失败、模型费用守卫、规则坏例 | tests/test_tracing.py；test_eval.py；test_persona.py | Langfuse UI、30/60条、多次模型统计、人工校准 |
+| M3.4 业务评测/固定流程 | 每案例新PG身份与条件、SDK/schema/数据相同、完整固定步骤 | 非法初始条件、目录漂移不覆盖、先fsync后付费、上限非法拒绝、空/失败阶段不推进、usage不全为unknown | tests/test_workflow.py；tests/integration/test_database_eval.py；docs/evidence/m34-hotel-comparison-2026-10-03.json | 酒店两组各n=1真实规则通过；完整行程对照、更多案例/重复和语义评分仍待验 |
 
 R18与C档实现按既定plan明确排除；C档仅交付ADR。新增主要功能同时补正常、分支、边界、输入和合理依赖故障，不只增加happy path。
 

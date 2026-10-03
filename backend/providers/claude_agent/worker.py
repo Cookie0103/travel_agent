@@ -9,6 +9,8 @@ from dataclasses import asdict, replace
 from pathlib import Path
 from uuid import UUID, uuid4
 
+from pydantic import TypeAdapter
+
 from backend.agent.persona import travel_prompt
 from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity
@@ -20,6 +22,7 @@ from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition, ToolExecutor
 from backend.tools.search import DEFINITIONS, SearchExecutor
 from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
+from backend.tools.workflow import WorkflowName
 
 
 async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
@@ -42,6 +45,9 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         str(payload["cli_version"]),
     )
     dsn = payload.get("database_dsn")
+    workflow: WorkflowName | None = TypeAdapter(WorkflowName | None).validate_python(
+        payload.get("workflow")
+    )
     if isinstance(dsn, str):
         supplier_url = payload.get("supplier_url")
         async with database_tools(
@@ -60,6 +66,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
                 checkpoints=Checkpoints(Path.cwd()),
                 revision=revision,
                 preference_revision=preference_revision,
+                workflow=workflow,
             )
     return await run_prompts(
         prompts, context, identity, cli, DEFINITIONS, SearchExecutor(), travel_prompt()
@@ -78,8 +85,9 @@ async def run_prompts(
     checkpoints: Checkpoints | None = None,
     revision: int = 0,
     preference_revision: int = 0,
+    workflow: WorkflowName | None = None,
 ) -> dict[str, object]:
-    config = RuntimeConfig(identity, cli, Path.cwd(), system)
+    config = RuntimeConfig(identity, cli, Path.cwd(), system, workflow=workflow)
     agent = Agent(ClaudeRuntime(config, definitions, executor))
     events: list[RuntimeEvent] = []
 

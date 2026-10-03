@@ -12,6 +12,7 @@ import time
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import TextIO
 from uuid import uuid4
 
 from pydantic import TypeAdapter
@@ -19,10 +20,16 @@ from pydantic import TypeAdapter
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RunResult, RuntimeEvent
+from backend.persistence.database import configuration, database_url
 from backend.providers.claude_agent.live import run_live
 from backend.providers.probe.settings import ProbeError
+from backend.services.common import ServiceError
+from backend.tools.contracts import ToolDefinition
 from backend.tools.search import DEFINITIONS, SearchExecutor
+from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
+from backend.tools.workflow import WORKFLOWS, WorkflowName
 from eval.cases import Case, load_cases
+from eval.database import DATA_VERSION, DatabaseEvaluation, database_evaluation, selector_runner
 from eval.graders import Observation, grade
 from eval.persona import rules as persona_rules
 
@@ -30,14 +37,34 @@ ROOT = Path(__file__).resolve().parents[1]
 
 
 async def observe(
-    case: Case, live: bool, context: RunContext
+    case: Case,
+    live: bool,
+    context: RunContext,
+    *,
+    business: DatabaseEvaluation | None = None,
+    workflow: WorkflowName | None = None,
+    max_attempts: int = 4,
 ) -> tuple[Observation, dict[str, object]]:
     if live:
-        report = run_live(case.input, context, ROOT)
+        report = (
+            await asyncio.to_thread(
+                run_live,
+                case.input,
+                context,
+                ROOT,
+                database_dsn=business.dsn(),
+                workflow=workflow,
+                max_attempts=max_attempts,
+            )
+            if business
+            else run_live(case.input, context, ROOT)
+        )
         results = TypeAdapter(list[RunResult]).validate_python(report.get("results", []))
         events = TypeAdapter(tuple[RuntimeEvent, ...]).validate_python(report.get("events", []))
         status = "completed" if report.get("status") == "success" else "failed"
         return Observation(status, results[-1].outcome.text if results else "", events), report
+    if business:
+        return await business.observe(case, context, workflow)
     events_list: list[RuntimeEvent] = []
     agent = Agent(FixtureRuntime(SearchExecutor()))
     result = await agent.run(context, case.input, events_list.append)
@@ -46,14 +73,42 @@ async def observe(
     ), {"identity": asdict(agent.runtime.identity)}
 
 
-async def run_cases(cases: list[Case], directory: Path, *, live: bool = False) -> dict[str, object]:
+async def run_cases(
+    cases: list[Case],
+    directory: Path,
+    *,
+    live: bool = False,
+    business: DatabaseEvaluation | None = None,
+    workflow: WorkflowName | None = None,
+    max_attempts: int = 4,
+) -> dict[str, object]:
+    if not business and (
+        workflow or max_attempts != 4 or any(case.initial_state for case in cases)
+    ):
+        raise ValueError("固定流程或初始业务条件需要--database")
     directory.mkdir(parents=True, exist_ok=False)
     (directory / "manifest.json").write_text(
-        json.dumps(manifest(cases), ensure_ascii=False, indent=2) + "\n",
+        json.dumps(
+            {
+                **manifest(cases, TRAVEL_DEFINITIONS if business else DEFINITIONS),
+                "workflow": workflow or "autonomous",
+                "business_database": business is not None,
+                "catalog_sha256": business.catalog_sha256 if business else None,
+                "data_version": DATA_VERSION if business else "kyoto-fixture-v1",
+                "max_http_attempts_per_case": max_attempts if live else 0,
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        + "\n",
         encoding="utf-8",
         newline="\n",
     )
-    mode = "live" if live else "offline_fixture"
+    mode = (
+        ("live_database" if live else "offline_database_fixture")
+        if business
+        else ("live" if live else "offline_fixture")
+    )
     print(f"模式：{mode}；规则分不代表完整任务质量，离线分不代表模型能力。")
     rows: list[dict[str, object]] = []
     passed = 0
@@ -63,17 +118,15 @@ async def run_cases(cases: list[Case], directory: Path, *, live: bool = False) -
         (directory / "attempts.jsonl").open("w", encoding="utf-8", newline="\n") as attempts,
     ):
         for case in cases:
-            context = RunContext(uuid4())
-            if not stop:
-                # 不变量：先落盘 case 与会话目录关联，再允许付费；未完成记录不可自动重试。
-                attempts.write(
-                    json.dumps({"case_id": case.case_id, "context": asdict(context)}, default=str)
-                    + "\n"
-                )
-                attempts.flush()
-                os.fsync(attempts.fileno())
             row: dict[str, object] = (
-                await run_case(case, context, live=live)
+                await attempt_case(
+                    case,
+                    attempts,
+                    live=live,
+                    business=business,
+                    workflow=workflow,
+                    max_attempts=max_attempts,
+                )
                 if not stop
                 else {
                     "case_id": case.case_id,
@@ -100,11 +153,13 @@ async def run_cases(cases: list[Case], directory: Path, *, live: bool = False) -
         "not_run": sum(r["status"] == "not_run" for r in rows),
         "rule_pass_rate": passed / evaluated if evaluated else None,
         "repetitions": 1,
-        "data_version": "kyoto-fixture-v1",
+        "data_version": DATA_VERSION if business else "kyoto-fixture-v1",
+        "workflow": workflow or "autonomous",
         "limitations": [
             "规则匹配不证明事实/相关性",
-            "CLI搜索fixture不执行DB业务；业务规格仍按原期待评分，不代表应用未实现这些功能",
-            "离线为固定工具脚本",
+            "DB模式共享应用业务工具，搜索模式只含搜索fixture",
+            "离线为固定工具脚本，不是模型自主选择或固定编排效果",
+            "案例声明的历史fixture标签保留；actual data_version与源文件hash记录本次实际数据",
         ],
     }
     (directory / "summary.json").write_text(
@@ -114,11 +169,54 @@ async def run_cases(cases: list[Case], directory: Path, *, live: bool = False) -
     return summary
 
 
-async def run_case(case: Case, context: RunContext, *, live: bool) -> dict[str, object]:
+async def attempt_case(
+    case: Case,
+    attempts: TextIO,
+    *,
+    live: bool,
+    business: DatabaseEvaluation | None,
+    workflow: WorkflowName | None,
+    max_attempts: int,
+) -> dict[str, object]:
+    try:
+        context = await business.prepare(case) if business else RunContext(uuid4())
+    except (ServiceError, ValueError, OSError):
+        return {"case_id": case.case_id, "status": "error", "reason": "business_setup_failed"}
+    # 不变量：先落盘实际PG身份与会话目录，再允许付费；未完成记录不可自动重试。
+    attempts.write(
+        json.dumps({"case_id": case.case_id, "context": asdict(context)}, default=str) + "\n"
+    )
+    attempts.flush()
+    os.fsync(attempts.fileno())
+    return await run_case(
+        case,
+        context,
+        live=live,
+        business=business,
+        workflow=workflow,
+        max_attempts=max_attempts,
+    )
+
+
+async def run_case(
+    case: Case,
+    context: RunContext,
+    *,
+    live: bool,
+    business: DatabaseEvaluation | None = None,
+    workflow: WorkflowName | None = None,
+    max_attempts: int = 4,
+) -> dict[str, object]:
     start = time.perf_counter()
     try:
-        actual, report = await observe(case, live, context)
-    except (ProbeError, ValueError, OSError):
+        actual, report = (
+            await observe(
+                case, live, context, business=business, workflow=workflow, max_attempts=max_attempts
+            )
+            if business
+            else await observe(case, live, context)
+        )
+    except (ProbeError, ServiceError, ValueError, OSError):
         return {"case_id": case.case_id, "status": "error", "reason": "runtime_unavailable"}
     checks = grade(case, actual)
     return {
@@ -135,6 +233,7 @@ async def run_case(case: Case, context: RunContext, *, live: bool) -> dict[str, 
         "failed_checks": [k for k, value in checks.items() if not value],
         "elapsed_seconds": round(time.perf_counter() - start, 3),
         "tools": [e.tool_name for e in actual.events if e.kind == "tool_started"],
+        "tool_count": sum(e.kind == "tool_started" for e in actual.events),
         "text": actual.text,
         "identity": report.get("identity"),
         "http_attempts": report.get("http_attempts", 0),
@@ -142,10 +241,36 @@ async def run_case(case: Case, context: RunContext, *, live: bool) -> dict[str, 
         "run_accounted_cny": report.get("run_accounted_cny"),
         "trace_id": report.get("trace_id"),
         "trace_status": report.get("trace_status"),
+        "tokens": token_totals(report) if live else None,
+        "accounting_currency": "CNY" if live else None,
     }
 
 
-def manifest(cases: list[Case]) -> dict[str, object]:
+def token_totals(report: dict[str, object]) -> dict[str, int] | None:
+    requests = report.get("requests")
+    keys = (
+        "input_tokens",
+        "cache_read_input_tokens",
+        "cache_creation_input_tokens",
+        "output_tokens",
+    )
+    if (
+        not isinstance(requests, list)
+        or not requests
+        or report.get("http_attempts") != len(requests)
+    ):
+        return None
+    if not all(
+        isinstance(row, dict) and all(type(row.get(key)) is int and row[key] >= 0 for key in keys)
+        for row in requests
+    ):
+        return None
+    return {key: sum(row[key] for row in requests) for key in keys}
+
+
+def manifest(
+    cases: list[Case], definitions: tuple[ToolDefinition, ...] = DEFINITIONS
+) -> dict[str, object]:
     """绑定实际源文件而非仅 HEAD；不读取 .env、vendor 或运行数据。"""
     commit = subprocess.run(
         ["git", "rev-parse", "HEAD"],
@@ -181,10 +306,12 @@ def manifest(cases: list[Case]) -> dict[str, object]:
         },
         "selected_cases": [c.model_dump() for c in cases],
         "schema_sha256": hashlib.sha256(
-            json.dumps([asdict(d) for d in DEFINITIONS], sort_keys=True).encode()
+            json.dumps([asdict(d) for d in definitions], sort_keys=True).encode()
         ).hexdigest(),
         "pricing": "backend/providers/probe/settings.py; CNY peak price; hash above",
-        "skills": [],
+        "skills": ["hotel-comparison", "itinerary-revision"]
+        if definitions == TRAVEL_DEFINITIONS
+        else [],
         "runtime_versions": "recorded per case from actual worker identity",
     }
 
@@ -196,6 +323,9 @@ def main() -> int:
     parser.add_argument("--split", choices=["dev", "test"], default="dev")
     parser.add_argument("--live", action="store_true", help="使用已授权 DeepSeek；产生费用")
     parser.add_argument("--case-id", action="append", help="只运行指定用例；不改变完整集")
+    parser.add_argument("--database", action="store_true", help="使用本地PG与应用旅行工具")
+    parser.add_argument("--workflow", choices=sorted(WORKFLOWS), help="固定工具阶段；默认自主选择")
+    parser.add_argument("--max-attempts", type=int, choices=range(1, 13), default=4)
     arguments = parser.parse_args()
     try:
         cases = load_cases(
@@ -210,10 +340,25 @@ def main() -> int:
                 raise ValueError("case_id 不存在")
             cases = [c for c in cases if c.case_id in arguments.case_id]
         name = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:8]
-        summary = asyncio.run(
-            run_cases(cases, ROOT / ".cache" / "eval" / name, live=arguments.live)
-        )
-    except (ValueError, OSError, subprocess.SubprocessError):
+
+        async def evaluate() -> dict[str, object]:
+            if arguments.database:
+                async with database_evaluation(database_url(configuration())) as business:
+                    return await run_cases(
+                        cases,
+                        ROOT / ".cache" / "eval" / name,
+                        live=arguments.live,
+                        business=business,
+                        workflow=arguments.workflow,
+                        max_attempts=arguments.max_attempts,
+                    )
+            return await run_cases(cases, ROOT / ".cache" / "eval" / name, live=arguments.live)
+
+        if not arguments.database and (arguments.workflow or arguments.max_attempts != 4):
+            raise ValueError("固定流程或自定义请求上限需要--database")
+        with selector_runner() as runner:
+            summary = runner.run(evaluate())
+    except (ServiceError, ValueError, OSError, subprocess.SubprocessError):
         print("评测未完成：用例规格或输出目录不可用。")
         return 1
     return 1 if summary["errors"] else 0

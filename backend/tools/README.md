@@ -11,3 +11,4 @@ SearchExecutor 返回带来源的 fixture 结果；空数据、参数错误和�
 TravelToolExecutor接数据库CatalogService/TravelService；schema复用Pydantic契约。
 同一run串行执行，身份不由模型提供；Skills只按白名单读取，不能扩大权限。
 酒店search/refresh/present共用同一守门；价格由服务端补齐，模型只传对象ID。
+workflow.OrderedTools用于固定流程评测，只检查阶段，仍调用同一执行器；失败不推进。

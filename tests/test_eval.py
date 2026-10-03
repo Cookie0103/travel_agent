@@ -1,6 +1,7 @@
 """评测规则保护失败样本；离线与真实模型的分母、标签及费用入口不能混淆。"""
 
 import json
+import sys
 from dataclasses import replace
 from pathlib import Path
 from uuid import uuid4
@@ -11,6 +12,7 @@ from backend.domain.execution import RunContext, RuntimeEvent
 from eval.cases import Case, load_cases
 from eval.graders import Observation, grade, response_matches
 from eval.run import ROOT, run_cases
+from eval.run import main as eval_main
 
 
 def example(**changes: object) -> Case:
@@ -174,3 +176,13 @@ async def test_interruption_keeps_started_case_and_private_session_location(
         await run_cases([example()], directory, live=True)
     assert (directory / "results.jsonl").read_text(encoding="utf-8") == ""
     assert (directory / "attempts.jsonl").read_text(encoding="utf-8")
+
+
+def test_cli_rejects_unsupported_request_limit_before_live(monkeypatch: pytest.MonkeyPatch) -> None:
+    def forbidden(*args: object, **kwargs: object) -> object:
+        raise AssertionError("invalid request limit cannot reach paid evaluation")
+
+    monkeypatch.setattr("eval.run.run_live", forbidden)
+    monkeypatch.setattr("eval.run.run_cases", forbidden)
+    monkeypatch.setattr(sys, "argv", ["eval.run", "--live", "--max-attempts", "1"])
+    assert eval_main() == 1

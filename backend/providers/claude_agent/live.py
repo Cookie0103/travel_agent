@@ -20,6 +20,7 @@ from backend.providers.probe.ledger import exclusive
 from backend.providers.probe.settings import ProbeError, load_settings
 from backend.tools.search import DEFINITIONS
 from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
+from backend.tools.workflow import WorkflowName
 
 
 def run_live(
@@ -31,7 +32,15 @@ def run_live(
     database_dsn: str | None = None,
     emit: EventSink | None = None,
     cancelled: Event | None = None,
+    workflow: WorkflowName | None = None,
+    max_attempts: int = 4,
 ) -> dict[str, object]:
+    if (
+        type(max_attempts) is not int
+        or not 1 <= max_attempts <= 12
+        or (workflow is not None and database_dsn is None)
+    ):
+        raise ProbeError("validation", "对照需数据库工具；请求上限须为1至12")
     exporter = cloud_exporter(os.environ) if trace_cloud else None
     settings = load_settings(os.environ)
     cli = find_cli(os.environ)
@@ -54,6 +63,7 @@ def run_live(
             budget,
             partial(forward_deepseek, settings.api_key),
             allowed_tools=frozenset(sdk_tool_name(d.name) for d in definitions),
+            max_attempts=max_attempts,
         )
         with serve(guard) as endpoint:
             env = worker_environment(
@@ -75,6 +85,7 @@ def run_live(
                     "database_dsn": database_dsn,
                     "supplier_url": os.environ.get("MOCK_SUPPLIER_URL"),
                     "cli_version": version.stdout.split()[0],
+                    "workflow": workflow,
                 },
                 cancelled=cancelled,
                 progress=reader.drain,

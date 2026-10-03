@@ -18,6 +18,7 @@ from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, RuntimeOutcome
 from backend.mcp.bridge import build_server, sdk_tool_name
 from backend.tools.contracts import ToolDefinition, ToolExecutor
+from backend.tools.workflow import OrderedTools, WorkflowName, workflow_guidance
 
 
 @dataclass(frozen=True)
@@ -28,6 +29,7 @@ class RuntimeConfig:
     system_prompt: str
     max_turns: int = 6
     timeout_seconds: float = 90
+    workflow: WorkflowName | None = None
 
 
 class ClaudeRuntime:
@@ -40,6 +42,8 @@ class ClaudeRuntime:
         executor: ToolExecutor,
     ) -> None:
         self.config, self.definitions, self.executor = config, definitions, executor
+        if config.workflow:
+            self.executor = OrderedTools(executor, config.workflow)
         self.identity = config.identity
 
     async def execute(
@@ -123,7 +127,8 @@ class ClaudeRuntime:
             cli_path=self.config.cli,
             cwd=self.config.directory,
             model=self.identity.model,
-            system_prompt=self.config.system_prompt,
+            system_prompt=self.config.system_prompt
+            + (workflow_guidance(self.config.workflow) if self.config.workflow else ""),
             tools=[],
             allowed_tools=[sdk_tool_name(d.name) for d in self.definitions],
             mcp_servers={"travel": build_server(self.definitions, self.executor, context, emit)},

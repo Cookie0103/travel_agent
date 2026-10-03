@@ -13,6 +13,7 @@ from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.probe.settings import Settings
 from backend.services.travel import TravelService
 from backend.tools.travel import DEFINITIONS
+from backend.tools.workflow import WorkflowName
 
 
 def run_database_worker(
@@ -26,6 +27,7 @@ def run_database_worker(
     supplier_url: str | None = None,
     auto_compact_percent: int | None = None,
     prompts: list[str] | None = None,
+    workflow: WorkflowName | None = None,
 ) -> tuple[dict[str, object], Guard]:
     guard = Guard(
         Settings("offline-only", "deepseek-flash", Decimal(5), Decimal(0)),
@@ -61,6 +63,7 @@ def run_database_worker(
                 "cli_version": version.stdout.split()[0],
                 "database_dsn": travel.database.engine.url.render_as_string(hide_password=False),
                 "supplier_url": supplier_url,
+                "workflow": workflow,
             },
         )
     return report, guard

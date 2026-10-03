@@ -3,7 +3,14 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+from backend.domain.travel_request import TravelConditions
+
+
+class InitialState(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    request: TravelConditions = Field(default_factory=TravelConditions)
 
 
 class Case(BaseModel):
@@ -42,6 +49,11 @@ def load_cases(path: Path | tuple[Path, ...], split: str) -> list[Case]:
     for case in selected:
         if not set(case.required_tools) <= set(case.allowed_tools):
             raise ValueError("必需工具不在允许集合")
-        if case.initial_state or case.fault or case.data_version != "kyoto-fixture-v1":
+        if case.initial_state:
+            try:
+                InitialState.model_validate(case.initial_state)
+            except ValidationError:
+                raise ValueError("尚不支持此初始状态或旅行条件无效") from None
+        if case.fault or case.data_version != "kyoto-fixture-v1":
             raise ValueError("评测入口尚不支持此初始状态/故障/数据版本")
     return selected

@@ -338,3 +338,21 @@
 - 独立只读复核无P1/P2、无必须处理P3；完整重跑411 passed/2 live deselected（116.85秒），契约失败关闭。M3.1工程机制验收通过，真实模型压缩质量保持未验；普通提交后自动继续M3.4。
 
 - 普通提交钩子静态通过、完整410通过/1旧SDK非法参数测试失败（115.77秒），worker_exit而非预期tool_roundtrip_missing。单独重跑原2用例均通过（3.11秒），目前未复现根因；补失败断言的安全结构化report诊断（不含stderr/密钥），保留原期望。重跑正常钩子，不能把第一次失败当从未发生。
+
+- 第二次普通钩子check/test均通过，0861da7保存16文件；未跳过、放宽测试。偶发工作进程退出根因尚未复现，保留风险和诊断。
+
+### M3.4 业务评测与固定编排
+
+- 新DatabaseEvaluation复用SessionService/TravelService/TravelToolExecutor，逐案例创建独立PG用户/session，可初始化明确request；实际身份先fsync再允许live。限制本地URL及无query覆盖，不输出DSN。导入既定目录快照，manifest记录实际混合数据版本/schema/Skill及源文件hash，保留历史Case标签。
+- OrderedTools仅限制既定search/hotel/itinerary阶段，不实现SDK循环或替换参数；同阶段可重试，失败/空不推进，setup条件写仅在开始前，不能跨run复用。SDK两组仍暴露完全相同14工具schema，固定提示只含阶段，不含grader期待。
+- token仅所有HTTP尝试都有完整usage才求和；离线/部分/未知保持null。按模型原CNY记账，单案例最大实际请求1–12，默认4；累计5元/100次与每日限制不变。暂未产生新费用。
+- 初次专项22通过/1失败，测试假设室内脚本有结果，但真实快照名称/文本无“室内”匹配。原Case应有结果期待不变、评测仍failed；补广义京都正常对照。固定脚本继续下一阶段会被空结果守门拒绝，诚实记录error；不作为真实模型固定流程效果。类型发现结果object不可下标，改共享RunResult TypeAdapter解析。
+
+- 独立审查指出非DB自定义请求数被入口丢弃、完整固定行程缺酒店、目录upsert不能排除额外行。入口无DB自定义上限提前拒绝；固定序列补酒店；目录空才导入，非空与版本化完整payload核对，漂移conflict保留原数据并记录实际hash。专项27通过（11.72秒），check183/3契约/10地图通过，独立复核问题关闭。
+- 即将按既有授权做hotel-complete-control自主/固定hotel各n=1，最多6实际HTTP/组，失败不自动重试；由既有预算/attempt fsync守卫执行。完整427预期测试正在运行，不能提前填通过。原累计21次/0.098450 CNY；调用后重新读取账本，不按预期次数记已发生。
+
+- 两次实际命令uv run --env-file .env python -m eval.run --database --live --case-id hotel-complete-control --max-attempts 6（第二组加--workflow hotel）均1/1原规则通过，无重试。自主5HTTP/5工具/14.316秒/0.091532 CNY；固定6HTTP/8工具/14.646秒/0.111926 CNY，额外3报价刷新。两组实际代码/schema/目录/Case hash一致。私有运行20261003T094904Z-f7172629和20261003T094950Z-ca7c40cb，脱敏导出m34-hotel-comparison-2026-10-03.json；不导出回答/DSN/SDK会话。
+- 账本重新核对32次/0.301908 CNY，剩68次，无未结预占。该小样本不能证明整体质量或固定编排改善；完整行程/重复统计开放。真实DB离线同酒店用例0/1、tool_selection失败，保留原标准，不靠脚本刷分。
+- 第一次完整424通过/3旧live测试失败（126.55秒）：测试Guard替身不接受新增max_attempts实参。将替身明确同真实签名、转发原Guard；不改终态/取消/重复付费断言。专项40通过（13.30秒），新增非法上限0/-1/13/bool在凭据前拒绝，单文件17通过（2.31秒）。完整重跑待结果。
+
+- 完整重跑431 passed/2 live deselected（127.36秒）；check183/3契约/10地图通过。正常提交保存M3.4设施与酒店小样本，完整行程多案例统计仍待验；独立目录/流程/请求上限问题均已关闭，无新增依赖或推送。
