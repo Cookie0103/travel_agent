@@ -83,7 +83,7 @@ uv run python scripts/dev.py eval-dev   # 评测 dev 集（默认 FakeRuntime）
 - 密钥只从环境变量读取（`.env` 本地文件，已在 `.gitignore`）；提交 `.env.example`，只写变量名不写值。
 - 绝不把密钥写进代码、测试、日志、trace 或文档。
 - 真实模型调用必须按计费来源分开检查每日预算：DeepSeek 使用 `DAILY_BUDGET_CNY`（人民币元）；Anthropic/OpenAI 共用 `DAILY_BUDGET_USD`（美元）。两个币种独立记账，不自动换汇、相加或借用余额；使用兼容 SDK 不改变计费来源。
-- 预算未配置、空白、非法或币种不匹配时拒绝真实调用；`0` 禁用对应线路，余额不足或达到上限即停止。预算值不代表调用授权，默认离线和用户本批次数限制仍需同时满足。
+- 预算未配置、空白、非法或币种不匹配时拒绝真实调用；`0` 禁用对应线路，余额不足或达到上限即停止。预算值不代表调用授权，默认离线与用户明确额度仍需满足。最新DeepSeek授权每日15CNY、累计次数/金额不设限；代码日硬限不可被更高.env扩大，其他币种仍看执行计划授权。
 - `vendor/` 已在 `.gitignore`。其中 DataMind 是组织内部仓库，**任何内容都不能提交到本仓库**（本仓库是公开的）；评测用例改编后的版本可以提交，原文件不行。
 - 日志在 INFO 级别不输出完整 prompt 和工具结果。SDK 会话文件属于私有运行数据，不进 Git 或公共 Trace。
 - SDK 的 max_turns 不等于 HTTP 请求上限，max_budget_usd 不能代替人民币预算。新 SDK live 实验先证明费用/次数边界，再按本批授权运行，调用额度以 docs/execution/travel-agent.md 最新用户授权为准；旧两请求许可已用完，不能与本轮授权混淆。

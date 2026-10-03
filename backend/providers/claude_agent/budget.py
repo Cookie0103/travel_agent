@@ -12,10 +12,10 @@ from backend.providers.probe.ledger import Ledger
 from backend.providers.probe.settings import Currency, ProbeError, read_budget
 
 GRANT = "2026-10-03-travel-autonomous"
-TOTAL_CNY = Decimal("5.00")
-TOTAL_REQUESTS = 100
-LIMITS: dict[Currency, tuple[Decimal, int]] = {
-    "CNY": (TOTAL_CNY, TOTAL_REQUESTS),
+# 用户新授权只限制每日15CNY；None表示没有累计上限，不用伪造大数。
+DAILY_CNY_AUTHORIZATION = Decimal("15.00")
+LIMITS: dict[Currency, tuple[Decimal | None, int | None]] = {
+    "CNY": (None, None),
     "USD": (Decimal(0), 0),
 }
 
@@ -43,7 +43,7 @@ class Budget:
 
     def check_authorization(self) -> None:
         amount, count = LIMITS[self.currency]
-        if amount <= 0 or count <= 0:
+        if (amount is not None and amount <= 0) or (count is not None and count <= 0):
             raise ProbeError("blocked", "美元累计金额和次数授权均为0；日预算不能授予调用权限")
 
     def check_minimum_requests(self, minimum: int) -> None:
@@ -52,7 +52,8 @@ class Budget:
             raise ProbeError("validation", "计划请求数必须为正整数")
         self.check_authorization()
         used, _ = self.totals()
-        if used + minimum > LIMITS[self.currency][1]:
+        limit = LIMITS[self.currency][1]
+        if limit is not None and used + minimum > limit:
             raise ProbeError("blocked", "即使每案例只请求一次，累计授权也不足完整评测")
 
     def entries(self) -> list[Entry]:
@@ -117,9 +118,14 @@ class Budget:
         if not amount.is_finite() or amount <= 0 or not self.daily.is_finite() or self.daily <= 0:
             raise ProbeError("blocked", "日预算非法或已禁用")
         total_limit, request_limit = LIMITS[self.currency]
-        if len(charges) >= request_limit or total + amount > total_limit:
+        if (request_limit is not None and len(charges) >= request_limit) or (
+            total_limit is not None and total + amount > total_limit
+        ):
             raise ProbeError("blocked", "已达用户累计调用授权上限")
-        if daily + amount > self.daily:
+        daily_limit = (
+            min(self.daily, DAILY_CNY_AUTHORIZATION) if self.currency == "CNY" else self.daily
+        )
+        if daily + amount > daily_limit:
             raise ProbeError("blocked", "今日原币种余额不足")
         request_id = str(uuid4())
         # 不变量：先 fsync 才联网；没有结算记录的尝试始终按全部预占计费。

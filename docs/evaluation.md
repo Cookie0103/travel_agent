@@ -2,7 +2,7 @@
 
 默认历史30例：`uv run python -m eval.run --database`；不调用模型。
 冻结集：`uv run python -m eval.run --suite frozen --database --split test --repeat 3`。
-授权真实调用需额外 `--live` 与既有供应商/请求/原币种/每日额度；完整40×3最低120次请求超过本轮授权，不会自动放开。
+授权真实调用需额外 `--live` 与明确供应商/原币种/每日额度；最新DeepSeek许可每日15CNY、无累计金额/次数上限，旧账/未结占用继续计入，USD仍0。完整40×3最低120次HTTP且通常更多，每日额度不足停止，不承诺整批一定完成。
 历史21+9文件和期望不改。冻结版本、hash、20dev/40test、历史来源及正常对照由suites校验；未冻结/内容漂移拒绝运行。test不用于模型调优。
 
 调用链：load_suite → temporary_database → database_evaluation → prepare/observe/checks → grade → report。

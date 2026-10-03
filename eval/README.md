@@ -2,7 +2,7 @@
 
 默认离线：`uv run python -m eval.run --database`。
 冻结40例三轮：`uv run python -m eval.run --suite frozen --database --split test --repeat 3`。
-授权真实调用须显式--live；最低120HTTP超过当前累计100授权，不能直接执行。
+真实调用须显式--live；DeepSeek最新授权每日≤15CNY（含旧费/未结预占），无累计次数上限，USD仍0。
 
 调用链：load_suite → temporary_database → database_evaluation → prepare/observe/checks → grade → report。
 数据库、工具、规则与SDK复用业务入口；每轮身份独立，setup不计成绩。
