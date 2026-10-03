@@ -17,6 +17,8 @@
 
 ## 本次可直接打开的记录
 
+- [M0 集中审查记录](review/M0.md)、[SDK 真实接入结果](protocol-agent-sdk.md)。
+
 - 2026-10-03：[长程工作流](execution/workflow.md)、[工程标准](execution/standards.md)、[操作日志](operations/2026-10-03-autonomous.md)。已取消逐任务人工关卡，保留自动验证与独立审查。
 
 - 2026-10-03：[SDK 路线说明](review/M0-sdk-route.md)、[ADR-003](adr/003-claude-agent-sdk-runtime.md)、[新版 M0 规格](tasks/M0.md)、[操作与恢复记录](operations/2026-10-03-agent-sdk-docs.md)。用户确认由 SDK 承担 runtime，自写业务与 tools；旧实测不算 SDK 验收。

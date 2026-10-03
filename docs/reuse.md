@@ -1,6 +1,20 @@
 # 上游阅读与复用清单
 
-本批只阅读、核对固定版本，未安装或运行上游应用，未复制上游代码。本项目工程脚本与测试为独立编写。
+本文件记录阅读与复用依据；下方旧批次说明仅代表当时的事实。未运行或复制上游应用。当前 SDK 验证见 [接入记录](protocol-agent-sdk.md)，实施状态见 [执行计划](execution/travel-agent.md)。
+
+## 2026-10-03：SDK 优先、简洁复用
+
+再次阅读用户本地 commerce-agents 的 SDK 路径，并核对 [官方仓库](https://github.com/anthropics/commerce-agents)、[SDK Python 文档](https://code.claude.com/docs/en/agent-sdk/python)、[当前发行版 v0.2.163](https://github.com/anthropics/claude-agent-sdk-python/releases/tag/v0.2.163)。项目已锁定这一 SDK 版本；不因此替换已验证的 CLI。
+
+| 已读入口（相对上游根目录） | 采用的做法 | 本项目的边界 |
+| --- | --- | --- |
+| shopping-agent/runtime-agent-sdk/shopping_agent_sdk/agent.py：make_options / run_turn | 配置集中构造，一次 query 后收集 SDK 结果，入口保持短 | 不复制 Messages API 循环；应用只适配需要的事件 |
+| 同目录 shopping_tools.py：tool_contracts / build_shopping_server | 一份工具契约生成注册项与允许列表 | 旅行 schema 和业务执行器只维护一份 |
+| commerce-common/commerce_common/agent_sdk.py：build_sdk_tools / collect_turn | 小型桥接复用 SDK tool、MCP server、消息类型 | 不创建另一套 MCP 协议或通用转换框架 |
+| commerce-common/commerce_common/execution.py：execute / dispatch | 把业务路由与校验收敛到同一入口 | 旅行业务校验不能靠 SDK 权限提示代替 |
+
+不会照搬的部分：多运行时共存、演示用户身份、全局配置加载、尚未验证的 PostToolBatch hook。上游 Any 较多也不能替代本项目的类型边界。
+费用守卫与 Windows 进程清理有已复现的失败依据，作为 SDK 外的必要保护；后续适配复用这套边界，不再复制一份。实际简化结果随代码审查记入 M0 集中记录。
 
 ## 固定版本与获取证据
 

@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
     "anthropic>=1.11.0",
+    "claude-agent-sdk>=0.2.139,<0.3",
 ]
 
 [dependency-groups]
@@ -63,7 +64,7 @@ source_modules = [
     "backend.api", "backend.agent", "backend.tools", "backend.domain",
     "backend.services", "backend.persistence", "mock_supplier", "data", "eval",
 ]
-forbidden_modules = ["anthropic", "openai", "mcp", "httpx"]
+forbidden_modules = ["claude_agent_sdk", "anthropic", "openai", "mcp", "httpx"]
 allow_indirect_imports = true
 
 [[tool.importlinter.contracts]]

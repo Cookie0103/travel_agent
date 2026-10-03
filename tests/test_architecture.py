@@ -52,6 +52,7 @@ def lint_temporary_project(
         ("backend.domain", "mock_supplier"),
         ("backend.domain", "httpx"),
         ("backend.agent", "anthropic"),
+        ("backend.tools", "claude_agent_sdk"),
         ("backend.services", "openai"),
         ("data", "mcp"),
         ("backend.api", "backend.persistence"),
