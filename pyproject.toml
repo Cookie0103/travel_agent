@@ -1,0 +1,75 @@
+[project]
+name = "travel-agent"
+version = "0.1.0"
+description = "旅行规划 Agent：工程骨架"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = []
+
+[dependency-groups]
+dev = [
+    "import-linter",
+    "mypy",
+    "pre-commit",
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
+]
+
+[tool.uv]
+package = false
+cache-dir = ".cache/uv"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+include = ["*.py", "*.pyi", "pyproject.toml"]
+extend-exclude = ["vendor", ".cache"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["backend", "mock_supplier", "data", "eval", "scripts", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-config --strict-markers -m 'not live'"
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "live: 显式授权后才可执行的真实外部模型测试",
+    "integration: 需要真实 PostgreSQL 的事务或恢复测试",
+]
+
+[tool.importlinter]
+root_packages = ["backend", "mock_supplier", "data", "eval"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Domain is independent of other project layers"
+type = "forbidden"
+source_modules = ["backend.domain"]
+forbidden_modules = ["backend.*", "mock_supplier", "data", "eval"]
+
+[[tool.importlinter.contracts]]
+name = "External service SDKs stay in providers adapters or mcp"
+type = "forbidden"
+source_modules = [
+    "backend.api", "backend.agent", "backend.tools", "backend.domain",
+    "backend.services", "backend.persistence", "mock_supplier", "data", "eval",
+]
+forbidden_modules = ["anthropic", "openai", "mcp", "httpx"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "API reaches project layers through services or agent"
+type = "forbidden"
+source_modules = ["backend.api"]
+forbidden_modules = [
+    "backend.providers", "backend.adapters", "backend.tools", "backend.domain",
+    "backend.mcp", "backend.persistence", "mock_supplier", "data", "eval",
+]
+allow_indirect_imports = true

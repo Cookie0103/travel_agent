@@ -1,0 +1,61 @@
+# M0.1 上游阅读与复用清单
+
+本批只阅读、核对固定版本，未安装或运行上游应用，未复制上游代码。本项目工程脚本与测试为独立编写。
+
+## 固定版本与获取证据
+
+| 上游 | 固定 commit | 本次结果 |
+| --- | --- | --- |
+| [Commerce Agents](https://github.com/anthropics/commerce-agents/tree/fd4d59224ab96b43c6dc6888207c67b3bd5a24cf) | fd4d59224ab96b43c6dc6888207c67b3bd5a24cf | 获取脚本打印 ready 并核对 HEAD；仅只读参考 |
+| DataMind（内部） | d57bb79e3cb16377fa2f6587f110f79ccd5141e1 | 获取脚本打印 ready 并核对 HEAD；本批未读取或复制内部原文 |
+
+获取命令：`uv run python scripts/fetch_upstream.py`，本次退出码 0，完整输出见操作日志。
+`vendor/` 被 Git 忽略；Commerce 的 Apache-2.0 声明不等于允许自行复制：本仓库另要求 ADR 授权，本次没有复制行为。
+
+## 官方材料的阅读结论
+
+- 单个主 Agent 在共享会话中调用工具、按需读取 Skills；安全约束应由代码执行层落实。工具模式表达展示卡片，再由服务端校验和补齐。来源：[架构文章](https://claude.com/blog/the-anatomy-of-effective-commerce-agents)。
+- 官方提供 retail、travel 等示例，支持 Messages API、Agent SDK、Managed Agents 三种运行方式；本项目按既定设计只参考手写循环。来源：[发布文章](https://claude.com/blog/claude-for-commerce-agents)。
+- 文章里的质量、收入、速度或缓存数字都不是本项目测量结果，不写进本项目的完成证据。
+
+## 一次 travel 工具往返（源码阅读，不是本项目已经运行）
+
+```text
+travel/api/main.py：MockTravel + ShoppingAgent + itinerary 展示扩展
+  → demo_common/host.py：把本轮会话交给 agent.stream_turn
+  → ShoppingAgent.stream_turn：预取、组装上下文、构造模型请求
+  → client.messages.stream：得到 assistant 的 tool_use
+  → StreamedRound / EagerDispatcher：收集完整参数并调 executor.execute
+  → BaseToolExecutor.execute / dispatch：选择 handler 或展示扩展
+  → ShoppingToolExecutor._search_products → MockTravel.search_products
+  → state.remember_products：把可引用的商品 ID 记入会话状态
+  → ToolOutcome → tool_result_block：用同一个 tool_use_id 配对
+  → 工具结果追加到 messages → 下一轮模型请求 → 文本或展示结果
+  → host：SSE 事件输出；轮次结束后保存会话
+```
+
+状态位置：模型消息在 `messages` 列表；已查到的商品在 `ShoppingSessionState`；演示供应商状态在 MockTravel；宿主负责会话保存。
+上游循环末轮设置不调用工具；异常或中断时 `close_open_tool_uses` 为未配对调用补结果。已完成写操作优先使用真实结果，避免被描述为需要重试。
+
+## 按文件阅读与取舍
+
+以下路径相对 `vendor/commerce-agents/`；函数名均按本批读到的固定 commit 记录。
+
+| 文件 / 入口 | 本批核实的事实 | 后续本项目如何使用 |
+| --- | --- | --- |
+| examples/travel/api/main.py | 构造 MockTravel 与 ShoppingAgent，注册 itinerary 扩展 | 参考入口组合方式，不使用上游运行时 |
+| shopping-agent/runtime-messages-api/shopping_agent_runtime/orchestrator.py / stream_turn | 有界循环、末轮 tool_choice none、配对结果回填 | M0.4 自行实现；DeepSeek 差异留到 M0.2 |
+| commerce-common/turn.py / EagerDispatcher.collect | 收集工具结果，支持流中启动的调用 | 第一版按本项目设计默认串行，不能直接照搬并发 |
+| commerce-common/turn.py / close_open_tool_uses | 中断后补齐结果并保留已完成操作结论 | 后续消息配对测试的参考思路 |
+| commerce-common/execution.py / execute、dispatch | 统一路由、参数失败与后端失败区分 | 自行实现 ToolExecutor 与既定错误码 |
+| shopping-agent/core/shopping_agent/executor.py / _search_products | 搜索后把结果写进本会话 seen 状态 | 本项目用 Evidence 与引用检查代替隐含信任 |
+| examples/travel/api/itinerary.py / _enrich | 用已见 ID 补卡片，忽略未知 ID；还会调用 note_trip_plan 写后端 | 不沿用展示时写业务状态的做法；保存由独立确认入口负责 |
+| examples/demo_common/host.py / write_back | 会话冲突后读取新版本再保存旧 turn | 不沿用；本项目要求条件更新，不能覆盖较新请求 |
+| commerce-common/testing.py / FakeClient | 脚本化响应、记录调用；响应耗尽即失败 | M0.4 参考测试策略，自行实现，不复制 |
+
+## 边界
+
+- 没有调用 DeepSeek、Claude 或其他 LLM API；没有做协议实测。
+- 没有执行上游测试，因此不能声称上游运行通过。
+- M0.1 的工具往返是源码分析；本项目 CLI、Provider 与业务工具尚未实现。
+- DataMind 的业务材料与 21 条用例留到 M0.6 按既定规则处理；本批没有从内部仓库发布文件或内容。

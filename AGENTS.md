@@ -22,7 +22,7 @@
 2. 按用户在启动提示中给出的任务列表，按 04 的依赖顺序执行。同一批内，后面的任务可以基于前面任务的代码。
 3. **关卡任务**（§2.3）做完后，本批不再开始任何依赖它的任务；改做列表中不依赖它的任务，没有就结束本批。
 4. 每个任务完成 = `dev check` 和 `dev test` 都通过（命令见 §4） + 一个 commit。commit message 用 `<任务ID>: <一句话>`。
-5. 同一个任务连续两次验证失败：把未完成的改动放进 `wip/<任务ID>` 分支，在 `BLOCKED.md` 记录，跳过它和所有依赖它的任务，继续做其他任务。
+5. 同一个任务连续两次验证失败：把未完成的改动放进 `wip/<任务ID>` 分支，在 `docs/blocked/<日期>-<主题>.md` 记录，跳过它和所有依赖它的任务，继续做其他任务。
 6. 全部做完或无任务可做时，写 `docs/review/<分支名>.md` 的批次总结（§2.4），然后结束。**不合并到 `main`，不 push。**
 
 ### 2.2 遇到不明确的地方
@@ -32,7 +32,7 @@
 2. 没有答案的，选最保守、最容易回退的做法；
 3. 在 `docs/decisions-pending.md` 追加一条：任务 ID、问题、选了什么、备选是什么、为什么、如果用户不同意要改哪些文件。
 
-**不能自行决定的事**（遇到就记入 `BLOCKED.md` 并跳过）：修改 `plan/` 的设计、新增 ADR 以外的依赖、修改已合并到 `main` 的公共接口、角色人设内容（M0.7）。
+**不能自行决定的事**（遇到就记入 `docs/blocked/<日期>-<主题>.md` 并跳过）：修改 `plan/` 的设计、新增 ADR 以外的依赖、修改已合并到 `main` 的公共接口、角色人设内容（M0.7）。
 
 ### 2.3 关卡任务（审阅通过并合并后，依赖它的任务才能开始）
 
@@ -62,6 +62,8 @@
 - **理解问题**：3–4 个，只给问题。用户白天在同一文件下方写回答。
 
 批次总结 `docs/review/<分支名>.md`：完成的任务和 commit 列表、跳过的任务及原因、`decisions-pending.md` 新增条目、建议的 commit 阅读顺序。
+
+记录统一从 `docs/README.md` 导航：任务说明放 `docs/review/`，批次总结放 `docs/review/batch/`，失败原因放 `docs/blocked/`，执行过程放 `docs/operations/`。阻塞记录只在遇到阻塞时新增或补充，不是每次命令运行都生成一份。操作日志随执行落盘，写清改动、命令结果和恢复点；不含密钥或内部仓库原文。
 
 ### 2.5 白天审阅后（由用户触发，不在批次内做）
 
@@ -127,7 +129,7 @@ uv run python scripts/dev.py eval-dev   # 评测 dev 集（默认 FakeClient）
 - 换行统一 LF（`.gitattributes` 已约束）；不提交 CRLF。
 - 环境变量在 `scripts/dev.py` 内设置，不要求用户在 shell 里 `export`。
 - 不依赖符号链接、`chmod`、`/tmp`。临时文件用 `tempfile`。
-- Docker 使用 Docker Desktop（WSL2 后端）。涉及 `docker compose` 的任务，启动前先检查 Docker 是否在运行，没运行就在 `BLOCKED.md` 记录并跳过，不要卡住。
+- Docker 使用 Docker Desktop（WSL2 后端）。涉及 `docker compose` 的任务，启动前先检查 Docker 是否在运行，没运行就在 `docs/blocked/environment.md` 记录并跳过，不要卡住。
 - 拉取 DataMind 需要用户的 GitHub 凭据；拉取失败不是致命错误（见 M0.1）。
 
 ## 5. 密钥、费用与安全
