@@ -8,8 +8,9 @@ from pathlib import Path
 from uuid import UUID
 
 import pytest
+from pydantic import TypeAdapter
 
-from backend.domain.execution import RunContext
+from backend.domain.execution import RunContext, RuntimeEvent
 from backend.domain.preferences import PreferencePatch
 from backend.mcp.bridge import sdk_tool_name
 from backend.persistence import plans
@@ -26,7 +27,16 @@ from tests.test_sdk_cli_offline import scripted_response
 
 @pytest.mark.skipif(not shutil.which("claude"), reason="需要实际CLI，本机脚本不访问模型")
 @pytest.mark.parametrize(
-    "variant", ["full", "no_tools", "no_skills", "no_preferences", "no_repairs"]
+    "variant",
+    [
+        "full",
+        "no_tools",
+        "no_skills",
+        "no_preferences",
+        "no_repairs",
+        "no_compaction",
+        "baseline_b2",
+    ],
 )
 def test_actual_sdk_advertises_variant_and_keeps_trip_and_preferences_unchanged(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
@@ -67,7 +77,13 @@ def test_actual_sdk_advertises_variant_and_keeps_trip_and_preferences_unchanged(
     report, guard = run_database_worker(
         travel, context, tmp_path, forward, "解释当前旅行条件，不调用工具", variant=variant
     )
-    assert report["status"] == "success" and guard.attempts == 1 and not guard.failures
+    assert report["status"] == "success" and guard.attempts == 1 and not guard.failures, (
+        report.get("code"),
+        report.get("reason"),
+        guard.attempts,
+        guard.failures,
+        guard.failure_details,
+    )
     assert report["checkpoint_persisted"] is (variant == "full")
     assert report["resume_mode"] == "business_snapshot"
     native_tools = requests[0].get("tools", [])
@@ -77,7 +93,7 @@ def test_actual_sdk_advertises_variant_and_keeps_trip_and_preferences_unchanged(
     }
     system = json.dumps(requests[0]["system"])
     assert ("private-preference-marker" in system) is (
-        variant not in {"no_tools", "no_preferences"}
+        variant not in {"no_tools", "no_preferences", "baseline_b2"}
     )
     if variant == "no_tools":
         assert "服务端业务状态" not in system and str(context.user_id) not in system
@@ -201,3 +217,67 @@ def test_no_repairs_actual_sdk_receives_conflict_then_blocked_repair(
     error = feedback[1]["error"]
     assert isinstance(error, dict) and error["code"] == "blocked"
     assert report["checkpoint_persisted"] is False
+
+
+@pytest.mark.skipif(not shutil.which("claude"), reason="实际CLI；人工usage只核验原生机制")
+@pytest.mark.parametrize("variant", ["full", "no_compaction", "baseline_b2"])
+def test_native_compaction_control_with_same_usage_and_trip(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+    tmp_path: Path,
+    variant: EvaluationVariant,
+) -> None:
+    runner, travel, context = travel_setup
+    before = runner.run(travel.get_request(context))
+    count = 0
+
+    def forward(body: bytes) -> tuple[int, bytes]:
+        nonlocal count
+        count += 1
+        request = json.loads(body)
+        if count == 1:
+            status, content = scripted_response(
+                json.dumps({**request, "messages": []}).encode(),
+                tool_calls=((sdk_tool_name("load_skill"), {"name": "hotel-comparison"}),),
+            )
+            # 两配置完全相同的人工usage/阈值；不当真实token/模型摘要质量。
+            return status, content.replace(b'"input_tokens": 100', b'"input_tokens": 40000')
+        return scripted_response(
+            json.dumps(
+                {
+                    **request,
+                    "messages": [
+                        {
+                            "content": [
+                                {"type": "tool_result", "content": "synthetic summary or answer"}
+                            ]
+                        }
+                    ],
+                }
+            ).encode()
+        )
+
+    report, guard = run_database_worker(
+        travel,
+        context,
+        tmp_path,
+        forward,
+        "读取酒店比较步骤",
+        variant=variant,
+        max_attempts=6,
+        auto_compact_percent=5,
+    )
+    assert report["status"] == "success" and not guard.failures, (
+        report.get("code"),
+        report.get("reason"),
+        guard.attempts,
+        guard.failures,
+    )
+    events = TypeAdapter(list[RuntimeEvent]).validate_python(report["events"])
+    compacted = sum(e.kind == "context_compacted" for e in events)
+    if variant == "full":
+        assert compacted >= 1 and guard.attempts > 2
+    else:
+        assert compacted == 0 and guard.attempts == 2
+        assert report["checkpoint_persisted"] is False
+    assert any(e.kind == "tool_finished" and e.code is None for e in events)
+    assert runner.run(travel.get_request(context)) == before

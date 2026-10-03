@@ -100,7 +100,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
             if variant == "no_repairs":
                 executor.executor.max_validations = 1
             snapshot, revision, preference_revision = await executor.context_snapshot(
-                context, include_preferences=variant != "no_preferences"
+                context, include_preferences=variant not in {"no_preferences", "baseline_b2"}
             )
             system = travel_prompt() + snapshot
             return await run_prompts(
@@ -115,6 +115,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
                 revision=revision,
                 preference_revision=preference_revision,
                 workflow=workflow,
+                disable_auto_compaction=variant in {"no_compaction", "baseline_b2"},
             )
     return await run_prompts(
         prompts, context, identity, cli, DEFINITIONS, SearchExecutor(), travel_prompt()
@@ -135,9 +136,16 @@ async def run_prompts(
     preference_revision: int = 0,
     workflow: WorkflowName | None = None,
     max_turns: int = 6,
+    disable_auto_compaction: bool = False,
 ) -> dict[str, object]:
     config = RuntimeConfig(
-        identity, cli, Path.cwd(), system, workflow=workflow, max_turns=max_turns
+        identity,
+        cli,
+        Path.cwd(),
+        system,
+        workflow=workflow,
+        max_turns=max_turns,
+        disable_auto_compaction=disable_auto_compaction,
     )
     if isinstance(executor, DatabaseTools):
         # 完整规划实测需8次工具往返+回答；保留3轮修复空间，HTTP/工具/费用边界不变。

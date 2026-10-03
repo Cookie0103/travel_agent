@@ -1,4 +1,4 @@
-"""仅供评测的单因素配置；工具集合在parent守卫与SDK worker保持同一来源。"""
+"""仅供评测的基线/单因素配置；parent守卫与SDK worker共享工具集合。"""
 
 from typing import Literal, get_args
 
@@ -8,7 +8,7 @@ from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
 from backend.tools.workflow import WorkflowName
 
 type EvaluationVariant = Literal[
-    "full", "no_tools", "no_skills", "no_preferences", "no_repairs", "no_compaction"
+    "full", "no_tools", "no_skills", "no_preferences", "no_repairs", "no_compaction", "baseline_b2"
 ]
 
 
@@ -21,12 +21,10 @@ def validate_variant(
 ) -> None:
     if variant not in get_args(EvaluationVariant.__value__):
         raise ValueError("未知评测配置")
-    if variant == "no_compaction":
-        raise ValueError("锁定SDK尚未核验可靠的压缩关闭能力")
     if variant != "full" and (workflow or judge):
-        raise ValueError("单因素对照不能混用固定workflow或语气评审")
+        raise ValueError("评测对照不能混用固定workflow或语气评审")
     if variant not in {"full", "no_tools"} and not database:
-        raise ValueError("业务单因素对照需要数据库")
+        raise ValueError("业务评测对照需要数据库")
 
 
 def evaluation_definitions(

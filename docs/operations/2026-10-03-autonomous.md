@@ -444,3 +444,7 @@ M0.7自动评审补齐：ADR011/共享rubric/唯一SDK私有开关/零工具/Gua
 指标独立复核关闭两P2。ADR012先记录同SDK对照/压缩关闭未证实边界，随后实现共享variant工具集合、B0无事实/工具、Skill/偏好/修复分别关闭；不暴露给用户API、不加runtime或依赖。初次patch因format后上下文匹配失败，无修改，读取实际源码后完成；静态导入/长行/构造Literal类型与kwargs错误修复，无忽略类型。实际CLI五组测试与相关65专项首跑64过/1新测试误断言草稿conflict必须拒绝；按原stage允许展示/confirm拒绝合同修正新测试并加强正式V0核对，生产规则/旧测试未改。第二次65通过28.65秒/check212通过。独立无P1/P2并建议补首次后新候选stage blocked/无draft，已补真实PG断言与实际CLI no_repairs第一次conflict/第二次blocked反馈（本机3HTTP）。无模型API新费用，累计仍80/2.076890。
 
 补充19专项14.71秒/check212通过；离线实际eval.run --database --case-id kyoto-matcha保存20261003T123554Z-1041d8be，规则1/1但两工具语义unknown/accuracy null，0模型HTTP。首次进度0.0秒是本机时间同tick，fixture结果不当模型效果。核对持久预算累计80/2.076890不变；manifest fixture标不适用压缩/无SDK持久resume。准备正常完整钩子保存，不在钩子期间编辑跟踪文件。
+
+71bd308正常check/完整默认Python钩子通过，保存指标及单因素机制。继续官方压缩能力：零工具实际SDK两组公开状态default true/flag false、0模型HTTP；带工具逐轮context_usage触发count_tokens/非流式Messages，被原Guard拒绝，2fail/49pass/0转发。取消逐轮探测，保留费用协议，只允许已验证SDK0.2.163/CLI2.1.114官方env，意外压缩中断；51专项39.25秒/check212通过。独立无P1/P2，P3文档/manifest及未知SDK反例已修。补plan B2偏好+压缩组合基线，标记非单因素，正在专项/窄复核。patch一次旧文本不匹配未写入，随后基于实际文本修正；无旧测试删除、无冻结期待修改、无真实模型新费用。
+
+压缩/B2专项58 passed/541 deselected43.13秒，check212/3契约/10地图通过；窄独立无P1/P2，两个P3关闭。建议非live组别不冒充B3已采纳：fixture not_applicable_fixture、无DB live search_only；6报表专项2.04秒通过。正常本地提交将执行完整钩子，0新真实费用。

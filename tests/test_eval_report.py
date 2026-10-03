@@ -44,6 +44,8 @@ async def test_repeat_creates_three_distinct_attempts_and_does_not_retry_after_e
     monkeypatch.setattr("eval.run.observe", observe)
     output = tmp_path / "three"
     summary = await run_cases([case()], output, repeats=3)
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["comparison_group"] == "not_applicable_fixture"
     assert summary["repetitions"] == 3 and summary["expected_attempts"] == 3
     assert summary["passed"] == 3 and len({c.session_id for c in contexts}) == 3
     attempts = [
@@ -61,6 +63,8 @@ async def test_repeat_creates_three_distinct_attempts_and_does_not_retry_after_e
 
     monkeypatch.setattr("eval.run.observe", fail)
     failed = await run_cases([case()], tmp_path / "failure", repeats=3, live=True)
+    manifest = json.loads((tmp_path / "failure/manifest.json").read_text(encoding="utf-8"))
+    assert manifest["comparison_group"] == "search_only"  # 无DB偏好，不能冒充B3。
     assert failed["errors"] == 1 and failed["not_run"] == 2
     assert (
         len((tmp_path / "failure" / "attempts.jsonl").read_text(encoding="utf-8").splitlines()) == 1

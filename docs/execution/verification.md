@@ -54,8 +54,8 @@ SDK终止与完整规划链：test_sdk_cli_offline保留真实CLI max_turns/tool
 
 M0.7：test_persona_judge覆盖原旅行bytes不变、实际temp0、采样/工具非法输入收费前拒绝、私有flag混入DB/supplier/workflow/provider/多prompt启动前拒绝、缺温度/身份/轨迹证明不评分、JSON错误单列/真人字段保留、durable attempts与运行异常停止后续。实际CLI零工具正常/非法JSON/未授权Bash响应三分支验证；真实DeepSeek小样本见m07-persona-judge证据，真人校准缺失仍开放。test_runs持久化故障注入要求恢复核对，日志不含原SQL/参数。
 
-评测指标增量（待提交/独立复核）：test_eval_metrics覆盖逐调用参数schema/独立答案、错run/重复/缺附件、成功不等于正确、非法选择与输入、未知分母、首次进度缺失/异常时间；integration/test_eval_metrics使用真实PG证明合法但日期错误的成功工具仍记incorrect。默认事件没有独立语义答案时accuracy为unknown；B0/单因素配置仍待实现，不能提前标记完成。
+评测指标增量（71bd308，独立两P2已关闭）：test_eval_metrics覆盖逐调用参数schema/独立答案、错run/重复/缺附件、成功不等于正确、非法选择与输入、未知分母、首次进度缺失/异常时间；integration/test_eval_metrics使用真实PG证明合法但日期错误的成功工具仍记incorrect。默认事件没有独立语义答案时accuracy为unknown；B0/单因素配置已实现并验证机制，实际模型对照尚未完成。
 
 两P2反例已补：跨run结束事件/倒序时间不能配对；旧报告缺指标不是零调用。test_eval_assess覆盖原案例选择、私有参数附件评分、无效输入脱敏、附件不改；该离线人工参数入口不等于已对真实模型全量逐调用评分。文本未语义分类不自动计首次进度，避免ACK刷低延迟。
 
-ADR012对照配置：test_evaluation_variants覆盖共享注册表、非法/未支持配置收费前拒绝、数据库要求、workflow/judge/多轮冲突、FixtureRuntime不能冒充效果；integration/test_evaluation_variants用实际SDK/CLI+真实PG核对五组schema/偏好/快照/无checkpoint/不改业务，并验证首次校验后修复阻止、原候选可暂存、conflict仍展示而用户确认拒绝且正式V0。no_compaction/B2压缩关闭能力与真实模型对照结果保持未验。
+ADR012对照配置：test_evaluation_variants覆盖共享注册表、非法配置收费前拒绝、数据库要求、workflow/judge/多轮冲突、FixtureRuntime不能冒充效果；integration/test_evaluation_variants用实际SDK/CLI+真实PG核对schema/偏好/快照/无checkpoint/业务不改，并验证首次校验后修复阻止、原候选可暂存、conflict可展示而用户确认拒绝且正式V0。新增no_compaction及B2：同人工usage/阈值原生自动压缩与关闭两分支；test_claude_runtime覆盖未知SDK/CLI在初始化前拒绝、意外压缩中断且无session ref。零工具公开状态探针只证实锁定版本能力；带工具不逐轮探测，不放宽费用。B2同时关闭偏好和压缩是组合基线，与单因素区分。真实模型压缩质量和统计对照仍未满足。

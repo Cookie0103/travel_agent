@@ -122,7 +122,20 @@ async def run_cases(
             {
                 **manifest(cases, evaluation_definitions(variant, database=business is not None)),
                 "evaluation_variant": variant,
-                "automatic_compaction": "sdk_default" if live else "not_applicable_fixture",
+                "comparison_group": "not_applicable_fixture"
+                if not live
+                else "search_only"
+                if not business
+                else "B1"
+                if workflow
+                else {"full": "B3", "no_tools": "B0", "baseline_b2": "B2"}.get(
+                    variant, "single_factor"
+                ),
+                "automatic_compaction": "verified_versions_env"
+                if variant in {"no_compaction", "baseline_b2"}
+                else "sdk_default"
+                if live
+                else "not_applicable_fixture",
                 "sdk_resume_enabled": live and business is not None and variant == "full",
                 "workflow": workflow or "autonomous",
                 "business_database": business is not None,
@@ -434,7 +447,7 @@ def main() -> int:
         "--variant",
         choices=get_args(EvaluationVariant.__value__),
         default="full",
-        help="单因素对照；不支持的压缩关闭会启动前拒绝",
+        help="同SDK基线/单因素对照；压缩关闭限已验证SDK/CLI版本",
     )
     parser.add_argument("--max-attempts", type=int, choices=range(1, 13), default=4)
     parser.add_argument(

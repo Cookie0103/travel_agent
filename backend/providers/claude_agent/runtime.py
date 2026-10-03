@@ -30,6 +30,7 @@ class RuntimeConfig:
     max_turns: int = 6
     timeout_seconds: float = 90
     workflow: WorkflowName | None = None
+    disable_auto_compaction: bool = False
 
 
 class ClaudeRuntime:
@@ -80,6 +81,12 @@ class ClaudeRuntime:
         sdk_id: str | None,
         emit: EventSink,
     ) -> RuntimeOutcome:
+        if self.config.disable_auto_compaction and (
+            self.identity.cli_version != "2.1.114" or self.identity.sdk_version != "0.2.163"
+        ):
+            # 带工具get_context_usage会请求计数API；不放开费用守卫来逐轮探测。
+            # 仅使用已实测的锁定版本/官方开关，未知版本须先独立离线核验。
+            return RuntimeOutcome(code="blocked", reason="auto_compaction_capability")
         options = self.options(context, sdk_id, emit)
         try:
             async with asyncio.timeout(self.config.timeout_seconds):
@@ -102,6 +109,9 @@ class ClaudeRuntime:
         async for message in client.receive_response():
             if isinstance(message, SystemMessage) and message.subtype == "compact_boundary":
                 emit(RuntimeEvent(context, "context_compacted"))
+                if self.config.disable_auto_compaction:
+                    await client.interrupt()
+                    return RuntimeOutcome(code="blocked", reason="unexpected_auto_compaction")
             if isinstance(message, AssistantMessage):
                 if (
                     message.error
@@ -141,6 +151,7 @@ class ClaudeRuntime:
             thinking={"type": "disabled"},
             verbatim_prompts=True,
             resume=sdk_id,
+            env={"DISABLE_AUTO_COMPACT": "1"} if self.config.disable_auto_compaction else {},
         )
 
 

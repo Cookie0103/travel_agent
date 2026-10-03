@@ -28,6 +28,6 @@ InitialState使用现有服务构造正式行程/锁、报价过期/条件失效
 
 ## 同一SDK对照
 
-实际模型评测可加 `--variant full|no_tools|no_skills|no_preferences|no_repairs`（需--database --live与既有授权）。full是当前完整配置；no_tools是B0，不给数据库事实或工具；其余分别只关闭按需Skill、当前持久偏好注入、校验后的修复轮次。非full单轮/fresh SDK，不与--workflow或语气评审混用；每例仍独立业务身份和原结果评分。反思关闭不跳过首次/最终校验，冲突草稿可展示但用户确认必须拒绝。manifest绑定实际variant/schema/Skills。FixtureRuntime不模拟这些效果，非full离线CLI拒绝；实际SDK+本机脚本/PG测试只证明配置机制。
+实际模型评测可加 `--variant full|no_tools|baseline_b2|no_skills|no_preferences|no_repairs|no_compaction`（需--database --live与既有授权）。full为B3；no_tools为B0，不给数据库事实或工具；固定--workflow为B1；baseline_b2为B2，保留工具/Skill/校验，同时关闭自动压缩和当前持久偏好注入。这是两项组合基线，不是单因素对照。其余分别只关闭按需Skill、当前持久偏好注入、校验后的修复轮次或自动压缩。非full单轮/fresh SDK，不与--workflow或语气评审混用；每例仍独立业务身份和原结果评分。反思关闭不跳过首次/最终校验，冲突草稿可展示但用户确认必须拒绝。manifest绑定实际variant/组别/schema/Skills。FixtureRuntime不模拟这些效果，非full离线CLI拒绝；实际SDK+本机脚本/PG测试只证明配置机制。
 
-`no_compaction`尚无锁定SDK的可靠关闭能力，启动前拒绝，B2/B3压缩差异不能声称已测；不改写transcript。长期偏好关闭只隔离保存的偏好值，保留用户当前条件与合法近期对话/删除墓碑，不声称删除所有历史线索。详见[ADR012](../docs/adr/012-evaluation-variants.md)。
+关闭自动压缩使用SDK公共options.env与官方DISABLE_AUTO_COMPACT=1，限已验证SDK0.2.163/CLI2.1.114；未知版本在初始化/模型请求前拒绝，意外压缩事件中断而非计成功。实际原生SDK在相同人工usage/阈值下默认发生压缩、no_compaction/B2不压缩；这不代表真实模型摘要质量或效果已测。带工具的get_context_usage会触发辅助请求，因此不逐轮查询、不放宽费用守卫、不改写transcript。长期偏好关闭只隔离保存的偏好值，保留用户当前条件与合法近期对话/删除墓碑，不声称删除所有历史线索。详见[ADR012](../docs/adr/012-evaluation-variants.md)。

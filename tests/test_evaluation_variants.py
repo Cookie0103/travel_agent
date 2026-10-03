@@ -23,13 +23,13 @@ def test_variants_reuse_original_definitions_and_remove_only_declared_skill() ->
     assert evaluation_definitions("full", database=True) == DEFINITIONS
     no_skills = evaluation_definitions("no_skills", database=True)
     assert no_skills == tuple(d for d in DEFINITIONS if d.name != "load_skill")
-    for variant in ("no_preferences", "no_repairs"):
+    for variant in ("no_preferences", "no_repairs", "no_compaction", "baseline_b2"):
         assert evaluation_definitions(variant, database=True) == DEFINITIONS
     assert evaluation_definitions("no_tools", database=True) == ()
     assert evaluation_definitions("no_tools", database=False) == ()
 
 
-@pytest.mark.parametrize("variant", ["no_compaction", "unknown"])
+@pytest.mark.parametrize("variant", ["unknown", ""])
 def test_unsupported_variant_is_rejected_before_budget_or_worker(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, variant: EvaluationVariant
 ) -> None:
@@ -45,7 +45,14 @@ def test_unsupported_variant_is_rejected_before_budget_or_worker(
 def test_one_factor_variants_require_database_and_reject_workflow_or_judge() -> None:
     with pytest.raises(ValueError):
         validate_variant("no_preferences", database=False, workflow=None)
-    for variant in ("no_tools", "no_skills", "no_preferences", "no_repairs"):
+    for variant in (
+        "no_tools",
+        "no_skills",
+        "no_preferences",
+        "no_repairs",
+        "no_compaction",
+        "baseline_b2",
+    ):
         with pytest.raises(ValueError):
             validate_variant(variant, database=True, workflow="search")
         with pytest.raises(ValueError):
@@ -57,6 +64,7 @@ def test_one_factor_variants_require_database_and_reject_workflow_or_judge() -> 
     [
         {"evaluation_variant": "unknown"},
         {"evaluation_variant": "no_compaction"},
+        {"evaluation_variant": "baseline_b2"},
         {"evaluation_variant": "no_preferences"},
         {"evaluation_variant": "no_tools", "prompts": ["one", "two"]},
         {"evaluation_variant": "no_tools", "workflow": "search"},
@@ -104,7 +112,7 @@ def test_eval_cli_compaction_or_offline_variant_stops_before_database_or_budget(
     monkeypatch.setattr("eval.run.check_evaluation_size", forbidden)
     monkeypatch.setattr("eval.run.temporary_database", forbidden)
     for arguments in (
-        ["--variant", "no_compaction", "--database", "--live"],
+        ["--variant", "no_compaction", "--database"],
         ["--variant", "no_tools", "--database"],
         ["--variant", "no_skills", "--database", "--live", "--workflow", "search"],
     ):

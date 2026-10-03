@@ -2,6 +2,7 @@
 
 import asyncio
 from collections.abc import AsyncIterator
+from dataclasses import replace
 from pathlib import Path
 from types import TracebackType
 from uuid import uuid4
@@ -12,6 +13,7 @@ from claude_agent_sdk import (
     ClaudeAgentOptions,
     Message,
     ResultMessage,
+    SystemMessage,
     TextBlock,
     ToolUseBlock,
 )
@@ -102,6 +104,69 @@ async def test_complete_result_translates_and_closes_sdk(
     assert client.options and client.options.resume == "known-sdk"
     assert client.options.tools == [] and client.options.setting_sources == []
     assert client.options.permission_mode == "dontAsk" and client.options.verbatim_prompts
+    assert client.options.env == {}
+
+
+class CompactionClient(ScriptedClient):
+    async def get_context_usage(self) -> dict[str, object]:
+        raise AssertionError("带工具不逐轮探测context_usage，避免隐式计数API请求")
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("sdk_version", "cli_version"),
+    [("0.2.163", v) for v in ("2.1.113", "2.1.115", "", "future", "test")]
+    + [(v, "2.1.114") for v in ("0.2.162", "0.2.164", "", "future")],
+)
+async def test_compaction_control_not_verified_stops_before_model_query(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    sdk_version: str,
+    cli_version: str,
+) -> None:
+    client = CompactionClient([])
+    adapter = runtime(tmp_path, monkeypatch, client)
+    adapter.identity = replace(adapter.identity, cli_version=cli_version, sdk_version=sdk_version)
+    adapter.config = replace(
+        adapter.config, disable_auto_compaction=True, identity=adapter.identity
+    )
+    result = await adapter.execute(
+        RunContext(uuid4()), "京都", None, lambda e: None, asyncio.Event()
+    )
+    assert result.code == "blocked" and result.reason == "auto_compaction_capability"
+    assert not client.queried.is_set() and result.sdk_session_id is None
+    assert client.options is None  # 未核验版本在SDK初始化前拒绝。
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("unexpected_compaction", [False, True])
+async def test_verified_compaction_control_completes_or_stops_on_compact_event(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    unexpected_compaction: bool,
+) -> None:
+    messages: list[Message] = [ResultMessage("success", 1, 1, False, 1, "sdk", result="done")]
+    if unexpected_compaction:
+        messages.insert(0, SystemMessage("compact_boundary", {}))
+    client = CompactionClient(messages)
+    adapter = runtime(tmp_path, monkeypatch, client)
+    adapter.identity = replace(adapter.identity, sdk_version="0.2.163")
+    adapter.config = replace(
+        adapter.config, disable_auto_compaction=True, identity=adapter.identity
+    )
+    events: list[RuntimeEvent] = []
+    result = await adapter.execute(
+        RunContext(uuid4()), "京都", None, events.append, asyncio.Event()
+    )
+    assert client.queried.is_set() and client.closed
+    assert client.options and client.options.env == {"DISABLE_AUTO_COMPACT": "1"}
+    if unexpected_compaction:
+        assert result.code == "blocked" and result.reason == "unexpected_auto_compaction"
+        assert result.sdk_session_id is None and client.interrupted
+        assert [e.kind for e in events] == ["context_compacted"]
+    else:
+        assert result.code is None and result.text == "done"
+        assert result.sdk_session_id == "sdk" and not client.interrupted
 
 
 @pytest.mark.asyncio
