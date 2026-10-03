@@ -12,6 +12,12 @@ from backend.api.events import stream_events
 from backend.services.bookings import Booking, BookingService, HoldHotelInput
 from backend.services.common import ServiceError
 from backend.services.plans import LockInput, PlanService, SavedPlan
+from backend.services.preferences import (
+    PreferencePatch,
+    Preferences,
+    PreferenceService,
+    PreferenceVersion,
+)
 from backend.services.runs import MessageInput, RunService, RunView
 from backend.services.sessions import (
     DemoIdentity,
@@ -41,6 +47,7 @@ def create_app(
     runs = runs_service or RunService(sessions.database, live_enabled=live_enabled)
     plans = PlanService(travel)
     bookings = booking_service or BookingService(travel)
+    preferences = PreferenceService(sessions.database)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -61,6 +68,22 @@ def create_app(
 
     async def identity(authorization: Annotated[str | None, Header()] = None) -> UUID:
         return await sessions.authenticate(authorization)
+
+    @app.get("/preferences")
+    async def get_preferences(user_id: Annotated[UUID, Depends(identity)]) -> Preferences:
+        return await preferences.get(user_id)
+
+    @app.patch("/preferences")
+    async def patch_preferences(
+        body: PreferencePatch, user_id: Annotated[UUID, Depends(identity)]
+    ) -> Preferences:
+        return await preferences.change(user_id, body)
+
+    @app.delete("/preferences")
+    async def delete_preferences(
+        body: PreferenceVersion, user_id: Annotated[UUID, Depends(identity)]
+    ) -> Preferences:
+        return await preferences.change(user_id, body)
 
     @app.get("/health")
     async def health() -> dict[str, str]:

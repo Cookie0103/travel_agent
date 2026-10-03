@@ -301,3 +301,16 @@
 
 - 401修复复核又发现迟到SSE与普通API成功回写竞态，包括Promise检查后的微任务窗口。统一generation、旧流abort、异步每次写回前同步active检查；共用readWhile拒绝已过期响应，调用方再次守门。新增迟到成功、原401状态保留、微任务顺序三回归，前端10/type/lint/build通过。不是声称浏览器验证过所有微任务排列。
 - M3规格已按既有plan补写，独立规格审查无产品冲突/重大缺口；外部MCP只四个明确工具、偏好用户API+持久墓碑版本、压缩/脚本/模型证据分开。核对官方hooks及已安装SDK0.2.163公共类型，PostCompact与CLI新版专用能力不能直接套用。M3仍未实施。
+
+- 4a12656正常dev check/test钩子通过，24文件保存，不push。M2最终独立复核未发现其他P1/P2，自动进入M3。
+
+### M3.2 用户偏好
+
+- 新增用户行preferences/preference_revision及0009迁移；GET/PATCH/DELETE仅认证本人，expected_revision锁内裁决、部分修改、清空保留墓碑版本。复用旅行Text/Transport字段类型，不注册偏好模型写工具，不自动改本次条件。
+- 业务上下文加入低优先级偏好；SDKcheckpoint同时绑定条件/偏好版本，轮中改变任一版本不保存旧上下文指针。删除后不续接旧偏好历史。移除无调用的旧单revision读取，用同快照revisions核对。
+- 第一专项8通过/1失败，测试误把load_snapshot的类型化list当dict；按真实接口构造Article.model_copy后重跑9通过（1.50秒），保留删除/注入断言。check174/3契约/10地图通过。实际SDK删除测试已写尚未运行；网页待实施，当前不能标M3.2完成。
+
+- 后续实现网页及实际CLI删除实验；初次完整397通过（87.60秒）。独立两P2发现初始空删除未阻止旧编辑、旧TaskRun回答仍注入；新增0010墓碑标志及回顾时间边界，保留用户原历史，SDK版本核对不变。
+- 新专项先失败3项：FakeRuntime成功缺sdk_session_id被原守卫判provider_error；补完整假会话ID，不改产品守卫。mypy拒绝SQL条件中的普通bool，改SQLAlchemy true()。重跑PG/实际CLI/版本13通过（9.83秒）、check176通过；实际CLI覆盖原空偏好和已保存偏好且旧回答已持久化。独立复核两P2关闭，无新增P1/P2。
+- 真实浏览器鼠标保存无效，键盘提交成功；截图证明旧conditions吸顶覆盖偏好表单，移除吸顶后鼠标保存/刷新/清除/重复清空通过，旅行条件仍rev0。网页版本0→1→2→3→4；最终空偏好rev4，截图m32-preferences-saved/deleted.jpg。不是把键盘成功冒充鼠标成功。
+- 最终dev test 400 passed/2 live deselected（91.94秒），dev web-check类型/lint/10测试/生产build通过；项目PG迁移0010。API70996、Next60844、供应商12178仍为本地测试进程。付费计数/金额无变化。普通提交后自动继续M3，不等用户验收。

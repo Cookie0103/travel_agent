@@ -8,6 +8,7 @@ TravelService共用RequestPatch领域规则，API与工具只传服务端RunCont
 common.transaction统一事务/错误脱敏；领域纯规则与仓储SQL不在此处重复实现。
 RunService负责消息去重、单会话执行、取消和持久事件；执行仍委托Agent，不实现模型循环。
 TravelService.business_context只返回本人最近两轮有界回顾和有效Evidence引用。
+PreferenceService以用户行锁更新显式偏好、删除墓碑与回顾边界；修改后旧SDK和旧对话不再注入。
 HotelService复用Evidence持久化不可变模拟报价；补卡拒绝过期、旧版本、他人和伪造ID。
 PlanningService解析同会话当前证据、生成自制估算路段并调用纯validator；修复往返由SDK驱动。
 PlanService同事务重新校验草稿/版本/证据并确认；用户+draft幂等重放返回第一次正式版本。

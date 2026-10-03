@@ -46,7 +46,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         async with database_tools(
             dsn, supplier_url if isinstance(supplier_url, str) else None
         ) as executor:
-            snapshot, revision = await executor.context_snapshot(context)
+            snapshot, revision, preference_revision = await executor.context_snapshot(context)
             system = travel_prompt() + snapshot
             return await run_prompts(
                 prompts,
@@ -58,6 +58,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
                 system,
                 checkpoints=Checkpoints(Path.cwd()),
                 revision=revision,
+                preference_revision=preference_revision,
             )
     return await run_prompts(
         prompts, context, identity, cli, DEFINITIONS, SearchExecutor(), travel_prompt()
@@ -75,6 +76,7 @@ async def run_prompts(
     *,
     checkpoints: Checkpoints | None = None,
     revision: int = 0,
+    preference_revision: int = 0,
 ) -> dict[str, object]:
     config = RuntimeConfig(identity, cli, Path.cwd(), system)
     agent = Agent(ClaudeRuntime(config, definitions, executor))
@@ -85,7 +87,11 @@ async def run_prompts(
         events.append(event)
 
     reference_id = None
-    resumed = checkpoints.load(context, identity, revision) if checkpoints else None
+    resumed = (
+        checkpoints.load(context, identity, revision, preference_revision=preference_revision)
+        if checkpoints
+        else None
+    )
     if resumed is not None:
         agent.restore(resumed)
         reference_id = resumed.id
@@ -111,8 +117,13 @@ async def run_prompts(
         reference_id = result.reference.id
     persisted = False
     if checkpoints and result.reference:
-        if not isinstance(executor, DatabaseTools) or await executor.revision(context) == revision:
-            persisted = checkpoints.save(result.reference, revision)
+        if not isinstance(executor, DatabaseTools) or await executor.revisions(context) == (
+            revision,
+            preference_revision,
+        ):
+            persisted = checkpoints.save(
+                result.reference, revision, preference_revision=preference_revision
+            )
     return {
         "status": "success",
         "results": results,

@@ -13,6 +13,11 @@ async def check_connection(db: AsyncSession) -> None:
     await db.execute(text("SELECT 1"))
 
 
+async def get_user(db: AsyncSession, user_id: UUID, *, lock: bool = False) -> UserRow | None:
+    statement = select(UserRow).where(UserRow.id == user_id)
+    return await db.scalar(statement.with_for_update() if lock else statement)
+
+
 async def create_user(db: AsyncSession, name: str, token_hash: str, expires: datetime) -> UserRow:
     user = UserRow(display_name=name, token_hash=token_hash, token_expires_at=expires)
     db.add(user)

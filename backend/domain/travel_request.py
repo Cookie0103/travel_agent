@@ -8,6 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 Age = Annotated[int, Field(strict=True, ge=0, le=17)]
 Text = Annotated[str, Field(min_length=1, max_length=200)]
+Transport = Literal["walk", "transit", "taxi"]
 
 
 class TravelConditions(BaseModel):
@@ -22,7 +23,7 @@ class TravelConditions(BaseModel):
     rooms: int | None = Field(default=None, strict=True, ge=1, le=6)
     budget: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
     currency: Literal["JPY"] = "JPY"
-    transport: Literal["walk", "transit", "taxi"] | None = None
+    transport: Transport | None = None
     departure_time: time | None = None
     interests: tuple[Text, ...] = Field(default=(), max_length=20)
     hard_constraints: tuple[Text, ...] = Field(default=(), max_length=20)

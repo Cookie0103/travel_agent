@@ -5,6 +5,7 @@ import { useWorkspace } from "@/lib/use-workspace";
 import { Conditions } from "./conditions";
 import { HotelResults, PlanResults } from "./results";
 import { Bookings } from "./bookings";
+import { PreferencePanel } from "./preferences";
 
 export function Workbench() {
   const workspace = useWorkspace();
@@ -95,6 +96,11 @@ export function Workbench() {
                 save={workspace.saveConditions}
               />
             )}
+            <PreferencePanel
+              key={workspace.identity.user_id}
+              identity={workspace.identity}
+              onError={workspace.fail}
+            />
             <p className="muted small">
               会话 {workspace.identity.session_id.slice(0, 8)} ·
               令牌仅保留在此标签页，24 小时有效。

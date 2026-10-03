@@ -14,6 +14,7 @@ class Checkpoint(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     reference: SessionReference
     request_revision: int = Field(ge=0)
+    preference_revision: int = Field(default=0, ge=0)
     digest: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
@@ -33,7 +34,12 @@ class Checkpoints:
         return hashlib.sha256(files[0].read_bytes()).hexdigest()
 
     def load(
-        self, context: RunContext, identity: RuntimeIdentity, revision: int
+        self,
+        context: RunContext,
+        identity: RuntimeIdentity,
+        revision: int,
+        *,
+        preference_revision: int = 0,
     ) -> SessionReference | None:
         try:
             if self.path.stat().st_size > 64 * 1024:
@@ -45,6 +51,7 @@ class Checkpoints:
                 != (context.user_id, context.session_id)
                 or reference.identity != identity
                 or saved.request_revision != revision
+                or saved.preference_revision != preference_revision
                 or self._digest(reference.sdk_session_id) != saved.digest
             ):
                 return None
@@ -56,12 +63,19 @@ class Checkpoints:
         # 执行前先撤掉旧指针；崩溃不能把旧完整轮次当成本轮DB写入的原子断点。
         self.path.unlink(missing_ok=True)
 
-    def save(self, reference: SessionReference, revision: int) -> bool:
+    def save(
+        self, reference: SessionReference, revision: int, *, preference_revision: int = 0
+    ) -> bool:
         try:
             digest = self._digest(reference.sdk_session_id)
             if digest is None:
                 return False
-            saved = Checkpoint(reference=reference, request_revision=revision, digest=digest)
+            saved = Checkpoint(
+                reference=reference,
+                request_revision=revision,
+                preference_revision=preference_revision,
+                digest=digest,
+            )
             temporary = self.path.with_suffix(".tmp")
             temporary.write_text(saved.model_dump_json() + "\n", encoding="utf-8", newline="\n")
             temporary.replace(self.path)

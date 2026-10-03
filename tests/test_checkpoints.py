@@ -24,6 +24,11 @@ def test_checkpoint_identity_revision_foreign_owner_and_corruption_are_rejected(
     for foreign in (replace(context, user_id=uuid4()), replace(context, session_id=uuid4())):
         assert checkpoint.load(foreign, identity, 1) is None
     assert checkpoint.load(context, identity, 2) is None
+    assert checkpoint.load(context, identity, 1, preference_revision=1) is None
+    assert checkpoint.save(reference, 1, preference_revision=2)
+    assert checkpoint.load(context, identity, 1, preference_revision=2) == reference
+    assert checkpoint.load(context, identity, 1, preference_revision=3) is None
+    assert checkpoint.save(reference, 1)
     assert checkpoint.load(context, replace(identity, model="other"), 1) is None
     monkeypatch.setattr(checkpoint, "_digest", lambda sdk_id: "b" * 64)
     assert checkpoint.load(context, identity, 1) is None

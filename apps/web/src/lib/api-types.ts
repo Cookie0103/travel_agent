@@ -4,6 +4,25 @@
  */
 
 export interface paths {
+    "/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Preferences */
+        get: operations["get_preferences_preferences_get"];
+        put?: never;
+        post?: never;
+        /** Delete Preferences */
+        delete: operations["delete_preferences_preferences_delete"];
+        options?: never;
+        head?: never;
+        /** Patch Preferences */
+        patch: operations["patch_preferences_preferences_patch"];
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -695,6 +714,52 @@ export interface components {
              */
             version_changed: boolean;
         };
+        /** PreferencePatch */
+        PreferencePatch: {
+            /** Expected Revision */
+            expected_revision: number;
+            set: components["schemas"]["PreferenceValues"];
+        };
+        /** PreferenceValues */
+        PreferenceValues: {
+            /**
+             * Interests
+             * @default []
+             */
+            interests: string[];
+            /**
+             * Soft Constraints
+             * @default []
+             */
+            soft_constraints: string[];
+            /** Transport */
+            transport?: ("walk" | "transit" | "taxi") | null;
+        };
+        /** PreferenceVersion */
+        PreferenceVersion: {
+            /** Expected Revision */
+            expected_revision: number;
+        };
+        /** Preferences */
+        Preferences: {
+            /**
+             * Interests
+             * @default []
+             */
+            interests: string[];
+            /**
+             * Soft Constraints
+             * @default []
+             */
+            soft_constraints: string[];
+            /** Transport */
+            transport?: ("walk" | "transit" | "taxi") | null;
+            /**
+             * Revision
+             * @default 0
+             */
+            revision: number;
+        };
         /** RequestPatch */
         RequestPatch: {
             /** Expected Revision */
@@ -1337,6 +1402,107 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    get_preferences_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preferences"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_preferences_preferences_delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferenceVersion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preferences"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_preferences_preferences_patch: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferencePatch"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preferences"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     health_health_get: {
         parameters: {
             query?: never;

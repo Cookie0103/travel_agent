@@ -86,6 +86,9 @@ p {
 aside {
   min-width: 0;
 }
+.preference-panel {
+  margin-top: 16px;
+}
 .conditions,
 .conversation,
 .results-section,
@@ -94,10 +97,6 @@ aside {
   border-radius: 12px;
   background: #fffef9;
   padding: 24px;
-}
-.conditions {
-  position: sticky;
-  top: 20px;
 }
 .section-heading {
   display: flex;
@@ -360,9 +359,6 @@ footer {
   }
   .workspace {
     grid-template-columns: 1fr;
-  }
-  .conditions {
-    position: static;
   }
   .conversation,
   .results-section,

@@ -29,7 +29,7 @@
 ## 本次可直接打开的记录
 
 - [M2 可靠执行规格](tasks/M2.md)、[M2 集中记录](review/M2.md)。
-- [M3 上下文与对照规格](tasks/M3.md)：按既定设计实现偏好、外部只读MCP与评测，不把待测能力当完成。
+- [M3 上下文与对照规格](tasks/M3.md)、[M3 集中记录](review/M3.md)：偏好、外部只读MCP与评测；未测能力不计完成。
 - [M1 业务集中记录](review/M1.md)、[基础 API 真实 HTTP 证据](evidence/m11-api-smoke-2026-10-03.json)、[M1 规格](tasks/M1.md)。
 - [M0 集中审查记录](review/M0.md)、[SDK 真实接入结果](protocol-agent-sdk.md)、[旅行工具真实查询证据](evidence/travel-query-2026-10-03.json)。
 - [本地 Trace 与云导出决策](adr/005-observability-export.md)、[Langfuse 页面验收缺口](blocked/langfuse.md)。

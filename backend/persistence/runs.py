@@ -5,7 +5,7 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome, terminal_event
@@ -58,7 +58,9 @@ async def active(db: AsyncSession, session_id: UUID) -> bool:
     )
 
 
-async def recent_completed(db: AsyncSession, context: RunContext) -> list[TaskRunRow]:
+async def recent_completed(
+    db: AsyncSession, context: RunContext, *, after: datetime | None = None
+) -> list[TaskRunRow]:
     rows = await db.scalars(
         select(TaskRunRow)
         .where(
@@ -66,6 +68,7 @@ async def recent_completed(db: AsyncSession, context: RunContext) -> list[TaskRu
             TaskRunRow.session_id == context.session_id,
             TaskRunRow.id != context.run_id,
             TaskRunRow.status == "completed",
+            TaskRunRow.created_at >= after if after is not None else true(),
         )
         .order_by(TaskRunRow.created_at.desc(), TaskRunRow.id)
         .limit(2)

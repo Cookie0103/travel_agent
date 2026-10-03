@@ -461,6 +461,7 @@ export function useWorkspace() {
     bookings,
     error,
     busy,
+    fail,
     login,
     saveConditions,
     send,
