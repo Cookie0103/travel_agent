@@ -2,26 +2,17 @@
 
 import hashlib
 import secrets
-from collections.abc import AsyncIterator, Mapping
-from contextlib import asynccontextmanager
+from collections.abc import Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import URL
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.domain.execution import ErrorCode
 from backend.persistence import sessions
 from backend.persistence.database import Database, configuration, database_url
-
-
-class ServiceError(RuntimeError):
-    def __init__(self, status: int, code: ErrorCode, message: str) -> None:
-        self.status, self.code = status, code
-        super().__init__(message)
+from backend.services.common import ServiceError, transaction
 
 
 class DemoLogin(BaseModel):
@@ -52,16 +43,8 @@ class SessionService:
         config = configuration(environment)
         return cls(database_url(config), demo_enabled=config["DEMO_MODE"].casefold() == "true")
 
-    @asynccontextmanager
-    async def _transaction(self) -> AsyncIterator[AsyncSession]:
-        try:
-            async with self.database.sessions.begin() as db:
-                yield db
-        except (SQLAlchemyError, OSError):
-            raise ServiceError(503, "unavailable", "数据库暂不可用") from None
-
     async def health(self) -> None:
-        async with self._transaction() as db:
+        async with transaction(self.database) as db:
             await sessions.check_connection(db)
 
     async def create_demo_user(self, request: DemoLogin) -> DemoIdentity:
@@ -69,7 +52,7 @@ class SessionService:
             raise ServiceError(403, "blocked", "演示登录未启用")
         token = secrets.token_urlsafe(32)
         expires = datetime.now(UTC) + timedelta(hours=24)
-        async with self._transaction() as db:
+        async with transaction(self.database) as db:
             user = await sessions.create_user(
                 db, request.display_name, hashlib.sha256(token.encode()).hexdigest(), expires
             )
@@ -79,19 +62,19 @@ class SessionService:
         if not authorization or not authorization.startswith("Bearer ") or len(authorization) > 256:
             raise ServiceError(401, "blocked", "需要有效身份")
         token_hash = hashlib.sha256(authorization[7:].encode()).hexdigest()
-        async with self._transaction() as db:
+        async with transaction(self.database) as db:
             user = await sessions.find_user(db, token_hash, datetime.now(UTC))
             if user is None:
                 raise ServiceError(401, "blocked", "需要有效身份")
             return user.id
 
     async def new_session(self, user_id: UUID) -> SessionView:
-        async with self._transaction() as db:
+        async with transaction(self.database) as db:
             row = await sessions.create_session(db, user_id)
             return SessionView(row.id, row.created_at)
 
     async def get_session(self, user_id: UUID, session_id: UUID) -> SessionView:
-        async with self._transaction() as db:
+        async with transaction(self.database) as db:
             row = await sessions.get_session(db, user_id, session_id)
             if row is None:
                 raise ServiceError(404, "blocked", "会话不存在")

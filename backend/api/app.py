@@ -8,17 +8,25 @@ from uuid import UUID
 from fastapi import Depends, FastAPI, Header, Request
 from fastapi.responses import JSONResponse
 
+from backend.services.common import ServiceError
 from backend.services.sessions import (
     DemoIdentity,
     DemoLogin,
-    ServiceError,
     SessionService,
     SessionView,
+)
+from backend.services.travel import (
+    RequestPatch,
+    RequestUpdate,
+    RunContext,
+    TravelRequest,
+    TravelService,
 )
 
 
 def create_app(service: SessionService | None = None) -> FastAPI:
     sessions = service or SessionService.from_environment()
+    travel = TravelService(sessions.database)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -56,5 +64,17 @@ def create_app(service: SessionService | None = None) -> FastAPI:
         session_id: UUID, user_id: Annotated[UUID, Depends(identity)]
     ) -> SessionView:
         return await sessions.get_session(user_id, session_id)
+
+    @app.get("/sessions/{session_id}/request")
+    async def get_travel_request(
+        session_id: UUID, user_id: Annotated[UUID, Depends(identity)]
+    ) -> TravelRequest:
+        return await travel.get_request(RunContext(user_id, session_id))
+
+    @app.patch("/sessions/{session_id}/request")
+    async def patch_travel_request(
+        session_id: UUID, body: RequestPatch, user_id: Annotated[UUID, Depends(identity)]
+    ) -> RequestUpdate:
+        return await travel.patch_request(RunContext(user_id, session_id), body)
 
     return app

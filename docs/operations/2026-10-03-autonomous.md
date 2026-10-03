@@ -144,3 +144,14 @@
 - check94文件/3契约通过；专项首次15通过/1失败为测试错误假设原始数字ID顺序等于DB字符串排序，改按稳定ID逐条核对来源；最终16专项通过（0.57秒）。
 - dev db-migrate和python -m data.import_catalog在项目真实库成功，entries_processed166。数据库失败回滚/重复导入已由真实测试覆盖。独立审查/最终完整测试进行中，无新增模型费用。
 - 最终dev test221 passed/2 deselected（18.31秒）；独立审查无P1/P2，建议明确OSM的2026-06-01数据基准已采纳。M1.4接入时必须使用snapshot标记，不继承fixture警告。
+- M1.2正常提交钩子通过，保存6443071。
+
+## M1.3 条件与Evidence
+
+- TravelConditions单份字段契约同时供当前状态和RequestPatch的set使用，clear显式清空；省略不变、无变化不增revision，children未知与明确无儿童分开。
+- 新增旅行条件/Evidence表与0003迁移；同一会话行锁覆盖读取版本、条件更新及相关证据失效。Evidence引用同时检查用户/会话、revision、适用日期人数、有效期；源字段缺失保持unknown。
+- services/common提取已有事务/错误边界供两个服务共用，无BaseService/通用仓储；HTTP GET/PATCH条件与工具将共用TravelService。
+- check102文件/3契约通过；领域+真实PostgreSQL+会话专项20 passed（5.94秒），覆盖并发只一方成功、写后异常回滚、伪造/他人/过期/条件不符/旧revision以及不变更新。
+- 自动质量关卡交独立审查；新增HTTP合并日期/所有者失败测试，完整验证待记录。未调用模型。
+- 完整dev test237 passed/2 deselected（18.91秒）。独立审查发现把酒店晚数要求误用在所有旅行日期，已允许同日旅行并在hotel_requirements单独要求overnight_stay；新增对照，11领域专项通过。
+- 修复后check102文件/3契约通过，dev db-migrate项目库升级0003，完整dev test238 passed/2 deselected（18.83秒）；独立复核关闭M1.3关卡，无剩余P1/P2。

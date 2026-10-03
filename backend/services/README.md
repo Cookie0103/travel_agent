@@ -4,3 +4,5 @@
 DemoLogin契约由FastAPI复用；服务端生成身份/令牌，摘要与会话写入各自事务。
 authenticate只返回有效令牌对应的服务端user_id；会话查询始终检查所属用户。
 数据库异常映射安全ServiceError，服务退出时关闭连接池；不吞错误或回显连接参数。
+TravelService共用RequestPatch领域规则，API与工具只传服务端RunContext；补卡必须通过resolve_evidence。
+common.transaction统一事务/错误脱敏；领域纯规则与仓储SQL不在此处重复实现。

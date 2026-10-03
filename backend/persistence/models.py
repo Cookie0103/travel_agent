@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, MetaData, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, MetaData, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -45,4 +45,24 @@ class CatalogRow(Base):
     id: Mapped[str] = mapped_column(String(100), primary_key=True)
     kind: Mapped[str] = mapped_column(String(10))
     city: Mapped[str] = mapped_column(String(40), index=True)
+    payload: Mapped[dict[str, object]] = mapped_column(JSONB)
+
+
+class TravelRequestRow(Base):
+    __tablename__ = "travel_requests"
+
+    session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), primary_key=True)
+    revision: Mapped[int] = mapped_column(default=0)
+    conditions: Mapped[dict[str, object]] = mapped_column(JSONB)
+    source_turn_id: Mapped[UUID | None]
+
+
+class EvidenceRow(Base):
+    __tablename__ = "evidence"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
+    kind: Mapped[str] = mapped_column(String(20))
+    invalidated: Mapped[bool] = mapped_column(Boolean, default=False)
     payload: Mapped[dict[str, object]] = mapped_column(JSONB)

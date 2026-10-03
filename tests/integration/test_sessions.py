@@ -100,3 +100,28 @@ def test_session_survives_new_application_instance(client: TestClient, postgres_
             assert db.scalar(select(SessionRow.id).where(SessionRow.id == session_id)) is not None
     finally:
         engine.dispose()
+
+
+def test_request_api_validates_merged_dates_and_owner(client: TestClient) -> None:
+    """R04：HTTP和工具复用同一条件契约，非法合并不能写入部分条件。"""
+    owner, other = login(client, "条件所有者"), login(client, "其他用户")
+    session = client.post("/sessions", headers=owner).json()["session_id"]
+    path = f"/sessions/{session}/request"
+    assert client.get(path, headers=owner).json()["revision"] == 0
+    changed = client.patch(
+        path,
+        headers=owner,
+        json={
+            "expected_revision": 0,
+            "set": {"start_date": "2026-11-03", "end_date": "2026-11-05"},
+        },
+    )
+    assert changed.status_code == 200 and changed.json()["request"]["revision"] == 1
+    invalid = client.patch(
+        path, headers=owner, json={"expected_revision": 1, "set": {"start_date": "2026-11-06"}}
+    )
+    assert invalid.status_code == 422
+    assert client.get(path, headers=owner).json()["start_date"] == "2026-11-03"
+    assert client.get(path, headers=other).status_code == 404
+    assert client.patch(path, headers=other, json={"expected_revision": 1}).status_code == 404
+    assert client.patch(path, headers=owner, json={"expected_revision": 0}).status_code == 409

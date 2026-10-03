@@ -36,11 +36,12 @@ async def create_session(db: AsyncSession, user_id: UUID) -> SessionRow:
     return session
 
 
-async def get_session(db: AsyncSession, user_id: UUID, session_id: UUID) -> SessionRow | None:
+async def get_session(
+    db: AsyncSession, user_id: UUID, session_id: UUID, *, lock: bool = False
+) -> SessionRow | None:
     # 不变量：不能先按ID查出对象再由调用方自觉检查归属。
-    return await db.scalar(
-        select(SessionRow).where(
-            SessionRow.id == session_id,
-            SessionRow.user_id == user_id,
-        )
+    statement = select(SessionRow).where(
+        SessionRow.id == session_id,
+        SessionRow.user_id == user_id,
     )
+    return await db.scalar(statement.with_for_update() if lock else statement)
