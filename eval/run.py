@@ -36,6 +36,7 @@ from backend.tools.contracts import ToolDefinition
 from backend.tools.search import DEFINITIONS, SearchExecutor
 from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
 from backend.tools.workflow import WORKFLOWS, WorkflowName
+from eval.business_metrics import BusinessMetrics
 from eval.cases import Case
 from eval.database import DATA_VERSION, DatabaseEvaluation, database_evaluation, selector_runner
 from eval.diagnostics import diagnose
@@ -126,6 +127,7 @@ async def run_cases(
                     variant, live=live, database=business is not None, workflow=workflow
                 ),
                 "business_database": business is not None,
+                "business_metrics_version": 1,
                 "database_name": business.sessions.database.engine.url.database
                 if business
                 else None,
@@ -177,6 +179,9 @@ async def run_cases(
                 }
             )
             row["repeat"] = repeat_index
+            row.setdefault(
+                "business_metrics", BusinessMetrics.for_case(case).model_dump(mode="json")
+            )
             rows.append(row)
             passed += int(row["status"] == "passed")
             checks = row.get("checks")
@@ -302,9 +307,12 @@ async def run_case(
     checks = grade(case, actual)
     verification_failed = False
     content_record: dict[str, object] | None = None
+    business_metrics = BusinessMetrics.for_case(case)
     if business:
         try:
-            checks.update(await business.checks(case, context, actual))
+            assessment = await business.assess(case, context, actual)
+            checks.update(assessment.checks)
+            business_metrics = assessment.metrics
             content_record = (await business.content_record(case, context, actual.text)).model_dump(
                 mode="json"
             )
@@ -320,6 +328,7 @@ async def run_case(
         if all(checks.values())
         else "failed",
         "checks": checks,
+        "business_metrics": business_metrics.model_dump(mode="json"),
         "diagnosis": asdict(
             diagnose(
                 actual.events,

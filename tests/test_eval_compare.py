@@ -15,6 +15,7 @@ from backend.providers.claude_agent.evaluation import (
     evaluation_definitions,
     evaluation_metadata,
 )
+from eval.business_metrics import BusinessMetrics
 from eval.cases import Case
 from eval.compare import compare
 from eval.report import measured_summary, rate
@@ -38,6 +39,7 @@ def write_batch(
         **manifest(cases, evaluation_definitions(variant, database=True)),
         **evaluation_metadata(variant, live=True, database=True, workflow=None),
         "business_database": True,
+        "business_metrics_version": 1,
         "catalog_sha256": "a" * 64,
         "data_version": "synthetic-v1",
         "max_http_attempts_per_case": 12,
@@ -84,6 +86,7 @@ def write_batch(
                     "evaluation_variant": variant,
                 }
             )
+        row["business_metrics"] = BusinessMetrics.for_case(cases[index % 2]).model_dump(mode="json")
         rows.append(row)
     totals = rate(rows)
     summary = {
@@ -270,6 +273,59 @@ def rewrite_results(path: Path, rows: list[dict[str, object]]) -> None:
     summary.update({key: value for key, value in rate(rows).items() if key != "expected"})
     summary.update(measured_summary(rows, 3))
     summary_path.write_text(json.dumps(summary), encoding="utf-8")
+
+
+@pytest.mark.parametrize("corruption", ["rows", "summary", "scope", "version"])
+def test_new_business_metrics_cannot_be_removed_or_reclassified(
+    tmp_path: Path, corruption: str
+) -> None:
+    a, b = tmp_path / "a", tmp_path / "b"
+    write_batch(a)
+    write_batch(b)
+    rp, sp, mp = b / "results.jsonl", b / "summary.json", b / "manifest.json"
+    rows = [json.loads(line) for line in rp.read_text(encoding="utf-8").splitlines()]
+    summary = json.loads(sp.read_text(encoding="utf-8"))
+    if corruption == "rows":
+        for row in rows:
+            row.pop("business_metrics")
+        summary.pop("business_metrics")
+    elif corruption == "summary":
+        summary.pop("business_metrics")
+    elif corruption == "scope":
+        rows[0]["business_metrics"]["constraint"]["status"] = "no_candidate"
+        summary.update(measured_summary(rows, 3))
+    else:
+        metadata = json.loads(mp.read_text(encoding="utf-8"))
+        metadata.pop("business_metrics_version")
+        mp.write_text(json.dumps(metadata), encoding="utf-8")
+    rp.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+    sp.write_text(json.dumps(summary), encoding="utf-8")
+    with pytest.raises(ValueError):
+        compare(a, b)
+
+
+def test_legacy_business_measurements_are_unknown_without_rewriting_original_summary(
+    tmp_path: Path,
+) -> None:
+    a, b = tmp_path / "a", tmp_path / "b"
+    for path in (a, b):
+        write_batch(path)
+        mp, sp, rp = path / "manifest.json", path / "summary.json", path / "results.jsonl"
+        metadata = json.loads(mp.read_text(encoding="utf-8"))
+        metadata.pop("business_metrics_version")
+        mp.write_text(json.dumps(metadata), encoding="utf-8")
+        summary = json.loads(sp.read_text(encoding="utf-8"))
+        summary.pop("business_metrics")
+        sp.write_text(json.dumps(summary), encoding="utf-8")
+        rows = [json.loads(line) for line in rp.read_text(encoding="utf-8").splitlines()]
+        for row in rows:
+            row.pop("business_metrics")
+        rp.write_text("".join(json.dumps(row) + "\n" for row in rows), encoding="utf-8")
+    before = (a / "summary.json").read_bytes()
+    groups = compare(a, b)["groups"]
+    assert isinstance(groups, dict)
+    assert groups["a"]["measurement"]["business_metrics"]["missing_observation_n"] == 6
+    assert (a / "summary.json").read_bytes() == before
 
 
 def test_missing_measurements_remain_unknown_without_zero_cost_or_latency(tmp_path: Path) -> None:

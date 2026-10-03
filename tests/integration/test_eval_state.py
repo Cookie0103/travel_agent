@@ -1,7 +1,7 @@
 """M4.2：真实PG初始状态、隔离run、过期/条件失效与供应商故障；不是模型成绩。"""
 
 from dataclasses import replace
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
@@ -12,8 +12,9 @@ from backend.adapters.supplier import SupplierClient
 from backend.domain.booking import HoldHotelInput
 from backend.domain.execution import RuntimeEvent
 from backend.domain.hotels import HotelOffer
-from backend.domain.plans import StageInput
+from backend.domain.plans import InitialStage, PlanDraft, StageInput
 from backend.domain.preferences import PreferencePatch
+from backend.domain.travel_request import RequestPatch
 from backend.persistence import plans
 from backend.persistence.models import EvidenceRow
 from backend.persistence.temporary import temporary_database
@@ -75,11 +76,17 @@ def test_setup_formal_plan_cannot_satisfy_new_draft_and_only_one_item_changes(
             assert first.user_id != second.user_id and first.session_id != second.session_id
             before = await business.checks(case, first, Observation("completed", "", ()))
             assert not before["one_item_patch"] and before["no_unconfirmed_plan_save"]
+            assert (
+                await business.assess(case, first, Observation("completed", "", ()))
+            ).metrics.constraint.status == "no_candidate"
             actual, _ = await business.observe(case, first, None)
             checks = await business.checks(case, first, actual)
             assert all(checks.values()), checks
             assert all(e.context == first for e in actual.events)
             assert "确认" in actual.text
+            assessment = await business.assess(case, first, actual)
+            assert assessment.metrics.constraint.status == "partial"
+            assert assessment.metrics.constraint.unknown and assessment.metrics.constraint.verified
             # setup已确认的V1保持，修改只增加新草稿；第二个身份没有继承修改。
             assert (await business.travel.business_context(first))["saved_plan"]
             assert (await business.travel.business_context(second))["pending_draft"] is None
@@ -278,6 +285,7 @@ def test_owned_supplier_fault_is_real_http_and_no_order_is_created(
                 initial_state={"request": REQUEST, "offer": "fresh"},
                 expected_tool_errors=[code],
                 business_checks=["expected_tool_failure"],
+                required_tools=["hold_hotel"],
             )
             context = await business.prepare(case)
             executor = TravelToolExecutor(business.travel)
@@ -298,6 +306,8 @@ def test_owned_supplier_fault_is_real_http_and_no_order_is_created(
             assert all(checks.values()), checks
             # 429业务终态由Booking返回failed；500/timeout是未确定写响应，不能混为成功。
             assert grade(case, actual)["tool_success"]
+            assert (await business.assess(case, context, actual)).metrics.booking == "correct"
+            assert (await business.assess(case, context, actual)).metrics.recovery == "unmeasured"
 
     with selector_runner() as runner:
         runner.run(exercise())
@@ -324,6 +334,9 @@ def test_setup_lost_response_has_one_order_and_reconcile_never_creates_another(
             assert result.status == "booked" and result.order_id
             checks = await business.checks(case, context, Observation("completed", "", ()))
             assert checks["no_new_supplier_order"] and not checks["booking_unknown_preserved"]
+            assert (
+                await business.assess(case, context, Observation("completed", "", ()))
+            ).metrics.booking == "incorrect"
 
     with selector_runner() as runner:
         runner.run(exercise())
@@ -348,6 +361,109 @@ def test_unconfirmed_save_and_new_order_are_detected_after_setup(
             )
             checks = await business.checks(case, context, actual)
             assert not checks["no_unconfirmed_plan_save"] and not checks["no_new_supplier_order"]
+
+    with selector_runner() as runner:
+        runner.run(exercise())
+
+
+@pytest.mark.parametrize("stale", ["expired", "conditions", "formal_version"])
+def test_constraint_measurement_revalidates_current_draft_and_rejects_stale_state(
+    postgres_url: URL, stale: str
+) -> None:
+    async def exercise() -> None:
+        async with database_evaluation(postgres_url) as business:
+            case = example(business_checks=["plan_draft"])
+            context = await business.prepare(case)
+            actual, _ = await business.observe(case, context, None)
+            measurement = (await business.assess(case, context, actual)).metrics.constraint
+            assert measurement.status == "partial" and measurement.unknown
+            async with transaction(business.travel.database) as db:
+                row = await plans.latest_draft(db, context)
+                assert row is not None
+                draft_id = row.id
+                pending = PlanDraft.model_validate(row.payload)
+                if stale == "expired":
+                    row.payload = {
+                        **row.payload,
+                        "expires_at": (datetime.now(UTC) - timedelta(seconds=1)).isoformat(),
+                    }
+            if stale == "conditions":
+                await business.travel.patch_request(
+                    context,
+                    RequestPatch.model_validate({"expected_revision": 1, "set": {"rooms": 2}}),
+                )
+            elif stale == "formal_version":
+                proposal = pending.content.proposal(1)
+                alternative = proposal.model_copy(
+                    update={
+                        "items": (
+                            proposal.items[0].model_copy(
+                                update={"start": proposal.items[0].start + timedelta(minutes=5)}
+                            ),
+                            *proposal.items[1:],
+                        )
+                    }
+                )
+                service = PlanService(business.travel)
+                other = await service.stage(
+                    context, StageInput(change=InitialStage(kind="initial", proposal=alternative))
+                )
+                assert other.draft_id != draft_id
+                await service.confirm(context.user_id, other.draft_id)
+            assessed = await business.assess(case, context, actual)
+            assert not assessed.checks["plan_draft"]
+            assert assessed.metrics.constraint.status == "unavailable"
+            assert assessed.metrics.constraint.verified is None
+
+    with selector_runner() as runner:
+        runner.run(exercise())
+
+
+def test_constraint_measurement_keeps_real_conflicts_instead_of_boolean_valid_draft(
+    postgres_url: URL,
+) -> None:
+    async def exercise() -> None:
+        async with database_evaluation(postgres_url) as business:
+            case = example(
+                initial_state={"request": REQUEST, "saved_plan": True},
+                business_checks=["one_item_patch"],
+            )
+            context = await business.prepare(case)
+            saved = business.baselines[context.run_id].saved
+            assert saved is not None
+            target = saved.content.items[0]
+            outside = target.proposed().model_copy(
+                update={
+                    "start": target.start - timedelta(days=1),
+                    "end": target.end - timedelta(days=1),
+                }
+            )
+            await PlanService(business.travel).stage(
+                context,
+                StageInput.model_validate(
+                    {
+                        "change": {
+                            "kind": "patch",
+                            "plan_id": str(saved.plan_id),
+                            "patch": {
+                                "base_version": saved.version,
+                                "expected_revision": 1,
+                                "operations": [
+                                    {
+                                        "op": "update",
+                                        "item_id": str(target.item_id),
+                                        "item": outside.model_dump(mode="json"),
+                                    }
+                                ],
+                            },
+                        }
+                    }
+                ),
+            )
+            assessed = await business.assess(case, context, Observation("completed", "", ()))
+            assert not assessed.checks["one_item_patch"]
+            assert assessed.metrics.constraint.status == "conflict"
+            assert assessed.metrics.constraint.conflict and assessed.metrics.constraint.conflict > 0
 
     with selector_runner() as runner:
         runner.run(exercise())

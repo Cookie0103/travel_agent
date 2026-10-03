@@ -3,6 +3,8 @@
 import math
 from decimal import Decimal, InvalidOperation
 
+from eval.business_metrics import business_summary
+
 
 def rate(rows: list[dict[str, object]]) -> dict[str, object]:
     evaluated = sum(row["status"] in {"passed", "failed"} for row in rows)
@@ -81,6 +83,7 @@ def measured_summary(rows: list[dict[str, object]], repeats: int) -> dict[str, o
         "tokens": token_summary(attempted),
         "semantic_fact_quality": None,
         "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+        "business_metrics": business_summary(rows),
     }
 
 

@@ -36,6 +36,12 @@ from backend.services.plans import LockInput, PlanService
 from backend.services.preferences import PreferenceService
 from backend.services.travel import TravelService
 from backend.tools.travel import TravelToolExecutor
+from eval.business_metrics import (
+    BOOKING_CHECKS,
+    BusinessAssessment,
+    BusinessMetrics,
+    ConstraintMeasurement,
+)
 from eval.cases import Case, InitialState
 from mock_supplier.scenarios import HoldAttempt
 
@@ -232,14 +238,14 @@ async def prepare_offer(
                 raise ValueError("未构造预期的丢响应状态")
 
 
-async def business_checks(
+async def assess_business(
     travel: TravelService,
     context: RunContext,
     case: Case,
     before: StateSnapshot,
     events: tuple[RuntimeEvent, ...],
     attempts: tuple[HoldAttempt, ...] = (),
-) -> dict[str, bool]:
+) -> BusinessAssessment:
     after = await snapshot(travel, context)
     checks = {
         "no_unconfirmed_plan_save": after.formal == before.formal,
@@ -282,6 +288,10 @@ async def business_checks(
         draft = PlanDraft.model_validate(row.payload) if row else None
     new_draft = draft is not None and draft.draft_id not in before.draft_ids
     valid_draft = False
+    metrics = BusinessMetrics.for_case(case)
+    constraint = metrics.constraint
+    if constraint.status != "not_applicable":
+        constraint = ConstraintMeasurement(status="unavailable" if new_draft else "no_candidate")
     if new_draft and draft:
         try:
             data = await PlanService(travel).get_draft(
@@ -292,6 +302,12 @@ async def business_checks(
                 "complete",
                 "partial",
             }
+            if constraint.status != "not_applicable" and isinstance(validation, dict):
+                counts = validation.get("check_counts")
+                if isinstance(counts, dict):
+                    constraint = ConstraintMeasurement.model_validate(
+                        {"status": validation.get("status"), **counts}
+                    )
         except ServiceError:
             pass  # 无效/失效草稿必须计失败，不用历史存在性替代本轮结果。
     for name in case.business_checks:
@@ -363,7 +379,20 @@ async def business_checks(
                     for b in affected
                 )
             )
-    return checks
+    booking = metrics.booking
+    if booking != "not_applicable":
+        expectations = BOOKING_CHECKS.intersection(case.business_checks)
+        if "hold_hotel" in case.required_tools and "expected_tool_failure" in case.business_checks:
+            expectations = expectations | {"expected_tool_failure"}
+        booking = (
+            "correct"
+            if all(
+                checks[name]
+                for name in (*expectations, "no_new_supplier_order", "no_unconfirmed_plan_save")
+            )
+            else "incorrect"
+        )
+    return BusinessAssessment(checks, BusinessMetrics(constraint=constraint, booking=booking))
 
 
 def second_afternoon_shift(saved: SavedPlan, draft: PlanDraft) -> bool:

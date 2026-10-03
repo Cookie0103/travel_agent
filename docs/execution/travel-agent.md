@@ -35,12 +35,12 @@
 ## 当前恢复点
 
 - 分支：batch/2026-10-03-travel-autonomous；既有origin=https://github.com/Cookie0103/travel_agent.git。
-- 最新已保存并普通push：**24b5dcb398851dc20e7b622b44e6ab81206e639a**。本地与ls-remote完整SHA一致，提交时工作区clean，正常静态/完整默认Python钩子Passed；不合并main。前序558e7d2、bf6dc52和39历史增量均保留。
+- 最新已保存并普通push：**a1cbd739be3cc3771564190ad6aede0e0eccf518**。本地与ls-remote完整SHA一致，提交时工作区clean，正常静态/完整默认Python钩子Passed；不合并main。前序558e7d2、bf6dc52和39历史增量均保留。
 - M1.8原工作台与本次攻略列表/全文→显式ID引用、独立正式页已实现并验证；最终web-check类型/lint/12测试/build Passed，实际浏览器V1及API停止后失败→恢复重读V1已验。原演示状态smoke --verify在最终构建后Passed、专用卷保留。两独立P2已关闭；迟到登录浏览器注入尚未做，现有Promise/微任务与源码审查范围明确。
 - full/B3及B0原40test×3各已完成，分别94/120与17/120规则通过，0error/not_run；原失败与161源码/数据/用例hash保留。bf6dc52原记录比较120完整配对/精确费用差已保存，不把结构规则说成语义质量。
 - 真实账本仍**608HTTP/12.089568CNY**，同UTC账日10-03含旧探针0.10后**12.189568/15、余额2.810432**，未结0。JST已10-04不等于UTC额度重置；无新付费请求。
-- CI：558e7d2两事件全部success。bf6dc52 PR37131409211全success，push37131407069两个原无工具评审断言暴露SDK回调竞态（HTTP2而应1），其余683passed/1已有平台skip/2live deselected、web/docker-demo success。7d1d0f6已修响应allowlist，63专项与原完整钩子Passed；新CI37132750339/37132753268全部success，Python693passed/1已有平台skip/2live deselected；R15下一提交CI待验。
-- 当前未提交：M1.5/M2.2原报价儿童信息显示，14前端检查和实际浏览器旧报价保持已验，独立无P1/P2，待正常完整钩子/commit/push。随后补约束/预订/恢复分项观测与报告；R15已保存24b5dcb。
+- CI：558e7d2两事件全部success。bf6dc52 PR37131409211全success，push37131407069两个原无工具评审断言暴露SDK回调竞态（HTTP2而应1），其余683passed/1已有平台skip/2live deselected、web/docker-demo success。7d1d0f6已修响应allowlist，63专项与原完整钩子Passed；新CI37132750339/37132753268全部success，Python693passed/1已有平台skip/2live deselected；24b5dcb两CI37133212223/37133214301与a1cbd73两CI37133743697/37133746081均全部success。
+- 当前未提交：M4.2业务分项捕获/汇总与新旧版本核对，116相关测试（实际PG/HTTP）Passed，222源码三平台strict及原静态关卡Passed，独立无P1/P2；原full/B0各120缺观测仍unknown，0新付费。待正常完整提交钩子/commit/push；随后处理其余离线验收缺口。
 - 未满足：其他模型/配置完整统计对照、参数/事实语义全量及真人校准、Claude真实API与Cloud页面、M3.6邻近正常/规划质量及历史阈值预声明偏差。已有三真实坏例不当全部闭环。C依plan04在A完整前不开始；总Goal不标完成。
 
 ## 进度
@@ -63,7 +63,7 @@
 | M1.5 | verified | 6虚构酒店/12报价组合、刷新与同口径比较卡片 | 5415e60；282完整测试/check125文件与文档地图通过，6.1-sol high复核无P1/P2 |
 | M1.6 | verified | 纯行程校验/估算路线/SDK修复反馈 | 3dd92c0；302完整测试/check132文件；实际SDK离线修复/上限、真实PG；独立审查两项P2已关闭 |
 | M1.7 | verified | 稳定item_id局部修改、草稿/差异、确认幂等 | e40c259；320完整测试/check139文件，真实PG竞争/回滚、实际SDK离线stage/present，独立P2已关闭 |
-| M1.8 | verified（7d1d0f6；新CI待验） | 攻略列表/详情→引用、工作台、独立正式行程页 | API/实际浏览器断线重试/12前端专项与正常完整钩子Passed，独立问题已关闭 |
+| M1.8 | verified（7d1d0f6；两CI全部success） | 攻略列表/详情→引用、工作台、独立正式行程页 | API/实际浏览器断线重试/12前端专项与正常完整钩子Passed，独立问题已关闭 |
 | M1.9 | verified（0b6fd8c） | 完整演示和30条回归 | R01–R08与页面证据 |
 | M2.1–M2.6 | verified（4a12656） | 模拟预订、对账、重启与断线恢复 | R09–R12，真实PG/HTTP/浏览器；真实失败小样本前后证据 |
 | M3.1–M3.6 | M3.1/M3.2/M3.3 verified / M3.4 partial（da68f86）/ M3.5 partial（f792c85）/ M3.6 partial（aab5972，三个真实输入记录已有、邻例/质量未完全通过） | 上下文/偏好、对外 MCP、编排对照、坏例修复 | R13–R17/R19；授权范围内模型实验；真实压缩质量未计入机制验收 |

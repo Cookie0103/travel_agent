@@ -5,7 +5,7 @@
 授权真实调用需额外 `--live` 与明确供应商/原币种/每日额度；最新DeepSeek许可每日15CNY、无累计金额/次数上限，旧账/未结占用继续计入，USD仍0。完整40×3最低120次HTTP且通常更多，每日额度不足停止，不承诺整批一定完成。
 历史21+9文件和期望不改。冻结版本、hash、20dev/40test、历史来源及正常对照由suites校验；未冻结/内容漂移拒绝运行。test不用于模型调优。
 
-调用链：load_suite → temporary_database → database_evaluation → prepare/observe/checks → grade → report。
+调用链：load_suite → temporary_database → database_evaluation → prepare/observe/assess → grade → report。
 DB模式只创建本次随机本地 `travel_agent_eval_<uuid>`，迁移/导入既定快照；正常退出仅清理该库，保留父库及输出。不读取已有用户数据。硬断电可能留下本次孤立库，恢复不自动删除其他库。
 InitialState使用现有服务构造正式行程/锁、报价过期/条件失效、held/unknown、偏好/墓碑与历史。setup与实际运行分开run_id，setup事件不计成绩；业务历史种子不等于原生SDK长会话。
 供应商故障只注入本次本机HTTP `/holds`；unknown订单setup在用户确认后丢响应。模型没有确认/对账工具，必须保留unknown并说明用户/API查询，不能据此声称模型对账成功。
@@ -18,6 +18,16 @@ InitialState使用现有服务构造正式行程/锁、报价过期/条件失效
 报告分别记录重复n/波动、工具数/HTTP、token、时延P50/P95及CNY/USD；未知测量为null，不填零、不换汇。未经语义/人工校准，规则分不代表事实准确率。
 离线DB仍用FixtureRuntime搜索/固定演示，只证明设施/真实服务协作，不能代表自主模型规划。规格期待从不送入模型，完整回答/SDK会话留私有缓存。
 规则失败仍输出报告并退出0；执行/规格/输出异常退出1，不能仅看退出码当业务通过。
+
+## 业务分项观测
+
+新manifest声明`business_metrics_version=1`；每行（包括error/not_run/setup失败）保存`business_metrics`，适用范围只按冻结Case既有business_checks/required_tools确定，不改规则评分或期望。新记录缺字段/范围改变/缓存摘要不符时比较拒绝；原无版本批次只能作为缺观测，保留原文件/hash，不能补算已销毁临时库的状态。
+
+约束复用本轮最新草稿的`get_draft`当前身份/条件/正式版本重校验与完整`check_counts`，不用截断12条检查计数。complete、partial、conflict、no_candidate、unavailable分别汇总；候选覆盖率包含无候选/不可用任务。已观测完整约束通过率仅complete计分，partial保留unknown并只贡献“无冲突率”；缺覆盖/旧观测时全量比率null，已观测小计单列。初始状态中的旧草稿不能计入本轮候选。
+
+预订分项仅统计已声明的模拟暂留、unknown保持及hold供应商预期故障，沿用实际同run/调用/Evidence/HTTP故障关联，并要求无新增订单、无未确认保存。它不代表付款或完整下单正确率。当前冻结套件不执行带原目标的恢复动作，恢复完成率保持unmeasured；独立PG/kill恢复测试证明机制，不替代模型恢复统计。
+
+实施证据见[业务分项](evidence/m42-business-metrics-2026-10-04.json)：0新模型请求，原full/B0仍94/120和17/120；两组各缺120项业务观测，原费用/规则记录未写回。
 
 语气/内容评审：`python -m eval.judge <私有JSONL>`默认只准备；显式--live复用同SDK/费用守卫、固定模型/temperature0/零工具。完整回答与评分私有，解析错误单列judge_error；运行异常停止余下样本，真人分不生成。校准/调用说明见[calibration](../eval/calibration/README.md)。
 ## 工具参数与首次进度指标

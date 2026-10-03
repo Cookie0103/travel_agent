@@ -29,10 +29,11 @@ from backend.tools.contracts import ToolExecutor
 from backend.tools.travel import TravelToolExecutor
 from backend.tools.workflow import OrderedTools, WorkflowName
 from data.import_catalog import load_snapshot
+from eval.business_metrics import BusinessAssessment
 from eval.cases import Case, InitialState
 from eval.content import AnswerRecord, Grounding
 from eval.graders import Observation
-from eval.state import StateSnapshot, business_checks, prepare_state, snapshot
+from eval.state import StateSnapshot, assess_business, prepare_state, snapshot
 from mock_supplier.scenarios import SupplierScenario
 
 DATA_VERSION = "kyoto-snapshot-v1+hotel-fixture-v1+routes-fixture-v1"
@@ -77,7 +78,12 @@ class DatabaseEvaluation:
         return context
 
     async def checks(self, case: Case, context: RunContext, actual: Observation) -> dict[str, bool]:
-        return await business_checks(
+        return (await self.assess(case, context, actual)).checks
+
+    async def assess(
+        self, case: Case, context: RunContext, actual: Observation
+    ) -> BusinessAssessment:
+        return await assess_business(
             self.travel,
             context,
             case,

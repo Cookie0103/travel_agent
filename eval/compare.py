@@ -19,6 +19,7 @@ from backend.providers.claude_agent.evaluation import (
 )
 from backend.providers.probe.settings import ProbeError, price_for, read_budget
 from backend.tools.workflow import WorkflowName
+from eval.business_metrics import BusinessMetrics
 from eval.cases import Case
 from eval.report import distribution, measured_summary, rate
 from eval.run import schema_fingerprint
@@ -47,6 +48,7 @@ class Manifest(BaseModel):
     sdk_resume_enabled: bool = Field(strict=True)
     skills: tuple[str, ...]
     pricing: str
+    business_metrics_version: Literal[1] | None = None
 
 
 class Row(BaseModel):
@@ -63,6 +65,7 @@ class Row(BaseModel):
     first_progress_seconds: float | None = Field(default=None, strict=True, ge=0)
     tool_call_accuracy: dict[str, object] | None = None
     tokens: dict[str, object] | None = None
+    business_metrics: BusinessMetrics | None = None
 
     @model_validator(mode="after")
     def valid_measurement(self) -> "Row":
@@ -132,6 +135,21 @@ def load_batch(directory: Path) -> Batch:
         or [r.key for r in rows] != expected
     ):
         raise ValueError("结果必须完整保持原用例与重复顺序")
+    if manifest.business_metrics_version == 1:
+        if any(r.business_metrics is None for r in rows):
+            raise ValueError("新格式缺少业务观测")
+        cases = {c.case_id: c for c in manifest.selected_cases}
+        for row in rows:
+            scope = BusinessMetrics.for_case(cases[row.case_id])
+            assert row.business_metrics is not None
+            if (scope.constraint.status == "not_applicable") != (
+                row.business_metrics.constraint.status == "not_applicable"
+            ) or (scope.booking == "not_applicable") != (
+                row.business_metrics.booking == "not_applicable"
+            ):
+                raise ValueError("业务观测适用范围与冻结用例不符")
+    elif any(r.business_metrics is not None for r in rows):
+        raise ValueError("业务观测缺少格式版本")
     started = [
         r.key
         for r in rows
@@ -195,6 +213,9 @@ def load_batch(directory: Path) -> Batch:
         "evaluation_variant": manifest.evaluation_variant,
         "data_version": manifest.data_version,
     }
+    # 旧冻结批次未捕获分项；只允许这一个新增摘要缺失，其他校核全部保留。
+    if manifest.business_metrics_version is None and "business_metrics" not in summary:
+        cached.pop("business_metrics")
     if any(summary.get(name) != value for name, value in cached.items()):
         raise ValueError("缓存摘要与原结果不符")
     return Batch(
@@ -209,6 +230,7 @@ def load_batch(directory: Path) -> Batch:
 def compare(first: Path, second: Path) -> dict[str, object]:
     a, b = load_batch(first), load_batch(second)
     same = (
+        "business_metrics_version",
         "selected_cases",
         "sha256",
         "evaluation_suite",

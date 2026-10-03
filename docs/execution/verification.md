@@ -89,3 +89,6 @@ R15追加：test_sdk_article_injection真实SDK/CLI+PG、本地脚本normal/inje
 - 24b5dcb R15正常完整check/test钩子Passed、普通push远端SHA一致；7d1d0f6两新CI37132750339/37132753268全部success，Linux Python693passed/1已有平台skip/2live deselected，158.64秒。
 - 验收审查发现M1.5/M2.2卡片漏报价儿童信息，现复用partyLabel读取card.stay/booking.offer.request；未知不当无儿童，不改价格或报价。14前端专项/type/lint/build Passed，独立无P1/P2。实际浏览器原比较及held报价2成人/儿童0,8/2房；当前改成儿童5/1房，旧held仍显示原人数、旧条件警告、确认disabled。旧正式V1酒店仍无儿童/1房。只有模拟hold，不确认下单；原state smoke --verify Passed。证据m15-party-display-2026-10-04，最终正常完整钩子/push继续。
 - 下一离线缺口：plan05约束/预订/恢复分项统计需复用原校验与业务观测添加报告，partial/unknown/conflict分开，不把valid_draft布尔当全部硬条件满足；无真实恢复观测保持未测，旧记录缺项unknown，不重付费或改变冻结期待。
+
+
+M4.2业务分项追加：复用一次PG事后核对与get_draft当前身份/条件/正式版本重校验，保存完整check_counts，complete/partial/conflict/无候选/不可用分开；partial不算全部硬约束验证通过，覆盖不足时总比率null。模拟暂留/unknown/预期故障且无额外订单单列，冻结集没执行恢复目标仍unmeasured。新manifest版本与逐行字段/适用范围/摘要严格核对；旧paid记录不补造，原full/B0各120缺观测、规则94/17和费用未改变。116相关测试含实际PG/HTTP 28.55秒Passed；222源码三平台strict/ruff/格式/3分层契约/10地图Passed，独立无P1/P2。正常完整钩子/push继续；证据m42-business-metrics-2026-10-04，0新付费。

@@ -12,8 +12,8 @@
     "invalid": "Missing/null/string/bool/negative/over17/fraction child ages all unknown, not no-children; legal0/17 and empty[] covered",
     "smoke": "Prior original demo state read-only verification Passed after current stack rebuild",
     "order": "Only local hold created for this browser test; booking confirmation not clicked",
-    "final_hooks": "pending",
-    "remote_ci": "previous7d1d0f6 push/PR all success, Python693passed/1existing platform skipped/2live deselected in158.64s; new R15 CI pending"
+    "final_hooks": "a1cbd73 normal static/full default offline Python hooks Passed; ordinary push and exact remote SHA verified",
+    "remote_ci": "a1cbd73 events37133743697/37133746081 all success;24b5dcb events37133212223/37133214301 all success"
   },
   "source_sha256": {
     "apps/web/src/lib/availability.ts": "63095a5fe27756dde23e8663843c1891b86a519b50478a7fd984683d1640aae0",

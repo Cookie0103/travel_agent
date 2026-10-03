@@ -517,3 +517,6 @@ R15追加：test_sdk_article_injection真实SDK/CLI+PG、本地脚本normal/inje
 - 24b5dcb R15正常完整check/test钩子Passed、普通push远端SHA一致；7d1d0f6两新CI37132750339/37132753268全部success，Linux Python693passed/1已有平台skip/2live deselected，158.64秒。
 - 验收审查发现M1.5/M2.2卡片漏报价儿童信息，现复用partyLabel读取card.stay/booking.offer.request；未知不当无儿童，不改价格或报价。14前端专项/type/lint/build Passed，独立无P1/P2。实际浏览器原比较及held报价2成人/儿童0,8/2房；当前改成儿童5/1房，旧held仍显示原人数、旧条件警告、确认disabled。旧正式V1酒店仍无儿童/1房。只有模拟hold，不确认下单；原state smoke --verify Passed。证据m15-party-display-2026-10-04，最终正常完整钩子/push继续。
 - 下一离线缺口：plan05约束/预订/恢复分项统计需复用原校验与业务观测添加报告，partial/unknown/conflict分开，不把valid_draft布尔当全部硬条件满足；无真实恢复观测保持未测，旧记录缺项unknown，不重付费或改变冻结期待。
+
+- a1cbd73儿童报价修复正常完整钩子Passed、普通push/ls-remote完整SHA一致；24b5dcb与a1cbd73两CI均全部success，保留所有历史失败。
+- M4.2分项复用实际PG观测及原check，不改变原分数。初57单元通过；strict初3错为测试list不变型/RequestPatch领域输入，按实际类型修正，无ignore。直接uv pytest全树因入口sys.path未含backend收集失败，改项目python -m pytest（无权限变更）；首相关115pass/1fail，formal_version原确认本轮导致无候选，保留unavailable断言改确认不同有效草稿/留原pending，修后116pass/603deselected、28.55秒。222源码原三平台/分层/文档check全通过，独立问题复核关闭。生成脱敏证据首次KeyError误写files hash键，无原文件写回；按实际files_sha256成功，两组仍94/17、各缺120观测。0新HTTP/未结0，正常完整钩子待验。
