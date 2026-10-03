@@ -448,3 +448,5 @@ M0.7自动评审补齐：ADR011/共享rubric/唯一SDK私有开关/零工具/Gua
 71bd308正常check/完整默认Python钩子通过，保存指标及单因素机制。继续官方压缩能力：零工具实际SDK两组公开状态default true/flag false、0模型HTTP；带工具逐轮context_usage触发count_tokens/非流式Messages，被原Guard拒绝，2fail/49pass/0转发。取消逐轮探测，保留费用协议，只允许已验证SDK0.2.163/CLI2.1.114官方env，意外压缩中断；51专项39.25秒/check212通过。独立无P1/P2，P3文档/manifest及未知SDK反例已修。补plan B2偏好+压缩组合基线，标记非单因素，正在专项/窄复核。patch一次旧文本不匹配未写入，随后基于实际文本修正；无旧测试删除、无冻结期待修改、无真实模型新费用。
 
 压缩/B2专项58 passed/541 deselected43.13秒，check212/3契约/10地图通过；窄独立无P1/P2，两个P3关闭。建议非live组别不冒充B3已采纳：fixture not_applicable_fixture、无DB live search_only；6报表专项2.04秒通过。正常本地提交将执行完整钩子，0新真实费用。
+
+8a41caa正常静态/完整默认Python钩子通过，未push。Goal独立审计补内容事实/质量入口；新增类型错误只在新测试object索引，通过真实dict断言修正，check215过。43相关专项20.59秒先过；新PG测试依次暴露缺city、跨run复用执行器、目录不按酒店规则invalidated三错误假设，保留原生产合同，补酒店实际失效/旧revision不可适用。独立两P2：实际Evidence为对象，整对象比较错判字段；unknown陈述排除分母仍能完美准确率。均补领域投影/酒店card/unknown字段、unresolved总率null及真实PG/混合反例。最终55相关21.37秒/check215通过、独立复核无P1/P2。原results CLI核对manifest/attempt/context/text/suite，旧未捕获不补造；新patch两次上下文不匹配未写入，按formatter后源码修正。0新增真实模型HTTP，80/2.076890不变。准备正常完整钩子保存，期间不改跟踪文件。

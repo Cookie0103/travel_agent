@@ -6,26 +6,31 @@ import json
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import asdict, replace
+from datetime import UTC, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import URL
+from sqlalchemy import URL, select
 
 from backend.adapters.local_http import serve_http
 from backend.adapters.supplier import SupplierClient
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent
+from backend.domain.evidence import EvidenceRecord
 from backend.domain.execution import RunContext, RuntimeEvent
 from backend.domain.travel_request import RequestPatch
+from backend.persistence import travel
 from backend.persistence.catalog import import_catalog, load_catalog
 from backend.persistence.database import Database
+from backend.persistence.models import EvidenceRow
 from backend.services.common import ServiceError, transaction
 from backend.services.sessions import DemoLogin, SessionService
-from backend.services.travel import TravelService
+from backend.services.travel import TravelService, request_from_row
 from backend.tools.contracts import ToolExecutor
 from backend.tools.travel import TravelToolExecutor
 from backend.tools.workflow import OrderedTools, WorkflowName
 from data.import_catalog import load_snapshot
 from eval.cases import Case, InitialState
+from eval.content import AnswerRecord, Grounding
 from eval.graders import Observation
 from eval.state import StateSnapshot, business_checks, prepare_state, snapshot
 from mock_supplier.scenarios import SupplierScenario
@@ -80,6 +85,32 @@ class DatabaseEvaluation:
             actual.events,
             tuple(self.scenario.attempts) if self.scenario else (),
         )
+
+    async def content_record(self, case: Case, context: RunContext, text: str) -> AnswerRecord:
+        """在临时库清理前捕获身份限定事实；旧/失效证据也保留以识别错引用。"""
+        async with transaction(self.sessions.database) as db:
+            request = request_from_row(await travel.owned_request(db, context))
+            rows = await db.scalars(
+                select(EvidenceRow).where(
+                    EvidenceRow.user_id == context.user_id,
+                    EvidenceRow.session_id == context.session_id,
+                )
+            )
+            return AnswerRecord(
+                case_id=case.case_id,
+                context=context,
+                request=request,
+                observed_at=datetime.now(UTC),
+                text=text,
+                evidence=tuple(
+                    Grounding(
+                        context=context,
+                        record=EvidenceRecord.model_validate(row.payload),
+                        invalidated=row.invalidated,
+                    )
+                    for row in rows
+                ),
+            )
 
     async def observe(
         self, case: Case, context: RunContext, workflow: WorkflowName | None

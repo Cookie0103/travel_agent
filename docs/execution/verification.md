@@ -59,3 +59,5 @@ M0.7：test_persona_judge覆盖原旅行bytes不变、实际temp0、采样/工�
 两P2反例已补：跨run结束事件/倒序时间不能配对；旧报告缺指标不是零调用。test_eval_assess覆盖原案例选择、私有参数附件评分、无效输入脱敏、附件不改；该离线人工参数入口不等于已对真实模型全量逐调用评分。文本未语义分类不自动计首次进度，避免ACK刷低延迟。
 
 ADR012对照配置：test_evaluation_variants覆盖共享注册表、非法配置收费前拒绝、数据库要求、workflow/judge/多轮冲突、FixtureRuntime不能冒充效果；integration/test_evaluation_variants用实际SDK/CLI+真实PG核对schema/偏好/快照/无checkpoint/业务不改，并验证首次校验后修复阻止、原候选可暂存、conflict可展示而用户确认拒绝且正式V0。新增no_compaction及B2：同人工usage/阈值原生自动压缩与关闭两分支；test_claude_runtime覆盖未知SDK/CLI在初始化前拒绝、意外压缩中断且无session ref。零工具公开状态探针只证实锁定版本能力；带工具不逐轮探测，不放宽费用。B2同时关闭偏好和压缩是组合基线，与单因素区分。真实模型压缩质量和统计对照仍未满足。
+
+内容评审增量：test_eval_content覆盖原case/context/hash/原文位置绑定、正确/错值/typed bool、过期/版本/来源/外国或重复附件、未完整标注/漏必需事实、显式unknown、估算不能冒充确定值、真人分非法与缺失、脱敏CLI及原results/manifest/attempt一致性（改原文/身份、重复、坏manifest、无捕获）。integration/test_eval_content用真实PG捕获本人事实/保留失效报价与旧revision、拒绝跨用户，实际目录name/opening_hours和酒店card.total/缺税/错值评分，捕获依赖失败使验证不完整并停止后续而保留HTTP计数。独立两P2（整对象错判子字段、未解决unknown陈述仍完美准确率）均已补反例复核关闭。机制已验不代替实际语义/人工校准；通用内容LLM辅助入口仍待补。

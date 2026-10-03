@@ -31,3 +31,13 @@ InitialState使用现有服务构造正式行程/锁、报价过期/条件失效
 实际模型评测可加 `--variant full|no_tools|baseline_b2|no_skills|no_preferences|no_repairs|no_compaction`（需--database --live与既有授权）。full为B3；no_tools为B0，不给数据库事实或工具；固定--workflow为B1；baseline_b2为B2，保留工具/Skill/校验，同时关闭自动压缩和当前持久偏好注入。这是两项组合基线，不是单因素对照。其余分别只关闭按需Skill、当前持久偏好注入、校验后的修复轮次或自动压缩。非full单轮/fresh SDK，不与--workflow或语气评审混用；每例仍独立业务身份和原结果评分。反思关闭不跳过首次/最终校验，冲突草稿可展示但用户确认必须拒绝。manifest绑定实际variant/组别/schema/Skills。FixtureRuntime不模拟这些效果，非full离线CLI拒绝；实际SDK+本机脚本/PG测试只证明配置机制。
 
 关闭自动压缩使用SDK公共options.env与官方DISABLE_AUTO_COMPACT=1，限已验证SDK0.2.163/CLI2.1.114；未知版本在初始化/模型请求前拒绝，意外压缩事件中断而非计成功。实际原生SDK在相同人工usage/阈值下默认发生压缩、no_compaction/B2不压缩；这不代表真实模型摘要质量或效果已测。带工具的get_context_usage会触发辅助请求，因此不逐轮查询、不放宽费用守卫、不改写transcript。长期偏好关闭只隔离保存的偏好值，保留用户当前条件与合法近期对话/删除墓碑，不声称删除所有历史线索。详见[ADR012](../docs/adr/012-evaluation-variants.md)。
+
+## 事实与内容的私有评审
+
+数据库评测在本次临时PG销毁前，将原回答、context、当前条件/时间、本人Evidence（含invalidated）写入results.content_record，不筛掉旧引用来美化成绩。正式入口：`uv run python -m eval.content --results <原results.jsonl> --case-id <原case_id> --repeat 1 --review <独立review.json>`；核对原text、唯一attempt/context、manifest选定Case与suite版本，原文/hash不匹配或缺捕获拒绝。旧运行没有捕获时不能补造；`--answer <AnswerRecord.json>`仅独立快照，输出standalone_snapshot而非原模型实验。所有附件留.cache，入口0模型请求、不改原结果/冻结集。
+
+ContentReview按原case/context/answer_sha256绑定；reviewer记录实际独立评审人，不能抄模型自述。claims每项包含claim_id、原文start/end/excerpt、entity_id、field_path、规范JSON value、certainty（asserted/unknown/estimate）与evidence_id。field_path是既有对象的相对字段：目录name/opening_hours、酒店total或stay.start_date、路段minutes/fare；复用Place/Article/HotelOffer.card/RouteEstimate，不用整对象自证单项。金额遵循原card的Decimal字符串，不另写税费算法。路线费用/分钟和边界框坐标须明确estimate；对象内null是unknown，缺字段/坏领域对象/外国或缺失附件保持unknown，错值/失效/缺来源不能通过。
+
+required_facts是依据原需求/既定状态独立列出的必需事实清单（entity_id/field_path/value/certainty），不从被测回答反推。claims_complete与requirements_complete只有经核验才填true；漏事实降低覆盖率，不完整或仍有未解决Evidence则总比率null；零断言分母不是100%。unknown陈述不充当确定事实，明确估算的正确陈述仍计入事实分母。输出仅hash/计数/固定理由标签，无陈述/来源/评审人；绑定不证明标注独立性，Evidence一致性也不代表现实数据独立核验。
+
+human_quality只接收真人提供的relevance/explanation/tradeoffs各0–5、reason与rater；未提供不生成分数。0=该项缺失/明显错误，3=基本可用但有关键遗漏，5=完整满足：相关性对应当前需求与硬条件，解释说明来源/unknown及选择原因，取舍说明冲突/可选调整且不偷偷放宽条件。现有自动LLM入口仍专门评语气；通用内容的模型辅助评分和实际人工抽查/校准尚未完成，不能将这个离线设施当整体模型质量验收。

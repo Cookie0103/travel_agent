@@ -314,9 +314,13 @@ async def run_case(
         return {"case_id": case.case_id, "status": "error", "reason": "runtime_unavailable"}
     checks = grade(case, actual)
     verification_failed = False
+    content_record: dict[str, object] | None = None
     if business:
         try:
             checks.update(await business.checks(case, context, actual))
+            content_record = (await business.content_record(case, context, actual.text)).model_dump(
+                mode="json"
+            )
         except (ServiceError, ValueError, OSError):
             checks["business_verification_available"] = False
             verification_failed = True
@@ -349,6 +353,7 @@ async def run_case(
         "tools": [e.tool_name for e in actual.events if e.kind == "tool_started"],
         "tool_count": sum(e.kind == "tool_started" for e in actual.events),
         "text": actual.text,
+        "content_record": content_record,
         "identity": report.get("identity"),
         "http_attempts": report.get("http_attempts", 0),
         "requests": report.get("requests", []),
