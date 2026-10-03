@@ -572,3 +572,18 @@ ceb676ec837bd54b76dd9b9084b3ac2734ddbee5正常原check/test钩子Passed，普通
 离线补验：R17真实本机OTLP收到protobuf后延迟5s，原3s exporter读超时、有界10s、关闭一次，PG completed/revision2/本地Trace保留，secret/正文未进日志。40实际PG/SDK/Trace专项Passed20.21s，最终7TracePassed7.44s；224三平台strict/原静态Passed。原full第一轮前4例11调用：私有CLI参数严格绑定4个非空唯一EvidenceID，独立autonomy_review依据原需求/目录标注4合法路径，eval.assess实际4正确/7unknown，总accuracy=null、真人0/新模型0；其余379全量不外推，原成绩未改。见m42-parameter-review-first4与m05 timeout evidence。4fd9923两CI全success；ceb676e一CI success/另运行中，未提前标全绿。
 
 查询/规划提示分工、R17真实读超时和first4参数附加审阅独立quality_review无P1/P2，原工具/权限/校验/失败期待均保留。最新窄ruff/格式/strict224通过；准备正常完整保存钩子，源码冻结。通过后普通push，再预先声明一次不同提示源码的邻例，不盲重放原failed记录。
+
+
+64497f60f67739f8d85b8284d6c39a0eae536191正常原check/test钩子Passed，普通push核对远端同SHA。不同提示源码两新dev实测：kyoto-matcha新数据3HTTP/.043178CNY，原规则passed且条件revision0；原plan-complete-control默认原数据9HTTP/.398528CNY，原工具规则passed，暂存7卡/3日、事实partial(verified8/unknown16/conflict0)、未选酒店/未正式确认，不当完整规划质量通过。manifest实际仅persona.py源码变动；旧失败保留，两n=1不作统计提升。CLI导入独立PG实际两次相同catalog已验。记录脚本首次路径分隔符断言失败、后一次摘要首行解析失败，均无业务/测试修改或额外模型调用，改为完整JSON和路径标准化后保存白名单receipt。
+
+当前账本664HTTP/12.673060CNY、未结0，UTC10-03含旧探针12.773060/15、余额2.226940。完整新版本40×3组最低预算预检未满足，不盲重跑旧组/失败。已创建当前thread的有限heartbeat travel-agent（ACTIVE，相对每小时COUNT2；工具确认已保存，运行取决于应用/电脑状态），下次实际UTC日余额及源码冻结满足才继续原全组/B1/B2；不得新建重复自动化，日硬限/未知/人工0保留。自动化初三次参数验证失败未创建任何任务，第四次相对有限调度成功。
+
+新增可独立修复的M0.5缺口：CLI Cloud已有实际SDK版本/用量，但API GuardedRuntime尚丢弃report，RunService只有初始reported-by-worker与业务事件。下一步共享Trace用量解析→报告context核对→仅使用已提交PG事件导出实际版本/费用，坏报告保持unknown且不改变业务终态；不改Runtime协议、不另造模型循环。补单位失败路径及PG/实际SDK本机HTTP跨模块验证→独立审查→正常commit/push。修复期间不启动付费全组；后续评测须冻结最新源码，不与旧版本硬配对。总体Goal仍未完成，Claude真实本轮暂缓、真人校准0/全量参数语义仍未验。
+
+
+M0.5 API实际用量传递已实施：CLI/API共用report_metadata/TraceMetadata；GuardedRuntime只接收本轮完整context及provider/model/SDK版本匹配报告，真实CLI版本作为观测附加，不修改原运行身份。取消清理后保留实际预占/结算，缺/坏/跨轮报告未知；RunService仍先提交PG终态再导出PG事件，不发布私有报告正文。56专项Passed14.24s，真实SDK/本机2HTTP/实际PG+OTLP覆盖completed(2/2usage)与上游503失败(2/1usage)、实际CLI/币种/账本金额传递、取消/九报告分支。首专项54pass/2新测试worker_exit因临时root被当Python源码，修新测试真实源码定位后通过；首次直接pytest入口backend模块不可见，使用已有python -m pytest标准入口；原断言未降低。224源码三平台strict/ruff/格式/3契约/10地图Passed。64497f6两CI37162518422/37162515154均completed/success。独立审查/正常完整钩子待完成；0新模型费，不把本机OTLP当Cloud API真实业务运行。
+
+
+下一版本完整模型测量预声明（启动前）：在本次API用量修复正常check/test/独立审查/commit/push全部通过后，仅当实际UTC日余额至少10CNY、未结0且无运行中的评测，开始原frozen travel-eval-v1 test40×3 full/B3、maxHTTP12/tools16/repair3，默认原166目录/原Case和初始状态/原顺序/独立身份，不使用抹茶补充包。此为已看过原test后的当前版本测量；提示改动依据legacy dev的纯查询/完整规划问题，不能声称未见集或倒填成功阈值，也不能与旧版本作为同源码比较。目的记录新增业务分项及当前实际行为，单次全组不挑失败重放、不根据新结果调test期待/源码。余额低于条件只保留待运行；错误/预算不足按原停止规则保留error/not_run；该测量不自动等于产品质量达标。后续同版本baseline_b2/B1仍各自需余额/适用范围声明、保持完整/未知分母，不自动用尽日预算。
+
+M0.5 API用量增量独立quality_review限定只读复核无P1/P2，共享解析/同轮绑定/取消结算/失败未知/业务提交优先均核对；两dev后续8原文件SHA与数值逐字段匹配。未把取消单元测试叫真实Cloud取消、无额外模型调用。准备正常完整原钩子保存，当前源码冻结；只有钩子通过后普通push，再检查实际UTC余额开启预声明批次。

@@ -2,7 +2,8 @@
 
 import asyncio
 import subprocess
-from dataclasses import asdict
+from dataclasses import asdict, replace
+from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
 
@@ -81,6 +82,134 @@ def test_application_rejects_cross_run_report() -> None:
     )
     report: dict[str, object] = {"status": "success", "results": [asdict(result)]}
     assert application.outcome(report, context).code == "blocked"
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "none",
+        "missing",
+        "cross_run",
+        "cross_result",
+        "provider",
+        "model",
+        "sdk",
+        "attempts",
+        "amount",
+    ],
+)
+def test_application_retains_only_bound_trace_metadata_without_changing_result(
+    mutation: str,
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """R17：报告错误保持用量未知，不传播正文/连接串或修改运行身份。"""
+    monkeypatch.setenv("LLM_PROVIDER", "deepseek")
+    monkeypatch.setenv("DEEPSEEK_MODEL", "deepseek-flash")
+    context = RunContext(uuid4())
+    runtime = application.GuardedRuntime(tmp_path, "synthetic-private-dsn")
+    initial = runtime.identity
+    actual = replace(initial, cli_version="2.1.114")
+    report: dict[str, object] = {
+        "status": "success",
+        "results": [asdict(RunResult(context, RuntimeOutcome(text="private-answer")))],
+        "identity": asdict(actual),
+        "events": [asdict(RuntimeEvent(context, "completed"))],
+        "http_attempts": 2,
+        "currency": "CNY",
+        "run_accounted_cny": "0.02",
+        "requests": [{"input_tokens": 7, "output_tokens": 2, "usage_cost_upper_cny": "0.01"}],
+    }
+    if mutation == "missing":
+        report.pop("events")
+    elif mutation == "cross_run":
+        report["events"] = [asdict(RuntimeEvent(RunContext(uuid4()), "completed"))]
+    elif mutation == "cross_result":
+        report["results"] = [asdict(RunResult(RunContext(uuid4()), RuntimeOutcome()))]
+    elif mutation in {"provider", "model", "sdk"}:
+        identity = asdict(actual)
+        identity["sdk_version" if mutation == "sdk" else mutation] = "synthetic-private-invalid"
+        report["identity"] = identity
+    elif mutation == "attempts":
+        report["http_attempts"] = True
+    elif mutation == "amount":
+        report["run_accounted_cny"] = "NaN"
+    monkeypatch.setattr(application, "run_live", lambda *a, **kw: report)
+
+    async def exercise() -> None:
+        result = await runtime.execute(
+            context, "private-prompt", None, lambda e: None, asyncio.Event()
+        )
+        assert (result.code == "blocked") == (mutation == "cross_result")
+        assert runtime.identity is initial
+        if mutation == "none":
+            assert runtime.trace_metadata is not None
+            assert runtime.trace_metadata.identity == actual
+            assert runtime.trace_metadata.http_attempts == 2
+            assert runtime.trace_metadata.accounted == Decimal("0.02")
+        else:
+            assert runtime.trace_metadata is None
+            assert "SDK Trace metadata unavailable" in caplog.text
+        assert all(
+            s not in caplog.text
+            for s in [
+                "private-prompt",
+                "private-answer",
+                "synthetic-private-dsn",
+                "synthetic-private-invalid",
+            ]
+        )
+        # 重用时先清空，早期拒绝不能留下上一轮用量。
+        await runtime.execute(
+            context, "private-prompt", "unsupported-resume", lambda e: None, asyncio.Event()
+        )
+        assert runtime.trace_metadata is None
+
+    asyncio.run(exercise())
+
+
+def test_cancelled_application_retains_settled_usage_after_cleanup(
+    monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
+) -> None:
+    """R17：取消仍计费，清理完成的同轮报告不能被丢弃。"""
+    from threading import Event
+
+    started, cleaned = Event(), Event()
+    context = RunContext(uuid4())
+    runtime = application.GuardedRuntime(tmp_path, "offline-dsn")
+
+    def operation(*args: object, **kwargs: object) -> dict[str, object]:
+        stop = kwargs["cancelled"]
+        assert isinstance(stop, Event)
+        started.set()
+        assert stop.wait(2)
+        cleaned.set()
+        return {
+            "status": "error",
+            "code": "cancelled",
+            "identity": asdict(runtime.identity),
+            "events": [asdict(RuntimeEvent(context, "cancelled"))],
+            "http_attempts": 1,
+            "requests": [],
+            "run_accounted_cny": "0.02",
+        }
+
+    monkeypatch.setattr(application, "run_live", operation)
+
+    async def exercise() -> None:
+        task = asyncio.create_task(
+            runtime.execute(context, "test", None, lambda e: None, asyncio.Event())
+        )
+        assert await asyncio.to_thread(started.wait, 2)
+        task.cancel()
+        assert (await task).code == "cancelled" and cleaned.is_set()
+        assert runtime.trace_metadata is not None
+        assert runtime.trace_metadata.http_attempts == 1
+        assert runtime.trace_metadata.accounted == Decimal("0.02")
+
+    asyncio.run(exercise())
 
 
 def test_application_business_limit_and_compaction_event_reach_parent(

@@ -147,5 +147,34 @@
     "private_text_and_secret_absent": true,
     "verification": "40 PG/SDK/trace tests passed20.21s; final7 trace tests passed7.44s",
     "new_model_http": 0
+  },
+  "api_usage_followup": {
+    "scope": "Production GuardedRuntime/live guard + real SDK/CLI + scripted local model HTTP + PostgreSQL committed events + actual local OTLP; no new paid model call or Cloud API business run",
+    "verification": "56 tests passed14.24s; ruff/format224, strict win32/linux/darwin224, 3 import contracts and 10 document maps passed",
+    "successful_run": {
+      "http_attempts": 2,
+      "observed_responses": 2,
+      "usage_complete": true,
+      "business_status": "completed"
+    },
+    "upstream_failure": {
+      "http_attempts": 2,
+      "observed_responses": 1,
+      "usage_complete": false,
+      "business_status": "failed"
+    },
+    "actual_cli_and_sdk_versions_forwarded": true,
+    "charge_matches_isolated_guard_ledger": true,
+    "local_otlp_trace_id_and_usage_match": true,
+    "cancelled_settled_usage_retained": true,
+    "bad_missing_cross_context_or_version_reports": "unknown metadata; business result unchanged unless original identity check rejects result",
+    "initial_runtime_identity_unchanged": true,
+    "new_paid_model_http": 0,
+    "failures_preserved": [
+      "Initial new integration tests used temporary root as worker Python source; two worker_exit failures. New test environment now uses actual project source with private ledger/session directory; original assertions unchanged.",
+      "First dev-check rejected implicit import of Guard; test now uses explicit public definition and typed signature."
+    ],
+    "independent_review": "quality_review no P1/P2: context/version/fee/unknown/privacy/committed PG truth/reuse checked; cancellation is unit verification, not claimed Cloud cancellation.",
+    "normal_save": "pending"
   }
 }

@@ -3,6 +3,7 @@
 import base64
 import os
 from collections.abc import Mapping, Sequence
+from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
 from urllib.parse import urlsplit
@@ -26,6 +27,31 @@ from backend.domain.execution import RuntimeEvent, RuntimeIdentity
 from backend.providers.probe.settings import Currency
 
 
+@dataclass(frozen=True)
+class TraceMetadata:
+    """父进程实际观测的版本和计费；业务事件仍由调用方提供。"""
+
+    identity: RuntimeIdentity
+    requests: Sequence[Mapping[str, object]]
+    http_attempts: int | None
+    accounted: Decimal | None
+    currency: Currency
+
+
+def report_metadata(report: Mapping[str, object]) -> TraceMetadata:
+    """CLI与API共用报告解析，不从正文或未知值推算费用。"""
+    identity = TypeAdapter(RuntimeIdentity).validate_python(report["identity"])
+    requests = TypeAdapter(list[dict[str, object]]).validate_python(report.get("requests", []))
+    attempts = report.get("http_attempts")
+    if attempts is not None and (type(attempts) is not int or attempts < len(requests)):
+        raise ValueError("Trace 请求次数不完整")
+    currency: Currency = TypeAdapter(Currency).validate_python(report.get("currency", "CNY"))
+    charge = _amount(report.get("run_accounted"), report.get("run_accounted_cny"), currency)
+    return TraceMetadata(
+        identity, requests, attempts if isinstance(attempts, int) else None, charge, currency
+    )
+
+
 def trace_report(
     report: dict[str, object], directory: Path, exporter: SpanExporter | None = None
 ) -> None:
@@ -47,22 +73,13 @@ def trace_report(
                     occurred_at=events[-1].occurred_at,
                 )
             )
-        identity = TypeAdapter(RuntimeIdentity).validate_python(report["identity"])
-        requests = TypeAdapter(list[dict[str, object]]).validate_python(report.get("requests", []))
-        attempts = report.get("http_attempts")
-        if attempts is not None and (type(attempts) is not int or attempts < len(requests)):
-            raise ValueError("Trace 请求次数不完整")
-        currency: Currency = TypeAdapter(Currency).validate_python(report.get("currency", "CNY"))
-        charge = _amount(report.get("run_accounted"), report.get("run_accounted_cny"), currency)
+        metadata = report_metadata(report)
         report["trace_id"] = write_trace(
             directory / "trace.jsonl",
             events,
-            identity,
-            requests=requests,
+            metadata.identity,
+            metadata=metadata,
             exporter=exporter,
-            http_attempts=attempts if isinstance(attempts, int) else None,
-            accounted=charge,
-            currency=currency,
         )
     except (OSError, ValueError, ArithmeticError, KeyError):
         # 不变量：可观测性失败不能抹掉业务结果；异常正文可能包含私有路径或原始数据。
@@ -111,6 +128,7 @@ def write_trace(
     accounted_cny: Decimal | None = None,
     accounted: Decimal | None = None,
     currency: Currency = "CNY",
+    metadata: TraceMetadata | None = None,
 ) -> str:
     """用 SDK exporter 输出 JSONL，时长取自事件，不使用导出时长冒充执行时长。"""
     if not events or len({e.context.run_id for e in events}) != 1:
@@ -119,6 +137,13 @@ def write_trace(
         raise ValueError("Trace导出只能选择一个出口")
     if any(e.occurred_at.tzinfo is None for e in events):
         raise ValueError("Trace 时间必须带时区")
+    if metadata is not None:
+        identity, requests = metadata.identity, metadata.requests
+        http_attempts, accounted, currency = (
+            metadata.http_attempts,
+            metadata.accounted,
+            metadata.currency,
+        )
     accounted = _amount(accounted, accounted_cny, currency)
     path.parent.mkdir(parents=True, exist_ok=True)
     provider = TracerProvider(

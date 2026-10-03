@@ -34,7 +34,9 @@
     "original_files_unchanged": 6,
     "new_model_http": 0,
     "independent_review": "quality_review: no P1/P2; source attribution, isolation, defaults, failure handling and reuse checked",
-    "normal_save": "ceb676ec837bd54b76dd9b9084b3ac2734ddbee5: original check/test hooks Passed, ordinary push exact remote SHA verified"
+    "normal_save": "ceb676ec837bd54b76dd9b9084b3ac2734ddbee5: original check/test hooks Passed, ordinary push exact remote SHA verified",
+    "import_cli": "Actual CLI repeated twice in isolated PostgreSQL: 2 curated entries, same catalog digest, no model calls.",
+    "import_cli_proof_sha256": "8ed5d70ba7eb8367bfc4c3ae726a9cd5848c3c63e69ec52a48fb3bcdc3feb3fe"
   },
   "failures_preserved": [
     "Initial new SDK assertion compared JSON escaped text with literal Chinese; changed new test to parse tool payload and validate exact fields; no old expectation or product code changed."
@@ -44,7 +46,7 @@
     "Original matcha baseline data failure remains in original results.",
     "New data cannot be compared with old results as identical data/version.",
     "Opening hours, indoor, current prices and queue time remain unknown.",
-    "Original neighbor tool-rule failure remains; scoped prompt clarification is being verified, no repeat of unchanged paid failure."
+    "Previous neighbor failure retained; new prompt passed two separate single examples, not the complete evaluation matrix."
   ],
   "live_neighbor": {
     "code_commit": "ceb676ec837bd54b76dd9b9084b3ac2734ddbee5",
@@ -88,5 +90,103 @@
     "answer_mentions_unknown": true,
     "new_data_same_version_comparison": false,
     "interpretation": "Data absence addressed in separate source-backed dev bundle; original two-tool contract still failed due get_article/update_travel_request; no expectations changed or success claimed."
-  }
+  },
+  "prompt_followups": [
+    {
+      "code_commit": "64497f60f67739f8d85b8284d6c39a0eae536191",
+      "worktree_dirty": false,
+      "files_sha256": {
+        "manifest.json": "395b1a7b9bac45e7f9c6289aca703a7a6c3001a456eba71ca720c811103f3a1a",
+        "attempts.jsonl": "25989e22035d6f8a25ed4b2ad59db9a4a47aa9413a1ad1eb88ca7cff449da43b",
+        "results.jsonl": "77f2540f7ec4748775a6539d4680ee856894e218edce21263213efe4e54b47f8",
+        "summary.json": "ee2bbfda2b13d0d8e0057f6ad48e9d55007f40f89c61168913485a0bc57a3248"
+      },
+      "case_id": "kyoto-matcha",
+      "repeat": 1,
+      "status": "passed",
+      "failed_checks": [],
+      "tools": [
+        "search_places",
+        "search_content",
+        "search_places"
+      ],
+      "http_attempts": 3,
+      "run_accounted_cny": "0.043178",
+      "identity": {
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "sdk_version": "0.2.163",
+        "cli_version": "2.1.114"
+      },
+      "tokens": {
+        "input_tokens": 6709,
+        "cache_read_input_tokens": 12416,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 616
+      },
+      "request_revision": 0,
+      "same_catalog_as_previous_neighbor": true,
+      "changed_manifest_sources": [
+        "backend/agent/persona.py"
+      ],
+      "interpretation": "One original dev query passes unchanged rules with clarified prompt. Previous failure retained; not a full quality or statistical improvement result."
+    },
+    {
+      "code_commit": "64497f60f67739f8d85b8284d6c39a0eae536191",
+      "worktree_dirty": false,
+      "files_sha256": {
+        "manifest.json": "b6dd0a102f17264e0dbbf772efcec34be2c87e973b015925a72a5e1dd8bcdaa3",
+        "attempts.jsonl": "a59329a5c5f0ec8cb4e2a8749a0eca652bf98ff9b297a94859779454404887e7",
+        "results.jsonl": "96c6962df04e55ea97ba39bf28543dc86bc4a8e63caa67e8c4ae385cdd7d1271",
+        "summary.json": "c80eb14ca5fc156d9ada95385f555eaa4875e0fe3c495f6ae8811e6fbcfb83de"
+      },
+      "case_id": "plan-complete-control",
+      "repeat": 1,
+      "status": "passed",
+      "failed_checks": [],
+      "tools": [
+        "update_travel_request",
+        "search_places",
+        "search_places",
+        "search_places",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "estimate_routes",
+        "validate_itinerary",
+        "stage_plan_change",
+        "present_travel_result"
+      ],
+      "http_attempts": 9,
+      "run_accounted_cny": "0.398528",
+      "identity": {
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "sdk_version": "0.2.163",
+        "cli_version": "2.1.114"
+      },
+      "tokens": {
+        "input_tokens": 22736,
+        "cache_read_input_tokens": 146304,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 7556
+      },
+      "validation_status": "partial",
+      "full_check_counts": {
+        "verified": 8,
+        "unknown": 16,
+        "conflict": 0
+      },
+      "selected_hotel": false,
+      "staged": true,
+      "formal_plan_confirmed": false,
+      "days": 3,
+      "cards": 7,
+      "interpretation": "One original dev planning example passes tool rules; partial facts and absent hotel mean full planning quality is not accepted."
+    }
+  ]
 }

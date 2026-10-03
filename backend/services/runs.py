@@ -11,7 +11,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
-from backend.adapters.tracing import write_trace
+from backend.adapters.tracing import TraceMetadata, write_trace
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent, Runtime
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, RuntimeOutcome
@@ -195,6 +195,7 @@ class RunService:
         consumer = asyncio.create_task(self._persist_events(context, queue))
         outcome = RuntimeOutcome(code="provider_error", reason="execution_failed")
         identity: RuntimeIdentity | None = None
+        runtime: Runtime | None = None
 
         def emit(event: RuntimeEvent) -> None:
             # 终态由finish和状态原子落库，避免SSE先看到完成、数据库却仍在运行。
@@ -232,7 +233,10 @@ class RunService:
                 async with transaction(self.database) as db:
                     await runs.finish(db, context, outcome)
                 if identity is not None:
-                    await self._trace(context, identity)
+                    metadata = (
+                        runtime.trace_metadata if isinstance(runtime, GuardedRuntime) else None
+                    )
+                    await self._trace(context, identity, metadata)
             except Exception as error:
                 self.persistence_failures.add(context.run_id)
                 # 数据库错误正文可能含条件/连接信息，只保留异常类型与标准SQLSTATE定位。
@@ -247,7 +251,9 @@ class RunService:
                 self.cancelled.pop(context.run_id, None)
                 self.tasks.pop(context.run_id, None)
 
-    async def _trace(self, context: RunContext, identity: RuntimeIdentity) -> None:
+    async def _trace(
+        self, context: RunContext, identity: RuntimeIdentity, metadata: TraceMetadata | None = None
+    ) -> None:
         """仅从已提交事件导出脱敏Trace；失败不能覆盖业务终态。"""
         try:
             recorded: list[RuntimeEvent] = []
@@ -262,7 +268,12 @@ class RunService:
                 / f"{context.run_id}.jsonl"
             )
             await asyncio.to_thread(
-                write_trace, path, recorded, identity, trace_cloud=self.trace_cloud
+                write_trace,
+                path,
+                recorded,
+                identity,
+                metadata=metadata,
+                trace_cloud=self.trace_cloud,
             )
         except Exception:
             LOGGER.warning("TaskRun Trace unavailable: %s", context.run_id)
