@@ -9,6 +9,7 @@
 - [DESIGN](DESIGN.md)：设计实施与简洁复用；业务设计继续链接plan。
 - [FRONTEND](FRONTEND.md)：界面状态、金额、SSE、失败恢复及浏览器验收。
 - [RELIABILITY](RELIABILITY.md)、[SECURITY](SECURITY.md)：关键不变量与故障测试位置。
+- [验收测试矩阵](execution/verification.md)：功能/正常与异常路径/跨模块证据/剩余缺口。
 - [QUALITY_SCORE](QUALITY_SCORE.md)：按能力标证据与缺口，不用主观总分包装完成度。
 
 `dev check`会检查入口长度与这些地图的仓库链接；不扫描历史/缓存，不发起网络请求。

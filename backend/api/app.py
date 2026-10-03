@@ -25,6 +25,7 @@ from backend.services.travel import (
     TravelRequest,
     TravelService,
 )
+from backend.services.views import PlanView
 
 
 def create_app(
@@ -124,16 +125,12 @@ def create_app(
         )
 
     @app.get("/plans/{plan_id}")
-    async def get_plan(
-        plan_id: UUID, user_id: Annotated[UUID, Depends(identity)]
-    ) -> dict[str, object]:
-        return await plans.get(user_id, plan_id)
+    async def get_plan(plan_id: UUID, user_id: Annotated[UUID, Depends(identity)]) -> PlanView:
+        return PlanView.model_validate(await plans.get(user_id, plan_id))
 
     @app.get("/plan-drafts/{draft_id}")
-    async def get_draft(
-        draft_id: UUID, user_id: Annotated[UUID, Depends(identity)]
-    ) -> dict[str, object]:
-        return await plans.get_draft(user_id, draft_id)
+    async def get_draft(draft_id: UUID, user_id: Annotated[UUID, Depends(identity)]) -> PlanView:
+        return PlanView.model_validate(await plans.get_draft(user_id, draft_id))
 
     @app.post("/plan-drafts/{draft_id}/confirm")
     async def confirm_plan(

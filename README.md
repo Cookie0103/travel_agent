@@ -75,6 +75,10 @@ uv run python scripts/fetch_upstream.py
 uv 缓存放 .cache/uv；dev 脚本统一设置 UTF-8 与子进程缓存，不要求手工设置 shell 环境变量。
 dev test 每次使用新的 .cache/pytest-runs/run-* 保存临时文件和缓存，避免终端与 AI 沙箱共用无权限的 pytest 目录；不需要先激活虚拟环境。M1 起集成测试需要下述项目 PostgreSQL，测试自动创建和清理本次专用随机库，不清空开发库。
 
+## 工作台启动
+
+在项目PostgreSQL已启动/迁移/导入快照后，分别运行`uv run python scripts/dev.py api`与`uv run python scripts/dev.py web`，打开http://127.0.0.1:3000。首次需`dev web-setup`安装前端依赖；完整命令见[工作台说明](apps/web/README.md)。默认免费离线演示，真实模式必须显式启用并通过预算。
+
 ## 模型预算配置
 
 在本地 .env 配置密钥与预算；.env.example 只保留空变量名，不填写真实密钥。

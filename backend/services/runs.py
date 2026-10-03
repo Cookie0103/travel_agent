@@ -3,7 +3,7 @@
 import asyncio
 import logging
 from collections.abc import Callable
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 from typing import Literal
@@ -44,6 +44,7 @@ class RunView:
     error_code: str | None
     last_sequence: int
     created_at: datetime
+    presentations: tuple[dict[str, object], ...] = ()
 
 
 def view(row: TaskRunRow | None) -> RunView:
@@ -100,6 +101,7 @@ class RunService:
     async def get(self, user_id: UUID, run_id: UUID) -> RunView:
         async with transaction(self.database) as db:
             result = view(await runs.owned(db, user_id, run_id))
+            result = replace(result, presentations=await runs.presentations(db, run_id))
         if run_id in self.persistence_failures:
             raise ServiceError(503, "unavailable", "执行记录写入失败，需要恢复核对")
         return result

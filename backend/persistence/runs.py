@@ -92,6 +92,18 @@ async def events(db: AsyncSession, run_id: UUID, after: int) -> list[RunEventRow
     return list(rows)
 
 
+async def presentations(db: AsyncSession, run_id: UUID) -> tuple[dict[str, object], ...]:
+    rows = await db.scalars(
+        select(RunEventRow)
+        .where(
+            RunEventRow.run_id == run_id, RunEventRow.payload["kind"].as_string() == "presentation"
+        )
+        .order_by(RunEventRow.sequence.desc())
+        .limit(4)
+    )
+    return tuple(row.payload for row in reversed(list(rows)))
+
+
 async def finish(db: AsyncSession, context: RunContext, outcome: RuntimeOutcome) -> None:
     row = await owned(db, context.user_id, context.run_id, lock=True)
     if row is None:

@@ -1,11 +1,13 @@
-"""默认离线演示：固定调用两个真实只读工具，不把确定性脚本冒充模型自主规划。"""
+"""默认离线演示：固定脚本调用真实业务工具，不把脚本冒充模型自主规划。"""
 
 import asyncio
 from uuid import uuid4
 
+from backend.agent.demo import demo_command
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, RuntimeOutcome
 from backend.tools.contracts import ToolExecutor
+from backend.tools.execution import execute_observed
 
 
 class FixtureRuntime:
@@ -22,6 +24,8 @@ class FixtureRuntime:
         emit: EventSink,
         cancelled: asyncio.Event,
     ) -> RuntimeOutcome:
+        if prompt.startswith("演示："):
+            return await demo_command(self.executor, context, prompt, emit, cancelled)
         city = "东京" if "东京" in prompt or "tokyo" in prompt.casefold() else "京都"
         indoor = "室内" in prompt or "雨" in prompt
         rows: list[str] = ["离线演示：固定调用景点和攻略工具，不代表模型自主规划。"]
@@ -35,27 +39,7 @@ class FixtureRuntime:
             }
             if name == "search_places" and indoor:
                 arguments["indoor"] = True
-            call_id = uuid4()
-            emit(
-                RuntimeEvent(
-                    context,
-                    "tool_started",
-                    tool_name=name,
-                    tool_call_id=call_id,
-                    argument_keys=tuple(sorted(arguments)),
-                )
-            )
-            result = await self.executor.execute(context, name, arguments)
-            emit(
-                RuntimeEvent(
-                    context,
-                    "tool_finished",
-                    tool_name=name,
-                    code=result.code,
-                    tool_call_id=call_id,
-                    result_empty=result.empty,
-                )
-            )
+            result = await execute_observed(self.executor, context, name, arguments, emit)
             if result.code:
                 return RuntimeOutcome(code=result.code, reason="tool_failed")
             items = result.data.get(collection)

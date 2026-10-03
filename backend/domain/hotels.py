@@ -32,14 +32,13 @@ class HotelRate(BaseModel):
     available_until: date
 
 
-class HotelOffer(BaseModel):
+class QuoteFields(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     offer_id: UUID = Field(default_factory=uuid4)
     rate_id: str
     hotel_id: str
     hotel_name: str
     room_type: str
-    request: TravelRequest
     currency: str = Field(pattern=r"^[A-Z]{3}$")
     base_amount: Money
     tax_amount: Money | None
@@ -48,6 +47,10 @@ class HotelOffer(BaseModel):
     refundable: bool
     quoted_at: AwareDatetime
     expires_at: AwareDatetime
+
+
+class HotelOffer(QuoteFields):
+    request: TravelRequest
 
     @model_validator(mode="after")
     def valid_quote(self) -> Self:

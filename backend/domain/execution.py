@@ -20,6 +20,7 @@ type EventKind = Literal[
     "text",
     "tool_started",
     "tool_finished",
+    "presentation",
     "completed",
     "failed",
     "cancelled",
@@ -72,6 +73,7 @@ class RuntimeEvent:
     tool_call_id: UUID | None = None
     argument_keys: tuple[str, ...] = ()
     result_empty: bool | None = None
+    presentation: dict[str, object] | None = None
     occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 

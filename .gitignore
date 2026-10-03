@@ -19,3 +19,5 @@ __pycache__/
 # Node
 node_modules/
 .next/
+*.tsbuildinfo
+next-env.d.ts

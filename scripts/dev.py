@@ -5,6 +5,7 @@ from __future__ import annotations
 import argparse
 import io
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -26,11 +27,15 @@ def configure_environment() -> None:
     os.environ.setdefault("PRE_COMMIT_HOME", str(ROOT / ".cache" / "pre-commit"))
 
 
-def run_command(command: Sequence[str], *, timeout: int = 300) -> int:
+def run_command(
+    command: Sequence[str], *, timeout: int | None = 300, cwd: Path | None = None
+) -> int:
     """让失败退出码原样传播，并给缺少可执行文件和超时以明确分类。"""
     print("+ " + " ".join(command), flush=True)
     try:
-        return subprocess.run(list(command), cwd=ROOT, timeout=timeout, check=False).returncode
+        return subprocess.run(
+            list(command), cwd=cwd or ROOT, timeout=timeout, check=False
+        ).returncode
     except OSError:
         print(f"unavailable: 无法启动 {command[0]}，请检查安装和权限。", file=sys.stderr)
         return 1
@@ -112,12 +117,47 @@ def eval_dev(*, live: bool) -> int:
     return run_command(command)
 
 
+def web(command: str) -> int:
+    pnpm = shutil.which("pnpm.cmd" if os.name == "nt" else "pnpm")
+    if pnpm is None:
+        print("unavailable: 需要Node24+和pnpm11，见apps/web/README.md", file=sys.stderr)
+        return 1
+    if command == "web-generate":
+        result = run_command([sys.executable, "-m", "scripts.export_web_schema"])
+        if result:
+            return result
+    actions = {
+        "web-setup": [["install", "--frozen-lockfile"]],
+        "web-generate": [["run", "generate"]],
+        "web-check": [["run", name] for name in ("typecheck", "lint", "test", "build")],
+        "web": [["run", "dev"]],
+    }
+    for action in actions[command]:
+        result = run_command(
+            [pnpm, *action], cwd=ROOT / "apps" / "web", timeout=None if command == "web" else 300
+        )
+        if result:
+            return result
+    return 0
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """解析唯一开发命令并返回适合 CI 与 Git hook 的退出码。"""
     configure_environment()
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("setup", "check", "test", "db-up", "db-migrate"):
+    for name in (
+        "setup",
+        "check",
+        "test",
+        "db-up",
+        "db-migrate",
+        "api",
+        "web-setup",
+        "web-generate",
+        "web-check",
+        "web",
+    ):
         commands.add_parser(name)
     evaluation = commands.add_parser("eval-dev")
     evaluation.add_argument("--live", action="store_true", help="显式启用真实模型评测")
@@ -157,6 +197,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         case "eval-dev":
             return eval_dev(live=args.live)
+        case "api":
+            return run_command([python, "-m", "backend.server"], timeout=None)
+        case "web" | "web-setup" | "web-check" | "web-generate":
+            return web(args.command)
     return 2
 
 

@@ -217,3 +217,19 @@
 - 独立P2：24项/21未知路段合法patch展示超过8k，改为按完整ToolResult长度缩差异/卡片、保留ID/总数/警告；新增PG原场景通过，复核关闭。
 - 修复后完整dev test：320 passed /2 deselected，36.66秒；check139文件/3契约/10地图通过。dev db-migrate退出0，项目库迁移至0005。模型账本保持21次/0.098450 CNY。
 - 下一步正常本地提交后自动M1.8，补前端/持久presentation事件与完整默认离线演示。
+- M1.7已保存e40c259，正常钩子通过；进入M1.8。读取Next官方安装/rewrites文档与registry，Node24.12.0/pnpm11.19.0，Next16.3.8/React19.3.0/openapi-typescript7.13.0。依赖先记ADR-007。
+
+## M1.8与补充验收契约
+
+- 新增前端ADR007/Next工作台、共享工具观察事件、持久presentation读取和固定免费离线脚本；SDK仍为唯一真实runtime。API契约本地生成，无密钥/DB访问。
+- 修正pnpm11配置失效导致首次默认store问题，只重装项目node_modules至项目缓存；外部store未删。peer兼容固定ESLint9.39.5/TS5.9.3，unrs-resolver安装脚本明确拒绝；生成/peer检查通过。
+- 桥接/live应用18专项通过，新前端lint通过。类型失败3处待修，完整测试/build/浏览器未跑，不套用上个提交的320项。
+- 用户补充Goal/Acceptance Criteria，已更新执行计划v4及verification矩阵，保留既有成果，按原A/B范围继续，C档仅ADR。当前无后台命令，恢复从类型修复与新PG链路开始。
+
+- 已修类型3处及离线route参数拼写；新增真实PG比较→stage→确认→patch/锁定失败与空结果。独立3P2/1P3全部实现修复并补回归，等待复核。
+- 首次直接pytest碰到既有系统Temp权限；改用dev test独立项目临时目录，未删测试/放宽断言。直接.venv Python运行dev check缺PATH的lint-imports；按README的uv run入口后全部通过。
+- 最终dev check145文件/3契约/10地图；dev test326 passed/2 live deselected，38.14秒。dev web-check类型/lint/6Node测试/build通过；增加前端CI配置，远端未执行。
+- 浏览器真实API+PG完成比较、草稿、两次确认、局部修改、锁定拒绝、刷新、旧条件禁确认→重生成恢复；未启用live拒绝可见。390窄屏与桌面截图/evidence已保存。浏览器一次viewport reset后首个点击未生效，读取状态后重新点击成功；没有把点击尝试算保存成功。
+- 模型用量仍21次/0.098450 CNY；当前本地离线API(session43772)与Next生产页面(session45684)运行；测试已结束。下一步审查复核/提交后M1.9，不等待用户。
+
+- 独立复核补发现截断卡片隐藏第二天下午另一项：新增9项PG复现，固定样例在cards_truncated时拒绝；6项PG专项2.41秒通过，复核P2关闭。消息持久ID/confirmed恢复/empty问题也关闭。typecheck先用Next官方typegen生成路由定义，支持干净checkout；next-env.d.ts保持生成/忽略。准备正常提交，提交钩子将全量验证含新增用例。
