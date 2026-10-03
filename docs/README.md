@@ -3,6 +3,16 @@
 当前采用 Claude Agent SDK 路线并进入长程自主开发。**只需看 [执行计划](execution/travel-agent.md)** 就能知道当前进度、决定、证据与下一步；阶段性材料无需逐项批准。
 想知道各个代码目录放什么，先看 [项目首页](../README.md)。
 
+## 工程地图与约定（按任务读取）
+
+- [ARCHITECTURE](../ARCHITECTURE.md)：模块入口、依赖方向与状态来源。
+- [DESIGN](DESIGN.md)：设计实施与简洁复用；业务设计继续链接plan。
+- [FRONTEND](FRONTEND.md)：界面状态、金额、SSE、失败恢复及浏览器验收。
+- [RELIABILITY](RELIABILITY.md)、[SECURITY](SECURITY.md)：关键不变量与故障测试位置。
+- [QUALITY_SCORE](QUALITY_SCORE.md)：按能力标证据与缺口，不用主观总分包装完成度。
+
+`dev check`会检查入口长度与这些地图的仓库链接；不扫描历史/缓存，不发起网络请求。
+
 | 你想了解什么 | 去哪里看 | 什么时候写 |
 | --- | --- | --- |
 | 当前做到哪里、如何恢复 | [执行计划](execution/travel-agent.md) | 持续更新，唯一实时进度入口 |

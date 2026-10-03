@@ -10,3 +10,4 @@ SearchExecutor 返回带来源的 fixture 结果；空数据、参数错误和�
 不变量：遵守 AGENTS.md 的分层规则，不在导入包时执行网络或业务写操作。
 TravelToolExecutor接数据库CatalogService/TravelService；schema复用Pydantic契约。
 同一run串行执行，身份不由模型提供；Skills只按白名单读取，不能扩大权限。
+酒店search/refresh/present共用同一守门；价格由服务端补齐，模型只传对象ID。

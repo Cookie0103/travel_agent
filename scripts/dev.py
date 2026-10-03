@@ -78,6 +78,7 @@ def run_tests() -> int:
                 "pytest",
                 "-m",
                 "not live",
+                "-q",
                 "-o",
                 f"cache_dir={run_root / 'cache'}",
             ]
@@ -134,6 +135,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                     [python, "-m", "ruff", "format", "--check", "."],
                     [python, "-m", "mypy", "--strict"],
                     ["lint-imports"],
+                    [python, "scripts/check_docs.py"],
                 ]
             )
         case "test":

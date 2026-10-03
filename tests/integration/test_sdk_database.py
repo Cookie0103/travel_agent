@@ -1,9 +1,7 @@
 """R01/R03：真实SDK/CLI使用数据库旅行工具；模型响应由本地HTTP脚本提供。"""
 
 import asyncio
-import os
 import shutil
-from decimal import Decimal
 from functools import partial
 from pathlib import Path
 
@@ -12,15 +10,10 @@ import pytest
 from backend.domain.execution import RunContext
 from backend.mcp.bridge import sdk_tool_name
 from backend.persistence.catalog import import_catalog
-from backend.providers.claude_agent.budget import Budget
-from backend.providers.claude_agent.environment import find_cli, worker_environment
-from backend.providers.claude_agent.guard import Guard, serve
-from backend.providers.claude_agent.process import invoke_worker, run_process
-from backend.providers.probe.settings import Settings
 from backend.services.common import transaction
 from backend.services.travel import TravelService
-from backend.tools.travel import DEFINITIONS
 from data.import_catalog import load_snapshot
+from tests.integration.sdk_helper import run_database_worker
 from tests.integration.test_travel import travel_setup as travel_setup
 from tests.test_sdk_cli_offline import scripted_response
 
@@ -42,34 +35,13 @@ def test_native_sdk_reads_snapshot_and_updates_database_conditions(
         (sdk_tool_name("search_places"), {"city": "京都", "query": "二条", "limit": 1}),
         (sdk_tool_name("update_travel_request"), {"expected_revision": 1, "set": {"rooms": 2}}),
     )
-    guard = Guard(
-        Settings("offline-only", "deepseek-flash", Decimal(5), Decimal(0)),
-        Budget(tmp_path / "ledger", tmp_path / "old", Decimal(5)),
+    report, guard = run_database_worker(
+        travel,
+        context,
+        tmp_path,
         partial(scripted_response, tool_calls=calls),
-        allowed_tools=frozenset(sdk_tool_name(d.name) for d in DEFINITIONS),
+        "查询二条城，并把房间数改为2",
     )
-    root = Path(__file__).resolve().parents[2]
-    with serve(guard) as endpoint:
-        directory = tmp_path / "worker"
-        cli = find_cli(os.environ)
-        env = worker_environment(
-            os.environ, directory, root, endpoint, guard.token, "deepseek-flash"
-        )
-        version = run_process([str(cli), "--version"], directory, env, timeout=10)
-        report = invoke_worker(
-            cli,
-            directory,
-            env,
-            module="backend.providers.claude_agent.worker",
-            payload={
-                "prompts": ["查询二条城，并把房间数改为2"],
-                "user_id": str(context.user_id),
-                "session_id": str(context.session_id),
-                "run_id": str(context.run_id),
-                "cli_version": version.stdout.split()[0],
-                "database_dsn": travel.database.engine.url.render_as_string(hide_password=False),
-            },
-        )
     assert report["status"] == "success", (report.get("code"), guard.failures)
     assert guard.attempts == 2 and not guard.failures
     request = runner.run(travel.get_request(context))

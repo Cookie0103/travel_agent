@@ -173,3 +173,24 @@
 - 专项13项父进程/错误码通过（2.28秒）、5项真实PG run通过（1.30秒），独立复核无剩余P1/P2。
 - 项目库迁移0004成功。真实临时Uvicorn HTTP烟测离线完成，7个事件有序，重复消息同run、snapshot中文标签正确；证据m14-http-smoke-2026-10-03.json，已停止本次自有服务进程。
 - 最终check116文件/3契约通过，dev test263 passed/2 deselected（23.94秒）；独立复核关闭，准备正常本地提交。
+- M1.4正常提交钩子通过，保存baa7cf9。
+
+## M1.5 模拟酒店与比较
+
+- 6虚构酒店、12种房型/早餐/退款组合，按房晚/周末加价计算，金额Decimal，5分钟有效；包含缺税与缺费样本，不连接真实供应商。
+- HotelOffer复用TravelRequest入住字段和evidence_conditions比较口径，报价直接保存为不可变Evidence.value，避免两份价格事实表。卡片和最低价由服务端生成。
+- search/refresh/present复用现有TravelToolExecutor权限、次数、schema和SDK桥接；旧ID刷新只定位本人查到过的rate，必须按当前完整条件生成新报价。模型不能输入卡片价格。
+- 已验证15项领域/真实PG专项（0.56秒）：6/12样本、房晚周末税费、未知金额、日期人数币种差异、过期/他人/伪造ID、条件变更刷新、缺儿童年龄、空与不可用区分；check121文件/3契约通过。
+- 独立审查进行中；无新增真实模型调用，授权仍21次/0.098450 CNY。M1.5未提交。
+- 首轮完整dev test278 passed/2 deselected（24.26秒）。独立审查未发现阻塞项，建议补present统一evidence_ids、拒绝重复offer_id，已采纳并补失败测试。
+- 新增真实SDK酒店3次本地HTTP流程：先查询，再使用实际返回ID补卡。首次失败来自测试脚本跨轮复用tool_use_id；改为唯一ID后通过，不是生产价格/归属规则放宽。
+- 两份数据库SDK测试共用启动helper，消除环境/预算/worker配置重复。最新17专项通过（5.08秒）、check123文件/3契约通过，准备最终全量与保存。真实授权未变化。
+
+## 模型切换与工程地图
+
+- 原Astra独立审查收尾因workspace额度失败；用户明确切换gpt-6.1-sol high继续。新小范围审查只给M1.5必要文件/证据，不传整段历史；只读复核通过，无P1/P2，不重复跑全量。
+- 读取OpenAI Harness engineering及官方长程任务文章：AGENTS做地图、知识就近落库、计划外置、规则自动验证。没有照搬其架构或扩大项目范围。
+- 新增ARCHITECTURE.md及docs的DESIGN/FRONTEND/RELIABILITY/SECURITY/QUALITY_SCORE短导航；业务设计继续plan，进度继续execution单一来源。修正plan/README过时“SDK尚未接入”字样，改为只指向执行计划。
+- 新增轻量check_docs到dev check，10份入口存在/短地图/仓库链接检查；不扫描缓存历史或获取外网，外部链接/标题锚点不在验证范围。3个文档失败/正常路径+原dev测试共15 passed（0.08秒），check125文件/3分层契约通过。
+- dev test增加-q减少正常输出；失败仍显示细节。模型切换前最后一次全量会话72523已不可恢复，不将缓存nodeids当成功；接下来运行一次最终全量并记录真实结果。
+- M1.5与新增规范独立复核无P1/P2；修正安全文档措辞，明确SDK供应商认证仅回环令牌，但业务数据库DSN通过自有worker stdin传入。最终dev test282 passed/2 deselected（26.47秒）；静态125文件/3契约和10文档地图通过，准备正常本地提交。

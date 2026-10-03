@@ -5,13 +5,15 @@ import hashlib
 import json
 from pathlib import Path
 from typing import Literal
+from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
 
 from backend.domain.execution import RunContext
 from backend.domain.travel_request import RequestPatch
 from backend.services.catalog import CatalogResult, CatalogService
 from backend.services.common import ServiceError
+from backend.services.hotels import HotelService, cards
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolDefinition, ToolResult
 from backend.tools.search import DEFINITIONS as SEARCH_DEFINITIONS
@@ -26,6 +28,33 @@ class EntityInput(BaseModel):
 class SkillInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     name: Literal["hotel-comparison", "itinerary-revision"]
+
+
+class HotelSearchInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    expected_revision: int = Field(strict=True, ge=0)
+    hotel_id: str | None = Field(default=None, min_length=1, max_length=100)
+    limit: int = Field(default=4, strict=True, ge=1, le=6)
+
+
+class RefreshOfferInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    expected_revision: int = Field(strict=True, ge=0)
+    offer_id: UUID
+
+
+class PresentationInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    component: Literal["hotel_comparison"]
+    expected_revision: int = Field(strict=True, ge=0)
+    offer_ids: tuple[UUID, ...] = Field(min_length=1, max_length=6)
+
+    @field_validator("offer_ids")
+    @classmethod
+    def unique_ids(cls, ids: tuple[UUID, ...]) -> tuple[UUID, ...]:
+        if len(ids) != len(set(ids)):
+            raise ValueError("报价ID不能重复")
+        return ids
 
 
 DEFINITIONS = (
@@ -51,6 +80,22 @@ DEFINITIONS = (
         "按白名单加载业务步骤；文本不授予额外工具权限。",
         SkillInput.model_json_schema(),
     ),
+    ToolDefinition(
+        "search_hotel_offers",
+        "按当前已确认且完整的入住条件查询模拟酒店；返回报价和有效期。",
+        HotelSearchInput.model_json_schema(),
+    ),
+    ToolDefinition(
+        "refresh_hotel_offer",
+        "为本会话查到过的报价按当前条件重新报价；不沿用旧价格。",
+        RefreshOfferInput.model_json_schema(),
+    ),
+    ToolDefinition(
+        "present_travel_result",
+        "只提供本会话的报价ID；服务端补齐卡片并比较含税费总价。",
+        PresentationInput.model_json_schema(),
+        kind="presentation",
+    ),
 )
 SCHEMAS: dict[str, type[BaseModel]] = {
     "search_places": PlaceSearchInput,
@@ -59,12 +104,16 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "get_place_facts": EntityInput,
     "update_travel_request": RequestPatch,
     "load_skill": SkillInput,
+    "search_hotel_offers": HotelSearchInput,
+    "refresh_hotel_offer": RefreshOfferInput,
+    "present_travel_result": PresentationInput,
 }
 
 
 class TravelToolExecutor:
     def __init__(self, travel: TravelService, *, max_calls: int = 16) -> None:
         self.travel, self.catalog = travel, CatalogService(travel)
+        self.hotels = HotelService(travel)
         self.calls, self.max_calls = 0, max_calls
         self.loaded_skills: set[str] = set()
         # 第一版全部串行（读并发上限1），避免为尚不存在的并行收益实现读写锁。
@@ -108,6 +157,8 @@ class TravelToolExecutor:
                 return ToolResult({}, code="unavailable", suggestion="本地业务数据暂不可用")
 
     async def _dispatch(self, context: RunContext, name: str, parsed: BaseModel) -> ToolResult:
+        if isinstance(parsed, HotelSearchInput | RefreshOfferInput | PresentationInput):
+            return await self._hotel_result(context, parsed)
         if isinstance(parsed, RequestPatch):
             update = await self.travel.patch_request(context, parsed)
             return ToolResult(
@@ -139,6 +190,35 @@ class TravelToolExecutor:
             collection = "places" if name == "get_place_facts" else "articles"
             result = await self.catalog.get(context, collection, parsed.entity_id)
         return catalog_result(result)
+
+    async def _hotel_result(
+        self,
+        context: RunContext,
+        parsed: HotelSearchInput | RefreshOfferInput | PresentationInput,
+    ) -> ToolResult:
+        warning = ("虚构酒店与模拟价格，非实时库存；仅住宿成本，不代表全程预算满足",)
+        if isinstance(parsed, PresentationInput):
+            data = await self.hotels.present(context, parsed.expected_revision, parsed.offer_ids)
+            presented = data["cards"]
+            assert isinstance(presented, list)
+            return ToolResult(
+                data,
+                evidence_ids=tuple(str(card["evidence_id"]) for card in presented),
+                warnings=warning,
+            )
+        records = (
+            await self.hotels.search(
+                context, parsed.expected_revision, parsed.hotel_id, parsed.limit
+            )
+            if isinstance(parsed, HotelSearchInput)
+            else await self.hotels.refresh(context, parsed.expected_revision, parsed.offer_id)
+        )
+        return ToolResult(
+            {"offers": cards(records)},
+            empty=not records,
+            evidence_ids=tuple(str(record.evidence_id) for record in records),
+            warnings=warning,
+        )
 
 
 def catalog_result(result: CatalogResult) -> ToolResult:

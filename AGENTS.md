@@ -9,6 +9,7 @@
 2. [计划地图](plan/README.md) → [任务定义与依赖](plan/实操计划/04-开发任务计划.md)。
 3. [当前任务规格](docs/tasks/M0.md)及本次涉及的 02/03/05、ADR；按需读，不全仓灌入上下文。
 4. [工作流](docs/execution/workflow.md)、[工程标准](docs/execution/standards.md)；先核对 git status，不覆盖已有工作。
+5. 按任务查[架构地图](ARCHITECTURE.md)及[设计/前端/可靠性/安全/质量导航](docs/README.md)，不每轮全部重读。
 
 ## 持续执行
 

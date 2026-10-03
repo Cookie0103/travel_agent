@@ -6,7 +6,8 @@
 `snapshots/`含146个OSM对象及中文Wikivoyage京都条目；来源/版本/哈希和数据许可随目录保存。
 运行 `uv run python scripts/dev.py db-migrate` 后，`uv run python -m data.import_catalog` 导入166条记录；重复执行按来源ID更新，不新增重复项。
 字段未知保留null，way/relation坐标是包围盒中心；原文含历史资料，不代表实时事实。
-CLI的M0查询仍默认使用fixture；M1.4旅行执行器再接入数据库查询。
+CLI的M0查询使用fixture；API旅行工具已查询数据库快照。
+fixtures/hotels.json含6家虚构酒店/12房型组合；金额为模拟数据，完整报价通过Evidence存入数据库。
 
 数据库本身运行在 PostgreSQL 中；表映射、迁移和数据库读写代码放 backend/persistence。
 旅行请求、行程等业务对象和规则放 backend/domain。

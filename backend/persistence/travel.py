@@ -7,7 +7,7 @@ from sqlalchemy import select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.domain.evidence import EvidenceRecord
+from backend.domain.evidence import EvidenceKind, EvidenceRecord
 from backend.domain.execution import RunContext
 from backend.domain.travel_request import TravelRequest
 from backend.persistence.models import EvidenceRow, TravelRequestRow
@@ -85,5 +85,19 @@ async def recent_evidence(
         )
         .order_by(EvidenceRow.payload["retrieved_at"].as_string().desc(), EvidenceRow.id)
         .limit(20)
+    )
+    return list(rows)
+
+
+async def entity_evidence(
+    db: AsyncSession, context: RunContext, kind: EvidenceKind, ids: Sequence[str]
+) -> list[EvidenceRow]:
+    rows = await db.scalars(
+        select(EvidenceRow).where(
+            EvidenceRow.user_id == context.user_id,
+            EvidenceRow.session_id == context.session_id,
+            EvidenceRow.kind == kind,
+            EvidenceRow.payload["entity_id"].as_string().in_(ids),
+        )
     )
     return list(rows)
