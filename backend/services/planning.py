@@ -2,14 +2,22 @@
 
 from datetime import UTC, datetime, timedelta
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
 from backend.domain.travel_request import TravelRequest
 from backend.domain.validator import validate_itinerary
+from backend.persistence import travel as requests
 from backend.providers.routes_fixture import estimate, load_routes
-from backend.services.common import ServiceError
-from backend.services.travel import TravelService
+from backend.services.common import ServiceError, transaction
+from backend.services.travel import (
+    TravelService,
+    request_from_row,
+    require_revision,
+    resolve_records,
+)
 
 
 class PlanningService:
@@ -18,8 +26,7 @@ class PlanningService:
 
     async def current(self, context: RunContext, revision: int) -> TravelRequest:
         request = await self.travel.get_request(context)
-        if request.revision != revision:
-            raise ServiceError(409, "conflict", "旅行条件已变化，请读取最新revision")
+        require_revision(request, revision)
         return request
 
     async def routes(
@@ -71,9 +78,19 @@ class PlanningService:
         return tuple(results)
 
     async def validate(self, context: RunContext, proposal: ItineraryProposal) -> ValidationReport:
-        request = await self.current(context, proposal.expected_revision)
-        records = await self.travel.resolve_evidence(context, proposal.evidence_ids())
-        try:
-            return validate_itinerary(request, proposal, records, datetime.now(UTC))
-        except ValueError:
-            raise ServiceError(422, "validation", "行程引用的证据类型、条件或内容不一致") from None
+        async with transaction(self.travel.database) as db:
+            request = request_from_row(await requests.owned_request(db, context))
+            return await validate_proposal(db, context, request, proposal)
+
+
+async def validate_proposal(
+    db: AsyncSession, context: RunContext, request: TravelRequest, proposal: ItineraryProposal
+) -> ValidationReport:
+    require_revision(request, proposal.expected_revision)
+    records = await resolve_records(
+        db, context, request, proposal.evidence_ids(), datetime.now(UTC)
+    )
+    try:
+        return validate_itinerary(request, proposal, records, datetime.now(UTC))
+    except ValueError:
+        raise ServiceError(422, "validation", "行程引用的证据类型、条件或内容不一致") from None

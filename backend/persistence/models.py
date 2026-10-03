@@ -92,3 +92,31 @@ class RunEventRow(Base):
     run_id: Mapped[UUID] = mapped_column(ForeignKey("task_runs.id"), primary_key=True)
     sequence: Mapped[int] = mapped_column(primary_key=True)
     payload: Mapped[dict[str, object]] = mapped_column(JSONB)
+
+
+class PlanRow(Base):
+    __tablename__ = "plans"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), unique=True)
+    current_version: Mapped[int] = mapped_column(default=0)
+
+
+class PlanVersionRow(Base):
+    __tablename__ = "plan_versions"
+
+    plan_id: Mapped[UUID] = mapped_column(ForeignKey("plans.id"), primary_key=True)
+    version: Mapped[int] = mapped_column(primary_key=True)
+    payload: Mapped[dict[str, object]] = mapped_column(JSONB)
+
+
+class PlanDraftRow(Base):
+    __tablename__ = "plan_drafts"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    plan_id: Mapped[UUID] = mapped_column(ForeignKey("plans.id"))
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
+    confirmed_version: Mapped[int | None]
+    payload: Mapped[dict[str, object]] = mapped_column(JSONB)

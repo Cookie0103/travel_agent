@@ -4,4 +4,7 @@
 GET /health检查数据库；POST /demo/login仅DEMO_MODE=true开放，返回24小时演示令牌。
 带Authorization: Bearer <token>调用POST /sessions、GET /sessions/{id}。
 服务端解析身份，不接受客户端user_id登录已有账号；他人/不存在会话均404。
-只通过services/agent调用其他项目层；当前尚无旅行执行/SSE接口，随M1.4接入。
+消息/状态/取消/SSE接口调用RunService；事件读取不重新运行模型。
+GET /plans/{id}、GET /plan-drafts/{id}读取本人历史/草稿及需刷新证据。
+POST /plan-drafts/{id}/confirm才保存正式版本；PATCH /plans/{id}/locks由用户设置锁定项。
+只通过services/agent调用其他项目层；模型工具中没有确认保存或锁定接口。

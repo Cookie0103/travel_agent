@@ -5,6 +5,8 @@ from typing import Literal, Protocol
 
 from backend.domain.execution import ErrorCode, RunContext
 
+RESULT_LIMIT = 8000
+
 
 @dataclass(frozen=True)
 class ToolDefinition:
@@ -13,7 +15,7 @@ class ToolDefinition:
     schema: dict[str, object]
     kind: Literal["read", "state", "draft", "presentation", "side_effect"] = "read"
     timeout_seconds: float = 5
-    max_result_chars: int = 8000
+    max_result_chars: int = RESULT_LIMIT
 
 
 @dataclass(frozen=True)

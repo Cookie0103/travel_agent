@@ -6,6 +6,7 @@ from datetime import UTC, datetime
 from uuid import UUID
 
 from pydantic import ValidationError
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.evidence import EvidenceRecord
 from backend.domain.execution import RunContext
@@ -16,7 +17,7 @@ from backend.domain.travel_request import (
     apply_request_patch,
     invalidated_kinds,
 )
-from backend.persistence import runs, travel
+from backend.persistence import plans, runs, travel
 from backend.persistence.database import Database
 from backend.persistence.models import TravelRequestRow
 from backend.services.common import ServiceError, transaction
@@ -24,10 +25,15 @@ from backend.services.common import ServiceError, transaction
 __all__ = ["RunContext", "RequestPatch", "TravelRequest", "RequestUpdate", "TravelService"]
 
 
-def _request(row: TravelRequestRow | None) -> TravelRequest:
+def request_from_row(row: TravelRequestRow | None) -> TravelRequest:
     if row is None:
         raise ServiceError(404, "blocked", "会话不存在")
     return TravelRequest.model_validate({**row.conditions, "revision": row.revision})
+
+
+def require_revision(request: TravelRequest, revision: int) -> None:
+    if request.revision != revision:
+        raise ServiceError(409, "conflict", "旅行条件已变化，请读取最新revision")
 
 
 @dataclass(frozen=True)
@@ -42,18 +48,22 @@ class TravelService:
 
     async def get_request(self, context: RunContext) -> TravelRequest:
         async with transaction(self.database) as db:
-            return _request(await travel.owned_request(db, context))
+            return request_from_row(await travel.owned_request(db, context))
 
     async def business_context(self, context: RunContext) -> dict[str, object]:
         """有界业务回顾，不重放SDK原始消息；未知或被截断的指代仍须追问/重新查询。"""
         async with transaction(self.database) as db:
-            current = _request(await travel.owned_request(db, context))
+            current = request_from_row(await travel.owned_request(db, context))
             history = await runs.recent_completed(db, context)
             rows = await travel.recent_evidence(db, context, current.revision)
             evidence = [EvidenceRecord.model_validate(row.payload) for row in rows]
             valid = [record for record in evidence if record.applicable(current, datetime.now(UTC))]
+            plan = await plans.for_session(db, context)
             return {
                 "request": current.model_dump(mode="json"),
+                "saved_plan": {"plan_id": str(plan.id), "version": plan.current_version}
+                if plan and plan.current_version
+                else None,
                 "recent_dialogue": [
                     {
                         "user": row.prompt[:1000],
@@ -74,7 +84,7 @@ class TravelService:
     async def patch_request(self, context: RunContext, patch: RequestPatch) -> RequestUpdate:
         async with transaction(self.database) as db:
             row = await travel.owned_request(db, context)
-            current = _request(row)
+            current = request_from_row(row)
             assert row is not None
             try:
                 updated, changed = apply_request_patch(current, patch)
@@ -90,7 +100,7 @@ class TravelService:
 
     async def record_evidence(self, context: RunContext, records: Sequence[EvidenceRecord]) -> None:
         async with transaction(self.database) as db:
-            current = _request(await travel.owned_request(db, context))
+            current = request_from_row(await travel.owned_request(db, context))
             if any(not record.applicable(current, datetime.now(UTC)) for record in records):
                 raise ServiceError(409, "conflict", "证据与当前条件或有效期不符")
             await travel.add_evidence(db, context, records)
@@ -98,16 +108,27 @@ class TravelService:
     async def resolve_evidence(
         self, context: RunContext, ids: Sequence[UUID]
     ) -> tuple[EvidenceRecord, ...]:
-        if len(ids) > 50:
-            raise ServiceError(422, "validation", "一次最多读取50条证据")
         async with transaction(self.database) as db:
-            current = _request(await travel.owned_request(db, context))
-            rows = {row.id: row for row in await travel.find_evidence(db, context, ids)}
-            if set(ids) != rows.keys():
-                raise ServiceError(404, "blocked", "证据不存在或不属于当前会话")
-            records = tuple(EvidenceRecord.model_validate(rows[key].payload) for key in ids)
-            if any(row.invalidated for row in rows.values()) or any(
-                not record.applicable(current, datetime.now(UTC)) for record in records
-            ):
-                raise ServiceError(409, "conflict", "证据已失效，请重新查询")
-            return records
+            current = request_from_row(await travel.owned_request(db, context))
+            return await resolve_records(db, context, current, ids, datetime.now(UTC))
+
+
+async def resolve_records(
+    db: AsyncSession,
+    context: RunContext,
+    request: TravelRequest,
+    ids: Sequence[UUID],
+    now: datetime,
+) -> tuple[EvidenceRecord, ...]:
+    """共用Evidence规则，可纳入确认事务，不另开事务留下检查/写入间隙。"""
+    if len(ids) > 50:
+        raise ServiceError(422, "validation", "一次最多读取50条证据")
+    rows = {row.id: row for row in await travel.find_evidence(db, context, ids)}
+    if set(ids) != rows.keys():
+        raise ServiceError(404, "blocked", "证据不存在或不属于当前会话")
+    records = tuple(EvidenceRecord.model_validate(rows[key].payload) for key in ids)
+    if any(row.invalidated for row in rows.values()) or any(
+        not record.applicable(request, now) for record in records
+    ):
+        raise ServiceError(409, "conflict", "证据已失效，请重新查询")
+    return records

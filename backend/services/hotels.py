@@ -10,7 +10,7 @@ from backend.domain.travel_request import TravelRequest
 from backend.persistence.travel import entity_evidence
 from backend.providers.hotel_fixture import load_rates
 from backend.services.common import ServiceError, transaction
-from backend.services.travel import TravelService
+from backend.services.travel import TravelService, require_revision
 
 
 class HotelService:
@@ -19,8 +19,7 @@ class HotelService:
 
     async def _request(self, context: RunContext, revision: int) -> TravelRequest:
         request = await self.travel.get_request(context)
-        if request.revision != revision:
-            raise ServiceError(409, "conflict", "旅行条件已变化，请读取最新revision")
+        require_revision(request, revision)
         if missing := request.hotel_requirements():
             raise ServiceError(422, "validation", "missing_fields: " + ", ".join(missing))
         return request

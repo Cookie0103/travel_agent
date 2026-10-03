@@ -10,6 +10,7 @@ from fastapi.responses import JSONResponse, StreamingResponse
 
 from backend.api.events import stream_events
 from backend.services.common import ServiceError
+from backend.services.plans import LockInput, PlanService, SavedPlan
 from backend.services.runs import MessageInput, RunService, RunView
 from backend.services.sessions import (
     DemoIdentity,
@@ -35,6 +36,7 @@ def create_app(
     sessions = service or SessionService.from_environment()
     travel = TravelService(sessions.database)
     runs = runs_service or RunService(sessions.database, live_enabled=live_enabled)
+    plans = PlanService(travel)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -120,5 +122,29 @@ def create_app(
             media_type="text/event-stream",
             headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
         )
+
+    @app.get("/plans/{plan_id}")
+    async def get_plan(
+        plan_id: UUID, user_id: Annotated[UUID, Depends(identity)]
+    ) -> dict[str, object]:
+        return await plans.get(user_id, plan_id)
+
+    @app.get("/plan-drafts/{draft_id}")
+    async def get_draft(
+        draft_id: UUID, user_id: Annotated[UUID, Depends(identity)]
+    ) -> dict[str, object]:
+        return await plans.get_draft(user_id, draft_id)
+
+    @app.post("/plan-drafts/{draft_id}/confirm")
+    async def confirm_plan(
+        draft_id: UUID, user_id: Annotated[UUID, Depends(identity)]
+    ) -> SavedPlan:
+        return await plans.confirm(user_id, draft_id)
+
+    @app.patch("/plans/{plan_id}/locks")
+    async def lock_items(
+        plan_id: UUID, body: LockInput, user_id: Annotated[UUID, Depends(identity)]
+    ) -> SavedPlan:
+        return await plans.locks(user_id, plan_id, body)
 
     return app

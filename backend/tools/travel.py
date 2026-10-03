@@ -3,21 +3,24 @@
 import asyncio
 import hashlib
 import json
+from dataclasses import replace
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
 from backend.domain.execution import RunContext
 from backend.domain.itinerary import ItineraryProposal, RouteInput
+from backend.domain.plans import StageInput
 from backend.domain.travel_request import RequestPatch
 from backend.services.catalog import CatalogResult, CatalogService
 from backend.services.common import ServiceError
 from backend.services.hotels import HotelService, cards
 from backend.services.planning import PlanningService
+from backend.services.plans import PlanInput, PlanService
 from backend.services.travel import TravelService
-from backend.tools.contracts import ToolDefinition, ToolResult
+from backend.tools.contracts import RESULT_LIMIT, ToolDefinition, ToolResult
 from backend.tools.search import DEFINITIONS as SEARCH_DEFINITIONS
 from backend.tools.search import ContentSearchInput, PlaceSearchInput
 
@@ -47,16 +50,21 @@ class RefreshOfferInput(BaseModel):
 
 class PresentationInput(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    component: Literal["hotel_comparison"]
-    expected_revision: int = Field(strict=True, ge=0)
-    offer_ids: tuple[UUID, ...] = Field(min_length=1, max_length=6)
+    component: Literal["hotel_comparison", "itinerary"]
+    expected_revision: int | None = Field(default=None, strict=True, ge=0)
+    offer_ids: tuple[UUID, ...] = Field(default=(), max_length=6)
+    draft_id: UUID | None = None
 
-    @field_validator("offer_ids")
-    @classmethod
-    def unique_ids(cls, ids: tuple[UUID, ...]) -> tuple[UUID, ...]:
-        if len(ids) != len(set(ids)):
+    @model_validator(mode="after")
+    def valid_component(self) -> "PresentationInput":
+        if len(self.offer_ids) != len(set(self.offer_ids)):
             raise ValueError("报价ID不能重复")
-        return ids
+        if self.component == "hotel_comparison":
+            if self.expected_revision is None or not self.offer_ids or self.draft_id is not None:
+                raise ValueError("酒店卡片仅需要版本和1至6个报价ID")
+        elif self.draft_id is None or self.offer_ids or self.expected_revision is not None:
+            raise ValueError("行程卡片仅需要草稿ID")
+        return self
 
 
 DEFINITIONS = (
@@ -103,8 +111,19 @@ DEFINITIONS = (
         ItineraryProposal.model_json_schema(),
     ),
     ToolDefinition(
+        "stage_plan_change",
+        "暂存初始行程或稳定item_id的局部patch，返回差异与校验；不保存正式版本，不接受锁定项改动。",
+        StageInput.model_json_schema(),
+        kind="draft",
+    ),
+    ToolDefinition(
+        "get_saved_plan",
+        "读取本会话正式行程、稳定item_id与锁定标记；历史证据需要刷新，不能当当前事实。",
+        PlanInput.model_json_schema(),
+    ),
+    ToolDefinition(
         "present_travel_result",
-        "只提供本会话的报价ID；服务端补齐卡片并比较含税费总价。",
+        "按本会话报价或草稿ID补卡；行程展示前重新校验，不接受模型提供事实或校验结果。",
         PresentationInput.model_json_schema(),
         kind="presentation",
     ),
@@ -121,6 +140,8 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "present_travel_result": PresentationInput,
     "estimate_routes": RouteInput,
     "validate_itinerary": ItineraryProposal,
+    "stage_plan_change": StageInput,
+    "get_saved_plan": PlanInput,
 }
 
 
@@ -129,8 +150,10 @@ class TravelToolExecutor:
         self.travel, self.catalog = travel, CatalogService(travel)
         self.hotels = HotelService(travel)
         self.planning = PlanningService(travel)
+        self.plans = PlanService(travel)
         self.calls, self.max_calls = 0, max_calls
         self.validations = 0
+        self.last_validation: ItineraryProposal | None = None
         self.loaded_skills: set[str] = set()
         # 第一版全部串行（读并发上限1），避免为尚不存在的并行收益实现读写锁。
         self.lock = asyncio.Lock()
@@ -173,6 +196,28 @@ class TravelToolExecutor:
                 return ToolResult({}, code="unavailable", suggestion="本地业务数据暂不可用")
 
     async def _dispatch(self, context: RunContext, name: str, parsed: BaseModel) -> ToolResult:
+        if isinstance(parsed, StageInput):
+            draft = await self.plans.stage(
+                context,
+                parsed,
+                before_validate=lambda proposal: self._take_validation(proposal, staging=True),
+            )
+            return ToolResult(draft.summary())
+        if isinstance(parsed, PlanInput):
+            data = await self.plans.get(
+                context.user_id, parsed.plan_id, session_id=context.session_id
+            )
+            return bounded_plan(ToolResult(data))
+        if isinstance(parsed, PresentationInput) and parsed.component == "itinerary":
+            assert parsed.draft_id is not None
+            data = await self.plans.get_draft(
+                context.user_id, parsed.draft_id, session_id=context.session_id
+            )
+            return bounded_plan(
+                ToolResult(
+                    data, warnings=("草稿尚未确认，unknown仍未核实；仅用户确认API能正式保存",)
+                )
+            )
         if isinstance(parsed, RouteInput):
             records = await self.planning.routes(context, parsed)
             return ToolResult(
@@ -192,13 +237,9 @@ class TravelToolExecutor:
                 warnings=("自制双向路段估算，非实时路线或票价；费用按全员估算，无儿童折扣",),
             )
         if isinstance(parsed, ItineraryProposal):
-            if self.validations >= 4:
-                return ToolResult(
-                    {}, code="blocked", suggestion="首次校验和3轮修复已用完，请说明仍存冲突或未知"
-                )
-            # 无效证据也消耗一次，避免用参数错误绕过修复上限。
-            self.validations += 1
+            self._take_validation(parsed)
             report = await self.planning.validate(context, parsed)
+            self.last_validation = parsed
             return ToolResult(
                 {**report.feedback(), "repair_rounds_remaining": 4 - self.validations}
             )
@@ -236,6 +277,15 @@ class TravelToolExecutor:
             result = await self.catalog.get(context, collection, parsed.entity_id)
         return catalog_result(result)
 
+    def _take_validation(self, proposal: ItineraryProposal, *, staging: bool = False) -> None:
+        # 不变量：最后已校验候选仍可暂存并重新检查，不增加修复次数。
+        if staging and proposal == self.last_validation:
+            self.last_validation = None
+            return
+        if self.validations >= 4:
+            raise ServiceError(429, "blocked", "首次校验和3轮修复已用完，请说明仍存冲突或未知")
+        self.validations += 1
+
     async def _hotel_result(
         self,
         context: RunContext,
@@ -243,6 +293,7 @@ class TravelToolExecutor:
     ) -> ToolResult:
         warning = ("虚构酒店与模拟价格，非实时库存；仅住宿成本，不代表全程预算满足",)
         if isinstance(parsed, PresentationInput):
+            assert parsed.expected_revision is not None
             data = await self.hotels.present(context, parsed.expected_revision, parsed.offer_ids)
             presented = data["cards"]
             assert isinstance(presented, list)
@@ -278,3 +329,24 @@ def catalog_result(result: CatalogResult) -> ToolResult:
         evidence_ids=tuple(str(e.evidence_id) for e in result.evidence),
         warnings=("历史快照非实时事实；缺失字段未知；证据可追溯不等于信息已实时核实",),
     )
+
+
+def bounded_plan(result: ToolResult) -> ToolResult:
+    data = dict(result.data)
+    for key, limit in (("cards", 8), ("changes", 6)):
+        values = data.get(key)
+        if isinstance(values, list):
+            data[key] = values[:limit]
+            data[key + "_count"] = len(values)
+            data[key + "_truncated"] = len(values) > limit
+    bounded = replace(result, data=data)
+    # 先缩详细差异，再缩卡片；ID/总数/校验警告保留，页面API仍可读取完整内容。
+    while len(json.dumps(bounded.payload(), ensure_ascii=False)) > RESULT_LIMIT:
+        changes = data.get("changes")
+        key = "changes" if isinstance(changes, list) and changes else "cards"
+        values = data.get(key)
+        if not isinstance(values, list) or len(values) <= (1 if key == "cards" else 0):
+            break
+        data[key] = values[:-1]
+        data[key + "_truncated"] = True
+    return bounded
