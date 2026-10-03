@@ -6,6 +6,7 @@
 历史21+9文件和期望不改。冻结版本、hash、20dev/40test、历史来源及正常对照由suites校验；未冻结/内容漂移拒绝运行。test不用于模型调优。
 
 调用链：load_suite → temporary_database → database_evaluation → prepare/observe/assess → grade → report。
+独立数据开发实验：`uv run python -m eval.run --database --catalog-dir data/supplements/kyoto-matcha-v1 --case-id kyoto-matcha`。仅legacy dev可指定目录；原冻结/test拒绝使用此开关。仍用随机临时库，目录完整匹配所选包，否则拒绝、不覆盖。data_version绑定manifest SHA且另存实际目录SHA；新增数据结果不能称作原数据同版本改善，详情见[ADR013](adr/013-curated-catalog-supplement.md)。
 DB模式只创建本次随机本地 `travel_agent_eval_<uuid>`，迁移/导入既定快照；正常退出仅清理该库，保留父库及输出。不读取已有用户数据。硬断电可能留下本次孤立库，恢复不自动删除其他库。
 InitialState使用现有服务构造正式行程/锁、报价过期/条件失效、held/unknown、偏好/墓碑与历史。setup与实际运行分开run_id，setup事件不计成绩；业务历史种子不等于原生SDK长会话。
 供应商故障只注入本次本机HTTP `/holds`；unknown订单setup在用户确认后丢响应。模型没有确认/对账工具，必须保留unknown并说明用户/API查询，不能据此声称模型对账成功。

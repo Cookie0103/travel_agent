@@ -1,12 +1,14 @@
 """将固定的Wikivoyage/OSM公开快照验证、切段并幂等导入；运行时不联网。"""
 
+import argparse
 import asyncio
 import hashlib
 import json
 import re
 from pathlib import Path
+from typing import Literal
 
-from pydantic import AliasPath, AwareDatetime, BaseModel, Field
+from pydantic import AliasPath, AwareDatetime, BaseModel, Field, TypeAdapter
 
 from backend.domain.catalog import Article, Place, Source
 from backend.persistence.catalog import import_catalog
@@ -22,6 +24,7 @@ class SnapshotFile(BaseModel):
 
 class Manifest(BaseModel):
     files: dict[str, SnapshotFile]
+    catalog_file: Literal["catalog.json"] | None = None
 
 
 class Element(BaseModel):
@@ -147,19 +150,29 @@ def articles(raw: str, file: SnapshotFile) -> list[Article]:
 def load_snapshot(folder: Path = SNAPSHOT) -> list[Place | Article]:
     manifest = Manifest.model_validate_json((folder / "manifest.json").read_text(encoding="utf-8"))
     raw: dict[str, str] = {}
-    for name in ("osm.json", "wikivoyage.json"):
+    names = ("osm.json", "wikivoyage.json") + (
+        (manifest.catalog_file,) if manifest.catalog_file else ()
+    )
+    for name in names:
         content = (folder / name).read_bytes()
-        if hashlib.sha256(content).hexdigest() != manifest.files[name].sha256:
+        file = manifest.files.get(name)
+        if file is None or hashlib.sha256(content).hexdigest() != file.sha256:
             raise ValueError("快照校验和不符；先核对来源，不能静默导入修改数据")
         raw[name] = content.decode("utf-8")
+    if manifest.catalog_file:
+        entries = TypeAdapter(list[Place | Article]).validate_json(raw[manifest.catalog_file])
+        ids = [e.place_id if isinstance(e, Place) else e.article_id for e in entries]
+        if not ids or len(ids) != len(set(ids)):
+            raise ValueError("整理目录为空或存在重复ID，拒绝导入")
+        return entries
     return [
         *places(raw["osm.json"], manifest.files["osm.json"]),
         *articles(raw["wikivoyage.json"], manifest.files["wikivoyage.json"]),
     ]
 
 
-async def main() -> None:
-    entries = load_snapshot()
+async def main(folder: Path = SNAPSHOT) -> None:
+    entries = load_snapshot(folder)
     database = Database(database_url(configuration()))
     try:
         async with database.sessions.begin() as db:
@@ -170,5 +183,8 @@ async def main() -> None:
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--snapshot-dir", type=Path, default=SNAPSHOT)
+    arguments = parser.parse_args()
     with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
-        runner.run(main())
+        runner.run(main(arguments.snapshot_dir))

@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from dataclasses import asdict, replace
 from datetime import UTC, datetime
+from pathlib import Path
 from uuid import UUID, uuid4
 
 from sqlalchemy import URL, select
@@ -28,7 +29,7 @@ from backend.services.travel import TravelService, request_from_row
 from backend.tools.contracts import ToolExecutor
 from backend.tools.travel import TravelToolExecutor
 from backend.tools.workflow import OrderedTools, WorkflowName
-from data.import_catalog import load_snapshot
+from data.import_catalog import SNAPSHOT, load_snapshot
 from eval.business_metrics import BusinessAssessment
 from eval.cases import Case, InitialState
 from eval.content import AnswerRecord, Grounding
@@ -46,6 +47,7 @@ class DatabaseEvaluation:
         self.sessions = SessionService(url, demo_enabled=True)
         self.travel = TravelService(self.sessions.database)
         self.catalog_sha256: str | None = None
+        self.data_version = DATA_VERSION
         self.supplier_url: str | None = None
         self.scenario: SupplierScenario | None = None
         self.baselines: dict[UUID, StateSnapshot] = {}
@@ -132,7 +134,7 @@ class DatabaseEvaluation:
         result = await Agent(runtime).run(context, case.input, events.append)
         return Observation(
             "failed" if result.outcome.code else "completed", result.outcome.text, tuple(events)
-        ), {"identity": asdict(runtime.identity), "data_version": DATA_VERSION}
+        ), {"identity": asdict(runtime.identity), "data_version": self.data_version}
 
     def dsn(self) -> str:
         return self.sessions.database.engine.url.render_as_string(hide_password=False)
@@ -140,12 +142,16 @@ class DatabaseEvaluation:
 
 @asynccontextmanager
 async def database_evaluation(
-    url: URL, *, supplier: bool = False
+    url: URL, *, supplier: bool = False, catalog_dir: Path | None = None
 ) -> AsyncIterator[DatabaseEvaluation]:
     evaluation = DatabaseEvaluation(url)
     try:
         await evaluation.sessions.health()
-        entries = load_snapshot()
+        folder = catalog_dir if catalog_dir is not None else SNAPSHOT
+        entries = load_snapshot(folder)
+        if catalog_dir is not None:
+            digest = hashlib.sha256((folder / "manifest.json").read_bytes()).hexdigest()
+            evaluation.data_version = f"catalog-sha256:{digest}+hotel-fixture-v1+routes-fixture-v1"
         expected: dict[str, list[dict[str, object]]] = {"places": [], "articles": []}
         for entry in entries:
             payload = entry.model_dump(mode="json")

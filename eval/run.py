@@ -38,7 +38,7 @@ from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
 from backend.tools.workflow import WORKFLOWS, WorkflowName
 from eval.business_metrics import BusinessMetrics
 from eval.cases import Case
-from eval.database import DATA_VERSION, DatabaseEvaluation, database_evaluation, selector_runner
+from eval.database import DatabaseEvaluation, database_evaluation, selector_runner
 from eval.diagnostics import diagnose
 from eval.graders import Observation, grade
 from eval.metrics import first_progress_seconds, tool_call_accuracy
@@ -132,7 +132,7 @@ async def run_cases(
                 if business
                 else None,
                 "catalog_sha256": business.catalog_sha256 if business else None,
-                "data_version": DATA_VERSION if business else "kyoto-fixture-v1",
+                "data_version": business.data_version if business else "kyoto-fixture-v1",
                 "max_http_attempts_per_case": max_attempts if live else 0,
                 "repetitions": repeats,
                 "evaluation_suite": suite,
@@ -214,7 +214,7 @@ async def run_cases(
         "repetitions": repeats,
         "expected_attempts": len(cases) * repeats,
         **measured_summary(rows, repeats),
-        "data_version": DATA_VERSION if business else "kyoto-fixture-v1",
+        "data_version": business.data_version if business else "kyoto-fixture-v1",
         "workflow": workflow or "autonomous",
         "evaluation_variant": variant,
         "limitations": [
@@ -453,6 +453,7 @@ def main() -> int:
     )
     parser.add_argument("--case-id", action="append", help="只运行指定用例；不改变完整集")
     parser.add_argument("--database", action="store_true", help="使用本地PG与应用旅行工具")
+    parser.add_argument("--catalog-dir", type=Path, help="独立目录版本；仅--database legacy dev")
     parser.add_argument("--workflow", choices=sorted(WORKFLOWS), help="固定工具阶段；默认自主选择")
     parser.add_argument(
         "--variant",
@@ -470,6 +471,10 @@ def main() -> int:
     )
     arguments = parser.parse_args()
     try:
+        if arguments.catalog_dir and (
+            not arguments.database or arguments.suite != "legacy" or arguments.split != "dev"
+        ):
+            raise ValueError("独立目录只允许--database legacy dev，不改冻结或test数据")
         cases, suite = load_suite(ROOT, arguments.suite, arguments.split)
         if arguments.suite == "frozen" and not arguments.database:
             raise ValueError("冻结评测需要--database")
@@ -482,7 +487,9 @@ def main() -> int:
         async def evaluate() -> dict[str, object]:
             if arguments.database:
                 with temporary_database(database_url(configuration()), "eval") as target:
-                    async with database_evaluation(target, supplier=True) as business:
+                    async with database_evaluation(
+                        target, supplier=True, catalog_dir=arguments.catalog_dir
+                    ) as business:
                         return await run_cases(
                             cases,
                             ROOT / ".cache" / "eval" / name,

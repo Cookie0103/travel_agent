@@ -227,3 +227,18 @@ def test_cli_rejects_unsupported_request_limit_before_live(monkeypatch: pytest.M
     monkeypatch.setattr("eval.run.run_cases", forbidden)
     monkeypatch.setattr(sys, "argv", ["eval.run", "--live", "--max-attempts", "1"])
     assert eval_main() == 1
+
+
+@pytest.mark.parametrize(
+    "arguments", [[], ["--database", "--suite", "frozen"], ["--database", "--split", "test"]]
+)
+def test_custom_catalog_cannot_change_frozen_test_or_search_only_data(
+    monkeypatch: pytest.MonkeyPatch, arguments: list[str]
+) -> None:
+    def forbidden(*args: object, **kwargs: object) -> object:
+        raise AssertionError("invalid data selection must stop before model or database")
+
+    monkeypatch.setattr("eval.run.check_evaluation_size", forbidden)
+    monkeypatch.setattr("eval.run.database_evaluation", forbidden)
+    monkeypatch.setattr(sys, "argv", ["eval.run", "--live", "--catalog-dir", "missing", *arguments])
+    assert eval_main() == 1

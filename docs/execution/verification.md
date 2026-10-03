@@ -102,3 +102,5 @@ M0.5/M4.1 API观测追加：test_run_trace真实PG+本机OTLP HTTP覆盖显式�
 诊断续接：14个原实际SDK/本机HTTP/真实PG恢复与压缩专项Passed（39.10s），无新的间歇故障；44个数据库/RunService/Trace回归Passed（3.45s）。前两次混合路径专项先unit后integration时6项postgres_url fixture发现失败，原全部44按integration入口先收集后通过，非跳过/降断言。新增连接故障白名单日志与worker安全标签，未知仍unknown；API错误码、重试、超时和原恢复断言均不改变，不把诊断当根因修复。正常完整关卡将再次核验，分类未输出原异常/SQL/密码。
 
 原错误契约恢复后21个实际SDK context/recovery与连接诊断回归Passed（34.40s）；worker.py与HEAD净diff=0，原精确字典断言保留。日志为症状标签、不触发重试，间歇PG/恢复根因仍待证据；随后正常全量关卡继续。
+
+M3.6 ADR013实现独立来源补充包与固定catalog.json可选导入；默认原166不变，legacy dev显式选择/随机临时库/完整目录不一致409拒绝，实际版本绑定manifestSHA。55专项Passed17.38s，224文件三平台strict/ruff/格式/3契约/10地图Passed，原六基准hash不变。新SDK测试首次只因JSON转义文本断言失败，改新测试解析实际工具payload核对原名/来源，未改生产或原Case。实际SDK本机2HTTP仅两搜索工具，0真实模型新费；独立审查/原保存钩子与一次受控模型邻例待执行，原失败保留。

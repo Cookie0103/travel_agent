@@ -1,0 +1,48 @@
+{
+  "task": "M3.6",
+  "scope": "source-backed development neighbor; original baseline is retained",
+  "data": {
+    "catalog_dir": "data/supplements/kyoto-matcha-v1",
+    "manifest_sha256": "27c344b3db1139f05036864905effc483af6aa402569c01009cb18317efa0742",
+    "files": {
+      "osm.json": "7d166a1a8bdef308bc15e0f9bb091fcf407ef3acc74d8486167974bb21fe06fb",
+      "wikivoyage.json": "c9994811af41b2884cc270cfbd6357d38795b22772d5660f5e458415016d5cc6",
+      "catalog.json": "3c50e552b120087ef3816f176927b0e918e7068a3edef2ba226ae38f6b76b091"
+    },
+    "entries": 2,
+    "original_sha256": {
+      "data/snapshots/osm.json": "3c6e54e76235d05467ecd875f64a4df8693b1d3ad6a0cde29a74aa97607b67b9",
+      "data/snapshots/wikivoyage.json": "7b3c002168894b1f45f97adeb85f2f9a495ea908239ef0a02f3530decc811ffe",
+      "data/snapshots/manifest.json": "edb8ffa03a90c668c3b0ab83476a32cb962668882f5e85ae87b6a3ba2fc421dc",
+      "data/fixtures/kyoto.json": "30570a9b30c2f4ba7d499fd76938ddad5be1ec31c8020dba4cd58ddd202cf566",
+      "eval/cases/datamind_adapted.jsonl": "9805c20fd7d7776eb6b78ae2c6cce71b756975722c416c812ab5035604d0bca0",
+      "eval/cases/frozen_v1.jsonl": "5a433b621c43f62d17f98c6902d8e889b31c451fe02aa67145b5c142aa97558b"
+    }
+  },
+  "case": {
+    "case_id": "kyoto-matcha",
+    "original_case_sha256": "40924f1f20d3b2b7555771908c225c2d8f10965c22aaa2858001a76c6788af8f",
+    "tools": [
+      "search_places",
+      "search_content"
+    ]
+  },
+  "verification": {
+    "focused": "55 passed in 17.38s",
+    "static": "224 files: ruff/format, three-platform strict mypy; 3 import contracts and 10 document maps passed",
+    "actual_sdk": "CLI+SDK, local scripted HTTP, real isolated PostgreSQL; exactly two search tools and two local HTTP requests, valid source-backed payloads",
+    "original_files_unchanged": 6,
+    "new_model_http": 0,
+    "independent_review": "quality_review: no P1/P2; source attribution, isolation, defaults, failure handling and reuse checked"
+  },
+  "failures_preserved": [
+    "Initial new SDK assertion compared JSON escaped text with literal Chinese; changed new test to parse tool payload and validate exact fields; no old expectation or product code changed."
+  ],
+  "limitations": [
+    "Offline scripted SDK validates engineering, not model quality.",
+    "Original matcha baseline data failure remains in original results.",
+    "New data cannot be compared with old results as identical data/version.",
+    "Opening hours, indoor, current prices and queue time remain unknown.",
+    "Normal save hooks and one controlled model neighbor still pending; no overall completion claim."
+  ]
+}
