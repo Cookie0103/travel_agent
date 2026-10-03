@@ -11,6 +11,9 @@ class ToolDefinition:
     name: str
     description: str
     schema: dict[str, object]
+    kind: Literal["read", "state", "draft", "presentation", "side_effect"] = "read"
+    timeout_seconds: float = 5
+    max_result_chars: int = 8000
 
 
 @dataclass(frozen=True)

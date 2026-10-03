@@ -2,8 +2,8 @@
 
 import json
 
+from backend.providers.claude_agent.request import Request
 from backend.providers.probe.settings import ProbeError, price_for
-from backend.providers.sdk_probe.request import Request
 
 
 def summarize(content: bytes, request: Request, model: str) -> dict[str, object]:
@@ -45,6 +45,7 @@ def summarize(content: bytes, request: Request, model: str) -> dict[str, object]
         raise ProbeError("blocked", "上游 usage 超出预占上界，停止后续请求")
     return {
         "model": model,
+        "stop_reason": delta["stop_reason"],
         "events": sorted({str(k) for k in kinds}),
         **tokens,
         "usage_cost_upper_cny": str(estimate),

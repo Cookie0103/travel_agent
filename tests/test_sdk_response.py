@@ -4,9 +4,9 @@ import json
 
 import pytest
 
+from backend.providers.claude_agent.request import validate_request
+from backend.providers.claude_agent.response import summarize
 from backend.providers.probe.settings import ProbeError
-from backend.providers.sdk_probe.request import validate_request
-from backend.providers.sdk_probe.response import summarize
 from tests.test_sdk_guard import request_body, response_body
 
 

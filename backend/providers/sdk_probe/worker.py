@@ -17,7 +17,7 @@ from claude_agent_sdk import (
     tool,
 )
 
-from backend.providers.sdk_probe.request import TOOL_NAME
+from backend.providers.claude_agent.request import TOOL_NAME
 
 PROMPT = "Call the echo tool with text='kyoto-sdk-ok', then reply with that exact tool result."
 DIAGNOSTICS: set[str] = set()

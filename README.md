@@ -4,10 +4,24 @@
 
 目标技术栈：Python / FastAPI / PostgreSQL / Next.js；Claude Agent SDK 负责 runtime，自写旅行 tools 与业务规则；DeepSeek 兼容线路与 Claude 原生线路分别验证；MCP；OpenTelemetry + Langfuse。
 
-**目前还不能使用这个旅行助手。** 已有工程骨架和旧 M0.2 的有限 Messages 探针（70 项离线测试、2 次真实请求的最小往返），没有旅行运行时、前端、HTTP 业务或数据库业务实现。
-2026-10-03 用户确认改用 Claude Agent SDK，本轮已更新文档，尚未安装/接入 SDK。当前进度只看 [长程执行计划](docs/execution/travel-agent.md)；阶段性验证自动继续，用户最终集中运行与学习。开发顺序见 [M0 规格](docs/tasks/M0.md)，历史记录从 [文档目录](docs/README.md) 进入。
+**现在可以运行最小旅行查询 CLI。** 默认离线演示会查询景点和攻略，并显示测试来源；正式模式使用 Claude Agent SDK。前端、行程规划与数据库业务仍在开发。
+当前进度只看 [长程执行计划](docs/execution/travel-agent.md)；阶段性验证自动继续，用户最终集中运行与学习。开发顺序见 [M0 规格](docs/tasks/M0.md)，历史记录从 [文档目录](docs/README.md) 进入。
 
-数据来源：攻略来自 [Wikivoyage](https://en.wikivoyage.org/)（CC BY-SA），地点来自 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）。酒店与预订均为模拟数据。
+当前数据为人工编写的 fixtures，标签不代表实时事实，营业时间未知。后续攻略/地点快照计划来自 [Wikivoyage](https://en.wikivoyage.org/)（CC BY-SA）与 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）。酒店与预订均为模拟。
+
+## 运行最小查询
+
+```text
+uv run python -m backend.cli "京都有哪些室内景点？"
+```
+
+默认不联网、不产生模型费用。完成授权且 .env 配好后，才使用真实模式：
+
+```text
+uv run --env-file .env python -m backend.cli --live "京都有哪些室内景点？"
+```
+
+真实模式同时遵守每日预算、累计 5 CNY / 100 次授权；旧 CLI 暂拒绝 @/行首斜杠输入，避免文件展开。
 
 ## 目录放什么
 
@@ -50,7 +64,7 @@ uv run python scripts/fetch_upstream.py
 ```
 
 这些命令用于开发准备，不是启动旅行助手。setup 按 uv.lock 安装依赖并安装本地提交钩子；每次提交执行同一套 check 与离线 test。
-默认测试排除 live，不需要 API key。另有 M0.2 有限协议探针，真实验证结果见 docs/protocol-deepseek.md；正式 SDK 适配、CLI 和 eval.run 尚未实现。
+默认测试排除 live，不需要 API key。SDK 接入证据见 docs/protocol-agent-sdk.md；eval.run 尚未实现。
 `dev eval-dev` 在 M0.6 前明确返回未实现错误。
 
 本机的 Python 3.12 已装入被忽略的 .cache/python，.venv 已绑定该解释器。

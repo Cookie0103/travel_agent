@@ -5,8 +5,8 @@ from pathlib import Path
 import pytest
 from claude_agent_sdk import ResultMessage
 
+from backend.providers.claude_agent.environment import find_cli, find_git_bash, worker_environment
 from backend.providers.probe.settings import ProbeError
-from backend.providers.sdk_probe.environment import find_cli, find_git_bash, worker_environment
 from backend.providers.sdk_probe.worker import result_summary
 
 

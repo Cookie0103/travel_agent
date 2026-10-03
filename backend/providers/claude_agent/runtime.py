@@ -138,6 +138,8 @@ class ClaudeRuntime:
 
 def outcome_from_result(message: ResultMessage) -> RuntimeOutcome:
     reason = message.terminal_reason
+    if message.stop_reason not in {None, "end_turn", "stop_sequence"}:
+        return RuntimeOutcome(code="provider_error", reason="incomplete_output")
     if reason in {"aborted_streaming", "aborted_tools"}:
         return RuntimeOutcome(code="cancelled", reason=reason)
     if reason == "max_turns" or message.subtype == "error_max_turns":

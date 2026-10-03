@@ -7,8 +7,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from backend.providers.claude_agent.process import run_process
 from backend.providers.probe.settings import ProbeError
-from backend.providers.sdk_probe.process import run_process
 
 MAX_RESPONSE_BYTES = 1_048_576
 
@@ -25,7 +25,7 @@ def forward_deepseek(api_key: str, body: bytes) -> tuple[int, bytes]:
     env.update(PYTHONPATH=str(root), PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
     try:
         result = run_process(
-            [sys.executable, "-m", "backend.providers.sdk_probe.http"],
+            [sys.executable, "-m", "backend.providers.claude_agent.http"],
             root,
             env,
             50,

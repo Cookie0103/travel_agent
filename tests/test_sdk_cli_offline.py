@@ -9,15 +9,20 @@ from pathlib import Path
 
 import pytest
 
+from backend.providers.claude_agent.budget import Budget
+from backend.providers.claude_agent.environment import find_cli, worker_environment
+from backend.providers.claude_agent.guard import Guard, serve
+from backend.providers.claude_agent.process import invoke_worker
+from backend.providers.claude_agent.request import TOOL_NAME
 from backend.providers.probe.settings import Settings
-from backend.providers.sdk_probe.budget import Budget
-from backend.providers.sdk_probe.environment import find_cli, worker_environment
-from backend.providers.sdk_probe.flow import invoke_worker
-from backend.providers.sdk_probe.guard import Guard, serve
-from backend.providers.sdk_probe.request import TOOL_NAME
 
 
-def scripted_response(body: bytes, *, invalid_argument: bool = False) -> tuple[int, bytes]:
+def scripted_response(
+    body: bytes,
+    *,
+    invalid_argument: bool = False,
+    tool_calls: tuple[tuple[str, dict[str, object]], ...] | None = None,
+) -> tuple[int, bytes]:
     request = json.loads(body)
     results = [
         part["content"]
@@ -42,16 +47,20 @@ def scripted_response(body: bytes, *, invalid_argument: bool = False) -> tuple[i
             },
         }
     ]
-    block: dict[str, object]
+    calls = tool_calls or ((TOOL_NAME, {"text": "wrong" if invalid_argument else "kyoto-sdk-ok"}),)
+    blocks: list[tuple[dict[str, object], dict[str, object]]]
     if has_result:
-        block = {"type": "text", "text": ""}
-        delta = {"type": "text_delta", "text": json.dumps(results[-1])}
+        blocks = [
+            ({"type": "text", "text": ""}, {"type": "text_delta", "text": json.dumps(results)})
+        ]
     else:
-        block = {"type": "tool_use", "id": "tool_offline", "name": TOOL_NAME, "input": {}}
-        delta = {
-            "type": "input_json_delta",
-            "partial_json": json.dumps({"text": "wrong" if invalid_argument else "kyoto-sdk-ok"}),
-        }
+        blocks = [
+            (
+                {"type": "tool_use", "id": f"tool_{i}", "name": name, "input": {}},
+                {"type": "input_json_delta", "partial_json": json.dumps(arguments)},
+            )
+            for i, (name, arguments) in enumerate(calls)
+        ]
     if invalid_argument and has_result:
         assert any(
             part.get("is_error") is True
@@ -60,11 +69,16 @@ def scripted_response(body: bytes, *, invalid_argument: bool = False) -> tuple[i
             for part in message["content"]
             if part.get("type") == "tool_result"
         ), "SDK must mark schema validation failure in the tool result"
+    for index, (block, delta) in enumerate(blocks):
+        frames.extend(
+            [
+                {"type": "content_block_start", "index": index, "content_block": block},
+                {"type": "content_block_delta", "index": index, "delta": delta},
+                {"type": "content_block_stop", "index": index},
+            ]
+        )
     frames.extend(
         [
-            {"type": "content_block_start", "index": 0, "content_block": block},
-            {"type": "content_block_delta", "index": 0, "delta": delta},
-            {"type": "content_block_stop", "index": 0},
             {
                 "type": "message_delta",
                 "delta": {

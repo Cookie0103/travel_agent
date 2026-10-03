@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
+from backend.providers.claude_agent.budget import Budget
 from backend.providers.probe.ledger import Entry, Ledger
 from backend.providers.probe.settings import ProbeError
-from backend.providers.sdk_probe.budget import Budget
 
 NOW = datetime(2026, 10, 3, 12, tzinfo=UTC)
 

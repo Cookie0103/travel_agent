@@ -21,6 +21,7 @@ from backend.providers.claude_agent.runtime import (
     ClaudeRuntime,
     RuntimeConfig,
     literal_prompt_supported,
+    outcome_from_result,
 )
 from backend.tools.contracts import ToolResult
 
@@ -164,3 +165,21 @@ async def test_timeout_and_cancel_close_sdk(
 def test_older_cli_cannot_expand_user_input(prompt: str) -> None:
     assert not literal_prompt_supported(prompt, "2.1.114")
     assert literal_prompt_supported(prompt, "2.1.248")
+
+
+@pytest.mark.parametrize("stop_reason", ["max_tokens", "tool_use", "future_reason"])
+def test_incomplete_stop_reason_overrides_success(stop_reason: str) -> None:
+    message = ResultMessage(
+        "success",
+        1,
+        1,
+        False,
+        1,
+        "sdk",
+        result="partial",
+        terminal_reason="completed",
+        stop_reason=stop_reason,
+    )
+    result = outcome_from_result(message)
+    assert result.code == "provider_error" and result.sdk_session_id is None
+    assert result.reason == "incomplete_output"

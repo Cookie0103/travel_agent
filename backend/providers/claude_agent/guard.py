@@ -12,10 +12,10 @@ from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from urllib.parse import urlsplit
 
+from backend.providers.claude_agent.budget import Budget
+from backend.providers.claude_agent.request import MAX_BYTES, TOOL_NAME, validate_request
+from backend.providers.claude_agent.response import summarize
 from backend.providers.probe.settings import ProbeError, Settings
-from backend.providers.sdk_probe.budget import Budget
-from backend.providers.sdk_probe.request import MAX_BYTES, validate_request
-from backend.providers.sdk_probe.response import summarize
 
 Forward = Callable[[bytes], tuple[int, bytes]]
 
@@ -33,6 +33,7 @@ class Guard:
     failures: list[str] = field(default_factory=list)
     failure_details: list[str] = field(default_factory=list)
     max_attempts: int = 4
+    allowed_tools: frozenset[str] = frozenset({TOOL_NAME})
 
     def accept(self, path: str, token: str, body: bytes) -> tuple[int, bytes]:
         if not secrets.compare_digest(token, "Bearer " + self.token):
@@ -40,7 +41,7 @@ class Guard:
         if urlsplit(path).path != "/v1/messages":
             return self.reject("unsupported_endpoint")
         try:
-            request = validate_request(body, self.settings.model)
+            request = validate_request(body, self.settings.model, self.allowed_tools)
             if self.failures or self.attempts >= self.max_attempts:
                 raise ProbeError("blocked", "当前实验已停止或达到请求上限")
             request_id = self.budget.reserve(request.charge, datetime.now(UTC))

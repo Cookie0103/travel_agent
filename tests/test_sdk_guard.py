@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
+from backend.providers.claude_agent.budget import Budget
+from backend.providers.claude_agent.guard import Guard
+from backend.providers.claude_agent.request import TOOL_NAME, validate_request
 from backend.providers.probe.settings import ProbeError, Settings
-from backend.providers.sdk_probe.budget import Budget
-from backend.providers.sdk_probe.guard import Guard
-from backend.providers.sdk_probe.request import TOOL_NAME, validate_request
 
 
 def request_body(**changes: object) -> bytes:
@@ -58,6 +58,15 @@ def response_body(**changes: object) -> bytes:
 def test_guard_rejects_unbudgetable_request(changes: dict[str, object]) -> None:
     with pytest.raises(ProbeError):
         validate_request(request_body(**changes), "deepseek-flash")
+
+
+def test_explicit_travel_tool_set_cannot_include_builtin_or_duplicate() -> None:
+    names = frozenset({"mcp__travel__search_places", "mcp__travel__search_content"})
+    valid = [{"name": name, "input_schema": {"type": "object"}} for name in names]
+    assert validate_request(request_body(tools=valid), "deepseek-flash", names).charge > 0
+    for invalid in ([valid[0], valid[0]], [valid[0], {"name": "Bash"}], [*valid, {"name": "Bash"}]):
+        with pytest.raises(ProbeError):
+            validate_request(request_body(tools=invalid), "deepseek-flash", names)
 
 
 def test_network_failure_keeps_reservation_and_prevents_sdk_retry(tmp_path: Path) -> None:

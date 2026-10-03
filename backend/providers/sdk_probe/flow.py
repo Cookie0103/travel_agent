@@ -3,18 +3,16 @@
 import importlib.metadata
 import json
 import os
-import subprocess
-import sys
 from functools import partial
 from pathlib import Path
 
+from backend.providers.claude_agent.budget import Budget
+from backend.providers.claude_agent.environment import find_cli, worker_environment
+from backend.providers.claude_agent.guard import Guard, serve
+from backend.providers.claude_agent.http import forward_deepseek
+from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.probe.ledger import exclusive
-from backend.providers.probe.settings import ProbeError, Settings
-from backend.providers.sdk_probe.budget import Budget
-from backend.providers.sdk_probe.environment import find_cli, worker_environment
-from backend.providers.sdk_probe.guard import Guard, serve
-from backend.providers.sdk_probe.http import forward_deepseek
-from backend.providers.sdk_probe.process import run_process
+from backend.providers.probe.settings import Settings
 
 
 def run_probe(settings: Settings, root: Path) -> dict[str, object]:
@@ -56,24 +54,3 @@ def run_probe(settings: Settings, root: Path) -> dict[str, object]:
             json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
         )
         return report
-
-
-def invoke_worker(cli: Path, directory: Path, env: dict[str, str]) -> dict[str, object]:
-    try:
-        result = run_process(
-            [sys.executable, "-m", "backend.providers.sdk_probe.worker", str(cli)],
-            cwd=directory,
-            env=env,
-            timeout=120,
-        )
-    except subprocess.TimeoutExpired:
-        return {"status": "error", "code": "timeout"}
-    if result.returncode != 0:
-        return {"status": "error", "code": "worker_exit", "exit_code": result.returncode}
-    try:
-        raw: object = json.loads(result.stdout.strip())
-    except ValueError:
-        raise ProbeError("provider_error", "SDK 工作进程没有返回结构化摘要") from None
-    if not isinstance(raw, dict) or raw.get("status") not in {"success", "error"}:
-        raise ProbeError("provider_error", "SDK 工作进程摘要不符合契约")
-    return {str(key): value for key, value in raw.items()}

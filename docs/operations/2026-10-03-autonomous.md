@@ -69,3 +69,18 @@
 - 独立审查发现桥接事件异常可能被 SDK 原文回填、执行期间切换 runtime 可误标会话来源；已将事件/序列化纳入脱敏，运行开始固定 runtime/identity 快照。失败与并发测试保护这些不变量。
 - 最新完整套件148项通过（9.10秒），之后增加切换模型并发回归，10项会话专项与check59文件/3契约通过；等待最终只读复核后正常提交。
 - 最终只读复核通过：无剩余 M0.3 阻塞项，继续正常提交检查。
+- 正常钩子通过，M0.3 提交 e2d848d（149 离线测试）。自动继续 M0.4。
+
+## M0.4 旅行工具与 CLI
+
+- 按 ADR-000 把已安装的 Pydantic v2 声明为直接依赖（uv add --offline），一份 SearchInput 同时生成 SDK schema 和直接业务输入验证，不另写规则副本。
+- 新增 20 景点/12 攻略人工 fixture；标签属于测试设置，营业时间未知，不冒充已导入的 OSM/Wikivoyage 真实事实。城市硬过滤、别名、空结果/失败、返回长度和工具次数限制共用 SearchExecutor。
+- 将 M0.2 的9个预算/网络/环境/进程模块移动到正式 claude_agent 包，探针改为引用；invoke_worker 也抽到同一 process 模块。没有复制第二套费用或清理实现。工具允许集合由本轮契约显式注入，探针默认限制保留。
+- 实现默认离线 CLI、FixtureRuntime 和显式 live 的隔离工作进程。CLI 默认不读取 .env；真实密钥仍只在父守卫/HTTPS进程，SDK只拿本地令牌。
+- 实际 SDK/CLI + 本地脚本 API 验证了两个旅行工具及同 SDK 会话续接（本地3次请求），未调用收费模型。SDK流式测试响应生成函数复用，修复测试模块导入路径和迁移后的 monkeypatch 路径。
+- 最新 check 67 文件/3契约通过；dev test 161 passed/2 deselected（11.54秒）。独立审查进行中，尚未新增真实请求。
+- 独立审查发现攻略 schema 暴露不支持的 indoor 过滤、max_tokens 回答可能误判完成。已用共享基础输入加景点专属字段修复；攻略补测试类别；SDK 终态和父进程最终 HTTP stop_reason 均核对完成状态，费用结算不变。
+- check67文件/3契约及40专项通过，独立复核无剩余 live 阻塞。开始一次两工具旅行查询 live：本次守卫至多4请求，累计5CNY/100和.env每日预算继续生效。运行结果结束后再记，不预记通过。
+- 真实旅行 CLI 通过（7.73秒）：3次HTTP，search_places成功1次、search_content成功3次；最终回答同时引用两个fixture来源、明确人工数据及未知营业时间。新增保守费用0.017716 CNY，累计5次/0.020670 CNY，全部预占已结算。
+- 脱敏证据导出 docs/evidence/travel-query-2026-10-03.json；含实际模型/版本/usage/工具状态，不含密钥、用户prompt、工具完整结果或SDK会话ID。
+- 最终 check67文件/3契约通过；dev test166 passed/2 deselected（11.37秒），git diff --check无问题。保存后继续Trace与评测。

@@ -21,7 +21,9 @@ class Request:
     max_output: int
 
 
-def validate_request(body: bytes, model: str) -> Request:
+def validate_request(
+    body: bytes, model: str, allowed_tools: frozenset[str] = frozenset({TOOL_NAME})
+) -> Request:
     if len(body) > MAX_BYTES:
         raise ProbeError("blocked", "SDK 输入超过接入实验上限")
     try:
@@ -55,9 +57,10 @@ def validate_request(body: bytes, model: str) -> Request:
     if raw.get("stream") is not True:
         raise ProbeError("validation", "接入实验仅接受流式 Messages")
     tools = raw.get("tools", [])
-    if not isinstance(tools, list) or len(tools) != 1:
-        raise ProbeError("blocked", "SDK 工具集合与只读探针不一致")
-    if not isinstance(tools[0], dict) or tools[0].get("name") != TOOL_NAME:
+    if not isinstance(tools, list) or len(tools) != len(allowed_tools):
+        raise ProbeError("blocked", "SDK 工具集合与本轮允许集合不一致")
+    names = [item.get("name") for item in tools if isinstance(item, dict)]
+    if not all(isinstance(name, str) for name in names) or set(names) != allowed_tools:
         raise ProbeError("blocked", "SDK 试图使用未授权工具")
     _check_blocks(raw)
     price = price_for(model)

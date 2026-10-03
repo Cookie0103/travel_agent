@@ -1,12 +1,14 @@
 """给 SDK 工作进程设置期限；最后保护同时回收其 CLI 子进程。"""
 
+import json
 import os
 import signal
 import subprocess
 import sys
 from pathlib import Path
 
-from backend.providers.sdk_probe.windows_job import WindowsJob
+from backend.providers.claude_agent.windows_job import WindowsJob
+from backend.providers.probe.settings import ProbeError
 
 
 def run_process(
@@ -61,3 +63,33 @@ def terminate_tree(process: subprocess.Popen[str]) -> None:
     if process.poll() is None:
         process.kill()
     process.communicate(timeout=10)
+
+
+def invoke_worker(
+    cli: Path,
+    directory: Path,
+    env: dict[str, str],
+    *,
+    module: str = "backend.providers.sdk_probe.worker",
+    payload: dict[str, object] | None = None,
+) -> dict[str, object]:
+    """探针和正式 CLI 共用退出码、期限与 JSON 边界；不回传原始 stderr。"""
+    try:
+        result = run_process(
+            [sys.executable, "-m", module, str(cli)],
+            cwd=directory,
+            env=env,
+            timeout=120,
+            input_text=json.dumps(payload) if payload is not None else "",
+        )
+    except subprocess.TimeoutExpired:
+        return {"status": "error", "code": "timeout"}
+    if result.returncode != 0:
+        return {"status": "error", "code": "worker_exit", "exit_code": result.returncode}
+    try:
+        raw: object = json.loads(result.stdout.strip())
+    except ValueError:
+        raise ProbeError("provider_error", "SDK 工作进程没有返回结构化摘要") from None
+    if not isinstance(raw, dict) or raw.get("status") not in {"success", "error"}:
+        raise ProbeError("provider_error", "SDK 工作进程摘要不符合契约")
+    return {str(key): value for key, value in raw.items()}
