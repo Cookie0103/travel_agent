@@ -40,8 +40,8 @@
 
 | 关卡 | 原因 |
 | --- | --- |
-| M0.2 DeepSeek 协议实测 | 结论决定消息格式和循环的处理方式 |
-| M0.3 中立消息格式 | 全部模型调用都建立在它上面 |
+| M0.2 Claude Agent SDK + DeepSeek 接入验证 | 确定运行时兼容、工具隔离和费用边界 |
+| M0.3 SDK 适配与应用事件契约 | 固定会话、业务状态和 SDK 的边界 |
 | M1.3 TravelRequest / Evidence | 状态与事实时效的基础 |
 | M1.6 validator + 反思循环 | 核心 Agent 机制 |
 | M1.7 PlanPatch 与确认保存 | 条件更新与幂等的第一次实现 |
@@ -84,7 +84,7 @@
 - Lint / 格式：`ruff check` 与 `ruff format --check` 通过。
 - 分层依赖（用 import-linter 检查）：
   - `domain/` 不 import 本项目的任何其他层，也不 import 外部 SDK；
-  - 外部 SDK（anthropic、openai、mcp、httpx 调外部服务）只能出现在 `providers/`、`adapters/`、`mcp/`；
+  - 外部 SDK（claude_agent_sdk、anthropic、openai、mcp、httpx 调外部服务）只能出现在 `providers/`、`adapters/`、`mcp/`；
   - `api/` 只调用 `services/` 和 `agent/`，不直接访问 `persistence/`。
 - 新增依赖必须先写 ADR（`docs/adr/`），说明为什么不用标准库或已有依赖。
 - 不吞异常：禁止裸 `except:` 和 `except Exception: pass`；错误按 02 §8.3 的错误码分类返回。
@@ -101,7 +101,7 @@
 
 ### 3.3 测试要求
 - 每个新行为至少有一个**失败路径**测试（错误输入、缺数据、下游出错）。
-- 测试默认不调用真实模型，用 FakeClient（参考 `vendor/commerce-agents/commerce-common/commerce_common/testing.py` 的思路）。
+- 测试默认不调用真实模型，用 FakeRuntime / 脚本化 SDK 消息替身（旧探针保留 FakeClient；参考 `vendor/commerce-agents/commerce-common/commerce_common/testing.py` 的思路）。
 - 涉及事务和恢复的测试必须用真实 PostgreSQL（docker），不能 mock 持久化层。
 - 对应 05 回归矩阵的测试，在测试 docstring 里写上 R 编号。
 
@@ -117,7 +117,7 @@ uv run python scripts/dev.py db-up      # docker compose 启动 PostgreSQL
 uv run python scripts/dev.py eval-dev   # 评测 dev 集（默认 FakeClient）
 ```
 
-真实模型调用只允许在显式标记下运行：`pytest -m live` 或 `dev eval-dev --live`。
+真实模型调用只允许在显式标记下运行：`pytest -m live`、`dev eval-dev --live` 或 M0.4 实现后的 `python -m backend.cli --live`；均须同时满足本批授权和预算。
 
 ### 4.1 运行环境：Windows 兼容（硬性要求）
 
@@ -139,12 +139,13 @@ uv run python scripts/dev.py eval-dev   # 评测 dev 集（默认 FakeClient）
 - 真实模型调用必须按计费来源分开检查每日预算：DeepSeek 使用 `DAILY_BUDGET_CNY`（人民币元）；Anthropic/OpenAI 共用 `DAILY_BUDGET_USD`（美元）。两个币种独立记账，不自动换汇、相加或借用余额；使用兼容 SDK 不改变计费来源。
 - 预算未配置、空白、非法或币种不匹配时拒绝真实调用；`0` 禁用对应线路，余额不足或达到上限即停止。预算值不代表调用授权，默认离线和用户本批次数限制仍需同时满足。
 - `vendor/` 已在 `.gitignore`。其中 DataMind 是组织内部仓库，**任何内容都不能提交到本仓库**（本仓库是公开的）；评测用例改编后的版本可以提交，原文件不行。
-- 日志在 INFO 级别不输出完整 prompt 和工具结果。
+- 日志在 INFO 级别不输出完整 prompt 和工具结果。SDK 会话文件属于私有运行数据，不进 Git 或公共 Trace。
+- SDK 的 max_turns 不等于 HTTP 请求上限，max_budget_usd 不能代替人民币预算。新 SDK live 实验先证明费用/次数边界，再按本批授权运行，不能复用已经用完的两请求许可。
 
 ## 6. 不要做的事
 
 - 不实现 04 中 C 档的内容（只写 ADR）。
-- 不引入 Agent 框架（LangChain / LangGraph 等）、Redis、消息队列、向量库。
+- Agent runtime 按 ADR-003 使用 Claude Agent SDK；不再自行实现通用消息循环。不引入 LangChain / LangGraph 或第二套运行时、Redis、消息队列、向量库。
 - 不 push、不合并到 `main`、不改已有 commit 的历史、不删除分支。
 - 不跳过 `dev check` / `dev test` 提交；不用 `--no-verify`。
 

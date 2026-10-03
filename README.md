@@ -2,10 +2,10 @@
 
 从攻略出发，通过对话比较酒店、生成并修改京都 2–3 天行程，确认后模拟预订。模型负责理解需求和编排工具，后端负责事实校验、约束检查和失败恢复。
 
-技术栈：Python / FastAPI / PostgreSQL / Next.js；DeepSeek（开发）与 Claude（演示 / 对比），Anthropic Messages 格式 tool calling；MCP；OpenTelemetry + Langfuse。
+目标技术栈：Python / FastAPI / PostgreSQL / Next.js；Claude Agent SDK 负责 runtime，自写旅行 tools 与业务规则；DeepSeek 兼容线路与 Claude 原生线路分别验证；MCP；OpenTelemetry + Langfuse。
 
-**目前还不能使用这个旅行助手。** 当前只有 M0.1 的开发环境、辅助脚本和目录框架；前端、HTTP 接口、模型调用、Agent 循环和数据库业务代码都尚未实现。
-M0.1 的工程检查和 37 个离线测试现已通过；这些测试检查工程辅助功能，不代表 Agent 已实现。先读 [通俗说明](docs/review/M0.1.md)，完整记录从 [文档目录](docs/README.md) 进入。
+**目前还不能使用这个旅行助手。** 已有工程骨架和旧 M0.2 的有限 Messages 探针（70 项离线测试、2 次真实请求的最小往返），没有旅行运行时、前端、HTTP 业务或数据库业务实现。
+2026-10-03 用户确认改用 Claude Agent SDK，本轮已更新文档，尚未安装/接入 SDK。先看 [新路线说明](docs/review/M0-sdk-route.md)，开发顺序见 [M0 规格](docs/tasks/M0.md)，全部记录从 [文档目录](docs/README.md) 进入。
 
 数据来源：攻略来自 [Wikivoyage](https://en.wikivoyage.org/)（CC BY-SA），地点来自 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）。酒店与预订均为模拟数据。
 
@@ -26,7 +26,7 @@ M0.1 的工程检查和 37 个离线测试现已通过；这些测试检查工�
 | plan | 设计方案、架构和任务计划 |
 | vendor | 下载的上游参考代码，不属于我们实现的业务代码，也不提交到 Git |
 
-backend 中只有 api 负责 HTTP；agent 负责模型与工具之间的循环，domain 放业务对象和规则，persistence 放数据库访问。见 [后端目录说明](backend/README.md)。
+backend 中只有 api 负责 HTTP；agent 负责旅行上下文与执行策略，providers 接 Claude Agent SDK 承担循环，domain 放业务对象和规则，persistence 放数据库访问。见 [后端目录说明](backend/README.md)。
 
 ## 根目录的配置为什么保留
 
@@ -50,7 +50,7 @@ uv run python scripts/fetch_upstream.py
 ```
 
 这些命令用于开发准备，不是启动旅行助手。setup 按 uv.lock 安装依赖并安装本地提交钩子；每次提交执行同一套 check 与离线 test。
-默认测试排除 live，不需要 API key。另有 M0.2 有限协议探针，真实验证结果见 docs/protocol-deepseek.md；正式 CLI、ModelProvider 和 eval.run 尚未实现。
+默认测试排除 live，不需要 API key。另有 M0.2 有限协议探针，真实验证结果见 docs/protocol-deepseek.md；正式 SDK 适配、CLI 和 eval.run 尚未实现。
 `dev eval-dev` 在 M0.6 前明确返回未实现错误。
 
 本机的 Python 3.12 已装入被忽略的 .cache/python，.venv 已绑定该解释器。
@@ -61,7 +61,7 @@ dev test 每次使用新的 .cache/pytest-runs/run-* 保存临时文件和缓存
 ## 模型预算配置
 
 在本地 .env 配置密钥与预算；.env.example 只保留空变量名，不填写真实密钥。
-DEEPSEEK_MODEL 明确选择模型，当前支持 deepseek-flash 或 deepseek-v4-pro；这次最小实测选 deepseek-flash。换模型时按该模型人民币单价计费，未知模型拒绝调用，不会偷偷使用默认模型或 claude-* 映射。
+现有 Messages 探针通过 DEEPSEEK_MODEL 明确选择模型，当前支持 deepseek-flash 或 deepseek-v4-pro；这次最小实测选 deepseek-flash。换模型时按该模型人民币单价计费，未知模型拒绝调用，不会偷偷使用默认模型或 claude-* 映射。
 
 | 配置 | 用途 | 单位 |
 | --- | --- | --- |
@@ -72,7 +72,8 @@ DEEPSEEK_MODEL 明确选择模型，当前支持 deepseek-flash 或 deepseek-v4-
 0 表示禁用该线路；空白、非法或缺少预算时应拒绝真实调用。预算不能替代用户授权和本批调用次数上限。
 M0.2 探针已实现环境变量读取、按所选模型的人民币预算检查与本批请求计数；uv --env-file .env 负责加载配置。美元线路只有配置与账本隔离测试，尚无 Anthropic/OpenAI 真实调用实现。
 最小实测已成功，账本会拒绝重复运行；不要删除 .cache/m02-protocol 来重新获得次数。完整协议关卡尚未完成，详见 [实测矩阵](docs/protocol-deepseek.md)。
-当前批次限制见 [M0.2 准备记录](docs/operations/2026-10-03-m02-preparation.md)。
+SDK 路线不复用探针的两请求授权，也不能用 SDK 的美元估算代替人民币预算。新接入验收与费用边界见 [ADR-003](docs/adr/003-claude-agent-sdk-runtime.md)；本轮不改本地 .env。
+历史批次限制见 [M0.2 准备记录](docs/operations/2026-10-03-m02-preparation.md)。
 
 ## PostgreSQL 配置
 
@@ -86,9 +87,10 @@ PostgreSQL 是后台服务；需要图形管理界面时打开安装附带的 pg
 
 ## 审阅与中断恢复
 
-- [最新修复与环境核对记录](docs/operations/2026-10-03-development-errors.md)：从这里判断现在的检查结果。
+- [SDK 路线调整与恢复点](docs/operations/2026-10-03-agent-sdk-docs.md)：本轮文档修改、核查和验证。
+- [修复与环境核对记录](docs/operations/2026-10-03-development-errors.md)：从这里判断现在的检查结果。
 - [M0.1 审阅材料](docs/review/M0.1.md)：阅读顺序、失败证据和理解问题。
 - [修复批次总结](docs/review/batch/2026-10-03-m0-repair.md)、[首次批次记录](docs/review/batch/2026-10-02-m0-core.md)。
 - [文档汇总](docs/README.md)、[阻塞记录汇总](docs/blocked/README.md)、[待审阅决定](docs/decisions-pending.md)、[上游复用清单](docs/reuse.md)。
 
-恢复前先检查 Git 状态；日志“开始”不代表成功。工程修复与 M0.2 增量保留在 batch/2026-10-03-m0-repair，等待用户审阅；M0.2 完整关卡尚未完成，M0.3 及后续业务功能未开始。
+恢复前先检查 Git 状态；日志“开始”不代表成功。工程修复与 M0.2 增量保留在 batch/2026-10-03-m0-repair，等待用户审阅；SDK 路线按新 M0.2 重新验收；M0.3 及后续业务功能未开始。

@@ -1,6 +1,6 @@
 # ADR-002：M0.2 小范围协议实测
 
-状态：accepted（2026-10-03，落实 ADR-000 及用户调用限制）
+状态：accepted，历史探针范围保留（2026-10-03）。后续运行时改用 [ADR-003](003-claude-agent-sdk-runtime.md)，本记录不再决定 M0.3 的设计。
 
 - 按 ADR-000 使用 anthropic SDK，只放在 providers 边界内；复用它的 SSE 拼接与类型。标准库虽可发 HTTP，但自写流式解析会混入协议实测，不选。SDK max_retries=0，固定 DeepSeek 官方 HTTPS 地址和明确模型名。
 - 实测模块独立于尚未开始的 M0.3，不在此固定 Message/ModelProvider 公共接口；使用两个无业务数据的模拟查询工具。
