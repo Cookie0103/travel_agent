@@ -11,9 +11,9 @@
 | R01 参数与错误 | search、注册工具、结果回填 | 截断参数、未知工具、额外身份、工具异常 | tests/test_mcp_bridge.py；tests/integration/test_travel_tools.py | 持续按新增工具补故障回归 |
 | R02 SDK中断续接 | 实际SDK完整轮次分进程resume同一ID | 丢文件/半JSON损坏/条件/CLI版本/轮中修改，业务快照新建；私有归属 | tests/test_runtime_sessions.py；tests/test_sdk_lifecycle.py；tests/integration/test_sdk_recovery.py | 小样本真实模型续接效果与M4持久卷配置 |
 | R03 工具与写入顺序 | 读上限1、写互斥、单会话执行 | 并发消息、版本竞争、取消晚成功 | tests/integration/test_runs.py；test_travel_tools.py | M2重启后裁决 |
-| R04 条件patch | set/clear/未写保留、无变更不增revision | 日期逆序、空值、未知字段、版本冲突 | tests/test_travel_request.py；tests/integration/test_travel.py | 浏览器条件失效已验证；真实响应丢失待M2 |
+| R04 条件patch | set/clear/未写保留、无变更不增revision | 日期逆序、空值、未知字段、版本冲突 | tests/test_travel_request.py；tests/integration/test_travel.py | 浏览器条件失效已验证；M2真实响应丢失与恢复已验证 |
 | R05 Evidence与卡片 | 服务端引用/来源/有效期 | 伪造、跨用户/会话、过期、旧revision、缺来源 | tests/integration/test_travel.py；test_hotels.py | 已验证持久presentation与浏览器刷新；真实模型质量待评测 |
-| R06 行程校验 | 时间/营业/路线/预算、SDK修正反馈 | 闭馆、跨午夜、缺税、未知路线、预算下界、3轮上限 | tests/test_itinerary.py；tests/integration/test_planning.py；test_sdk_planning.py | 真实模型修复效果、页面警告 |
+| R06 行程校验 | 时间/营业/路线/预算、SDK修正反馈 | 闭馆、跨午夜、缺税、未知路线、预算下界、3轮上限 | tests/test_itinerary.py；tests/integration/test_planning.py；test_sdk_planning.py | 页面警告已验；真实模型修复效果待评测 |
 | R07 局部修改 | 稳定item_id、无关项保留、重复地点 | 锁定/不存在项目、旧base、超长合法草稿 | tests/test_plans.py；tests/integration/test_plans.py | 网页差异/锁定端到端已验证；模型改程效果待评测 |
 | R08 确认保存 | 用户API确认、不可变正式版本 | 并发/重复确认、过期/硬冲突/旧条件整笔回滚 | tests/integration/test_plans.py；test_sdk_plans.py | 网页确认及HTTP重复操作已验证 |
 | R09 预订幂等 | 同client_ref仅一订单、独立用户确认 | 重复/并发确认、服务重建、跨用户、长条件、51条历史后的恢复 | tests/integration/test_supplier.py；test_bookings.py；test_sdk_bookings.py；test_recovery.py | 实际供应商提交前/后kill对账与浏览器已验证 |
@@ -49,3 +49,7 @@ M3.6归因：tests/test_diagnostics.py 与 integration/test_diagnostics.py 使�
 - 未满足项保持开放；外部权限、预算不足或人工校准缺失不得包装为全部完成。
 
 M4.2评测设施：test_eval_suites保护冻结前拒绝、hash/20/40/历史不改与正常对照；test_eval_report保护独立三轮、异常后停止所有轮次、分母/原币种/未知token与HTTP。integration/test_eval_state用真实PG/HTTP验证正式plan/setup隔离、精准改程及错误目标/幅度、锁/历史/偏好改写、expired/stale报价刷新、未知税本轮卡片、500/429/实际超时、unknown不重复下单、禁止副作用、本次专用库。规则机制与离线重复不计真实模型三次统计。
+
+SDK终止与完整规划链：test_sdk_cli_offline保留真实CLI max_turns/tool_use复合终止和四次截断请求计数；integration/test_sdk_planning保留9HTTP/8工具三日草稿链，失败不写正式版本。integration/test_plans保留同草稿混填酒店参数拒绝、无卡片后正确展示；不放宽业务校验。真实模型原dev的最后展示失败另记证据，不将脚本化SDK成功当模型质量。
+
+M0.7：test_persona_judge覆盖原旅行bytes不变、实际temp0、采样/工具非法输入收费前拒绝、私有flag混入DB/supplier/workflow/provider/多prompt启动前拒绝、缺温度/身份/轨迹证明不评分、JSON错误单列/真人字段保留、durable attempts与运行异常停止后续。实际CLI零工具正常/非法JSON/未授权Bash响应三分支验证；真实DeepSeek小样本见m07-persona-judge证据，真人校准缺失仍开放。test_runs持久化故障注入要求恢复核对，日志不含原SQL/参数。

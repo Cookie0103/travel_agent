@@ -3,6 +3,7 @@
 import json
 from dataclasses import dataclass
 from decimal import Decimal
+from typing import Literal
 
 from backend.providers.probe.settings import ProbeError, price_for
 
@@ -19,10 +20,15 @@ class Request:
     body: bytes
     charge: Decimal
     max_output: int
+    temperature: Literal[0] | None = None
 
 
 def validate_request(
-    body: bytes, model: str, allowed_tools: frozenset[str] = frozenset({TOOL_NAME})
+    body: bytes,
+    model: str,
+    allowed_tools: frozenset[str] = frozenset({TOOL_NAME}),
+    *,
+    temperature: Literal[0] | None = None,
 ) -> Request:
     if len(body) > MAX_BYTES:
         raise ProbeError("blocked", "SDK 输入超过接入实验上限")
@@ -63,10 +69,26 @@ def validate_request(
     if not all(isinstance(name, str) for name in names) or set(names) != allowed_tools:
         raise ProbeError("blocked", "SDK 试图使用未授权工具")
     _check_blocks(raw)
+    if temperature is not None:
+        if (
+            type(temperature) is not int
+            or temperature != 0
+            or not model.startswith("deepseek-")
+            or allowed_tools
+            or ("thinking" in raw and raw["thinking"] != {"type": "disabled"})
+            or any(raw.get(key) is not None for key in ("top_p", "top_k"))
+        ):
+            raise ProbeError("blocked", "固定温度评审只支持无工具且关闭思考的DeepSeek")
+        raw["temperature"] = 0
+        # 锁定CLI省略disabled字段；评审在实际转发层显式关闭思考以使温度生效。
+        raw["thinking"] = {"type": "disabled"}
+        body = json.dumps(raw, ensure_ascii=False).encode("utf-8")
+        if len(body) > MAX_BYTES:
+            raise ProbeError("blocked", "SDK 输入超过接入实验上限")
     price = price_for(model)
     # 不变量：按模型整个上下文与最高缓存写价预占，不猜文本字节/token比例。
     charge = price.usage_upper(int(price.input_limit * price.cache_write_multiplier), output)
-    return Request(body, charge, output)
+    return Request(body, charge, output, temperature)
 
 
 def _check_blocks(value: object, depth: int = 0) -> None:

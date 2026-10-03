@@ -10,6 +10,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from decimal import Decimal
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from typing import Literal
 from urllib.parse import urlsplit
 
 from backend.providers.claude_agent.budget import Budget
@@ -34,6 +35,7 @@ class Guard:
     failure_details: list[str] = field(default_factory=list)
     max_attempts: int = 4
     allowed_tools: frozenset[str] = frozenset({TOOL_NAME})
+    temperature: Literal[0] | None = None
 
     def accept(self, path: str, token: str, body: bytes) -> tuple[int, bytes]:
         if not secrets.compare_digest(token, "Bearer " + self.token):
@@ -47,7 +49,9 @@ class Guard:
                 == price_for(self.settings.model).currency
             ):
                 raise ProbeError("blocked", "模型计费币种与账本不一致")
-            request = validate_request(body, self.settings.model, self.allowed_tools)
+            request = validate_request(
+                body, self.settings.model, self.allowed_tools, temperature=self.temperature
+            )
             if self.failures or self.attempts >= self.max_attempts:
                 raise ProbeError("blocked", "当前实验已停止或达到请求上限")
             request_id = self.budget.reserve(request.charge, datetime.now(UTC))

@@ -47,6 +47,9 @@ def test_tools_return_six_cards_and_comparison_cannot_accept_model_prices(
             context, "present_travel_result", {**arguments, "total": "1"}
         )
         assert forged_price.code == "validation"
+        assert (
+            "hotel_comparison" in forged_price.suggestion and "itinerary" in forged_price.suggestion
+        )
         duplicate = await executor.execute(
             context,
             "present_travel_result",

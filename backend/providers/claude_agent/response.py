@@ -65,6 +65,8 @@ def summarize(
     }
     if currency == "CNY":
         result.update(usage_cost_upper_cny=str(estimate), reserved_cny=str(request.charge))
+    if request.temperature is not None:
+        result["temperature"] = request.temperature
     return result
 
 

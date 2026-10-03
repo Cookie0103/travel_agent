@@ -19,7 +19,7 @@ from backend.persistence import runs, sessions
 from backend.persistence.database import Database
 from backend.persistence.models import TaskRunRow
 from backend.providers.claude_agent.application import GuardedRuntime
-from backend.services.common import ServiceError, transaction
+from backend.services.common import ServiceError, database_error_details, transaction
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolExecutor
 from backend.tools.travel import TravelToolExecutor
@@ -231,9 +231,16 @@ class RunService:
                     await runs.finish(db, context, outcome)
                 if identity is not None:
                     await self._trace(context, identity)
-            except Exception:
+            except Exception as error:
                 self.persistence_failures.add(context.run_id)
-                LOGGER.error("TaskRun persistence failed: %s", context.run_id)
+                # 数据库错误正文可能含条件/连接信息，只保留异常类型与标准SQLSTATE定位。
+                kind, sqlstate = database_error_details(error)
+                LOGGER.error(
+                    "TaskRun persistence failed: %s error=%s sqlstate=%s",
+                    context.run_id,
+                    kind,
+                    sqlstate,
+                )
             finally:
                 self.cancelled.pop(context.run_id, None)
                 self.tasks.pop(context.run_id, None)

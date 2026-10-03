@@ -146,12 +146,13 @@ class ClaudeRuntime:
 
 def outcome_from_result(message: ResultMessage) -> RuntimeOutcome:
     reason = message.terminal_reason
-    if message.stop_reason not in {None, "end_turn", "stop_sequence"}:
-        return RuntimeOutcome(code="provider_error", reason="incomplete_output")
+    # SDK轮数终止仍可能保留最后一次tool_use；停止原因不能掩盖已知执行边界。
     if reason in {"aborted_streaming", "aborted_tools"}:
         return RuntimeOutcome(code="cancelled", reason=reason)
     if reason == "max_turns" or message.subtype == "error_max_turns":
         return RuntimeOutcome(code="blocked", reason="max_turns")
+    if message.stop_reason not in {None, "end_turn", "stop_sequence"}:
+        return RuntimeOutcome(code="provider_error", reason="incomplete_output")
     if message.api_error_status == 429:
         return RuntimeOutcome(code="rate_limited", reason="provider_rate_limit")
     if message.is_error or message.subtype != "success" or reason not in {None, "completed"}:

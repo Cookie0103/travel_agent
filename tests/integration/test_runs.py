@@ -6,11 +6,14 @@ from uuid import uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from psycopg.errors import DeadlockDetected
 from sqlalchemy import URL
+from sqlalchemy.exc import OperationalError
 
 from backend.agent.runtime import EventSink, FakeRuntime
 from backend.api.app import create_app
 from backend.domain.execution import RunContext, RuntimeOutcome
+from backend.persistence import runs
 from backend.services.common import ServiceError
 from backend.services.runs import MessageInput, RunService
 from backend.services.sessions import SessionService
@@ -20,6 +23,44 @@ from tests.integration.test_travel import evidence
 from tests.integration.test_travel import travel_setup as travel_setup
 
 pytestmark = pytest.mark.integration
+
+
+def test_persistence_failure_exposes_only_type_sqlstate_and_requires_recovery(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+    monkeypatch: pytest.MonkeyPatch,
+    caplog: pytest.LogCaptureFixture,
+) -> None:
+    """R12/R17：真实PG终态写入故障，不假报完成；诊断不输出原始SQL/参数。"""
+    runner, travel, context = travel_setup
+    service = RunService(
+        travel.database,
+        runtime_factory=lambda executor: FakeRuntime(
+            RuntimeOutcome(text="完成", sdk_session_id="synthetic")
+        ),
+    )
+
+    async def fail(*args: object) -> None:
+        raise OperationalError(
+            "private SQL", {"key": "secret-value"}, DeadlockDetected("private original message")
+        )
+
+    monkeypatch.setattr(runs, "finish", fail)
+
+    async def exercise() -> None:
+        run = await service.submit(
+            context.user_id,
+            context.session_id,
+            MessageInput(client_message_id=uuid4(), text="查询"),
+        )
+        await asyncio.gather(*tuple(service.tasks.values()))
+        with pytest.raises(ServiceError, match="需要恢复核对"):
+            await service.get(context.user_id, run.run_id)
+        assert run.run_id in service.persistence_failures
+        await service.close()
+
+    runner.run(exercise())
+    assert "error=ServiceError sqlstate=40P01" in caplog.text
+    assert "private" not in caplog.text and "secret-value" not in caplog.text
 
 
 class WaitingRuntime(FakeRuntime):

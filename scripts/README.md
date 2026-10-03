@@ -6,7 +6,7 @@
 - fetch_upstream.py / main：下载指定版本的参考代码到 vendor/，已有目录不随意覆盖。
 
 例如运行 dev.py test，只是启动 pytest；pytest 再读取 tests/ 中的测试。
-Agent 的模型调用与工具循环以后放 backend/agent，不放在这里。
+Agent入口位于backend/agent，模型与工具循环由Claude Agent SDK执行；scripts只负责开发、容器和烟测命令。
 环境阻塞记录统一写入 docs/blocked/environment.md。
 
 不变量：前一步失败就返回失败，不能让后一步的成功掩盖它；默认测试不调用真实模型。

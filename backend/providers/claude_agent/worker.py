@@ -11,7 +11,7 @@ from uuid import UUID, uuid4
 
 from pydantic import TypeAdapter
 
-from backend.agent.persona import travel_prompt
+from backend.agent.persona import persona_judge_prompt, travel_prompt
 from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity
 from backend.providers.claude_agent.checkpoints import Checkpoints
@@ -49,6 +49,22 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
     workflow: WorkflowName | None = TypeAdapter(WorkflowName | None).validate_python(
         payload.get("workflow")
     )
+    persona_judge = payload.get("persona_judge", False)
+    if type(persona_judge) is not bool or (
+        persona_judge
+        and (
+            identity.provider != "deepseek"
+            or dsn
+            or workflow
+            or payload.get("supplier_url")
+            or len(prompts) != 1
+        )
+    ):
+        return {"status": "error", "code": "validation"}
+    if persona_judge:
+        return await run_prompts(
+            prompts, context, identity, cli, (), SearchExecutor(), persona_judge_prompt()
+        )
     if isinstance(dsn, str):
         supplier_url = payload.get("supplier_url")
         async with database_tools(
@@ -89,6 +105,9 @@ async def run_prompts(
     workflow: WorkflowName | None = None,
 ) -> dict[str, object]:
     config = RuntimeConfig(identity, cli, Path.cwd(), system, workflow=workflow)
+    if isinstance(executor, DatabaseTools):
+        # 完整规划实测需8次工具往返+回答；保留3轮修复空间，HTTP/工具/费用边界不变。
+        config = replace(config, max_turns=12)
     agent = Agent(ClaudeRuntime(config, definitions, executor))
     events: list[RuntimeEvent] = []
 

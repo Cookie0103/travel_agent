@@ -55,6 +55,8 @@ class RefreshOfferInput(BaseModel):
 
 
 class PresentationInput(BaseModel):
+    """酒店比较填component=hotel_comparison、expected_revision和offer_ids；行程只填component=itinerary和stage返回的draft_id。两类参数不得混填。"""
+
     model_config = ConfigDict(extra="forbid", frozen=True)
     component: Literal["hotel_comparison", "itinerary"]
     expected_revision: int | None = Field(default=None, strict=True, ge=0)
@@ -135,7 +137,8 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "present_travel_result",
-        "按本会话报价或草稿ID补卡；行程展示前重新校验，不接受模型提供事实或校验结果。",
+        (PresentationInput.__doc__ or "")
+        + "按本会话报价或草稿ID补卡；行程展示前重新校验，不接受模型提供事实或校验结果。",
         PresentationInput.model_json_schema(),
         kind="presentation",
     ),
@@ -200,7 +203,11 @@ class TravelToolExecutor:
                 return result
             except ValidationError:
                 return ToolResult(
-                    {}, code="validation", suggestion="检查工具参数；不接受用户/会话身份字段"
+                    {},
+                    code="validation",
+                    suggestion=(PresentationInput.__doc__ or "检查工具参数")
+                    if name == "present_travel_result"
+                    else "检查工具参数；不接受用户/会话身份字段",
                 )
             except ServiceError as error:
                 return ToolResult({}, code=error.code, suggestion=str(error))

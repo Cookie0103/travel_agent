@@ -68,7 +68,7 @@ uv run python scripts/fetch_upstream.py
 
 这些命令用于开发准备，不是启动旅行助手。setup 按 uv.lock 安装依赖并安装本地提交钩子；每次提交执行同一套 check 与离线 test。
 默认测试排除 live，不需要 API key。SDK 接入证据见 docs/protocol-agent-sdk.md。
-`dev eval-dev` 跑21条初始用例并输出规则分；默认固定工具脚本，分数不代表模型能力。真实基线需显式 `--live`，入口及结果说明见 [eval](eval/README.md)。
+`dev eval-dev` 跑30条历史用例并输出规则分；默认固定工具脚本，分数不代表模型能力。真实基线需显式 `--live`，入口及结果说明见 [eval](eval/README.md)。
 
 本机的 Python 3.12 已装入被忽略的 .cache/python，.venv 已绑定该解释器。
 普通新环境由 uv 根据 .python-version 准备解释器；不要把本机 .venv 复制到其他电脑。
@@ -134,6 +134,8 @@ check 不连接数据库；test 会检查真实事务和用户隔离。CI 已配
 需要真实模型时，显式用 `uv run --env-file .env python -m backend.server --live` 启动，并把该条消息的mode设为live；仍受累计授权与每日预算限制。
 
 ## 审阅与中断恢复
+
+从[源码学习索引](docs/review/learning.md)顺着入口理解关键模块，再按[三段演示](docs/review/demos.md)复现业务与失败恢复。真实模型规划和外部验收缺口仍以执行计划为准。
 
 - [SDK 路线调整与恢复点](docs/operations/2026-10-03-agent-sdk-docs.md)：本轮文档修改、核查和验证。
 - [修复与环境核对记录](docs/operations/2026-10-03-development-errors.md)：从这里判断现在的检查结果。

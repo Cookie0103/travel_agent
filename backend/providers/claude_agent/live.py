@@ -50,20 +50,25 @@ def run_live(
     workflow: WorkflowName | None = None,
     max_attempts: int = 4,
     supplier_url: str | None = None,
+    persona_judge: bool = False,
 ) -> dict[str, object]:
     if (
         type(max_attempts) is not int
         or not 1 <= max_attempts <= 12
         or (workflow is not None and database_dsn is None)
+        or type(persona_judge) is not bool
+        or (persona_judge and any((database_dsn, supplier_url, workflow)))
     ):
         raise ProbeError("validation", "对照需数据库工具；请求上限须为1至12")
     exporter = cloud_exporter(os.environ) if trace_cloud else None
     settings = load_runtime_settings(os.environ)
+    if persona_judge and settings.provider != "deepseek":
+        raise ProbeError("blocked", "语气评审仅核验了DeepSeek固定温度线路")
     cache = root / ".cache"
     directory = cache / "sessions" / str(context.user_id) / str(context.session_id)
     event_path = directory / f"events-{context.run_id}.jsonl"
     reader = EventReader(event_path, context, emit)
-    definitions = TRAVEL_DEFINITIONS if database_dsn else DEFINITIONS
+    definitions = () if persona_judge else TRAVEL_DEFINITIONS if database_dsn else DEFINITIONS
     budget = runtime_budget(root, settings)
     budget.check_authorization()
     cli = find_cli(os.environ)
@@ -80,6 +85,8 @@ def run_live(
             allowed_tools=frozenset(sdk_tool_name(d.name) for d in definitions),
             max_attempts=max_attempts,
         )
+        if persona_judge:
+            guard.temperature = 0
         with serve(guard) as endpoint:
             env = worker_environment(
                 os.environ, directory, root, endpoint, guard.token, settings.model
@@ -98,10 +105,13 @@ def run_live(
                     "session_id": str(context.session_id),
                     "run_id": str(context.run_id),
                     "database_dsn": database_dsn,
-                    "supplier_url": supplier_url or os.environ.get("MOCK_SUPPLIER_URL"),
+                    "supplier_url": None
+                    if persona_judge
+                    else supplier_url or os.environ.get("MOCK_SUPPLIER_URL"),
                     "cli_version": version.stdout.split()[0],
                     "workflow": workflow,
                     "provider": settings.provider,
+                    "persona_judge": persona_judge,
                 },
                 cancelled=cancelled,
                 progress=reader.drain,

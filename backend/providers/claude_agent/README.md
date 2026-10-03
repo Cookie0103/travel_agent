@@ -24,3 +24,5 @@ DatabaseTools用Selector线程运行数据库工具，SDK进程保留Windows Pro
 compact_boundary只转为context_compacted事件，不复制摘要或改写SDK历史。
 评测可注入固定阶段守门；两组SDK和schema相同，真实HTTP上限仍由父进程Guard独立限制。
 Claude固定Haiku4.5经实际CLI本地脚本往返；真实Anthropic服务与新模型协议尚未验证。
+
+SDK普通搜索6轮，DB完整规划12轮；HTTP/工具/费用独立限制。已知取消/轮数终止优先于最后stop_reason，不完整结果无成功checkpoint。

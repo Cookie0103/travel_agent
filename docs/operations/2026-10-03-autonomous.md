@@ -413,3 +413,28 @@
 - 实际离线评测20261003T112436Z-6dc4c45b：40×3=120、0errors/0not_run/0HTTP，每轮3/40规则通过共9/120。替身只搜索，失败规则原样保存，不当模型质量；专用库正常退出已查询确认移除，父库保留。全量真实最低120授权预检blocked，账本hash不变。公共证据m42-offline-repeat-2026-10-03.json无回答/密钥/DSN。
 
 - 完整Python506 passed/2 live deselected（140.03秒），专项和独立复核通过。准备正常本地提交，不push；下一步真实SDK本机离线复现轮数/截断语义，未发起新付费请求。
+
+- e86ad6e正常静态/完整提交钩子通过保存M4.2共32文件，未push。随后本机终止probe实际2HTTP error_max_turns/tool_use误判provider_error/incomplete_output；四max_tokens内续最终is_error，所有HTTP被Guard计数。新回归先1failed/1passed（5.20秒），修已知终止原因优先后20专项通过（7.96秒）。没有真实模型费用。
+- 完整三日新真实SDK/PG链路在DB6轮实际blocked/max_turns/6HTTP，只到validate。仅DB设SDK12轮（普通搜索保持6，HTTP12/工具16/三修复/预算不变），后21专项通过（10.65秒），9HTTP/8工具/6项草稿正式V0。测试存储payload改用既有PlanDraft验证修复mypy object索引，不改产品检查。check202/3契约/10地图通过，独立复核无P1/P2；完整回归64070运行中。旧真实终止原字段未留，不倒推已确认原因；待全回归后仅原dev一次最多12HTTP新代码实测，无自动重试。
+
+- 完整511 passed/2 live deselected（145.88秒）后，既有授权内仅原dev一次修复回归23028：20261003T113648Z-a696428b，8HTTP/.322942 CNY、SDK invalid_assistant_message、guard无失败，原规则error。15工具13次搜索（含多次空）、酒店一次、条件更新一次；无facts/路线/validate/stage/present，最后4HTTP max_tokens。不自动重试、不认为12轮修好模型质量；累计59/1.257420，无未结预占。继续先离线检查提示路径与检索能力，冻结test未用于模型调优。
+
+- 原dev重复搜索归因仅依据实际事件不猜事实错误；提示补明确完整规划路径，无兴趣时用京都宽查询、当前已一致字段不重复update、少量候选及时getfacts/路线/validate/stage/present与最小参数。不改查询算法/工具/冻结test，保留自主选参数。本次临时PG实际京都宽查询4条/无错误；check202通过，相关91359回归。
+
+### 原dev展示契约失败与修复
+
+20261003T114222Z-6424d8e2新提示实测10HTTP/0.452110CNY，SDK完成、guard无失败，但最后itinerary携带hotel专属expected_revision，ValidationInput拒绝；无卡片，原tool_success失败保留。本轮工具14：已读取5个facts/估算路线/校验/暂存，不能因SDK成功宣称规划成功。累计69/1.709530、0未结预占。复用PresentationInput docstring向schema/description/validation suggestion给出互斥参数提示，原验证与评分不动；26专项14.67秒/check202通过，补混填拒绝后正确展示的真实PG反例，独立复核进行中。
+
+独立小范围复核无P1/P2；P3建议的同草稿混填反例已加入现有plans PG测试，拒绝/空data后正确展示，1专项通过2.20秒。现准备一次原legacy dev契约修复实测，最多12HTTP，累计69/100、1.709530/5CNY和每日限制均保持；新代码实验失败不自动重试。
+
+20261003T114932Z-4e630873完成：10HTTP/0.365238CNY，SDKsuccess、guard无失败、原规则passed。实际presentation6项，validation partial/7 verified/13 unknown/0 conflict，住宿未选，无正式用户确认；不夸大质量。累计79/2.074768，0未结预占。公开证据仅摘要/Trace/hash，不含原模型回答/SDK私有上下文；将同一输入多次实验明确标作一例。学习索引/三段演示沿用业务与测试入口，修正README历史30条和过时前端状态。准备正常提交，提交钩子完整check/test，不在钩子期间编辑跟踪文件。
+
+正常提交钩子首次失败：510通过/1失败/2live排除（145.50秒）；已有workbench截断歧义测试遇到RunService持久化失败，未删/跳过断言，提交未成功。单项重现1通过2.31秒、workbench/runs组15通过5.16秒；原异常正文被安全边界隐藏，新增仅异常类型/标准SQLSTATE诊断以便复现，无完整SQL/参数/连接字符串。完整复跑与独立复核进行中，不把偶发失败隐去。
+
+M0.7自动评审补齐：ADR011/共享rubric/唯一SDK私有开关/零工具/Guard固定temp0，新增eval.judge持久证据与严格解析/停止边界。初次专项2失败：attempts UUID未序列化、CLI省略thinking且发temp1；定位后编码default=str/评审实际补thinking disabled，不放宽输出评分或工具规则。43专项4.01秒/check204过，独立复核中。原全量重跑511 passed/2 excluded145.96秒；容器近期无PG ERROR，未知原偶发原因继续明示。真实PG故障诊断反例/角色29专项通过4.07秒，无原始SQL/密钥输出。
+
+评审独立复核无P1/P2；P3启动前混入DB/supplier/workflow/provider反例已补；本机SDK正常JSON/非法JSON/未授权Bash响应三分支均验，56专项7.64秒/check204通过。web-check本轮type/lint/10测试/build通过；首次check新增故障测试FakeRuntime缺outcome类型错误已修并复核。现用已有原dev实际回答准备1条语气评审，原文只存.cache，不用冻结test/不生成真人分。授权累计79/2.074768，最多4HTTP，失败不自动重试，原daily与5元/100限制不变。
+
+真实语气评审结束：1HTTP/0.002122CNY、temperature0/零工具/合法分数、真人0配对/pending，原candidate/理由未公开。累计80/2.076890，无未结预占。56专项/check204与web-check通过。新故障测试FakeRuntime缺outcome类型问题已修后check过，独立复核无P1/P2；新增多prompt拒绝与actualSDK两错误分支。准备正常本地提交，不绕过失败检查。
+
+第二次提交钩子149.73秒：3旧工厂签名失败+1PG初始化error/540pass/2excluded。恢复普通Guard工厂调用兼容，temperature仅评审分支在serve前赋值，原parent断言未改；共同事务边界新增共享安全异常类型/标准SQLSTATE日志，不打印SQL/参数。44相关9.62秒与11相关6.53秒过，未知PG根因仍开放。独立Goal审计指出3离线实现缺口：逐调用指标/首进度延迟/B0B3单因素控制；当前保存后继续，不标只剩外部验收。

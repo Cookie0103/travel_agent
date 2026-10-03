@@ -3,18 +3,21 @@
 import json
 import os
 import shutil
+import sys
 from decimal import Decimal
 from functools import partial
 from pathlib import Path
 
 import pytest
 
+from backend.mcp.bridge import sdk_tool_name
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
 from backend.providers.claude_agent.guard import Guard, serve
-from backend.providers.claude_agent.process import invoke_worker
+from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.claude_agent.request import TOOL_NAME
 from backend.providers.probe.settings import Settings
+from backend.tools.search import DEFINITIONS
 
 
 def scripted_response(
@@ -122,3 +125,92 @@ def test_real_sdk_and_cli_call_only_synthetic_tool_offline(
         assert report["code"] == "tool_roundtrip_missing", report
     assert guard.attempts == 2
     assert guard.failures == []
+
+
+TERMINAL_PROGRAM = """
+import asyncio,json,sys
+from pathlib import Path
+from uuid import uuid4
+from claude_agent_sdk import ClaudeSDKClient,ResultMessage
+from backend.domain.execution import RunContext,RuntimeIdentity
+from backend.providers.claude_agent.runtime import ClaudeRuntime,RuntimeConfig,outcome_from_result
+from backend.tools.search import DEFINITIONS,SearchExecutor
+async def run():
+    context=RunContext(uuid4())
+    config=RuntimeConfig(RuntimeIdentity('deepseek','deepseek-flash','0.2.163','2.1.114'),
+                        Path(sys.argv[1]),Path.cwd(),'Use only travel tools.',max_turns=2)
+    runtime=ClaudeRuntime(config,DEFINITIONS[:1],SearchExecutor())
+    async with ClaudeSDKClient(options=runtime.options(context,None,lambda e:None)) as client:
+        await client.query('Search Kyoto')
+        async for message in client.receive_response():
+            if isinstance(message,ResultMessage):
+                outcome=outcome_from_result(message)
+                print(json.dumps({'subtype':message.subtype,'stop_reason':message.stop_reason,
+                    'terminal_reason':message.terminal_reason,'is_error':message.is_error,
+                    'outcome_code':outcome.code,'outcome_reason':outcome.reason}))
+asyncio.run(run())
+"""
+
+
+@pytest.mark.skipif(not shutil.which("claude"), reason="需要真实CLI，本机响应不调用模型")
+@pytest.mark.parametrize("flavor", ["tool_loop", "truncated_text"])
+def test_real_sdk_terminal_limit_and_output_continuations_remain_failure(
+    tmp_path: Path, flavor: str
+) -> None:
+    """R01/R17：实际Result同时有tool_use/max_turns；截断内续请求也要全部计数。"""
+    count = 0
+
+    def forward(body: bytes) -> tuple[int, bytes]:
+        nonlocal count
+        count += 1
+        request = json.loads(body)
+        request["messages"] = (
+            []
+            if flavor == "tool_loop"
+            else [{"content": [{"type": "tool_result", "content": "synthetic"}]}]
+        )
+        status, content = scripted_response(
+            json.dumps(request).encode(),
+            tool_calls=(
+                (sdk_tool_name(DEFINITIONS[0].name), {"city": "京都", "query": "寺庙", "limit": 1}),
+            ),
+        )
+        content = content.replace(b'"tool_0"', f'"terminal_{count}"'.encode())
+        if flavor == "truncated_text":
+            content = content.replace(b'"stop_reason": "end_turn"', b'"stop_reason": "max_tokens"')
+        return status, content
+
+    guard = Guard(
+        Settings("synthetic-local-only", "deepseek-flash", Decimal(5), Decimal(0)),
+        Budget(tmp_path / "ledger", tmp_path / "old", Decimal(5)),
+        forward,
+        max_attempts=12,
+        allowed_tools=frozenset({sdk_tool_name(DEFINITIONS[0].name)}),
+    )
+    with serve(guard) as endpoint:
+        directory = tmp_path / "worker"
+        env = worker_environment(
+            os.environ,
+            directory,
+            Path(__file__).resolve().parents[1],
+            endpoint,
+            guard.token,
+            "deepseek-flash",
+        )
+        result = run_process(
+            [sys.executable, "-c", TERMINAL_PROGRAM, str(find_cli(os.environ))],
+            directory,
+            env,
+            timeout=60,
+        )
+    assert result.returncode == 0
+    metadata = json.loads(result.stdout.strip())
+    assert metadata["is_error"] is True and not guard.failures
+    if flavor == "tool_loop":
+        assert metadata["subtype"] == "error_max_turns" and metadata["stop_reason"] == "tool_use"
+        assert metadata["terminal_reason"] == "max_turns" and guard.attempts == 2
+        assert metadata["outcome_code"] == "blocked" and metadata["outcome_reason"] == "max_turns"
+    else:
+        assert metadata["outcome_code"] == "provider_error"
+        assert guard.attempts == 4 and len(guard.observations) == 4
+        assert all(row["stop_reason"] == "max_tokens" for row in guard.observations)

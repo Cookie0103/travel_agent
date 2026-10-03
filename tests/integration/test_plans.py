@@ -239,6 +239,14 @@ def test_four_validations_allow_staging_same_final_candidate_but_not_new_repair(
         result = await executor.execute(context, "stage_plan_change", args)
         assert result.code is None and executor.validations == 4
         draft_id = UUID(str(result.data["draft_id"]))
+        mixed = await executor.execute(
+            context,
+            "present_travel_result",
+            {"component": "itinerary", "draft_id": str(draft_id), "expected_revision": 1},
+        )
+        assert mixed.code == "validation"
+        assert mixed.data == {}
+        assert "两类参数不得混填" in mixed.suggestion
         presented = await executor.execute(
             context, "present_travel_result", {"component": "itinerary", "draft_id": str(draft_id)}
         )

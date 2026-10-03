@@ -183,3 +183,21 @@ def test_incomplete_stop_reason_overrides_success(stop_reason: str) -> None:
     result = outcome_from_result(message)
     assert result.code == "provider_error" and result.sdk_session_id is None
     assert result.reason == "incomplete_output"
+
+
+@pytest.mark.parametrize("reason,code", [("max_turns", "blocked"), ("aborted_tools", "cancelled")])
+def test_known_terminal_boundary_overrides_last_tool_stop(reason: str, code: str) -> None:
+    message = ResultMessage(
+        "success",
+        1,
+        1,
+        True,
+        2,
+        "sdk",
+        result="partial",
+        terminal_reason=reason,
+        stop_reason="tool_use",
+    )
+    outcome = outcome_from_result(message)
+    assert outcome.code == code and outcome.reason == reason
+    assert outcome.sdk_session_id is None
