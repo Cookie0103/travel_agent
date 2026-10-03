@@ -1,8 +1,7 @@
-# 旅行工具的 SDK 桥接与对外服务
+# 进程内工具桥接
 
-职责：M0.3/0.4 用进程内 MCP 将自写工具接到 Claude Agent SDK。
-M3.3 再提供独立的对外只读 MCP 服务，两者共享业务 handlers。
-入口：尚未实现，当前为目录占位。
-关键流程：SDK 工具参数 → ToolExecutor → services/domain → 结构化结果。
-不变量：内部条件修改/草稿/hold 也必须过业务校验；确认保存和下单不暴露给模型。
-对外 MCP 只读；不预设 2.x，按 SDK 依赖组合锁定版本。
+`build_server` 从 `tools.contracts` 的同一份定义注册 SDK MCP 工具。
+身份从服务端 `RunContext` 注入，不从模型参数读取。
+执行调用注入的 `ToolExecutor`，结果用 SDK 的 `is_error` 标记。
+工具事件只包含名称/错误码，不记录完整参数或结果。
+M3.3 才提供对外只读 MCP；这里不启动外部服务。
