@@ -467,3 +467,10 @@ aab5972正常check/完整默认Python钩子通过，已保存M3矩阵/实际内�
 b54eddc正常check/完整默认Python钩子通过，保存恢复记录。用户后来明确新DeepSeek授权：累计次数/金额无上限、每日最多15CNY；主agent已接受且保留USD0/单run保护/不自动付费重试。Budget以None表示取消累计上限，逐HTTP预占/结算及UTC旧账口径不变，日额度取min配置/15；只改本地.env DAILY_BUDGET_CNY=15.00、其他私有字段/字节保留，账本未改写。原有限授权三测试显式旧5/100，新增日硬限/101次/跨日/配置更低与USD0，39相关3.74秒/check216通过。窄复核与正常全量钩子待执行，然后冻结test40×3受控测量，不以未定义阈值宣称质量过关。
 
 每日15CNY预算增量独立窄复核无P1/P2，None/有限授权/日硬限/坏账/USD/历史均核对；eval当前地图/指南旧100次阻止口径已同步，历史实验按原时点保留。39相关/check216通过，准备正常本地提交/完整默认Python钩子；通过后新授权受控测量，不自动重放失败。
+
+9eb653a正常check/全量默认Python钩子通过。启动明确授权后的真实 `eval.run --suite frozen --database --split test --repeat 3 --live --max-attempts 12 --variant full`，session33589/20261003T135558Z-3899d0b3、初始manifest clean HEAD9eb653a/原冻结SHA/40test。当前首6例两has_results失败其余通过；不调test/模型提示，继续预先计划重复。代码/schema/数据冻结，过程仅更新docs；预算逐HTTP日硬15含旧账/未结占用、USD0，最终结果未出不提前宣称整体质量。
+
+持续只读核对results与session33589：第一轮40条31 passed/9 failed/0 error，第二轮启动；42已记录小计145HTTP/3.343968CNY，非全日账本。已记录首轮安全三断言全部true，供应商500/429/实际超时有规则通过，偏好场景局部修改仍失败。不修改Case/源码/提示，不自动重试失败。恢复入口顶部/M4规格旧授权文本已同步；一次误读不存在的backend/agent/workflow.py只读失败，随后rg/实际backend/tools/workflow.py核对，0网络/写入。
+独立autonomy_review只读窄审查确认当前无eval.compare；给出完整配对、分母、实际身份、精确配置差异与公共白名单要求。新增比较源码会改变后续manifest哈希集合，先保留当前执行版本完成受控对照；不得临时忽略eval差异使结果可比。
+
+用户新要求先push一轮并每Mx.x验证完成自动commit/push，替代旧不push。git status仅本轮docs，HEAD9eb653a、origin/main..HEAD39提交；origin=https://github.com/Cookie0103/travel_agent.git，ls-remote正常仅main741879d。AGENTS/workflow/执行计划授权更新，quality_review只读窄复核无P1/P2。git ls-files确认.env/vendor/.cache未跟踪，仅.env.example；gitignore保持私有数据排除，原待上传历史文本对象脱敏模式扫描session5642中。准备正常本地commit/原完整默认钩子，再普通推当前开发分支并核对远端HEAD；不force/main合并，不把push称整项目验收。正在模型批次不改被测源码。
