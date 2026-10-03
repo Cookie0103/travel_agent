@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from backend.agent.persona import RUBRIC as RUBRIC
 from backend.agent.persona import load_persona, persona_judge_prompt
+from eval.content import HumanQuality, QualityScore
 
 
 class JudgeScore(BaseModel):
@@ -26,6 +27,7 @@ class Sample(BaseModel):
     scene: Literal["regular", "emotional", "out_of_scope"] = "regular"
     human_score: int | None = Field(default=None, ge=0, le=5, strict=True)
     human_rater: str | None = None
+    human_quality: HumanQuality | None = None
     judge_response: str | None = None
     judge_model: str | None = None
     judge_temperature: int | None = Field(default=None, strict=True)
@@ -88,9 +90,45 @@ def calibration(samples: list[Sample]) -> dict[str, object]:
     }
 
 
+def content_calibration(samples: list[Sample]) -> dict[str, object]:
+    dimensions: dict[str, dict[str, object]] = {}
+    for dimension in ("relevance", "explanation", "tradeoffs"):
+        projected: list[Sample] = []
+        for sample in samples:
+            response = sample.judge_response
+            if response is not None:
+                try:
+                    quality = QualityScore.model_validate_json(response)
+                    response = JudgeScore(
+                        score=getattr(quality, dimension), reason=dimension
+                    ).model_dump_json()
+                except ValidationError:
+                    # 语气score JSON也不能当合法三维分，原样本不变，投影计error。
+                    response = "invalid-content-score"
+            human = sample.human_quality
+            projected.append(
+                sample.model_copy(
+                    update={
+                        "judge_response": response,
+                        "human_score": getattr(human, dimension) if human else None,
+                        "human_rater": human.rater if human else None,
+                    }
+                )
+            )
+        dimensions[dimension] = calibration(projected)
+    return {
+        "status": "calibrated"
+        if all(d["status"] == "calibrated" for d in dimensions.values())
+        else "pending",
+        "dimensions": dimensions,
+        "limitations": "内容模型分不证明事实准确；真人三维配对分别校准",
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="读取真实人工/评审记录计算校准；本入口不调用模型")
     parser.add_argument("samples", type=Path)
+    parser.add_argument("--kind", choices=["persona", "content"], default="persona")
     args = parser.parse_args()
     try:
         samples = [
@@ -98,7 +136,8 @@ def main() -> int:
             for line in args.samples.read_text(encoding="utf-8").splitlines()
             if line.strip()
         ]
-        print(json.dumps(calibration(samples), ensure_ascii=False))
+        result = calibration(samples) if args.kind == "persona" else content_calibration(samples)
+        print(json.dumps(result, ensure_ascii=False))
     except (ValueError, OSError):
         print("校准记录格式错误，未生成评分。")
         return 1

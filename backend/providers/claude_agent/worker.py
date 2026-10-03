@@ -11,7 +11,7 @@ from uuid import UUID, uuid4
 
 from pydantic import TypeAdapter
 
-from backend.agent.persona import persona_judge_prompt, travel_prompt
+from backend.agent.persona import JudgeKind, evaluation_judge_prompt, travel_prompt
 from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity
 from backend.providers.claude_agent.checkpoints import Checkpoints
@@ -55,6 +55,9 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
     )
     persona_judge = payload.get("persona_judge", False)
     try:
+        judge_kind: JudgeKind = TypeAdapter(JudgeKind).validate_python(
+            payload.get("judge_kind", "persona")
+        )
         variant: EvaluationVariant = TypeAdapter(EvaluationVariant).validate_python(
             payload.get("evaluation_variant", "full")
         )
@@ -65,20 +68,30 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         return {"status": "error", "code": "validation"}
     if variant != "full" and len(prompts) != 1:
         return {"status": "error", "code": "validation"}
-    if type(persona_judge) is not bool or (
-        persona_judge
-        and (
-            identity.provider != "deepseek"
-            or dsn
-            or workflow
-            or payload.get("supplier_url")
-            or len(prompts) != 1
+    if (
+        (judge_kind != "persona" and not persona_judge)
+        or type(persona_judge) is not bool
+        or (
+            persona_judge
+            and (
+                identity.provider != "deepseek"
+                or dsn
+                or workflow
+                or payload.get("supplier_url")
+                or len(prompts) != 1
+            )
         )
     ):
         return {"status": "error", "code": "validation"}
     if persona_judge:
         return await run_prompts(
-            prompts, context, identity, cli, (), SearchExecutor(), persona_judge_prompt()
+            prompts,
+            context,
+            identity,
+            cli,
+            (),
+            SearchExecutor(),
+            evaluation_judge_prompt(judge_kind),
         )
     definitions = evaluation_definitions(variant, database=isinstance(dsn, str))
     if variant == "no_tools":

@@ -15,3 +15,5 @@ eval入口默认只准备/校验样本，显式--live才收费。输入/完整�
 本机SDK实验：锁定CLI实际发送temperature=1、省略thinking；Guard评审分支覆盖temperature=0并补thinking disabled，1HTTP收到严格评分JSON，零工具事件，43专项通过。只证明工程边界；真实供应商与真人校准尚未完成。
 
 一次真实原dev回答评审：1HTTP/0.002122CNY、实际temperature0/零工具/合法JSON，真人配对0保持pending；公开摘要见[证据](../evidence/m07-persona-judge-2026-10-03.json)。独立复核无P1/P2，56专项/check204通过；完整结果从执行计划读取。
+
+Goal/AC审计补通用内容辅助评审：沿用现有私有persona_judge固定温度/零工具/无业务状态入口，仅新增judge_kind（persona默认、content）选择系统rubric，避免复制费用/进程/SDK/解析运行设施。content输出相关性/解释/取舍各0–5和简短reason，真人三维记录独立；从同一严格分数类型投影成原JudgeScore后按维度复用calibration，不把模型分当真人分或语气分。未知kind或在普通旅行路径设置content启动前拒绝；原persona旅行默认字节不改，禁止外部供应商/业务workflow/多prompt等原限制保持。实际facts/coverage仍用独立标注/Evidence入口，内容LLM分不能当事实真值或校准完成；本增量优先本机SDK无模型费用验证。

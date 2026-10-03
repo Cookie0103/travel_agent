@@ -66,17 +66,26 @@ class Claim(Fact):
     evidence_id: UUID | None = None
 
 
-class HumanQuality(PrivateModel):
+class QualityScore(PrivateModel):
     relevance: int = Field(strict=True, ge=0, le=5)
     explanation: int = Field(strict=True, ge=0, le=5)
     tradeoffs: int = Field(strict=True, ge=0, le=5)
     reason: str = Field(min_length=1, max_length=1000)
-    rater: str = Field(min_length=1, max_length=100)
 
     @model_validator(mode="after")
     def nonblank(self) -> Self:
-        if not self.reason.strip() or not self.rater.strip():
-            raise ValueError("人工理由/评审人不能为空白")
+        if not self.reason.strip():
+            raise ValueError("评分理由不能为空白")
+        return self
+
+
+class HumanQuality(QualityScore):
+    rater: str = Field(min_length=1, max_length=100)
+
+    @model_validator(mode="after")
+    def valid_rater(self) -> Self:
+        if not self.rater.strip():
+            raise ValueError("真人评审人不能为空白")
         return self
 
 

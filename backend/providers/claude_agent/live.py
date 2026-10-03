@@ -7,6 +7,7 @@ from pathlib import Path
 from threading import Event
 
 from backend.adapters.tracing import cloud_exporter, trace_report
+from backend.agent.persona import JudgeKind
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, error_code
 from backend.mcp.bridge import sdk_tool_name
@@ -54,6 +55,7 @@ def run_live(
     max_attempts: int = 4,
     supplier_url: str | None = None,
     persona_judge: bool = False,
+    judge_kind: JudgeKind = "persona",
     evaluation_variant: EvaluationVariant = "full",
 ) -> dict[str, object]:
     try:
@@ -66,7 +68,9 @@ def run_live(
     except ValueError as error:
         raise ProbeError("validation", str(error)) from None
     if (
-        type(max_attempts) is not int
+        judge_kind not in ("persona", "content")
+        or (judge_kind != "persona" and not persona_judge)
+        or type(max_attempts) is not int
         or not 1 <= max_attempts <= 12
         or (workflow is not None and database_dsn is None)
         or type(persona_judge) is not bool
@@ -129,6 +133,7 @@ def run_live(
                     "workflow": workflow,
                     "provider": settings.provider,
                     "persona_judge": persona_judge,
+                    "judge_kind": judge_kind,
                     "evaluation_variant": evaluation_variant,
                 },
                 cancelled=cancelled,

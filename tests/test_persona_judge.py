@@ -10,6 +10,7 @@ from uuid import uuid4
 
 import pytest
 
+from backend.agent.persona import JudgeKind
 from backend.domain.execution import RunContext
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
@@ -238,18 +239,30 @@ def test_runtime_error_stops_later_samples_after_durable_attempt(
 
 @pytest.mark.skipif(not shutil.which("claude"), reason="真实CLI未安装，不冒充SDK验证")
 @pytest.mark.parametrize("response_kind", ["score", "invalid_json", "unauthorized_tool"])
+@pytest.mark.parametrize("kind", ["persona", "content"])
 def test_real_sdk_judge_has_no_tools_and_guard_sets_temperature_zero(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, response_kind: str
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, response_kind: str, kind: JudgeKind
 ) -> None:
     def forward(body: bytes) -> tuple[int, bytes]:
         request = json.loads(body)
         assert request.get("tools", []) == [] and request["temperature"] == 0
+        assert ("你是旅行内容评审" in json.dumps(request["system"], ensure_ascii=False)) is (
+            kind == "content"
+        )
         if response_kind == "unauthorized_tool":
             request["messages"] = []
             return scripted_response(json.dumps(request).encode(), tool_calls=(("Bash", {}),))
         request["messages"] = [{"content": [{"type": "tool_result", "content": "synthetic"}]}]
         status, content = scripted_response(json.dumps(request).encode())
-        text = "not JSON" if response_kind == "invalid_json" else '{"score":4,"reason":"brief"}'
+        text = (
+            "not JSON"
+            if response_kind == "invalid_json"
+            else (
+                '{"score":4,"reason":"brief"}'
+                if kind == "persona"
+                else '{"relevance":4,"explanation":3,"tradeoffs":2,"reason":"brief"}'
+            )
+        )
         return status, content.replace(
             b'"text": "[\\"synthetic\\"]"', ('"text": ' + json.dumps(text)).encode()
         )
@@ -292,12 +305,13 @@ def test_real_sdk_judge_has_no_tools_and_guard_sets_temperature_zero(
                 "run_id": str(uuid4()),
                 "cli_version": "2.1.114",
                 "persona_judge": True,
+                "judge_kind": kind,
             },
         )
     actual.update(
         requests=guard.observations, http_attempts=guard.attempts, guard_failures=guard.failures
     )
-    scored, status = score_report(sample(), actual, "deepseek-flash")
+    scored, status = score_report(sample(), actual, "deepseek-flash", kind=kind)
     expected = {
         "score": "scored",
         "invalid_json": "judge_error",

@@ -450,3 +450,8 @@ M0.7自动评审补齐：ADR011/共享rubric/唯一SDK私有开关/零工具/Gua
 压缩/B2专项58 passed/541 deselected43.13秒，check212/3契约/10地图通过；窄独立无P1/P2，两个P3关闭。建议非live组别不冒充B3已采纳：fixture not_applicable_fixture、无DB live search_only；6报表专项2.04秒通过。正常本地提交将执行完整钩子，0新真实费用。
 
 8a41caa正常静态/完整默认Python钩子通过，未push。Goal独立审计补内容事实/质量入口；新增类型错误只在新测试object索引，通过真实dict断言修正，check215过。43相关专项20.59秒先过；新PG测试依次暴露缺city、跨run复用执行器、目录不按酒店规则invalidated三错误假设，保留原生产合同，补酒店实际失效/旧revision不可适用。独立两P2：实际Evidence为对象，整对象比较错判字段；unknown陈述排除分母仍能完美准确率。均补领域投影/酒店card/unknown字段、unresolved总率null及真实PG/混合反例。最终55相关21.37秒/check215通过、独立复核无P1/P2。原results CLI核对manifest/attempt/context/text/suite，旧未捕获不补造；新patch两次上下文不匹配未写入，按formatter后源码修正。0新增真实模型HTTP，80/2.076890不变。准备正常完整钩子保存，期间不改跟踪文件。
+
+
+fd17edc正常静态/完整默认Python钩子通过，保存事实/人工内容评审。继续复用同一评审SDK循环加入content三维rubric，严格QualityScore与HumanQuality共享字段，分数/真人记录分离；非法kind/混量表/已评分输入收费前拒绝。实际本机SDK零工具合法/非法JSON/越权工具扩展两种rubric，原persona断言保留。78相关测试13.93秒通过，mypy导入共享helper一次错误定位后修正，check216/3契约/10地图通过。补已评分样本后填真人分的离线CLI，0重新调用；说明集中docs/evaluation.md，包README短地图。无新依赖/runtime/实际模型费用，累计80/2.076890；窄独立复核和完整钩子待执行。
+
+内容辅助评分窄独立复核无P1/P2，离线校准与文档两跟进关闭；78专项与check216通过。准备正常本地提交，完整默认Python钩子期间不改跟踪文件；未产生真实模型新费用，实际校准未满足。

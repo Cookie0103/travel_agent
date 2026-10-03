@@ -9,8 +9,8 @@
 | 需求 / 范围 | 正常与主要分支 | 边界 / 非法输入 / 预期失败 / 依赖故障 | 跨模块证据入口 | 仍需补充 |
 | --- | --- | --- | --- | --- |
 | R01 参数与错误 | search、注册工具、结果回填 | 截断参数、未知工具、额外身份、工具异常 | tests/test_mcp_bridge.py；tests/integration/test_travel_tools.py | 持续按新增工具补故障回归 |
-| R02 SDK中断续接 | 实际SDK完整轮次分进程resume同一ID | 丢文件/半JSON损坏/条件/CLI版本/轮中修改，业务快照新建；私有归属 | tests/test_runtime_sessions.py；tests/test_sdk_lifecycle.py；tests/integration/test_sdk_recovery.py | 小样本真实模型续接效果与M4持久卷配置 |
-| R03 工具与写入顺序 | 读上限1、写互斥、单会话执行 | 并发消息、版本竞争、取消晚成功 | tests/integration/test_runs.py；test_travel_tools.py | M2重启后裁决 |
+| R02 SDK中断续接 | 实际SDK完整轮次分进程resume同一ID | 丢文件/半JSON损坏/条件/CLI版本/轮中修改，业务快照新建；私有归属 | tests/test_runtime_sessions.py；tests/test_sdk_lifecycle.py；tests/integration/test_sdk_recovery.py | M4持久卷/HTTP重启已验；小样本真实模型续接效果仍待测 |
+| R03 工具与写入顺序 | 读上限1、写互斥、单会话执行 | 并发消息、版本竞争、取消晚成功 | tests/integration/test_runs.py；test_travel_tools.py | M2实际进程重启/取消晚成功裁决已验证 |
 | R04 条件patch | set/clear/未写保留、无变更不增revision | 日期逆序、空值、未知字段、版本冲突 | tests/test_travel_request.py；tests/integration/test_travel.py | 浏览器条件失效已验证；M2真实响应丢失与恢复已验证 |
 | R05 Evidence与卡片 | 服务端引用/来源/有效期 | 伪造、跨用户/会话、过期、旧revision、缺来源 | tests/integration/test_travel.py；test_hotels.py | 已验证持久presentation与浏览器刷新；真实模型质量待评测 |
 | R06 行程校验 | 时间/营业/路线/预算、SDK修正反馈 | 闭馆、跨午夜、缺税、未知路线、预算下界、3轮上限 | tests/test_itinerary.py；tests/integration/test_planning.py；test_sdk_planning.py | 页面警告已验；真实模型修复效果待评测 |
@@ -27,8 +27,8 @@
 | R17 失败归因 | 正常Trace与工具span、API提交事件导出 | 写盘故障不影响结果、未知字段名脱敏、partial/awaiting_user状态 | tests/test_tracing.py；tests/integration/test_run_trace.py；docs/evidence/m26-failure-regression-2026-10-03.json | 已有真实scope失败前后证据；M3补5类注入/unknown与其余坏例 |
 | R19 对外只读MCP | 官方客户端legacy/auto、四查询与直接handlers同事实/来源 | 鉴权、跨用户、非法/未知工具、空结果、DB/工具故障、Host/Origin/请求大小 | tests/integration/test_mcp_server.py；docs/review/M3.md | 真实TCP/PG及独立复核通过；仅本机演示Bearer，不声称企业OAuth/公网部署 |
 | 酒店比较/刷新 | 同入住口径、并列最低、服务端报价 | 缺人数/税费、不匹配、过期、无库存 | tests/test_hotels.py；tests/integration/test_hotels.py；test_sdk_hotels.py | 网页过期与恢复 |
-| M1.8工作台 | 条件→比较→草稿→确认→局部改程 | 类型、SSE分块、错误显示、失效确认、锁定拒绝 | 前端类型/lint/build、PG链路、真实浏览器 | 类型/lint/build/6前端测试、PG全链与浏览器正常/失效/锁定/刷新通过；丢响应实际故障待M2 |
-| Trace/评测/角色 | 本地OTLP、规则评分/版本、角色草案 | 导出失败、模型费用守卫、规则坏例 | tests/test_tracing.py；test_eval.py；test_persona.py | Langfuse UI、30/60条、多次模型统计、人工校准 |
+| M1.8工作台 | 条件→比较→草稿→确认→局部改程 | 类型、SSE分块、错误显示、失效确认、锁定拒绝 | 前端类型/lint/build、PG链路、真实浏览器 | 类型/lint/build/10前端测试、PG全链与浏览器正常/失效/锁定/刷新通过；M2实际丢响应与重启恢复已验 |
+| Trace/评测/角色 | 本地OTLP、规则评分/版本、角色草案 | 导出失败、模型费用守卫、规则坏例 | tests/test_tracing.py；test_eval.py；test_persona.py | 历史30/冻结60设施与离线三轮已验；Langfuse UI、实际多次模型统计、人工校准仍未满足 |
 | M3.4 业务评测/固定流程 | 每案例新PG身份与条件、SDK/schema/数据相同、完整固定步骤 | 非法初始条件、目录漂移不覆盖、先fsync后付费、上限非法拒绝、空/失败阶段不推进、usage不全为unknown | tests/test_workflow.py；tests/integration/test_database_eval.py；docs/evidence/m34-hotel-comparison-2026-10-03.json | 酒店两组各n=1真实规则通过；完整行程对照、更多案例/重复和语义评分仍待验 |
 
 R18与C档实现按既定plan明确排除；C档仅交付ADR。新增主要功能同时补正常、分支、边界、输入和合理依赖故障，不只增加happy path。
@@ -39,7 +39,7 @@ M3.5供应商/原币种：test_sdk_providers覆盖显式选择/无key不回退�
 
 M4.1容器：tests/test_stack.py覆盖密码重用/损坏不覆盖、Docker不可用/构建失败不启动、停止保留卷。实际独立Compose从新卷初始化、Next同源代理→认证→条件→比较→草稿→局部修改→确认→模拟预订与重复确认、隔离/非法版本/禁止live、停止重建后只读计划/订单/SSE恢复。合成嵌套dotenv实际构建排除；浏览器确认刷新V1及截图见[M4](../review/M4.md)。容器默认离线，不代替真实模型与Langfuse UI；远端CI尚未运行。
 
-M3.6归因：tests/test_diagnostics.py 与 integration/test_diagnostics.py 使用实际工具/PG/本机供应商HTTP注入五类单根因，并验证正常、已恢复、completed但业务规则失败、错run/调用、重复/乱序、缺失/矛盾附件、合法参数反证与私密字段不导出。eval默认缺事实附件的失败标unknown；注入不是三真实dev坏例验收。integration/test_travel_tools.py覆盖最大8条真实目录搜索与完整详情/证据保留；test_live_business.py通过真实SDK/CLI、PG和本机六HTTP酒店链路检验API入口，合成费用写测试临时账本。实测规划上限实验与其余坏例仍待记录。
+M3.6归因：tests/test_diagnostics.py 与 integration/test_diagnostics.py 使用实际工具/PG/本机供应商HTTP注入五类单根因，并验证正常、已恢复、completed但业务规则失败、错run/调用、重复/乱序、缺失/矛盾附件、合法参数反证与私密字段不导出。eval默认缺事实附件的失败标unknown；注入不是三真实dev坏例验收。integration/test_travel_tools.py覆盖最大8条真实目录搜索与完整详情/证据保留；test_live_business.py通过真实SDK/CLI、PG和本机六HTTP酒店链路检验API入口，合成费用写测试临时账本。实测规划同输入三次与最后规则通过已留证据；其余不同dev坏例矩阵继续审计。
 
 - Python：dev check（ruff、format、mypy strict、分层、文档地图）、dev test（默认不付费；真实PG必须可用）。
 - 前端：生成契约一致性、TypeScript、官方Next ESLint、Prettier、生产build；浏览器宽/窄布局与核心流程操作。
@@ -60,4 +60,6 @@ M0.7：test_persona_judge覆盖原旅行bytes不变、实际temp0、采样/工�
 
 ADR012对照配置：test_evaluation_variants覆盖共享注册表、非法配置收费前拒绝、数据库要求、workflow/judge/多轮冲突、FixtureRuntime不能冒充效果；integration/test_evaluation_variants用实际SDK/CLI+真实PG核对schema/偏好/快照/无checkpoint/业务不改，并验证首次校验后修复阻止、原候选可暂存、conflict可展示而用户确认拒绝且正式V0。新增no_compaction及B2：同人工usage/阈值原生自动压缩与关闭两分支；test_claude_runtime覆盖未知SDK/CLI在初始化前拒绝、意外压缩中断且无session ref。零工具公开状态探针只证实锁定版本能力；带工具不逐轮探测，不放宽费用。B2同时关闭偏好和压缩是组合基线，与单因素区分。真实模型压缩质量和统计对照仍未满足。
 
-内容评审增量：test_eval_content覆盖原case/context/hash/原文位置绑定、正确/错值/typed bool、过期/版本/来源/外国或重复附件、未完整标注/漏必需事实、显式unknown、估算不能冒充确定值、真人分非法与缺失、脱敏CLI及原results/manifest/attempt一致性（改原文/身份、重复、坏manifest、无捕获）。integration/test_eval_content用真实PG捕获本人事实/保留失效报价与旧revision、拒绝跨用户，实际目录name/opening_hours和酒店card.total/缺税/错值评分，捕获依赖失败使验证不完整并停止后续而保留HTTP计数。独立两P2（整对象错判子字段、未解决unknown陈述仍完美准确率）均已补反例复核关闭。机制已验不代替实际语义/人工校准；通用内容LLM辅助入口仍待补。
+内容评审增量：test_eval_content覆盖原case/context/hash/原文位置绑定、正确/错值/typed bool、过期/版本/来源/外国或重复附件、未完整标注/漏必需事实、显式unknown、估算不能冒充确定值、真人分非法与缺失、脱敏CLI及原results/manifest/attempt一致性（改原文/身份、重复、坏manifest、无捕获）。integration/test_eval_content用真实PG捕获本人事实/保留失效报价与旧revision、拒绝跨用户，实际目录name/opening_hours和酒店card.total/缺税/错值评分，捕获依赖失败使验证不完整并停止后续而保留HTTP计数。独立两P2（整对象错判子字段、未解决unknown陈述仍完美准确率）均已补反例复核关闭。机制已验不代替实际语义/人工校准；通用内容LLM辅助入口已补，实际内容模型统计/人工配对仍未满足。
+
+内容辅助评审：test_content_judge验证三维严格类型/错用语气JSON/缺或非法kind启动前拒绝、真实温度与工具证明不足不评分、真人三维原样保留、每维独立校准、已评分离线补真人记录而不重付费。test_persona_judge原实际SDK三分支扩展到两种rubric（合法JSON/坏JSON/未授权工具），原语气断言保留。共享同一执行循环/预算/SDK/Guard，无第二runtime；合成配对仅测试统计，不当实际真人验收。
