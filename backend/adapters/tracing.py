@@ -176,7 +176,9 @@ def _spans(
     for span in (runtime, root):
         span.set_attribute(
             "travel.status",
-            end.kind if end.kind in {"completed", "failed", "cancelled"} else "incomplete",
+            end.kind
+            if end.kind in {"completed", "failed", "cancelled", "partial", "awaiting_user"}
+            else "incomplete",
         )
         if end.kind != "completed" or incomplete:
             span.set_status(StatusCode.ERROR)
@@ -211,6 +213,11 @@ def _tool_spans(tracer: Tracer, parent: Span, events: Sequence[RuntimeEvent]) ->
         elif event.kind == "tool_finished" and event.tool_call_id in active:
             span = active.pop(event.tool_call_id)
             span.set_attribute("tool.status", event.code or "ok")
+            span.set_attribute("tool.result_empty", event.result_empty is True)
+            if event.request_revision is not None:
+                span.set_attribute("travel.request_revision", event.request_revision)
+            if event.evidence_ids:
+                span.set_attribute("travel.evidence_ids", event.evidence_ids)
             if event.code:
                 span.set_status(StatusCode.ERROR)
             span.end(end_time=_ns(event))

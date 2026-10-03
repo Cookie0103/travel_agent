@@ -37,7 +37,9 @@ def _build_tool(
     @tool(definition.name, definition.description, definition.schema)
     async def handler(arguments: dict[str, object]) -> dict[str, object]:
         try:
-            result = await execute_observed(executor, context, definition.name, arguments, emit)
+            result = await execute_observed(
+                executor, context, definition.name, arguments, emit, definition=definition
+            )
             payload = json.dumps(result.payload(), ensure_ascii=False)
         except Exception:
             # 事件接收器/序列化也可能抛异常；不能交给 SDK 的 str(error) 透传。

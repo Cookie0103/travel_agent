@@ -3569,6 +3569,26 @@
             "format": "date-time",
             "title": "Occurred At",
             "type": "string"
+          },
+          "request_revision": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Request Revision"
+          },
+          "evidence_ids": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
           }
         },
         "required": [

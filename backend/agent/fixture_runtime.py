@@ -8,6 +8,7 @@ from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, RuntimeOutcome
 from backend.tools.contracts import ToolExecutor
 from backend.tools.execution import execute_observed
+from backend.tools.search import DEFINITIONS
 
 
 class FixtureRuntime:
@@ -39,7 +40,10 @@ class FixtureRuntime:
             }
             if name == "search_places" and indoor:
                 arguments["indoor"] = True
-            result = await execute_observed(self.executor, context, name, arguments, emit)
+            definition = next(item for item in DEFINITIONS if item.name == name)
+            result = await execute_observed(
+                self.executor, context, name, arguments, emit, definition=definition
+            )
             if result.code:
                 return RuntimeOutcome(code=result.code, reason="tool_failed")
             items = result.data.get(collection)

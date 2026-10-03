@@ -9,11 +9,12 @@ from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
+from backend.adapters.tracing import write_trace
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent, Runtime
-from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
+from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, RuntimeOutcome
 from backend.persistence import runs, sessions
 from backend.persistence.database import Database
 from backend.persistence.models import TaskRunRow
@@ -69,9 +70,13 @@ class RunService:
         *,
         live_enabled: bool = False,
         runtime_factory: Callable[[ToolExecutor], Runtime] | None = None,
+        trace_directory: Path | None = None,
     ) -> None:
         self.database, self.live_enabled = database, live_enabled
         self.runtime_factory = runtime_factory
+        self.trace_directory = (
+            trace_directory or Path(__file__).resolve().parents[2] / ".cache" / "api-traces"
+        )
         self.tasks: dict[UUID, asyncio.Task[None]] = {}
         self.cancelled: dict[UUID, asyncio.Event] = {}
         self.persistence_failures: set[UUID] = set()
@@ -187,6 +192,7 @@ class RunService:
         queue: asyncio.Queue[RuntimeEvent | None] = asyncio.Queue()
         consumer = asyncio.create_task(self._persist_events(context, queue))
         outcome = RuntimeOutcome(code="provider_error", reason="execution_failed")
+        identity: RuntimeIdentity | None = None
 
         def emit(event: RuntimeEvent) -> None:
             # 终态由finish和状态原子落库，避免SSE先看到完成、数据库却仍在运行。
@@ -195,7 +201,9 @@ class RunService:
 
         try:
             executor = TravelToolExecutor(TravelService(self.database))
-            agent = Agent(self._runtime(message.mode, executor))
+            runtime = self._runtime(message.mode, executor)
+            identity = runtime.identity
+            agent = Agent(runtime)
             deadline = asyncio.timeout(RUN_TIMEOUT)
             async with deadline:
                 result = await agent.run(
@@ -221,11 +229,32 @@ class RunService:
                 await consumer
                 async with transaction(self.database) as db:
                     await runs.finish(db, context, outcome)
+                if identity is not None:
+                    await self._trace(context, identity)
             except Exception:
                 self.persistence_failures.add(context.run_id)
                 LOGGER.error("TaskRun persistence failed: %s", context.run_id)
-            self.cancelled.pop(context.run_id, None)
-            self.tasks.pop(context.run_id, None)
+            finally:
+                self.cancelled.pop(context.run_id, None)
+                self.tasks.pop(context.run_id, None)
+
+    async def _trace(self, context: RunContext, identity: RuntimeIdentity) -> None:
+        """仅从已提交事件导出脱敏Trace；失败不能覆盖业务终态。"""
+        try:
+            recorded: list[RuntimeEvent] = []
+            after = 0
+            while rows := await self.events(context.user_id, context.run_id, after):
+                recorded.extend(TypeAdapter(list[RuntimeEvent]).validate_python(rows))
+                after = int(str(rows[-1]["sequence"]))
+            path = (
+                self.trace_directory
+                / str(context.user_id)
+                / str(context.session_id)
+                / f"{context.run_id}.jsonl"
+            )
+            await asyncio.to_thread(write_trace, path, recorded, identity)
+        except Exception:
+            LOGGER.warning("TaskRun Trace unavailable: %s", context.run_id)
 
     async def close(self) -> None:
         for event in self.cancelled.values():

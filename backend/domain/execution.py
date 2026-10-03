@@ -77,6 +77,8 @@ class RuntimeEvent:
     result_empty: bool | None = None
     presentation: dict[str, object] | None = None
     occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
+    request_revision: int | None = None
+    evidence_ids: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)

@@ -279,3 +279,25 @@
 
 - 完整9187：381 passed/1 failed/2 live deselected（66.75秒）；原PG故障503回归发现initialize导致API启动退出。修为数据库暂不可用时保持待恢复状态，GET/submit/取消前先核对、并发只核对一次。原测试和恢复/API专项15通过（16.98秒），新增启动不可用→恢复→并发同消息回归。没有删除或降低原测试要求。
 - 独立三P2复核关闭；非阻断建议已补：initial proposal省略酒店字段与完整null重放同一草稿。SDK轮中条件修改实验通过，全表将以最终代码再跑；本轮静态持续通过。未标任务全完成。
+
+- 启动closed-port→恢复→并发同消息单项1通过（10.93秒），check169通过；005434f普通check/test钩子通过，未push。项目PG已迁移0008。
+
+### M2.5 浏览器断线
+
+- 停自有API9452/58595进行故障实验，浏览器真实POST失败500；刷新发现identity在GET成功后才设置，错误显示为新建会话。移动setIdentity到网络读取前，保留原身份/pending消息；前端type/lint/7测试/build通过，并重启生产Next6480使用最新构建。
+- 断线刷新仍显示原会话6119c835与“重试未获响应的消息”，截图m25-network-outage.jpg。一次waitFor exact text未匹配，但DOM确认alert存在后截屏；不将等待尝试冒充断言成功。
+- 恢复API后显式原ID重试，运行数3→4，新的3eb5ee5f… completed、事件序号7；固定离线室内查询返回空列表如实展示。模型费用不变。
+- 再次停止自有API，保存条件请求未到达，页面出现复连按钮；只读SSE复连失败后重启42061，点击复连成功。PG核对运行数仍4、同一run ID/sequence7；页面2条tool完成项无重复、原模拟订单仍同一ID。恢复截图m25-network-recovered.jpg已保存。
+- 此实验验证浏览器API断线/失败POST与只读重连；在运行中的API强制kill/补发由test_api_restart实际HTTP验证，不冒充浏览器中途断流实验。下一步Trace/归因、独立复核和正常提交。
+
+### M2.6 Trace与复核
+
+- API复用已有OTel exporter，从已提交PG事件导出私有Trace；补实际revision/Evidence ID、partial/awaiting_user状态。写盘失败与取消清理不覆盖业务终态。13专项通过（1.64秒），check170/前端7+build通过；全表387 passed/2 live deselected（82.48秒）。
+- 重读M0.6/M0.7真实hakone-onsen Trace及原规则，保存m26脱敏前后元数据：4次无必要工具→范围规则修复→一次真实回归无工具通过。只读旧证据，无新增模型费用；小样本与Trace不能单独证明根因的限制已写明。
+- 独立2P2：未知字段名可泄密、401后无登录入口。修为共用schema已知字段名与受控工具名、共用401错误处理；19专项通过（1.67秒），check170与前端7+build通过。
+- 两次pnpm exec prettier因Windows入口PATH失败，正式dev web-check的Prettier检查通过；未跳过格式检查。第一次从apps/web启动Python不能import scripts，改从根目录启动并给子进程cwd。生产Next现81812，API仍42061。
+- 临时过期仅自建demo6119c835所对应用户令牌；浏览器刷新真实401后显示“身份已失效”及显式创建按钮，m25-expired-identity.jpg。复原原期限/保留旧订单行程，再点击创建成功进入新会话6d990e19。不是更改用户真实账号/密钥，无外部费用。
+- 等待独立复核关闭和普通提交钩子全表；不标整个开发完成，继续M3。
+
+- 401修复复核又发现迟到SSE与普通API成功回写竞态，包括Promise检查后的微任务窗口。统一generation、旧流abort、异步每次写回前同步active检查；共用readWhile拒绝已过期响应，调用方再次守门。新增迟到成功、原401状态保留、微任务顺序三回归，前端10/type/lint/build通过。不是声称浏览器验证过所有微任务排列。
+- M3规格已按既有plan补写，独立规格审查无产品冲突/重大缺口；外部MCP只四个明确工具、偏好用户API+持久墓碑版本、压缩/脚本/模型证据分开。核对官方hooks及已安装SDK0.2.163公共类型，PostCompact与CLI新版专用能力不能直接套用。M3仍未实施。

@@ -23,6 +23,14 @@ export class ApiError extends Error {
   }
 }
 
+export function readWhile(active: () => boolean) {
+  return async <T>(request: Promise<T>): Promise<T> => {
+    const value = await request;
+    if (!active()) throw new Error("会话已改变，忽略原请求结果。");
+    return value;
+  };
+}
+
 export function messageInput(
   previous: Identity["pending_message"],
   text: string,

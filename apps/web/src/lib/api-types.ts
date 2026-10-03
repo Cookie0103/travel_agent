@@ -1317,6 +1317,16 @@ export interface components {
              * Format: date-time
              */
             occurred_at?: string;
+            /**
+             * Request Revision
+             * @default null
+             */
+            request_revision: number | null;
+            /**
+             * Evidence Ids
+             * @default []
+             */
+            evidence_ids: string[];
         };
     };
     responses: never;

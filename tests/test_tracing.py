@@ -17,6 +17,57 @@ from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity
 IDENTITY = RuntimeIdentity("fake", "scripted", "none", "none")
 
 
+def test_invalid_parameter_name_cannot_leak_into_observed_trace(tmp_path: Path) -> None:
+    import asyncio
+
+    from backend.tools.execution import execute_observed
+    from backend.tools.search import DEFINITIONS, SearchExecutor
+
+    context = RunContext(uuid4())
+    recorded = [RuntimeEvent(context, "started")]
+    marker = "synthetic-private-marker"
+    result = asyncio.run(
+        execute_observed(
+            SearchExecutor(),
+            context,
+            "search_places",
+            {"city": "京都", marker: "secret"},
+            recorded.append,
+            definition=DEFINITIONS[0],
+        )
+    )
+    assert result.code == "validation"
+    recorded.append(RuntimeEvent(context, "failed", code=result.code))
+    path = tmp_path / "trace.jsonl"
+    write_trace(path, recorded, IDENTITY)
+    raw = path.read_text(encoding="utf-8")
+    assert marker not in raw and "secret" not in raw
+    spans = [json.loads(line) for line in raw.splitlines()]
+    tool = next(span for span in spans if span["name"] == "tool.search_places")
+    assert tool["attributes"]["tool.argument_keys"] == ["city"]
+    assert tool["attributes"]["tool.status"] == "validation"
+
+
+@pytest.mark.parametrize("kind", ["partial", "awaiting_user"])
+def test_recovery_status_and_evidence_metadata_are_preserved(tmp_path: Path, kind: str) -> None:
+    from typing import cast
+
+    from backend.domain.execution import EventKind
+
+    recorded = events()
+    evidence_id = str(uuid4())
+    recorded[-2] = replace(recorded[-2], request_revision=3, evidence_ids=(evidence_id,))
+    recorded[-1] = replace(recorded[-1], kind=cast(EventKind, kind))
+    path = tmp_path / "trace.jsonl"
+    write_trace(path, recorded, IDENTITY)
+    spans = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+    assert spans[-1]["attributes"]["travel.status"] == kind
+    assert spans[-1]["status"]["status_code"] == "ERROR"
+    tool = next(span for span in spans if span["name"] == "tool.search_places")
+    assert tool["attributes"]["travel.evidence_ids"] == [evidence_id]
+    assert tool["attributes"]["travel.request_revision"] == 3
+
+
 def events(*, unfinished: bool = False) -> list[RuntimeEvent]:
     context, call_id = RunContext(uuid4()), uuid4()
     start = RuntimeEvent(context, "started")

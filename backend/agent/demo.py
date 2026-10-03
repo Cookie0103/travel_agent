@@ -14,7 +14,7 @@ from backend.domain.travel_request import TravelRequest
 from backend.services.common import ServiceError
 from backend.tools.contracts import ToolExecutor, ToolResult
 from backend.tools.execution import execute_observed
-from backend.tools.travel import TravelToolExecutor
+from backend.tools.travel import DEFINITIONS, TravelToolExecutor
 
 type DemoCall = Callable[[str, dict[str, object]], Awaitable[ToolResult]]
 
@@ -34,7 +34,10 @@ async def demo_command(
     async def call(name: str, arguments: dict[str, object]) -> ToolResult:
         if cancelled.is_set():
             raise asyncio.CancelledError
-        result = await execute_observed(executor, context, name, arguments, emit)
+        definition = next(item for item in DEFINITIONS if item.name == name)
+        result = await execute_observed(
+            executor, context, name, arguments, emit, definition=definition
+        )
         if result.empty:
             raise ServiceError(422, "unavailable", "演示工具没有可用数据，请检查条件或数据导入")
         if result.code:
