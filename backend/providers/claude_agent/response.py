@@ -3,10 +3,12 @@
 import json
 
 from backend.providers.claude_agent.request import Request
-from backend.providers.probe.settings import ProbeError, price_for
+from backend.providers.probe.settings import Currency, ProbeError, price_for
 
 
-def summarize(content: bytes, request: Request, model: str) -> dict[str, object]:
+def summarize(
+    content: bytes, request: Request, model: str, currency: Currency = "CNY"
+) -> dict[str, object]:
     try:
         events = _events(content)
         kinds = [e.get("type") for e in events]
@@ -40,17 +42,30 @@ def summarize(content: bytes, request: Request, model: str) -> dict[str, object]
     except (ValueError, TypeError, KeyError, StopIteration, UnicodeError, IndexError):
         raise ProbeError("provider_error", "上游 SSE 或最终 usage 不完整，保留全部预占") from None
     inputs = sum(v for k, v in tokens.items() if k != "output_tokens")
-    estimate = price_for(model).usage_upper(inputs, tokens["output_tokens"])
+    price = price_for(model)
+    if currency != price.currency:
+        raise ProbeError("blocked", "响应费用币种与模型不一致")
+    if inputs > price.input_limit:
+        raise ProbeError("blocked", "上游输入超出模型上下文上界")
+    # 无缓存TTL明细时，Claude写缓存统一按更高的1小时价格保守结算。
+    weighted_inputs = inputs + int(
+        tokens["cache_creation_input_tokens"] * (price.cache_write_multiplier - 1)
+    )
+    estimate = price.usage_upper(weighted_inputs, tokens["output_tokens"])
     if estimate > request.charge or tokens["output_tokens"] > request.max_output:
         raise ProbeError("blocked", "上游 usage 超出预占上界，停止后续请求")
-    return {
+    result: dict[str, object] = {
         "model": model,
         "stop_reason": delta["stop_reason"],
         "events": sorted({str(k) for k in kinds}),
         **tokens,
-        "usage_cost_upper_cny": str(estimate),
-        "reserved_cny": str(request.charge),
+        "currency": currency,
+        "usage_cost_upper": str(estimate),
+        "reserved": str(request.charge),
     }
+    if currency == "CNY":
+        result.update(usage_cost_upper_cny=str(estimate), reserved_cny=str(request.charge))
+    return result
 
 
 def _events(content: bytes) -> list[dict[str, object]]:

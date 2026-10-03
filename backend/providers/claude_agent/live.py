@@ -14,10 +14,11 @@ from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
 from backend.providers.claude_agent.events import EventReader
 from backend.providers.claude_agent.guard import Guard, serve
-from backend.providers.claude_agent.http import forward_deepseek
+from backend.providers.claude_agent.http import forward_deepseek, forward_messages
 from backend.providers.claude_agent.process import invoke_worker, run_process
+from backend.providers.claude_agent.settings import load_runtime_settings
 from backend.providers.probe.ledger import exclusive
-from backend.providers.probe.settings import ProbeError, load_settings
+from backend.providers.probe.settings import ProbeError
 from backend.tools.search import DEFINITIONS
 from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
 from backend.tools.workflow import WorkflowName
@@ -42,18 +43,20 @@ def run_live(
     ):
         raise ProbeError("validation", "对照需数据库工具；请求上限须为1至12")
     exporter = cloud_exporter(os.environ) if trace_cloud else None
-    settings = load_settings(os.environ)
-    cli = find_cli(os.environ)
+    settings = load_runtime_settings(os.environ)
     cache = root / ".cache"
     directory = cache / "sessions" / str(context.user_id) / str(context.session_id)
     event_path = directory / f"events-{context.run_id}.jsonl"
     reader = EventReader(event_path, context, emit)
     definitions = TRAVEL_DEFINITIONS if database_dsn else DEFINITIONS
     budget = Budget(
-        cache / "model-budget" / "deepseek.jsonl",
+        cache / "model-budget" / f"{settings.provider}.jsonl",
         cache / "m02-protocol" / "ledger.jsonl",
-        settings.cny_limit,
+        settings.daily_limit,
+        settings.currency,
     )
+    budget.check_authorization()
+    cli = find_cli(os.environ)
     with exclusive(cache / "model-budget" / "active.lock"):
         if event_path.exists():
             raise ProbeError("conflict", "此run已有执行记录，不能自动重复付费执行")
@@ -61,7 +64,9 @@ def run_live(
         guard = Guard(
             settings,
             budget,
-            partial(forward_deepseek, settings.api_key),
+            partial(forward_deepseek, settings.api_key)
+            if settings.provider == "deepseek"
+            else partial(forward_messages, settings.provider, settings.api_key),
             allowed_tools=frozenset(sdk_tool_name(d.name) for d in definitions),
             max_attempts=max_attempts,
         )
@@ -86,6 +91,7 @@ def run_live(
                     "supplier_url": os.environ.get("MOCK_SUPPLIER_URL"),
                     "cli_version": version.stdout.split()[0],
                     "workflow": workflow,
+                    "provider": settings.provider,
                 },
                 cancelled=cancelled,
                 progress=reader.drain,
@@ -95,10 +101,15 @@ def run_live(
             http_attempts=guard.attempts,
             requests=guard.observations,
             grant_attempts=count,
-            grant_accounted_cny=str(charge),
-            run_accounted_cny=str(charge - before_charge),
+            currency=settings.currency,
+            grant_accounted=str(charge),
+            run_accounted=str(charge - before_charge),
             guard_failures=guard.failures,
         )
+        if settings.currency == "CNY":
+            report.update(
+                grant_accounted_cny=str(charge), run_accounted_cny=str(charge - before_charge)
+            )
         if guard.failures:
             report["status"] = "error"
         if (

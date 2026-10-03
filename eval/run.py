@@ -239,10 +239,11 @@ async def run_case(
         "http_attempts": report.get("http_attempts", 0),
         "requests": report.get("requests", []),
         "run_accounted_cny": report.get("run_accounted_cny"),
+        "run_accounted": report.get("run_accounted"),
         "trace_id": report.get("trace_id"),
         "trace_status": report.get("trace_status"),
         "tokens": token_totals(report) if live else None,
-        "accounting_currency": "CNY" if live else None,
+        "accounting_currency": report.get("currency") if live else None,
     }
 
 
@@ -308,7 +309,7 @@ def manifest(
         "schema_sha256": hashlib.sha256(
             json.dumps([asdict(d) for d in definitions], sort_keys=True).encode()
         ).hexdigest(),
-        "pricing": "backend/providers/probe/settings.py; CNY peak price; hash above",
+        "pricing": "backend/providers/probe/settings.py; original-currency upper bound; hash above",
         "skills": ["hotel-comparison", "itinerary-revision"]
         if definitions == TRAVEL_DEFINITIONS
         else [],
@@ -321,7 +322,9 @@ def main() -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="旅行任务规则评测；默认离线，不把规则分当模型质量")
     parser.add_argument("--split", choices=["dev", "test"], default="dev")
-    parser.add_argument("--live", action="store_true", help="使用已授权 DeepSeek；产生费用")
+    parser.add_argument(
+        "--live", action="store_true", help="使用显式供应商；须有独立授权且产生费用"
+    )
     parser.add_argument("--case-id", action="append", help="只运行指定用例；不改变完整集")
     parser.add_argument("--database", action="store_true", help="使用本地PG与应用旅行工具")
     parser.add_argument("--workflow", choices=sorted(WORKFLOWS), help="固定工具阶段；默认自主选择")

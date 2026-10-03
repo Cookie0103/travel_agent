@@ -90,7 +90,7 @@ def test_invalid_request_limit_stops_before_loading_credentials(
     def forbidden(*args: object) -> Settings:
         raise AssertionError("invalid limit must not reach credentials or model")
 
-    monkeypatch.setattr(live, "load_settings", forbidden)
+    monkeypatch.setattr(live, "load_runtime_settings", forbidden)
     with pytest.raises(ProbeError, match="validation"):
         live.run_live("offline", RunContext(uuid4()), tmp_path, max_attempts=limit)
 

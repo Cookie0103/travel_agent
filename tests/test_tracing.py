@@ -174,6 +174,45 @@ def test_cloud_requires_explicit_complete_configuration() -> None:
         )
 
 
+@pytest.mark.parametrize("invalid", [False, True])
+def test_usd_report_keeps_original_currency_and_rejects_mixed_trace(
+    tmp_path: Path, invalid: bool
+) -> None:
+    report: dict[str, object] = {
+        "status": "success",
+        "events": [asdict(e) for e in events()],
+        "identity": asdict(
+            replace(IDENTITY, provider="anthropic", model="claude-haiku-4-5-20251001")
+        ),
+        "http_attempts": 1,
+        "currency": "USD",
+        "run_accounted": "0.002",
+        "requests": [
+            {
+                "input_tokens": 7,
+                "output_tokens": 2,
+                "currency": "CNY" if invalid else "USD",
+                "usage_cost_upper": "0.002",
+            }
+        ],
+    }
+    trace_report(report, tmp_path)
+    assert report["status"] == "success"
+    if invalid:
+        assert report["trace_status"] == "failed"
+        return
+    assert report["trace_status"] == "local_saved"
+    spans = [
+        json.loads(line)
+        for line in (tmp_path / "trace.jsonl").read_text(encoding="utf-8").splitlines()
+    ]
+    attributes = next(s for s in spans if s["name"] == "agent.sdk")["attributes"]
+    assert attributes["travel.currency"] == "USD"
+    assert attributes["travel.run_accounted"] == "0.002"
+    assert attributes["travel.observed_cost_upper"] == "0.002"
+    assert not any(key.endswith("_cny") for key in attributes)
+
+
 def test_bad_trace_preserves_business_result(tmp_path: Path) -> None:
     report: dict[str, object] = {
         "status": "success",
@@ -184,6 +223,26 @@ def test_bad_trace_preserves_business_result(tmp_path: Path) -> None:
     trace_report(report, tmp_path)
     assert report["status"] == "success" and report["results"] == ["business result"]
     assert report["trace_status"] == "failed" and report["trace_error"] == "unavailable"
+
+
+@pytest.mark.parametrize(
+    "currency,current,legacy",
+    [("USD", None, "0.01"), ("USD", "0.01", "0.01"), ("CNY", "0.01", "0.02")],
+)
+def test_trace_report_does_not_relabel_legacy_cny_or_ignore_conflicts(
+    tmp_path: Path, currency: str, current: str | None, legacy: str
+) -> None:
+    report: dict[str, object] = {
+        "status": "success",
+        "events": [asdict(e) for e in events()],
+        "identity": asdict(IDENTITY),
+        "currency": currency,
+        "run_accounted": current,
+        "run_accounted_cny": legacy,
+    }
+    trace_report(report, tmp_path)
+    assert report["status"] == "success" and report["trace_status"] == "failed"
+    assert not (tmp_path / "trace.jsonl").exists()
 
 
 def test_missing_tool_start_marks_observation_gap(tmp_path: Path) -> None:

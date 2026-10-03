@@ -10,33 +10,40 @@ from uuid import uuid4
 import pytest
 
 from backend.mcp.bridge import sdk_tool_name
-from backend.providers.claude_agent.budget import Budget
+from backend.providers.claude_agent.budget import LIMITS, Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
 from backend.providers.claude_agent.guard import Guard, serve
 from backend.providers.claude_agent.process import invoke_worker, run_process
-from backend.providers.probe.settings import Settings
+from backend.providers.probe.settings import Provider, Settings
 from backend.tools.search import DEFINITIONS
 from tests.test_sdk_cli_offline import scripted_response
 
 
 @pytest.mark.skipif(not shutil.which("claude"), reason="需要本机 Claude CLI；不调用真实模型")
-def test_sdk_executes_travel_tools_and_resumes_same_session(tmp_path: Path) -> None:
+@pytest.mark.parametrize(
+    "provider,model", [("deepseek", "deepseek-flash"), ("anthropic", "claude-haiku-4-5-20251001")]
+)
+def test_sdk_executes_travel_tools_and_resumes_same_session(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, provider: Provider, model: str
+) -> None:
     root = Path(__file__).resolve().parents[1]
     calls = tuple(
         (sdk_tool_name(d.name), {"city": "京都", "query": "室内", "limit": 2}) for d in DEFINITIONS
     )
+    settings = Settings("offline-token", model, Decimal(5), Decimal(5), provider)
+    if provider == "anthropic":
+        # 仅给本地脚本传输授予合成额度；测试结束恢复，绝不修改真实美元授权。
+        monkeypatch.setitem(LIMITS, "USD", (Decimal(5), 100))
     guard = Guard(
-        Settings("offline-token", "deepseek-flash", Decimal(5), Decimal(0)),
-        Budget(tmp_path / "ledger", tmp_path / "old", Decimal(5)),
+        settings,
+        Budget(tmp_path / "ledger", tmp_path / "old", Decimal(5), settings.currency),
         partial(scripted_response, tool_calls=calls),
         allowed_tools=frozenset(name for name, _ in calls),
     )
     with serve(guard) as endpoint:
         directory = tmp_path / "worker"
         cli = find_cli(os.environ)
-        env = worker_environment(
-            os.environ, directory, root, endpoint, guard.token, "deepseek-flash"
-        )
+        env = worker_environment(os.environ, directory, root, endpoint, guard.token, model)
         version = run_process([str(cli), "--version"], directory, env, timeout=10)
         report = invoke_worker(
             cli,
@@ -48,6 +55,7 @@ def test_sdk_executes_travel_tools_and_resumes_same_session(tmp_path: Path) -> N
                 "user_id": str(uuid4()),
                 "session_id": str(uuid4()),
                 "cli_version": version.stdout.split()[0],
+                "provider": provider,
             },
         )
     assert report["status"] == "success", (report, guard.failures)
@@ -62,3 +70,9 @@ def test_sdk_executes_travel_tools_and_resumes_same_session(tmp_path: Path) -> N
         "search_content",
     }
     assert guard.attempts == 3 and not guard.failures
+    identity = report["identity"]
+    assert isinstance(identity, dict) and (identity["provider"], identity["model"]) == (
+        provider,
+        model,
+    )
+    assert all(o["currency"] == settings.currency for o in guard.observations)

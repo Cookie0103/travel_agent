@@ -39,7 +39,8 @@ def scripted_response(
                 "id": "msg_offline",
                 "type": "message",
                 "role": "assistant",
-                "model": "deepseek-flash",
+                # 旧场景用空messages作为脚本阶段控制，实际出站请求仍经Guard严格核对模型。
+                "model": request.get("model", "deepseek-flash"),
                 "content": [],
                 "stop_reason": None,
                 "stop_sequence": None,

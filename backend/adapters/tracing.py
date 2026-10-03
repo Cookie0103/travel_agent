@@ -22,6 +22,7 @@ from opentelemetry.trace import Span, StatusCode, Tracer, set_span_in_context
 from pydantic import TypeAdapter
 
 from backend.domain.execution import RuntimeEvent, RuntimeIdentity
+from backend.providers.probe.settings import Currency
 
 
 def trace_report(
@@ -50,7 +51,8 @@ def trace_report(
         attempts = report.get("http_attempts")
         if attempts is not None and (type(attempts) is not int or attempts < len(requests)):
             raise ValueError("Trace 请求次数不完整")
-        charge = report.get("run_accounted_cny")
+        currency: Currency = TypeAdapter(Currency).validate_python(report.get("currency", "CNY"))
+        charge = _amount(report.get("run_accounted"), report.get("run_accounted_cny"), currency)
         report["trace_id"] = write_trace(
             directory / "trace.jsonl",
             events,
@@ -58,7 +60,8 @@ def trace_report(
             requests=requests,
             exporter=exporter,
             http_attempts=attempts if isinstance(attempts, int) else None,
-            accounted_cny=Decimal(str(charge)) if charge is not None else None,
+            accounted=charge,
+            currency=currency,
         )
     except (OSError, ValueError, ArithmeticError, KeyError):
         # 不变量：可观测性失败不能抹掉业务结果；异常正文可能包含私有路径或原始数据。
@@ -104,12 +107,15 @@ def write_trace(
     exporter: SpanExporter | None = None,
     http_attempts: int | None = None,
     accounted_cny: Decimal | None = None,
+    accounted: Decimal | None = None,
+    currency: Currency = "CNY",
 ) -> str:
     """用 SDK exporter 输出 JSONL，时长取自事件，不使用导出时长冒充执行时长。"""
     if not events or len({e.context.run_id for e in events}) != 1:
         raise ValueError("Trace 需要一轮实际运行的事件")
     if any(e.occurred_at.tzinfo is None for e in events):
         raise ValueError("Trace 时间必须带时区")
+    accounted = _amount(accounted, accounted_cny, currency)
     path.parent.mkdir(parents=True, exist_ok=True)
     provider = TracerProvider(
         resource=Resource({"service.name": "travel-agent"}),
@@ -120,7 +126,7 @@ def write_trace(
         memory = InMemorySpanExporter()
         provider.add_span_processor(SimpleSpanProcessor(memory))
         tracer = provider.get_tracer("travel-agent")
-        trace_id = _spans(tracer, events, identity, requests, http_attempts, accounted_cny)
+        trace_id = _spans(tracer, events, identity, requests, http_attempts, accounted, currency)
         spans = memory.get_finished_spans()
         with path.open("w", encoding="utf-8", newline="\n") as handle:
             local = ConsoleSpanExporter(out=handle, formatter=_format_span)
@@ -152,7 +158,8 @@ def _spans(
     identity: RuntimeIdentity,
     requests: Sequence[Mapping[str, object]],
     http_attempts: int | None,
-    accounted_cny: Decimal | None,
+    accounted: Decimal | None,
+    currency: Currency,
 ) -> str:
     attributes: dict[str, str | bool] = {
         "travel.run_id": str(events[0].context.run_id),
@@ -170,7 +177,7 @@ def _spans(
         start_time=_ns(events[0]),
         attributes=attributes,
     )
-    _usage(runtime, requests, http_attempts, accounted_cny)
+    _usage(runtime, requests, http_attempts, accounted, currency)
     incomplete = _tool_spans(tracer, runtime, events)
     end = events[-1]
     for span in (runtime, root):
@@ -236,17 +243,19 @@ def _usage(
     span: Span,
     requests: Sequence[Mapping[str, object]],
     http_attempts: int | None,
-    accounted_cny: Decimal | None,
+    accounted: Decimal | None,
+    currency: Currency,
 ) -> None:
     span.set_attribute("travel.usage_observed", bool(requests))
+    span.set_attribute("travel.currency", currency)
     span.set_attribute("travel.usage_complete", http_attempts == len(requests))
     if http_attempts is not None:
         span.set_attribute("travel.http_attempts", http_attempts)
         span.set_attribute("travel.unobserved_responses", http_attempts - len(requests))
-    if accounted_cny is not None:
-        if not accounted_cny.is_finite() or accounted_cny < 0:
-            raise ValueError("Trace 记账必须是有限非负值")
-        span.set_attribute("travel.run_accounted_cny", str(accounted_cny))
+    if accounted is not None:
+        span.set_attribute("travel.run_accounted", str(accounted))
+        if currency == "CNY":
+            span.set_attribute("travel.run_accounted_cny", str(accounted))
     if not requests:
         return
     inputs = outputs = 0
@@ -265,15 +274,33 @@ def _usage(
                 outputs += value
             else:
                 inputs += value
-        charge = Decimal(str(request["usage_cost_upper_cny"]))
-        if not charge.is_finite() or charge < 0:
-            raise ValueError("Trace 费用必须是有限非负值")
+        if request.get("currency", "CNY") != currency:
+            raise ValueError("Trace不能混合币种")
+        charge = _amount(
+            request.get("usage_cost_upper"), request.get("usage_cost_upper_cny"), currency
+        )
+        if charge is None:
+            raise ValueError("Trace缺少费用")
         amount += charge
     span.set_attributes(
         {
             "gen_ai.usage.input_tokens": inputs,
             "gen_ai.usage.output_tokens": outputs,
-            "travel.observed_cost_upper_cny": str(amount),
+            "travel.observed_cost_upper": str(amount),
             "travel.accounted_responses": len(requests),
         }
     )
+    if currency == "CNY":
+        span.set_attribute("travel.observed_cost_upper_cny", str(amount))
+
+
+def _amount(current: object, legacy: object, currency: Currency) -> Decimal | None:
+    """历史字段仅属于CNY，两个格式同时存在时不能静默忽略冲突。"""
+    if legacy is not None and currency != "CNY":
+        raise ValueError("历史人民币字段不能用于其他币种")
+    values = [Decimal(str(value)) for value in (current, legacy) if value is not None]
+    if not values:
+        return None
+    if any(not value.is_finite() or value < 0 or value != values[0] for value in values):
+        raise ValueError("Trace金额非法或相互冲突")
+    return values[0]

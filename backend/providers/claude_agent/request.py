@@ -64,8 +64,8 @@ def validate_request(
         raise ProbeError("blocked", "SDK 试图使用未授权工具")
     _check_blocks(raw)
     price = price_for(model)
-    # 不变量：预占整个 1M 上下文的高峰价格，不依赖文本字节与 token 的比例。
-    charge = price.usage_upper(MAX_INPUT_TOKENS, output)
+    # 不变量：按模型整个上下文与最高缓存写价预占，不猜文本字节/token比例。
+    charge = price.usage_upper(int(price.input_limit * price.cache_write_multiplier), output)
     return Request(body, charge, output)
 
 

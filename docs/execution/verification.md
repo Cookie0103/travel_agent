@@ -33,6 +33,8 @@
 
 R18与C档实现按既定plan明确排除；C档仅交付ADR。新增主要功能同时补正常、分支、边界、输入和合理依赖故障，不只增加happy path。
 
+M3.5供应商/原币种：test_sdk_providers覆盖显式选择/无key不回退、非法/未核定模型/日预算、USD零授权在SDK前拦截、CNY旧账本字节与结算不变、跨币种拒绝、缓存上界、截断/缺usage/超上下文、固定HTTPS/auth。test_travel_sdk_offline用真实SDK/CLI与本地脚本验证两供应商相同旅行工具与resume；test_checkpoints验证切供应商失效；test_tracing验证USD原币种与混合拒绝。Anthropic真实API、模型对照和新版Sonnet仍未验证。
+
 ## 交付检查
 
 - Python：dev check（ruff、format、mypy strict、分层、文档地图）、dev test（默认不付费；真实PG必须可用）。

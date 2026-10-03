@@ -18,15 +18,17 @@ from backend.domain.execution import (
     error_code,
 )
 from backend.providers.claude_agent.live import run_live
+from backend.providers.claude_agent.settings import model_name, provider_name
 from backend.providers.probe.settings import ProbeError
 
 
 class GuardedRuntime:
     def __init__(self, root: Path, database_dsn: str) -> None:
         self.root, self.database_dsn = root, database_dsn
+        provider = provider_name(os.environ)
         self.identity = RuntimeIdentity(
-            "deepseek",
-            os.environ.get("DEEPSEEK_MODEL", "unconfigured"),
+            provider,
+            model_name(os.environ, provider),
             importlib.metadata.version("claude-agent-sdk"),
             "reported-by-worker",
         )

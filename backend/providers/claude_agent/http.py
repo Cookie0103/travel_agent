@@ -1,4 +1,4 @@
-"""固定 DeepSeek HTTPS 传输；复用进程总期限覆盖 DNS、连接和慢流。"""
+"""固定供应商Messages传输；复用进程总期限覆盖DNS、连接和慢流。"""
 
 import http.client
 import json
@@ -8,12 +8,16 @@ import sys
 from pathlib import Path
 
 from backend.providers.claude_agent.process import run_process
-from backend.providers.probe.settings import ProbeError
+from backend.providers.probe.settings import ProbeError, Provider
 
 MAX_RESPONSE_BYTES = 1_048_576
 
 
 def forward_deepseek(api_key: str, body: bytes) -> tuple[int, bytes]:
+    return forward_messages("deepseek", api_key, body)
+
+
+def forward_messages(provider: Provider, api_key: str, body: bytes) -> tuple[int, bytes]:
     """整个 DNS/连接/读取在可回收进程中限时，真实 key 仅通过 stdin 传递。"""
     root = Path(__file__).resolve().parents[3]
     env = {
@@ -29,12 +33,12 @@ def forward_deepseek(api_key: str, body: bytes) -> tuple[int, bytes]:
             root,
             env,
             50,
-            json.dumps({"key": api_key, "body": body.decode("utf-8")}),
+            json.dumps({"provider": provider, "key": api_key, "body": body.decode("utf-8")}),
         )
     except subprocess.TimeoutExpired:
-        raise ProbeError("timeout", "DeepSeek 请求总期限已到，保留预占") from None
+        raise ProbeError("timeout", "上游请求总期限已到，保留预占") from None
     if result.returncode != 0:
-        raise ProbeError("unavailable", "DeepSeek 请求工作进程失败")
+        raise ProbeError("unavailable", "上游请求工作进程失败")
     try:
         raw = json.loads(result.stdout)
         if raw.get("status") != "ok" or type(raw.get("http_status")) is not int:
@@ -44,19 +48,28 @@ def forward_deepseek(api_key: str, body: bytes) -> tuple[int, bytes]:
             raise ValueError
         return raw["http_status"], content.encode("utf-8")
     except (ValueError, AttributeError, KeyError, TypeError):
-        raise ProbeError("unavailable", "DeepSeek 请求失败或返回格式无效") from None
+        raise ProbeError("unavailable", "上游请求失败或返回格式无效") from None
 
 
-def _direct_request(api_key: str, body: bytes) -> tuple[int, bytes]:
+def _direct_request(
+    api_key: str, body: bytes, provider: Provider = "deepseek"
+) -> tuple[int, bytes]:
     """不使用代理环境、不跟随重定向；一次 reserve 对应一次 HTTP 尝试。"""
-    connection = http.client.HTTPSConnection("api.deepseek.com", timeout=45)
+    if provider not in {"deepseek", "anthropic"}:
+        raise ProbeError("blocked", "未知供应商；禁止自定义转发地址")
+    host, path, authorization = (
+        ("api.deepseek.com", "/anthropic/v1/messages", "Authorization")
+        if provider == "deepseek"
+        else ("api.anthropic.com", "/v1/messages", "x-api-key")
+    )
+    connection = http.client.HTTPSConnection(host, timeout=45)
     try:
         connection.request(
             "POST",
-            "/anthropic/v1/messages",
+            path,
             body,
             {
-                "Authorization": f"Bearer {api_key}",
+                authorization: f"Bearer {api_key}" if provider == "deepseek" else api_key,
                 "Content-Type": "application/json",
                 "anthropic-version": "2023-06-01",
             },
@@ -74,7 +87,9 @@ def main() -> None:
     """私有传输进程：错误只回固定分类，不打印密钥或 HTTP 异常正文。"""
     try:
         request = json.loads(sys.stdin.read())
-        status, content = _direct_request(request["key"], request["body"].encode("utf-8"))
+        status, content = _direct_request(
+            request["key"], request["body"].encode("utf-8"), request.get("provider", "deepseek")
+        )
         response: dict[str, object] = {
             "status": "ok",
             "http_status": status,

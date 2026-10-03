@@ -15,7 +15,7 @@ from urllib.parse import urlsplit
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.request import MAX_BYTES, TOOL_NAME, validate_request
 from backend.providers.claude_agent.response import summarize
-from backend.providers.probe.settings import ProbeError, Settings
+from backend.providers.probe.settings import ProbeError, Settings, price_for
 
 Forward = Callable[[bytes], tuple[int, bytes]]
 
@@ -41,6 +41,12 @@ class Guard:
         if urlsplit(path).path != "/v1/messages":
             return self.reject("unsupported_endpoint")
         try:
+            if not (
+                self.settings.currency
+                == self.budget.currency
+                == price_for(self.settings.model).currency
+            ):
+                raise ProbeError("blocked", "模型计费币种与账本不一致")
             request = validate_request(body, self.settings.model, self.allowed_tools)
             if self.failures or self.attempts >= self.max_attempts:
                 raise ProbeError("blocked", "当前实验已停止或达到请求上限")
@@ -48,9 +54,9 @@ class Guard:
             self.attempts += 1
             status, content = self.forward(request.body)
             if status != 200:
-                raise ProbeError("provider_error", f"DeepSeek HTTP {status}")
-            observation = summarize(content, request, self.settings.model)
-            self.budget.settle(request_id, Decimal(str(observation["usage_cost_upper_cny"])))
+                raise ProbeError("provider_error", f"上游 HTTP {status}")
+            observation = summarize(content, request, self.settings.model, self.settings.currency)
+            self.budget.settle(request_id, Decimal(str(observation["usage_cost_upper"])))
             self.observations.append(observation)
             return 200, content
         except ProbeError as error:

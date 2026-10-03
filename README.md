@@ -87,11 +87,11 @@ dev test 每次使用新的 .cache/pytest-runs/run-* 保存临时文件和缓存
 | 配置 | 用途 | 单位 |
 | --- | --- | --- |
 | DAILY_BUDGET_CNY | DeepSeek 每日预算 | 人民币元 |
-| DAILY_BUDGET_USD | Anthropic / OpenAI 合计每日预算 | 美元 |
+| DAILY_BUDGET_USD | Anthropic每日预算；当前无美元调用授权 | 美元 |
 
 两条线路独立记账，不自动换汇或借用余额；兼容 API 的 SDK 名称不改变计费来源。
 0 表示禁用该线路；空白、非法或缺少预算时应拒绝真实调用。预算不能替代用户授权和本批调用次数上限。
-M0.2 探针已实现环境变量读取、按所选模型的人民币预算检查与本批请求计数；uv --env-file .env 负责加载配置。美元线路只有配置与账本隔离测试，尚无 Anthropic/OpenAI 真实调用实现。
+`uv --env-file .env`加载配置；`LLM_PROVIDER`默认deepseek，也可显式anthropic。DeepSeek使用DEEPSEEK_MODEL；Claude使用ANTHROPIC_MODEL，当前仅核定固定claude-haiku-4-5-20251001。共用Claude Agent SDK、旅行工具与费用守卫；原币种报告和账本隔离，USD累计授权0金额/0次数会在SDK启动前拦截。真实SDK/CLI本地脚本已验证，Anthropic真实服务与最新Sonnet协议未验，不因填key/每日预算自动调用。
 最小实测已成功，账本会拒绝重复运行；不要删除 .cache/m02-protocol 来重新获得次数。完整协议关卡尚未完成，详见 [实测矩阵](docs/protocol-deepseek.md)。
 旧探针两请求授权已用完；本轮长程开发的 DeepSeek 整体额度见执行计划，同时遵守 .env 每日预算。SDK 美元估算不能代替人民币预算。新接入验收与费用边界见 [ADR-003](docs/adr/003-claude-agent-sdk-runtime.md)。
 历史批次限制见 [M0.2 准备记录](docs/operations/2026-10-03-m02-preparation.md)。

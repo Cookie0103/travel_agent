@@ -9,7 +9,7 @@
 | 工具权限 | 单份允许工具和schema；Skill白名单不能授予权限；额外身份/价格参数拒绝。test_mcp_bridge与integration工具测试 |
 | 外部内容 | 攻略、历史对话、工具结果是数据；工具白名单/业务确认不能被文本扩大 |
 | SDK隔离 | 供应商认证仅用回环临时令牌，真实供应商密钥留父进程；业务数据库连接经自有worker stdin传入；禁内建读写/命令工具，隔离设置和私有会话目录。test_sdk_worker/test_sdk_guard |
-| 费用 | DeepSeek人民币账本持久预占/结算、HTTP尝试上限、每日及累计授权；不按SDK美元字段扣人民币。test_sdk_budget |
+| 费用 | 显式供应商与原币种账本，持久预占/结算、HTTP/每日/累计限制；USD授权0/0，旧CNY不重写，不按SDK美元字段扣人民币。test_sdk_budget/test_sdk_providers |
 | 确认 | 正式保存/下单只由独立确认API触发；模型口头确认无效。相关M1.7/M2测试实施后补验 |
 | 输出 | 公共日志/Trace不含密钥、完整prompt、工具原文或SDK私有会话；错误不回显连接串/下游异常。test_tracing及失败测试 |
 

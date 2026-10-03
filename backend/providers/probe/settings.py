@@ -6,6 +6,7 @@ from decimal import Decimal, InvalidOperation
 from typing import Literal
 
 Currency = Literal["CNY", "USD"]
+Provider = Literal["deepseek", "anthropic"]
 BASE_URL = "https://api.deepseek.com/anthropic"
 MAX_TOKENS = 1024
 MAX_REQUEST_BYTES = 8192
@@ -27,15 +28,27 @@ class Settings:
     model: str
     cny_limit: Decimal
     usd_limit: Decimal
+    provider: Provider = "deepseek"
+
+    @property
+    def currency(self) -> Currency:
+        return "CNY" if self.provider == "deepseek" else "USD"
+
+    @property
+    def daily_limit(self) -> Decimal:
+        return self.cny_limit if self.currency == "CNY" else self.usd_limit
 
 
 @dataclass(frozen=True)
 class Price:
-    """2026-10-03 官方人民币高峰单价，单位为元/百万 token。"""
+    """2026-10-03官方价表；原币种/百万token，缓存未知时使用保守上界。"""
 
     input_per_million: Decimal
     output_per_million: Decimal
     attempt_charge: Decimal
+    input_limit: int = 1_048_576
+    cache_write_multiplier: Decimal = Decimal(1)
+    currency: Currency = "CNY"
 
     def usage_upper(self, inputs: int, outputs: int) -> Decimal:
         if inputs < 0 or outputs < 0:
@@ -48,9 +61,12 @@ def price_for(model: str) -> Price:
     prices = {
         "deepseek-flash": Price(Decimal("2"), Decimal("8"), Decimal("0.05")),
         "deepseek-v4-pro": Price(Decimal("9"), Decimal("27"), Decimal("0.20")),
+        "claude-haiku-4-5-20251001": Price(
+            Decimal("1"), Decimal("5"), Decimal("0.01"), 200_000, Decimal(2), "USD"
+        ),
     }
     if model not in prices:
-        raise ProbeError("validation", "DEEPSEEK_MODEL 缺失或未配置对应人民币计价规则")
+        raise ProbeError("validation", "DEEPSEEK_MODEL/ANTHROPIC_MODEL缺失或未配置对应计价规则")
     return prices[model]
 
 
@@ -71,6 +87,8 @@ def load_settings(environment: Mapping[str, str]) -> Settings:
     if not key or key in {"你的真实密钥", "你的密钥"}:
         raise ProbeError("validation", "未配置 DeepSeek API Key")
     model = environment.get("DEEPSEEK_MODEL", "").strip()
+    if not model.startswith("deepseek-"):
+        raise ProbeError("validation", "DEEPSEEK_MODEL必须使用已配置的DeepSeek模型")
     price_for(model)
     cny = read_budget(environment.get("DAILY_BUDGET_CNY", ""))
     usd = read_budget(environment.get("DAILY_BUDGET_USD", "") or "0")
