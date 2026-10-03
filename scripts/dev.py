@@ -153,6 +153,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "db-up",
         "db-migrate",
         "api",
+        "supplier",
         "web-setup",
         "web-generate",
         "web-check",
@@ -199,6 +200,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return eval_dev(live=args.live)
         case "api":
             return run_command([python, "-m", "backend.server"], timeout=None)
+        case "supplier":
+            return run_command([python, "-m", "mock_supplier.server"], timeout=None)
         case "web" | "web-setup" | "web-check" | "web-generate":
             return web(args.command)
     return 2

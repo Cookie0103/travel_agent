@@ -120,3 +120,22 @@ class PlanDraftRow(Base):
     session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
     confirmed_version: Mapped[int | None]
     payload: Mapped[dict[str, object]] = mapped_column(JSONB)
+
+
+class SupplierHoldRow(Base):
+    """模拟供应商自己的事实，不依赖应用用户/报价证据表。"""
+
+    __tablename__ = "supplier_holds"
+    client_ref: Mapped[UUID] = mapped_column(primary_key=True)
+    id: Mapped[UUID] = mapped_column(unique=True)
+    payload: Mapped[dict[str, object]] = mapped_column(JSONB)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class SupplierOrderRow(Base):
+    __tablename__ = "supplier_orders"
+    client_ref: Mapped[UUID] = mapped_column(
+        ForeignKey("supplier_holds.client_ref"), primary_key=True
+    )
+    id: Mapped[UUID] = mapped_column(unique=True)
+    payload: Mapped[dict[str, object]] = mapped_column(JSONB)
