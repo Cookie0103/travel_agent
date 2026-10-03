@@ -41,11 +41,14 @@ def create_app(
     *,
     runs_service: RunService | None = None,
     live_enabled: bool = False,
+    trace_cloud: bool = False,
     booking_service: BookingService | None = None,
 ) -> FastAPI:
     sessions = service or SessionService.from_environment()
     travel = TravelService(sessions.database)
-    runs = runs_service or RunService(sessions.database, live_enabled=live_enabled)
+    runs = runs_service or RunService(
+        sessions.database, live_enabled=live_enabled, trace_cloud=trace_cloud
+    )
     plans = PlanService(travel)
     bookings = booking_service or BookingService(travel)
     preferences = PreferenceService(sessions.database)

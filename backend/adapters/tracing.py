@@ -1,6 +1,7 @@
 """将真实应用事件映射为 OTel spans；默认本地文件，显式配置才导出到 Langfuse。"""
 
 import base64
+import os
 from collections.abc import Mapping, Sequence
 from decimal import Decimal
 from pathlib import Path
@@ -105,6 +106,7 @@ def write_trace(
     *,
     requests: Sequence[Mapping[str, object]] = (),
     exporter: SpanExporter | None = None,
+    trace_cloud: bool = False,
     http_attempts: int | None = None,
     accounted_cny: Decimal | None = None,
     accounted: Decimal | None = None,
@@ -113,6 +115,8 @@ def write_trace(
     """用 SDK exporter 输出 JSONL，时长取自事件，不使用导出时长冒充执行时长。"""
     if not events or len({e.context.run_id for e in events}) != 1:
         raise ValueError("Trace 需要一轮实际运行的事件")
+    if trace_cloud and exporter is not None:
+        raise ValueError("Trace导出只能选择一个出口")
     if any(e.occurred_at.tzinfo is None for e in events):
         raise ValueError("Trace 时间必须带时区")
     accounted = _amount(accounted, accounted_cny, currency)
@@ -132,6 +136,9 @@ def write_trace(
             local = ConsoleSpanExporter(out=handle, formatter=_format_span)
             if local.export(spans) != SpanExportResult.SUCCESS:
                 raise OSError("本地 Trace 导出失败")
+        # 不变量：先落本地记录；缺云配置或导出失败不丢失本轮Trace。
+        if trace_cloud:
+            exporter = cloud_exporter(os.environ)
         if exporter is not None and exporter.export(spans) != SpanExportResult.SUCCESS:
             raise OSError("云端 Trace 导出失败；本地记录已保留")
         return trace_id

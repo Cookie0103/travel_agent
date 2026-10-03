@@ -1,0 +1,42 @@
+{
+  "created_at": "2026-10-03T22:26:43.935958+00:00",
+  "auth_http_status": 200,
+  "trace_status": "local_saved_cloud_sent",
+  "business_status": "success",
+  "model_http_requests": 0,
+  "local_trace_sha256": "bb26d75f9fa2c2d4cffd426fc7492547fd3d8779794f3b7d239768b4e42297c5",
+  "read_http_status": 200,
+  "observed_n": 4,
+  "expected_n": 4,
+  "exact_span_match": true,
+  "observation_names": [
+    "agent.fixture",
+    "tool.search_content",
+    "tool.search_places",
+    "travel.run"
+  ],
+  "version": "m05-langfuse-cloud-v1",
+  "endpoint_host": "jp.cloud.langfuse.com",
+  "trace_id_sha256": "91936504ea6f605ff2b1c1c99c488c9cf4a25822fcfad9edb567d2bbf67dc3dc",
+  "ui_verified": false,
+  "ui_reason": "In-app browser session not signed in; access page requests Sign In",
+  "runtime": "fixture/offline; no real model usage",
+  "source_sha256": {
+    "backend/adapters/tracing.py": "5bbfd648f0819140c3a54008cad3f92935b5349ddd5b66dd76e0ad10262a289d",
+    "backend/services/runs.py": "903477480f4ab7da3de8b0b303d820006cb237813aac61fb61c46620cfe52d30",
+    "backend/server.py": "76f6c518367a9c94a38368080a98d2bc627e5346823539f6ee66bfd271529ee2",
+    "tests/integration/test_run_trace.py": "e48512cd03e670ede8564dedc26cb6f2cc4e8a5e9a59ae71cae72493b2cb8165"
+  },
+  "verification": {
+    "related_tests": "23 passed in 2.67s",
+    "static": "222 source files strict win32/linux/darwin; ruff/format; 3 import contracts; 10 docs maps passed",
+    "independent_review": "quality_review no P1/P2; source and test review, no real cloud verification by reviewer",
+    "additional_recovery_tests": "15 passed in 15.45s; original intermittent recovery failure retained"
+  },
+  "limitations": [
+    "Cloud API auth/upload/readback verified; browser UI not authenticated",
+    "Offline trace has no real model tokens/cost or model subcall observations",
+    "No real network timeout injected",
+    "Human paired scores remain 0; Claude real calls deferred by user"
+  ]
+}

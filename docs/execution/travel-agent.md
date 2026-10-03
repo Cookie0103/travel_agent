@@ -24,6 +24,7 @@
 
 ## 执行授权
 
+- 用户2026-10-04要求继续自主开发，**Claude真实调用暂缓，不作为本轮完成的前置条件**；保留已实现适配与历史缺口，不新增美元调用。Langfuse/OTel接入继续自主实现，Cloud UI仍须用户项目凭据；真人评分不由agent冒填，也不阻塞其他开发。
 - 用户授权连续推进，不因阶段完成、尚未合并 main 或学习材料未读而停下。允许独立审查 agent。
 - DeepSeek最新授权：**每日累计最多15.00 CNY，无累计金额/请求次数上限**（用户本次明确追加，替代旧5元/100次）。同时服从.env更低日预算；代码硬限15，即使.env更高也不能扩大许可。仍优先离线，不默认用尽额度。
 - 2026-10-03用户后续明确“次数没上限，一天总共不超过15元人民币”；不是通过有key或.env授予权限。USD授权仍0/0，其他计费供应商不得调用。
@@ -42,7 +43,10 @@
 - CI：558e7d2两事件全部success。bf6dc52 PR37131409211全success，push37131407069两个原无工具评审断言暴露SDK回调竞态（HTTP2而应1），其余683passed/1已有平台skip/2live deselected、web/docker-demo success。7d1d0f6已修响应allowlist，63专项与原完整钩子Passed；新CI37132750339/37132753268全部success，Python693passed/1已有平台skip/2live deselected；24b5dcb两CI37133212223/37133214301与a1cbd73两CI37133743697/37133746081均全部success。
 - M4.2分项已保存581870a：116相关测试（实际PG/HTTP）Passed、222源码三平台strict/原静态关卡及正常完整离线提交钩子Passed，独立无P1/P2；普通push/full远端SHA已核验。原full/B0各120缺观测仍unknown，0新付费，两CI37134456437/37134458120全部success（实际Linux716passed/1已有平台skip/2live deselected，185.43秒）。
 - 当前M4.4材料：集中演示/阅读导航已更新并经独立审查（正常保存结果以Git HEAD/远端和CI为准），20条真人评审样本离线准备（17pass/3fail），0模型评分/0真人配对、两个评审prepare与两个离线统计均正确pending/null；原回答仅.cache、公共hash/选择说明无原文。固定前4原记录独立字段审阅复用eval.content：23字段匹配、两例缺Evidence，完整性均false/整体准确率null；0新调用，原记录hash不变。独立续查未见新的明确A/B产品代码缺口，未满足项继续单列。
-- 未满足：其他模型/配置完整统计对照、参数/事实语义全量及真人校准、Claude真实API与Cloud页面、M3.6邻近正常/规划质量及历史阈值预声明偏差。已有三真实坏例不当全部闭环。C依plan04在A完整前不开始；总Goal不标完成。
+- M0.5/M4.1 Cloud实际接入：用户10-04配置并授权验证，Japan认证/OTLP上传/v2读回均成功，4个span与本地完全匹配，0模型HTTP。[证据](../evidence/m05-langfuse-cloud-2026-10-04.json)。API显式开关已实施/23专项通过；浏览器会话未登录仍只看到Sign In，UI不冒充通过，不阻塞其他任务。当前增量正常hooks/提交/push进行中。
+- 下一批评审预先约定：复用已离线准备的first20-v1原20回答，固定选择顺序/hash与既有rubric不改，先content后persona、各一次，不因低分/非法JSON重新付费评分。来源均仓库自写冻结旅行案例/原DeepSeek回答，非真人旅行资料；真实评审仍DeepSeek/temperature0/零工具/同SDK，按每日min(env,15)硬限，余额不足停止保留not_run。只准备模型侧评分，真人0、整体事实准确/全40代表性/真人校准保持未满足，不据这批结果调冻结test或倒填阈值。当前UTC日余额2.810432；不启动预计约9CNY的另一完整工具对照批次。
+- 当前观测提交第一次正常钩子未通过：新增shutdown spy类型缺失已显式Callable修正；完整720passed/1原恢复测试数据库OperationalError失败，15恢复/观测专项随后通过15.45s，根因仍待证据。二次原完整钩子继续，绝不绕过原断言。20内容评分19合法/1缺reason、20语气全部合法，真人仍0；实际模型费和证据将在本轮保存后集中更新，不补分或重跑失败。
+- 未满足：其他配置完整统计对照、参数/事实语义全量及真人校准、Cloud页面、M3.6邻近正常/规划质量及历史阈值预声明偏差。Claude真实API已按用户10-04要求暂缓；不当通过，也不阻塞本轮。已有三真实坏例不当全部闭环。C依plan04在A完整前不开始；总Goal不标完成。
 
 ## 进度
 
@@ -54,7 +58,7 @@
 | 新 M0.2 | verified | SDK 接入与费用/工具/进程边界 | d2a1b13；SDK 0.2.163、MCP 2.3.0、CLI 2.1.114；123 离线测试，2 次 live 请求；见 [证据](../protocol-agent-sdk.md) |
 | M0.3 | verified | 应用边界、会话引用、MCP 桥接 | e2d848d；149 离线测试/独立审查通过；两项审查问题有回归保护 |
 | M0.4 | verified | 旅行搜索与 CLI | 727778b；20 景点/12 攻略 fixture；166 离线测试；SDK 本地续接及 3 次请求真实查询通过；[证据](../evidence/travel-query-2026-10-03.json) |
-| M0.5 | partial | 本地 Trace 和可选云导出 | 837b8f0；176离线测试，真实本机OTLP传输；[Langfuse UI 待配置](../blocked/langfuse.md)，不阻塞其他开发 |
+| M0.5 | partial（真实Cloud上传/读回已验） | 本地 Trace 和显式云导出 | 真实认证/4 spans上传读回一致、23专项；[页面待浏览器登录](../blocked/langfuse.md)，不阻塞其他开发 |
 | M0.6 | partial | 21条初始用例、规则评分、版本与恢复记录 | 离线全表已运行；首次live 1通过/1规则失败/1限次错误/18未跑，见[真实证据](../evidence/m06-baseline-2026-10-03.json) |
 | M0.7 | partial | 中性角色草案和语气评测设施 | [范围坏例回归](../evidence/m07-scope-regression-2026-10-03.json)；[LLM/人工校准待办](../blocked/persona-calibration.md) |
 | M1.1 | verified | API、身份/会话、真实数据库与迁移、CI配置 | d2cfb12；205测试/独立复核；[HTTP实测](../evidence/m11-api-smoke-2026-10-03.json)；CI未远端运行 |
@@ -274,3 +278,5 @@ aab5972正常静态/完整默认Python提交钩子通过，代码已本地保存
 - 24b5dcb R15正常完整check/test钩子Passed、普通push远端SHA一致；7d1d0f6两新CI37132750339/37132753268全部success，Linux Python693passed/1已有平台skip/2live deselected，158.64秒。
 - 验收审查发现M1.5/M2.2卡片漏报价儿童信息，现复用partyLabel读取card.stay/booking.offer.request；未知不当无儿童，不改价格或报价。14前端专项/type/lint/build Passed，独立无P1/P2。实际浏览器原比较及held报价2成人/儿童0,8/2房；当前改成儿童5/1房，旧held仍显示原人数、旧条件警告、确认disabled。旧正式V1酒店仍无儿童/1房。只有模拟hold，不确认下单；原state smoke --verify Passed。证据m15-party-display-2026-10-04，最终正常完整钩子/push继续。
 - 下一离线缺口：plan05约束/预订/恢复分项统计需复用原校验与业务观测添加报告，partial/unknown/conflict分开，不把valid_draft布尔当全部硬条件满足；无真实恢复观测保持未测，旧记录缺项unknown，不重付费或改变冻结期待。
+
+- 2026-10-04恢复：用户要求继续、Claude真实调用暂缓；Langfuse三个字段仅核对空值仍缺，OpenTelemetry无需单独key。宿主API新增显式trace_cloud复用原write_trace，先本地再云端，配置/HTTP失败保留业务终态；默认有key也不上传。首17unit Passed/6PG setup errors因Docker停机，已启动现有Docker Desktop和原postgres（健康，不删卷）；修复环境后23专项2.79秒，通过追加shutdown断言后23专项2.67秒。222源码三平台strict/ruff/格式/3契约/10地图Passed，独立无P1/P2；正常提交钩子/push将继续，不因阶段通过停下。实际网络超时/Cloud页面未验，0新模型HTTP、原账本不变；真人20准备保留0配对，不代填真人。

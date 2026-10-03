@@ -528,3 +528,15 @@ R15追加：test_sdk_article_injection真实SDK/CLI+PG、本地脚本normal/inje
 - 4条固定原第一轮样本独立字段审阅：先原Case/快照、后答案/captured Evidence，二条城15+攻略来源8字段匹配；另两例缺事实附件、不造答案。四例claims_complete/requirements_complete均false、整体准确率/覆盖率null，reviewer为独立Codex无human_quality。主agent逐份通过现有eval.content CLI绑定原suite/case/context/attempt/hash，完整结果留.cache，公共JSON删重复suite/逐字段明细只留hash/计数。README旧5元100次/旧探针未验收叙述修正为最新DeepSeek日15、无累计限、USD0及当前SDK证据；AGENTS入口同步M4验收，不变路线或权限。
 
 - M4.4最终窄审无P1/P2，四份私有review/result与公开hash一致；23审阅项含1explicit_unknown，22计分陈述，完整准确率/覆盖率仍null。准备执行普通材料commit/push，原源代码未变；保存后恢复应以Git最新HEAD/远端核验，581870a为最近业务代码提交。
+
+## 2026-10-04 JST / UTC10-03 API观测续接
+
+- git status clean、HEAD750dc8d确认；读取计划/工作流/标准与M4规格。部分猜测路径读取失败（不存在的observability/config/compose等），随后rg --files定位实际adapters/tracing、server和docker-compose；没有覆盖既有文件。官方Langfuse/OTel页面核对区域地址、Basic auth和v4 header。只输出Langfuse三字段Configured=false，不输出值。
+- 用户要求Claude真实调用暂缓已纳入计划；解释真人配对是实际评阅人与自动评分比较，工具不代填真人。API/server/RunService显式开关连接共享write_trace；适配器先落本地，再建每轮云exporter，finally关闭。原CLI行为、模型预算与默认离线保持。
+- 首相关命令17unit passed/6PG setup errors（连接超时）。docker ps确认原Docker engine pipe不存在；核对已安装Docker Desktop路径后Start-Process Hidden启动，docker info28.5.1、docker compose up原postgres健康；无删卷/重建数据库。重验23 passed2.79s，增加200/400实际shutdown断言后23 passed2.67s。
+- ruff/格式与win32 strict101文件初验通过；完整dev check222源码win32/linux/darwin、3分层契约、10文档地图通过。只读quality_review无P1/P2，提示网络超时未实测据实保留；没有伪造Cloud页面证据。
+- README/.env.example/blocked配置说明及执行/验证/M4汇总更新。费用账本未改、0新模型调用。下一步原正常commit hooks→push→核对远端，继续可独立评测工作。
+- 用户随后已配置Langfuse并要求验证；仅核对三个字段configured/有效Japan端点，未输出密钥。私有.cache/langfuse-check-20261004.py认证/api/public/projects=200，实际免费FixtureRuntime京都搜索4 spans上传；v2 observations单Trace/有界5分钟/core,basic读回200，4 ID与本地完全一致，receipt保存实际链接/本地hash。新版官方Public API文档核对，旧API reference两个页面web访问失败未用于结论。
+- 新建隐藏in-app tab访问本次Trace，实际页面要求Sign In/无访问权限，浏览器未登录；没有将API认证替代UI登录或伪造截图。真实API接入已可用，UI保持未验。新增公共证据只host/状态/计数/hash，不含key/项目ID/原文；README/blocked/执行/M4同步当前结论。无模型调用/费用账本未变。
+- 第一次正常commit被原钩子拒绝：strict新增shutdown spy调用未类型化；full离线720passed/1failed/2live deselected（190.99s），原进程stage后恢复并发测试OperationalError/sqlstate None，原断言未改。spy显式Callable声明修复，无type ignore；win32该文件strict Passed。Docker近期日志有正常重启恢复与负例密码认证失败，没有对应可证实服务崩溃，根因不称已定位。15恢复/观测专项15.45s全部通过；准备再次原完整钩子。
+- 预先固定20样本content一次20HTTP/0.035082CNY，19scored/1judge_error，test-hotel-policy缺reason；严格解析保留失败，不自动重试/补分。随后persona同20一次20合法评分；两类真人配对0/calibration pending。原输入/全部结果留私有，公共结果准备汇总；未调冻结期待或rubric。

@@ -92,3 +92,5 @@ R15追加：test_sdk_article_injection真实SDK/CLI+PG、本地脚本normal/inje
 
 
 M4.2业务分项追加：复用一次PG事后核对与get_draft当前身份/条件/正式版本重校验，保存完整check_counts，complete/partial/conflict/无候选/不可用分开；partial不算全部硬约束验证通过，覆盖不足时总比率null。模拟暂留/unknown/预期故障且无额外订单单列，冻结集没执行恢复目标仍unmeasured。新manifest版本与逐行字段/适用范围/摘要严格核对；旧paid记录不补造，原full/B0各120缺观测、规则94/17和费用未改变。116相关测试含实际PG/HTTP 28.55秒Passed；222源码三平台strict/ruff/格式/3分层契约/10地图Passed，独立无P1/P2。正常完整钩子/push继续；证据m42-business-metrics-2026-10-04，0新付费。
+
+M0.5/M4.1 API观测追加：test_run_trace真实PG+本机OTLP HTTP覆盖显式开关、默认有key不外发、200/400/缺secret。上传与本地trace_id一致、正文/secret不导出；三种失败/默认路径均保留completed/条件revision2、本地JSONL与无持久化失败。实际OTLP exporter.shutdown断言在200/400各一次；网络超时未实际注入，不当通过。23相关测试2.67秒Passed；222源码三平台strict/ruff/格式/3分层契约/10地图Passed。Cloud页面仍缺项目凭据，Claude实测依用户最新要求暂缓。

@@ -71,9 +71,11 @@ class RunService:
         live_enabled: bool = False,
         runtime_factory: Callable[[ToolExecutor], Runtime] | None = None,
         trace_directory: Path | None = None,
+        trace_cloud: bool = False,
     ) -> None:
         self.database, self.live_enabled = database, live_enabled
         self.runtime_factory = runtime_factory
+        self.trace_cloud = trace_cloud
         self.trace_directory = (
             trace_directory or Path(__file__).resolve().parents[2] / ".cache" / "api-traces"
         )
@@ -259,7 +261,9 @@ class RunService:
                 / str(context.session_id)
                 / f"{context.run_id}.jsonl"
             )
-            await asyncio.to_thread(write_trace, path, recorded, identity)
+            await asyncio.to_thread(
+                write_trace, path, recorded, identity, trace_cloud=self.trace_cloud
+            )
         except Exception:
             LOGGER.warning("TaskRun Trace unavailable: %s", context.run_id)
 
