@@ -1,0 +1,50 @@
+{
+  "version": "calibration-preparation-v1",
+  "selection": "first20 nonempty first-repeat records in original frozen manifest order; retain passed and failed; no model score selection",
+  "source_sha256": {
+    "manifest.json": "0ba14cf33be6dcd57fc27611cb51dd285a3ab11846bc5fe9fedd5e418aee11e5",
+    "results.jsonl": "5fff2556ecc7be2aa1e2f6c808df4dfaefd1b17d26015ec82c20a068c04a6779",
+    "attempts.jsonl": "d440f421405fdada36d6c13e579172a58c0ba544a0c5e05bc22c3c8ec430b6b9",
+    "summary.json": "9d47273ce13078df242ba6822f32a8cc466e026413854abc2d02610c94981ea2"
+  },
+  "sample_sha256": "77b119c64c8a00663f54a8aa2cf70d730d95108b3ada7288b342603004851dde",
+  "case_ids": [
+    "test-search-gion",
+    "test-content-higashiyama",
+    "test-nijo-detail",
+    "test-article-source",
+    "test-rain-search",
+    "test-unknown-hours",
+    "test-osaka-scope",
+    "test-location-clarify",
+    "test-child-age-clarify",
+    "test-currency-clarify",
+    "test-reversed-date-clarify",
+    "test-negative-budget-clarify",
+    "test-hotel-normal",
+    "test-hotel-unknown-tax",
+    "test-hotel-child-control",
+    "test-hotel-policy",
+    "test-hotel-refresh",
+    "test-hotel-expired",
+    "test-hotel-date-changed",
+    "test-day-trip-control"
+  ],
+  "selected_n": 20,
+  "first_repeat_n": 40,
+  "empty_answers_not_rateable": [],
+  "rule_status_counts": {
+    "passed": 17,
+    "failed": 3,
+    "error": 0,
+    "not_run": 0
+  },
+  "paid_http_requests": 0,
+  "human_ratings": 0,
+  "model_ratings": 0,
+  "limitations": [
+    "Nonempty-answer sample is for rubric preparation only; empty answers remain original rule failures, not removed from evaluation.",
+    "Selected first20 is not all40 coverage or a stratified representative quality estimate.",
+    "Persona neutral draft; final character and actual human/model paired scores pending. No candidate sent externally."
+  ]
+}

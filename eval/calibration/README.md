@@ -15,4 +15,7 @@ DeepSeek固定模型/温度0、零工具/无业务库；累计/每日额度同�
 内容加`--kind content`，分别复用三维校准，不再调用模型/更改输入文件。
 每维至少20对、同一模型/温度0、无解析错误才达到样本条件；缺真人分pending、比率null。
 语气/内容各一次真实小样本已验入口；完整模型质量、真人校准与最终角色仍未完成。
+本机20条未评分准备：.cache/calibration-preparation/20261004-first20-v1/samples.jsonl。
+选原full第一轮前20非空回答（17规则pass/3fail）；选择/hash见docs/evidence/calibration-preparation-2026-10-04.json。
+默认准备/离线校准已验0请求、真人配对0；不是全40质量估计，没有外发候选或代填真人分。
 模型内容分不证明事实准确；事实附件入口见[评测指南](../../docs/evaluation.md)。

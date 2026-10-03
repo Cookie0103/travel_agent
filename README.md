@@ -21,7 +21,7 @@ uv run python -m backend.cli "京都有哪些室内景点？"
 uv run --env-file .env python -m backend.cli --live "京都有哪些室内景点？"
 ```
 
-真实模式同时遵守每日预算、累计 5 CNY / 100 次授权；旧 CLI 暂拒绝 @/行首斜杠输入，避免文件展开。
+真实模式遵守最新授权：DeepSeek 每日最多15 CNY，同时取`.env`更低日预算，无累计金额/次数上限；每run HTTP/工具/修复次数仍有限。其他计费线路未授权。旧 CLI 暂拒绝 @/行首斜杠输入，避免文件展开。
 
 每次查询默认保存本地 OTel Trace：离线在 `.cache/traces/`，真实模式在私有 `.cache/sessions/`。
 配置 Langfuse 的 BASE_URL、PUBLIC_KEY、SECRET_KEY 后，可显式追加 `--trace-cloud` 导出摘要；不上传完整对话或工具结果。当前未配置云端凭据，Langfuse 页面验收待完成。
@@ -102,9 +102,9 @@ uv run python scripts/dev.py stack-down
 | DAILY_BUDGET_USD | Anthropic每日预算；当前无美元调用授权 | 美元 |
 
 两条线路独立记账，不自动换汇或借用余额；兼容 API 的 SDK 名称不改变计费来源。
-0 表示禁用该线路；空白、非法或缺少预算时应拒绝真实调用。预算不能替代用户授权和本批调用次数上限。
+0 表示禁用该线路；空白、非法或缺少预算时拒绝真实调用。预算不能替代用户授权，最新DeepSeek每日15 CNY硬限及未授权USD0见执行计划；未结预占与旧费继续计入，日界沿用UTC。
 `uv --env-file .env`加载配置；`LLM_PROVIDER`默认deepseek，也可显式anthropic。DeepSeek使用DEEPSEEK_MODEL；Claude使用ANTHROPIC_MODEL，当前仅核定固定claude-haiku-4-5-20251001。共用Claude Agent SDK、旅行工具与费用守卫；原币种报告和账本隔离，USD累计授权0金额/0次数会在SDK启动前拦截。真实SDK/CLI本地脚本已验证，Anthropic真实服务与最新Sonnet协议未验，不因填key/每日预算自动调用。
-最小实测已成功，账本会拒绝重复运行；不要删除 .cache/m02-protocol 来重新获得次数。完整协议关卡尚未完成，详见 [实测矩阵](docs/protocol-deepseek.md)。
+旧Messages探针的最小实测与有限授权记录保留；不要删除.cache账本重复获得额度。当前SDK接入与业务验证见[SDK实测](docs/protocol-agent-sdk.md)，旧探针[实测矩阵](docs/protocol-deepseek.md)不能代替当前runtime验收。
 旧探针两请求授权已用完；本轮长程开发的 DeepSeek 整体额度见执行计划，同时遵守 .env 每日预算。SDK 美元估算不能代替人民币预算。新接入验收与费用边界见 [ADR-003](docs/adr/003-claude-agent-sdk-runtime.md)。
 历史批次限制见 [M0.2 准备记录](docs/operations/2026-10-03-m02-preparation.md)。
 
@@ -131,7 +131,7 @@ check 不连接数据库；test 会检查真实事务和用户隔离。CI 已配
 发消息：`POST /sessions/{id}/messages`，传 `client_message_id`（UUID）、`text`；默认 `mode=offline`。
 查询 `/runs/{id}`，进度读 `/runs/{id}/events`（SSE，可带 `Last-Event-ID`），取消用 `POST /runs/{id}/cancel`。
 重复消息ID返回原执行；新一轮需新UUID。离线固定流程用于检查工具和数据，不代表模型自主规划。
-需要真实模型时，显式用 `uv run --env-file .env python -m backend.server --live` 启动，并把该条消息的mode设为live；仍受累计授权与每日预算限制。
+需要真实模型时，显式用 `uv run --env-file .env python -m backend.server --live` 启动，并把该条消息的mode设为live；DeepSeek遵守每日15 CNY/更低配置及每run保护，USD仍未授权，不自动切换供应商。
 
 ## 审阅与中断恢复
 

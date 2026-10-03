@@ -5,8 +5,9 @@
   "verification": {
     "targeted_tests": "116 passed, 603 deselected; actual PostgreSQL and local supplier HTTP; 28.55 seconds",
     "independent_review": "No P1/P2; formal-version test construction corrected without relaxing assertion",
-    "normal_hooks": "pending",
-    "static_check": "222 sources strict win32/linux/darwin, ruff/format,3 import contracts,10 maps Passed"
+    "normal_hooks": "581870a normal static/full default offline Python hooks Passed; ordinary push and exact remote SHA verified",
+    "static_check": "222 sources strict win32/linux/darwin, ruff/format,3 import contracts,10 maps Passed",
+    "remote_ci": "581870a events37134456437/37134458120 all success; actual Linux716 passed/1 existing Windows platform skip/2 live deselected in185.43s; web type/lint/14 tests/build and Docker demo all success"
   },
   "original_batches": {
     "a": {

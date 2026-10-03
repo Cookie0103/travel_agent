@@ -520,3 +520,11 @@ R15追加：test_sdk_article_injection真实SDK/CLI+PG、本地脚本normal/inje
 
 - a1cbd73儿童报价修复正常完整钩子Passed、普通push/ls-remote完整SHA一致；24b5dcb与a1cbd73两CI均全部success，保留所有历史失败。
 - M4.2分项复用实际PG观测及原check，不改变原分数。初57单元通过；strict初3错为测试list不变型/RequestPatch领域输入，按实际类型修正，无ignore。直接uv pytest全树因入口sys.path未含backend收集失败，改项目python -m pytest（无权限变更）；首相关115pass/1fail，formal_version原确认本轮导致无候选，保留unavailable断言改确认不同有效草稿/留原pending，修后116pass/603deselected、28.55秒。222源码原三平台/分层/文档check全通过，独立问题复核关闭。生成脱敏证据首次KeyError误写files hash键，无原文件写回；按实际files_sha256成功，两组仍94/17、各缺120观测。0新HTTP/未结0，正常完整钩子待验。
+
+- 581870a M4.2正常完整check/test提交钩子Passed，普通push与远端完整SHA一致、工作区clean；0新增HTTP，不改原paid输出。下一新CI待验。M4.4导航更新实际攻略→显式引用/正式页与旧报价儿童流程，历史三坏例已有但邻例/质量partial表述纠正。按原full第一轮顺序离线准备20候选（17pass/3fail，无空答案），真人/模型评分均空，原文只.cache；默认persona/content prepare均0请求，两个校准统计均paired0/pending/null。公共JSON仅选择/原hash，无原回答、身份或DSN。
+
+- 581870a两CI37134456437/37134458120实际全部success；Linux完整Python716pass/1已有Windows平台skip/2live deselected、185.43秒，web类型/lint/14测试/build和Docker-demo全success。当前smoke_demo --verify再次只读Passed，未创建新任务/模型调用。M4.4独立核对20样本原文/顺序/四原文件hash/samplehash，无P1/P2；待4条范围有限独立事实审阅，不冒充真人。独立验收续查未发现其他明确A/B用户功能/API/状态/界面代码缺口；模型统计/事实参数语义、真实压缩、Claude/Cloud、真人等未验收，不标Goal完成。
+
+- 4条固定原第一轮样本独立字段审阅：先原Case/快照、后答案/captured Evidence，二条城15+攻略来源8字段匹配；另两例缺事实附件、不造答案。四例claims_complete/requirements_complete均false、整体准确率/覆盖率null，reviewer为独立Codex无human_quality。主agent逐份通过现有eval.content CLI绑定原suite/case/context/attempt/hash，完整结果留.cache，公共JSON删重复suite/逐字段明细只留hash/计数。README旧5元100次/旧探针未验收叙述修正为最新DeepSeek日15、无累计限、USD0及当前SDK证据；AGENTS入口同步M4验收，不变路线或权限。
+
+- M4.4最终窄审无P1/P2，四份私有review/result与公开hash一致；23审阅项含1explicit_unknown，22计分陈述，完整准确率/覆盖率仍null。准备执行普通材料commit/push，原源代码未变；保存后恢复应以Git最新HEAD/远端核验，581870a为最近业务代码提交。

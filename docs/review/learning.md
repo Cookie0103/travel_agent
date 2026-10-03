@@ -41,7 +41,7 @@ API只处理身份/HTTP；RunService管理业务任务和事件；SDK负责模�
 | 怎么处理供应商失败？ | [BookingService](../../backend/services/bookings.py)在用户确认后下单。429最多三尝试且总期限5秒；模糊超时/丢响应进入unknown，查询既有client_ref，不能直接再POST。[SupplierClient](../../backend/adapters/supplier.py)做协议隔离，供应商事务保证幂等。 |
 | 恢复保证什么？ | 服务启动裁决未完成TaskRun，恢复只读状态/事件，不自动再调用模型或下单。正式写入和operation key在同事务；SDK文件丢失/未完成时从当前业务快照新建，不透明重放旧工具。SSE按已提交序号补发，浏览器断线不生成新任务。 |
 | 偏好/Memory为什么这样做？ | [PreferenceService](../../backend/services/preferences.py)仅用户显式改/删；删除保留墓碑版本。每轮注入[当前权威快照](../../backend/providers/claude_agent/database_tools.py)，旧聊天/攻略不能恢复已删偏好或覆盖当前条件。没有向量记忆或模型自动提取写入。 |
-| 费用怎么限制？ | 父Guard持有真key，CLI只得到回环令牌。每次实际HTTP先fsync预占，完整usage后结算；未知保持保守占用。CNY/USD不换汇、每日与全程同时限制；SDK美元估计不能当DeepSeek账单。[ADR004](../adr/004-sdk-request-budget-boundary.md)。 |
+| 费用怎么限制？ | 父Guard持有真key，CLI只得到回环令牌。每次实际HTTP先fsync预占，完整usage后结算；未知保持保守占用。CNY/USD不换汇；最新DeepSeek每日≤15 CNY并服从更低配置、无累计金额/次数上限，USD0；每run仍限制HTTP/工具/修复。SDK美元估计不能当DeepSeek账单。[ADR004](../adr/004-sdk-request-budget-boundary.md)。 |
 | 怎么eval？ | [eval入口](../../eval/README.md)复用真实服务、每例每轮隔离状态、setup不计分。历史30保留，新冻结20dev/40test，记录代码/schema/数据/hash/模型/原币种和未知字段。规则、脚本、实际模型、语义/人工分开；SDK success不等于旅行任务完成。 |
 
 ## 三个已留下证据的失败故事
@@ -57,3 +57,9 @@ API只处理身份/HTTP；RunService管理业务任务和事件；SDK负责模�
 语气评审从[eval.judge](../../eval/judge.py)进入同一SDK，零工具/无DB；出站Guard显式温度0，严格评分解析失败为judge_error。一次真实小样本不等于20真人校准；这部分可以与任务事实/约束评分分别理解。
 
 事实/内容评测沿[评测指南](../evaluation.md)读eval/content、eval/judge与eval/persona：SDK评语气或三维内容，事实校验依赖独立必需事实与Evidence字段，真人配对不代填；错误JSON/未知附件/缺标注不是零分或完美分。[M3真实坏例矩阵](M3.md)包含原失败、修复与仍未满足的邻例和历史阈值偏差。
+
+新业务指标从[assess_business](../../eval/state.py)到[business_summary](../../eval/business_metrics.py)：与原checks共享一次PG观测，当前条件重新验证草稿，完整check_counts不受展示截断影响。partial和无冲突不是全条件验证通过；没执行恢复目标就没有恢复率。原付费批次状态未捕获时保持unknown，不能事后用新代码推测原表现。
+
+集中评分准备已从原full第一轮按用例顺序选前20条，含17规则通过/3失败，原回答仅本地`.cache/calibration-preparation/20261004-first20-v1/samples.jsonl`。两个评审入口默认准备均0请求，persona/content真人配对均0/比率null；选择依据与原文件hash见[准备证据](../evidence/calibration-preparation-2026-10-04.json)。它不是全40的质量估计，未代填真人分或外发候选。补分与rubric只读[校准说明](../../eval/calibration/README.md)。
+
+[原运行前4条独立字段审阅](../evidence/content-review-first4-2026-10-04.json)复用原Case/attempt/context/hash及captured Evidence：二条城和攻略来源23项字段陈述与快照一致，其他两条缺事实附件；正文事实、别名子集和地区关系未覆盖。四条完整性都false，整体准确率/覆盖率null，不能把23个匹配当全部事实正确；reviewer为独立Codex agent、无人类分。原文/标注/完整输出仅`.cache/content-review-preparation/20261004-first4-v1/`，公共证据只有hash/计数，0模型调用。
