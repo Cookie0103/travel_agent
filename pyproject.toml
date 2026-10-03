@@ -4,7 +4,9 @@ version = "0.1.0"
 description = "旅行规划 Agent：工程骨架"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
-dependencies = []
+dependencies = [
+    "anthropic>=1.11.0",
+]
 
 [dependency-groups]
 dev = [

@@ -16,6 +16,9 @@
 
 ## 本次可直接打开的记录
 
+- 2026-10-03：[M0.2 阅读说明](review/M0.2.md)、[协议验证矩阵](protocol-deepseek.md)、[执行记录](operations/2026-10-03-m02-protocol.md)。离线 70 项通过，两次真实请求跑通最小往返；完整关卡尚未完成。
+- 2026-10-03：[人民币 / 美元两条预算线路](operations/2026-10-03-budget-currencies.md)。用户要求的配置调整；费用拦截尚待 M0.2 实现。
+- 2026-10-03：[M0.2 配置准备与少量调用限制](operations/2026-10-03-m02-preparation.md)。仅记录准备要求，尚未开始真实模型调用。
 - 2026-10-03：[报错修复和 Docker/PostgreSQL 核对](operations/2026-10-03-development-errors.md)、[修复批次总结](review/batch/2026-10-03-m0-repair.md)。工程检查与 37 个离线测试通过。
 - 2026-10-03：[目录整理操作记录](operations/2026-10-03-directory-cleanup.md)。
 - 2026-10-02：[M0.1 批次总结](review/batch/2026-10-02-m0-core.md)、[未完成原因](blocked/2026-10-02-m0-core.md)、[详细操作记录](operations/2026-10-02-m0-core.md)。

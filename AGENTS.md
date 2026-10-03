@@ -136,7 +136,8 @@ uv run python scripts/dev.py eval-dev   # 评测 dev 集（默认 FakeClient）
 
 - 密钥只从环境变量读取（`.env` 本地文件，已在 `.gitignore`）；提交 `.env.example`，只写变量名不写值。
 - 绝不把密钥写进代码、测试、日志、trace 或文档。
-- 真实模型调用必须经过预算检查：`DAILY_BUDGET_USD`（默认 1）超出即停止。
+- 真实模型调用必须按计费来源分开检查每日预算：DeepSeek 使用 `DAILY_BUDGET_CNY`（人民币元）；Anthropic/OpenAI 共用 `DAILY_BUDGET_USD`（美元）。两个币种独立记账，不自动换汇、相加或借用余额；使用兼容 SDK 不改变计费来源。
+- 预算未配置、空白、非法或币种不匹配时拒绝真实调用；`0` 禁用对应线路，余额不足或达到上限即停止。预算值不代表调用授权，默认离线和用户本批次数限制仍需同时满足。
 - `vendor/` 已在 `.gitignore`。其中 DataMind 是组织内部仓库，**任何内容都不能提交到本仓库**（本仓库是公开的）；评测用例改编后的版本可以提交，原文件不行。
 - 日志在 INFO 级别不输出完整 prompt 和工具结果。
 
@@ -153,7 +154,8 @@ uv run python scripts/dev.py eval-dev   # 评测 dev 集（默认 FakeClient）
 读 AGENTS.md，按 §2 批次模式工作。
 分支：batch/<日期>-<主题>
 任务：<任务ID 列表，例如 M0.1 M0.2 M0.3 M0.4>
-真实模型调用：<允许 / 不允许>；DAILY_BUDGET_USD=<金额>
+真实模型调用：<允许的计费来源 / 不允许>
+DAILY_BUDGET_CNY=<DeepSeek 人民币金额>；DAILY_BUDGET_USD=<Anthropic/OpenAI 美元合计金额>
 做完或无任务可做时，写批次总结后结束。
 ```
 - 不为了让测试通过而修改测试的断言，除非说明该断言本身错在哪里。
