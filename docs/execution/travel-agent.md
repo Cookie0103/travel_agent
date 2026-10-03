@@ -40,8 +40,8 @@
 - 最新功能保存9eb653a（正常check/完整默认Python钩子通过）：承接fd17edc/8a41caa/71bd308/99da71b，补逐调用参数评审/首次进度指标及同SDK B0/单因素配置；两指标P2已修并独立关闭。M4离线容器/HTTP/恢复/浏览器与冻结60条/离线40×3证据保留。SDK真实规划规则通过且展示6项，但7 verified/13 unknown、未选住宿/未正式确认，不算完整质量；真人配对0。
 - full批次结束账本：**488 HTTP / 11.442662 CNY保守估计**、未结0；同UTC日含旧探针0.10后11.542662/15CNY。B0随后继续追加，以`.cache/model-budget/deepseek.jsonl`为实时依据，旧100次许可不再适用；不把此批次边界数字当新实时余额。
 - 当前：完整真实full/B3原40test×3已结束，94/120规则通过、0error/not_run，原manifest全部源码哈希结束核对一致；407HTTP/9.363264CNY，独立身份120、安全三断言120/120，临时库正常清理。证据docs/evidence/m42-model-repeat-2026-10-03.json。B0同版本批次`.cache/eval/20261003T142321Z-d7e13464`已结束，17/120规则通过，120HTTP/0.646906CNY；开始前后原161源码hash相同，生产修改在结束核对后应用。原已付费批次不重启。首轮启动被自动审批拒绝具体载荷授权；用户随后明确批准这40自写文本外发及对照，原命令直接重新审批后启动，首次拒绝0请求/费用。
-- CI：首次push及pull_request事件，web/docker-demo已actual success；Linux Python静态11属性错误已本地同样复现，测试尚未跑。平台保护已应用，保持Windows原清理语义；新增两非Windows拒绝反例，原代码红色，修后8生命周期测试通过2.82秒。dev check扩为win32/linux/darwin，三平台各216源码strict、ruff/format/3分层/10地图全部通过，独立无P1/P2。下一步正常完整钩子→commit/push→核对远端CI，不改原评测成绩。
-- 未满足：三个真实坏例的完整邻近正常回归/规划质量、真实语义/人工评分及其他模型对照、Claude凭据、Cloud UI与真人校准；自动事件的参数语义/纯文本首进度仍unknown，不能冒充全量质量。最新web-check type/lint/10测试/build通过；偶发PG持久化/初始化失败根因未确认，脱敏SQLSTATE诊断不代表已修根因。首轮远端Python失败原证据保留，修复复跑待验。PG0010；离线镜像/旧状态只读/新会话完整烟测已验，最新构建源码范围80a308d。
+- CI：首次push及pull_request事件，web/docker-demo已actual success；Linux Python静态11属性错误已本地同样复现，测试尚未跑。平台保护已应用，保持Windows原清理语义；新增两非Windows拒绝反例，原代码红色，修后8生命周期测试通过2.82秒。dev check扩为win32/linux/darwin，三平台各216源码strict、ruff/format/3分层/10地图全部通过，独立无P1/P2。已保存并push558e7d2，正常静态/完整离线钩子Passed；push37130689536与PR37130692016的Python/web/docker-demo均实际success，不改原评测成绩。当前离线比较增量待最终钩子/commit/push。
+- 未满足：三个真实坏例的完整邻近正常回归/规划质量、真实语义/人工评分及其他模型对照、Claude凭据、Cloud UI与真人校准；自动事件的参数语义/纯文本首进度仍unknown，不能冒充全量质量。最新web-check type/lint/10测试/build通过；偶发PG持久化/初始化失败根因未确认，脱敏SQLSTATE诊断不代表已修根因。首轮远端Python失败原证据保留，558e7d2复跑全部success。PG0010；离线镜像/旧状态只读/新会话完整烟测已验，最新构建源码范围80a308d。
 
 
 
@@ -255,3 +255,9 @@ aab5972正常静态/完整默认Python提交钩子通过，代码已本地保存
 第三轮进行中；前两轮均31/40规则通过、各9失败，但失败集合不同。90已记录小计290HTTP/6.452126CNY、0执行错误；无最终总体质量结论。docs/evaluation记录后续B0测量约定：同原40test×3/顺序/初始状态/模型SDK数据源码/HTTP12，仅no_tools；当前批次结束及核对日余额后才启动，禁止根据test失败改配置/挑子集。B0工具结构失败不当事实提升，日额度不足保持未跑，不自动重放。
 
 - 2026-10-03恢复点：B0完整120测量与完整组120逐项配对，原selected_cases/source hash/catalog/冻结suite相同，仅组别差异；辅助scripts/dev.py原未入manifest，两个开始提交Git blob相同，补绑定hash并明示范围。账本608HTTP/12.089568CNY，含旧探针当天12.189568/15、余额2.810432，未结0。零工具结果不当语义评分。公开证据m42-no-tools-repeat；待独立证据审查/原钩子及CI修复push。
+
+- 2026-10-03保存558e7d2并正常push成功，远端full SHA相同、工作区clean。原静态/完整默认Python钩子Passed。远端复跑37130689536：三平台strict成功、web/docker-demo success，Python完整测试运行中。新增eval.compare及共享metadata/schema哈希，未来manifest补实际编码助手；73专项（含PG variants/report/suites）通过30.99秒，win32 strict218文件通过。实际离线读取原两组120完整配对、0新模型费；独立审查/最终关卡待完成，不把CI尚在运行写成success。
+
+- 2026-10-03：两远端事件558e7d2的Python/web/docker-demo全部success（37130689536/37130692016）。比较独立审查1P2缺值小计误当完整差额，新增反例原红色后已修：未全覆盖total=null，known小计/unknown n单列；34比较测试通过6.90秒，P2已复核关闭。实际120费用完整，原−8.716358差额未变。正常完整钩子/自动push和最新CI继续。
+
+- 558e7d2 Linux Python实际CI日志：651 passed、1 skipped、2 deselected，149.27秒。CLI2.1.114实际安装运行；1项为已有Windows Job平台专属语义，本机8项生命周期已通过，2项真实模型默认排除，不为CI新加skip或删测试。

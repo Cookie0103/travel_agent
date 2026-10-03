@@ -34,3 +34,31 @@ def evaluation_definitions(
         return ()
     definitions = TRAVEL_DEFINITIONS if database else SEARCH_DEFINITIONS
     return tuple(d for d in definitions if variant != "no_skills" or d.name != "load_skill")
+
+
+def evaluation_metadata(
+    variant: EvaluationVariant,
+    *,
+    live: bool,
+    database: bool,
+    workflow: WorkflowName | None,
+) -> dict[str, object]:
+    """运行manifest和离线比较共用声明，避免实验组定义漂移。"""
+    validate_variant(variant, database=database, workflow=workflow)
+    return {
+        "evaluation_variant": variant,
+        "comparison_group": "not_applicable_fixture"
+        if not live
+        else "search_only"
+        if not database
+        else "B1"
+        if workflow
+        else {"full": "B3", "no_tools": "B0", "baseline_b2": "B2"}.get(variant, "single_factor"),
+        "automatic_compaction": "verified_versions_env"
+        if variant in {"no_compaction", "baseline_b2"}
+        else "sdk_default"
+        if live
+        else "not_applicable_fixture",
+        "sdk_resume_enabled": live and database and variant == "full",
+        "workflow": workflow or "autonomous",
+    }

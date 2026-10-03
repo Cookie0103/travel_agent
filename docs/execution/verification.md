@@ -73,3 +73,9 @@ Windows评测CLI：test_eval强制非UTF8/ASCII环境启动四个真实子进程
 M4.2首次完整真实test三轮：原40×3、实际DeepSeek/SDK/PG/HTTP，94/120规则通过、26失败、0error/not_run；三轮分别31/31/32，全部120安全三断言通过。绑定原源码/数据/用例/schema与实际费用/时延/缓存，源文件结束哈希一致、独立身份120与临时库清理确认；见m42-model-repeat证据/M4集中记录。规则不是语义完成率，379参数语义unknown、27次运行首进度unknown、真人0，B0结果见末尾，其他对照未完成。远端web/docker-demo已实际success，但Linux Python静态11错待修，测试尚未执行；不把Windows本地Passed当全CI通过。
 
 B0同版本真实120次：17通过/103失败/0error/not_run，三轮6/6/5；120HTTP/0.646906CNY，零工具首进度120 unknown。源版本/冻结用例/状态/schema变更边界见M4与公开证据；不得当事实准确率。CI平台保护新增两原红色失败回归，修后8生命周期测试通过；三平台各216源码strict及原静态检查全通过，完整钩子与远端待验。
+
+原记录比较：test_eval_compare覆盖完整配对、失败/错误/未跑分母、源/期望/状态/数据/schema/配置漂移、缺/重复/乱序/未结束、attempt/组内组间身份重复、混模型/SDK漂移、缓存摘要不符、缺指标/币种不同/非法数字、UTF8脱敏CLI失败。比较不产生真实模型调用；73相关专项（含PG对照机制）通过，独立审查/全仓关卡待完成。
+
+CI恢复：558e7d2两事件37130689536/37130692016的Python/web/docker-demo全success，首次失败保留；不是只有配置。比较1P2已红→绿→独立关闭，partial费用total null/小计单列，34比较测试通过，原120精确费用差不变。
+
+- 558e7d2 Linux Python实际CI日志：651 passed、1 skipped、2 deselected，149.27秒。CLI2.1.114实际安装运行；1项为已有Windows Job平台专属语义，本机8项生命周期已通过，2项真实模型默认排除，不为CI新加skip或删测试。

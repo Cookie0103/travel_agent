@@ -51,3 +51,14 @@ human_quality只接收真人提供的relevance/explanation/tradeoffs各0–5、r
 后续B0对照在运行前明确：仍用同40test、同顺序、3个独立重复、原期望与初始状态、同模型/SDK/CLI/数据/源码和12HTTP上限，唯一运行配置变为no_tools。先完成当前批次并核对日余额，再决定是否启动；日硬限不足停止并公开not_run，不自动回放失败。B0不注入数据库事实/工具，其缺工具导致的结构规则失败是预期对照边界，不能据此宣称事实准确率提升。对照不用于调提示或挑选有利案例。
 
 B2/B1及单因素后续测量各自记录实际样本/重复/适用范围，不能把未运行的组别填为成功或将B2两开关组合当单因素。比较入口只读取原manifest/results，核对完整配对/执行版本并重用report统计，缺语义或真人答案继续unknown。新增eval比较源码会改变未来manifest哈希集合，因此本轮同版本受控调用先完成，随后实现比较；不临时忽略源码差异来接纳不同实验。
+
+
+## 原记录离线配对比较
+
+`uv run python -m eval.compare --runs <run_id_a> <run_id_b>`，接受原目录或.cache/eval中的run id；不会调用模型/DB/供应商。原四文件读取后绑定hash，以完整selected_cases×repeat原顺序校核，不能挑交集、重复/缺记录或接纳未结束批次。结果、attempt、独立身份、汇总均核对；副作用断言仍从原公开评测证据审查，不由比较入口追加运行。
+
+共用运行时配置注册表和工具schema序列化；源码hash集合、用例全文/初始状态/故障/期望、目录/套件/价表/重复/每例HTTP上限必须相同。每组已知模型身份保持一致、SDK/CLI版本相同；不同provider/model仅描述其真实记录，不支持未经接入模型。未知身份不补成相同，报告runtime_identity_complete=false。原manifest未含的执行助手不静默补写；未来manifest已纳入scripts/dev.py，旧组在集中证据补Git blob hash。
+
+复用report：passed/failed/error/not_run各自保留，另给planned_pass_rate（通过/计划数），原rule_pass_rate仍是通过/已评测；两个分母都公开。时延/原币种费用差仅统计双方已知配对并列n，金额汇总用Decimal，不混CNY/USD。纯文本首次进度和参数语义未标注仍unknown。公共输出只含声明配置、可信实际身份、数值和四原文件hash，原prompt/回答/事实附件/身份UUID/连接信息不导出。
+
+full→B0的120个配对：15两组通过、24两组失败、79完整组通过但B0失败、2相反。规则差B0−full为−64.17个百分点，费用差−8.716358CNY；不称事实准确率变化，既定no_tools还关闭续接能力/Skills/事实注入，均fresh没有旧checkpoint，此配置整体差异不用于单独归因。原文件不改，原失败不重跑。

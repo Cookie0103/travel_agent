@@ -495,3 +495,12 @@ B0原命令首次自动审批拒绝“具体测试载荷外发未明确授权”
 - 独立full证据审查无P1/P2，提示将历史未跑标“当时”，27首进度unknown注明分母为运行；已同步集中记录、质量与候选表述，不上调模型质量。
 
 - B0独立证据复核无P1/P2：120配对/17通过/6,6,5/费用/源map及4原文件hash一致、上下文无交叉。按建议明示resume_enabled标志随既定no_tools配置变化，各次fresh无旧checkpoint，比较只称配置整体差异。下一步按原钩子commit/push复跑CI。
+
+
+- 558e7d2正常静态/完整默认Python提交钩子Passed，push既有开发分支成功，ls-remote full SHA吻合、工作区clean。复跑push run37130689536、PR事件37130692016（没有本轮创建PR）。push三平台strict/web/docker-demo完成success，完整Python仍运行。
+- eval.compare复用report及原SDK配置，原inline metadata抽成纯函数共同验证，不改原业务/模型执行逻辑；schema hash同序列化。新manifest补scripts/dev.py，旧文件不写回。最初私有草稿的长行/同一行语句经ruff格式化后修正，strict发现汇总object相除，改按typed Row真实passed计数；不用ignore。首27测试通过；增未知/币种/跨组身份/非法metrics后73相关含PG专项通过30.99秒，win32 strict218源码通过。
+- 实际比较原两组完整120配对，原schema按共享定义分别校核；15pass两组/24fail两组/79full pass B0fail/2相反，规则差−64.17个百分点、CNY精确差−8.716358。新公开JSON只测量/hash/配置，无原回答/UUID/DSN，0新HTTP。时延配对差按原毫秒粒度保留6小数，缺值/币种差不补零。
+
+- 558e7d2的push/PR两事件实际Python/web/docker-demo全部success（37130689536/37130692016），并非跳过Linux Python。比较独立1P2缺值差额total不该等已知小计；新断言先1failed复现，再修total完整才有值/小计和n单列，34比较测试6.90秒全通过。独立复核关闭，原完整120差額不变；无新增真实API费。最新正常钩子/commit/push继续。
+
+- 558e7d2 Linux Python实际CI日志：651 passed、1 skipped、2 deselected，149.27秒。CLI2.1.114实际安装运行；1项为已有Windows Job平台专属语义，本机8项生命周期已通过，2项真实模型默认排除，不为CI新加skip或删测试。

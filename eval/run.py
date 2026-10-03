@@ -26,6 +26,7 @@ from backend.persistence.temporary import temporary_database
 from backend.providers.claude_agent.evaluation import (
     EvaluationVariant,
     evaluation_definitions,
+    evaluation_metadata,
     validate_variant,
 )
 from backend.providers.claude_agent.live import check_evaluation_size, run_live
@@ -121,23 +122,9 @@ async def run_cases(
         json.dumps(
             {
                 **manifest(cases, evaluation_definitions(variant, database=business is not None)),
-                "evaluation_variant": variant,
-                "comparison_group": "not_applicable_fixture"
-                if not live
-                else "search_only"
-                if not business
-                else "B1"
-                if workflow
-                else {"full": "B3", "no_tools": "B0", "baseline_b2": "B2"}.get(
-                    variant, "single_factor"
+                **evaluation_metadata(
+                    variant, live=live, database=business is not None, workflow=workflow
                 ),
-                "automatic_compaction": "verified_versions_env"
-                if variant in {"no_compaction", "baseline_b2"}
-                else "sdk_default"
-                if live
-                else "not_applicable_fixture",
-                "sdk_resume_enabled": live and business is not None and variant == "full",
-                "workflow": workflow or "autonomous",
                 "business_database": business is not None,
                 "database_name": business.sessions.database.engine.url.database
                 if business
@@ -388,6 +375,13 @@ def token_totals(report: dict[str, object]) -> dict[str, int] | None:
     return {key: sum(row[key] for row in requests) for key in keys}
 
 
+def schema_fingerprint(definitions: tuple[ToolDefinition, ...]) -> str:
+    """绑定共享工具契约，运行与比较使用相同序列化。"""
+    return hashlib.sha256(
+        json.dumps([asdict(d) for d in definitions], sort_keys=True).encode()
+    ).hexdigest()
+
+
 def manifest(
     cases: list[Case], definitions: tuple[ToolDefinition, ...] = DEFINITIONS
 ) -> dict[str, object]:
@@ -416,7 +410,12 @@ def manifest(
         for p in (ROOT / folder).rglob("*")
         if p.suffix in {".py", ".md", ".json", ".jsonl"} and "__pycache__" not in p.parts
     )
-    files += [ROOT / "pyproject.toml", ROOT / "uv.lock", ROOT / "backend/persistence/alembic.ini"]
+    files += [
+        ROOT / "pyproject.toml",
+        ROOT / "uv.lock",
+        ROOT / "backend/persistence/alembic.ini",
+        ROOT / "scripts/dev.py",
+    ]
     return {
         "created_at": datetime.now(UTC).isoformat(),
         "code_commit": commit,
@@ -425,9 +424,7 @@ def manifest(
             str(p.relative_to(ROOT)): hashlib.sha256(p.read_bytes()).hexdigest() for p in files
         },
         "selected_cases": [c.model_dump() for c in cases],
-        "schema_sha256": hashlib.sha256(
-            json.dumps([asdict(d) for d in definitions], sort_keys=True).encode()
-        ).hexdigest(),
+        "schema_sha256": schema_fingerprint(definitions),
         "pricing": "backend/providers/probe/settings.py; original-currency upper bound; hash above",
         "skills": ["hotel-comparison", "itinerary-revision"]
         if definitions == TRAVEL_DEFINITIONS

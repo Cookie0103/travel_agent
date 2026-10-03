@@ -4,6 +4,8 @@
 冻结40例三轮：`uv run python -m eval.run --suite frozen --database --split test --repeat 3`。
 真实调用须显式--live；DeepSeek最新授权每日≤15CNY（含旧费/未结预占），无累计次数上限，USD仍0。
 
+离线比较：`uv run python -m eval.compare --runs <run_a> <run_b>`；完整配对/源码/数据/schema/真实身份校核，规则差不当事实质量。
+
 调用链：load_suite → temporary_database → database_evaluation → prepare/observe/checks → grade → report。
 数据库、工具、规则与SDK复用业务入口；每轮身份独立，setup不计成绩。
 冻结test不用于调优；原始回答/附件/会话只留私有.cache，公共报告脱敏。

@@ -56,3 +56,5 @@
 设计目标与任务顺序仍以 [plan/](../plan/README.md) 为准。这里解释实际做过什么，不会把目录占位写成已经实现的功能。
 
 - [M4真实零工具三轮对照](evidence/m42-no-tools-repeat-2026-10-03.json)：同版本40×3，原规则失败保留。
+
+- [M4完整配对统计](evidence/m42-paired-comparison-2026-10-03.json)：绑定两组原文件，错误/未知不刷掉。
