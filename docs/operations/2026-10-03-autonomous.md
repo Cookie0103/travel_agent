@@ -123,3 +123,13 @@
 - 按ADR000 uv添加FastAPI0.142.2、SQLAlchemy2.1.3、psycopg3.3.6、Alembic1.20.0和uvicorn直接依赖。此项将随M1.1提交。
 - dev db-up成功：项目容器travel-agent-postgres-1健康，PostgreSQL17，127.0.0.1:5434，新建项目卷；未连接或改本机5432/5433的服务。
 - 核对官方SQLAlchemy每任务独立AsyncSession、psycopg Windows需SelectorLoop；SDK子进程仍使用独立运行环境，后续API使用线程启动现有同步live入口，不在DB事件循环里直接启动SDK。
+
+## M1.1 API 与真实数据库
+
+- M0.7正常钩子通过，保存59cf7b3。M1.1按ADR000/006使用FastAPI、SQLAlchemy/psycopg、Alembic及python-dotenv，避免手写配置解析器；httpx仅测试直接依赖。
+- 实现用户/会话表、事务服务和API；DemoLogin契约单份复用，服务端生成身份，令牌只存摘要；同一SQL核对会话与所有者，非法/过期身份拒绝。
+- dev db-migrate已在项目库成功；独立随机测试库升级两次并检查模型无漂移。完整203项通过（18.00秒），不调用收费模型。CI配置已写入，未推送或声称远端通过。
+- 真实启动发现Uvicorn自定义loop回调误返回类，修复为SelectorEventLoop实例并新增回归；stdout/stderr显式UTF-8。实际HTTP health200、两次登录201、创建会话201、本人200/他人404。只停止本次启动的临时API进程，证据m11-api-smoke-2026-10-03.json。
+- 独立审查发现测试URL query可能覆盖随机数据库/本机host；清空测试连接query，增加实际方言参数测试。无连接回归首次因方言附带类型适配context而全字典相等失败；改为精确路由断言并禁止hostaddr/service，未放宽隔离规则。7项专项通过。
+- check87文件/3分层契约通过；最终完整验证/独立复核待记录。无新增模型请求。
+- 最终dev test205 passed/2 deselected（17.60秒），独立复核无剩余P1/P2，准备正常本地提交。

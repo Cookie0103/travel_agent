@@ -116,7 +116,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     configure_environment()
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
-    for name in ("setup", "check", "test", "db-up"):
+    for name in ("setup", "check", "test", "db-up", "db-migrate"):
         commands.add_parser(name)
     evaluation = commands.add_parser("eval-dev")
     evaluation.add_argument("--live", action="store_true", help="显式启用真实模型评测")
@@ -141,6 +141,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             return run_tests()
         case "db-up":
             return db_up()
+        case "db-migrate":
+            return run_command(
+                [
+                    python,
+                    "-m",
+                    "alembic",
+                    "-c",
+                    "backend/persistence/alembic.ini",
+                    "upgrade",
+                    "head",
+                ]
+            )
         case "eval-dev":
             return eval_dev(live=args.live)
     return 2

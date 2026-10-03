@@ -4,7 +4,7 @@
 
 目标技术栈：Python / FastAPI / PostgreSQL / Next.js；Claude Agent SDK 负责 runtime，自写旅行 tools 与业务规则；DeepSeek 兼容线路与 Claude 原生线路分别验证；MCP；OpenTelemetry + Langfuse。
 
-**现在可以运行最小旅行查询 CLI。** 默认离线演示会查询景点和攻略，并显示测试来源；正式模式使用 Claude Agent SDK。前端、行程规划与数据库业务仍在开发。
+**现在可以运行旅行查询 CLI 和基础会话 API。** 默认离线演示会查询景点和攻略，并显示测试来源；正式模式使用 Claude Agent SDK。API 已接 PostgreSQL，前端与行程规划仍在开发。
 当前进度只看 [长程执行计划](docs/execution/travel-agent.md)；阶段性验证自动继续，用户最终集中运行与学习。开发顺序见 [M0 规格](docs/tasks/M0.md)，历史记录从 [文档目录](docs/README.md) 进入。
 
 当前数据为人工编写的 fixtures，标签不代表实时事实，营业时间未知。后续攻略/地点快照计划来自 [Wikivoyage](https://en.wikivoyage.org/)（CC BY-SA）与 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）。酒店与预订均为模拟。
@@ -73,7 +73,7 @@ uv run python scripts/fetch_upstream.py
 本机的 Python 3.12 已装入被忽略的 .cache/python，.venv 已绑定该解释器。
 普通新环境由 uv 根据 .python-version 准备解释器；不要把本机 .venv 复制到其他电脑。
 uv 缓存放 .cache/uv；dev 脚本统一设置 UTF-8 与子进程缓存，不要求手工设置 shell 环境变量。
-dev test 每次使用新的 .cache/pytest-runs/run-* 保存临时文件和缓存，避免终端与 AI 沙箱共用无权限的 pytest 目录；不需要先激活虚拟环境，也不需要数据库。
+dev test 每次使用新的 .cache/pytest-runs/run-* 保存临时文件和缓存，避免终端与 AI 沙箱共用无权限的 pytest 目录；不需要先激活虚拟环境。M1 起集成测试需要下述项目 PostgreSQL，测试自动创建和清理本次专用随机库，不清空开发库。
 
 ## 模型预算配置
 
@@ -89,18 +89,27 @@ dev test 每次使用新的 .cache/pytest-runs/run-* 保存临时文件和缓存
 0 表示禁用该线路；空白、非法或缺少预算时应拒绝真实调用。预算不能替代用户授权和本批调用次数上限。
 M0.2 探针已实现环境变量读取、按所选模型的人民币预算检查与本批请求计数；uv --env-file .env 负责加载配置。美元线路只有配置与账本隔离测试，尚无 Anthropic/OpenAI 真实调用实现。
 最小实测已成功，账本会拒绝重复运行；不要删除 .cache/m02-protocol 来重新获得次数。完整协议关卡尚未完成，详见 [实测矩阵](docs/protocol-deepseek.md)。
-旧探针两请求授权已用完；本轮长程开发的 DeepSeek 整体额度见执行计划，同时遵守 .env 每日预算。SDK 美元估算不能代替人民币预算。新接入验收与费用边界见 [ADR-003](docs/adr/003-claude-agent-sdk-runtime.md)；本轮不改本地 .env。
+旧探针两请求授权已用完；本轮长程开发的 DeepSeek 整体额度见执行计划，同时遵守 .env 每日预算。SDK 美元估算不能代替人民币预算。新接入验收与费用边界见 [ADR-003](docs/adr/003-claude-agent-sdk-runtime.md)。
 历史批次限制见 [M0.2 准备记录](docs/operations/2026-10-03-m02-preparation.md)。
 
 ## PostgreSQL 配置
 
-本批只提供 PostgreSQL 17 的 Compose 配置，没有迁移或仓储代码。
-需要运行数据库时，把 .env.example 复制为本地 .env，自行设置 POSTGRES_PASSWORD。
-POSTGRES_USER / POSTGRES_DB 默认 travel_agent，端口默认 5432，仅绑定 127.0.0.1。
-启动 Docker Desktop 后运行 `uv run python scripts/dev.py db-up`；引擎不可用会记录到 docs/blocked/environment.md 并退出。
-2026-10-03 已只读确认本机 Docker 正常；本地 PostgreSQL 17（5433）和 18（5432）均在接收连接。这两套 Windows 服务与项目的 Docker 数据库是独立的。
-本机以后启动项目容器时，可在本地 .env 设置 POSTGRES_PORT=5434 避开已占用端口；本次没有创建容器、改数据库密码或写入数据。
-PostgreSQL 是后台服务；需要图形管理界面时打开安装附带的 pgAdmin 4。当前的 check/test 不需要数据库，不能用数据库是否有窗口判断它们能否运行。
+项目使用 Docker PostgreSQL 17，默认仅绑定 127.0.0.1:5434；不占用本机已安装服务的 5432/5433。
+新环境复制 .env.example 为 .env，填写 POSTGRES_PASSWORD；POSTGRES_USER / POSTGRES_DB 默认 travel_agent。
+DATABASE_URL 可留空，由这些字段安全组合；如果填写则优先使用，需为 PostgreSQL psycopg 连接。
+本机已填写数据库配置并启动容器；密码只存本地 .env。启动 Docker Desktop 后执行：
+
+```text
+uv run python scripts/dev.py db-up
+uv run python scripts/dev.py db-migrate
+uv run python -m backend.server
+```
+
+API 在 http://127.0.0.1:8000/docs 展示接口；/health 检查数据库。
+本地 .env 的 DEMO_MODE=true 启用 POST /demo/login，返回一次性展示的演示令牌；后续 /sessions 请求带 Authorization: Bearer <token>。
+演示身份用于本机开发，不是生产登录。令牌仅保存摘要，24 小时过期；不能指定他人的 user_id 登录。
+Windows 服务入口使用兼容 psycopg 的事件循环。数据库迁移在 backend/persistence/migrations，当前包含用户与会话表。
+check 不连接数据库；test 会检查真实事务和用户隔离。CI 已配置 PostgreSQL 服务，尚未推送或远端运行。
 
 ## 审阅与中断恢复
 

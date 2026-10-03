@@ -17,6 +17,7 @@
 
 ## 本次可直接打开的记录
 
+- [M1 业务集中记录](review/M1.md)、[基础 API 真实 HTTP 证据](evidence/m11-api-smoke-2026-10-03.json)、[M1 规格](tasks/M1.md)。
 - [M0 集中审查记录](review/M0.md)、[SDK 真实接入结果](protocol-agent-sdk.md)、[旅行工具真实查询证据](evidence/travel-query-2026-10-03.json)。
 - [本地 Trace 与云导出决策](adr/005-observability-export.md)、[Langfuse 页面验收缺口](blocked/langfuse.md)。
 - [初始真实评测](evidence/m06-baseline-2026-10-03.json)、[范围坏例回归](evidence/m07-scope-regression-2026-10-03.json)、[角色校准待办](blocked/persona-calibration.md)。
