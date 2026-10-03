@@ -1,6 +1,7 @@
 """把共享工具契约接到 SDK 进程内 MCP；模型参数不能覆盖服务端身份。"""
 
 import json
+from uuid import uuid4
 
 from claude_agent_sdk import SdkMcpTool, create_sdk_mcp_server, tool
 from claude_agent_sdk.types import McpSdkServerConfig
@@ -35,14 +36,29 @@ def _build_tool(
 ) -> SdkMcpTool[dict[str, object]]:
     @tool(definition.name, definition.description, definition.schema)
     async def handler(arguments: dict[str, object]) -> dict[str, object]:
+        call_id = uuid4()
         try:
-            emit(RuntimeEvent(context, "tool_started", tool_name=definition.name))
+            emit(
+                RuntimeEvent(
+                    context,
+                    "tool_started",
+                    tool_name=definition.name,
+                    tool_call_id=call_id,
+                    argument_keys=tuple(sorted(arguments)),
+                )
+            )
             try:
                 result = await executor.execute(context, definition.name, arguments)
             except Exception:
                 result = ToolResult({}, code="unavailable")
             emit(
-                RuntimeEvent(context, "tool_finished", tool_name=definition.name, code=result.code)
+                RuntimeEvent(
+                    context,
+                    "tool_finished",
+                    tool_name=definition.name,
+                    code=result.code,
+                    tool_call_id=call_id,
+                )
             )
             payload = json.dumps(result.payload(), ensure_ascii=False)
         except Exception:

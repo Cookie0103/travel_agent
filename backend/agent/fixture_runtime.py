@@ -35,9 +35,22 @@ class FixtureRuntime:
             }
             if name == "search_places" and indoor:
                 arguments["indoor"] = True
-            emit(RuntimeEvent(context, "tool_started", tool_name=name))
+            call_id = uuid4()
+            emit(
+                RuntimeEvent(
+                    context,
+                    "tool_started",
+                    tool_name=name,
+                    tool_call_id=call_id,
+                    argument_keys=tuple(sorted(arguments)),
+                )
+            )
             result = await self.executor.execute(context, name, arguments)
-            emit(RuntimeEvent(context, "tool_finished", tool_name=name, code=result.code))
+            emit(
+                RuntimeEvent(
+                    context, "tool_finished", tool_name=name, code=result.code, tool_call_id=call_id
+                )
+            )
             if result.code:
                 return RuntimeOutcome(code=result.code, reason="tool_failed")
             items = result.data.get(collection)

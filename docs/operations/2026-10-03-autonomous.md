@@ -84,3 +84,13 @@
 - 真实旅行 CLI 通过（7.73秒）：3次HTTP，search_places成功1次、search_content成功3次；最终回答同时引用两个fixture来源、明确人工数据及未知营业时间。新增保守费用0.017716 CNY，累计5次/0.020670 CNY，全部预占已结算。
 - 脱敏证据导出 docs/evidence/travel-query-2026-10-03.json；含实际模型/版本/usage/工具状态，不含密钥、用户prompt、工具完整结果或SDK会话ID。
 - 最终 check67文件/3契约通过；dev test166 passed/2 deselected（11.37秒），git diff --check无问题。保存后继续Trace与评测。
+- M0.4 正常钩子通过，提交727778b。
+
+## M0.5 Trace
+
+- 核查官方 Langfuse v4 Compose/OTel文档：自托管需要Redis等项目排除组件；按ADR000采用可选Cloud。只检查.env变量是否存在，三项均缺失，未输出值；UI验收记docs/blocked/langfuse.md。
+- ADR005 后通过uv安装官方OTel SDK/OTLP HTTP exporter 1.45.0；应用事件新增实际时间与服务端工具调用ID。默认仅保存本地JSONL，显式--trace-cloud才启用网络导出。
+- 新增本机HTTP collector验证真实OTLP路径/认证/摘要，不连模型或Langfuse Cloud。首次完整173项通过（12.09秒）。
+- 独立审查发现4处P2，已修复并增加失败测试：失败请求预占单独记账、CLI/live共享导出降级、拒绝旧事件缺时间/重放保留原时间、复用SDK内存exporter后显式检查导出结果。付费运行先保存私有报告，再尝试Trace。
+- 最新check69文件/3契约通过；dev test176 passed/2 deselected（12.01秒）。累计模型费用不变5次/0.020670 CNY。
+- 恢复点：当前未提交M0.5完整增量；独立复核后正常提交，继续M0.6。已只读查看DataMind21用例及工具选择评分思路，后续只提交改编案例，不复制内部源码。

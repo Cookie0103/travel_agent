@@ -3,25 +3,39 @@
 import argparse
 import asyncio
 import io
+import os
 import sys
+from dataclasses import asdict
 from pathlib import Path
 from uuid import uuid4
 
+from backend.adapters.tracing import cloud_exporter, trace_report
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent
-from backend.domain.execution import RunContext
+from backend.domain.execution import RunContext, RuntimeEvent
 from backend.providers.claude_agent.live import run_live
 from backend.providers.probe.settings import ProbeError
 from backend.tools.search import SearchExecutor
 
 
-async def offline(prompt: str) -> int:
+async def offline(prompt: str, *, trace_cloud: bool = False) -> int:
+    exporter = cloud_exporter(os.environ) if trace_cloud else None
     agent = Agent(FixtureRuntime(SearchExecutor()))
-    result = await agent.run(RunContext(uuid4()), prompt, lambda event: None)
+    context = RunContext(uuid4())
+    events: list[RuntimeEvent] = []
+    result = await agent.run(context, prompt, events.append)
+    directory = Path(__file__).resolve().parents[1] / ".cache" / "traces" / str(context.run_id)
+    report: dict[str, object] = {
+        "status": "error" if result.outcome.code else "success",
+        "events": [asdict(e) for e in events],
+        "identity": asdict(agent.runtime.identity),
+    }
+    trace_report(report, directory, exporter)
     if result.outcome.code:
         print(f"查询未完成：{result.outcome.code}")
         return 1
     print(result.outcome.text)
+    print(f"本地 Trace：{report.get('trace_id', '记录失败；业务结果已保留')}")
     return 0
 
 
@@ -33,14 +47,20 @@ def main() -> int:
     parser.add_argument(
         "--live", action="store_true", help="使用已授权的 DeepSeek 线路；产生 API 费用"
     )
+    parser.add_argument(
+        "--trace-cloud", action="store_true", help="显式导出脱敏 Trace 到配置的 Langfuse"
+    )
     arguments = parser.parse_args()
-    if not arguments.live:
-        return asyncio.run(offline(arguments.prompt))
     try:
+        if not arguments.live:
+            return asyncio.run(offline(arguments.prompt, trace_cloud=arguments.trace_cloud))
         report = run_live(
-            arguments.prompt, RunContext(uuid4()), Path(__file__).resolve().parents[1]
+            arguments.prompt,
+            RunContext(uuid4()),
+            Path(__file__).resolve().parents[1],
+            trace_cloud=arguments.trace_cloud,
         )
-    except ProbeError as error:
+    except (ProbeError, ValueError) as error:
         print(f"运行未开始：{error}")
         return 1
     if report.get("status") != "success":

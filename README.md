@@ -23,6 +23,9 @@ uv run --env-file .env python -m backend.cli --live "京都有哪些室内景点
 
 真实模式同时遵守每日预算、累计 5 CNY / 100 次授权；旧 CLI 暂拒绝 @/行首斜杠输入，避免文件展开。
 
+每次查询默认保存本地 OTel Trace：离线在 `.cache/traces/`，真实模式在私有 `.cache/sessions/`。
+配置 Langfuse 的 BASE_URL、PUBLIC_KEY、SECRET_KEY 后，可显式追加 `--trace-cloud` 导出摘要；不上传完整对话或工具结果。当前未配置云端凭据，Langfuse 页面验收待完成。
+
 ## 目录放什么
 
 下表是计划职责；建好了目录不代表功能已经实现。

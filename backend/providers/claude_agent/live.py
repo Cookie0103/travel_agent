@@ -5,6 +5,7 @@ import os
 from functools import partial
 from pathlib import Path
 
+from backend.adapters.tracing import cloud_exporter, trace_report
 from backend.domain.execution import RunContext
 from backend.mcp.bridge import sdk_tool_name
 from backend.providers.claude_agent.budget import Budget
@@ -17,7 +18,10 @@ from backend.providers.probe.settings import ProbeError, load_settings
 from backend.tools.search import DEFINITIONS
 
 
-def run_live(prompt: str, context: RunContext, root: Path) -> dict[str, object]:
+def run_live(
+    prompt: str, context: RunContext, root: Path, *, trace_cloud: bool = False
+) -> dict[str, object]:
+    exporter = cloud_exporter(os.environ) if trace_cloud else None
     settings = load_settings(os.environ)
     cli = find_cli(os.environ)
     cache = root / ".cache"
@@ -28,6 +32,7 @@ def run_live(prompt: str, context: RunContext, root: Path) -> dict[str, object]:
         settings.cny_limit,
     )
     with exclusive(cache / "model-budget" / "active.lock"):
+        _, before_charge = budget.totals()
         guard = Guard(
             settings,
             budget,
@@ -59,6 +64,7 @@ def run_live(prompt: str, context: RunContext, root: Path) -> dict[str, object]:
             requests=guard.observations,
             grant_attempts=count,
             grant_accounted_cny=str(charge),
+            run_accounted_cny=str(charge - before_charge),
             guard_failures=guard.failures,
         )
         if guard.failures:
@@ -69,6 +75,11 @@ def run_live(prompt: str, context: RunContext, root: Path) -> dict[str, object]:
         }:
             # 旧 CLI 可能没有向 SDK 透出 stop_reason；费用仍按完整 usage 结算。
             report.update(status="error", code="provider_error", reason="incomplete_output")
+        # 先保存执行证据，即使随后进程在导出期间被终止也能恢复结果。
+        (directory / "report.json").write_text(
+            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
+        )
+        trace_report(report, directory, exporter)
         (directory / "report.json").write_text(
             json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
         )

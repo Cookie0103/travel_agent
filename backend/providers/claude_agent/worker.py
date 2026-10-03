@@ -52,10 +52,16 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
                 "reason": result.outcome.reason,
                 "results": results,
                 "events": [asdict(e) for e in events],
+                "identity": asdict(identity),
             }
         assert result.reference
         reference_id = result.reference.id
-    return {"status": "success", "results": results, "events": [asdict(e) for e in events]}
+    return {
+        "status": "success",
+        "results": results,
+        "events": [asdict(e) for e in events],
+        "identity": asdict(identity),
+    }
 
 
 def main() -> None:

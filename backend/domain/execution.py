@@ -1,6 +1,7 @@
 """应用执行的数据契约；业务身份和事件不依赖 SDK 消息或会话文件。"""
 
 from dataclasses import dataclass, field
+from datetime import UTC, datetime
 from typing import Literal
 from uuid import UUID, uuid4
 
@@ -59,6 +60,9 @@ class RuntimeEvent:
     text: str = ""
     tool_name: str | None = None
     code: ErrorCode | None = None
+    tool_call_id: UUID | None = None
+    argument_keys: tuple[str, ...] = ()
+    occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 
 @dataclass(frozen=True)
