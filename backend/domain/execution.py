@@ -62,6 +62,7 @@ class RuntimeEvent:
     code: ErrorCode | None = None
     tool_call_id: UUID | None = None
     argument_keys: tuple[str, ...] = ()
+    result_empty: bool | None = None
     occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
 

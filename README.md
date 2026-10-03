@@ -38,7 +38,7 @@ uv run --env-file .env python -m backend.cli --live "京都有哪些室内景点
 | scripts | 开发辅助命令：安装环境、检查代码、启动测试、下载参考代码 |
 | tests| 自动测试代码；scripts/dev.py 只是帮你启动这些测试 |
 | mock_supplier | 以后模拟酒店供应商：正常查询/下单，以及超时、重复请求等故障 |
-| eval | 以后评测 Agent 回答和工具选择，保存用例与结果 |
+| eval | 评测 Agent 工具选择和结果，保存改编用例；私有运行结果在.cache/eval |
 | docs | 实际工作的说明、报告和操作日志 |
 | plan | 设计方案、架构和任务计划 |
 | vendor | 下载的上游参考代码，不属于我们实现的业务代码，也不提交到 Git |
@@ -67,8 +67,8 @@ uv run python scripts/fetch_upstream.py
 ```
 
 这些命令用于开发准备，不是启动旅行助手。setup 按 uv.lock 安装依赖并安装本地提交钩子；每次提交执行同一套 check 与离线 test。
-默认测试排除 live，不需要 API key。SDK 接入证据见 docs/protocol-agent-sdk.md；eval.run 尚未实现。
-`dev eval-dev` 在 M0.6 前明确返回未实现错误。
+默认测试排除 live，不需要 API key。SDK 接入证据见 docs/protocol-agent-sdk.md。
+`dev eval-dev` 跑21条初始用例并输出规则分；默认固定工具脚本，分数不代表模型能力。真实基线需显式 `--live`，入口及结果说明见 [eval](eval/README.md)。
 
 本机的 Python 3.12 已装入被忽略的 .cache/python，.venv 已绑定该解释器。
 普通新环境由 uv 根据 .python-version 准备解释器；不要把本机 .venv 复制到其他电脑。

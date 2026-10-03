@@ -58,6 +58,7 @@ def _build_tool(
                     tool_name=definition.name,
                     code=result.code,
                     tool_call_id=call_id,
+                    result_empty=result.empty,
                 )
             )
             payload = json.dumps(result.payload(), ensure_ascii=False)

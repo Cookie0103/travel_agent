@@ -48,7 +48,12 @@ class FixtureRuntime:
             result = await self.executor.execute(context, name, arguments)
             emit(
                 RuntimeEvent(
-                    context, "tool_finished", tool_name=name, code=result.code, tool_call_id=call_id
+                    context,
+                    "tool_finished",
+                    tool_name=name,
+                    code=result.code,
+                    tool_call_id=call_id,
+                    result_empty=result.empty,
                 )
             )
             if result.code:
