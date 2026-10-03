@@ -27,10 +27,11 @@ class Case(BaseModel):
     response_rule: Literal["nonempty", "clarify", "unsupported", "out_of_scope"] = "nonempty"
 
 
-def load_cases(path: Path, split: str) -> list[Case]:
+def load_cases(path: Path | tuple[Path, ...], split: str) -> list[Case]:
     cases = [
         Case.model_validate_json(line)
-        for line in path.read_text(encoding="utf-8").splitlines()
+        for source in ((path,) if isinstance(path, Path) else path)
+        for line in source.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
     if len({c.case_id for c in cases}) != len(cases):

@@ -1,4 +1,4 @@
-"""21 条初始任务的可恢复评测入口；复用 CLI 的 Agent 与 live 费用守卫。"""
+"""版本化自然语言任务的可恢复评测入口；复用CLI的Agent与live费用守卫。"""
 
 import argparse
 import asyncio
@@ -103,7 +103,7 @@ async def run_cases(cases: list[Case], directory: Path, *, live: bool = False) -
         "data_version": "kyoto-fixture-v1",
         "limitations": [
             "规则匹配不证明事实/相关性",
-            "未实现的业务按原标准失败",
+            "CLI搜索fixture不执行DB业务；业务规格仍按原期待评分，不代表应用未实现这些功能",
             "离线为固定工具脚本",
         ],
     }
@@ -198,7 +198,13 @@ def main() -> int:
     parser.add_argument("--case-id", action="append", help="只运行指定用例；不改变完整集")
     arguments = parser.parse_args()
     try:
-        cases = load_cases(ROOT / "eval" / "cases" / "datamind_adapted.jsonl", arguments.split)
+        cases = load_cases(
+            tuple(
+                ROOT / "eval" / "cases" / name
+                for name in ("datamind_adapted.jsonl", "travel_m1.jsonl")
+            ),
+            arguments.split,
+        )
         if arguments.case_id:
             if set(arguments.case_id) - {c.case_id for c in cases}:
                 raise ValueError("case_id 不存在")

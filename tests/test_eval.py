@@ -54,6 +54,28 @@ def test_21_ids_are_unique_and_keep_unimplemented_planning_expectation() -> None
     assert sum(c.response_rule == "unsupported" for c in cases) == 5
 
 
+def test_m1_suite_adds_nine_business_specs_with_normal_and_clarification_controls() -> None:
+    cases = load_cases(
+        tuple(
+            ROOT / "eval" / "cases" / name for name in ("datamind_adapted.jsonl", "travel_m1.jsonl")
+        ),
+        "dev",
+    )
+    assert len(cases) == 30 and len({case.case_id for case in cases}) == 30
+    ids = {case.case_id for case in cases}
+    assert {
+        "hotel-complete-control",
+        "hotel-missing-ages",
+        "plan-complete-control",
+        "plan-missing-dates",
+        "claim-confirmation-blocked",
+    } <= ids
+    for case in cases:
+        if case.case_id in {"hotel-missing-ages", "plan-missing-dates"}:
+            assert case.allowed_tools == ["update_travel_request"]
+            assert case.response_rule == "clarify" and not case.required_tools
+
+
 @pytest.mark.parametrize("empty,unfinished", [(True, False), (False, True)])
 def test_empty_or_unfinished_tools_do_not_pass_result_rule(empty: bool, unfinished: bool) -> None:
     checks = grade(example(), observation(empty=empty, unfinished=unfinished))
