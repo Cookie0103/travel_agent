@@ -4,7 +4,8 @@
 `options` 只组合 SDK 配置和进程内 MCP 工具；不实现模型/工具消息循环。
 SDK 原始消息在这里转换为 `RuntimeEvent` / `RuntimeOutcome`。
 `Agent.run` 负责业务会话归属、版本/模型切换和唯一终态。
-当前仅定义进程内续接边界；跨进程业务恢复属于 M2.4。
+完整成功轮次通过checkpoints绑定用户/会话/版本/revision与私有SDK文件指纹，复用SDK resume。
+中断、文件丢失/损坏、条件变化时按当前业务快照新建；不透明重放未完成工具。
 运行时必须置于隔离工作进程，共用 M0.2 的环境、费用和进程保护。
 旧 CLI 缺少 verbatim_prompts 时，拒绝含 @ 或行首斜杠的输入。
 测试使用脚本化 SDK 消息；不把替身结果当模型效果。
@@ -17,3 +18,4 @@ SDK 原始消息在这里转换为 `RuntimeEvent` / `RuntimeOutcome`。
 GuardedRuntime将API事件/取消接到同一live入口；父进程验证后才报告终态。
 DatabaseTools用Selector线程运行数据库工具，SDK进程保留Windows Proactor。
 私有事件文件只用于跨进程传递；UI读取PostgreSQL中的已提交应用事件。
+业务快照与revision同次读取；轮次中条件变化不保存续接指针。指针只由worker管理。

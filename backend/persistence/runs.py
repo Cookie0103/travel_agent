@@ -14,6 +14,31 @@ from backend.persistence.models import RunEventRow, TaskRunRow
 ACTIVE = ("running", "cancelling")
 
 
+async def interrupted(db: AsyncSession) -> list[TaskRunRow]:
+    return list(await db.scalars(select(TaskRunRow).where(TaskRunRow.status.in_(ACTIVE))))
+
+
+async def recover(db: AsyncSession, context: RunContext) -> None:
+    """单API启动时裁决旧进程，不重放模型或供应商请求。"""
+    row = await owned(db, context.user_id, context.run_id, lock=True)
+    if row is None or row.status not in ACTIVE:
+        return
+    cancelled = row.status == "cancelling"
+    row.status = "cancelled" if cancelled else "partial"
+    row.error_code = "cancelled" if cancelled else "unavailable"
+    row.answer = "原执行进程已退出。已提交的条件、草稿和模拟预订保留；请读取最新状态后继续。"
+    row.finished_at = datetime.now(UTC)
+    await append_event(
+        db,
+        RuntimeEvent(
+            context,
+            "cancelled" if cancelled else "partial",
+            text=row.answer,
+            code="cancelled" if cancelled else "unavailable",
+        ),
+    )
+
+
 async def by_message(db: AsyncSession, session_id: UUID, message_id: UUID) -> TaskRunRow | None:
     return await db.scalar(
         select(TaskRunRow).where(

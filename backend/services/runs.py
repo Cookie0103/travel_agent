@@ -75,8 +75,38 @@ class RunService:
         self.tasks: dict[UUID, asyncio.Task[None]] = {}
         self.cancelled: dict[UUID, asyncio.Event] = {}
         self.persistence_failures: set[UUID] = set()
+        self.recovery_pending = False
+        self.recovery_lock = asyncio.Lock()
+
+    async def initialize(self, *, only_pending: bool = False) -> None:
+        """单API进程启动：释放中断执行，不自动重复任何付费或预订操作。"""
+        async with self.recovery_lock:
+            if only_pending and not self.recovery_pending:
+                return
+            if self.tasks:
+                raise RuntimeError("只能在接受消息前恢复旧执行")
+            self.recovery_pending = True
+            try:
+                async with transaction(self.database) as db:
+                    for row in await runs.interrupted(db):
+                        context = RunContext(row.user_id, row.session_id, row.id)
+                        await sessions.get_session(db, row.user_id, row.session_id, lock=True)
+                        await runs.recover(db, context)
+            except ServiceError as error:
+                if error.code != "unavailable":
+                    raise
+                LOGGER.warning("TaskRun recovery waiting for database")
+                return
+            self.recovery_pending = False
+
+    async def _require_recovery(self) -> None:
+        if self.recovery_pending:
+            await self.initialize(only_pending=True)
+            if self.recovery_pending:
+                raise ServiceError(503, "unavailable", "数据库恢复核对尚未完成")
 
     async def submit(self, user_id: UUID, session_id: UUID, message: MessageInput) -> RunView:
+        await self._require_recovery()
         if message.mode == "live" and not self.live_enabled:
             raise ServiceError(403, "blocked", "API真实模型模式未启用")
         async with transaction(self.database) as db:
@@ -99,6 +129,7 @@ class RunService:
         return result
 
     async def get(self, user_id: UUID, run_id: UUID) -> RunView:
+        await self._require_recovery()
         async with transaction(self.database) as db:
             result = view(await runs.owned(db, user_id, run_id))
             result = replace(result, presentations=await runs.presentations(db, run_id))
@@ -107,6 +138,7 @@ class RunService:
         return result
 
     async def events(self, user_id: UUID, run_id: UUID, after: int) -> list[dict[str, object]]:
+        await self._require_recovery()
         if after < 0:
             raise ServiceError(422, "validation", "事件游标不能为负")
         async with transaction(self.database) as db:
@@ -117,6 +149,7 @@ class RunService:
             ]
 
     async def cancel(self, user_id: UUID, run_id: UUID) -> RunView:
+        await self._require_recovery()
         async with transaction(self.database) as db:
             row = await runs.owned(db, user_id, run_id, lock=True)
             result = view(row)

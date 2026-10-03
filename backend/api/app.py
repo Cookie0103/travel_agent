@@ -45,6 +45,7 @@ def create_app(
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         try:
+            await runs.initialize()
             yield
         finally:
             await runs.close()

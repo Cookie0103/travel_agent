@@ -9,7 +9,7 @@
 | 需求 / 范围 | 正常与主要分支 | 边界 / 非法输入 / 预期失败 / 依赖故障 | 跨模块证据入口 | 仍需补充 |
 | --- | --- | --- | --- | --- |
 | R01 参数与错误 | search、注册工具、结果回填 | 截断参数、未知工具、额外身份、工具异常 | tests/test_mcp_bridge.py；tests/integration/test_travel_tools.py | 持续按新增工具补故障回归 |
-| R02 SDK中断续接 | SDK本地会话引用与resume | 不可恢复安全停止、工具配对 | tests/test_runtime_sessions.py；tests/test_sdk_lifecycle.py | M2业务/SDK保存窗口与进程故障 |
+| R02 SDK中断续接 | 实际SDK完整轮次分进程resume同一ID | 丢文件/半JSON损坏/条件/CLI版本/轮中修改，业务快照新建；私有归属 | tests/test_runtime_sessions.py；tests/test_sdk_lifecycle.py；tests/integration/test_sdk_recovery.py | 小样本真实模型续接效果与M4持久卷配置 |
 | R03 工具与写入顺序 | 读上限1、写互斥、单会话执行 | 并发消息、版本竞争、取消晚成功 | tests/integration/test_runs.py；test_travel_tools.py | M2重启后裁决 |
 | R04 条件patch | set/clear/未写保留、无变更不增revision | 日期逆序、空值、未知字段、版本冲突 | tests/test_travel_request.py；tests/integration/test_travel.py | 浏览器条件失效已验证；真实响应丢失待M2 |
 | R05 Evidence与卡片 | 服务端引用/来源/有效期 | 伪造、跨用户/会话、过期、旧revision、缺来源 | tests/integration/test_travel.py；test_hotels.py | 已验证持久presentation与浏览器刷新；真实模型质量待评测 |
@@ -19,7 +19,7 @@
 | R09 预订幂等 | 同client_ref仅一订单、独立用户确认 | 重复/并发确认、服务重建、跨用户、长条件、51条历史后的恢复 | tests/integration/test_supplier.py；test_bookings.py；test_sdk_bookings.py | 服务重建与真实浏览器已验证；杀进程保存窗口待M2.4 |
 | R10 供应商失败 | 正常预订、有界429重试 | 429/500/实际超时/损坏响应/关联错误/非法Retry-After，终态分类 | tests/test_supplier_adapter.py；tests/integration/test_bookings.py；test_supplier.py | API进程退出/取消窗口待M2.4 |
 | R11 丢响应对账 | 实际HTTP断传输unknown→查询→booked | 查询500、暂时查无保持unknown、过期锁内缺席证明、不重复下单 | tests/integration/test_bookings.py；test_supplier.py | 业务进程强制退出后的对账待M2.4 |
-| R12 恢复与SSE | 已提交事件有序只读、取消 | 断线游标、进程退出、DB/SDK非原子窗口、改条件 | tests/integration/test_runs.py；M2.4–M2.6 | 当前仅单进程部分覆盖；真实杀进程/浏览器重连待做 |
+| R12 恢复与SSE | 启动只读裁决partial/cancelled，SSE补发；patch/stage稳定业务结果 | API/业务子进程真实kill、供应商提交前/后、条件版本/证据过期/默认参数差异、事务回滚 | tests/integration/test_recovery.py；test_api_restart.py；test_sdk_recovery.py；tests/test_operation_keys.py | HTTP/API进程重启已验证；浏览器真实断线待M2.5，未完成SDK轮次安全新建而非透明恢复 |
 | R13 上下文 | 当前条件/正式plan指针/近期引用注入 | 长历史压缩、旧Evidence、Skill与工具配对 | tests/integration/test_sdk_database.py；M3.1 | 压缩故障与长对话完整实验 |
 | R14 偏好 | 本人查看/修改/删除 | 跨用户、删除不复活、工具文本不写入 | M3.2 | 未实现 |
 | R15 注入隔离 | 正常搜索/业务流程 | 恶意攻略不扩权限、无Shell/文件/偏好写入 | tests/test_sdk_guard.py；tests/integration/test_travel_tools.py | 偏好完成后补正常/恶意对照 |

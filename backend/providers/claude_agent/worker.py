@@ -12,7 +12,8 @@ from uuid import UUID, uuid4
 from backend.agent.persona import travel_prompt
 from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity
-from backend.providers.claude_agent.database_tools import database_tools
+from backend.providers.claude_agent.checkpoints import Checkpoints
+from backend.providers.claude_agent.database_tools import DatabaseTools, database_tools
 from backend.providers.claude_agent.events import save_event
 from backend.providers.claude_agent.runtime import ClaudeRuntime, RuntimeConfig
 from backend.tools.contracts import ToolDefinition, ToolExecutor
@@ -45,9 +46,18 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         async with database_tools(
             dsn, supplier_url if isinstance(supplier_url, str) else None
         ) as executor:
-            system = travel_prompt() + await executor.context_text(context)
+            snapshot, revision = await executor.context_snapshot(context)
+            system = travel_prompt() + snapshot
             return await run_prompts(
-                prompts, context, identity, cli, TRAVEL_DEFINITIONS, executor, system
+                prompts,
+                context,
+                identity,
+                cli,
+                TRAVEL_DEFINITIONS,
+                executor,
+                system,
+                checkpoints=Checkpoints(Path.cwd()),
+                revision=revision,
             )
     return await run_prompts(
         prompts, context, identity, cli, DEFINITIONS, SearchExecutor(), travel_prompt()
@@ -62,6 +72,9 @@ async def run_prompts(
     definitions: tuple[ToolDefinition, ...],
     executor: ToolExecutor,
     system: str,
+    *,
+    checkpoints: Checkpoints | None = None,
+    revision: int = 0,
 ) -> dict[str, object]:
     config = RuntimeConfig(identity, cli, Path.cwd(), system)
     agent = Agent(ClaudeRuntime(config, definitions, executor))
@@ -72,6 +85,12 @@ async def run_prompts(
         events.append(event)
 
     reference_id = None
+    resumed = checkpoints.load(context, identity, revision) if checkpoints else None
+    if resumed is not None:
+        agent.restore(resumed)
+        reference_id = resumed.id
+    if checkpoints:
+        checkpoints.invalidate()
     results: list[dict[str, object]] = []
     for index, prompt in enumerate(prompts):
         assert isinstance(prompt, str)
@@ -90,11 +109,17 @@ async def run_prompts(
             }
         assert result.reference
         reference_id = result.reference.id
+    persisted = False
+    if checkpoints and result.reference:
+        if not isinstance(executor, DatabaseTools) or await executor.revision(context) == revision:
+            persisted = checkpoints.save(result.reference, revision)
     return {
         "status": "success",
         "results": results,
         "events": [asdict(e) for e in events],
         "identity": asdict(identity),
+        "resume_mode": "sdk" if resumed else "business_snapshot",
+        "checkpoint_persisted": persisted,
     }
 
 

@@ -266,3 +266,16 @@
 - 前端共享useClock与确认可用性规则；web type/lint/7测试/build通过。完整364 passed/2 live deselected（44.26秒），check159通过；本轮未增加模型费用。
 - 独立审查2P2：长合法偏好使已提交hold返回超过8k而blocked；UUID排序静默50截断隐藏新活动记录。修复Booking.card复用offer.card与全部本人预订按创建时间排序；新增真实PG长条件重复hold及51历史后held/booked恢复回归，修后34专项通过（3.48秒），check159通过。暂不加分页框架。
 - 直接uv run pytest缺项目module PATH，改成uv run python -m pytest；静态发现parsed.port无用表达式，改为显式验证赋值。未跳过测试、放松断言或绕过检查。接下来正常提交，再做M2.4断点/进程恢复。
+
+### M2.4 业务断点与SDK私有续接
+
+- M2.2/2.3保存ffff284正常钩子通过，独立2P2复核关闭。新增0008同事务业务结果凭据，patch/stage业务键不依赖SDK tool ID；hold/confirm继续复用原稳定预订键。未引入新依赖/运行时。
+- 查阅Anthropic官方sessions文档与已安装SDK公共get_session_info；私有指针绑定业务用户/会话/runtime身份/条件revision，校验完整成功轮次transcript指纹；执行前撤旧指针，丢失/损坏/条件/版本变化从当前业务快照新建，不手改transcript。SDK完整轮次实际6次分进程实验通过（12.74秒），均本地脚本模型，无真实费用。
+- 启动单API只读业务核对，中断running→partial/cancelling→cancelled，事件与状态同事务；不自动模型/下单。实际子进程patch/stage提交后kill，新执行保留revision/draft/item ID；预订confirmed在供应商提交前/后kill，重启先查，订单保持0/1。专项8PG通过（3.92秒）。
+- 实际API kill→重启读取条件rev2/partial→SSE补发/游标只读→原消息去重→新消息完成，专项1通过（2.75秒）。初次独立测试库未导入景点目录导致新消息failed，补上正常bootstrap快照导入后通过；不降低completed断言。
+- 既有旧base回归发现缓存绕版本检查，修复；子进程patch数据序列化曾把未传条件变成null，改exclude_unset传输。新增过期Evidence测试一度造出valid_until早于retrieved_at的非法记录，修为合法已过期证据；恢复parametrize装饰器误移已修，未删测试。
+- 独立3P2已修：规范等价默认字段/Decimal/时间与保留真实clear语义；缓存重放复用当前Evidence校验，快照只注入有效draft指针；快照和revision同次读取，轮次中条件变化则不写续接pointer。相应单位/PG/实际SDK并发条件实验均通过，等待独立复核。
+- 前端生成契约更新、type/lint/7测试/build通过；check169文件/3契约/10地图通过。完整dev test session9187运行中。模型用量仍21次/0.098450 CNY，预算未变化。M2.5真实浏览器断线尚未做，不能标全部M2完成。
+
+- 完整9187：381 passed/1 failed/2 live deselected（66.75秒）；原PG故障503回归发现initialize导致API启动退出。修为数据库暂不可用时保持待恢复状态，GET/submit/取消前先核对、并发只核对一次。原测试和恢复/API专项15通过（16.98秒），新增启动不可用→恢复→并发同消息回归。没有删除或降低原测试要求。
+- 独立三P2复核关闭；非阻断建议已补：initial proposal省略酒店字段与完整null重放同一草稿。SDK轮中条件修改实验通过，全表将以最终代码再跑；本轮静态持续通过。未标任务全完成。

@@ -28,6 +28,19 @@ async def draft(db: AsyncSession, user_id: UUID, draft_id: UUID) -> PlanDraftRow
     )
 
 
+async def latest_draft(db: AsyncSession, context: RunContext) -> PlanDraftRow | None:
+    return await db.scalar(
+        select(PlanDraftRow)
+        .where(
+            PlanDraftRow.user_id == context.user_id,
+            PlanDraftRow.session_id == context.session_id,
+            PlanDraftRow.confirmed_version.is_(None),
+        )
+        .order_by(PlanDraftRow.payload["expires_at"].astext.desc(), PlanDraftRow.id)
+        .limit(1)
+    )
+
+
 async def version(db: AsyncSession, row: PlanRow, number: int | None = None) -> SavedPlan | None:
     record = await db.get(
         PlanVersionRow, (row.id, row.current_version if number is None else number)

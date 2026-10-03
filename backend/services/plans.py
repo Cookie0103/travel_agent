@@ -24,7 +24,7 @@ from backend.domain.plans import (
     SavedPlan as SavedPlan,
 )
 from backend.domain.travel_request import TravelRequest
-from backend.persistence import plans
+from backend.persistence import operations, plans
 from backend.persistence import travel as requests
 from backend.persistence.models import PlanRow
 from backend.services.common import ServiceError, transaction
@@ -61,6 +61,20 @@ class PlanService:
     ) -> PlanDraft:
         async with transaction(self.travel.database) as db:
             request = request_from_row(await requests.owned_request(db, context))
+            operation_key = operations.key(arguments)
+            cached = await operations.result(db, context.session_id, "stage_plan", operation_key)
+            if cached is not None:
+                saved = PlanDraft.model_validate(cached)
+                require_revision(request, saved.request_revision)
+                current_plan = await plans.for_session(db, context)
+                if current_plan is None or current_plan.current_version != saved.base_version:
+                    raise ServiceError(409, "conflict", "正式行程版本已变化，请重新读取")
+                if datetime.now(UTC) >= saved.expires_at:
+                    raise ServiceError(409, "conflict", "原草稿已过期，请重新查询后生成")
+                report = await validate_proposal(
+                    db, context, request, saved.content.proposal(request.revision)
+                )
+                return saved.model_copy(update={"validation": report})
             row = await plans.for_session(db, context)
             change = arguments.change
             previous = await plans.version(db, row) if row else None
@@ -103,6 +117,9 @@ class PlanService:
                 expires_at=datetime.now(UTC) + timedelta(minutes=10),
             )
             await plans.add_draft(db, context, draft)
+            operations.save(
+                db, context.session_id, "stage_plan", operation_key, draft.model_dump(mode="json")
+            )
             return draft
 
     async def confirm(self, user_id: UUID, draft_id: UUID) -> SavedPlan:

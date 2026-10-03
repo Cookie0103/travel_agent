@@ -32,12 +32,17 @@ class Runtime(Protocol):
 
 
 class Agent:
-    """首版进程内引用表；M2.4 才实现数据库与 SDK 文件的跨进程恢复。"""
+    """应用引用边界；私有持久指针由provider核验后导入，不依赖SDK消息类型。"""
 
     def __init__(self, runtime: Runtime) -> None:
         self.runtime = runtime
         self._references: dict[UUID, SessionReference] = {}
         self._active: set[tuple[UUID, UUID]] = set()
+
+    def restore(self, reference: SessionReference) -> None:
+        if reference.identity != self.runtime.identity:
+            raise ValueError("恢复引用的runtime版本不匹配")
+        self._references[reference.id] = reference
 
     async def run(
         self,

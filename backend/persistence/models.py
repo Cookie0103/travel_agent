@@ -149,3 +149,13 @@ class BookingRow(Base):
     session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
     evidence_id: Mapped[UUID] = mapped_column(ForeignKey("evidence.id"))
     payload: Mapped[dict[str, object]] = mapped_column(JSONB)
+
+
+class BusinessOperationRow(Base):
+    """与业务写入同事务的结果凭据，不依赖SDK tool_call_id。"""
+
+    __tablename__ = "business_operations"
+    session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), primary_key=True)
+    name: Mapped[str] = mapped_column(String(40), primary_key=True)
+    key: Mapped[str] = mapped_column(String(64), primary_key=True)
+    payload: Mapped[dict[str, object]] = mapped_column(JSONB)

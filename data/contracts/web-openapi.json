@@ -3451,7 +3451,9 @@
           "presentation",
           "completed",
           "failed",
-          "cancelled"
+          "cancelled",
+          "partial",
+          "awaiting_user"
         ],
         "type": "string"
       },

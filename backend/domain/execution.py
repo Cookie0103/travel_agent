@@ -24,6 +24,8 @@ type EventKind = Literal[
     "completed",
     "failed",
     "cancelled",
+    "partial",
+    "awaiting_user",
 ]
 
 

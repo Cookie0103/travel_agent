@@ -34,13 +34,23 @@ class DatabaseTools:
             )
         )
 
-    async def context_text(self, context: RunContext) -> str:
+    async def context_snapshot(self, context: RunContext) -> tuple[str, int]:
         state = await asyncio.wrap_future(
             asyncio.run_coroutine_threadsafe(self.travel.business_context(context), self.loop)
         )
-        return "\n服务端业务状态与有界回顾（以当前revision为准）：\n" + json.dumps(
-            state, ensure_ascii=False
+        request = state["request"]
+        assert isinstance(request, dict) and isinstance(request["revision"], int)
+        return (
+            "\n服务端业务状态与有界回顾（以当前revision为准）：\n"
+            + json.dumps(state, ensure_ascii=False),
+            request["revision"],
         )
+
+    async def revision(self, context: RunContext) -> int:
+        request = await asyncio.wrap_future(
+            asyncio.run_coroutine_threadsafe(self.travel.get_request(context), self.loop)
+        )
+        return request.revision
 
 
 @asynccontextmanager

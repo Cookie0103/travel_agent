@@ -5,11 +5,13 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from uuid import UUID
 
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.domain.booking import Booking
 from backend.domain.evidence import EvidenceRecord
 from backend.domain.execution import RunContext
+from backend.domain.plans import PlanDraft
 from backend.domain.travel_request import (
     RequestConflict,
     RequestPatch,
@@ -17,7 +19,7 @@ from backend.domain.travel_request import (
     apply_request_patch,
     invalidated_kinds,
 )
-from backend.persistence import plans, runs, travel
+from backend.persistence import bookings, operations, plans, runs, travel
 from backend.persistence.database import Database
 from backend.persistence.models import TravelRequestRow
 from backend.services.common import ServiceError, transaction
@@ -59,11 +61,51 @@ class TravelService:
             evidence = [EvidenceRecord.model_validate(row.payload) for row in rows]
             valid = [record for record in evidence if record.applicable(current, datetime.now(UTC))]
             plan = await plans.for_session(db, context)
+            draft_row = await plans.latest_draft(db, context)
+            draft = PlanDraft.model_validate(draft_row.payload) if draft_row else None
+            pending_draft: dict[str, object] | None = None
+            if (
+                draft
+                and plan
+                and plan.current_version == draft.base_version
+                and draft.request_revision == current.revision
+                and draft.expires_at > datetime.now(UTC)
+            ):
+                try:
+                    await resolve_records(
+                        db,
+                        context,
+                        current,
+                        draft.content.proposal(current.revision).evidence_ids(),
+                        datetime.now(UTC),
+                    )
+                    pending_draft = draft.model_dump(
+                        mode="json",
+                        include={
+                            "draft_id",
+                            "plan_id",
+                            "base_version",
+                            "request_revision",
+                            "expires_at",
+                        },
+                    )
+                except ServiceError:
+                    pass  # 旧草稿不作为当前断点；正式历史仍可由用户API读取。
+            booking_rows = await bookings.for_session(db, context.user_id, context.session_id)
+            booking_values = [Booking.model_validate(row.payload) for row in booking_rows]
+            active_bookings = [
+                booking
+                for booking in booking_values
+                if booking.status in {"quoted", "held", "confirmed", "unknown"}
+            ]
             return {
                 "request": current.model_dump(mode="json"),
                 "saved_plan": {"plan_id": str(plan.id), "version": plan.current_version}
                 if plan and plan.current_version
                 else None,
+                "pending_draft": pending_draft,
+                "bookings": [booking.card() for booking in active_bookings[:8]],
+                "bookings_truncated": len(active_bookings) > 8,
                 "recent_dialogue": [
                     {
                         "user": row.prompt[:1000],
@@ -86,6 +128,14 @@ class TravelService:
             row = await travel.owned_request(db, context)
             current = request_from_row(row)
             assert row is not None
+            operation_key = operations.key(patch)
+            cached = await operations.result(
+                db, context.session_id, "update_travel_request", operation_key
+            )
+            if cached is not None:
+                saved = TypeAdapter(RequestUpdate).validate_python(cached)
+                require_revision(current, saved.request.revision)
+                return saved
             try:
                 updated, changed = apply_request_patch(current, patch)
             except RequestConflict as error:
@@ -96,7 +146,18 @@ class TravelService:
                 await travel.update_request(
                     db, row, updated, invalidated_kinds(changed), context.run_id
                 )
-            return RequestUpdate(updated, tuple(sorted(changed)))
+            result = RequestUpdate(updated, tuple(sorted(changed)))
+            operations.save(
+                db,
+                context.session_id,
+                "update_travel_request",
+                operation_key,
+                {
+                    "request": updated.model_dump(mode="json"),
+                    "changed_fields": list(result.changed_fields),
+                },
+            )
+            return result
 
     async def record_evidence(self, context: RunContext, records: Sequence[EvidenceRecord]) -> None:
         async with transaction(self.database) as db:
