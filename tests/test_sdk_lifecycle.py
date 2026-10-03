@@ -1,5 +1,6 @@
 """真实慢流和受控挂起进程验证期限，避免只测模拟 timeout 异常。"""
 
+import ctypes
 import os
 import socket
 import subprocess
@@ -133,3 +134,16 @@ def test_cancel_stops_running_child_after_publishing_progress(tmp_path: Path) ->
             progress=progress,
         )
     assert marker.exists() and time.monotonic() - started < 3
+
+
+@pytest.mark.parametrize("platform", ["linux", "darwin"])
+def test_unsupported_platform_never_loads_windows_api(
+    monkeypatch: pytest.MonkeyPatch, platform: str
+) -> None:
+    def forbidden(*args: object, **kwargs: object) -> None:
+        raise AssertionError("非Windows平台不应加载kernel32")
+
+    monkeypatch.setattr(sys, "platform", platform)
+    monkeypatch.setattr(ctypes, "WinDLL", forbidden, raising=False)
+    with pytest.raises(OSError, match="Windows"):
+        WindowsJob()

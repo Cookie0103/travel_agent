@@ -177,7 +177,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 [
                     [python, "-m", "ruff", "check", "."],
                     [python, "-m", "ruff", "format", "--check", "."],
-                    [python, "-m", "mypy", "--strict"],
+                    *[
+                        [python, "-m", "mypy", "--strict", "--platform", platform]
+                        for platform in ("win32", "linux", "darwin")
+                    ],
                     ["lint-imports"],
                     [python, "scripts/check_docs.py"],
                 ]

@@ -37,7 +37,7 @@ M3.5供应商/原币种：test_sdk_providers覆盖显式选择/无key不回退�
 
 ## 交付检查
 
-M4.1容器：tests/test_stack.py覆盖密码重用/损坏不覆盖、Docker不可用/构建失败不启动、停止保留卷。实际独立Compose从新卷初始化、Next同源代理→认证→条件→比较→草稿→局部修改→确认→模拟预订与重复确认、隔离/非法版本/禁止live、停止重建后只读计划/订单/SSE恢复。合成嵌套dotenv实际构建排除；浏览器确认刷新V1及截图见[M4](../review/M4.md)。容器默认离线，不代替真实模型与Langfuse UI；远端CI尚未运行。
+M4.1容器：tests/test_stack.py覆盖密码重用/损坏不覆盖、Docker不可用/构建失败不启动、停止保留卷。实际独立Compose从新卷初始化、Next同源代理→认证→条件→比较→草稿→局部修改→确认→模拟预订与重复确认、隔离/非法版本/禁止live、停止重建后只读计划/订单/SSE恢复。合成嵌套dotenv实际构建排除；浏览器确认刷新V1及截图见[M4](../review/M4.md)。容器默认离线，不代替真实模型与Langfuse UI；该历史验证时远端CI尚未运行，当前结果见末尾。
 
 M3.6归因：tests/test_diagnostics.py 与 integration/test_diagnostics.py 使用实际工具/PG/本机供应商HTTP注入五类单根因，并验证正常、已恢复、completed但业务规则失败、错run/调用、重复/乱序、缺失/矛盾附件、合法参数反证与私密字段不导出。eval默认缺事实附件的失败标unknown；注入不是三真实dev坏例验收。integration/test_travel_tools.py覆盖最大8条真实目录搜索与完整详情/证据保留；test_live_business.py通过真实SDK/CLI、PG和本机六HTTP酒店链路检验API入口，合成费用写测试临时账本。实测规划同输入三次与最后规则通过已留证据；不同dev坏例矩阵已集中review/M3；正常邻例/完整模型质量仍未满足。
 
@@ -69,3 +69,7 @@ M3.6逐案例矩阵及来源hash核对集中review/M3：箱根/冲绳共享59cf7
 Windows评测CLI：test_eval强制非UTF8/ASCII环境启动四个真实子进程，失败输入仍返回脱敏中文/退出1、不吐Unicode traceback；复用既有configure_environment而不要求用户设shell变量。首次四失败保留定位记录，修后92相关通过。内容辅助入口一次真实模型三维JSON已验，n=1/真人0不是质量统计；证据m34-content-judge。
 
 新用户授权预算回归：test_sdk_budget保留有限5CNY/100次的原三个边界，另验证无累计限下101次与跨日累计历史、日硬限15包含旧账/未结占用/重启且不受env100扩大、更低配置与USD0。日界沿用UTC；单run/工具/修复保护不改，不以新增授权改冻结规则。
+
+M4.2首次完整真实test三轮：原40×3、实际DeepSeek/SDK/PG/HTTP，94/120规则通过、26失败、0error/not_run；三轮分别31/31/32，全部120安全三断言通过。绑定原源码/数据/用例/schema与实际费用/时延/缓存，源文件结束哈希一致、独立身份120与临时库清理确认；见m42-model-repeat证据/M4集中记录。规则不是语义完成率，379参数语义unknown、27次运行首进度unknown、真人0，B0结果见末尾，其他对照未完成。远端web/docker-demo已实际success，但Linux Python静态11错待修，测试尚未执行；不把Windows本地Passed当全CI通过。
+
+B0同版本真实120次：17通过/103失败/0error/not_run，三轮6/6/5；120HTTP/0.646906CNY，零工具首进度120 unknown。源版本/冻结用例/状态/schema变更边界见M4与公开证据；不得当事实准确率。CI平台保护新增两原红色失败回归，修后8生命周期测试通过；三平台各216源码strict及原静态检查全通过，完整钩子与远端待验。

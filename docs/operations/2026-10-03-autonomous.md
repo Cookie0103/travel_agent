@@ -474,3 +474,24 @@ b54eddc正常check/完整默认Python钩子通过，保存恢复记录。用户�
 独立autonomy_review只读窄审查确认当前无eval.compare；给出完整配对、分母、实际身份、精确配置差异与公共白名单要求。新增比较源码会改变后续manifest哈希集合，先保留当前执行版本完成受控对照；不得临时忽略eval差异使结果可比。
 
 用户新要求先push一轮并每Mx.x验证完成自动commit/push，替代旧不push。git status仅本轮docs，HEAD9eb653a、origin/main..HEAD39提交；origin=https://github.com/Cookie0103/travel_agent.git，ls-remote正常仅main741879d。AGENTS/workflow/执行计划授权更新，quality_review只读窄复核无P1/P2。git ls-files确认.env/vendor/.cache未跟踪，仅.env.example；gitignore保持私有数据排除，原待上传历史文本对象脱敏模式扫描session5642中。准备正常本地commit/原完整默认钩子，再普通推当前开发分支并核对远端HEAD；不force/main合并，不把push称整项目验收。正在模型批次不改被测源码。
+
+备份执行完成：session5642检查917历史文本blob、forbidden_paths/suspects均空；session48207正常check与完整默认Python钩子Passed，commit2333ebc共5文档。普通git push -u origin batch/2026-10-03-travel-autonomous退出0、新分支且upstream建立；独立ls-remote核对远端完整SHA2333ebca7ca33945aba68636776a97beae8cceb3、本地相同/ahead-behind0-0，status当时干净。没有强推/main推送/PR。原评测session33589继续，期间只改docs/提交HEAD；实际manifest源码SHA逐文件检查无不一致，旧模型版本/失败不重写。后续验证完成Mx.x自动push，不再将原不push作为阻塞。
+
+第三轮已开始，前两轮各31 passed/9 failed，失败集合不同；90已记录案例290HTTP/6.452126CNY、0error，非全日/最终总额。未来B0同40test×3对照配置在启动前写docs/evaluation（只变no_tools，原顺序/期望/状态/模型SDKCLI/数据源码及HTTP12不变）；须先当前批次结束/核对预算，不刷失败/不挑子集、不将工具结构通过差叫事实提升。被测源码继续保持冻结，新增比较代码在同版本付费对照后实施。
+
+首次push后的GitHub只读核查：gh run list/view发现push37128791088与另一pull_request事件37128985119均失败，web/docker-demo实际success，Python静态Linux mypy11 attr-defined、测试未执行。失败日志定位windows_job.py9处WinDLL/WinError/get_last_error与process.py2处creationflags。uv mypy --strict --platform linux同仓库复现11错误（session43406退出1）。一次误猜ci.yml只读路径失败，实际发现check.yml后读取；未创建PR/修改远端配置/重跑远端workflow。
+
+full session33589退出0：原120结果94 passed/26 failed、三轮31/31/32、0error/not_run，407HTTP/9.363264CNY。元数据导出首次误把SQLAlchemy URL直接传psycopg连接，AttributeError在输出前，0模型/写入；复用配置URL字段正确只读查pg_database后确认本次临时库移除，导出m42-model-repeat公开证据（无原输入/回答/事实/上下文ID）。原manifest源码hash结束一致、120独立身份/会话/run、安全三断言全true；完整缓存token/时延/逐例原失败保留。结束账本488HTTP/11.442662、未结0，含旧探针0.10当天11.542662/15，余额3.457338。
+
+B0原命令首次自动审批拒绝“具体测试载荷外发未明确授权”，执行未开始、0费；没有间接执行或绕过。用户随后明确“允许这组测试文本外发和对照，遵守每日15元”，原命令携带具体授权直接重新审批成功。session56730/20261003T142321Z-d7e13464，同原40×3、source/SDK/model/data/schema配置按no_tools原机制，生产文件保持原样，余额不足停止。
+
+平台CI私有草案放.cache/ci-platform，仅准备、不污染正在B0被测源码：WindowsJob明确CDLL/handle类型且__init__/assign非win32启动前拒绝，process flags改sys.platform if语句。新Linux/Darwin反例对原生产代码2failed；私有两目标诊断首次条件表达式仍2mypy错误，改语句后2文件通过（follow-imports=skip仅诊断，不当全仓验证）。quality_review只读窄复核无P1/P2，不改变Windows API参数/句柄/进程树/期限/取消；测量后应用并完成正式三平台全仓/原生命周期/正常钩子/新push及远端CI。
+
+
+- B0 session56730正常结束0：120原记录、17规则通过、0error/not_run，120HTTP/0.646906CNY。在任何生产修改前两组manifest逐文件161哈希均相同，独立selected_cases/catalog/suite也相同；私有原记录不改。
+- 应用先前独立审查CI草案两平台保护；新增反例并入原test_sdk_lifecycle，dev check扩为三平台。首次check发现测试从模块隐式访问ctypes不符合strict，改直接import ctypes，未加ignore。修后三平台各216文件成功、原ruff/format/3分层/10地图通过；8生命周期测试2.82秒通过。独立复核无P1/P2。
+- 白名单B0导出记录：首次相对module启动非法，未执行；用runpy按原文件执行正常保存公开证据，实际PG确认仅本批临时库已移除。预算608HTTP/12.089568CNY，同UTC日旧探针0.10后12.189568，未结0；未读出候选回答/密钥/身份。
+- 几次导航命令引用不存在的路径或PowerShell wildcard导致读失败，随后定位既有入口；一次误搜.cache越过多个旧ACL缓存，止于只读拒绝，没有改权限/删除/遍历内容，之后仅精确目录。均不产生模型费用。
+- 独立full证据审查无P1/P2，提示将历史未跑标“当时”，27首进度unknown注明分母为运行；已同步集中记录、质量与候选表述，不上调模型质量。
+
+- B0独立证据复核无P1/P2：120配对/17通过/6,6,5/费用/源map及4原文件hash一致、上下文无交叉。按建议明示resume_enabled标志随既定no_tools配置变化，各次fresh无旧checkpoint，比较只称配置整体差异。下一步按原钩子commit/push复跑CI。

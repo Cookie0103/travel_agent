@@ -32,6 +32,7 @@
 - [源码学习索引](review/learning.md)、[三段可重放演示](review/demos.md)、[项目表述审计稿](review/resume-draft.md)：集中学习入口，分别标注 SDK、真实业务服务和离线脚本的证据边界。
 
 - [M4 交付规格](tasks/M4.md)、[M4 集中记录](review/M4.md)：容器启动、离线业务与重启证据；冻结评测和外部缺口分别记录。
+- [首次真实40test×3脱敏证据](evidence/m42-model-repeat-2026-10-03.json)：94/120规则通过及原失败/费用/时延，不当事实准确率或人工校准。
 - [M2 可靠执行规格](tasks/M2.md)、[M2 集中记录](review/M2.md)。
 - [M3 上下文与对照规格](tasks/M3.md)、[M3 集中记录](review/M3.md)：偏好、外部只读MCP与评测；未测能力不计完成。
 - [M1 业务集中记录](review/M1.md)、[基础 API 真实 HTTP 证据](evidence/m11-api-smoke-2026-10-03.json)、[M1 规格](tasks/M1.md)。
@@ -53,3 +54,5 @@
 - 2026-10-02：[M0.1 批次总结](review/batch/2026-10-02-m0-core.md)、[未完成原因](blocked/2026-10-02-m0-core.md)、[详细操作记录](operations/2026-10-02-m0-core.md)。
 
 设计目标与任务顺序仍以 [plan/](../plan/README.md) 为准。这里解释实际做过什么，不会把目录占位写成已经实现的功能。
+
+- [M4真实零工具三轮对照](evidence/m42-no-tools-repeat-2026-10-03.json)：同版本40×3，原规则失败保留。

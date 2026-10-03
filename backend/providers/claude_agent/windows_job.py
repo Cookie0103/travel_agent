@@ -1,6 +1,7 @@
 """Windows Job Object 回收工作进程和后代；不依赖 WMI 或 taskkill 权限。"""
 
 import ctypes
+import sys
 from ctypes import wintypes
 
 
@@ -46,7 +47,12 @@ class _ExtendedLimits(ctypes.Structure):
 class WindowsJob:
     """仅包住本项目创建的进程；关闭句柄会终止全部后代。"""
 
+    api: ctypes.CDLL
+    handle: int | None
+
     def __init__(self) -> None:
+        if sys.platform != "win32":
+            raise OSError("Windows Job Object 仅支持 Windows")
         self.api = ctypes.WinDLL("kernel32", use_last_error=True)
         self.api.CreateJobObjectW.argtypes = [ctypes.c_void_p, wintypes.LPCWSTR]
         self.api.CreateJobObjectW.restype = wintypes.HANDLE
@@ -73,6 +79,8 @@ class WindowsJob:
             raise error
 
     def assign(self, pid: int) -> None:
+        if sys.platform != "win32":
+            raise OSError("Windows Job Object 仅支持 Windows")
         process = self.api.OpenProcess(0x0101, False, pid)  # SET_QUOTA | TERMINATE
         if not process:
             raise ctypes.WinError(ctypes.get_last_error())

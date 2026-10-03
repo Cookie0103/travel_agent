@@ -35,12 +35,13 @@
 ## 当前恢复点
 
 - 分支：batch/2026-10-03-travel-autonomous，起点 1d75f79，承接已有工程和 SDK 设计。
-- 远端：origin=https://github.com/Cookie0103/travel_agent.git。新push授权收到时有39个尚未推送的本地提交（相对origin/main）；准备先保存当前文档增量，再正常push -u origin当前分支。历史记录中的“未push”为当时事实，不重写为已推送。
+- 远端：origin=https://github.com/Cookie0103/travel_agent.git。首轮push已成功，开发分支远端HEAD=2333ebca7ca33945aba68636776a97beae8cceb3，与本地一致（ahead/behind均0）。包含此前39个本地提交及本轮文档提交；原历史“未push”为当时事实，不改写。随后完成的Mx.x验证/审查后自动commit/push。
 - 当前：保留M0/M1/M2原提交，M3.2已保存3590b2c、M3.3已保存f9eb345、M3.1已保存0861da7、M3.4已保存da68f86、M3.5已保存f792c85（正常静态/完整钩子通过）。M3.5工程线路已验、真实Claude未授权/未测。M3.6真实完整规划原4HTTP基线失败并保存Trace；上限截断不计模型选工具根因，保留原失败、不自动付费重试。
 - 最新功能保存9eb653a（正常check/完整默认Python钩子通过）：承接fd17edc/8a41caa/71bd308/99da71b，补逐调用参数评审/首次进度指标及同SDK B0/单因素配置；两指标P2已修并独立关闭。M4离线容器/HTTP/恢复/浏览器与冻结60条/离线40×3证据保留。SDK真实规划规则通过且展示6项，但7 verified/13 unknown、未选住宿/未正式确认，不算完整质量；真人配对0。
-- 完整批次前累计：**81 次 / 2.079398 CNY 保守估计**、无未结预占。当前真实批次持续追加，以 `.cache/model-budget/deepseek.jsonl` 为准；不能把批次前数字当实时总消费。旧100次许可已被每日15CNY许可替代，旧账/未结预占仍计入日余额。
-- 当前：9eb653a正常check/完整默认Python钩子与预算独立复核通过。39相关3.74秒/check216通过；CNY累计上限None、日硬限15、USD0，原账本/单run保护不变。真实冻结test40×3 full/B3批次运行中，目录 `.cache/eval/20261003T135558Z-3899d0b3`、exec session33589；开始时HEAD9eb653a、dirty=false。保持被测源码/数据/schema/prompt不变，仅更新过程文档。断线后先核对attempts/results/账本与进程，不重新启动整批。
-- 未满足：三个真实坏例的完整邻近正常回归/规划质量、真实40×3最终结果与模型对照、Claude凭据、Cloud UI与真人校准；自动事件的参数语义/纯文本首进度仍unknown，不能冒充全量质量。最新web-check type/lint/10测试/build通过；偶发PG持久化/初始化失败根因未确认，脱敏SQLSTATE诊断不代表已修根因。远端CI未运行。PG0010；离线镜像/旧状态只读/新会话完整烟测已验，最新构建源码范围80a308d。
+- full批次结束账本：**488 HTTP / 11.442662 CNY保守估计**、未结0；同UTC日含旧探针0.10后11.542662/15CNY。B0随后继续追加，以`.cache/model-budget/deepseek.jsonl`为实时依据，旧100次许可不再适用；不把此批次边界数字当新实时余额。
+- 当前：完整真实full/B3原40test×3已结束，94/120规则通过、0error/not_run，原manifest全部源码哈希结束核对一致；407HTTP/9.363264CNY，独立身份120、安全三断言120/120，临时库正常清理。证据docs/evidence/m42-model-repeat-2026-10-03.json。B0同版本批次`.cache/eval/20261003T142321Z-d7e13464`已结束，17/120规则通过，120HTTP/0.646906CNY；开始前后原161源码hash相同，生产修改在结束核对后应用。原已付费批次不重启。首轮启动被自动审批拒绝具体载荷授权；用户随后明确批准这40自写文本外发及对照，原命令直接重新审批后启动，首次拒绝0请求/费用。
+- CI：首次push及pull_request事件，web/docker-demo已actual success；Linux Python静态11属性错误已本地同样复现，测试尚未跑。平台保护已应用，保持Windows原清理语义；新增两非Windows拒绝反例，原代码红色，修后8生命周期测试通过2.82秒。dev check扩为win32/linux/darwin，三平台各216源码strict、ruff/format/3分层/10地图全部通过，独立无P1/P2。下一步正常完整钩子→commit/push→核对远端CI，不改原评测成绩。
+- 未满足：三个真实坏例的完整邻近正常回归/规划质量、真实语义/人工评分及其他模型对照、Claude凭据、Cloud UI与真人校准；自动事件的参数语义/纯文本首进度仍unknown，不能冒充全量质量。最新web-check type/lint/10测试/build通过；偶发PG持久化/初始化失败根因未确认，脱敏SQLSTATE诊断不代表已修根因。首轮远端Python失败原证据保留，修复复跑待验。PG0010；离线镜像/旧状态只读/新会话完整烟测已验，最新构建源码范围80a308d。
 
 
 
@@ -68,7 +69,7 @@
 | M1.9 | verified（0b6fd8c） | 完整演示和30条回归 | R01–R08与页面证据 |
 | M2.1–M2.6 | verified（4a12656） | 模拟预订、对账、重启与断线恢复 | R09–R12，真实PG/HTTP/浏览器；真实失败小样本前后证据 |
 | M3.1–M3.6 | M3.1/M3.2/M3.3 verified / M3.4 partial（da68f86）/ M3.5 partial（f792c85）/ M3.6 partial（aab5972，三个真实输入记录已有、邻例/质量未完全通过） | 上下文/偏好、对外 MCP、编排对照、坏例修复 | R13–R17/R19；授权范围内模型实验；真实压缩质量未计入机制验收 |
-| M4.1–M4.5 | M4.1 partial（离线应用容器已验，Cloud UI待凭据）；M4.2 in_progress（冻结/离线重复已验，真实120批次运行中） | 可启动交付、回归报告、演示与学习索引 | 构建、冻结集、最终独立审查；未测项明示 |
+| M4.1–M4.5 | M4.1 partial（离线容器/远端Docker已验，Cloud UI待凭据）；M4.2 partial（冻结/真实120测量已有，B0同版本120次已完成，语义/人工/其他对照未验） | 可启动交付、回归报告、演示与学习索引 | 构建、冻结集、最终独立审查；未测项明示 |
 
 执行时把当前阶段展开为任务级进度，附 commit 和证据链接；不为用户制造逐项批准待办。
 
@@ -248,3 +249,9 @@ aab5972正常静态/完整默认Python提交钩子通过，代码已本地保存
 下一免费增量审查已确认缺少双运行比较入口，可复用eval.report构建eval.compare，不另建框架。当前测量期间不改源码；比较须核对完整Case/repetitions/实际identity/数据价表与源码hash、预定variant schema/Skills，保留error/not_run/unknown分母且只输出白名单。新增eval源码会改变manifest hash集合，因此同版本付费对照必须先用当前冻结执行版本完成，不能为了接纳对照临时忽略eval源码差异。
 
 用户随后要求继续开发前先push全部已有工作，并在每个Mx.x完成后提交/push。已同步AGENTS/workflow/v8授权，独立quality_review窄复核无P1/P2；origin只读确认目前仅main=741879d。当前开发分支39个本地增量已保存，先将本轮文档状态正常commit（含原钩子），再普通push -u origin batch/2026-10-03-travel-autonomous，不合并main。上传范围不含.env/vendor/.cache，历史文本对象的脱敏密钥扫描运行中；扫描与钩子未结束前不声称推送完成。真实批次继续使用原源码/数据/初始manifest，当前仅文档/HEAD发生保存，模型失败不因push被标通过。
+
+首轮备份已完成：917个历史文本对象扫描无常见密钥模式命中、无.env/vendor/.cache跟踪路径；正常check/完整默认Python提交钩子通过，2333ebc保存文档授权与恢复点。git push -u origin batch/2026-10-03-travel-autonomous成功创建开发分支，随后git ls-remote核对真实远端2333ebca7ca33945aba68636776a97beae8cceb3，本地ahead/behind=0/0且当时工作区干净。未push main/强推/创建PR。模型批次继续，已核对其manifest全部源码hash无变化；本条为push后追加的过程记录，随下一增量保存，不重跑已通过检查刷结果。
+
+第三轮进行中；前两轮均31/40规则通过、各9失败，但失败集合不同。90已记录小计290HTTP/6.452126CNY、0执行错误；无最终总体质量结论。docs/evaluation记录后续B0测量约定：同原40test×3/顺序/初始状态/模型SDK数据源码/HTTP12，仅no_tools；当前批次结束及核对日余额后才启动，禁止根据test失败改配置/挑子集。B0工具结构失败不当事实提升，日额度不足保持未跑，不自动重放。
+
+- 2026-10-03恢复点：B0完整120测量与完整组120逐项配对，原selected_cases/source hash/catalog/冻结suite相同，仅组别差异；辅助scripts/dev.py原未入manifest，两个开始提交Git blob相同，补绑定hash并明示范围。账本608HTTP/12.089568CNY，含旧探针当天12.189568/15、余额2.810432，未结0。零工具结果不当语义评分。公开证据m42-no-tools-repeat；待独立证据审查/原钩子及CI修复push。

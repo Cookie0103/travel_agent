@@ -43,3 +43,11 @@ required_facts是依据原需求/既定状态独立列出的必需事实清单�
 human_quality只接收真人提供的relevance/explanation/tradeoffs各0–5、reason与rater；未提供不生成分数。0=该项缺失/明显错误，3=基本可用但有关键遗漏，5=完整满足：相关性对应当前需求与硬条件，解释说明来源/unknown及选择原因，取舍说明冲突/可选调整且不偷偷放宽条件。内容辅助评审使用 `uv run python -m eval.judge <私有Sample.jsonl> --kind content`，默认只准备；显式--live仍受原累计/每日额度约束，同一固定温度零工具SDK入口，只将三维rubric与严格输出模型换为QualityScore。模型分和human_quality分别保存，不能用模型分代替真人或事实证据。已有评分补入实际真人human_quality后，运行 `uv run python -m eval.persona <samples.jsonl> --kind content` 离线分别计算三维校准，不再次调用模型。实际内容单样本已验证入口，完整模型统计、人工抽查和校准仍待验证，不能将本机SDK工程测试当整体模型质量验收。
 
 评测CLI复用scripts.dev编码初始化，Windows无需手动设置PYTHONUTF8；输出和私有文件保持UTF-8。初始化不读取密钥、不修改评分输入，不产生请求。
+
+## 本轮受控测量约定（2026-10-03）
+
+首个真实完整批次在HEAD9eb653a、干净工作区启动：travel-eval-v1原40test×3、full/B3、每例最多12HTTP；被测源码/数据/prompt/schema保持不变。期间保存执行文档及push不会改变这些文件，原manifest的HEAD与启动状态保留，结束时逐文件核对。该批次是测量，不能补造优化前缺失的成功率/费用验收阈值。
+
+后续B0对照在运行前明确：仍用同40test、同顺序、3个独立重复、原期望与初始状态、同模型/SDK/CLI/数据/源码和12HTTP上限，唯一运行配置变为no_tools。先完成当前批次并核对日余额，再决定是否启动；日硬限不足停止并公开not_run，不自动回放失败。B0不注入数据库事实/工具，其缺工具导致的结构规则失败是预期对照边界，不能据此宣称事实准确率提升。对照不用于调提示或挑选有利案例。
+
+B2/B1及单因素后续测量各自记录实际样本/重复/适用范围，不能把未运行的组别填为成功或将B2两开关组合当单因素。比较入口只读取原manifest/results，核对完整配对/执行版本并重用report统计，缺语义或真人答案继续unknown。新增eval比较源码会改变未来manifest哈希集合，因此本轮同版本受控调用先完成，随后实现比较；不临时忽略源码差异来接纳不同实验。

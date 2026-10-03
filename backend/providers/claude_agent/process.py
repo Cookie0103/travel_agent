@@ -25,9 +25,9 @@ def run_process(
     progress: Callable[[], None] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """先由 worker 自行取消；父期限到达才对自己创建的进程树强制终止。"""
-    flags = (
-        subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP if os.name == "nt" else 0
-    )
+    flags = 0
+    if sys.platform == "win32":
+        flags = subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP
     job = WindowsJob() if sys.platform == "win32" else None
     # Windows venv python.exe 会立刻启动真正解释器；用基础解释器启动无 SDK 的握手器。
     interpreter = str(Path(sys.base_prefix) / "python.exe") if os.name == "nt" else sys.executable

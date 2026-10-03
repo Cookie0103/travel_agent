@@ -57,7 +57,7 @@
 
 ```text
 uv run python scripts/dev.py setup      # uv sync + 安装 pre-commit
-uv run python scripts/dev.py check      # ruff check + ruff format --check + mypy --strict + lint-imports
+uv run python scripts/dev.py check      # ruff check + ruff format --check + mypy --strict（三平台）+ lint-imports
 uv run python scripts/dev.py test       # pytest（不含 live 测试）
 uv run python scripts/dev.py db-up      # docker compose 启动 PostgreSQL
 uv run python scripts/dev.py eval-dev   # 评测 dev 集（默认 FakeRuntime）
