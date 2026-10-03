@@ -139,3 +139,13 @@ class SupplierOrderRow(Base):
     )
     id: Mapped[UUID] = mapped_column(unique=True)
     payload: Mapped[dict[str, object]] = mapped_column(JSONB)
+
+
+class BookingRow(Base):
+    __tablename__ = "bookings"
+    __table_args__ = (UniqueConstraint("session_id", "evidence_id"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
+    evidence_id: Mapped[UUID] = mapped_column(ForeignKey("evidence.id"))
+    payload: Mapped[dict[str, object]] = mapped_column(JSONB)

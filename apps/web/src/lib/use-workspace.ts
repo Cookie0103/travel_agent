@@ -13,6 +13,7 @@ import {
   type Plan,
   type Hotels,
   type AppEvent,
+  type Booking,
 } from "./api";
 import type { components } from "./api-types";
 
@@ -27,6 +28,7 @@ export function useWorkspace() {
   const [events, setEvents] = useState<AppEvent[]>([]);
   const [hotels, setHotels] = useState<Hotels>();
   const [plan, setPlan] = useState<Plan>();
+  const [bookings, setBookings] = useState<Booking[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const stream = useRef<AbortController | null>(null);
@@ -89,6 +91,12 @@ export function useWorkspace() {
             current.token,
           ),
         );
+        setBookings(
+          await api<Booking[]>(
+            `/sessions/${current.session_id}/bookings`,
+            current.token,
+          ),
+        );
         if (final.error_code)
           setError(final.answer || `执行失败：${final.error_code}`);
       } catch (failure) {
@@ -118,6 +126,12 @@ export function useWorkspace() {
         if (!mounted) return;
         setIdentity(current);
         setRequest(state);
+        setBookings(
+          await api<Booking[]>(
+            `/sessions/${current.session_id}/bookings`,
+            current.token,
+          ),
+        );
         if (current.plan_id)
           setPlan(await api<Plan>(`/plans/${current.plan_id}`, current.token));
         if (current.run_id) {
@@ -174,6 +188,7 @@ export function useWorkspace() {
       setRun(undefined);
       setHotels(undefined);
       setPlan(undefined);
+      setBookings([]);
       setEvents([]);
       setRequest(
         await api<RequestState>(
@@ -212,6 +227,12 @@ export function useWorkspace() {
         ),
       );
       setHotels(undefined);
+      setBookings(
+        await api<Booking[]>(
+          `/sessions/${identity.session_id}/bookings`,
+          identity.token,
+        ),
+      );
       if (plan)
         setPlan(
           await api<Plan>(
@@ -265,6 +286,51 @@ export function useWorkspace() {
       setPlan(await api<Plan>(`/plans/${saved.plan_id}`, identity.token));
     });
   }
+  async function holdOffer(offerId: string, revision: number) {
+    if (!identity) return;
+    await action(async () => {
+      try {
+        await api(
+          `/sessions/${identity.session_id}/hotel-holds`,
+          identity.token,
+          "POST",
+          {
+            offer_id: offerId,
+            expected_revision: revision,
+          },
+        );
+      } finally {
+        setBookings(
+          await api<Booking[]>(
+            `/sessions/${identity.session_id}/bookings`,
+            identity.token,
+          ),
+        );
+      }
+    });
+  }
+  async function bookingAction(
+    bookingId: string,
+    operation: "confirm" | "reconcile",
+  ) {
+    if (!identity) return;
+    await action(async () => {
+      try {
+        await api(
+          `/bookings/${bookingId}/${operation}`,
+          identity.token,
+          "POST",
+        );
+      } finally {
+        setBookings(
+          await api<Booking[]>(
+            `/sessions/${identity.session_id}/bookings`,
+            identity.token,
+          ),
+        );
+      }
+    });
+  }
   async function lock(itemId: string) {
     if (!identity || !plan?.version) return;
     const ids = new Set(
@@ -304,12 +370,15 @@ export function useWorkspace() {
     events,
     hotels,
     plan,
+    bookings,
     error,
     busy,
     login,
     saveConditions,
     send,
     confirm,
+    holdOffer,
+    bookingAction,
     lock,
     reconnect,
     refresh,

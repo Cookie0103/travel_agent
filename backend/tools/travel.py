@@ -10,10 +10,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 
+from backend.domain.booking import HoldHotelInput
 from backend.domain.execution import RunContext
 from backend.domain.itinerary import ItineraryProposal, RouteInput
 from backend.domain.plans import StageInput
 from backend.domain.travel_request import RequestPatch
+from backend.services.bookings import BookingService
 from backend.services.catalog import CatalogResult, CatalogService
 from backend.services.common import ServiceError
 from backend.services.hotels import HotelService, cards
@@ -122,6 +124,12 @@ DEFINITIONS = (
         PlanInput.model_json_schema(),
     ),
     ToolDefinition(
+        "hold_hotel",
+        "暂留本人本会话查询到的有效完整模拟报价；返回预订ID与到期时间，不能下单，用户必须在页面确认。",
+        HoldHotelInput.model_json_schema(),
+        kind="state",
+    ),
+    ToolDefinition(
         "present_travel_result",
         "按本会话报价或草稿ID补卡；行程展示前重新校验，不接受模型提供事实或校验结果。",
         PresentationInput.model_json_schema(),
@@ -142,6 +150,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "validate_itinerary": ItineraryProposal,
     "stage_plan_change": StageInput,
     "get_saved_plan": PlanInput,
+    "hold_hotel": HoldHotelInput,
 }
 
 
@@ -151,6 +160,7 @@ class TravelToolExecutor:
         self.hotels = HotelService(travel)
         self.planning = PlanningService(travel)
         self.plans = PlanService(travel)
+        self.bookings = BookingService(travel)
         self.calls, self.max_calls = 0, max_calls
         self.validations = 0
         self.last_validation: ItineraryProposal | None = None
@@ -196,6 +206,12 @@ class TravelToolExecutor:
                 return ToolResult({}, code="unavailable", suggestion="本地业务数据暂不可用")
 
     async def _dispatch(self, context: RunContext, name: str, parsed: BaseModel) -> ToolResult:
+        if isinstance(parsed, HoldHotelInput):
+            booking = await self.bookings.hold(context, parsed)
+            return ToolResult(
+                booking.card(),
+                warnings=("仅模拟暂留，不是订单；只允许用户在页面独立确认预订",),
+            )
         if isinstance(parsed, StageInput):
             draft = await self.plans.stage(
                 context,

@@ -73,6 +73,7 @@ def run_live(
                     "session_id": str(context.session_id),
                     "run_id": str(context.run_id),
                     "database_dsn": database_dsn,
+                    "supplier_url": os.environ.get("MOCK_SUPPLIER_URL"),
                     "cli_version": version.stdout.split()[0],
                 },
                 cancelled=cancelled,

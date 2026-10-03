@@ -16,14 +16,14 @@
 | R06 行程校验 | 时间/营业/路线/预算、SDK修正反馈 | 闭馆、跨午夜、缺税、未知路线、预算下界、3轮上限 | tests/test_itinerary.py；tests/integration/test_planning.py；test_sdk_planning.py | 真实模型修复效果、页面警告 |
 | R07 局部修改 | 稳定item_id、无关项保留、重复地点 | 锁定/不存在项目、旧base、超长合法草稿 | tests/test_plans.py；tests/integration/test_plans.py | 网页差异/锁定端到端已验证；模型改程效果待评测 |
 | R08 确认保存 | 用户API确认、不可变正式版本 | 并发/重复确认、过期/硬冲突/旧条件整笔回滚 | tests/integration/test_plans.py；test_sdk_plans.py | 网页确认及HTTP重复操作已验证 |
-| R09 预订幂等 | 同client_ref仅一订单 | 重复点击、重启重发、身份隔离 | M2.1–M2.3真实PG/模拟供应商 | 未实现，不能算通过 |
-| R10 供应商失败 | 正常预订与有界重试 | 429/500/超时、终态分类 | M2.1–M2.3故障注入 | 未实现 |
-| R11 丢响应对账 | unknown→查询→booked | 订单已创建/响应丢失、查询失败、不重复下单 | M2.2/M2.6真实PG与供应商 | 未实现 |
+| R09 预订幂等 | 同client_ref仅一订单、独立用户确认 | 重复/并发确认、服务重建、跨用户、长条件、51条历史后的恢复 | tests/integration/test_supplier.py；test_bookings.py；test_sdk_bookings.py | 服务重建与真实浏览器已验证；杀进程保存窗口待M2.4 |
+| R10 供应商失败 | 正常预订、有界429重试 | 429/500/实际超时/损坏响应/关联错误/非法Retry-After，终态分类 | tests/test_supplier_adapter.py；tests/integration/test_bookings.py；test_supplier.py | API进程退出/取消窗口待M2.4 |
+| R11 丢响应对账 | 实际HTTP断传输unknown→查询→booked | 查询500、暂时查无保持unknown、过期锁内缺席证明、不重复下单 | tests/integration/test_bookings.py；test_supplier.py | 业务进程强制退出后的对账待M2.4 |
 | R12 恢复与SSE | 已提交事件有序只读、取消 | 断线游标、进程退出、DB/SDK非原子窗口、改条件 | tests/integration/test_runs.py；M2.4–M2.6 | 当前仅单进程部分覆盖；真实杀进程/浏览器重连待做 |
 | R13 上下文 | 当前条件/正式plan指针/近期引用注入 | 长历史压缩、旧Evidence、Skill与工具配对 | tests/integration/test_sdk_database.py；M3.1 | 压缩故障与长对话完整实验 |
 | R14 偏好 | 本人查看/修改/删除 | 跨用户、删除不复活、工具文本不写入 | M3.2 | 未实现 |
 | R15 注入隔离 | 正常搜索/业务流程 | 恶意攻略不扩权限、无Shell/文件/偏好写入 | tests/test_sdk_guard.py；tests/integration/test_travel_tools.py | 偏好完成后补正常/恶意对照 |
-| R16 确认边界 | 模型只暂存，用户确认保存 | 模型声称确认、越权写入 | tests/integration/test_sdk_plans.py；M2.2 | 下单工具/API拒绝实际证明 |
+| R16 确认边界 | 模型只暂存，用户独立确认保存/模拟订单 | 模型无下单工具、伪造user_confirmed、越权确认 | tests/integration/test_sdk_plans.py；test_sdk_bookings.py；test_bookings.py | 本地SDK暂留后订单为零与API确认已验证；真实模型恶意对照待M3 |
 | R17 失败归因 | 正常Trace与工具span | 5类单根因注入、缺证据unknown | tests/test_tracing.py；M2.6/M3.5 | 完整归因实验与真实修复前后证据 |
 | R19 对外只读MCP | 与直接handlers一致 | 鉴权、参数、依赖故障、跨用户 | M3.3 | 未实现；不能用进程内桥接代替 |
 | 酒店比较/刷新 | 同入住口径、并列最低、服务端报价 | 缺人数/税费、不匹配、过期、无库存 | tests/test_hotels.py；tests/integration/test_hotels.py；test_sdk_hotels.py | 网页过期与恢复 |

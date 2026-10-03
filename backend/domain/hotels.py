@@ -33,7 +33,9 @@ class HotelRate(BaseModel):
 
 
 class QuoteFields(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(
+        extra="forbid", frozen=True, json_schema_serialization_defaults_required=True
+    )
     offer_id: UUID = Field(default_factory=uuid4)
     rate_id: str
     hotel_id: str

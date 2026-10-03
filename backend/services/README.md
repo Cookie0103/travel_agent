@@ -12,3 +12,5 @@ HotelService复用Evidence持久化不可变模拟报价；补卡拒绝过期、
 PlanningService解析同会话当前证据、生成自制估算路段并调用纯validator；修复往返由SDK驱动。
 PlanService同事务重新校验草稿/版本/证据并确认；用户+draft幂等重放返回第一次正式版本。
 resolve_records与validate_proposal供普通工具/展示/确认共用，确认时不另开事务。
+
+BookingService持久确认后才调供应商；confirmed/unknown只对账，同报价ID幂等，报价锁价与hold有效期分开。

@@ -8,6 +8,7 @@ from threading import Thread
 
 from sqlalchemy import make_url
 
+from backend.adapters.supplier import SupplierClient
 from backend.domain.execution import RunContext
 from backend.persistence.database import Database
 from backend.services.travel import TravelService
@@ -16,10 +17,13 @@ from backend.tools.travel import TravelToolExecutor
 
 
 class DatabaseTools:
-    def __init__(self, loop: asyncio.AbstractEventLoop, database: Database) -> None:
+    def __init__(
+        self, loop: asyncio.AbstractEventLoop, database: Database, supplier_url: str | None = None
+    ) -> None:
         self.loop = loop
         self.travel = TravelService(database)
         self.executor = TravelToolExecutor(self.travel)
+        self.executor.bookings.supplier = SupplierClient(supplier_url)
 
     async def execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
@@ -40,13 +44,13 @@ class DatabaseTools:
 
 
 @asynccontextmanager
-async def database_tools(dsn: str) -> AsyncIterator[DatabaseTools]:
+async def database_tools(dsn: str, supplier_url: str | None = None) -> AsyncIterator[DatabaseTools]:
     loop = asyncio.SelectorEventLoop()
     thread = Thread(target=loop.run_forever, name="travel-database", daemon=True)
     database = Database(make_url(dsn))
     thread.start()
     try:
-        yield DatabaseTools(loop, database)
+        yield DatabaseTools(loop, database, supplier_url)
     finally:
         try:
             await asyncio.wrap_future(asyncio.run_coroutine_threadsafe(database.close(), loop))

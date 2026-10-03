@@ -4,6 +4,7 @@ export type RequestState = components["schemas"]["TravelRequest"];
 export type Run = components["schemas"]["RunView"];
 export type Plan = components["schemas"]["UiPlanView"];
 export type Hotels = components["schemas"]["UiHotelPresentation"];
+export type Booking = components["schemas"]["Booking"];
 export type AppEvent = components["schemas"]["UiRuntimeEvent"] & {
   sequence: number;
 };

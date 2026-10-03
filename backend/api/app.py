@@ -9,6 +9,7 @@ from fastapi import Depends, FastAPI, Header, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from backend.api.events import stream_events
+from backend.services.bookings import Booking, BookingService, HoldHotelInput
 from backend.services.common import ServiceError
 from backend.services.plans import LockInput, PlanService, SavedPlan
 from backend.services.runs import MessageInput, RunService, RunView
@@ -33,11 +34,13 @@ def create_app(
     *,
     runs_service: RunService | None = None,
     live_enabled: bool = False,
+    booking_service: BookingService | None = None,
 ) -> FastAPI:
     sessions = service or SessionService.from_environment()
     travel = TravelService(sessions.database)
     runs = runs_service or RunService(sessions.database, live_enabled=live_enabled)
     plans = PlanService(travel)
+    bookings = booking_service or BookingService(travel)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -127,6 +130,34 @@ def create_app(
     @app.get("/plans/{plan_id}")
     async def get_plan(plan_id: UUID, user_id: Annotated[UUID, Depends(identity)]) -> PlanView:
         return PlanView.model_validate(await plans.get(user_id, plan_id))
+
+    @app.post("/sessions/{session_id}/hotel-holds")
+    async def hold_hotel(
+        session_id: UUID, body: HoldHotelInput, user_id: Annotated[UUID, Depends(identity)]
+    ) -> Booking:
+        return await bookings.hold(RunContext(user_id, session_id), body)
+
+    @app.get("/sessions/{session_id}/bookings")
+    async def session_bookings(
+        session_id: UUID, user_id: Annotated[UUID, Depends(identity)]
+    ) -> tuple[Booking, ...]:
+        return await bookings.list(RunContext(user_id, session_id))
+
+    @app.get("/bookings/{booking_id}")
+    async def get_booking(booking_id: UUID, user_id: Annotated[UUID, Depends(identity)]) -> Booking:
+        return await bookings.get(user_id, booking_id)
+
+    @app.post("/bookings/{booking_id}/confirm")
+    async def confirm_booking(
+        booking_id: UUID, user_id: Annotated[UUID, Depends(identity)]
+    ) -> Booking:
+        return await bookings.confirm(user_id, booking_id)
+
+    @app.post("/bookings/{booking_id}/reconcile")
+    async def reconcile_booking(
+        booking_id: UUID, user_id: Annotated[UUID, Depends(identity)]
+    ) -> Booking:
+        return await bookings.reconcile(user_id, booking_id)
 
     @app.get("/plan-drafts/{draft_id}")
     async def get_draft(draft_id: UUID, user_id: Annotated[UUID, Depends(identity)]) -> PlanView:

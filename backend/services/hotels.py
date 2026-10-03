@@ -38,7 +38,7 @@ class HotelService:
         self, context: RunContext, revision: int, offer_id: UUID
     ) -> tuple[EvidenceRecord, ...]:
         # 只允许刷新本人查到过的实体；旧证据仅定位rate，不沿用旧价格/入住条件。
-        old = (await self._known(context, (offer_id,)))[0]
+        old = (await self.known_quotes(context, (offer_id,)))[0]
         offer = HotelOffer.model_validate(old.value)
         request = await self._request(context, revision)
         return await self._quote(context, request, rate_id=offer.rate_id, limit=1)
@@ -85,7 +85,7 @@ class HotelService:
             await self.travel.record_evidence(context, records)
         return tuple(records)
 
-    async def _known(
+    async def known_quotes(
         self, context: RunContext, ids: tuple[UUID, ...]
     ) -> tuple[EvidenceRecord, ...]:
         async with transaction(self.travel.database) as db:
@@ -101,7 +101,7 @@ class HotelService:
         self, context: RunContext, revision: int, ids: tuple[UUID, ...]
     ) -> dict[str, object]:
         await self._request(context, revision)
-        known = await self._known(context, ids)
+        known = await self.known_quotes(context, ids)
         records = await self.travel.resolve_evidence(
             context, tuple(record.evidence_id for record in known)
         )

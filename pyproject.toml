@@ -9,6 +9,7 @@ dependencies = [
     "anthropic>=1.11.0",
     "claude-agent-sdk>=0.2.139,<0.3",
     "fastapi>=0.115,<1",
+    "httpx>=0.28.1,<1",
     "opentelemetry-exporter-otlp-proto-http>=1.45.0",
     "opentelemetry-sdk>=1.45.0",
     "psycopg[binary]>=3,<4",
@@ -20,7 +21,6 @@ dependencies = [
 
 [dependency-groups]
 dev = [
-    "httpx>=0.28.1",
     "import-linter",
     "mypy",
     "pre-commit",

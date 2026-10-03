@@ -175,6 +175,91 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/sessions/{session_id}/hotel-holds": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Hold Hotel */
+        post: operations["hold_hotel_sessions__session_id__hotel_holds_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessions/{session_id}/bookings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Session Bookings */
+        get: operations["session_bookings_sessions__session_id__bookings_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/bookings/{booking_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Booking */
+        get: operations["get_booking_bookings__booking_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/bookings/{booking_id}/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Booking */
+        post: operations["confirm_booking_bookings__booking_id__confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/bookings/{booking_id}/reconcile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reconcile Booking */
+        post: operations["reconcile_booking_bookings__booking_id__reconcile_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/plan-drafts/{draft_id}": {
         parameters: {
             query?: never;
@@ -230,6 +315,69 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** Booking */
+        Booking: {
+            /**
+             * Booking Id
+             * Format: uuid
+             */
+            booking_id: string;
+            /**
+             * Client Ref
+             * Format: uuid
+             */
+            client_ref: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Evidence Id
+             * Format: uuid
+             */
+            evidence_id: string;
+            offer: components["schemas"]["HotelOffer"];
+            /** Total */
+            total: string;
+            /** Source Ref */
+            source_ref: string;
+            /** Content Version */
+            content_version: string | null;
+            /** @default quoted */
+            status: components["schemas"]["BookingStatus"];
+            /** Hold Id */
+            hold_id: string | null;
+            /** Expires At */
+            expires_at: string | null;
+            /** Order Id */
+            order_id: string | null;
+            error_code: components["schemas"]["ErrorCode"] | null;
+            /**
+             * History
+             * @default []
+             */
+            history: components["schemas"]["BookingChange"][];
+            /**
+             * Data Mode
+             * @default fixture
+             * @constant
+             */
+            data_mode: "fixture";
+        };
+        /** BookingChange */
+        BookingChange: {
+            status: components["schemas"]["BookingStatus"];
+            /**
+             * At
+             * Format: date-time
+             */
+            at: string;
+            /** Reason */
+            reason: string;
+        };
+        /** @enum {string} */
+        BookingStatus: "quoted" | "held" | "confirmed" | "booked" | "failed" | "unknown" | "expired";
         /** DemoIdentity */
         DemoIdentity: {
             /**
@@ -253,10 +401,22 @@ export interface components {
              */
             display_name: string;
         };
+        /** @enum {string} */
+        ErrorCode: "validation" | "blocked" | "unavailable" | "timeout" | "rate_limited" | "provider_error" | "conflict" | "cancelled";
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HoldHotelInput */
+        HoldHotelInput: {
+            /**
+             * Offer Id
+             * Format: uuid
+             */
+            offer_id: string;
+            /** Expected Revision */
+            expected_revision: number;
         };
         /** HotelCard */
         HotelCard: {
@@ -319,6 +479,45 @@ export interface components {
             source_ref: string | null;
             /** Content Version */
             content_version: string | null;
+        };
+        /** HotelOffer */
+        HotelOffer: {
+            /**
+             * Offer Id
+             * Format: uuid
+             */
+            offer_id: string;
+            /** Rate Id */
+            rate_id: string;
+            /** Hotel Id */
+            hotel_id: string;
+            /** Hotel Name */
+            hotel_name: string;
+            /** Room Type */
+            room_type: string;
+            /** Currency */
+            currency: string;
+            /** Base Amount */
+            base_amount: string;
+            /** Tax Amount */
+            tax_amount: string | null;
+            /** Fee Amount */
+            fee_amount: string | null;
+            /** Breakfast */
+            breakfast: boolean;
+            /** Refundable */
+            refundable: boolean;
+            /**
+             * Quoted At
+             * Format: date-time
+             */
+            quoted_at: string;
+            /**
+             * Expires At
+             * Format: date-time
+             */
+            expires_at: string;
+            request: components["schemas"]["TravelRequest"];
         };
         /** ItemDiff */
         ItemDiff: {
@@ -1476,6 +1675,175 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    hold_hotel_sessions__session_id__hotel_holds_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["HoldHotelInput"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    session_bookings_sessions__session_id__bookings_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_booking_bookings__booking_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_booking_bookings__booking_id__confirm_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reconcile_booking_bookings__booking_id__reconcile_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                booking_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Booking"];
                 };
             };
             /** @description Validation Error */

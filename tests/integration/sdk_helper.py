@@ -23,6 +23,7 @@ def run_database_worker(
     prompt: str,
     *,
     max_attempts: int = 4,
+    supplier_url: str | None = None,
 ) -> tuple[dict[str, object], Guard]:
     guard = Guard(
         Settings("offline-only", "deepseek-flash", Decimal(5), Decimal(0)),
@@ -55,6 +56,7 @@ def run_database_worker(
                 "run_id": str(context.run_id),
                 "cli_version": version.stdout.split()[0],
                 "database_dsn": travel.database.engine.url.render_as_string(hide_password=False),
+                "supplier_url": supplier_url,
             },
         )
     return report, guard

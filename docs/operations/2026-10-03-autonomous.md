@@ -253,3 +253,16 @@
 - 专项4真实PG/ASGI/HTTP通过（1.15秒），静态首次遗漏测试函数返回类型，补齐后重检；全量与独立实现审查稍后追加。
 
 - 完整333通过/2 live排除（39.02秒），check152通过；项目库0006成功，供应商实际8001启动。独立P2报价延期伪造已修为quote以原quoted_at重算、只忽略随机ID；原场景回归4专项通过（1.17秒），静态通过。
+
+### M2.2/2.3 预订与对账
+
+- M2.1保存c1262af正常钩子通过，独立P2复核关闭；继续Booking/API/hold工具/页面，不等用户review。ADR008复用httpx移入生产依赖，离线uv lock/sync通过，无新增包。
+- 状态/历史/报价与来源保存在bookings/0007；同会话同Evidence一个稳定ID。模型只有hold_hotel；用户独立确认提交后才发送order，confirmed/unknown重复确认只对账。
+- 重试只在服务层：429最多3尝试/5秒，非法/过长Retry-After拒绝继续等待；总deadline涵盖HTTP。未知写响应保留unknown，暂时查无保持unknown，只有过期hold证明缺席才failed。
+- 专项10预订 +4供应商 +schema通过，真实HTTP断传输→unknown→服务重建→对账booked。前端类型/6测试/build通过，新增模拟预订确认/恢复读取页面。首次输出字段误入HoldInput和引用类型问题已修，schema重新生成，不编辑生成物。
+- 尚待：API全链、更多依赖故障/输入/取消边界、真实浏览器、完整验证和独立关卡。累计模型21次/0.098450CNY不变。
+
+- 后续已完成API所有者/非法输入/重复确认与服务重建读取、19供应商HTTP边界、实际SDK本地3请求search→hold且零订单。真实浏览器比较→暂留→确认booked→刷新原订单，m22-booking-workbench.jpg已保存。
+- 前端共享useClock与确认可用性规则；web type/lint/7测试/build通过。完整364 passed/2 live deselected（44.26秒），check159通过；本轮未增加模型费用。
+- 独立审查2P2：长合法偏好使已提交hold返回超过8k而blocked；UUID排序静默50截断隐藏新活动记录。修复Booking.card复用offer.card与全部本人预订按创建时间排序；新增真实PG长条件重复hold及51历史后held/booked恢复回归，修后34专项通过（3.48秒），check159通过。暂不加分页框架。
+- 直接uv run pytest缺项目module PATH，改成uv run python -m pytest；静态发现parsed.port无用表达式，改为显式验证赋值。未跳过测试、放松断言或绕过检查。接下来正常提交，再做M2.4断点/进程恢复。

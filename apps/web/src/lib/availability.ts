@@ -1,5 +1,5 @@
 /** UI expiry guards mirror server timestamps; confirmation still rechecks in the transaction. */
-import type { Plan, Hotels } from "./api";
+import type { Plan, Hotels, Booking } from "./api";
 export function planUnavailable(plan: Plan, now: number): boolean {
   return (
     plan.expired ||
@@ -11,4 +11,17 @@ export function planUnavailable(plan: Plan, now: number): boolean {
 }
 export function expiredHotels(hotels: Hotels, now: number): boolean {
   return hotels.cards.some((card) => now >= Date.parse(card.expires_at));
+}
+
+export function bookingCanConfirm(
+  booking: Booking,
+  revision: number | undefined,
+  now: number,
+): boolean {
+  return (
+    booking.status === "held" &&
+    booking.offer.request.revision === revision &&
+    !!booking.expires_at &&
+    now < Date.parse(booking.expires_at)
+  );
 }

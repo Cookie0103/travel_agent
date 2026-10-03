@@ -602,6 +602,300 @@
         }
       }
     },
+    "/sessions/{session_id}/hotel-holds": {
+      "post": {
+        "summary": "Hold Hotel",
+        "operationId": "hold_hotel_sessions__session_id__hotel_holds_post",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/HoldHotelInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{session_id}/bookings": {
+      "get": {
+        "summary": "Session Bookings",
+        "operationId": "session_bookings_sessions__session_id__bookings_get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/Booking"
+                  },
+                  "title": "Response Session Bookings Sessions  Session Id  Bookings Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/{booking_id}": {
+      "get": {
+        "summary": "Get Booking",
+        "operationId": "get_booking_bookings__booking_id__get",
+        "parameters": [
+          {
+            "name": "booking_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Booking Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/{booking_id}/confirm": {
+      "post": {
+        "summary": "Confirm Booking",
+        "operationId": "confirm_booking_bookings__booking_id__confirm_post",
+        "parameters": [
+          {
+            "name": "booking_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Booking Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/bookings/{booking_id}/reconcile": {
+      "post": {
+        "summary": "Reconcile Booking",
+        "operationId": "reconcile_booking_bookings__booking_id__reconcile_post",
+        "parameters": [
+          {
+            "name": "booking_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Booking Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Booking"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/plan-drafts/{draft_id}": {
       "get": {
         "summary": "Get Draft",
@@ -783,6 +1077,173 @@
   },
   "components": {
     "schemas": {
+      "Booking": {
+        "properties": {
+          "booking_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Booking Id"
+          },
+          "client_ref": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Client Ref"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "evidence_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Evidence Id"
+          },
+          "offer": {
+            "$ref": "#/components/schemas/HotelOffer"
+          },
+          "total": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,15}0*$)\\d{0,12}\\.\\d{0,2}0*$)",
+            "title": "Total"
+          },
+          "source_ref": {
+            "type": "string",
+            "title": "Source Ref"
+          },
+          "content_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Content Version"
+          },
+          "status": {
+            "$ref": "#/components/schemas/BookingStatus",
+            "default": "quoted"
+          },
+          "hold_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hold Id"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "order_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Order Id"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorCode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "history": {
+            "items": {
+              "$ref": "#/components/schemas/BookingChange"
+            },
+            "type": "array",
+            "title": "History",
+            "default": []
+          },
+          "data_mode": {
+            "type": "string",
+            "const": "fixture",
+            "title": "Data Mode",
+            "default": "fixture"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "booking_id",
+          "client_ref",
+          "session_id",
+          "evidence_id",
+          "offer",
+          "total",
+          "source_ref",
+          "content_version",
+          "status",
+          "hold_id",
+          "expires_at",
+          "order_id",
+          "error_code",
+          "history",
+          "data_mode"
+        ],
+        "title": "Booking"
+      },
+      "BookingChange": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/BookingStatus"
+          },
+          "at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "At"
+          },
+          "reason": {
+            "type": "string",
+            "title": "Reason"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "at",
+          "reason"
+        ],
+        "title": "BookingChange"
+      },
+      "BookingStatus": {
+        "type": "string",
+        "enum": [
+          "quoted",
+          "held",
+          "confirmed",
+          "booked",
+          "failed",
+          "unknown",
+          "expired"
+        ]
+      },
       "DemoIdentity": {
         "properties": {
           "user_id": {
@@ -822,6 +1283,19 @@
         "type": "object",
         "title": "DemoLogin"
       },
+      "ErrorCode": {
+        "type": "string",
+        "enum": [
+          "validation",
+          "blocked",
+          "unavailable",
+          "timeout",
+          "rate_limited",
+          "provider_error",
+          "conflict",
+          "cancelled"
+        ]
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -834,6 +1308,27 @@
         },
         "type": "object",
         "title": "HTTPValidationError"
+      },
+      "HoldHotelInput": {
+        "properties": {
+          "offer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Offer Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "offer_id",
+          "expected_revision"
+        ],
+        "title": "HoldHotelInput"
       },
       "HotelCard": {
         "properties": {
@@ -1000,6 +1495,105 @@
           "content_version"
         ],
         "title": "HotelCard"
+      },
+      "HotelOffer": {
+        "properties": {
+          "offer_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Offer Id"
+          },
+          "rate_id": {
+            "type": "string",
+            "title": "Rate Id"
+          },
+          "hotel_id": {
+            "type": "string",
+            "title": "Hotel Id"
+          },
+          "hotel_name": {
+            "type": "string",
+            "title": "Hotel Name"
+          },
+          "room_type": {
+            "type": "string",
+            "title": "Room Type"
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency"
+          },
+          "base_amount": {
+            "type": "string",
+            "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,15}0*$)\\d{0,12}\\.\\d{0,2}0*$)",
+            "title": "Base Amount"
+          },
+          "tax_amount": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,15}0*$)\\d{0,12}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tax Amount"
+          },
+          "fee_amount": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,15}0*$)\\d{0,12}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fee Amount"
+          },
+          "breakfast": {
+            "type": "boolean",
+            "title": "Breakfast"
+          },
+          "refundable": {
+            "type": "boolean",
+            "title": "Refundable"
+          },
+          "quoted_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Quoted At"
+          },
+          "expires_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Expires At"
+          },
+          "request": {
+            "$ref": "#/components/schemas/TravelRequest"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "offer_id",
+          "rate_id",
+          "hotel_id",
+          "hotel_name",
+          "room_type",
+          "currency",
+          "base_amount",
+          "tax_amount",
+          "fee_amount",
+          "breakfast",
+          "refundable",
+          "quoted_at",
+          "expires_at",
+          "request"
+        ],
+        "title": "HotelOffer"
       },
       "ItemDiff": {
         "properties": {

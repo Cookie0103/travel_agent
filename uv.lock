@@ -1194,6 +1194,7 @@ dependencies = [
     { name = "anthropic" },
     { name = "claude-agent-sdk" },
     { name = "fastapi" },
+    { name = "httpx" },
     { name = "opentelemetry-exporter-otlp-proto-http" },
     { name = "opentelemetry-sdk" },
     { name = "psycopg", extra = ["binary"] },
@@ -1205,7 +1206,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "httpx" },
     { name = "import-linter" },
     { name = "mypy" },
     { name = "pre-commit" },
@@ -1220,6 +1220,7 @@ requires-dist = [
     { name = "anthropic", specifier = ">=1.11.0" },
     { name = "claude-agent-sdk", specifier = ">=0.2.139,<0.3" },
     { name = "fastapi", specifier = ">=0.115,<1" },
+    { name = "httpx", specifier = ">=0.28.1,<1" },
     { name = "opentelemetry-exporter-otlp-proto-http", specifier = ">=1.45.0" },
     { name = "opentelemetry-sdk", specifier = ">=1.45.0" },
     { name = "psycopg", extras = ["binary"], specifier = ">=3,<4" },
@@ -1231,7 +1232,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "httpx", specifier = ">=0.28.1" },
     { name = "import-linter" },
     { name = "mypy" },
     { name = "pre-commit" },

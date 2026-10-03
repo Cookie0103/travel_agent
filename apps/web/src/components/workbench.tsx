@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useWorkspace } from "@/lib/use-workspace";
 import { Conditions } from "./conditions";
 import { HotelResults, PlanResults } from "./results";
+import { Bookings } from "./bookings";
 
 export function Workbench() {
   const workspace = useWorkspace();
@@ -211,7 +212,21 @@ export function Workbench() {
                 </button>
               )}
             </section>
-            {workspace.hotels && <HotelResults hotels={workspace.hotels} />}
+            {workspace.hotels && (
+              <HotelResults
+                hotels={workspace.hotels}
+                disabled={workspace.busy}
+                revision={workspace.request?.revision}
+                hold={workspace.holdOffer}
+              />
+            )}
+            <Bookings
+              bookings={workspace.bookings}
+              revision={workspace.request?.revision}
+              disabled={workspace.busy}
+              hold={workspace.holdOffer}
+              act={workspace.bookingAction}
+            />
             {workspace.plan && (
               <PlanResults
                 plan={workspace.plan}

@@ -41,7 +41,10 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
     )
     dsn = payload.get("database_dsn")
     if isinstance(dsn, str):
-        async with database_tools(dsn) as executor:
+        supplier_url = payload.get("supplier_url")
+        async with database_tools(
+            dsn, supplier_url if isinstance(supplier_url, str) else None
+        ) as executor:
             system = travel_prompt() + await executor.context_text(context)
             return await run_prompts(
                 prompts, context, identity, cli, TRAVEL_DEFINITIONS, executor, system

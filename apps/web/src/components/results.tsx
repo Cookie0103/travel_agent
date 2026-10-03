@@ -14,7 +14,7 @@ const date = (value: string) =>
     hour12: false,
   });
 
-function useClock() {
+export function useClock() {
   const [now, setNow] = useState(0);
   useEffect(() => {
     const update = () => setNow(Date.now());
@@ -61,7 +61,17 @@ function Hotel({ card }: { card: components["schemas"]["UiHotelCard"] }) {
     </article>
   );
 }
-export function HotelResults({ hotels }: { hotels: Hotels }) {
+export function HotelResults({
+  hotels,
+  disabled,
+  revision,
+  hold,
+}: {
+  hotels: Hotels;
+  disabled: boolean;
+  revision?: number;
+  hold: (offerId: string, revision: number) => Promise<void>;
+}) {
   const expired = expiredHotels(hotels, useClock());
   return (
     <section className="results-section">
@@ -84,6 +94,17 @@ export function HotelResults({ hotels }: { hotels: Hotels }) {
         {hotels.cards.map((card) => (
           <div key={card.offer_id}>
             <Hotel card={card} />
+            <button
+              disabled={
+                disabled ||
+                expired ||
+                card.total === null ||
+                revision !== card.request_revision
+              }
+              onClick={() => void hold(card.offer_id, card.request_revision)}
+            >
+              暂留模拟房间
+            </button>
             {!expired &&
               hotels.comparison.lowest_offer_ids.includes(card.offer_id) && (
                 <p className="lowest">所列同口径报价中的最低价</p>
