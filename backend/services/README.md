@@ -6,6 +6,7 @@ authenticate只返回有效令牌对应的服务端user_id；会话查询始终�
 数据库异常映射安全ServiceError，服务退出时关闭连接池；不吞错误或回显连接参数。
 TravelService共用RequestPatch领域规则，API与工具只传服务端RunContext；补卡必须通过resolve_evidence。
 common.transaction统一事务/错误脱敏；领域纯规则与仓储SQL不在此处重复实现。
+CatalogService复用同一目录加载器，公共articles/article仅读快照；工具查询仍核对当前请求并保存Evidence。
 RunService负责消息去重、单会话执行、取消和持久事件；执行仍委托Agent，不实现模型循环。
 TravelService.business_context只返回本人最近两轮有界回顾和有效Evidence引用。
 PreferenceService以用户行锁更新显式偏好、删除墓碑与回顾边界；修改后旧SDK和旧对话不再注入。

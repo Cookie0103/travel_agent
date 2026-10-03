@@ -14,7 +14,7 @@
 | backend/tools / mcp | 单份schema/业务执行器；SDK进程内桥接与server对外四个只读查询 |
 | backend/adapters | 脱敏Trace与外部观测导出 |
 | data / eval / scripts | 数据快照/fixture、评测、开发命令 |
-| apps/web / mock_supplier | 前端与模拟供应商位置；实施状态看执行计划 |
+| apps/web / mock_supplier | 攻略列表/详情、规划工作台、只读正式行程；模拟供应商与故障注入 |
 
 主链：消息API → RunService → Agent → 隔离SDK worker → MCP → TravelToolExecutor → 业务服务 → 仓储。
 事件链：worker私有进度 → 父进程验证 → RunService事务保存 → SSE读取；重连不触发执行。

@@ -62,6 +62,10 @@ class Guard:
             observation = summarize(content, request, self.settings.model, self.settings.currency)
             self.budget.settle(request_id, Decimal(str(observation["usage_cost_upper"])))
             self.observations.append(observation)
+            # 已发生的费用照实结算；违规工具响应不能交给 CLI 继续发请求。
+            names = observation["tool_names"]
+            if not isinstance(names, list) or any(name not in self.allowed_tools for name in names):
+                raise ProbeError("blocked", "上游返回未授权工具，停止后续请求")
             return 200, content
         except ProbeError as error:
             self.failure_details.append(str(error))
@@ -109,8 +113,8 @@ def handler_for(guard: Guard) -> type[BaseHTTPRequestHandler]:
                 "Content-Type", "text/event-stream" if status == 200 else "application/json"
             )
             self.send_header("Content-Length", str(len(content)))
-            self.end_headers()
             try:
+                self.end_headers()
                 self.wfile.write(content)
             except (BrokenPipeError, ConnectionResetError):
                 guard.failures.append("client_disconnected")

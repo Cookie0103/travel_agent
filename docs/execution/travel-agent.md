@@ -65,7 +65,7 @@
 | M1.5 | verified | 6虚构酒店/12报价组合、刷新与同口径比较卡片 | 5415e60；282完整测试/check125文件与文档地图通过，6.1-sol high复核无P1/P2 |
 | M1.6 | verified | 纯行程校验/估算路线/SDK修复反馈 | 3dd92c0；302完整测试/check132文件；实际SDK离线修复/上限、真实PG；独立审查两项P2已关闭 |
 | M1.7 | verified | 稳定item_id局部修改、草稿/差异、确认幂等 | e40c259；320完整测试/check139文件，真实PG竞争/回滚、实际SDK离线stage/present，独立P2已关闭 |
-| M1.8 | verified（d239cc7） | 网页完成规划→修改→确认保存 | 前端类型/构建、R01–R08、端到端流程 |
+| M1.8 | in_progress（补齐页面） | 原工作台已验；补攻略列表/详情→引用与独立正式行程页 | d239cc7旧流程保留；本次API/浏览器已验，完整钩子/新CI待验 |
 | M1.9 | verified（0b6fd8c） | 完整演示和30条回归 | R01–R08与页面证据 |
 | M2.1–M2.6 | verified（4a12656） | 模拟预订、对账、重启与断线恢复 | R09–R12，真实PG/HTTP/浏览器；真实失败小样本前后证据 |
 | M3.1–M3.6 | M3.1/M3.2/M3.3 verified / M3.4 partial（da68f86）/ M3.5 partial（f792c85）/ M3.6 partial（aab5972，三个真实输入记录已有、邻例/质量未完全通过） | 上下文/偏好、对外 MCP、编排对照、坏例修复 | R13–R17/R19；授权范围内模型实验；真实压缩质量未计入机制验收 |
@@ -261,3 +261,11 @@ aab5972正常静态/完整默认Python提交钩子通过，代码已本地保存
 - 2026-10-03：两远端事件558e7d2的Python/web/docker-demo全部success（37130689536/37130692016）。比较独立审查1P2缺值小计误当完整差额，新增反例原红色后已修：未全覆盖total=null，known小计/unknown n单列；34比较测试通过6.90秒，P2已复核关闭。实际120费用完整，原−8.716358差额未变。正常完整钩子/自动push和最新CI继续。
 
 - 558e7d2 Linux Python实际CI日志：651 passed、1 skipped、2 deselected，149.27秒。CLI2.1.114实际安装运行；1项为已有Windows Job平台专属语义，本机8项生命周期已通过，2项真实模型默认排除，不为CI新加skip或删测试。
+
+
+- 2026-10-03 bf6dc52正常静态/完整默认Python钩子Passed，普通push成功，远端SHA一致。独立验收缺口核对发现M1.8仍缺攻略文章入口→工作台及独立正式行程页面（plan01§4明确），不是凭据阻塞。当前补齐：公共快照攻略读API/列表详情和明确进入规划，正式行程只用已有身份GET现有PlanView，复用现有卡片/恢复；无自动消息/保存/下单/模型费。R15现有直接恶意攻略服务测试保留，随后补正常/恶意真实SDK本机回填对照；C依04 A未完继续不开始。未把整体标完成。
+
+- 2026-10-04 JST（UTC账期仍10-03）：M1.8补页面实际浏览器完成攻略详情→引用→离线生成→显式确认→独立正式V1；自有API stop/reload失败500→restart/retry重读同V1，刷新保留且无确认/锁定按钮。原smoke --verify Passed；专用栈重建保留所有卷，来源/未知警告保留。独立2P2（首读失败误空、卸载迟到身份覆盖）已修复复核关闭；详情ID重复编码浏览器发现并修复同输入重验。11 PG/API专项Passed；前端12/type/lint/build已通过，最终变更关卡待验。证据m18-pages-2026-10-04。
+- bf6dc52远端CI：PR 37131409211全success，push37131407069 Python有2原unauthorized_tool断言失败（actual2HTTP而应1），683passed/1已有平台skip/2live deselected，web/docker-demo success。未删除/降低断言。守卫复用SSE解析收集工具名，完整usage照实结算后拒绝越权响应、failures阻止下一转发，避免SDK回调竞态；3非法名保留全部预占。63相关测试11.57秒Passed，独立无P1/P2。最终完整钩子/push/新CI继续；当日真实账本仍608HTTP/12.189568CNY含旧探针、未结0，未消费新费。
+
+- 最终web-check曾因JSX位于decode的try/catch触发React lint；改为只解码字符串、JSX在捕获外，未禁用规则。最终type/lint/12测试/build全部Passed；源码冻结后按原提交钩子完整验证，最终演示栈重建与原状态只读验证继续。

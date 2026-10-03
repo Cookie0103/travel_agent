@@ -10,6 +10,7 @@ from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.guard import Guard
 from backend.providers.claude_agent.request import TOOL_NAME, validate_request
 from backend.providers.probe.settings import ProbeError, Settings
+from tests.test_sdk_cli_offline import scripted_response
 
 
 def request_body(**changes: object) -> bytes:
@@ -115,6 +116,50 @@ def test_guard_forwards_success_and_caps_hidden_requests(tmp_path: Path) -> None
     assert statuses == [200, 200, 400]
     assert budget.totals()[0] == 2
     assert len(guard.observations) == 2
+
+
+@pytest.mark.parametrize("allowed", [frozenset(), frozenset({TOOL_NAME})])
+def test_forbidden_response_settles_once_and_blocks_followup(
+    tmp_path: Path, allowed: frozenset[str]
+) -> None:
+    """R15：违规返回不能依赖 CLI 回调时序来阻止下一次付费请求。"""
+    budget = Budget(tmp_path / "ledger", tmp_path / "old", Decimal(5))
+    body = request_body(tools=[{"name": name} for name in allowed])
+    guard = Guard(
+        Settings("secret", "deepseek-flash", Decimal(5), Decimal(0)),
+        budget,
+        lambda data: scripted_response(data, tool_calls=(("Bash", {}),)),
+        allowed_tools=allowed,
+    )
+    for _ in range(2):
+        status, content = guard.accept("/v1/messages", "Bearer " + guard.token, body)
+        assert status == 400 and b"Bash" not in content and b"secret" not in content
+    assert guard.attempts == 1 and budget.totals()[0] == 1
+    assert [entry.kind for entry in budget.entries()] == ["attempt", "settled"]
+    assert budget.totals()[1] == Decimal(str(guard.observations[0]["usage_cost_upper"]))
+
+
+@pytest.mark.parametrize("name", [None, "", 42])
+def test_malformed_tool_name_keeps_reservation_and_stops_followup(
+    tmp_path: Path, name: object
+) -> None:
+    budget = Budget(tmp_path / "ledger", tmp_path / "old", Decimal(5))
+    body = request_body()
+    status, content = scripted_response(body, tool_calls=((TOOL_NAME, {}),))
+    malformed = content.replace(
+        ('"name": ' + json.dumps(TOOL_NAME)).encode(),
+        ('"name": ' + json.dumps(name)).encode(),
+    )
+    guard = Guard(
+        Settings("secret", "deepseek-flash", Decimal(5), Decimal(0)),
+        budget,
+        lambda _: (status, malformed),
+    )
+    for _ in range(2):
+        assert guard.accept("/v1/messages", "Bearer " + guard.token, body)[0] == 400
+    assert guard.attempts == 1
+    assert [entry.kind for entry in budget.entries()] == ["attempt"]
+    assert budget.totals()[1] == validate_request(body, "deepseek-flash").charge
 
 
 def test_local_endpoint_and_token_checked_before_reserving(tmp_path: Path) -> None:

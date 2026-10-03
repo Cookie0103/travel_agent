@@ -1,6 +1,8 @@
 # 旅行工作台
 
 Next.js App Router / React / TypeScript；入口src/app/page.tsx，业务状态在use-workspace。
+导航：/articles攻略列表与全文 → 明确引用到工作台；/plans只读当前身份已确认的正式行程。
+攻略阅读不创建会话；引用只填消息。页面卸载撤销旧请求写回，读取失败可重试原plan_id。
 API请求/输出类型由FastAPI和服务端卡片模型生成，不在页面重算价格或校验。
 
 需要Node24+、pnpm11；从仓库根目录：

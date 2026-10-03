@@ -5,8 +5,34 @@ import {
   ApiError,
   messageInput,
   readDraft,
+  readConfirmedPlan,
   readWhile,
 } from "../src/lib/api.ts";
+
+test("saved plan retry uses persisted plan ID after the first read fails", async () => {
+  const original = globalThis.fetch;
+  const calls: string[] = [];
+  globalThis.fetch = async (input, options) => {
+    calls.push(String(input));
+    assert.equal(options?.method, "GET");
+    return calls.length === 1
+      ? Response.json({ message: "暂不可用" }, { status: 503 })
+      : Response.json({ plan_id: "saved-id", version: 1 });
+  };
+  try {
+    const identity = { token: "test-token", plan_id: "saved-id" };
+    await assert.rejects(
+      readConfirmedPlan(identity),
+      (error) => error instanceof ApiError && error.status === 503,
+    );
+    assert.equal((await readConfirmedPlan(identity))?.version, 1);
+    assert.deepEqual(calls, ["/api/plans/saved-id", "/api/plans/saved-id"]);
+    assert.equal(await readConfirmedPlan({ token: "test-token" }), undefined);
+    assert.equal(calls.length, 2);
+  } finally {
+    globalThis.fetch = original;
+  }
+});
 
 test("late successful response cannot restore the previous identity or view", async () => {
   let generation = 1;

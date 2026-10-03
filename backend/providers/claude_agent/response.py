@@ -22,7 +22,7 @@ def summarize(
             or "error" in kinds
         ):
             raise ValueError
-        _check_blocks(events[1:-2])
+        tools = _check_blocks(events[1:-2])
         start = events[0]["message"]
         end = next(e for e in events if e.get("type") == "message_delta")
         if not isinstance(start, dict) or start.get("model") != model:
@@ -57,6 +57,7 @@ def summarize(
     result: dict[str, object] = {
         "model": model,
         "stop_reason": delta["stop_reason"],
+        "tool_names": sorted(tools),
         "events": sorted({str(k) for k in kinds}),
         **tokens,
         "currency": currency,
@@ -111,14 +112,21 @@ def _tokens(initial: dict[str, object], final: dict[str, object]) -> dict[str, i
     return result
 
 
-def _check_blocks(events: list[dict[str, object]]) -> None:
+def _check_blocks(events: list[dict[str, object]]) -> set[str]:
     opened: set[int] = set()
     seen: set[int] = set()
+    tools: set[str] = set()
     for event in events:
         kind, index = event.get("type"), event.get("index")
         if type(index) is not int or index < 0:
             raise ValueError
         if kind == "content_block_start" and index not in seen:
+            block = event.get("content_block")
+            if isinstance(block, dict) and block.get("type") == "tool_use":
+                name = block.get("name")
+                if not isinstance(name, str) or not name:
+                    raise ValueError
+                tools.add(name)
             opened.add(index)
             seen.add(index)
         elif kind == "content_block_delta" and index in opened:
@@ -129,3 +137,4 @@ def _check_blocks(events: list[dict[str, object]]) -> None:
             raise ValueError
     if opened:
         raise ValueError
+    return tools

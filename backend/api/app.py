@@ -5,11 +5,12 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, Header, Query, Request
+from fastapi import Depends, FastAPI, Header, Path, Query, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 
 from backend.api.events import stream_events
 from backend.services.bookings import Booking, BookingService, HoldHotelInput
+from backend.services.catalog import Article, CatalogService
 from backend.services.common import ServiceError
 from backend.services.plans import LockInput, PlanService, SavedPlan
 from backend.services.preferences import (
@@ -48,6 +49,7 @@ def create_app(
     plans = PlanService(travel)
     bookings = booking_service or BookingService(travel)
     preferences = PreferenceService(sessions.database)
+    catalog = CatalogService(travel)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -89,6 +91,14 @@ def create_app(
     async def health() -> dict[str, str]:
         await sessions.health()
         return {"status": "ok"}
+
+    @app.get("/articles")
+    async def articles() -> tuple[Article, ...]:
+        return await catalog.articles()
+
+    @app.get("/articles/{article_id}")
+    async def article(article_id: Annotated[str, Path(min_length=1, max_length=100)]) -> Article:
+        return await catalog.article(article_id)
 
     @app.post("/demo/login", status_code=201)
     async def demo_login(body: DemoLogin) -> DemoIdentity:

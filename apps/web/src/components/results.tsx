@@ -123,8 +123,8 @@ export function PlanResults({
 }: {
   plan: Plan;
   disabled: boolean;
-  confirm: () => Promise<void>;
-  lock: (id: string) => Promise<void>;
+  confirm?: () => Promise<void>;
+  lock?: (id: string) => Promise<void>;
 }) {
   const stale = planUnavailable(plan, useClock());
   const blocked = stale || plan.validation.status === "conflict";
@@ -198,7 +198,7 @@ export function PlanResults({
               </p>
               <p className="muted small">历史快照 · {item.source_ref}</p>
             </div>
-            {!plan.draft_id && (
+            {!plan.draft_id && lock && (
               <button
                 disabled={disabled}
                 onClick={() => void lock(item.item_id)}
@@ -216,7 +216,7 @@ export function PlanResults({
           <Hotel card={plan.hotel} />
         </details>
       )}
-      {plan.draft_id && (
+      {plan.draft_id && confirm && (
         <div className="confirm-bar">
           <p>确认只保存此草稿；unknown 保留，不创建订单或付款。</p>
           <button

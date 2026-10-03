@@ -79,3 +79,7 @@ B0同版本真实120次：17通过/103失败/0error/not_run，三轮6/6/5；120H
 CI恢复：558e7d2两事件37130689536/37130692016的Python/web/docker-demo全success，首次失败保留；不是只有配置。比较1P2已红→绿→独立关闭，partial费用total null/小计单列，34比较测试通过，原120精确费用差不变。
 
 - 558e7d2 Linux Python实际CI日志：651 passed、1 skipped、2 deselected，149.27秒。CLI2.1.114实际安装运行；1项为已有Windows Job平台专属语义，本机8项生命周期已通过，2项真实模型默认排除，不为CI新加skip或删测试。
+
+M1.8页面缺口追加：integration/test_article_pages真实独立PG验证20公开攻略与各详情/归属来源一致、unknown404/长ID422/空库及依赖503、公开阅读不创建User/Session/TaskRun/Evidence。前端新HTTPS链接失败输入与持久plan_id首读失败重试；现有旧代响应/微任务用例保留。浏览器实际验证带编码ID修复、攻略引用不发送、匿名空页、确认V1正式页以及自有API断线500→恢复/重读同V1。卸载登录延迟未做浏览器注入，不把helper测试叫完整hook测试。证据m18-pages-2026-10-04。
+
+CI竞态原失败保存：bf6dc52 push两个评审未经许可工具时guard HTTP2（原要求1），同HEAD PR通过；新增守卫响应allowlist无需依赖SDK回调，原两种rubric×3实际CLI断言未修改。test_sdk_guard追加违规名完整usage结算后拒绝/下一请求不转发与非法名保留预占三反例；63相关专项Passed。所有已计费用保留，不以拒绝违规结果退款。完整钩子和新CI尚待。

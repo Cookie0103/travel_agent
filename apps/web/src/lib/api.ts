@@ -3,6 +3,7 @@ import type { components } from "./api-types";
 export type RequestState = components["schemas"]["TravelRequest"];
 export type Run = components["schemas"]["RunView"];
 export type Plan = components["schemas"]["UiPlanView"];
+export type Article = components["schemas"]["Article"];
 export type Hotels = components["schemas"]["UiHotelPresentation"];
 export type Booking = components["schemas"]["Booking"];
 export type AppEvent = components["schemas"]["UiRuntimeEvent"] & {
@@ -20,6 +21,15 @@ export class ApiError extends Error {
   constructor(message: string, status: number) {
     super(message);
     this.status = status;
+  }
+}
+
+export function sourceHref(value: string): string | undefined {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.href : undefined;
+  } catch {
+    return undefined;
   }
 }
 
@@ -48,6 +58,14 @@ export async function readDraft(draftId: string, token: string): Promise<Plan> {
   return draft.status === "confirmed"
     ? api<Plan>(`/plans/${draft.plan_id}`, token)
     : draft;
+}
+
+export async function readConfirmedPlan(
+  identity: Pick<Identity, "plan_id" | "token">,
+): Promise<Plan | undefined> {
+  return identity.plan_id
+    ? api<Plan>(`/plans/${identity.plan_id}`, identity.token)
+    : undefined;
 }
 
 export async function api<T>(

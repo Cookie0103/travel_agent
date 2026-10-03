@@ -181,6 +181,69 @@
         }
       }
     },
+    "/articles": {
+      "get": {
+        "summary": "Articles",
+        "operationId": "articles_articles_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Article"
+                  },
+                  "type": "array",
+                  "title": "Response Articles Articles Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/articles/{article_id}": {
+      "get": {
+        "summary": "Article",
+        "operationId": "article_articles__article_id__get",
+        "parameters": [
+          {
+            "name": "article_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 100,
+              "title": "Article Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Article"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/demo/login": {
       "post": {
         "summary": "Demo Login",
@@ -1231,6 +1294,55 @@
   },
   "components": {
     "schemas": {
+      "Article": {
+        "properties": {
+          "article_id": {
+            "type": "string",
+            "title": "Article Id"
+          },
+          "city": {
+            "type": "string",
+            "const": "京都",
+            "title": "City",
+            "default": "京都"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "text": {
+            "type": "string",
+            "maxLength": 3000,
+            "minLength": 1,
+            "title": "Text"
+          },
+          "category": {
+            "type": "string",
+            "title": "Category",
+            "default": "guide"
+          },
+          "mentioned_places": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Mentioned Places",
+            "default": []
+          },
+          "source": {
+            "$ref": "#/components/schemas/Source"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "article_id",
+          "title",
+          "text",
+          "source"
+        ],
+        "title": "Article"
+      },
       "Booking": {
         "properties": {
           "booking_id": {
@@ -2498,6 +2610,66 @@
           "created_at"
         ],
         "title": "SessionView"
+      },
+      "Source": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "enum": [
+              "osm",
+              "wikivoyage"
+            ],
+            "title": "Provider"
+          },
+          "source_ref": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source Ref"
+          },
+          "content_version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Content Version"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Retrieved At"
+          },
+          "license": {
+            "type": "string",
+            "minLength": 1,
+            "title": "License"
+          },
+          "license_url": {
+            "type": "string",
+            "minLength": 1,
+            "title": "License Url"
+          },
+          "attribution": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Attribution"
+          },
+          "data_mode": {
+            "type": "string",
+            "const": "snapshot",
+            "title": "Data Mode",
+            "default": "snapshot"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "provider",
+          "source_ref",
+          "content_version",
+          "retrieved_at",
+          "license",
+          "license_url",
+          "attribution"
+        ],
+        "title": "Source"
       },
       "TravelConditions": {
         "properties": {

@@ -6,6 +6,7 @@ import {
   ApiError,
   messageInput,
   readDraft,
+  readConfirmedPlan,
   readEvents,
   readWhile,
   type Identity,
@@ -22,7 +23,9 @@ const STORAGE = "travel-demo-v1";
 const message = (error: unknown) =>
   error instanceof Error ? error.message : "操作失败，请重试。";
 
-export function useWorkspace() {
+export function useWorkspace({
+  savedOnly = false,
+}: { savedOnly?: boolean } = {}) {
   const [identity, setIdentity] = useState<Identity>();
   const [request, setRequest] = useState<RequestState>();
   const [run, setRun] = useState<Run>();
@@ -32,6 +35,7 @@ export function useWorkspace() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const [restoring, setRestoring] = useState(true);
   const stream = useRef<AbortController | null>(null);
   const cursor = useRef(0);
   const generation = useRef(0);
@@ -166,14 +170,11 @@ export function useWorkspace() {
         if (!active()) return;
         setBookings(savedBookings);
         if (current.plan_id) {
-          const savedPlan = await api<Plan>(
-            `/plans/${current.plan_id}`,
-            current.token,
-          );
+          const savedPlan = await readConfirmedPlan(current);
           if (!active()) return;
           setPlan(savedPlan);
         }
-        if (current.run_id) {
+        if (current.run_id && !savedOnly) {
           const saved = await api<Run>(
             `/runs/${current.run_id}`,
             current.token,
@@ -190,14 +191,18 @@ export function useWorkspace() {
         }
       } catch (failure) {
         if (active()) fail(failure);
+      } finally {
+        if (mounted) setRestoring(false);
       }
     }
     void restore();
     return () => {
       mounted = false;
+      // 导航后迟到的请求不能覆盖新页面已经保存的身份。
+      generation.current += 1;
       stream.current?.abort();
     };
-  }, [connect, hydrate, fail]);
+  }, [connect, hydrate, fail, savedOnly]);
 
   async function action(
     work: (
@@ -300,7 +305,10 @@ export function useWorkspace() {
       );
       if (!active()) return;
       setBookings(savedBookings);
-      if (plan) {
+      if (savedOnly) {
+        const displayed = await read(readConfirmedPlan(identity));
+        if (active()) setPlan(displayed);
+      } else if (plan) {
         const displayed = await read(
           api<Plan>(
             plan.draft_id
@@ -461,6 +469,7 @@ export function useWorkspace() {
     bookings,
     error,
     busy,
+    restoring,
     fail,
     login,
     saveConditions,

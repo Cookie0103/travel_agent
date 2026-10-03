@@ -504,3 +504,10 @@ B0原命令首次自动审批拒绝“具体测试载荷外发未明确授权”
 - 558e7d2的push/PR两事件实际Python/web/docker-demo全部success（37130689536/37130692016），并非跳过Linux Python。比较独立1P2缺值差额total不该等已知小计；新断言先1failed复现，再修total完整才有值/小计和n单列，34比较测试6.90秒全通过。独立复核关闭，原完整120差額不变；无新增真实API费。最新正常钩子/commit/push继续。
 
 - 558e7d2 Linux Python实际CI日志：651 passed、1 skipped、2 deselected，149.27秒。CLI2.1.114实际安装运行；1项为已有Windows Job平台专属语义，本机8项生命周期已通过，2项真实模型默认排除，不为CI新加skip或删测试。
+
+- M1.8追加公共攻略API与列表/详情/引用入口、只读正式页，复用CatalogService、PlanResults和恢复函数，无新增依赖。API层直接domain导入被import-linter实际拦截，改services明确重导出后219文件三平台strict/ruff/3契约/10地图全部通过。测试最初模型名RunRow不存在改实际TaskRunRow；每例独立临时PG避免目录污染，11专项Passed。pnpm exec prettier在Windows未找到，改既有run format；未改安装/权限。
+- 独立2P2均修复复核：正式读取失败后refresh原来依赖内存plan而不重读，改复用持久plan_id GET；导航卸载generation++阻止迟到action/send写storage。12前端专项/type/lint/build通过。浏览器发现当前Next参数仍百分号编码，双编码404，页面边界一次decode，原同ID实际全文通过。两次浏览器wait超时源于猜测控件名称，按实际DOM精确控件续验，没有假写产品错误。
+- 既有Docker专用演示栈default pipe ACL拒绝后正常escalated运行成功；三次必要构建随页面/修复更新，卷保留，bootstrap0/allhealthy。浏览器匿名正式页空状态、引用只填文本、显式创建条件/生成/确认V1、正式页只读、API临时stop→500重试提示→同API恢复→原V1及刷新通过。API已恢复healthy；不操作真实订单或外部模型。旧state smoke --verify在首轮构建后Passed。公开截图与JSON无token/UUID/DSN。
+- bf6dc52实际两CI一成功一失败；push Python683通过2失败，违规工具评审实际多发HTTP受SDK回调时序影响。原attempts==1断言保留；守卫先按最终usage结算已发生费用，再阻止非法工具响应/后续联网，无效名称不释放预占。63专项11.57秒绿，独立无P1/P2；失败账簿未清空，不用重复CI隐藏波动，最终hooks/push待验。
+
+- 最终web-check曾因JSX位于decode的try/catch触发React lint；改为只解码字符串、JSX在捕获外，未禁用规则。最终type/lint/12测试/build全部Passed；源码冻结后按原提交钩子完整验证，最终演示栈重建与原状态只读验证继续。

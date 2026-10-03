@@ -2,12 +2,13 @@
 "use client";
 import { useState } from "react";
 import { useWorkspace } from "@/lib/use-workspace";
+import { ArticleReference } from "./articles";
 import { Conditions } from "./conditions";
 import { HotelResults, PlanResults } from "./results";
 import { Bookings } from "./bookings";
 import { PreferencePanel } from "./preferences";
 
-export function Workbench() {
+export function Workbench({ articleId }: { articleId?: string }) {
   const workspace = useWorkspace();
   const [text, setText] = useState("");
   const [mode, setMode] = useState<"offline" | "live">("offline");
@@ -32,6 +33,12 @@ export function Workbench() {
       <div className="notice">
         景点与攻略来自历史快照，酒店是虚构测试数据，路线是估算。这里展示可验证的规划流程。
       </div>
+      {articleId && (
+        <ArticleReference
+          articleId={articleId}
+          select={(id) => setText(`请参考攻略 ${id}，帮我规划京都旅行。`)}
+        />
+      )}
       {workspace.error && (
         <div className="error-box" role="alert">
           {workspace.error}
@@ -79,7 +86,7 @@ export function Workbench() {
           </p>
           <button
             className="primary"
-            disabled={workspace.busy}
+            disabled={workspace.busy || workspace.restoring}
             onClick={() => void workspace.login()}
           >
             创建演示会话

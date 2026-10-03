@@ -2,6 +2,7 @@
 
 入口：app.create_app；启动uv run python -m backend.server。
 GET /health检查数据库；POST /demo/login仅DEMO_MODE=true开放，返回24小时演示令牌。
+GET /articles、/articles/{id}公开读取已验证快照和许可，不创建身份、Evidence或执行；空目录503、未知ID404。
 带Authorization: Bearer <token>调用POST /sessions、GET /sessions/{id}。
 服务端解析身份，不接受客户端user_id登录已有账号；他人/不存在会话均404。
 消息/状态/取消/SSE接口调用RunService；事件读取不重新运行模型。

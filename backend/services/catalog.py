@@ -3,7 +3,8 @@
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from backend.domain.catalog import Article, ContentSearchInput, Place, PlaceSearchInput, search
+from backend.domain.catalog import Article as Article
+from backend.domain.catalog import ContentSearchInput, Place, PlaceSearchInput, search
 from backend.domain.evidence import EvidenceKind, EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
 from backend.domain.travel_request import TravelRequest
@@ -22,6 +23,18 @@ class CatalogResult:
 class CatalogService:
     def __init__(self, travel: TravelService) -> None:
         self.travel = travel
+
+    async def articles(self) -> tuple[Article, ...]:
+        """公开攻略只读；不创建业务身份、Evidence、任务或模型请求。"""
+        data = await self._catalog()
+        return tuple(Article.model_validate(row) for row in data["articles"])
+
+    async def article(self, article_id: str) -> Article:
+        articles = await self.articles()
+        result = next((entry for entry in articles if entry.article_id == article_id), None)
+        if result is None:
+            raise ServiceError(404, "blocked", "攻略ID不存在")
+        return result
 
     async def query(self, context: RunContext, arguments: ContentSearchInput) -> CatalogResult:
         current, data = await self._load(context)
@@ -42,11 +55,14 @@ class CatalogService:
         self, context: RunContext
     ) -> tuple[TravelRequest, dict[str, list[dict[str, object]]]]:
         current = await self.travel.get_request(context)
+        return current, await self._catalog()
+
+    async def _catalog(self) -> dict[str, list[dict[str, object]]]:
         async with transaction(self.travel.database) as db:
             data = await load_catalog(db)
         if not any(data.values()):
             raise ServiceError(503, "unavailable", "目录尚未导入，请运行data.import_catalog")
-        return current, data
+        return data
 
     async def _publish(
         self,
