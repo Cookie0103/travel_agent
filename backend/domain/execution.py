@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Literal, cast, get_args
 from uuid import UUID, uuid4
 
 type ErrorCode = Literal[
@@ -24,6 +24,15 @@ type EventKind = Literal[
     "failed",
     "cancelled",
 ]
+
+
+def error_code(value: object) -> ErrorCode:
+    """外部错误只接受已定义的应用码，未知值统一归provider_error。"""
+    return (
+        cast(ErrorCode, value)
+        if isinstance(value, str) and value in get_args(ErrorCode.__value__)
+        else "provider_error"
+    )
 
 
 @dataclass(frozen=True)
@@ -79,3 +88,14 @@ class RunResult:
     context: RunContext
     outcome: RuntimeOutcome
     reference: SessionReference | None = None
+
+
+def terminal_event(context: RunContext, outcome: RuntimeOutcome) -> RuntimeEvent:
+    kind: EventKind = (
+        "completed"
+        if outcome.code is None
+        else "cancelled"
+        if outcome.code == "cancelled"
+        else "failed"
+    )
+    return RuntimeEvent(context, kind, code=outcome.code)

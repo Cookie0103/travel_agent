@@ -24,7 +24,7 @@ class FixtureRuntime:
     ) -> RuntimeOutcome:
         city = "东京" if "东京" in prompt or "tokyo" in prompt.casefold() else "京都"
         indoor = "室内" in prompt or "雨" in prompt
-        rows: list[str] = ["离线演示：固定调用景点和攻略工具；数据为人工测试集。"]
+        rows: list[str] = ["离线演示：固定调用景点和攻略工具，不代表模型自主规划。"]
         for name, collection in (("search_places", "places"), ("search_content", "articles")):
             if cancelled.is_set():
                 return RuntimeOutcome(code="cancelled", reason="cancelled")
@@ -63,10 +63,17 @@ class FixtureRuntime:
                 return RuntimeOutcome(code="provider_error", reason="invalid_tool_result")
             if not items:
                 rows.append(f"{city}：没有匹配的{collection}数据。")
+            label_mode = "人工测试集" if result.data_mode == "fixture" else "历史快照，非实时事实"
             for item in items:
                 if isinstance(item, dict):
                     label = item.get("name", item.get("title", ""))
-                    rows.append(f"- {label}（来源：{item.get('source_ref')}；fixture）")
+                    source = item.get("source")
+                    ref = (
+                        source.get("source_ref")
+                        if isinstance(source, dict)
+                        else item.get("source_ref")
+                    )
+                    rows.append(f"- {label}（来源：{ref}；{result.data_mode}，{label_mode}）")
         text = "\n".join(rows)
         emit(RuntimeEvent(context, "text", text=text))
         return RuntimeOutcome(text, sdk_session_id or str(uuid4()))

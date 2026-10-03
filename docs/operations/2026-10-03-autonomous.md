@@ -155,3 +155,21 @@
 - 自动质量关卡交独立审查；新增HTTP合并日期/所有者失败测试，完整验证待记录。未调用模型。
 - 完整dev test237 passed/2 deselected（18.91秒）。独立审查发现把酒店晚数要求误用在所有旅行日期，已允许同日旅行并在hotel_requirements单独要求overnight_stay；新增对照，11领域专项通过。
 - 修复后check102文件/3契约通过，dev db-migrate项目库升级0003，完整dev test238 passed/2 deselected（18.83秒）；独立复核关闭M1.3关卡，无剩余P1/P2。
+
+- M1.3正常钩子提交通过，保存723575a。
+
+## M1.4 旅行工具与消息执行
+
+- 搜索输入/匹配复用领域函数；旅行执行器单份schema连接目录查询、实体详情、条件更新和两份白名单Skill。串行读写界限1，按run绑定身份/计数，结果保留snapshot和来源警告。
+- SDK worker复用现有Guard/预算/进程清理；Windows通过专用Selector线程转发同一数据库工具执行器，SDK保持Proactor，不另建模型循环。
+- 新增TaskRun消息ID唯一约束、有序持久事件、同会话数据库行锁、取消与状态接口和SSE读取。最终状态与最终事件同事务提交；重复取消和相同消息无二次执行。API默认离线，只有server --live并且请求mode=live才进入既有付费守卫。
+- 独立审查修复：worker不能提前公开completed；cancel错误不被tool_use停止原因覆盖；run重复检查移入预算锁；共享persona按工具实际data_mode说明历史快照。
+- 新增故障专项11 passed（3.97秒）：真实PG并发消息去重/单执行/取消、两个实际API身份的SSE隔离、重建应用不重跑、事件半行/他人身份、真实子进程取消清理。
+- 父进程失败回归+真实SDK/CLI/DB本地响应专项6 passed（4.44秒）。本地脚本2次HTTP工具往返完成快照读取/条件修改，不消耗真实授权。
+- 首轮全量252通过/1失败（23.81秒）：离线fixture缺少原有中文人工测试集标签；补回按data_mode区分的中文说明，未改原断言。测试替身Guard工厂的严格类型失败已用明确签名修复。
+- 独立审查指出多轮缺业务回顾：补TravelService.business_context，最多2轮有界历史和8个有效证据引用；旧revision/过期/他人证据不带入，历史文本不授予权限，不能确定指代就追问。最近15专项通过（3.41秒），check116文件/3契约通过。
+- 恢复点：M1.4尚未提交；待独立复核、最终全量测试、开发库0004迁移和真实HTTP/SSE烟测。真实授权仍21次/0.098450 CNY，无新增调用。
+- 追加独立审查修复：Python3.12 TypeAliasType需读取__value__才能枚举Literal；8种合法错误码逐项回归。Agent转换取消异常后deadline不再抛TimeoutError，改检查expired()；10ms真实PG验证failed/timeout状态及末事件。
+- 专项13项父进程/错误码通过（2.28秒）、5项真实PG run通过（1.30秒），独立复核无剩余P1/P2。
+- 项目库迁移0004成功。真实临时Uvicorn HTTP烟测离线完成，7个事件有序，重复消息同run、snapshot中文标签正确；证据m14-http-smoke-2026-10-03.json，已停止本次自有服务进程。
+- 最终check116文件/3契约通过，dev test263 passed/2 deselected（23.94秒）；独立复核关闭，准备正常本地提交。

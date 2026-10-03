@@ -70,3 +70,20 @@ async def find_evidence(
         )
     )
     return list(rows)
+
+
+async def recent_evidence(
+    db: AsyncSession, context: RunContext, revision: int
+) -> list[EvidenceRow]:
+    rows = await db.scalars(
+        select(EvidenceRow)
+        .where(
+            EvidenceRow.user_id == context.user_id,
+            EvidenceRow.session_id == context.session_id,
+            EvidenceRow.invalidated.is_(False),
+            EvidenceRow.payload["request_revision"].as_integer() == revision,
+        )
+        .order_by(EvidenceRow.payload["retrieved_at"].as_string().desc(), EvidenceRow.id)
+        .limit(20)
+    )
+    return list(rows)

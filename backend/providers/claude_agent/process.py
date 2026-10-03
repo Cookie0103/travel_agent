@@ -5,14 +5,24 @@ import os
 import signal
 import subprocess
 import sys
+import time
+from collections.abc import Callable
 from pathlib import Path
+from threading import Event
 
 from backend.providers.claude_agent.windows_job import WindowsJob
 from backend.providers.probe.settings import ProbeError
 
 
 def run_process(
-    args: list[str], cwd: Path, env: dict[str, str], timeout: float, input_text: str = ""
+    args: list[str],
+    cwd: Path,
+    env: dict[str, str],
+    timeout: float,
+    input_text: str = "",
+    *,
+    cancelled: Event | None = None,
+    progress: Callable[[], None] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """先由 worker 自行取消；父期限到达才对自己创建的进程树强制终止。"""
     flags = (
@@ -36,7 +46,9 @@ def run_process(
         try:
             if job is not None:
                 job.assign(process.pid)
-            stdout, stderr = process.communicate(input="start\n" + input_text, timeout=timeout)
+            stdout, stderr = communicate(
+                process, "start\n" + input_text, timeout, cancelled, progress
+            )
         except subprocess.TimeoutExpired:
             if job is not None:
                 job.close()
@@ -44,13 +56,45 @@ def run_process(
             else:
                 terminate_tree(process)
             raise
-        except OSError:
-            process.kill()
+        except BaseException:
+            # 取消/事件写入失败也必须清理自己启动的整个进程树。
+            if job is not None:
+                job.close()
+                process.communicate(timeout=10)
+            else:
+                terminate_tree(process)
             raise
         finally:
             if job is not None:
                 job.close()
         return subprocess.CompletedProcess(args, process.returncode, stdout, stderr)
+
+
+def communicate(
+    process: subprocess.Popen[str],
+    payload: str,
+    timeout: float,
+    cancelled: Event | None,
+    progress: Callable[[], None] | None,
+) -> tuple[str, str]:
+    deadline = time.monotonic() + timeout
+    pending: str | None = payload
+    while True:
+        if cancelled is not None and cancelled.is_set():
+            raise ProbeError("cancelled", "执行已取消")
+        remaining = deadline - time.monotonic()
+        if remaining <= 0:
+            raise subprocess.TimeoutExpired(process.args, timeout)
+        try:
+            result = process.communicate(input=pending, timeout=min(0.2, remaining))
+        except subprocess.TimeoutExpired:
+            pending = None
+            if progress is not None:
+                progress()
+        else:
+            if progress is not None:
+                progress()
+            return result
 
 
 def terminate_tree(process: subprocess.Popen[str]) -> None:
@@ -72,6 +116,8 @@ def invoke_worker(
     *,
     module: str = "backend.providers.sdk_probe.worker",
     payload: dict[str, object] | None = None,
+    cancelled: Event | None = None,
+    progress: Callable[[], None] | None = None,
 ) -> dict[str, object]:
     """探针和正式 CLI 共用退出码、期限与 JSON 边界；不回传原始 stderr。"""
     try:
@@ -81,9 +127,13 @@ def invoke_worker(
             env=env,
             timeout=120,
             input_text=json.dumps(payload) if payload is not None else "",
+            cancelled=cancelled,
+            progress=progress,
         )
     except subprocess.TimeoutExpired:
         return {"status": "error", "code": "timeout"}
+    except ProbeError as error:
+        return {"status": "error", "code": error.code}
     if result.returncode != 0:
         return {"status": "error", "code": "worker_exit", "exit_code": result.returncode}
     try:

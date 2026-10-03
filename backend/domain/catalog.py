@@ -46,3 +46,41 @@ class Article(BaseModel):
     category: str = "guide"
     mentioned_places: tuple[str, ...] = ()
     source: Source
+
+
+class ContentSearchInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True, str_strip_whitespace=True)
+
+    city: str = Field(min_length=1, max_length=40, description="城市是硬过滤条件，例如京都")
+    query: str = Field(
+        default="", max_length=100, description="简短关键词，支持原名、中文别名和标签"
+    )
+    category: str | None = Field(default=None, max_length=40)
+    limit: int = Field(default=5, ge=1, le=8)
+
+
+class PlaceSearchInput(ContentSearchInput):
+    indoor: bool | None = Field(default=None, description="室内景点为 true")
+
+
+def search(rows: list[dict[str, object]], arguments: ContentSearchInput) -> list[dict[str, object]]:
+    city = "京都" if arguments.city.casefold() in {"kyoto", "京都", "京都市"} else arguments.city
+    query = arguments.query.casefold()
+    found: list[dict[str, object]] = []
+    for row in rows:
+        if row.get("city") != city:
+            continue
+        if arguments.category and row.get("category") != arguments.category:
+            continue
+        if isinstance(arguments, PlaceSearchInput):
+            if arguments.indoor is not None and row.get("indoor") != arguments.indoor:
+                continue
+        searchable = " ".join(
+            str(row.get(k, "")) for k in ("name", "aliases", "title", "text", "tags")
+        )
+        if query and query not in searchable.casefold():
+            continue
+        found.append(row)
+        if len(found) == arguments.limit:
+            break
+    return found

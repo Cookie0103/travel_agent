@@ -1,0 +1,21 @@
+{
+  "checked_at": "2026-10-03T06:23:02.993022+00:00",
+  "model_mode": "offline",
+  "message_status": 202,
+  "run_status": "completed",
+  "error_code": null,
+  "event_kinds": [
+    "started",
+    "tool_started",
+    "tool_finished",
+    "tool_started",
+    "tool_finished",
+    "text",
+    "completed"
+  ],
+  "event_count": 7,
+  "sequences_contiguous": true,
+  "duplicate_same_run": true,
+  "snapshot_labeled": true,
+  "real_model_requests": 0
+}

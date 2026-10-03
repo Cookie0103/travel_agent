@@ -109,8 +109,13 @@ uv run python -m backend.server
 API 在 http://127.0.0.1:8000/docs 展示接口；/health 检查数据库。
 本地 .env 的 DEMO_MODE=true 启用 POST /demo/login，返回一次性展示的演示令牌；后续 /sessions 请求带 Authorization: Bearer <token>。
 演示身份用于本机开发，不是生产登录。令牌仅保存摘要，24 小时过期；不能指定他人的 user_id 登录。
-Windows 服务入口使用兼容 psycopg 的事件循环。数据库迁移在 backend/persistence/migrations，当前包含用户与会话表。
+Windows 服务入口使用兼容 psycopg 的事件循环。数据库迁移在 backend/persistence/migrations，当前包含身份、会话、目录、旅行条件、Evidence和TaskRun/事件。
 check 不连接数据库；test 会检查真实事务和用户隔离。CI 已配置 PostgreSQL 服务，尚未推送或远端运行。
+
+发消息：`POST /sessions/{id}/messages`，传 `client_message_id`（UUID）、`text`；默认 `mode=offline`。
+查询 `/runs/{id}`，进度读 `/runs/{id}/events`（SSE，可带 `Last-Event-ID`），取消用 `POST /runs/{id}/cancel`。
+重复消息ID返回原执行；新一轮需新UUID。离线固定流程用于检查工具和数据，不代表模型自主规划。
+需要真实模型时，显式用 `uv run --env-file .env python -m backend.server --live` 启动，并把该条消息的mode设为live；仍受累计授权与每日预算限制。
 
 ## 审阅与中断恢复
 

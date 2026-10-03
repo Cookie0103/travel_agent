@@ -3,7 +3,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, MetaData, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, MetaData, String, Text, UniqueConstraint, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -65,4 +65,30 @@ class EvidenceRow(Base):
     session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
     kind: Mapped[str] = mapped_column(String(20))
     invalidated: Mapped[bool] = mapped_column(Boolean, default=False)
+    payload: Mapped[dict[str, object]] = mapped_column(JSONB)
+
+
+class TaskRunRow(Base):
+    __tablename__ = "task_runs"
+    __table_args__ = (UniqueConstraint("session_id", "client_message_id"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
+    client_message_id: Mapped[UUID]
+    mode: Mapped[str] = mapped_column(String(10))
+    status: Mapped[str] = mapped_column(String(20), default="running")
+    prompt: Mapped[str] = mapped_column(Text)
+    answer: Mapped[str] = mapped_column(Text, default="")
+    error_code: Mapped[str | None] = mapped_column(String(30))
+    last_sequence: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class RunEventRow(Base):
+    __tablename__ = "run_events"
+
+    run_id: Mapped[UUID] = mapped_column(ForeignKey("task_runs.id"), primary_key=True)
+    sequence: Mapped[int] = mapped_column(primary_key=True)
     payload: Mapped[dict[str, object]] = mapped_column(JSONB)

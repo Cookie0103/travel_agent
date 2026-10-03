@@ -5,10 +5,12 @@ from contextlib import asynccontextmanager
 from typing import Annotated
 from uuid import UUID
 
-from fastapi import Depends, FastAPI, Header, Request
-from fastapi.responses import JSONResponse
+from fastapi import Depends, FastAPI, Header, Query, Request
+from fastapi.responses import JSONResponse, StreamingResponse
 
+from backend.api.events import stream_events
 from backend.services.common import ServiceError
+from backend.services.runs import MessageInput, RunService, RunView
 from backend.services.sessions import (
     DemoIdentity,
     DemoLogin,
@@ -24,15 +26,22 @@ from backend.services.travel import (
 )
 
 
-def create_app(service: SessionService | None = None) -> FastAPI:
+def create_app(
+    service: SessionService | None = None,
+    *,
+    runs_service: RunService | None = None,
+    live_enabled: bool = False,
+) -> FastAPI:
     sessions = service or SessionService.from_environment()
     travel = TravelService(sessions.database)
+    runs = runs_service or RunService(sessions.database, live_enabled=live_enabled)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         try:
             yield
         finally:
+            await runs.close()
             await sessions.close()
 
     app = FastAPI(title="Travel Agent", lifespan=lifespan)
@@ -76,5 +85,40 @@ def create_app(service: SessionService | None = None) -> FastAPI:
         session_id: UUID, body: RequestPatch, user_id: Annotated[UUID, Depends(identity)]
     ) -> RequestUpdate:
         return await travel.patch_request(RunContext(user_id, session_id), body)
+
+    @app.post("/sessions/{session_id}/messages", status_code=202)
+    async def message(
+        session_id: UUID, body: MessageInput, user_id: Annotated[UUID, Depends(identity)]
+    ) -> RunView:
+        return await runs.submit(user_id, session_id, body)
+
+    @app.get("/runs/{run_id}")
+    async def get_run(run_id: UUID, user_id: Annotated[UUID, Depends(identity)]) -> RunView:
+        return await runs.get(user_id, run_id)
+
+    @app.post("/runs/{run_id}/cancel")
+    async def cancel_run(run_id: UUID, user_id: Annotated[UUID, Depends(identity)]) -> RunView:
+        return await runs.cancel(user_id, run_id)
+
+    @app.get("/runs/{run_id}/events")
+    async def events(
+        request: Request,
+        run_id: UUID,
+        user_id: Annotated[UUID, Depends(identity)],
+        after: Annotated[int, Query(ge=0)] = 0,
+        last_event_id: Annotated[str | None, Header()] = None,
+    ) -> StreamingResponse:
+        current = await runs.get(user_id, run_id)
+        try:
+            cursor = int(last_event_id) if last_event_id is not None else after
+        except ValueError:
+            raise ServiceError(422, "validation", "事件游标必须是整数") from None
+        if not 0 <= cursor <= current.last_sequence:
+            raise ServiceError(422, "validation", "事件游标超出此执行的范围")
+        return StreamingResponse(
+            stream_events(request, runs, user_id, run_id, cursor),
+            media_type="text/event-stream",
+            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+        )
 
     return app

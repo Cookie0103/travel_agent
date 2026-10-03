@@ -1,10 +1,13 @@
 """跨平台 API 启动入口；Windows 为 PostgreSQL 显式选择支持的事件循环。"""
 
+import argparse
 import asyncio
 import io
 import sys
 
 import uvicorn
+
+from backend.api.app import create_app
 
 
 def loop_factory() -> asyncio.AbstractEventLoop:
@@ -15,9 +18,11 @@ if __name__ == "__main__":
     for stream in (sys.stdout, sys.stderr):
         if isinstance(stream, io.TextIOWrapper):
             stream.reconfigure(encoding="utf-8")
+    parser = argparse.ArgumentParser(description="Travel Agent 本地API，默认离线")
+    parser.add_argument("--live", action="store_true", help="允许显式live消息使用已授权人民币线路")
+    arguments = parser.parse_args()
     uvicorn.run(
-        "backend.api.app:create_app",
-        factory=True,
+        create_app(live_enabled=arguments.live),
         host="127.0.0.1",
         port=8000,
         loop="backend.server:loop_factory",

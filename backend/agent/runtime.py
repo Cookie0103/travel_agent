@@ -6,13 +6,13 @@ from typing import Protocol
 from uuid import UUID
 
 from backend.domain.execution import (
-    EventKind,
     RunContext,
     RunResult,
     RuntimeEvent,
     RuntimeIdentity,
     RuntimeOutcome,
     SessionReference,
+    terminal_event,
 )
 
 type EventSink = Callable[[RuntimeEvent], None]
@@ -97,14 +97,7 @@ class Agent:
             assert outcome.sdk_session_id is not None
             reference = SessionReference(context, identity, outcome.sdk_session_id)
             self._references[reference.id] = reference
-        kind: EventKind = (
-            "completed"
-            if outcome.code is None
-            else "cancelled"
-            if outcome.code == "cancelled"
-            else "failed"
-        )
-        emit(RuntimeEvent(context, kind, code=outcome.code))
+        emit(terminal_event(context, outcome))
         return RunResult(context, outcome, reference)
 
     @staticmethod

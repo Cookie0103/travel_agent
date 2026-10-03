@@ -12,6 +12,7 @@ import pytest
 
 from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.claude_agent.windows_job import WindowsJob
+from backend.providers.probe.settings import ProbeError
 
 
 def test_continuous_slow_stream_cannot_extend_total_deadline(tmp_path: Path) -> None:
@@ -107,3 +108,28 @@ def test_bootstrap_preserves_stdin_payload_for_child(tmp_path: Path) -> None:
         input_text="private-payload",
     )
     assert result.returncode == 0 and result.stdout.strip() == "private-payload"
+
+
+def test_cancel_stops_running_child_after_publishing_progress(tmp_path: Path) -> None:
+    cancelled = threading.Event()
+    marker = tmp_path / "running"
+    script = (
+        "from pathlib import Path; import time; "
+        "Path('running').write_text('started',encoding='utf-8'); time.sleep(60)"
+    )
+
+    def progress() -> None:
+        if marker.exists():
+            cancelled.set()
+
+    started = time.monotonic()
+    with pytest.raises(ProbeError, match="cancelled"):
+        run_process(
+            [sys.executable, "-c", script],
+            tmp_path,
+            dict(os.environ),
+            timeout=5,
+            cancelled=cancelled,
+            progress=progress,
+        )
+    assert marker.exists() and time.monotonic() - started < 3
