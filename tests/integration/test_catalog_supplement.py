@@ -18,6 +18,7 @@ from backend.mcp.bridge import sdk_tool_name
 from backend.persistence.catalog import import_catalog, load_catalog
 from backend.persistence.temporary import temporary_database
 from backend.services.common import ServiceError, transaction
+from backend.tools.fencing import fence
 from backend.tools.travel import TravelToolExecutor
 from data.import_catalog import load_snapshot
 from eval.database import DATA_VERSION, DatabaseEvaluation, database_evaluation, selector_runner
@@ -136,7 +137,7 @@ def test_actual_sdk_matches_original_two_search_tool_contract_on_curated_sources
     assert len(payloads) == 2 and all(p["status"] == "ok" for p in payloads)
     article = next(p["data"]["articles"][0] for p in payloads if "articles" in p["data"])
     place = next(p["data"]["places"][0] for p in payloads if "places" in p["data"])
-    assert place["name"] == "茶寮都路里" and place["source"]["content_version"].endswith(
+    assert place["name"] == fence("茶寮都路里") and place["source"]["content_version"].endswith(
         ":curation-v1"
     )
     assert article["source"]["source_ref"].startswith("https://en.wikivoyage.org/")
