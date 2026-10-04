@@ -12,9 +12,9 @@ from backend.providers.claude_agent.evaluation import (
     evaluation_definitions,
     validate_variant,
 )
+from backend.providers.claude_agent.limits import ProbeError
 from backend.providers.claude_agent.live import run_live
 from backend.providers.claude_agent.worker import run as run_worker
-from backend.providers.probe.settings import ProbeError
 from backend.tools.travel import DEFINITIONS
 from eval.run import main, run_cases
 

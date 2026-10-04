@@ -20,11 +20,11 @@ from backend.providers.claude_agent.evaluation import (
 )
 from backend.providers.claude_agent.events import EventReader
 from backend.providers.claude_agent.guard import Guard, serve
-from backend.providers.claude_agent.http import forward_deepseek, forward_messages
+from backend.providers.claude_agent.http import forward_messages
+from backend.providers.claude_agent.ledger import exclusive
+from backend.providers.claude_agent.limits import ProbeError, Provider, Settings
 from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.claude_agent.settings import load_runtime_settings
-from backend.providers.probe.ledger import exclusive
-from backend.providers.probe.settings import ProbeError, Provider, Settings
 from backend.tools.travel import live_definitions
 from backend.tools.workflow import WorkflowName
 
@@ -107,9 +107,7 @@ def run_live(
         guard = Guard(
             settings,
             budget,
-            partial(forward_deepseek, settings.api_key)
-            if settings.provider == "deepseek"
-            else partial(forward_messages, settings.provider, settings.api_key),
+            partial(forward_messages, settings.provider, settings.api_key),
             allowed_tools=frozenset(sdk_tool_name(d.name) for d in definitions),
             max_attempts=max_attempts,
         )

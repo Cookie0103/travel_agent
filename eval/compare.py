@@ -17,7 +17,7 @@ from backend.providers.claude_agent.evaluation import (
     evaluation_definitions,
     evaluation_metadata,
 )
-from backend.providers.probe.settings import ProbeError, price_for, read_budget
+from backend.providers.claude_agent.limits import ProbeError, price_for, read_budget
 from backend.tools.workflow import WorkflowName
 from eval.business_metrics import BusinessMetrics
 from eval.cases import Case

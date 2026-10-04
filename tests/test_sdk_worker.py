@@ -3,11 +3,9 @@
 from pathlib import Path
 
 import pytest
-from claude_agent_sdk import ResultMessage
 
 from backend.providers.claude_agent.environment import find_cli, find_git_bash, worker_environment
-from backend.providers.probe.settings import ProbeError
-from backend.providers.sdk_probe.worker import result_summary
+from backend.providers.claude_agent.limits import ProbeError
 
 
 def test_sdk_worker_does_not_inherit_real_credentials(tmp_path: Path) -> None:
@@ -57,27 +55,3 @@ def test_git_bash_is_found_for_shell_and_hook_paths(
 def test_missing_explicit_git_bash_is_rejected(tmp_path: Path) -> None:
     with pytest.raises(ProbeError, match="Git Bash"):
         find_git_bash({"CLAUDE_CODE_GIT_BASH_PATH": str(tmp_path / "missing.exe")})
-
-
-@pytest.mark.parametrize(
-    "reason", ["max_turns", "aborted_streaming", "aborted_tools", "future_reason"]
-)
-def test_terminal_reason_overrides_success_subtype(reason: str) -> None:
-    """R02：半条流、取消、达到轮次上限都不能当完成。"""
-    result = ResultMessage(
-        "success", 1, 1, False, 1, "session", result="kyoto-sdk-ok", terminal_reason=reason
-    )
-    assert result_summary(result, ["echo"], ["ResultMessage"], "kyoto-sdk-ok")["status"] == "error"
-
-
-def test_success_requires_tool_execution_and_final_result() -> None:
-    result = ResultMessage(
-        "success", 1, 1, False, 1, "session", result="kyoto-sdk-ok", terminal_reason="completed"
-    )
-    assert result_summary(result, [], ["ResultMessage"], "kyoto-sdk-ok")["status"] == "error"
-    assert (
-        result_summary(result, ["echo"], ["ResultMessage"], "kyoto-sdk-ok")["status"] == "success"
-    )
-    assert (
-        result_summary(result, ["echo"], [], "kyoto-sdk-ok:unseen-challenge")["status"] == "error"
-    )

@@ -14,7 +14,7 @@ from backend.providers.claude_agent import application, live
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.events import save_event
 from backend.providers.claude_agent.guard import Forward, Guard
-from backend.providers.probe.settings import ProbeError, Settings
+from backend.providers.claude_agent.limits import ProbeError, Settings
 
 
 @pytest.mark.parametrize("failure", ["cancelled", "worker_exit", "guard_failure"])

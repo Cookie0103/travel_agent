@@ -6,8 +6,8 @@ from typing import Literal
 from pydantic import BaseModel
 
 from backend.providers.claude_agent.budget import check_authorization
+from backend.providers.claude_agent.limits import ProbeError
 from backend.providers.claude_agent.settings import load_runtime_settings
-from backend.providers.probe.settings import ProbeError, Provider
 
 
 class ModelOption(BaseModel):
@@ -38,7 +38,3 @@ def model_options(environment: Mapping[str, str], live_enabled: bool) -> list[Mo
             )
         )
     return options
-
-
-def selected_provider(mode: str) -> Provider:
-    return "anthropic" if mode == "claude" else "deepseek"

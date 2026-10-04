@@ -14,7 +14,7 @@ SDK 原始消息在这里转换为 `RuntimeEvent` / `RuntimeOutcome`。
 `settings`按LLM_PROVIDER显式选DeepSeek/CNY或Anthropic/USD，模型/价表共用。
 `budget/request/response/guard/http`共用预占/结算；USD累计授权为0，密钥和日预算不放行。
 `environment/process/bootstrap/windows_job` 共用环境隔离与子进程清理。
-上述模块由探针移动到这里；探针仍复用同一实现，不维护副本。
+`limits`读取环境变量并给出价表/预算校验，`ledger`在网络调用前落盘计次与保守费用（写入失败就不发送）；不同币种分开记账。
 父进程的私有报告在 .cache/sessions；前端/CLI 不展示 SDK session_id 或原始 stderr。
 GuardedRuntime将API事件/取消接到同一live入口；父进程验证后才报告终态；用量/实际CLI版本只从本轮核验报告取，API Trace仍用已提交PG事件。
 DatabaseTools用Selector线程运行数据库工具，SDK进程保留Windows Proactor。

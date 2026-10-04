@@ -6,8 +6,9 @@ from uuid import uuid4
 
 import pytest
 
-from backend.agent.runtime import Agent, EventSink, FakeRuntime
+from backend.agent.runtime import Agent, EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, RuntimeOutcome
+from tests.fakes import FakeRuntime
 
 
 @pytest.mark.asyncio

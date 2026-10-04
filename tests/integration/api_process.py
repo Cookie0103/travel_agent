@@ -8,13 +8,14 @@ import sys
 import uvicorn
 from sqlalchemy import make_url
 
-from backend.agent.runtime import EventSink, FakeRuntime
+from backend.agent.runtime import EventSink
 from backend.api.app import create_app
 from backend.domain.execution import RunContext, RuntimeOutcome
 from backend.domain.travel_request import RequestPatch
 from backend.services.runs import RunService
 from backend.services.sessions import SessionService
 from backend.services.travel import TravelService
+from tests.fakes import FakeRuntime
 
 
 class InterruptedRuntime(FakeRuntime):

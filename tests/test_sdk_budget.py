@@ -7,8 +7,8 @@ from pathlib import Path
 import pytest
 
 from backend.providers.claude_agent.budget import LIMITS, Budget
-from backend.providers.probe.ledger import Entry, Ledger
-from backend.providers.probe.settings import Currency, ProbeError
+from backend.providers.claude_agent.ledger import Entry, Ledger
+from backend.providers.claude_agent.limits import Currency, ProbeError
 
 NOW = datetime(2026, 10, 3, 12, tzinfo=UTC)
 

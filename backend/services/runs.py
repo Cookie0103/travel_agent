@@ -26,7 +26,6 @@ from backend.persistence.database import Database
 from backend.persistence.models import TaskRunRow
 from backend.providers.claude_agent.application import GuardedRuntime
 from backend.services.common import ServiceError, database_error_details, transaction
-from backend.services.models import selected_provider
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolExecutor
 from backend.tools.travel import TravelToolExecutor
@@ -193,7 +192,7 @@ class RunService:
         return GuardedRuntime(
             Path(__file__).resolve().parents[2],
             self.database.engine.url.render_as_string(hide_password=False),
-            provider=selected_provider(mode),
+            provider="anthropic" if mode == "claude" else "deepseek",
             real_data=True,
         )
 

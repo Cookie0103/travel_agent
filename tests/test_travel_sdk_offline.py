@@ -13,8 +13,8 @@ from backend.mcp.bridge import sdk_tool_name
 from backend.providers.claude_agent.budget import LIMITS, Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
 from backend.providers.claude_agent.guard import Guard, serve
+from backend.providers.claude_agent.limits import Provider, Settings
 from backend.providers.claude_agent.process import invoke_worker, run_process
-from backend.providers.probe.settings import Provider, Settings
 from backend.tools.search import DEFINITIONS
 from tests.test_sdk_cli_offline import scripted_response
 

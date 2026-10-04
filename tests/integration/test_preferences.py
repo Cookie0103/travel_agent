@@ -6,7 +6,6 @@ from uuid import uuid4
 import pytest
 from fastapi.testclient import TestClient
 
-from backend.agent.runtime import FakeRuntime
 from backend.domain.catalog import Article
 from backend.domain.execution import RuntimeOutcome
 from backend.domain.preferences import PreferencePatch, Preferences, PreferenceVersion
@@ -17,6 +16,7 @@ from backend.services.runs import MessageInput, RunService
 from backend.services.travel import RunContext, TravelService
 from backend.tools.travel import TravelToolExecutor
 from data.import_catalog import load_snapshot
+from tests.fakes import FakeRuntime
 from tests.integration.test_sessions import client as client
 from tests.integration.test_sessions import login
 from tests.integration.test_travel import travel_setup as travel_setup

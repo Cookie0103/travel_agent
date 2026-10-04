@@ -9,7 +9,7 @@ from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field, ValidationError
 
 from backend.agent.persona import RUBRIC as RUBRIC
-from backend.agent.persona import load_persona, persona_judge_prompt
+from backend.agent.persona import load_persona
 from eval.content import HumanQuality, QualityScore
 from scripts.dev import configure_environment
 
@@ -46,17 +46,6 @@ def rules(text: str, *, emotional: bool = False) -> dict[str, bool]:
         "no_forbidden_phrases": not any(phrase in text for phrase in banned),
         "plain_format": not re.search(r"(?m)^#{1,6}\s|```", text),
     }
-
-
-def judge_prompt(sample: Sample) -> str:
-    return (
-        persona_judge_prompt()
-        + "\n待评数据：\n"
-        + json.dumps(
-            {"scene": sample.scene, "user_input": sample.user_input, "candidate": sample.text},
-            ensure_ascii=False,
-        )
-    )
 
 
 def calibration(samples: list[Sample]) -> dict[str, object]:

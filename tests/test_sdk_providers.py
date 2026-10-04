@@ -14,11 +14,11 @@ from backend.domain.execution import RunContext
 from backend.providers.claude_agent.budget import GRANT, Budget
 from backend.providers.claude_agent.guard import Guard
 from backend.providers.claude_agent.http import _direct_request
+from backend.providers.claude_agent.limits import ProbeError, Provider, Settings, price_for
 from backend.providers.claude_agent.live import run_live
 from backend.providers.claude_agent.request import validate_request
 from backend.providers.claude_agent.response import summarize
 from backend.providers.claude_agent.settings import load_runtime_settings
-from backend.providers.probe.settings import ProbeError, Provider, Settings, price_for
 from tests.test_sdk_guard import request_body, response_body
 
 MODEL = "claude-haiku-4-5-20251001"

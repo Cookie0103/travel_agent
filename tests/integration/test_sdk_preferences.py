@@ -10,13 +10,13 @@ from uuid import uuid4
 
 import pytest
 
-from backend.agent.runtime import FakeRuntime
 from backend.domain.execution import RuntimeOutcome
 from backend.domain.preferences import PreferencePatch, PreferenceVersion
 from backend.mcp.bridge import sdk_tool_name
 from backend.services.preferences import PreferenceService
 from backend.services.runs import MessageInput, RunService
 from backend.services.travel import RunContext, TravelService
+from tests.fakes import FakeRuntime
 from tests.integration.sdk_helper import run_database_worker
 from tests.integration.test_sdk_recovery import sdk_id
 from tests.integration.test_travel import travel_setup as travel_setup

@@ -13,9 +13,9 @@ from pydantic import ValidationError
 
 from backend.agent.persona import JudgeKind, evaluation_judge_prompt
 from backend.domain.execution import RunContext
+from backend.providers.claude_agent.limits import ProbeError
 from backend.providers.claude_agent.live import check_evaluation_size, run_live
 from backend.providers.claude_agent.settings import load_runtime_settings
-from backend.providers.probe.settings import ProbeError
 from eval.content import QualityScore
 from eval.persona import JudgeScore, Sample, calibration, content_calibration
 from eval.run import manifest

@@ -7,14 +7,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+from backend.providers.claude_agent.limits import ProbeError, Provider
 from backend.providers.claude_agent.process import run_process
-from backend.providers.probe.settings import ProbeError, Provider
 
 MAX_RESPONSE_BYTES = 1_048_576
-
-
-def forward_deepseek(api_key: str, body: bytes) -> tuple[int, bytes]:
-    return forward_messages("deepseek", api_key, body)
 
 
 def forward_messages(provider: Provider, api_key: str, body: bytes) -> tuple[int, bytes]:

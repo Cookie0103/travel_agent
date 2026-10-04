@@ -16,19 +16,20 @@ from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExport
 from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTraceServiceRequest
 
 from backend.adapters.local_http import serve_http
-from backend.agent.runtime import EventSink, FakeRuntime
+from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeOutcome
 from backend.mcp.bridge import sdk_tool_name
 from backend.providers.claude_agent import application, live
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import worker_environment
 from backend.providers.claude_agent.guard import Forward, Guard
-from backend.providers.probe.settings import Settings
+from backend.providers.claude_agent.limits import Settings
 from backend.services.runs import MessageInput, RunService
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolExecutor
 from backend.tools.execution import execute_observed
 from backend.tools.travel import DEFINITIONS
+from tests.fakes import FakeRuntime
 from tests.integration.test_travel import travel_setup as travel_setup
 from tests.test_sdk_cli_offline import scripted_response
 
@@ -167,8 +168,9 @@ def test_api_actual_sdk_usage_reaches_committed_trace_and_otlp(
     )
     calls = 0
 
-    def local_model(key: str, body: bytes) -> tuple[int, bytes]:
+    def local_model(provider: str, key: str, body: bytes) -> tuple[int, bytes]:
         nonlocal calls
+        assert provider == "deepseek"
         assert key == "offline-only"
         calls += 1
         return (
@@ -177,7 +179,7 @@ def test_api_actual_sdk_usage_reaches_committed_trace_and_otlp(
             else forward(body)
         )
 
-    monkeypatch.setattr(live, "forward_deepseek", local_model)
+    monkeypatch.setattr(live, "forward_messages", local_model)
     collector = FastAPI()
     received: list[ExportTraceServiceRequest] = []
 

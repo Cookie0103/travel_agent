@@ -29,8 +29,8 @@ from backend.providers.claude_agent.evaluation import (
     evaluation_metadata,
     validate_variant,
 )
+from backend.providers.claude_agent.limits import ProbeError
 from backend.providers.claude_agent.live import check_evaluation_size, run_live
-from backend.providers.probe.settings import ProbeError
 from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition
 from backend.tools.search import DEFINITIONS, SearchExecutor
@@ -434,7 +434,9 @@ def manifest(
         },
         "selected_cases": [c.model_dump() for c in cases],
         "schema_sha256": schema_fingerprint(definitions),
-        "pricing": "backend/providers/probe/settings.py; original-currency upper bound; hash above",
+        "pricing": (
+            "backend/providers/claude_agent/limits.py; original-currency upper bound; hash above"
+        ),
         "skills": ["hotel-comparison", "itinerary-revision"]
         if definitions == TRAVEL_DEFINITIONS
         else [],

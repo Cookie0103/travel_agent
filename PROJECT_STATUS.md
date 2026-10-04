@@ -178,8 +178,7 @@ uv run python -m scripts.smoke_demo --verify
 | `backend/persistence/migrations/`、`versions/` | DONE：现有迁移 | 空库可升级，重启不丢业务状态 | 无新迁移 |
 | `backend/providers/` | DONE：供应商/runtime 边界 | 默认离线、显式线路、费用/进程保护 | 无新增供应商 |
 | `backend/providers/claude_agent/` | DONE：当前正式 runtime | SDK/CLI、工具、guard、resume/压缩回归 | 无重写 runtime |
-| `backend/providers/probe/` | DONE：历史协议/账本支持 | 保留旧账、本地测试通过 | 不扩展历史探针 |
-| `backend/providers/sdk_probe/` | DONE：SDK 验证支持 | 既有协议/边界测试 | 无 |
+| `backend/providers/claude_agent/limits.py`、`ledger.py` | DONE：价表/预算配置与费用账本（原 providers/probe 并入） | 保留旧账、本地测试通过 | 无 |
 | `backend/services/` | 主体 DONE，过期 hold 有缺陷 | 业务事务/版本/归属与 AC01 | P0-1 bookings/travel |
 | `backend/tools/` | DONE：旅行业务工具 | 原 schema/执行/越权/失败回归 | 不新增工具 |
 | `backend/tools/skills/` | DONE：两类旅行 Skill | 按需加载及开关机制已有测试 | 完整效果对照 P1 |

@@ -9,7 +9,7 @@ from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
-from backend.providers.probe.settings import Currency, ProbeError, read_budget
+from backend.providers.claude_agent.limits import Currency, ProbeError, read_budget
 
 
 @dataclass(frozen=True)

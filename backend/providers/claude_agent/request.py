@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Literal
 
-from backend.providers.probe.settings import ProbeError, price_for
+from backend.providers.claude_agent.limits import ProbeError, price_for
 
 MAX_BYTES = 131072
 MAX_OUTPUT = 2048

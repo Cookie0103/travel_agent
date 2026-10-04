@@ -13,7 +13,6 @@ from uuid import uuid4
 import pytest
 from pydantic import TypeAdapter
 
-from backend.agent.runtime import FakeRuntime
 from backend.domain.execution import RunContext, RunResult, RuntimeEvent, RuntimeOutcome
 from backend.domain.travel_request import RequestPatch
 from backend.mcp.bridge import sdk_tool_name
@@ -22,6 +21,7 @@ from backend.persistence.travel import add_evidence
 from backend.services.common import transaction
 from backend.services.runs import MessageInput, RunService
 from backend.services.travel import TravelService
+from tests.fakes import FakeRuntime
 from tests.integration.sdk_helper import run_database_worker
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import evidence

@@ -22,8 +22,8 @@ from backend.providers.claude_agent.evaluation import (
     validate_variant,
 )
 from backend.providers.claude_agent.events import save_event
+from backend.providers.claude_agent.limits import Provider
 from backend.providers.claude_agent.runtime import ClaudeRuntime, RuntimeConfig
-from backend.providers.probe.settings import Provider
 from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition, ToolExecutor
 from backend.tools.search import DEFINITIONS, SearchExecutor

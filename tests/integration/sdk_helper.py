@@ -10,8 +10,8 @@ from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
 from backend.providers.claude_agent.evaluation import EvaluationVariant, evaluation_definitions
 from backend.providers.claude_agent.guard import Forward, Guard, serve
+from backend.providers.claude_agent.limits import Settings
 from backend.providers.claude_agent.process import invoke_worker, run_process
-from backend.providers.probe.settings import Settings
 from backend.services.travel import TravelService
 from backend.tools.workflow import WorkflowName
 

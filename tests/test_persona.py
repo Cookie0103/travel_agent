@@ -7,7 +7,7 @@ import pytest
 from pydantic import ValidationError
 
 from backend.agent.persona import load_persona, travel_prompt
-from eval.persona import JudgeScore, Sample, calibration, judge_prompt, rules
+from eval.persona import JudgeScore, Sample, calibration, rules
 
 
 def test_persona_is_shared_by_prompt_and_rule_grader() -> None:
@@ -47,8 +47,6 @@ def test_missing_human_or_temperature_proof_stays_pending() -> None:
     )
     assert calibration([sample])["judge_errors"] == 1
     assert calibration([sample.model_copy(update={"judge_temperature": 0})])["paired"] == 0
-    assert "候选回答" in judge_prompt(sample)
-    assert sample.user_input in judge_prompt(sample)
 
 
 def test_calibration_computes_real_pairs_without_filling_missing_scores() -> None:

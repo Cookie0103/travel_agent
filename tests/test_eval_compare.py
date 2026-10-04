@@ -395,7 +395,7 @@ def test_experiment_groups_cannot_reuse_contexts(tmp_path: Path) -> None:
 def test_invalid_measurement_is_rejected_before_reporting(
     tmp_path: Path, field: str, value: object
 ) -> None:
-    from backend.providers.probe.settings import ProbeError
+    from backend.providers.claude_agent.limits import ProbeError
 
     a, b = tmp_path / "a", tmp_path / "b"
     write_batch(a)

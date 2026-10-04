@@ -1,60 +1,22 @@
 """离线验证 M0.2 的配置、持久次数限制、费用隔离和工具配对。"""
 
-import json
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 
 import pytest
-from anthropic.types import Message, MessageParam, ToolParam
 
-from backend.providers.probe.flow import execute_flow, synthetic_results, write_report
-from backend.providers.probe.ledger import Entry, Ledger, exclusive
-from backend.providers.probe.settings import (
+from backend.providers.claude_agent.ledger import Entry, Ledger, exclusive
+from backend.providers.claude_agent.limits import (
     ProbeError,
     Settings,
     load_settings,
     price_for,
     read_budget,
 )
-from backend.providers.probe.transport import Reply
 
 NOW = datetime(2026, 10, 3, tzinfo=UTC)
 SETTINGS = Settings("fake-key-for-tests", "deepseek-flash", Decimal("5"), Decimal("0"))
-
-
-def reply(content: list[dict[str, object]], stop: str = "tool_use") -> Reply:
-    return Reply(
-        Message.model_validate(
-            {
-                "id": "offline-message",
-                "type": "message",
-                "role": "assistant",
-                "model": "deepseek-flash",
-                "content": content,
-                "stop_reason": stop,
-                "stop_sequence": None,
-                "usage": {"input_tokens": 12, "output_tokens": 8},
-            }
-        ),
-        ("message_start", "content_block_delta", "message_stop"),
-    )
-
-
-def tool(call_id: str, city: str = "Kyoto") -> dict[str, object]:
-    return {"type": "tool_use", "id": call_id, "name": "lookup_fixture", "input": {"city": city}}
-
-
-class FakeClient:
-    """脚本化结果，无 HTTP；保留内存请求用于断言续接内容。"""
-
-    def __init__(self, replies: list[Reply]) -> None:
-        self.replies = iter(replies)
-        self.calls: list[list[MessageParam]] = []
-
-    def send(self, messages: list[MessageParam], tools: list[ToolParam]) -> Reply:
-        self.calls.append(list(messages))
-        return next(self.replies)
 
 
 @pytest.mark.parametrize("value", ["", "bad", "NaN", "Infinity", "-0.1"])
@@ -154,61 +116,3 @@ def test_concurrent_flow_lock_blocks_second_run_and_releases_after_error(tmp_pat
                     pytest.fail("concurrent lock was acquired")
             raise RuntimeError("synthetic interruption")
     assert not path.exists()
-
-
-def test_roundtrip_preserves_thinking_and_pairs_reordered_results(tmp_path: Path) -> None:
-    """R02：工具结果以 ID 配对，SDK 思考块内存原样回传但不写报告。"""
-    thinking: dict[str, object] = {
-        "type": "thinking",
-        "thinking": "private-test-thought",
-        "signature": "test-signature",
-    }
-    first = reply([thinking, tool("call-a"), tool("call-b", "Osaka")])
-    client = FakeClient(
-        [first, reply([{"type": "text", "text": "fixture ok; Osaka unavailable"}], "end_turn")]
-    )
-    path = tmp_path / "report.json"
-    report = execute_flow(SETTINGS, client.send, lambda item: write_report(path, item))
-    assert report["status"] == "success"
-    assert report["tool_count"] == 2
-    assert report["is_error_true_sent"] is True
-    assert client.calls[1][1]["content"] == first.message.content
-    results = synthetic_results(first)
-    assert [result["tool_use_id"] for result in results] == ["call-b", "call-a"]
-    assert results[0]["is_error"] is True
-    assert "private-test-thought" not in path.read_text(encoding="utf-8")
-    assert "test-signature" not in path.read_text(encoding="utf-8")
-
-
-@pytest.mark.parametrize(
-    "content",
-    [
-        [tool("same"), tool("same")],
-        [tool("a", "Tokyo")],
-        [{"type": "tool_use", "id": "a", "name": "other", "input": {}}],
-    ],
-)
-def test_invalid_tool_response_prevents_second_request(content: list[dict[str, object]]) -> None:
-    """R02：重复 ID、未知工具和非法参数都不能成为下一轮输入。"""
-    client = FakeClient([reply(content)])
-    reports: list[dict[str, object]] = []
-    with pytest.raises(ProbeError, match="validation"):
-        execute_flow(SETTINGS, client.send, lambda item: reports.append(dict(item)))
-    assert len(client.calls) == 1
-    assert reports[-1]["status"] == "failed"
-
-
-def test_truncated_final_answer_fails_without_third_request() -> None:
-    client = FakeClient(
-        [reply([tool("a")]), reply([{"type": "text", "text": "partial"}], "max_tokens")]
-    )
-    with pytest.raises(ProbeError, match="完整最终回答"):
-        execute_flow(SETTINGS, client.send, lambda item: None)
-    assert len(client.calls) == 2
-
-
-def test_report_overwrite_keeps_valid_json(tmp_path: Path) -> None:
-    path = tmp_path / "report.json"
-    write_report(path, {"status": "running"})
-    write_report(path, {"status": "failed"})
-    assert json.loads(path.read_text(encoding="utf-8")) == {"status": "failed"}

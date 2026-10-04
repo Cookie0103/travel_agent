@@ -15,7 +15,6 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import URL, func, select
 
-from backend.agent.runtime import FakeRuntime
 from backend.api.app import create_app
 from backend.domain.booking import HoldHotelInput
 from backend.domain.evidence import EvidenceRecord
@@ -40,6 +39,7 @@ from backend.services.runs import MessageInput, RunService
 from backend.services.sessions import SessionService
 from backend.services.travel import TravelService
 from mock_supplier.service import SupplierService
+from tests.fakes import FakeRuntime
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import travel_setup as travel_setup
 

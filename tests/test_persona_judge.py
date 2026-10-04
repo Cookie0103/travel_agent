@@ -15,11 +15,11 @@ from backend.domain.execution import RunContext
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
 from backend.providers.claude_agent.guard import Guard, serve
+from backend.providers.claude_agent.limits import ProbeError, Settings
 from backend.providers.claude_agent.live import run_live
 from backend.providers.claude_agent.process import invoke_worker
 from backend.providers.claude_agent.request import validate_request
 from backend.providers.claude_agent.worker import run as run_worker
-from backend.providers.probe.settings import ProbeError, Settings
 from backend.tools.workflow import WorkflowName
 from eval.judge import evaluate, load_samples, score_report
 from eval.persona import Sample

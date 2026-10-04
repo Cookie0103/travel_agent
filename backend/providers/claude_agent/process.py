@@ -10,8 +10,8 @@ from collections.abc import Callable
 from pathlib import Path
 from threading import Event
 
+from backend.providers.claude_agent.limits import ProbeError
 from backend.providers.claude_agent.windows_job import WindowsJob
-from backend.providers.probe.settings import ProbeError
 
 
 def run_process(
@@ -114,7 +114,7 @@ def invoke_worker(
     directory: Path,
     env: dict[str, str],
     *,
-    module: str = "backend.providers.sdk_probe.worker",
+    module: str,
     payload: dict[str, object] | None = None,
     cancelled: Event | None = None,
     progress: Callable[[], None] | None = None,

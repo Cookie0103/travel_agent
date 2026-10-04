@@ -8,8 +8,8 @@ from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
 
-from backend.providers.probe.ledger import Ledger
-from backend.providers.probe.settings import Currency, ProbeError, read_budget
+from backend.providers.claude_agent.ledger import Ledger
+from backend.providers.claude_agent.limits import Currency, ProbeError, read_budget
 
 GRANT = "2026-10-03-travel-autonomous"
 # 用户新授权只限制每日15CNY；None表示没有累计上限，不用伪造大数。

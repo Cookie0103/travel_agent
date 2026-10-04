@@ -3,7 +3,7 @@
 import pytest
 
 from backend.providers.claude_agent import budget
-from backend.services.models import model_options, selected_provider
+from backend.services.models import model_options
 from backend.services.runs import MessageInput
 
 ENVIRONMENT = {
@@ -24,8 +24,6 @@ def test_models_are_available_only_with_enabled_and_valid_configuration(
     assert [item.id for item in options] == ["offline", "deepseek", "claude"]
     assert all(item.available for item in options)
     assert "private" not in str([item.model_dump() for item in options])
-    assert selected_provider("deepseek") == "deepseek"
-    assert selected_provider("claude") == "anthropic"
 
 
 @pytest.mark.parametrize(

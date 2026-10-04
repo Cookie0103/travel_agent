@@ -11,9 +11,9 @@ from pathlib import Path
 
 import pytest
 
+from backend.providers.claude_agent.limits import ProbeError
 from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.claude_agent.windows_job import WindowsJob
-from backend.providers.probe.settings import ProbeError
 
 
 def test_continuous_slow_stream_cannot_extend_total_deadline(tmp_path: Path) -> None:
@@ -75,7 +75,7 @@ def test_worker_nonzero_exit_overrides_success_output(
         return subprocess.CompletedProcess(["worker"], 1, '{"status":"success"}', "private")
 
     monkeypatch.setattr("backend.providers.claude_agent.process.run_process", failed)
-    assert invoke_worker(tmp_path / "cli", tmp_path, {}) == {
+    assert invoke_worker(tmp_path / "cli", tmp_path, {}, module="worker") == {
         "status": "error",
         "code": "worker_exit",
         "exit_code": 1,

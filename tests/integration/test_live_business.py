@@ -26,7 +26,8 @@ def test_api_runtime_completes_six_http_hotel_flow_with_real_sdk_and_pg(
     requests: list[dict[str, object]] = []
     offers: list[str] = []
 
-    def forward(key: str, body: bytes) -> tuple[int, bytes]:
+    def forward(provider: str, key: str, body: bytes) -> tuple[int, bytes]:
+        assert provider == "deepseek"
         assert key == "synthetic-local-only"
         request = json.loads(body)
         requests.append(request)
@@ -76,7 +77,7 @@ def test_api_runtime_completes_six_http_hotel_flow_with_real_sdk_and_pg(
         "DAILY_BUDGET_USD": "0",
     }.items():
         monkeypatch.setenv(name, value)
-    monkeypatch.setattr("backend.providers.claude_agent.live.forward_deepseek", forward)
+    monkeypatch.setattr("backend.providers.claude_agent.live.forward_messages", forward)
 
     # 隔离账本仍在tmp_path；被测实际worker加载项目代码，不把临时目录误作源码根。
     def environment(

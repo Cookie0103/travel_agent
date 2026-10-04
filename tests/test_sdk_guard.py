@@ -8,8 +8,8 @@ import pytest
 
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.guard import Guard
+from backend.providers.claude_agent.limits import ProbeError, Settings
 from backend.providers.claude_agent.request import TOOL_NAME, validate_request
-from backend.providers.probe.settings import ProbeError, Settings
 from tests.test_sdk_cli_offline import scripted_response
 
 

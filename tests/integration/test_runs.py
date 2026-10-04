@@ -10,7 +10,7 @@ from psycopg.errors import DeadlockDetected
 from sqlalchemy import URL
 from sqlalchemy.exc import OperationalError
 
-from backend.agent.runtime import EventSink, FakeRuntime
+from backend.agent.runtime import EventSink
 from backend.api.app import create_app
 from backend.domain.execution import RunContext, RuntimeOutcome
 from backend.persistence import runs
@@ -18,6 +18,7 @@ from backend.services.common import ServiceError
 from backend.services.runs import MessageInput, RunService
 from backend.services.sessions import SessionService
 from backend.services.travel import TravelService
+from tests.fakes import FakeRuntime
 from tests.integration.test_sessions import login
 from tests.integration.test_travel import evidence
 from tests.integration.test_travel import travel_setup as travel_setup

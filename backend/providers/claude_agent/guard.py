@@ -14,9 +14,9 @@ from typing import Literal
 from urllib.parse import urlsplit
 
 from backend.providers.claude_agent.budget import Budget
+from backend.providers.claude_agent.limits import ProbeError, Settings, price_for
 from backend.providers.claude_agent.request import MAX_BYTES, TOOL_NAME, validate_request
 from backend.providers.claude_agent.response import summarize
-from backend.providers.probe.settings import ProbeError, Settings, price_for
 
 Forward = Callable[[bytes], tuple[int, bytes]]
 
