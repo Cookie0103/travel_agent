@@ -20,7 +20,10 @@ sequenceDiagram
     R-->>A: 应用事件/唯一终态
     A->>P: 有序事件与状态一起提交
     W->>A: SSE补发/状态读取
-    W->>P: 经用户确认API保存或模拟预订
+    W->>A: 用户明确确认保存或模拟预订
+    A->>P: 归属/版本/时效裁决并提交
+    P-->>A: 正式行程或预订状态
+    A-->>W: 展示已提交结果
 ```
 
 入口依次读 [API](../../backend/api/app.py)、[RunService.submit/_execute](../../backend/services/runs.py)、[GuardedRuntime](../../backend/providers/claude_agent/application.py)、[live.run_live](../../backend/providers/claude_agent/live.py)、[worker.run/run_prompts](../../backend/providers/claude_agent/worker.py)、[ClaudeRuntime.options/_collect](../../backend/providers/claude_agent/runtime.py)、[工具定义与执行器](../../backend/tools/travel.py)。

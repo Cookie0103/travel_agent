@@ -78,6 +78,10 @@ class Booking(BaseModel):
     history: tuple[BookingChange, ...] = ()
     data_mode: Literal["fixture"] = "fixture"
 
+    def hold_expired(self, observed_at: datetime) -> bool:
+        """暂留时效在服务与上下文共用；已确认/未知订单必须走对账。"""
+        return self.status == "held" and (self.expires_at is None or self.expires_at <= observed_at)
+
     def card(self) -> dict[str, object]:
         """工具只携带预订裁决信息，完整条件与历史留在用户API。"""
         return {

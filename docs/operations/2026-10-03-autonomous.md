@@ -634,3 +634,41 @@ UTC10-04实际账本预检：日9.533012/15，余额5.466988，未结0、active.
 
 
 本轮修复正常全量关卡首轮764passed/1failed/2live deselected（203.54s）：新增公开schema说明使web-openapi生成契约漂移，原检测断言保持不变。使用既有dev web-generate正常更新data/contracts/web-openapi.json及apps/web/src/lib/api-types.ts（不手改生成物/无DB或凭据），相关74测试Passed4.74s。web-check类型/lint/格式/14测试通过且production build成功；最后生成结果正常退出以工具结果/Git保存为准。原快照/Case/历史模型分与账本不改。独立quality_review另核对observed_at增量无P1/P2。准备再次正常全量提交钩子，期间不改跟踪文件，待通过后普通push，直接进入已预声明有限验收组，不每日调度。
+
+
+fa9930beed460ec1f2bfa994045ccd1e53d7d181正常原check/完整默认Python钩子Passed；普通push/远端完整SHA一致，启动时工作区clean。当前已启动一次有限验收sweep（exec60928），恢复点.cache/verification-sweep-20261004.json，full首组.cache/eval/20261004T014804Z-9fb38f8d，169源文件冻结；日限例外实际预检null/未结0/无model lock。所有组顺序一次，不重复183已完成组；独立副作用/参数/事实未知保留。源码/原快照/Case保持不变，过程中只更新docs。当前两CI37169086681/37169084562运行中，未提前标绿。日调度已删除，此sweep是本轮有限验收而非每日任务；中断恢复先查PID/状态/实际行数及账本，不启动第二个sweep。
+
+
+恢复补充：fa9930b两CI37169086681/37169084562已实际核对completed/success。独立autonomy_review另发现M2.2 P2：已到期held在直接重复hold及business_context仍显示活动held；确认入口仍拒绝下单。新增两真实PG反例实际2failed（1.22s），未删除/降断言：重复工具返回held而期待expired，快照仍含过期hold；新测试不在169被测源hash中，源冻结核对true。当前付费有限sweep继续原版本一次，不改源码破坏对照；结束后最小复用到期判定/同事务transition修复，复核无新增供应商请求/订单、身份/版本/并发不变量。该已证实缺陷未关闭，不把当前整项验收标通过。
+
+
+为并行推进已证实缺陷，已在私有.cache/expiry-fix-20261004复制273个自写已跟踪项目文件（不含.env/密钥/vendor/私有运行数据），隔离修复Booking.hold_expired共同判定、原事务重复hold落expired、快照按同observed_at排除到期/缺期限held；confirmed/unknown仍对账。两原红例扩为4分支（过期/缺expires），隔离17实际PG回归Passed3.91s、3源strict/格式/lint通过，主169评测源码未变。最小补丁.cache/expiry-fix-20261004.patch，待独立窄审查与当前有限测量结束后应用主源码、全量正常关卡和commit/push；不是已经发布/关闭该缺陷。
+
+额外验收准备：.cache/api-cloud-real-20261004.py 尚未运行，先Cloud配置/认证，再一次合成旅行API/SDK/PG/Cloud；持久阶段及失败费用、同轮Trace/账本HTTP与Decimal金额、Cloud精确ID/type/版本/token读回，拒绝重放且不写坏旧receipt。一次只读既有SDKCloud元数据GET200确认attributes.<key>扁平形状，0新模型HTTP；来源为Langfuse官方Observations API文档。另.cache/full-quality-20261004.py准备全部当前full120原回答顺序分块30、内容/语气各一次固定温度零工具辅助评审，未启动/不筛rule失败/空回答保留分母/真人0/事实准确仍null；须先完成sweep并核对源hash，无付费重试。原first20历史评分不覆盖新版本。
+
+
+隔离到期补丁独立quality_review只读复核无P1/P2：仅held时效裁决，valid hold不因quote到期受影响，confirmed/unknown保留对账；同事务/锁与身份版本保留。API/Cloud及全120辅助评分私有脚本独立审查发现的运行前认证/费用与次数读回/旧receipt覆盖P2已修复关闭；没有代填真人/重复网络调用。主169源码仍冻结，补丁待有限测量结束应用主库并重新正常关卡保存。
+
+
+fa9930b有限sweep首full已正常完成：.cache/eval/20261004T014804Z-9fb38f8d，120原独立运行、97规则通过/23失败、0error/not_run，三轮31/33/33；406HTTP/9.331554CNY保守峰价全input上界，不是供应商实际账单。169源码结束一致；三安全断言均120/120，26规划候选仍partial/7no_candidate、385工具中381语义unknown/4选择不符合Case、全量准确率null。已自动进入no_tools，未付费重复旧183组。公开白名单单一证据m42-controlled-sweep-2026-10-04.json目前partial，后续复用严格compare追加，不造多份要求用户阅读的报告。首轮前30人评准备在.cache/current-full-human-review-20261004，原顺序/不筛rule/不展示模型分，真人0/新模型0。
+
+
+同fa9930b新对照续接：no_tools(B0)120记录/18规则通过/0error/not_run，严格配对原full97/120，15两组pass/20两组fail/82full pass B0fail/3反向；原配置差异、120分母与unknown保留，不称事实准确提升。baseline_b2也已完整120/103规则通过/0error/not_run；已自动进入fixed_itinerary(B1)，不重放失败。单一公开证据m42-controlled-sweep已更新3完整组，严格compare/169源hash通过；成绩波动和组合配置差异不当因果优化。到期补丁隔离17PG/独立审查通过，主应用仍待有限测量结束。最终顺序：所有同源码组/配对与全120辅助质量评分完成后应用补丁，正常完整关卡提交push；随后真实API/SDK/PG/Cloud单查询核对最新源码/真实tool非空Evidence/费用与版本，不把旧API替身当实测。
+
+
+B1原批次停止并保留：.cache/eval/20261004T024702Z-500fecdb，12pass/1error/107not_run。test-hotel-normal r1固定行程阶段阻挡单酒店展示，38整组HTTP中本run12已用完（13工具、未超过16）；guard_failure_details精准为blocked: 当前实验已停止或达到请求上限，12响应usage完结；未结0/无model lock，累计2066HTTP/43.064372CNY保守上界，当日30.391312不是实际账单。严格load_batch原partial也通过，不重放13已执行slot、不放宽Case/额度。私有恢复脚本.cache/b1-remaining-20261004.py待独立只读审查，只在新派生目录复用原attempt_case按原顺序续接107未启动slot，继承原13实际行与attempts、四原文件hash不变；只有精准本地12请求cap错误才保留error并继续下一预定独立slot，其他error/安全/预算立即止；两临时DB的实际分段sidecar披露。恢复及后四组控制器.cache/verification-sweep-resume-20261004.py未启动，真实调用0；原.exec60928已exit1，当前没有活跃评测，禁止重新跑原sweep。
+
+
+2026-10-04 B1精确恢复补充：第一次续接exec53237已exit1；新派生20261004T025819Z-cb950b1d继承原13且只新执行test-hotel-unknown-tax r1，SDK12轮到限blocked/max_turns、12HTTP/12tools、完整token/三安全True；12pass/2error/106not_run保留。原guard拒绝与SDK max_turns两种本地保护出口已定位runtime.py，不把API故障混进继续例外。v2私有恢复仅继承14原实际slot，续106，记录inherited_recovery多DB来源；源码/期待/限额不变，原两partial不可变。最后账本2078HTTP/43.307934CNYupper，当日30.634874、未结0/no锁；v2待独立只读复核，0新付费重放。
+
+
+v2精确继续已独立只读审查无P1/P2并启动exec34598，派生B1目录.cache/eval/20261004T030120Z-3ca3b17f。原两个partial/14实际slot不重放；仅剩106原slot，12HTTP cap或SDK12轮上限仍记error继续，其他故障停止；169源开始/每slot/结束核对、三安全明确True、完整usage与多DB来源保护保持。后四组由同一控制器连续推进，不新建每日调度。恢复先查.cache/b1-remaining-v2-20261004.json与.cache/verification-sweep-20261004.json、实际进程/账本，不能重放该私有入口。
+
+
+完整离线语义材料已准备：.cache/full-semantic-review-20261004，当前fa full原120全部保留顺序/答案/context/Case/Evidence/报告与transcript SHA；385业务调用中246可精确来源绑定、139未绑定，SDK实际388次工具请求另列，不改原385分母。独立quality_review核对四原文件与720包hash/context/来源、無重复SDK绑定，无P1/P2；只复制tool_use/result，不复制thinking，参数绑定不是正确性，expected/human均0，0新模型HTTP。初次TypeAdapter前离线整理异常保存空failed目录，修复后全120成功，不覆盖原产物、不自动生成expected。
+
+
+B1 v2已停止并诊断真实输出失败：派生3ca3b17f原63已执行（25pass/21failed/17error）57not_run，最后closed-museum r2为8HTTP，末四stop_reason=max_tokens，唯一SDK transcript末assistant model=<synthetic>/error=max_output_tokens；runtime按原provider_error安全终止，三安全True/usage完整，未结0。旧partial与错误保持不改，不以重试抹去失败。v3额外只放行这个已精确证明的输出限制后继续下一个原独立slot，所有其他未知错误仍停；独立quality_review无P1/P2，0付费核对三个历史退出理由通过，私有诊断hash见.cache/b1-failure-diagnosis-20261004.json。v3已启动exec96685，仅剩57，随后后四组；最后账本2430HTTP/53.548538CNYupper，当日40.875478，不是实际账单。
+
+
+同fa169源码B1最终完整120已严格load/compare通过：38pass/48failed/34error、0not_run，原13→14→63→120 lineage保留，原三个partial文件不改，原实际slot0重放。exec96685已自动进入no_skills .cache/eval/20261004T035158Z-2c33dbaf，随后no_preferences/no_repairs/no_compaction。单一公开证据更新四组；对每组120原SDK report上下文核对，补真实工具次数与context_compacted观测、报告有序hash摘要，配置关闭不是机制生效或因果改善。全文不含原prompt/arguments/UUID/keys；完整参数审阅准备仅绑定不正确，human/expected仍0。地图检查10通过，0新模型HTTP。

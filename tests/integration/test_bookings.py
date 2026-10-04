@@ -7,6 +7,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import TypeAdapter
 from sqlalchemy import URL, func, select, update
 
 from backend.adapters.supplier import SupplierClient, SupplierError
@@ -14,7 +15,9 @@ from backend.api.app import create_app as create_travel_app
 from backend.domain.booking import (
     Booking,
     HoldHotelInput,
+    HoldInput,
     OrderInput,
+    SupplierHold,
     SupplierOrder,
     transition,
 )
@@ -235,6 +238,91 @@ def test_expired_hold_cannot_confirm_and_quote_expiry_does_not_shorten_valid_hol
             )
             row.payload = other.model_copy(update={"offer": old_offer}).model_dump(mode="json")
         assert (await service.confirm(context.user_id, other.booking_id)).status == "booked"
+
+    runner.run(exercise())
+
+
+class CountingHolds(SupplierService):
+    def __init__(self, database: Database) -> None:
+        super().__init__(database)
+        self.hold_calls = 0
+
+    async def hold(self, body: HoldInput) -> SupplierHold:
+        self.hold_calls += 1
+        return await super().hold(body)
+
+
+@pytest.mark.parametrize("missing_expiry", [False, True])
+def test_repeated_expired_hold_persists_expiry_without_another_supplier_request(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+    missing_expiry: bool,
+) -> None:
+    """R09/R16：不经GET的重复工具调用也应裁决到期，不再暂留或下单。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        supplier = CountingHolds(travel.database)
+        executor = TravelToolExecutor(travel)
+        executor.bookings = BookingService(travel, supplier)
+        body = await select_offer(travel, context)
+        held = await executor.bookings.hold(context, body)
+        async with travel.database.sessions.begin() as db:
+            row = await db.get(BookingRow, held.booking_id)
+            assert row is not None
+            row.payload = held.model_copy(
+                update={
+                    "expires_at": None
+                    if missing_expiry
+                    else datetime.now(UTC) - timedelta(seconds=1)
+                }
+            ).model_dump(mode="json")
+        for _ in range(2):
+            repeated = await executor.execute(context, "hold_hotel", body.model_dump(mode="json"))
+            assert repeated.code is None
+            assert repeated.data["status"] == "expired"
+            assert repeated.data["booking_id"] == str(held.booking_id)
+        assert supplier.hold_calls == 1
+        assert (await supplier.lookup(held.client_ref)).order is None
+        async with travel.database.sessions.begin() as db:
+            row = await db.get(BookingRow, held.booking_id)
+            assert row is not None
+            saved = Booking.model_validate(row.payload)
+            assert saved.status == "expired"
+            assert [event.reason for event in saved.history].count("hold_expired") == 1
+
+    runner.run(exercise())
+
+
+@pytest.mark.parametrize("missing_expiry", [False, True])
+def test_business_context_omits_elapsed_hold_before_any_booking_get(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+    missing_expiry: bool,
+) -> None:
+    """R13/R16：上下文快照不能向模型提供已经到期的活动暂留。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        service = BookingService(travel, SupplierService(travel.database))
+        held = await service.hold(context, await select_offer(travel, context))
+        valid = await travel.business_context(context)
+        valid_bookings = TypeAdapter(list[dict[str, object]]).validate_python(valid["bookings"])
+        assert any(row["booking_id"] == str(held.booking_id) for row in valid_bookings)
+        async with travel.database.sessions.begin() as db:
+            row = await db.get(BookingRow, held.booking_id)
+            assert row is not None
+            row.payload = held.model_copy(
+                update={
+                    "expires_at": None
+                    if missing_expiry
+                    else datetime.now(UTC) - timedelta(seconds=1)
+                }
+            ).model_dump(mode="json")
+        snapshot = await travel.business_context(context)
+        snapshot_bookings = TypeAdapter(list[dict[str, object]]).validate_python(
+            snapshot["bookings"]
+        )
+        assert not any(row["booking_id"] == str(held.booking_id) for row in snapshot_bookings)
+        assert (await service.supplier.lookup(held.client_ref)).order is None
 
     runner.run(exercise())
 

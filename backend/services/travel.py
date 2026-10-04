@@ -102,6 +102,7 @@ class TravelService:
                 booking
                 for booking in booking_values
                 if booking.status in {"quoted", "held", "confirmed", "unknown"}
+                and not booking.hold_expired(observed_at)
             ]
             return {
                 "observed_at": observed_at.isoformat(),

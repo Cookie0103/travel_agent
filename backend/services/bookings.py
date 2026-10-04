@@ -54,6 +54,9 @@ class BookingService:
             if previous:
                 result = value(previous)
                 require_revision(request, result.offer.request.revision)
+                if result.hold_expired(datetime.now(UTC)):
+                    result = transition(result, "expired", "hold_expired")
+                    previous.payload = result.model_dump(mode="json")
                 if result.status != "quoted":
                     return result
             else:
@@ -108,7 +111,7 @@ class BookingService:
     async def get(self, user_id: UUID, booking_id: UUID) -> Booking:
         async with transaction(self.travel.database) as db:
             result = value(await bookings.owned(db, user_id, booking_id))
-        if result.status == "held" and result.expires_at and result.expires_at <= datetime.now(UTC):
+        if result.hold_expired(datetime.now(UTC)):
             return await self._update(user_id, booking_id, "expired", "hold_expired")
         return result
 
@@ -161,7 +164,7 @@ class BookingService:
             if not reconciling:
                 if current.status != "held":
                     raise ServiceError(409, "conflict", "请先完成酒店暂留")
-                if not current.expires_at or current.expires_at <= datetime.now(UTC):
+                if current.hold_expired(datetime.now(UTC)):
                     updated = transition(current, "expired", "hold_expired")
                     row.payload = updated.model_dump(mode="json")
                     return updated

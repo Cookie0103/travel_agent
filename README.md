@@ -5,7 +5,7 @@
 目标技术栈：Python / FastAPI / PostgreSQL / Next.js；Claude Agent SDK 负责 runtime，自写旅行 tools 与业务规则；DeepSeek 兼容线路与 Claude 原生线路分别验证；MCP；OpenTelemetry + Langfuse。
 
 **现在可以运行网页工作台、旅行工具和模拟预订。** 默认离线演示使用固定脚本与真实业务数据库；真实模式使用 Claude Agent SDK。真实模型完整规划效果、完整多次评测及部分外部验收仍未通过，不能把免费演示当模型能力证明。
-当前进度只看 [长程执行计划](docs/execution/travel-agent.md)；阶段性验证自动继续，用户最终集中运行与学习。开发顺序见 [M0 规格](docs/tasks/M0.md)，历史记录从 [文档目录](docs/README.md) 进入。
+本轮发布范围与最终验收只看 [PROJECT_STATUS](PROJECT_STATUS.md)：仅修复既有到期问题并核对现有 Demo，AC01–AC07 全部通过后停止；未完成的研究评测不阻塞工程交付。历史记录从 [文档目录](docs/README.md) 进入，恢复记录见 [执行计划](docs/execution/travel-agent.md)。
 
 CLI默认仍用人工 fixtures。数据库已导入 [Wikivoyage](https://en.wikivoyage.org/)（CC BY-SA 4.0）20段攻略与 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）146个地点对象；快照有历史和缺失信息，不能当实时事实。酒店与预订均为模拟。
 

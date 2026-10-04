@@ -59,3 +59,5 @@
 - [M4真实零工具三轮对照](evidence/m42-no-tools-repeat-2026-10-03.json)：同版本40×3，原规则失败保留。
 
 - [M4完整配对统计](evidence/m42-paired-comparison-2026-10-03.json)：绑定两组原文件，错误/未知不刷掉。
+
+- [本轮有限同版本验收测量](evidence/m42-controlled-sweep-2026-10-04.json)：fa9930b原40test×3，完整组97/120规则通过；余下实验已停止，partial与语义/真人unknown保留。本轮交付范围与最终结果见 [PROJECT_STATUS](../PROJECT_STATUS.md)，不重复每日运行。
