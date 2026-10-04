@@ -5,6 +5,28 @@
     "version": "0.1.0"
   },
   "paths": {
+    "/models": {
+      "get": {
+        "summary": "Models",
+        "operationId": "models_models_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ModelOption"
+                  },
+                  "type": "array",
+                  "title": "Response Models Models Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/preferences": {
       "get": {
         "summary": "Get Preferences",
@@ -1948,7 +1970,8 @@
             "type": "string",
             "enum": [
               "offline",
-              "live"
+              "deepseek",
+              "claude"
             ],
             "title": "Mode",
             "default": "offline"
@@ -1961,6 +1984,45 @@
           "text"
         ],
         "title": "MessageInput"
+      },
+      "ModelOption": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "enum": [
+              "offline",
+              "deepseek",
+              "claude"
+            ],
+            "title": "Id"
+          },
+          "label": {
+            "type": "string",
+            "title": "Label"
+          },
+          "available": {
+            "type": "boolean",
+            "title": "Available"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          }
+        },
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "available"
+        ],
+        "title": "ModelOption"
       },
       "PlanCard": {
         "properties": {

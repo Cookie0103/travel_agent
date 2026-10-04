@@ -34,6 +34,7 @@ export function useWorkspace({
   const [plan, setPlan] = useState<Plan>();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [error, setError] = useState("");
+  const [sendError, setSendError] = useState("");
   const [busy, setBusy] = useState(false);
   const [restoring, setRestoring] = useState(true);
   const stream = useRef<AbortController | null>(null);
@@ -150,6 +151,11 @@ export function useWorkspace({
         const stored = sessionStorage.getItem(STORAGE);
         if (!stored) return;
         const current = JSON.parse(stored) as Identity;
+        if ((current.pending_message?.mode as string) === "live") {
+          current.pending_message = undefined;
+          remember(current);
+          setSendError("旧版实时消息不能重试，请选择模型后重新发送。");
+        }
         if (Date.parse(current.expires_at) <= Date.now()) {
           sessionStorage.removeItem(STORAGE);
           return;
@@ -202,7 +208,7 @@ export function useWorkspace({
       generation.current += 1;
       stream.current?.abort();
     };
-  }, [connect, hydrate, fail, savedOnly]);
+  }, [connect, hydrate, fail, remember, savedOnly]);
 
   async function action(
     work: (
@@ -321,13 +327,14 @@ export function useWorkspace({
       }
     });
   }
-  async function send(text: string, mode: "offline" | "live") {
+  async function send(text: string, mode: "offline" | "deepseek" | "claude") {
     if (!identity || !text.trim() || busy) return;
     const started = generation.current;
     const read = readWhile(() => generation.current === started);
     setBusy(true);
     setError("");
     try {
+      setSendError("");
       const body = messageInput(identity.pending_message, text, mode);
       remember({ ...identity, pending_message: body });
       const submitted = await read(
@@ -354,6 +361,7 @@ export function useWorkspace({
       if (failure instanceof ApiError && failure.status < 500)
         remember({ ...identity, pending_message: undefined });
       fail(failure);
+      setSendError(message(failure));
       setBusy(false);
     }
   }
@@ -468,6 +476,7 @@ export function useWorkspace({
     plan,
     bookings,
     error,
+    sendError,
     busy,
     restoring,
     fail,

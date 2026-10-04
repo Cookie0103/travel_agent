@@ -1,5 +1,6 @@
 """FastAPI 薄入口；只调用服务用例，不直接查库或连接模型。"""
 
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
@@ -12,6 +13,7 @@ from backend.api.events import stream_events
 from backend.services.bookings import Booking, BookingService, HoldHotelInput
 from backend.services.catalog import Article, CatalogService
 from backend.services.common import ServiceError
+from backend.services.models import ModelOption, model_options
 from backend.services.plans import LockInput, PlanService, SavedPlan
 from backend.services.preferences import (
     PreferencePatch,
@@ -64,6 +66,10 @@ def create_app(
             await sessions.close()
 
     app = FastAPI(title="Travel Agent", lifespan=lifespan)
+
+    @app.get("/models")
+    async def models() -> list[ModelOption]:
+        return model_options(os.environ, runs.live_enabled)
 
     @app.exception_handler(ServiceError)
     async def service_error(request: Request, error: ServiceError) -> JSONResponse:

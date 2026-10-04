@@ -24,7 +24,7 @@ from backend.providers.claude_agent.http import forward_deepseek, forward_messag
 from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.claude_agent.settings import load_runtime_settings
 from backend.providers.probe.ledger import exclusive
-from backend.providers.probe.settings import ProbeError, Settings
+from backend.providers.probe.settings import ProbeError, Provider, Settings
 from backend.tools.workflow import WorkflowName
 
 
@@ -57,6 +57,7 @@ def run_live(
     persona_judge: bool = False,
     judge_kind: JudgeKind = "persona",
     evaluation_variant: EvaluationVariant = "full",
+    provider: Provider | None = None,
 ) -> dict[str, object]:
     try:
         validate_variant(
@@ -78,7 +79,9 @@ def run_live(
     ):
         raise ProbeError("validation", "对照需数据库工具；请求上限须为1至12")
     exporter = cloud_exporter(os.environ) if trace_cloud else None
-    settings = load_runtime_settings(os.environ)
+    settings = load_runtime_settings(
+        {**os.environ, "LLM_PROVIDER": provider} if provider is not None else os.environ
+    )
     if persona_judge and settings.provider != "deepseek":
         raise ProbeError("blocked", "语气评审仅核验了DeepSeek固定温度线路")
     cache = root / ".cache"

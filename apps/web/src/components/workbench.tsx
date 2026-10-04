@@ -1,9 +1,9 @@
-/** Chat-first orchestration; mode, billing consent and draft text live here, never in the hook. */
+/** Chat workspace composed from persisted business state and the selected model. */
 "use client";
 import { useState } from "react";
 import { useWorkspace } from "@/lib/use-workspace";
 import { ArticleReference } from "./articles";
-import { ActivityDrawer, toolCallCount } from "./activity-drawer";
+import { useModels } from "@/lib/models";
 import { Banner } from "./banner";
 import { Composer, type Mode } from "./composer";
 import { Conversation, Welcome, type SentMessage } from "./conversation";
@@ -14,18 +14,15 @@ export type Workspace = ReturnType<typeof useWorkspace>;
 export function Workbench({ articleId }: { articleId?: string }) {
   const workspace = useWorkspace();
   const [text, setText] = useState("");
-  const [mode, setMode] = useState<Mode>("offline");
-  const [liveConsent, setLiveConsent] = useState(false);
+  const { mode, setMode, options } = useModels();
   const [sent, setSent] = useState<SentMessage[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
-  const [activityOpen, setActivityOpen] = useState(false);
   const active = !!(
     workspace.run && ["running", "cancelling"].includes(workspace.run.status)
   );
   const { identity } = workspace;
   const submit = (message: string, via: Mode) => {
-    if (via === "live" && !liveConsent) return;
     if (!message.trim() || workspace.busy) return;
     const pending = identity?.pending_message;
     // A mismatched text is rejected by the hook; do not show it as sent.
@@ -55,14 +52,6 @@ export function Workbench({ articleId }: { articleId?: string }) {
         <div className="chat-layout">
           <section className="chat-pane">
             <div className="chat-toolbar">
-              <button
-                className={active ? "pulse" : undefined}
-                aria-expanded={activityOpen}
-                onClick={() => setActivityOpen((value) => !value)}
-              >
-                Agent 活动{" "}
-                <span className="tag">{toolCallCount(workspace.events)}</span>
-              </button>
               <button
                 className="only-wide"
                 aria-expanded={!collapsed}
@@ -104,10 +93,7 @@ export function Workbench({ articleId }: { articleId?: string }) {
                 <Banner kind="warning">
                   上一条消息的响应未知；刷新也保留去重ID。
                   <button
-                    disabled={
-                      workspace.busy ||
-                      (identity.pending_message.mode === "live" && !liveConsent)
-                    }
+                    disabled={workspace.busy}
                     onClick={() => {
                       const pending = identity.pending_message;
                       if (pending)
@@ -133,8 +119,7 @@ export function Workbench({ articleId }: { articleId?: string }) {
             <Composer
               mode={mode}
               setMode={setMode}
-              consent={liveConsent}
-              setConsent={setLiveConsent}
+              options={options}
               text={text}
               setText={setText}
               busy={workspace.busy}
@@ -144,12 +129,6 @@ export function Workbench({ articleId }: { articleId?: string }) {
               articleId={articleId}
             />
           </section>
-          {activityOpen && (
-            <ActivityDrawer
-              workspace={workspace}
-              close={() => setActivityOpen(false)}
-            />
-          )}
           <TripPanel
             workspace={workspace}
             className={panelClass}

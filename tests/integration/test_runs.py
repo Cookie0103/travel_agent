@@ -173,12 +173,18 @@ def test_api_run_events_are_private_and_new_app_does_not_reexecute(postgres_url:
     app = create_app(sessions, runs_service=service)
     options = {"loop_factory": asyncio.SelectorEventLoop}
     with TestClient(app, backend_options=options) as client:
+        available = client.get("/models")
+        assert available.status_code == 200
+        assert [item["id"] for item in available.json()] == ["offline", "deepseek", "claude"]
         owner, other = login(client), login(client)
         session_id = client.post("/sessions", headers=owner).json()["session_id"]
         path = f"/sessions/{session_id}/messages"
         message = {"client_message_id": str(uuid4()), "text": "京都"}
         assert client.post(path, headers=other, json=message).status_code == 404
-        assert client.post(path, headers=owner, json={**message, "mode": "live"}).status_code == 403
+        for mode in ("deepseek", "claude"):
+            assert (
+                client.post(path, headers=owner, json={**message, "mode": mode}).status_code == 403
+            )
         created = client.post(path, headers=owner, json=message)
         assert created.status_code == 202
         run_path = "/runs/" + created.json()["run_id"]

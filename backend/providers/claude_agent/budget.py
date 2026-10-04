@@ -22,6 +22,12 @@ LIMITS: dict[Currency, tuple[Decimal | None, int | None]] = {
 }
 
 
+def check_authorization(currency: Currency) -> None:
+    amount, count = LIMITS[currency]
+    if (amount is not None and amount <= 0) or (count is not None and count <= 0):
+        raise ProbeError("blocked", "美元累计金额和次数授权均为0；日预算不能授予调用权限")
+
+
 @dataclass(frozen=True)
 class Entry:
     """每个请求一条预占、至多一条结算；不保存正文或密钥。"""
@@ -44,9 +50,7 @@ class Budget:
         self.currency = currency
 
     def check_authorization(self) -> None:
-        amount, count = LIMITS[self.currency]
-        if (amount is not None and amount <= 0) or (count is not None and count <= 0):
-            raise ProbeError("blocked", "美元累计金额和次数授权均为0；日预算不能授予调用权限")
+        check_authorization(self.currency)
 
     def daily_limit(self, now: datetime) -> Decimal | None:
         """None仅表示获准日期无日限；零配置仍在预占前拒绝。"""

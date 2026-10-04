@@ -21,19 +21,19 @@ from backend.domain.execution import (
 )
 from backend.providers.claude_agent.live import run_live
 from backend.providers.claude_agent.settings import model_name, provider_name
-from backend.providers.probe.settings import ProbeError
+from backend.providers.probe.settings import ProbeError, Provider
 
 LOGGER = logging.getLogger(__name__)
 
 
 class GuardedRuntime:
-    def __init__(self, root: Path, database_dsn: str) -> None:
+    def __init__(self, root: Path, database_dsn: str, *, provider: Provider | None = None) -> None:
         self.root, self.database_dsn = root, database_dsn
         self.trace_metadata: TraceMetadata | None = None
-        provider = provider_name(os.environ)
+        self.provider = provider or provider_name(os.environ)
         self.identity = RuntimeIdentity(
-            provider,
-            model_name(os.environ, provider),
+            self.provider,
+            model_name(os.environ, self.provider),
             importlib.metadata.version("claude-agent-sdk"),
             "reported-by-worker",
         )
@@ -75,6 +75,7 @@ class GuardedRuntime:
                 emit=forward,
                 cancelled=stop,
                 max_attempts=12,
+                provider=self.provider,
             )
         )
         watcher = asyncio.create_task(cancelled.wait())

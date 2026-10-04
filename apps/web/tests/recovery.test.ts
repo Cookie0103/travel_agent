@@ -80,20 +80,20 @@ test("identity change between Promise resolution and view update discards the ol
 });
 
 test("pending message survives serialization and explicit retry keeps its ID and mode", () => {
-  const first = messageInput(undefined, "京都旅行", "live");
+  const first = messageInput(undefined, "京都旅行", "deepseek");
   const restored = JSON.parse(JSON.stringify({ pending_message: first }));
   assert.deepEqual(
-    messageInput(restored.pending_message, "京都旅行", "live"),
+    messageInput(restored.pending_message, "京都旅行", "deepseek"),
     first,
   );
   assert.throws(() =>
-    messageInput(restored.pending_message, "不同消息", "live"),
+    messageInput(restored.pending_message, "不同消息", "deepseek"),
   );
   assert.throws(() =>
     messageInput(restored.pending_message, "京都旅行", "offline"),
   );
   assert.notEqual(
-    messageInput(undefined, "京都旅行", "live").client_message_id,
+    messageInput(undefined, "京都旅行", "deepseek").client_message_id,
     first.client_message_id,
   );
 });

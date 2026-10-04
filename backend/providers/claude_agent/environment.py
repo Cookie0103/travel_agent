@@ -36,6 +36,15 @@ def worker_environment(
         "LC_ALL",
         "SSL_CERT_FILE",
         "SSL_CERT_DIR",
+        "GOOGLE_MAPS_API_KEY",
+        "RAKUTEN_APP_ID",
+        "RAKUTEN_ACCESS_KEY",
+        "RAKUTEN_AFFILIATE_ID",
+        "GOOGLE_GEOCODE_DAILY_CAP",
+        "GOOGLE_PLACES_DAILY_CAP",
+        "GOOGLE_ROUTES_DAILY_CAP",
+        "RAKUTEN_DAILY_CAP",
+        "WEATHER_DAILY_CAP",
     }
     env = {k: v for k, v in source.items() if k.upper() in names}
     if os.name == "nt":

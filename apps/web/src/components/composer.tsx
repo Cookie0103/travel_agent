@@ -1,14 +1,117 @@
-/** Message input with the model selector; live mode is amber and needs per-message billing consent. */
+/** Message input and keyboard-accessible model choice. */
 "use client";
+import { useId, useRef, useState } from "react";
+import type { ModelOption, Mode } from "@/lib/models";
+import { modeLabel } from "@/lib/models";
 import { ArticleReference } from "./articles";
+export type { Mode } from "@/lib/models";
 
-export type Mode = "offline" | "live";
+function ModelSelector({
+  mode,
+  setMode,
+  options,
+  disabled,
+}: {
+  mode: Mode;
+  setMode: (mode: Mode) => void;
+  options: ModelOption[];
+  disabled: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  const [focused, setFocused] = useState(0);
+  const id = useId();
+  const trigger = useRef<HTMLButtonElement>(null);
+  const choose = (index: number) => {
+    const option = options[index];
+    if (!option?.available) return;
+    setMode(option.id);
+    setOpen(false);
+    trigger.current?.focus();
+  };
+  return (
+    <div
+      className="model-picker"
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+      }}
+    >
+      <button
+        ref={trigger}
+        type="button"
+        role="combobox"
+        aria-label="选择模型"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={id}
+        disabled={disabled}
+        onClick={() => {
+          setFocused(
+            Math.max(
+              0,
+              options.findIndex((item) => item.id === mode),
+            ),
+          );
+          setOpen(!open);
+        }}
+        onKeyDown={(event) => {
+          if (["ArrowDown", "ArrowUp"].includes(event.key)) {
+            event.preventDefault();
+            setOpen(true);
+            setFocused(
+              (index) =>
+                (index +
+                  (event.key === "ArrowDown" ? 1 : -1) +
+                  options.length) %
+                options.length,
+            );
+          } else if (open && ["Enter", " "].includes(event.key)) {
+            event.preventDefault();
+            choose(focused);
+          } else if (event.key === "Escape") setOpen(false);
+        }}
+        aria-activedescendant={open ? `${id}-${focused}` : undefined}
+      >
+        {modeLabel(mode)} ▾
+      </button>
+      {open && (
+        <div
+          id={id}
+          role="listbox"
+          aria-label="执行模型"
+          className="model-options"
+        >
+          {options.map((option, index) => (
+            <div
+              key={option.id}
+              id={`${id}-${index}`}
+              role="option"
+              aria-selected={option.id === mode}
+              aria-disabled={!option.available}
+              className={`model-option${focused === index ? " is-focused" : ""}${!option.available ? " is-disabled" : ""}`}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => choose(index)}
+            >
+              <strong>{option.label}</strong>
+              <span className="small muted">
+                {option.id === "offline"
+                  ? "免费 · 模拟数据"
+                  : "实时数据 · 按 API 计费"}
+              </span>
+              {option.reason && (
+                <span className="small muted">{option.reason}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 export function Composer({
   mode,
   setMode,
-  consent,
-  setConsent,
+  options,
   text,
   setText,
   busy,
@@ -19,8 +122,7 @@ export function Composer({
 }: {
   mode: Mode;
   setMode: (mode: Mode) => void;
-  consent: boolean;
-  setConsent: (value: boolean) => void;
+  options: ModelOption[];
   text: string;
   setText: (value: string) => void;
   busy: boolean;
@@ -29,7 +131,6 @@ export function Composer({
   cancel: () => void;
   articleId?: string;
 }) {
-  const blocked = mode === "live" && !consent;
   return (
     <div className="composer-wrap">
       {articleId && (
@@ -39,10 +140,10 @@ export function Composer({
         />
       )}
       <form
-        className={`composer${mode === "live" ? " composer-live" : ""}`}
+        className="composer"
         onSubmit={(event) => {
           event.preventDefault();
-          if (!blocked) send(text, mode);
+          send(text, mode);
         }}
       >
         <label className="sr-only" htmlFor="message">
@@ -57,68 +158,35 @@ export function Composer({
               : "说说你的旅行计划…"
           }
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(event) => setText(event.target.value)}
         />
         <div className="composer-bar">
-          <label className="model-select">
-            <span className="sr-only">执行模式</span>
-            <select
-              aria-label="执行模式"
-              disabled={busy}
-              value={mode}
-              onChange={(e) => {
-                setMode(e.target.value as Mode);
-                setConsent(false);
-              }}
-            >
-              <option value="offline">离线演示（免费）</option>
-              <option value="live">
-                实时模型（DeepSeek / Claude Agent SDK）
-              </option>
-            </select>
-          </label>
-          {mode === "live" && (
-            <label className="consent">
-              <input
-                type="checkbox"
-                checked={consent}
-                onChange={(e) => setConsent(e.target.checked)}
-              />
-              允许本条消息计费
-            </label>
-          )}
+          <ModelSelector
+            mode={mode}
+            setMode={setMode}
+            options={options}
+            disabled={busy}
+          />
           <span className="composer-hint small muted">
-            {mode === "live"
-              ? consent
-                ? "服务端还须启用真实模式并通过预算。"
-                : "需勾选计费许可才能发送。"
-              : "固定脚本，使用真实业务工具与数据库。"}
+            {mode === "offline"
+              ? "固定演示 · 不调用模型"
+              : "费用受服务端预算与调用上限限制"}
           </span>
           {active ? (
             <button type="button" onClick={cancel}>
               ■ 停止
             </button>
           ) : (
-            <button
-              className="primary"
-              disabled={busy || !text.trim() || blocked}
-            >
+            <button className="primary" disabled={busy || !text.trim()}>
               发送
             </button>
           )}
         </div>
       </form>
       <div className="disclaimer small muted">
-        酒店与订单为模拟数据，不会真实付款 ·{" "}
-        <details>
-          <summary>数据说明</summary>
-          <ul>
-            <li>攻略：Wikivoyage 历史快照，营业信息需工具核验。</li>
-            <li>酒店：虚构报价，非实时库存。</li>
-            <li>路线：估算值。</li>
-            <li>当前数据覆盖：京都。</li>
-          </ul>
-        </details>
+        {mode === "offline"
+          ? "离线演示 · 酒店和订单为模拟数据"
+          : "行程确认后保存 · 酒店仅查询，不下单"}
       </div>
     </div>
   );

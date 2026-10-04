@@ -20,6 +20,7 @@ from backend.persistence.database import Database
 from backend.persistence.models import TaskRunRow
 from backend.providers.claude_agent.application import GuardedRuntime
 from backend.services.common import ServiceError, database_error_details, transaction
+from backend.services.models import selected_provider
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolExecutor
 from backend.tools.travel import TravelToolExecutor
@@ -32,7 +33,7 @@ class MessageInput(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
     client_message_id: UUID
     text: str = Field(min_length=1, max_length=4000)
-    mode: Literal["offline", "live"] = "offline"
+    mode: Literal["offline", "deepseek", "claude"] = "offline"
 
 
 @dataclass(frozen=True)
@@ -114,7 +115,7 @@ class RunService:
 
     async def submit(self, user_id: UUID, session_id: UUID, message: MessageInput) -> RunView:
         await self._require_recovery()
-        if message.mode == "live" and not self.live_enabled:
+        if message.mode != "offline" and not self.live_enabled:
             raise ServiceError(403, "blocked", "API真实模型模式未启用")
         async with transaction(self.database) as db:
             if await sessions.get_session(db, user_id, session_id, lock=True) is None:
@@ -177,6 +178,7 @@ class RunService:
         return GuardedRuntime(
             Path(__file__).resolve().parents[2],
             self.database.engine.url.render_as_string(hide_password=False),
+            provider=selected_provider(mode),
         )
 
     async def _persist_events(

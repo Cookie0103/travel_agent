@@ -1,6 +1,7 @@
 /** Tool-call inspector built only from persisted run events; argument values are never shown. */
 "use client";
 import type { AppEvent } from "@/lib/api";
+import { modeLabel } from "@/lib/models";
 import type { Workspace } from "./workbench";
 import { runStatus } from "./conversation";
 import { toolLabel } from "./tool-names";
@@ -58,6 +59,27 @@ export function activityEntries(events: AppEvent[]): Entry[] {
 export const toolCallCount = (events: AppEvent[]) =>
   events.filter((event) => event.kind === "tool_started").length;
 
+export function RunSteps({ events }: { events: AppEvent[] }) {
+  const entries = activityEntries(events);
+  if (!entries.length) return null;
+  return (
+    <details className="run-steps">
+      <summary>执行了 {toolCallCount(events)} 步 ▸</summary>
+      <ol>
+        {entries.map((entry) => (
+          <li key={entry.key}>
+            {entry.type === "tool"
+              ? `${entry.state === "ok" ? "✓" : entry.state === "failed" ? "✗" : "●"} ${toolLabel(entry.name)}`
+              : entry.type === "compacted"
+                ? "上下文已压缩"
+                : "已更新卡片"}
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+}
+
 export function ActivityDrawer({
   workspace,
   close,
@@ -83,8 +105,7 @@ export function ActivityDrawer({
       </div>
       {run ? (
         <p className="small muted">
-          {run.mode === "live" ? "实时模型" : "离线演示"} ·{" "}
-          {runStatus(run.status)}
+          {modeLabel(run.mode)} · {runStatus(run.status)}
         </p>
       ) : (
         <p className="small muted">还没有运行记录。</p>

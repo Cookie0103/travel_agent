@@ -207,7 +207,7 @@ def test_api_actual_sdk_usage_reaches_committed_trace_and_otlp(
                 context.user_id,
                 context.session_id,
                 MessageInput(
-                    client_message_id=uuid4(), text="synthetic-private-prompt", mode="live"
+                    client_message_id=uuid4(), text="synthetic-private-prompt", mode="deepseek"
                 ),
             )
             await asyncio.wait_for(asyncio.gather(*tuple(service.tasks.values())), timeout=40)

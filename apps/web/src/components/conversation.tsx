@@ -4,6 +4,7 @@ import type { Workspace } from "./workbench";
 import { toolLabel } from "./tool-names";
 import { HotelResults, planDays } from "./results";
 import type { Mode } from "./composer";
+import { RunSteps } from "./activity-drawer";
 
 export const runStatusLabels: Record<string, string> = {
   running: "处理中",
@@ -137,6 +138,12 @@ export function Conversation({
               </p>
             )}
             {run.answer && <p className="answer">{run.answer}</p>}
+            {run.error_code && !run.answer && (
+              <p className="error">
+                执行未完成：{run.error_code}。请检查模型配置或调用额度。
+              </p>
+            )}
+            <RunSteps events={workspace.events} />
             {workspace.hotels && (
               <HotelResults
                 hotels={workspace.hotels}
@@ -165,6 +172,13 @@ export function Conversation({
               </section>
             )}
           </div>
+        </div>
+      )}
+      {workspace.sendError && (
+        <div className="reply reply-failed">
+          <p className="error" role="alert">
+            {workspace.sendError}
+          </p>
         </div>
       )}
     </div>

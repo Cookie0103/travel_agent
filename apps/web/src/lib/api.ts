@@ -44,7 +44,7 @@ export function readWhile(active: () => boolean) {
 export function messageInput(
   previous: Identity["pending_message"],
   text: string,
-  mode: "offline" | "live",
+  mode: "offline" | "deepseek" | "claude",
 ): components["schemas"]["MessageInput"] {
   if (previous && (previous.text !== text || previous.mode !== mode))
     throw new Error(

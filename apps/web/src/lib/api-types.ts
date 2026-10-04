@@ -4,6 +4,23 @@
  */
 
 export interface paths {
+    "/models": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Models */
+        get: operations["models_models_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/preferences": {
         parameters: {
             query?: never;
@@ -634,7 +651,21 @@ export interface components {
              * @default offline
              * @enum {string}
              */
-            mode: "offline" | "live";
+            mode: "offline" | "deepseek" | "claude";
+        };
+        /** ModelOption */
+        ModelOption: {
+            /**
+             * Id
+             * @enum {string}
+             */
+            id: "offline" | "deepseek" | "claude";
+            /** Label */
+            label: string;
+            /** Available */
+            available: boolean;
+            /** Reason */
+            reason?: string | null;
         };
         /** PlanCard */
         PlanCard: {
@@ -1499,6 +1530,26 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    models_models_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ModelOption"][];
+                };
+            };
+        };
+    };
     get_preferences_preferences_get: {
         parameters: {
             query?: never;
