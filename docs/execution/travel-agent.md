@@ -35,20 +35,17 @@
 
 ## 当前恢复点
 
-- 分支：batch/2026-10-03-travel-autonomous；既有origin=https://github.com/Cookie0103/travel_agent.git。
-- 最新业务代码已保存并普通push：**64497f60f67739f8d85b8284d6c39a0eae536191**。本地与ls-remote完整SHA一致，提交时工作区clean，正常静态/完整默认Python钩子Passed；不合并main。前序558e7d2、bf6dc52和39历史增量均保留。
-- M1.8原工作台与本次攻略列表/全文→显式ID引用、独立正式页已实现并验证；最终web-check类型/lint/12测试/build Passed，实际浏览器V1及API停止后失败→恢复重读V1已验。原演示状态smoke --verify在最终构建后Passed、专用卷保留。两独立P2已关闭；迟到登录浏览器注入尚未做，现有Promise/微任务与源码审查范围明确。
-- full/B3及B0原40test×3各已完成，分别94/120与17/120规则通过，0error/not_run；原失败与161源码/数据/用例hash保留。bf6dc52原记录比较120完整配对/精确费用差已保存，不把结构规则说成语义质量。
-- 真实账本累计**664HTTP/12.673060CNY**，同UTC账日10-03含旧探针0.10后**12.773060/15、余额2.226940**，未结0。本轮评分40HTTP/.072812及三新dev实验16HTTP/.510680均计入；JST已10-04不等于UTC额度重置。
-- CI：558e7d2两事件全部success。bf6dc52 PR37131409211全success，push37131407069两个原无工具评审断言暴露SDK回调竞态（HTTP2而应1），其余683passed/1已有平台skip/2live deselected、web/docker-demo success。7d1d0f6已修响应allowlist，63专项与原完整钩子Passed；新CI37132750339/37132753268全部success，Python693passed/1已有平台skip/2live deselected；24b5dcb两CI37133212223/37133214301与a1cbd73两CI37133743697/37133746081均全部success。
-- M4.2分项已保存581870a：116相关测试（实际PG/HTTP）Passed、222源码三平台strict/原静态关卡及正常完整离线提交钩子Passed，独立无P1/P2；普通push/full远端SHA已核验。原full/B0各120缺观测仍unknown，0新付费，两CI37134456437/37134458120全部success（实际Linux716passed/1已有平台skip/2live deselected，185.43秒）。
-- 当前M4.4材料：集中演示/阅读导航已更新并经独立审查（正常保存结果以Git HEAD/远端和CI为准），20条真人评审样本离线准备（17pass/3fail），内容19合法/1缺reason、语气20合法；0真人配对、两个评审prepare与两个离线统计均正确pending/null；原回答仅.cache、公共hash/选择说明无原文。固定前4原记录独立字段审阅复用eval.content：23字段匹配、两例缺Evidence，完整性均false/整体准确率null；0新调用，原记录hash不变。独立续查未见新的明确A/B产品代码缺口，未满足项继续单列。
-- M0.5/M4.1 Cloud实际接入：用户10-04配置并授权验证，Japan认证/OTLP上传/v2读回均成功，4个span与本地完全匹配，0模型HTTP。[证据](../evidence/m05-langfuse-cloud-2026-10-04.json)。API显式开关已实施/23专项通过；既有已登录Chrome页面四节点/completed已验，初次匿名会话失败保留。70072de正常hooks/提交/push已完成，两CI37159111962/37159114642全部success。后续显式chain/agent/tool分类也真实上传/读回/页面通过，25专项与静态通过，独立无P1/P2，当前保存中。
-- 下一批评审预先约定：复用已离线准备的first20-v1原20回答，固定选择顺序/hash与既有rubric不改，先content后persona、各一次，不因低分/非法JSON重新付费评分。来源均仓库自写冻结旅行案例/原DeepSeek回答，非真人旅行资料；真实评审仍DeepSeek/temperature0/零工具/同SDK，按每日min(env,15)硬限，余额不足停止保留not_run。只准备模型侧评分，真人0、整体事实准确/全40代表性/真人校准保持未满足，不据这批结果调冻结test或倒填阈值。当前UTC日余额2.737620；不启动预计约9CNY的另一完整工具对照批次。
-- 当前观测提交第一次正常钩子未通过：新增shutdown spy类型缺失已显式Callable修正；完整720passed/1原恢复测试数据库OperationalError失败，15恢复/观测专项随后通过15.45s，根因仍待证据。二次原完整钩子通过，70072de两CI全绿；原间歇OperationalError根因未证明解决，绝不绕过原断言。20内容评分19合法/1缺reason、20语气全部合法，真人仍0；费用已更新，模型侧脱敏证据保存，不补分或重跑失败。
-- 未满足：其他配置完整统计对照、参数/事实语义全量及真人校准、M3.6完整规划质量及历史阈值预声明偏差；新查询/规划邻例原工具规则各一次通过，规划partial8/16、无酒店不当完整质量通过。Claude真实API已按用户10-04要求暂缓；不当通过，也不阻塞本轮。已有三真实坏例不当全部闭环。C依plan04在A完整前不开始；总Goal不标完成。
-
-- 下一步M3.6数据缺口：原fixture和166条快照均没有抹茶/甜品店。已在私有缓存获取真实OSM三对象及英文Wikivoyage东山条目；首Overpass超时后备用官方端点200。计划显式独立补充包与原导入/工具复用，排除同店重复/未验证礼品店，冲突营业时间和价格保持未知；原快照/冻结用例/旧失败不改，先离线和实际PG验证。
+- 分支：batch/2026-10-03-travel-autonomous；既有origin=https://github.com/Cookie0103/travel_agent.git。最新业务代码**183fdd355dfaaa7b1334c9ae1095ad461190aada**普通push后完整远端SHA一致；原check/test钩子Passed，两CI37163720648/37163717405全部success。此后仅更新docs证据/恢复记录，169被测源码保持冻结；本次文档保存结果见文末/Git。
+- Langfuse用户新凭据已实际验证：Japan认证、真实OTLP上传/v2读回、已登录Chrome页面一致；包括脱敏的既有实际SDK报告四span、真实CLI/SDK版本、19773tokens。0新增模型请求；模型子调用仍unknown。[Cloud证据](../evidence/m05-langfuse-cloud-2026-10-04.json)。API现在共享报告解析、同轮身份核对和取消结算结果，仍只导出已提交PG事件；56专项及原完整关卡通过，实际SDK/PG/本机OTLP测试不是API真实Cloud模型调用。
+- 当前版本full/B3原40test×3已**正常完成**：.cache/eval/20261004T000334Z-2bb7ad48，120记录、92规则通过/28失败、0error/not_run，三轮29/31/32；412HTTP/9.533012CNY。原Case/目录/schema不改，169源码结束无变化，严格load_batch校核Passed；三无副作用断言均120/120通过。[当前证据](../evidence/m42-current-full-repeat-2026-10-04.json)。无运行中的付费进程/批次，不重复启动这一组。
+- 规划分项33适用、26候选均partial、7无候选、0complete；完整硬约束总比率null。387工具调用中386参数语义unknown、1次工具选择不符合Case允许集合（非全局权限违规），整体accuracy null；真人0。旧源码full94/120与B0 17/120原始记录保留，不强配对或宣称当前提升，已见test不称盲测。
+- UTC2026-10-04账本：当日9.533012/15CNY、可用5.466988、未结0、无active.lock；SDK累计1076HTTP/22.206072CNY。旧探针.10仍属UTC10-03，不清账/搬账。下一完整工具组预检至少10CNY，今日不启动预算不足的整组；每日仍取min(.env,15)，无累计次数/金额上限，不默认用尽额度。
+- M3.6独立抹茶来源包/导入已保存ceb676e；默认原166条不变。64497f6最小查询/规划提示分工后新dev查询与规划各一次原规则通过，旧抹茶失败保留；规划仍partial(verified8/unknown16)、无酒店，不算完整质量。数据/实验见[来源证据](../evidence/m36-matcha-data-2026-10-04.json)。
+- 历史first20内容19合法/1缺reason、语气20合法，真人配对0/校准pending；历史first4参数4/11合法、7unknown，只是有限独立审阅，不外推新387。网页工作台/攻略/正式页及儿童报价显示、真实PG事务/恢复、容器演示和静态检查已有证据，见测试矩阵与各里程碑记录。
+- 正常提交完整离线钩子已通过；原间歇PG OperationalError根因仍未证明解决，诊断只记安全分类，不以最近全绿抹去旧失败。当前独立quality_review核对新full四SHA/169源码/120记录/费用/安全断言，无P1/P2；修正文案区分Case选择与权限违规。
+- 自动续接：**更新既有travel-agent heartbeat**，ACTIVE、每天一次、有限8次，替代此前每小时2次；工具已确认保存，并view成功。运行依赖Codex/电脑/网络可用，不保证断电或休眠仍计算。恢复先查本计划/Git/进程/账本，禁止重复自动化或重复已完成组。
+- 后续顺序：baseline_b2 → B1固定行程工具阶段 → no_skills → no_preferences → no_repairs → no_compaction。同169源码/原目录/Case/schema/实际SDK CLI比较，每预算窗口最多一完整40×3组，余额≥10、未结0且无活跃付费任务才启动；失败保留不重放，不从partial填complete。代码需修复时先隔离测量版本/留证据，不能改源码后强配对。
+- 未满足：其余完整对照/单因素统计、全量参数与事实语义、真人校准、M3.6完整规划质量、历史优化阈值预声明缺失。Claude真实API按用户要求暂缓，USD0；C按plan04不开始；**总体Goal未完成**。普通离线问题自主修复，不在milestone后等待用户review。
 
 ## 进度
 
@@ -321,3 +318,19 @@ M0.5 API实际用量传递已实施：CLI/API共用report_metadata/TraceMetadata
 下一版本完整模型测量预声明（启动前）：在本次API用量修复正常check/test/独立审查/commit/push全部通过后，仅当实际UTC日余额至少10CNY、未结0且无运行中的评测，开始原frozen travel-eval-v1 test40×3 full/B3、maxHTTP12/tools16/repair3，默认原166目录/原Case和初始状态/原顺序/独立身份，不使用抹茶补充包。此为已看过原test后的当前版本测量；提示改动依据legacy dev的纯查询/完整规划问题，不能声称未见集或倒填成功阈值，也不能与旧版本作为同源码比较。目的记录新增业务分项及当前实际行为，单次全组不挑失败重放、不根据新结果调test期待/源码。余额低于条件只保留待运行；错误/预算不足按原停止规则保留error/not_run；该测量不自动等于产品质量达标。后续同版本baseline_b2/B1仍各自需余额/适用范围声明、保持完整/未知分母，不自动用尽日预算。
 
 M0.5 API用量增量独立quality_review限定只读复核无P1/P2，共享解析/同轮绑定/取消结算/失败未知/业务提交优先均核对；两dev后续8原文件SHA与数值逐字段匹配。未把取消单元测试叫真实Cloud取消、无额外模型调用。准备正常完整原钩子保存，当前源码冻结；只有钩子通过后普通push，再检查实际UTC余额开启预声明批次。
+
+183fdd355dfaaa7b1334c9ae1095ad461190aada原check/完整默认Python钩子Passed，普通push及远端完整SHA核对一致、当时工作区clean。API SDK用量增量独立审查无P1/P2。实际UTC新账日2026-10-04预检0/15CNY、未结0、无活跃lock，已按预声明启动原frozen40test×3 full/B3：.cache/eval/20261004T000334Z-2bb7ad48，exec session9570，manifest初始clean HEAD183fdd3，169源文件hash冻结、Case/默认原数据不变，12HTTP上限。运行中只改docs过程，不改被测源码/目录/schema；不重复启动。恢复须先查此session/私有recovery与逐行实际结果、账本再续接，不推断启动即完成，不自动重放失败。新源码只做已知测试集测量，旧120成绩保留，语义/真人unknown。
+
+当前完整测量首轮40/40已记录：{'failed': 11, 'passed': 29}，134HTTP/3.066368CNY；第二轮已开始。原三无副作用断言当前全部通过；源hash169无变化。183fdd3两远端CI37163720648/37163717405均completed/success。原完整离线钩子通过但本次模型测量未完，规则失败保留；规划partial/no_candidate不填complete，旧结果不改、不挑失败重放。
+
+
+当前版本完整模型测量已正常结束exit0：.cache/eval/20261004T000334Z-2bb7ad48，原40test×3 full/B3全部120记录、92规则通过/28失败、0error/not_run；各轮29/31/32，72.5%–80%，412HTTP/9.533012CNY。原三无副作用断言各120/120通过、169源码hash结束核对无变化，eval.compare.load_batch严格原批次校核通过。公开只保存四文件SHA/计数/实际版本/原币种统计，私有回答/上下文不上传；新证据m42-current-full-repeat-2026-10-04。
+
+约束分项33适用、26候选全部partial、7no_candidate、0complete；整体完整硬约束比率null（覆盖不完整），不是100%或单纯规则76.67%。参数387调用、386unknown/1次工具选择不符合Case允许集合（非全局权限违规）、整体accuracy null；真人0、事实语义未验。原旧full94/120/B0 17/120不改，新源码不与旧组强配对/不宣称提升或倒填历史阈值。第一/二轮失败集合及第三轮仍存路线参数验证/遗漏工具，全部保留；0原断言降低/付费挑失败重跑。
+
+UTC10-04实际账本预检：日9.533012/15，余额5.466988，未结0、active.lock不存在；累计1076HTTP/22.206072CNY，旧探针.10仍在10-03不改。剩余同源码B2/B1与单因素完整组未满足≥10CNY的启动条件，不启动注定不足的全组、不自动用尽今日额度。183fdd3两CI均success；普通完整保存证据关卡及独立只读证据审查继续。只读核对锁定OTel exporter错误日志路径，无新增已证实生产问题/未改SDK依赖或vendor。总体Goal未完成，下一预算窗口按计划续接，不要求用户逐项review。
+
+
+新full证据独立quality_review完成：四原文件SHA、169源码、120记录/92通过/28失败、三轮/412HTTP/9.533012CNY及三项安全断言一致，无P1/P2。依据建议澄清1次load_skill选择不符合adversarial-history Case集合，非SDK全局权限违规；其余参数语义unknown不补评分，公开证据没有正文/身份。
+
+已成功更新既有travel-agent heartbeat（ACTIVE、每天一次有限8次），view成功，替代先前每小时2次安排；不新建重复任务。余额预检重核UTC10-04可用5.466988、未结0/无lock，当前完整组已完成不重跑。后续B2→B1固定行程→四单因素按同源码/原数据/Case及≥10CNY启动条件，每日最多一组、硬限15CNY；暂停新付费期间保存离线证据，通知只限有意义变化。执行依赖应用/电脑在线，不承诺关机继续。更新执行计划恢复区并接入docs导航/质量缺口，准备正常完整提交钩子与普通push；保存实际结果以本轮Git/远端为准。

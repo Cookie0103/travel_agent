@@ -109,3 +109,10 @@ M3.6 ADR013实现独立来源补充包与固定catalog.json可选导入；默认
 
 
 M0.5 API实际用量传递已实施：CLI/API共用report_metadata/TraceMetadata；GuardedRuntime只接收本轮完整context及provider/model/SDK版本匹配报告，真实CLI版本作为观测附加，不修改原运行身份。取消清理后保留实际预占/结算，缺/坏/跨轮报告未知；RunService仍先提交PG终态再导出PG事件，不发布私有报告正文。56专项Passed14.24s，真实SDK/本机2HTTP/实际PG+OTLP覆盖completed(2/2usage)与上游503失败(2/1usage)、实际CLI/币种/账本金额传递、取消/九报告分支。首专项54pass/2新测试worker_exit因临时root被当Python源码，修新测试真实源码定位后通过；首次直接pytest入口backend模块不可见，使用已有python -m pytest标准入口；原断言未降低。224源码三平台strict/ruff/格式/3契约/10地图Passed。64497f6两CI37162518422/37162515154均completed/success。独立审查/正常完整钩子待完成；0新模型费，不把本机OTLP当Cloud API真实业务运行。
+
+
+当前版本完整模型测量已正常结束exit0：.cache/eval/20261004T000334Z-2bb7ad48，原40test×3 full/B3全部120记录、92规则通过/28失败、0error/not_run；各轮29/31/32，72.5%–80%，412HTTP/9.533012CNY。原三无副作用断言各120/120通过、169源码hash结束核对无变化，eval.compare.load_batch严格原批次校核通过。公开只保存四文件SHA/计数/实际版本/原币种统计，私有回答/上下文不上传；新证据m42-current-full-repeat-2026-10-04。
+
+约束分项33适用、26候选全部partial、7no_candidate、0complete；整体完整硬约束比率null（覆盖不完整），不是100%或单纯规则76.67%。参数387调用、386unknown/1次工具选择不符合Case允许集合（非全局权限违规）、整体accuracy null；真人0、事实语义未验。原旧full94/120/B0 17/120不改，新源码不与旧组强配对/不宣称提升或倒填历史阈值。第一/二轮失败集合及第三轮仍存路线参数验证/遗漏工具，全部保留；0原断言降低/付费挑失败重跑。
+
+UTC10-04实际账本预检：日9.533012/15，余额5.466988，未结0、active.lock不存在；累计1076HTTP/22.206072CNY，旧探针.10仍在10-03不改。剩余同源码B2/B1与单因素完整组未满足≥10CNY的启动条件，不启动注定不足的全组、不自动用尽今日额度。183fdd3两CI均success；普通完整保存证据关卡及独立只读证据审查继续。只读核对锁定OTel exporter错误日志路径，无新增已证实生产问题/未改SDK依赖或vendor。总体Goal未完成，下一预算窗口按计划续接，不要求用户逐项review。

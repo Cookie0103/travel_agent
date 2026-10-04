@@ -32,6 +32,7 @@
 - [源码学习索引](review/learning.md)、[三段可重放演示](review/demos.md)、[项目表述审计稿](review/resume-draft.md)：集中学习入口，分别标注 SDK、真实业务服务和离线脚本的证据边界。
 
 - [M4 交付规格](tasks/M4.md)、[M4 集中记录](review/M4.md)：容器启动、离线业务与重启证据；冻结评测和外部缺口分别记录。
+- [当前版本三轮脱敏证据](evidence/m42-current-full-repeat-2026-10-04.json)：92/120规则通过、28失败保留；26规划候选全部partial，语义/真人校准尚未完成。
 - [首次真实40test×3脱敏证据](evidence/m42-model-repeat-2026-10-03.json)：94/120规则通过及原失败/费用/时延，不当事实准确率或人工校准。
 - [M2 可靠执行规格](tasks/M2.md)、[M2 集中记录](review/M2.md)。
 - [M3 上下文与对照规格](tasks/M3.md)、[M3 集中记录](review/M3.md)：偏好、外部只读MCP与评测；未测能力不计完成。
