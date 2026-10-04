@@ -8,7 +8,7 @@ Google存储修正继续按用户已批准边界，不恢复完整详情缓存�
 
 当前分支仍 `batch/2026-10-04-product-v2`，已核对本机2026-10-04日期并复用同日分支。新0012迁移已应用；16初始专项通过，独立审查的三项P2已修并复核无P1/P2。最终默认全量回归 **798 passed、3 live deselected、215.45s**；239文件三平台strict、ruff/格式、3分层契约通过，文档地图补齐目标后10份入口通过，git diff --check通过。前端无新增改动，复用上一轮14测试/type/lint/format/build通过的结果。
 
-本轮补齐 **DONE**，没有已知P0/P1。用户2026-10-04 21:35（日本时间）明确要求将全部完成改动提交并push到 `batch/2026-10-04-product-v2`，替代之前保留工作区给用户提交的安排；本次正常执行提交钩子，随后普通push并核对远端，实际结果以Git和本段续记为准。上一轮744f410及以前已push不变。.env仍被忽略，本轮仅补正确的本地乐天Referer，密钥没有进入代码/日志/提交。不提高永久配额，不继续evaluation或refactor。Railway V2/Claude API/V2同轮Cloud实测仍未做，其他历史记录不作为当前待办。
+本轮补齐 **DONE**，没有已知P0/P1。用户2026-10-04 21:35（日本时间）明确要求将全部完成改动提交并push到 `batch/2026-10-04-product-v2`，替代之前保留工作区给用户提交的安排。功能提交 **b02f34c890ea0fe82ee27f89c0dd1bb9f4314aad** 的正常dev check和完整默认dev test提交钩子均Passed；普通push成功，git ls-remote确认远端完整SHA一致，工作区干净。此续记仅改文档，复用同源码刚通过的完整回归，保存时只跳过重复project-test并保留project-check；不重跑真实API或模型。上一轮744f410及以前已push不变。.env仍被忽略，本轮仅补正确的本地乐天Referer，密钥没有进入代码/日志/提交。不提高永久配额，不继续evaluation或refactor。Railway V2/Claude API/V2同轮Cloud实测仍未做，其他历史记录不作为当前待办。
 
 <details>
 <summary>历史执行记录（旧完成结论和研究队列保留，不作为当前待办）</summary>
