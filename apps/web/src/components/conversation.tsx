@@ -6,7 +6,7 @@ import { HotelResults, planDays } from "./results";
 import type { Mode } from "./composer";
 import { RunSteps } from "./activity-drawer";
 
-export const runStatusLabels: Record<string, string> = {
+const runStatusLabels: Record<string, string> = {
   running: "处理中",
   cancelling: "取消中",
   completed: "完成",

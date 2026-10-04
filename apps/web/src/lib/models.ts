@@ -1,14 +1,10 @@
 /** Model availability comes from the server; fetching it never starts a paid run. */
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import type { components } from "./api-types";
 
 export type Mode = "offline" | "deepseek" | "claude";
-export type ModelOption = {
-  id: Mode;
-  label: string;
-  available: boolean;
-  reason: string | null;
-};
+export type ModelOption = components["schemas"]["ModelOption"];
 export const offlineOption: ModelOption = {
   id: "offline",
   label: "离线演示",

@@ -1,21 +1,29 @@
 /* Chat-first travel assistant: calm surfaces, readable server evidence, responsive panel. */
 :root {
+  /* Bright and clean: white surfaces, slate ink, ONE teal accent. */
   --bg: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f7f7f8;
-  --ink: #18181b;
-  --muted: #71717a;
-  --line: #e4e4e7;
-  --brand: #4f46e5;
-  --brand-weak: #eef2ff;
-  --live: #b7791f;
-  --live-weak: #fbf1df;
-  --ok: #16a34a;
-  --warn: #d97706;
-  --danger: #dc2626;
+  --surface-2: #f1f5f9;
+  --ink: #0f172a;
+  --muted: #475569;
+  --line: #d9e0e8;
+  --brand: #0f766e;
+  --brand-strong: #115e59;
+  --brand-weak: #e6f4f2;
+  --live: #92400e;
+  --live-weak: #fef3c7;
+  --ok: #166534;
+  --warn: #92400e;
+  --danger: #b91c1c;
+  --danger-weak: #fef2f2;
   --radius: 12px;
   --radius-sm: 8px;
-  --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 6px 16px rgb(0 0 0 / 0.05);
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 6px 16px rgb(15 23 42 / 0.06);
 }
 * {
   box-sizing: border-box;
@@ -27,31 +35,33 @@ body {
   font-family:
     var(--font-inter), var(--font-chinese), "PingFang SC", "Hiragino Sans",
     "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
-  font-size: 15px;
-  line-height: 1.65;
+  font-size: 20px;
+  line-height: 1.6;
 }
 h1 {
   margin: 0 0 8px;
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 36px;
+  line-height: 1.3;
+  font-weight: 700;
 }
 h2,
 h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: 24px;
+  line-height: 1.4;
   font-weight: 600;
 }
 p {
   margin: 6px 0;
 }
 a {
-  color: var(--brand);
+  color: var(--brand-strong);
 }
 .muted {
   color: var(--muted);
 }
 .small {
-  font-size: 12px;
+  font-size: 18px;
   overflow-wrap: anywhere;
 }
 .sr-only {
@@ -66,7 +76,7 @@ a {
   border: 0;
 }
 :focus-visible {
-  outline: 2px solid var(--brand);
+  outline: 3px solid var(--brand);
   outline-offset: 2px;
 }
 .tabular,
@@ -83,25 +93,27 @@ a {
   display: flex;
   align-items: center;
   gap: 20px;
-  height: 52px;
-  padding: 0 20px;
+  height: 68px;
+  padding: 0 24px;
   background: var(--surface);
   border-bottom: 1px solid var(--line);
 }
 .site-nav a {
   color: var(--muted);
+  font-size: 20px;
   text-decoration: none;
-  padding: 4px 2px;
+  padding: 6px 2px;
   border-bottom: 2px solid transparent;
 }
 .site-nav a[aria-current="page"] {
   color: var(--ink);
+  font-weight: 600;
   border-bottom-color: var(--brand);
 }
 .site-nav .brand {
-  color: var(--brand);
-  font-weight: 600;
-  font-size: 16px;
+  color: var(--brand-strong);
+  font-weight: 700;
+  font-size: 24px;
   margin-right: 12px;
   border-bottom: 0;
 }
@@ -109,7 +121,8 @@ a {
 /* Controls */
 label {
   display: block;
-  font-size: 13px;
+  font-size: 18px;
+  font-weight: 500;
   margin: 12px 0;
 }
 input,
@@ -117,10 +130,10 @@ select,
 textarea {
   font: inherit;
   color: inherit;
-  border: 1px solid var(--line);
+  border: 1px solid #64748b;
   background: var(--surface);
   border-radius: var(--radius-sm);
-  padding: 8px 10px;
+  padding: 10px 12px;
   width: 100%;
 }
 select {
@@ -133,11 +146,12 @@ select {
 button {
   cursor: pointer;
   font: inherit;
-  font-size: 13px;
-  color: var(--brand);
+  font-size: 19px;
+  font-weight: 500;
+  color: var(--brand-strong);
   background: var(--surface);
-  border: 1px solid var(--line);
-  padding: 7px 12px;
+  border: 1px solid var(--brand);
+  padding: 8px 16px;
   border-radius: var(--radius-sm);
 }
 button:hover {
@@ -153,19 +167,19 @@ button:disabled {
   border-color: var(--brand);
 }
 .primary:hover {
-  background: #4338ca;
+  background: var(--brand-strong);
 }
 .tag {
-  font-size: 12px;
-  color: var(--brand);
+  font-size: 18px;
+  color: var(--brand-strong);
   background: var(--brand-weak);
-  border-radius: 5px;
-  padding: 2px 7px;
+  border-radius: 6px;
+  padding: 2px 8px;
   white-space: nowrap;
 }
 .chip {
   border-radius: 999px;
-  padding: 6px 14px;
+  padding: 8px 16px;
   text-align: left;
 }
 .chips {
@@ -197,11 +211,11 @@ button:disabled {
   gap: 12px;
 }
 details {
-  font-size: 13px;
+  font-size: 18px;
 }
 summary {
   cursor: pointer;
-  color: var(--brand);
+  color: var(--brand-strong);
 }
 .error {
   color: var(--danger);
@@ -214,41 +228,42 @@ summary {
   align-items: center;
   gap: 8px 12px;
   margin: 0 0 12px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
-  font-size: 13px;
+  font-size: 19px;
 }
 .banner-error {
   color: var(--danger);
-  background: #fff4f1;
-  border-color: #f0c9c2;
+  background: var(--danger-weak);
+  border-color: #fca5a5;
 }
 .banner-warning {
   color: var(--warn);
   background: var(--live-weak);
-  border-color: #ecd4a4;
+  border-color: #fcd34d;
 }
 .banner-info {
-  color: var(--brand);
+  color: var(--brand-strong);
   background: var(--brand-weak);
+  border-color: #99d5cd;
 }
 .warning {
   background: var(--live-weak);
   color: var(--warn);
   padding: 8px 12px;
   border-radius: var(--radius-sm);
-  font-size: 13px;
+  font-size: 18px;
 }
 
 /* Chat layout */
 .chat-main {
-  height: calc(100vh - 52px);
+  height: calc(100vh - 68px);
   min-height: 420px;
 }
 .chat-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 380px;
+  grid-template-columns: minmax(0, 1fr) 520px;
   height: 100%;
 }
 .chat-layout:has(.trip-panel.is-collapsed) {
@@ -264,16 +279,16 @@ summary {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  padding: 8px 20px 0;
+  padding: 12px 24px 0;
 }
 .chat-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
   width: 100%;
-  max-width: 760px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 12px 20px;
+  padding: 16px 24px;
 }
 .only-narrow {
   display: none;
@@ -295,14 +310,15 @@ summary {
 .conversation-stream {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 20px;
 }
 .bubble-user {
   align-self: flex-end;
   max-width: 85%;
   background: var(--brand-weak);
+  border: 1px solid #99d5cd;
   border-radius: var(--radius);
-  padding: 8px 14px;
+  padding: 10px 16px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -317,10 +333,10 @@ summary {
 }
 .avatar {
   color: var(--brand);
-  line-height: 1.65;
+  line-height: 1.6;
 }
 .run-status {
-  font-size: 12px;
+  font-size: 18px;
   color: var(--muted);
   margin: 0 0 4px;
 }
@@ -358,25 +374,22 @@ summary {
 /* Composer */
 .composer-wrap {
   width: 100%;
-  max-width: 760px;
+  max-width: 900px;
   margin: 0 auto;
-  padding: 0 20px 10px;
+  padding: 0 24px 16px;
 }
 .composer {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: var(--surface);
-  padding: 8px 10px;
+  padding: 10px 12px;
+  border-color: #64748b;
   box-shadow: var(--shadow);
-}
-.composer-live {
-  border-color: var(--live);
-  background: var(--live-weak);
 }
 .composer textarea {
   border: 0;
   background: transparent;
-  min-height: 56px;
+  min-height: 64px;
   resize: none;
   padding: 4px;
 }
@@ -400,14 +413,6 @@ summary {
   flex: 1;
   min-width: 120px;
 }
-.consent {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.consent input {
-  width: auto;
-}
 .disclaimer {
   margin-top: 6px;
   text-align: center;
@@ -425,7 +430,7 @@ summary {
 }
 .guide-reference {
   margin-bottom: 8px;
-  padding: 10px 14px;
+  padding: 12px 16px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: var(--surface);
@@ -436,7 +441,7 @@ summary {
   overflow-y: auto;
   background: var(--surface);
   border-left: 1px solid var(--line);
-  padding: 0 16px 16px;
+  padding: 0 20px 20px;
 }
 .trip-panel.is-collapsed {
   display: none;
@@ -448,8 +453,8 @@ summary {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 0 8px;
-  background: var(--surface);
+  padding: 16px 0 8px;
+  background: var(--bg-subtle);
 }
 .panel-block {
   padding: 12px 0;
@@ -484,21 +489,21 @@ summary {
 .hotel-card {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
-  padding: 12px;
-  font-size: 13px;
+  padding: 14px;
+  font-size: 19px;
   overflow-wrap: anywhere;
   background: var(--surface);
 }
 .price {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 30px;
+  font-weight: 700;
 }
 .lowest {
-  font-size: 12px;
+  font-size: 18px;
   color: var(--ok);
 }
 .checks {
-  font-size: 13px;
+  font-size: 18px;
   color: var(--warn);
   padding-left: 20px;
 }
@@ -515,12 +520,14 @@ summary {
 }
 .visit-number {
   background: var(--surface-2);
-  min-width: 24px;
-  height: 24px;
-  line-height: 24px;
+  min-width: 28px;
+  height: 28px;
+  line-height: 28px;
   text-align: center;
   border-radius: 50%;
-  font-size: 12px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ink);
 }
 .visit h3,
 .visit p {
@@ -531,9 +538,9 @@ summary {
   bottom: 0;
   margin-top: 12px;
   padding: 10px 0;
-  background: var(--surface);
+  background: var(--bg-subtle);
   border-top: 1px solid var(--line);
-  font-size: 13px;
+  font-size: 19px;
 }
 .confirm-bar .primary {
   width: 100%;
@@ -543,7 +550,7 @@ summary {
 .page {
   max-width: 1040px;
   margin: 0 auto;
-  padding: 28px 20px;
+  padding: 32px 24px;
 }
 .guide-grid {
   display: grid;
@@ -567,7 +574,7 @@ summary {
   margin-top: 16px;
 }
 .notice {
-  font-size: 13px;
+  font-size: 18px;
   color: var(--muted);
 }
 .empty-state {
@@ -594,11 +601,11 @@ summary {
   .trip-panel.is-sheet-open {
     display: block;
     position: fixed;
-    top: 52px;
+    top: 68px;
     right: 0;
     bottom: 0;
     z-index: 30;
-    width: min(100%, 400px);
+    width: min(100%, 520px);
     box-shadow: var(--shadow);
   }
 }
@@ -622,64 +629,7 @@ summary {
   }
 }
 
-/* Activity drawer, plan summary, status chips, compact cards */
-.activity-drawer {
-  position: fixed;
-  top: 52px;
-  right: 0;
-  bottom: 0;
-  z-index: 40;
-  width: min(100%, 360px);
-  overflow-y: auto;
-  padding: 0 16px 16px;
-  background: var(--surface);
-  border-left: 1px solid var(--line);
-  box-shadow: var(--shadow);
-}
-.activity-list {
-  list-style: none;
-  margin: 8px 0;
-  padding: 0;
-}
-.activity-tool {
-  display: flex;
-  gap: 10px;
-  padding: 8px 0;
-  border-bottom: 1px solid var(--line);
-}
-.activity-state {
-  width: 16px;
-  color: var(--muted);
-}
-.is-ok .activity-state {
-  color: var(--ok);
-}
-.is-failed .activity-state {
-  color: var(--danger);
-}
-.is-running .activity-state {
-  color: var(--live);
-  animation: pulse 1s ease-in-out infinite;
-}
-.activity-divider {
-  margin: 8px 0;
-  text-align: center;
-  font-size: 12px;
-  color: var(--muted);
-  border-top: 1px dashed var(--line);
-  padding-top: 6px;
-}
-.activity-note {
-  font-size: 12px;
-  color: var(--brand);
-  padding: 4px 0;
-}
-.chips-inline {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  margin-top: 4px;
-}
+/* Plan summary, status chips, compact cards */
 .pulse {
   animation: pulse 1.2s ease-in-out infinite;
 }
@@ -701,8 +651,8 @@ summary {
 }
 .status-chip {
   display: inline-block;
-  font-size: 12px;
-  padding: 1px 8px;
+  font-size: 18px;
+  padding: 1px 10px;
   border-radius: 999px;
   background: var(--surface-2);
 }
@@ -714,7 +664,7 @@ summary {
 .status-unknown,
 .status-failed,
 .status-expired {
-  background: #fff4f1;
+  background: var(--danger-weak);
   color: var(--danger);
 }
 .status-confirmed,
@@ -729,20 +679,19 @@ summary {
   padding: 10px;
 }
 .is-compact .price {
-  font-size: 17px;
+  font-size: 21px;
 }
 @media (prefers-reduced-motion: reduce) {
-  .pulse,
-  .is-running .activity-state {
+  .pulse {
     animation: none;
   }
 }
 
 /* Plan days, validation bar, sheet backdrop */
 .status-bar {
-  padding: 6px 10px;
+  padding: 8px 12px;
   border-radius: var(--radius-sm);
-  font-size: 13px;
+  font-size: 18px;
   background: var(--brand-weak);
   color: var(--ok);
 }
@@ -751,20 +700,21 @@ summary {
   color: var(--warn);
 }
 .status-bar-conflict {
-  background: #fff4f1;
+  background: var(--danger-weak);
   color: var(--danger);
 }
 .day-heading {
-  margin: 12px 0 0;
-  font-size: 13px;
-  color: var(--brand);
+  margin: 16px 0 0;
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--brand-strong);
 }
 .base-version {
-  font-size: 13px;
+  font-size: 18px;
 }
 .button-link {
   display: inline-block;
-  padding: 7px 16px;
+  padding: 8px 16px;
   border-radius: var(--radius-sm);
   background: var(--brand);
   color: #fff;
@@ -791,7 +741,7 @@ summary {
   bottom: calc(100% + 8px);
   left: 0;
   z-index: 40;
-  min-width: 280px;
+  min-width: 320px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
@@ -806,7 +756,7 @@ summary {
   cursor: pointer;
 }
 .model-option.is-focused {
-  background: var(--bg);
+  background: var(--surface-2);
 }
 .model-option.is-disabled {
   opacity: 0.5;
@@ -814,7 +764,7 @@ summary {
 }
 .run-steps {
   margin: 8px 0;
-  font-size: 12px;
+  font-size: 18px;
   color: var(--muted);
 }
 .run-steps summary {
@@ -825,22 +775,18 @@ summary {
 }
 
 :root {
-  --bg-subtle: #f7f7f8;
-  --ink-2: #3f3f46;
-  --faint: #a1a1aa;
-  --line-strong: #d4d4d8;
-  --accent: #4f46e5;
-  --accent-hover: #4338ca;
-  --accent-soft: #eef2ff;
-  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+  --bg-subtle: #f8fafc;
+  --ink-2: #1e293b;
+  --faint: #64748b;
+  --line-strong: #64748b;
+  --accent: var(--brand);
+  --accent-hover: var(--brand-strong);
+  --accent-soft: var(--brand-weak);
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.08);
 }
 .trip-panel {
   background: var(--bg-subtle);
   border-left: 1px solid var(--line);
-}
-h2,
-h3 {
-  font-size: 16px;
 }
 .hotel-card {
   box-shadow: var(--shadow-sm);
@@ -857,13 +803,13 @@ h3 {
 .composer-examples summary {
   cursor: pointer;
   white-space: nowrap;
-  font-size: 12px;
+  font-size: 18px;
 }
 .composer-examples > div {
   position: absolute;
-  bottom: 36px;
+  bottom: 40px;
   left: 0;
-  width: 260px;
+  width: 300px;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);

@@ -1,9 +1,6 @@
 /** Tool-call inspector built only from persisted run events; argument values are never shown. */
 "use client";
 import type { AppEvent } from "@/lib/api";
-import { modeLabel } from "@/lib/models";
-import type { Workspace } from "./workbench";
-import { runStatus } from "./conversation";
 import { toolLabel } from "./tool-names";
 
 type Entry =
@@ -77,91 +74,5 @@ export function RunSteps({ events }: { events: AppEvent[] }) {
         ))}
       </ol>
     </details>
-  );
-}
-
-export function ActivityDrawer({
-  workspace,
-  close,
-}: {
-  workspace: Workspace;
-  close: () => void;
-}) {
-  const { run } = workspace;
-  const entries = activityEntries(workspace.events);
-  return (
-    <aside
-      className="activity-drawer"
-      aria-label="Agent 活动"
-      onKeyDown={(event) => {
-        if (event.key === "Escape") close();
-      }}
-    >
-      <div className="panel-head">
-        <h2>Agent 活动</h2>
-        <button aria-label="关闭 Agent 活动" onClick={close} autoFocus>
-          ×
-        </button>
-      </div>
-      {run ? (
-        <p className="small muted">
-          {modeLabel(run.mode)} · {runStatus(run.status)}
-        </p>
-      ) : (
-        <p className="small muted">还没有运行记录。</p>
-      )}
-      <ol className="activity-list">
-        {entries.map((entry) => {
-          if (entry.type === "compacted")
-            return (
-              <li key={entry.key} className="activity-divider">
-                上下文已压缩
-              </li>
-            );
-          if (entry.type === "presentation")
-            return (
-              <li key={entry.key} className="activity-note">
-                已更新卡片
-              </li>
-            );
-          return (
-            <li key={entry.key} className={`activity-tool is-${entry.state}`}>
-              <span className="activity-state" aria-hidden="true">
-                {entry.state === "ok"
-                  ? "✓"
-                  : entry.state === "failed"
-                    ? "✗"
-                    : "●"}
-              </span>
-              <div>
-                <strong>{toolLabel(entry.name)}</strong>
-                <span className="sr-only">
-                  {entry.state === "ok"
-                    ? "完成"
-                    : entry.state === "failed"
-                      ? "失败"
-                      : "进行中"}
-                </span>
-                {entry.code && (
-                  <span className="error small"> {entry.code}</span>
-                )}
-                {!!entry.keys.length && (
-                  <div className="chips-inline">
-                    {entry.keys.map((key) => (
-                      <span className="tag" key={key}>
-                        {key}
-                      </span>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-      {!entries.length && run && (
-        <p className="small muted">本次运行没有工具调用。</p>
-      )}
-    </aside>
   );
 }
