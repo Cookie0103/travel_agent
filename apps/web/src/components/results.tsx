@@ -4,6 +4,12 @@ import { useEffect, useState } from "react";
 import { planUnavailable, expiredHotels, partyLabel } from "@/lib/availability";
 import { sourceHref, type Hotels, type Plan } from "@/lib/api";
 import type { components } from "@/lib/api-types";
+import { CalendarButton } from "./calendar-button";
+export const formatYen = (value: string) =>
+  Number(value).toLocaleString("ja-JP");
+const rakutenCredit = `<!-- Rakuten Web Services Attribution Snippet FROM HERE -->
+<a href="https://developers.rakuten.com/" target="_blank">Supported by Rakuten Developers</a>
+<!-- Rakuten Web Services Attribution Snippet TO HERE -->`;
 const date = (value: string) =>
   new Date(value).toLocaleString("zh-CN", {
     timeZone: "Asia/Tokyo",
@@ -62,23 +68,55 @@ export function SourceRef({ value }: { value: string | null }) {
 function Hotel({ card }: { card: components["schemas"]["UiHotelCard"] }) {
   return (
     <article className="hotel-card">
-      <span className="tag">模拟报价</span>
+      {/* 楽天图片按供应商原URL展示；避免图片代理和公共缓存。 */}
+      {card.image_url && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          className="hotel-image"
+          src={card.image_url}
+          alt=""
+          loading="lazy"
+          referrerPolicy="no-referrer"
+        />
+      )}
+      <span className="tag">
+        {card.data_mode === "live" ? "乐天实时" : "模拟报价"}
+      </span>
       <h3>{card.hotel_name}</h3>
       <p>{card.room_type}</p>
+      {card.review_average != null && <p>★ {card.review_average}</p>}
       <p className="small">
         {String(card.stay.start_date)} — {String(card.stay.end_date)} ·{" "}
         {partyLabel(card.stay)}
       </p>
       <strong className="price">
-        {card.total === null ? "总价未知" : `¥ ${card.total}`}
+        {card.total === null ? "总价未知" : `¥ ${formatYen(card.total)}`}
       </strong>
       <p className="small">
-        基础 {card.base_amount} · 税 {card.tax_amount ?? "未知"} · 费{" "}
-        {card.fee_amount ?? "未知"}
+        {card.data_mode === "live" ? (
+          "含税和服务费，明细未知"
+        ) : (
+          <>
+            基础 {formatYen(card.base_amount)} · 税 {card.tax_amount ?? "未知"}{" "}
+            · 费 {card.fee_amount ?? "未知"}
+          </>
+        )}
       </p>
+      {card.total_reason && (
+        <p className="warning small">{card.total_reason}</p>
+      )}
       <p>
-        {card.breakfast ? "含早餐" : "不含早餐"} ·{" "}
-        {card.refundable ? "可退" : "不可退"}
+        {card.breakfast === null
+          ? "早餐未知"
+          : card.breakfast
+            ? "含早餐"
+            : "不含早餐"}{" "}
+        ·{" "}
+        {card.refundable === null
+          ? "退款规则请以乐天为准"
+          : card.refundable
+            ? "可退"
+            : "不可退"}
       </p>
       <details>
         <summary>来源与版本</summary>
@@ -133,17 +171,30 @@ export function HotelResults({
         {hotels.cards.map((card) => (
           <div key={card.offer_id}>
             <Hotel card={card} />
-            <button
-              disabled={
-                disabled ||
-                expired ||
-                card.total === null ||
-                revision !== card.request_revision
-              }
-              onClick={() => void hold(card.offer_id, card.request_revision)}
-            >
-              暂留模拟房间
-            </button>
+            {card.data_mode === "live" ? (
+              card.booking_url && (
+                <a
+                  className="button-link primary"
+                  href={card.booking_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  去乐天查看 ↗
+                </a>
+              )
+            ) : (
+              <button
+                disabled={
+                  disabled ||
+                  expired ||
+                  card.total === null ||
+                  revision !== card.request_revision
+                }
+                onClick={() => void hold(card.offer_id, card.request_revision)}
+              >
+                暂留模拟房间
+              </button>
+            )}
             {!expired &&
               hotels.comparison.lowest_offer_ids.includes(card.offer_id) && (
                 <p className="lowest">所列同口径报价中的最低价</p>
@@ -151,6 +202,12 @@ export function HotelResults({
           </div>
         ))}
       </div>
+      {hotels.cards.some((card) => card.data_mode === "live") && (
+        <div
+          className="small muted"
+          dangerouslySetInnerHTML={{ __html: rakutenCredit }}
+        />
+      )}
     </section>
   );
 }
@@ -159,11 +216,13 @@ export function PlanResults({
   disabled,
   confirm,
   lock,
+  token,
 }: {
   plan: Plan;
   disabled: boolean;
   confirm?: () => Promise<void>;
   lock?: (id: string) => Promise<void>;
+  token?: string;
 }) {
   const stale = planUnavailable(plan, useClock());
   const blocked = stale || plan.validation.status === "conflict";
@@ -173,6 +232,13 @@ export function PlanResults({
         <h2>{plan.draft_id ? "待确认行程" : `正式行程 · V${plan.version}`}</h2>
         <span className="tag">条件版本 {plan.request_revision}</span>
       </div>
+      {!plan.draft_id && token && (
+        <CalendarButton
+          planId={plan.plan_id}
+          token={token}
+          disabled={disabled}
+        />
+      )}
       <p className={`status-bar status-bar-${plan.validation.status}`}>
         {plan.validation.status === "conflict"
           ? "有硬冲突，不能确认"
@@ -245,7 +311,8 @@ export function PlanResults({
                     {date(item.start)} — {date(item.end)}
                   </p>
                   <p className="muted small">
-                    历史快照 · <SourceRef value={item.source_ref} />
+                    {item.data_mode === "live" ? "Google Maps" : "历史快照"} ·{" "}
+                    <SourceRef value={item.source_ref} />
                   </p>
                 </div>
                 {!plan.draft_id && lock && (

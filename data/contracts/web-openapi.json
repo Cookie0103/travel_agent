@@ -841,6 +841,60 @@
         }
       }
     },
+    "/plans/{plan_id}/calendar.ics": {
+      "get": {
+        "summary": "Get Calendar",
+        "operationId": "get_calendar_plans__plan_id__calendar_ics_get",
+        "parameters": [
+          {
+            "name": "plan_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Plan Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sessions/{session_id}/hotel-holds": {
       "post": {
         "summary": "Hold Hotel",
@@ -1324,7 +1378,6 @@
           },
           "city": {
             "type": "string",
-            "const": "京都",
             "title": "City",
             "default": "京都"
           },
@@ -1676,12 +1729,90 @@
             "title": "Fee Amount"
           },
           "breakfast": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Breakfast"
           },
           "refundable": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Refundable"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "review_average": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Average"
+          },
+          "booking_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Url"
+          },
+          "data_mode": {
+            "type": "string",
+            "enum": [
+              "fixture",
+              "live"
+            ],
+            "title": "Data Mode"
+          },
+          "included_total": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,15}0*$)\\d{0,12}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included Total"
+          },
+          "total_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Reason"
           },
           "quoted_at": {
             "type": "string",
@@ -1723,11 +1854,6 @@
               }
             ],
             "title": "Lodging Exceeds Trip Budget"
-          },
-          "data_mode": {
-            "type": "string",
-            "const": "fixture",
-            "title": "Data Mode"
           },
           "evidence_id": {
             "type": "string",
@@ -1771,13 +1897,18 @@
           "fee_amount",
           "breakfast",
           "refundable",
+          "image_url",
+          "review_average",
+          "booking_url",
+          "data_mode",
+          "included_total",
+          "total_reason",
           "quoted_at",
           "expires_at",
           "stay",
           "request_revision",
           "total",
           "lodging_exceeds_trip_budget",
-          "data_mode",
           "evidence_id",
           "source_ref",
           "content_version"
@@ -1842,12 +1973,91 @@
             "title": "Fee Amount"
           },
           "breakfast": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Breakfast"
           },
           "refundable": {
-            "type": "boolean",
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Refundable"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "review_average": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Average"
+          },
+          "booking_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Booking Url"
+          },
+          "data_mode": {
+            "type": "string",
+            "enum": [
+              "fixture",
+              "live"
+            ],
+            "title": "Data Mode",
+            "default": "fixture"
+          },
+          "included_total": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,15}0*$)\\d{0,12}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Included Total"
+          },
+          "total_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Reason"
           },
           "quoted_at": {
             "type": "string",
@@ -1877,6 +2087,12 @@
           "fee_amount",
           "breakfast",
           "refundable",
+          "image_url",
+          "review_average",
+          "booking_url",
+          "data_mode",
+          "included_total",
+          "total_reason",
           "quoted_at",
           "expires_at",
           "request"
@@ -2035,13 +2251,13 @@
             "type": "string",
             "format": "date-time",
             "title": "Start",
-            "description": "含时区的ISO时间；京都当地时间使用+09:00"
+            "description": "含时区的ISO时间；日本时间使用+09:00"
           },
           "end": {
             "type": "string",
             "format": "date-time",
             "title": "End",
-            "description": "含时区的ISO时间；京都当地时间使用+09:00"
+            "description": "含时区的ISO时间；日本时间使用+09:00"
           },
           "route_evidence_id": {
             "anyOf": [
@@ -2084,7 +2300,8 @@
             "type": "string",
             "enum": [
               "fixture",
-              "snapshot"
+              "snapshot",
+              "live"
             ],
             "title": "Data Mode"
           }
@@ -2146,13 +2363,13 @@
             "type": "string",
             "format": "date-time",
             "title": "Start",
-            "description": "含时区的ISO时间；京都当地时间使用+09:00"
+            "description": "含时区的ISO时间；日本时间使用+09:00"
           },
           "end": {
             "type": "string",
             "format": "date-time",
             "title": "End",
-            "description": "含时区的ISO时间；京都当地时间使用+09:00"
+            "description": "含时区的ISO时间；日本时间使用+09:00"
           },
           "route_evidence_id": {
             "anyOf": [
@@ -2683,7 +2900,8 @@
             "type": "string",
             "enum": [
               "osm",
-              "wikivoyage"
+              "wikivoyage",
+              "google_places"
             ],
             "title": "Provider"
           },
@@ -2719,7 +2937,10 @@
           },
           "data_mode": {
             "type": "string",
-            "const": "snapshot",
+            "enum": [
+              "snapshot",
+              "live"
+            ],
             "title": "Data Mode",
             "default": "snapshot"
           }
@@ -2743,7 +2964,8 @@
             "anyOf": [
               {
                 "type": "string",
-                "const": "京都"
+                "maxLength": 40,
+                "minLength": 1
               },
               {
                 "type": "null"
@@ -2918,7 +3140,8 @@
             "anyOf": [
               {
                 "type": "string",
-                "const": "京都"
+                "maxLength": 40,
+                "minLength": 1
               },
               {
                 "type": "null"
@@ -3194,7 +3417,7 @@
           "scope": {
             "type": "string",
             "title": "Scope",
-            "default": "按当前快照和模拟报价校验；路线为估算，未覆盖实时天气、临时闭馆和未知费用"
+            "default": "按当前来源与报价校验；路线时长为估算，临时闭馆与未核实费用仍需出行前确认"
           },
           "check_counts": {
             "additionalProperties": {
@@ -3251,7 +3474,7 @@
           "scope": {
             "type": "string",
             "title": "Scope",
-            "default": "按当前快照和模拟报价校验；路线为估算，未覆盖实时天气、临时闭馆和未知费用"
+            "default": "按当前来源与报价校验；路线时长为估算，临时闭馆与未核实费用仍需出行前确认"
           }
         },
         "additionalProperties": false,
@@ -3358,12 +3581,95 @@
             "title": "Fee Amount"
           },
           "breakfast": {
-            "title": "Breakfast",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Breakfast"
           },
           "refundable": {
-            "title": "Refundable",
-            "type": "boolean"
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Refundable"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Image Url"
+          },
+          "review_average": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Review Average"
+          },
+          "booking_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Booking Url"
+          },
+          "data_mode": {
+            "enum": [
+              "fixture",
+              "live"
+            ],
+            "title": "Data Mode",
+            "type": "string"
+          },
+          "included_total": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,12}|(?=[\\d.]{1,15}0*$)\\d{0,12}\\.\\d{0,2}0*$)",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Included Total"
+          },
+          "total_reason": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total Reason"
           },
           "quoted_at": {
             "format": "date-time",
@@ -3406,11 +3712,6 @@
             ],
             "title": "Lodging Exceeds Trip Budget"
           },
-          "data_mode": {
-            "const": "fixture",
-            "title": "Data Mode",
-            "type": "string"
-          },
           "evidence_id": {
             "format": "uuid",
             "title": "Evidence Id",
@@ -3451,13 +3752,18 @@
           "fee_amount",
           "breakfast",
           "refundable",
+          "image_url",
+          "review_average",
+          "booking_url",
+          "data_mode",
+          "included_total",
+          "total_reason",
           "quoted_at",
           "expires_at",
           "stay",
           "request_revision",
           "total",
           "lodging_exceeds_trip_budget",
-          "data_mode",
           "evidence_id",
           "source_ref",
           "content_version"
@@ -3547,13 +3853,13 @@
             "type": "string"
           },
           "start": {
-            "description": "含时区的ISO时间；京都当地时间使用+09:00",
+            "description": "含时区的ISO时间；日本时间使用+09:00",
             "format": "date-time",
             "title": "Start",
             "type": "string"
           },
           "end": {
-            "description": "含时区的ISO时间；京都当地时间使用+09:00",
+            "description": "含时区的ISO时间；日本时间使用+09:00",
             "format": "date-time",
             "title": "End",
             "type": "string"
@@ -3599,7 +3905,8 @@
           "data_mode": {
             "enum": [
               "fixture",
-              "snapshot"
+              "snapshot",
+              "live"
             ],
             "title": "Data Mode",
             "type": "string"
@@ -3628,13 +3935,13 @@
             "type": "string"
           },
           "start": {
-            "description": "含时区的ISO时间；京都当地时间使用+09:00",
+            "description": "含时区的ISO时间；日本时间使用+09:00",
             "format": "date-time",
             "title": "Start",
             "type": "string"
           },
           "end": {
-            "description": "含时区的ISO时间；京都当地时间使用+09:00",
+            "description": "含时区的ISO时间；日本时间使用+09:00",
             "format": "date-time",
             "title": "End",
             "type": "string"
@@ -3928,7 +4235,7 @@
             "type": "string"
           },
           "scope": {
-            "default": "按当前快照和模拟报价校验；路线为估算，未覆盖实时天气、临时闭馆和未知费用",
+            "default": "按当前来源与报价校验；路线时长为估算，临时闭馆与未核实费用仍需出行前确认",
             "title": "Scope",
             "type": "string"
           },

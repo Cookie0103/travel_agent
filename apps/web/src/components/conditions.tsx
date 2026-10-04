@@ -13,9 +13,10 @@ export function Conditions({
   disabled: boolean;
   save: (
     value: Partial<components["schemas"]["TravelConditions"]>,
-  ) => Promise<void>;
+  ) => Promise<boolean | undefined>;
 }) {
   const [start, setStart] = useState(request.start_date || "2026-11-03");
+  const [city, setCity] = useState(request.city || "京都");
   const [end, setEnd] = useState(request.end_date || "2026-11-05");
   const [adults, setAdults] = useState(request.adults || 2);
   const [children, setChildren] = useState(
@@ -46,7 +47,7 @@ export function Conditions({
           return;
         }
         void save({
-          city: "京都",
+          city,
           start_date: start,
           end_date: end,
           adults,
@@ -60,12 +61,22 @@ export function Conditions({
       }}
     >
       <div className="section-heading">
-        <h2>旅行条件</h2>
+        <h2>编辑条件</h2>
         <span className="tag">版本 {request.revision}</span>
       </div>
       <p className="muted">
-        京都 · 日本时间 · 日元。空儿童年龄表示明确无儿童。
+        日本国内 · 日本时间 · 日元。空儿童年龄表示明确无儿童。
       </p>
+      <label>
+        目的地
+        <input
+          required
+          maxLength={40}
+          value={city}
+          placeholder="例如 大阪、札幌、那霸、箱根"
+          onChange={(event) => setCity(event.target.value)}
+        />
+      </label>
       <label>
         开始日期
         <input
@@ -159,7 +170,7 @@ export function Conditions({
         保存条件
       </button>
       <p className="muted small">
-        修改条件会使旧报价和草稿不再适用。固定演示覆盖二至三天；未知信息会显示警告。
+        修改条件会使旧报价和草稿不再适用；未知信息会显示警告。
       </p>
     </form>
   );

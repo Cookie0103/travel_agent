@@ -2,12 +2,14 @@
 
 import asyncio
 import json
+import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from threading import Thread
 
 from sqlalchemy import make_url
 
+from backend.adapters.live_data import LiveData
 from backend.adapters.supplier import SupplierClient
 from backend.domain.execution import RunContext
 from backend.persistence.database import Database
@@ -18,11 +20,18 @@ from backend.tools.travel import TravelToolExecutor
 
 class DatabaseTools:
     def __init__(
-        self, loop: asyncio.AbstractEventLoop, database: Database, supplier_url: str | None = None
+        self,
+        loop: asyncio.AbstractEventLoop,
+        database: Database,
+        supplier_url: str | None = None,
+        *,
+        real_data: bool = False,
     ) -> None:
         self.loop = loop
         self.supplier_url = supplier_url
-        self.travel = TravelService(database)
+        self.travel = TravelService(
+            database, LiveData.from_environment(os.environ, database) if real_data else None
+        )
         self.executor = TravelToolExecutor(self.travel)
         self.executor.bookings.supplier = SupplierClient(supplier_url)
 
@@ -69,13 +78,21 @@ class DatabaseTools:
 
 
 @asynccontextmanager
-async def database_tools(dsn: str, supplier_url: str | None = None) -> AsyncIterator[DatabaseTools]:
+async def database_tools(
+    dsn: str, supplier_url: str | None = None, *, real_data: bool = False
+) -> AsyncIterator[DatabaseTools]:
     loop = asyncio.SelectorEventLoop()
     thread = Thread(target=loop.run_forever, name="travel-database", daemon=True)
     database = Database(make_url(dsn))
     thread.start()
     try:
-        yield DatabaseTools(loop, database, supplier_url)
+        tools = DatabaseTools(loop, database, supplier_url, real_data=real_data)
+        try:
+            yield tools
+        finally:
+            await asyncio.wrap_future(
+                asyncio.run_coroutine_threadsafe(tools.travel.close_data(), loop)
+            )
     finally:
         try:
             await asyncio.wrap_future(asyncio.run_coroutine_threadsafe(database.close(), loop))

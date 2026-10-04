@@ -55,7 +55,9 @@ export function Welcome({ workspace }: { workspace: Workspace }) {
       >
         {workspace.restoring ? "正在恢复上次会话…" : "开始"}
       </button>
-      <p className="muted small">当前数据覆盖：京都</p>
+      <p className="muted small">
+        实时规划支持日本国内；离线演示使用京都样本。
+      </p>
     </section>
   );
 }
@@ -111,7 +113,9 @@ export function Conversation({
           {mode === "offline" && noRevision && (
             <p className="small muted">先在右侧确认旅行条件</p>
           )}
-          <p className="small muted">当前数据覆盖：京都</p>
+          <p className="small muted">
+            实时规划支持日本国内；离线演示使用京都样本。
+          </p>
         </div>
       )}
       {sent.map((message) => (
@@ -181,6 +185,23 @@ export function Conversation({
           </p>
         </div>
       )}
+      <details className="small muted data-notes">
+        <summary>数据说明</summary>
+        <p>
+          实时景点和路线：Google
+          Maps。酒店：乐天实时查询，报价以供应商页面为准。
+        </p>
+        <p>
+          天气数据：
+          <a
+            href="https://open-meteo.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Open-Meteo.com（CC BY 4.0）
+          </a>
+        </p>
+      </details>
     </div>
   );
 }

@@ -7,6 +7,7 @@ from backend.domain.catalog import Article as Article
 from backend.domain.catalog import ContentSearchInput, Place, PlaceSearchInput, search
 from backend.domain.evidence import EvidenceKind, EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
+from backend.domain.external_data import ExternalDataError
 from backend.domain.travel_request import TravelRequest
 from backend.persistence.catalog import load_catalog
 from backend.services.common import ServiceError, transaction
@@ -18,6 +19,7 @@ class CatalogResult:
     collection: str
     rows: list[dict[str, object]]
     evidence: tuple[EvidenceRecord, ...]
+    warnings: tuple[str, ...] = ()
 
 
 class CatalogService:
@@ -39,12 +41,53 @@ class CatalogService:
     async def query(self, context: RunContext, arguments: ContentSearchInput) -> CatalogResult:
         current, data = await self._load(context)
         collection = "places" if isinstance(arguments, PlaceSearchInput) else "articles"
+        if collection == "places" and self.travel.live:
+            google = self.travel.live.google
+            if not google:
+                raise ServiceError(503, "unavailable", "未配置 GOOGLE_MAPS_API_KEY")
+            try:
+                places = await google.search_places(
+                    arguments.city, arguments.query, arguments.limit
+                )
+                rows = [place.model_dump(mode="json") for place in places]
+                result = await self._publish(context, current, collection, rows)
+                point = google.points.get(arguments.city)
+                return CatalogResult(
+                    result.collection,
+                    result.rows,
+                    result.evidence,
+                    ("目的地范围较大，请让用户指定具体城市或区域",)
+                    if point and point.broad
+                    else (),
+                )
+            except ExternalDataError as error:
+                if error.validation:
+                    raise ServiceError(422, "validation", str(error)) from None
+                result = await self._publish(
+                    context, current, collection, search(data[collection], arguments)
+                )
+                return CatalogResult(
+                    result.collection,
+                    result.rows,
+                    result.evidence,
+                    (str(error), "实时查询失败，以下仅为历史快照结果"),
+                )
         return await self._publish(
             context, current, collection, search(data[collection], arguments)
         )
 
     async def get(self, context: RunContext, collection: str, entity_id: str) -> CatalogResult:
         current, data = await self._load(context)
+        if collection == "places" and entity_id.startswith("gplace:") and self.travel.live:
+            if not self.travel.live.google:
+                raise ServiceError(503, "unavailable", "未配置 GOOGLE_MAPS_API_KEY")
+            try:
+                place = await self.travel.live.google.details(entity_id, current.city or "")
+            except ExternalDataError as error:
+                raise ServiceError(503, "unavailable", str(error)) from None
+            return await self._publish(
+                context, current, collection, [place.model_dump(mode="json")]
+            )
         key = "place_id" if collection == "places" else "article_id"
         rows = [row for row in data[collection] if row.get(key) == entity_id]
         if not rows:
@@ -91,7 +134,7 @@ class CatalogService:
                         "content_version": entry.source.content_version,
                         "retrieved_at": now,
                         "valid_until": now + timedelta(hours=24),
-                        "data_mode": "snapshot",
+                        "data_mode": entry.source.data_mode,
                     }
                 )
             )

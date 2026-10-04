@@ -1,5 +1,6 @@
 """旅行条件/证据用例；API与旅行工具共用所有者、版本、时效和事务规则。"""
 
+import os
 from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -8,9 +9,11 @@ from uuid import UUID
 from pydantic import TypeAdapter, ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.adapters.live_data import LiveData
 from backend.domain.booking import Booking
 from backend.domain.evidence import EvidenceRecord
 from backend.domain.execution import RunContext
+from backend.domain.external_data import ExternalDataError
 from backend.domain.plans import PlanDraft
 from backend.domain.travel_request import (
     RequestConflict,
@@ -46,8 +49,22 @@ class RequestUpdate:
 
 
 class TravelService:
-    def __init__(self, database: Database) -> None:
+    def __init__(self, database: Database, live: LiveData | None = None) -> None:
         self.database = database
+        self.live = live
+
+    @classmethod
+    def from_environment(cls, database: Database, live_enabled: bool) -> "TravelService":
+        live = (
+            LiveData.from_environment(os.environ, database, run_limits=False)
+            if live_enabled
+            else None
+        )
+        return cls(database, live)
+
+    async def close_data(self) -> None:
+        if self.live:
+            await self.live.close()
 
     async def get_request(self, context: RunContext) -> TravelRequest:
         async with transaction(self.database) as db:
@@ -175,14 +192,63 @@ class TravelService:
             current = request_from_row(await travel.owned_request(db, context))
             if any(not record.applicable(current, datetime.now(UTC)) for record in records):
                 raise ServiceError(409, "conflict", "证据与当前条件或有效期不符")
-            await travel.add_evidence(db, context, records)
+            stored = []
+            for record in records:
+                if record.provider in {"google_places", "google_routes"}:
+                    if self.live:
+                        self.live.evidence[record.evidence_id] = record
+                    value = (
+                        {"place_id": record.entity_id, "city": current.city}
+                        if record.kind == "place"
+                        else None
+                    )
+                    source = (
+                        f"https://www.google.com/maps/search/?api=1&query=place&query_place_id={record.entity_id.removeprefix('gplace:')}"
+                        if record.kind == "place"
+                        else "https://maps.google.com/"
+                    )
+                    stored.append(record.model_copy(update={"value": value, "source_ref": source}))
+                else:
+                    stored.append(record)
+            await travel.add_evidence(db, context, stored)
 
     async def resolve_evidence(
         self, context: RunContext, ids: Sequence[UUID]
     ) -> tuple[EvidenceRecord, ...]:
         async with transaction(self.database) as db:
             current = request_from_row(await travel.owned_request(db, context))
-            return await resolve_records(db, context, current, ids, datetime.now(UTC))
+            records = await resolve_records(db, context, current, ids, datetime.now(UTC))
+        return await hydrate_records(records, self.live)
+
+
+async def hydrate_records(
+    records: Sequence[EvidenceRecord], live: LiveData | None
+) -> tuple[EvidenceRecord, ...]:
+    hydrated = []
+    for record in records:
+        if live and record.evidence_id in live.evidence:
+            hydrated.append(live.evidence[record.evidence_id])
+        elif (
+            record.provider == "google_places"
+            and isinstance(record.value, dict)
+            and "name" not in record.value
+        ):
+            place = None
+            if live and live.google:
+                try:
+                    place = await live.google.details(
+                        record.entity_id, str(record.value.get("city") or "")
+                    )
+                except ExternalDataError:
+                    pass
+            hydrated.append(
+                record.model_copy(
+                    update={"value": place.model_dump(mode="json") if place else None}
+                )
+            )
+        else:
+            hydrated.append(record)
+    return tuple(hydrated)
 
 
 async def resolve_records(

@@ -23,7 +23,7 @@ class ToolResult:
     data: dict[str, object]
     code: ErrorCode | None = None
     empty: bool = False
-    data_mode: Literal["fixture", "snapshot"] = "fixture"
+    data_mode: Literal["fixture", "snapshot", "live"] = "fixture"
     evidence_ids: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
     suggestion: str = ""

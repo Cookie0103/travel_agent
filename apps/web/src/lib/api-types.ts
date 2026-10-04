@@ -245,6 +245,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/plans/{plan_id}/calendar.ics": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Calendar */
+        get: operations["get_calendar_plans__plan_id__calendar_ics_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sessions/{session_id}/hotel-holds": {
         parameters: {
             query?: never;
@@ -392,9 +409,8 @@ export interface components {
             /**
              * City
              * @default 京都
-             * @constant
              */
-            city: "京都";
+            city: string;
             /** Title */
             title: string;
             /** Text */
@@ -538,9 +554,24 @@ export interface components {
             /** Fee Amount */
             fee_amount: string | null;
             /** Breakfast */
-            breakfast: boolean;
+            breakfast: boolean | null;
             /** Refundable */
-            refundable: boolean;
+            refundable: boolean | null;
+            /** Image Url */
+            image_url: string | null;
+            /** Review Average */
+            review_average: number | null;
+            /** Booking Url */
+            booking_url: string | null;
+            /**
+             * Data Mode
+             * @enum {string}
+             */
+            data_mode: "fixture" | "live";
+            /** Included Total */
+            included_total: string | null;
+            /** Total Reason */
+            total_reason: string | null;
             /**
              * Quoted At
              * Format: date-time
@@ -561,11 +592,6 @@ export interface components {
             total: string | null;
             /** Lodging Exceeds Trip Budget */
             lodging_exceeds_trip_budget: boolean | null;
-            /**
-             * Data Mode
-             * @constant
-             */
-            data_mode: "fixture";
             /**
              * Evidence Id
              * Format: uuid
@@ -600,9 +626,25 @@ export interface components {
             /** Fee Amount */
             fee_amount: string | null;
             /** Breakfast */
-            breakfast: boolean;
+            breakfast: boolean | null;
             /** Refundable */
-            refundable: boolean;
+            refundable: boolean | null;
+            /** Image Url */
+            image_url: string | null;
+            /** Review Average */
+            review_average: number | null;
+            /** Booking Url */
+            booking_url: string | null;
+            /**
+             * Data Mode
+             * @default fixture
+             * @enum {string}
+             */
+            data_mode: "fixture" | "live";
+            /** Included Total */
+            included_total: string | null;
+            /** Total Reason */
+            total_reason: string | null;
             /**
              * Quoted At
              * Format: date-time
@@ -677,13 +719,13 @@ export interface components {
             /**
              * Start
              * Format: date-time
-             * @description 含时区的ISO时间；京都当地时间使用+09:00
+             * @description 含时区的ISO时间；日本时间使用+09:00
              */
             start: string;
             /**
              * End
              * Format: date-time
-             * @description 含时区的ISO时间；京都当地时间使用+09:00
+             * @description 含时区的ISO时间；日本时间使用+09:00
              */
             end: string;
             /** Route Evidence Id */
@@ -706,7 +748,7 @@ export interface components {
              * Data Mode
              * @enum {string}
              */
-            data_mode: "fixture" | "snapshot";
+            data_mode: "fixture" | "snapshot" | "live";
         };
         /** PlanContent */
         PlanContent: {
@@ -725,13 +767,13 @@ export interface components {
             /**
              * Start
              * Format: date-time
-             * @description 含时区的ISO时间；京都当地时间使用+09:00
+             * @description 含时区的ISO时间；日本时间使用+09:00
              */
             start: string;
             /**
              * End
              * Format: date-time
-             * @description 含时区的ISO时间；京都当地时间使用+09:00
+             * @description 含时区的ISO时间；日本时间使用+09:00
              */
             end: string;
             /** Route Evidence Id */
@@ -945,7 +987,7 @@ export interface components {
              * Provider
              * @enum {string}
              */
-            provider: "osm" | "wikivoyage";
+            provider: "osm" | "wikivoyage" | "google_places";
             /** Source Ref */
             source_ref: string;
             /** Content Version */
@@ -964,14 +1006,14 @@ export interface components {
             /**
              * Data Mode
              * @default snapshot
-             * @constant
+             * @enum {string}
              */
-            data_mode: "snapshot";
+            data_mode: "snapshot" | "live";
         };
         /** TravelConditions */
         TravelConditions: {
             /** City */
-            city?: "京都" | null;
+            city?: string | null;
             /** Start Date */
             start_date?: string | null;
             /** End Date */
@@ -1019,7 +1061,7 @@ export interface components {
         /** TravelRequest */
         TravelRequest: {
             /** City */
-            city?: "京都" | null;
+            city?: string | null;
             /** Start Date */
             start_date?: string | null;
             /** End Date */
@@ -1111,7 +1153,7 @@ export interface components {
             estimated_cost: string;
             /**
              * Scope
-             * @default 按当前快照和模拟报价校验；路线为估算，未覆盖实时天气、临时闭馆和未知费用
+             * @default 按当前来源与报价校验；路线时长为估算，临时闭馆与未核实费用仍需出行前确认
              */
             scope: string;
             /** Check Counts */
@@ -1136,7 +1178,7 @@ export interface components {
             estimated_cost: string;
             /**
              * Scope
-             * @default 按当前快照和模拟报价校验；路线为估算，未覆盖实时天气、临时闭馆和未知费用
+             * @default 按当前来源与报价校验；路线时长为估算，临时闭馆与未核实费用仍需出行前确认
              */
             scope: string;
         };
@@ -1175,9 +1217,39 @@ export interface components {
             /** Fee Amount */
             fee_amount: string | null;
             /** Breakfast */
-            breakfast: boolean;
+            breakfast: boolean | null;
             /** Refundable */
-            refundable: boolean;
+            refundable: boolean | null;
+            /**
+             * Image Url
+             * @default null
+             */
+            image_url: string | null;
+            /**
+             * Review Average
+             * @default null
+             */
+            review_average: number | null;
+            /**
+             * Booking Url
+             * @default null
+             */
+            booking_url: string | null;
+            /**
+             * Data Mode
+             * @enum {string}
+             */
+            data_mode: "fixture" | "live";
+            /**
+             * Included Total
+             * @default null
+             */
+            included_total: string | null;
+            /**
+             * Total Reason
+             * @default null
+             */
+            total_reason: string | null;
             /**
              * Quoted At
              * Format: date-time
@@ -1198,11 +1270,6 @@ export interface components {
             total: string | null;
             /** Lodging Exceeds Trip Budget */
             lodging_exceeds_trip_budget: boolean | null;
-            /**
-             * Data Mode
-             * @constant
-             */
-            data_mode: "fixture";
             /**
              * Evidence Id
              * Format: uuid
@@ -1251,13 +1318,13 @@ export interface components {
             /**
              * Start
              * Format: date-time
-             * @description 含时区的ISO时间；京都当地时间使用+09:00
+             * @description 含时区的ISO时间；日本时间使用+09:00
              */
             start: string;
             /**
              * End
              * Format: date-time
-             * @description 含时区的ISO时间；京都当地时间使用+09:00
+             * @description 含时区的ISO时间；日本时间使用+09:00
              */
             end: string;
             /**
@@ -1283,7 +1350,7 @@ export interface components {
              * Data Mode
              * @enum {string}
              */
-            data_mode: "fixture" | "snapshot";
+            data_mode: "fixture" | "snapshot" | "live";
         };
         /** PlanItem */
         UiPlanItem: {
@@ -1295,13 +1362,13 @@ export interface components {
             /**
              * Start
              * Format: date-time
-             * @description 含时区的ISO时间；京都当地时间使用+09:00
+             * @description 含时区的ISO时间；日本时间使用+09:00
              */
             start: string;
             /**
              * End
              * Format: date-time
-             * @description 含时区的ISO时间；京都当地时间使用+09:00
+             * @description 含时区的ISO时间；日本时间使用+09:00
              */
             end: string;
             /**
@@ -1429,7 +1496,7 @@ export interface components {
             estimated_cost: string;
             /**
              * Scope
-             * @default 按当前快照和模拟报价校验；路线为估算，未覆盖实时天气、临时闭馆和未知费用
+             * @default 按当前来源与报价校验；路线时长为估算，临时闭馆与未核实费用仍需出行前确认
              */
             scope: string;
             /** Check Counts */
@@ -2050,6 +2117,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PlanView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_calendar_plans__plan_id__calendar_ics_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                plan_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */

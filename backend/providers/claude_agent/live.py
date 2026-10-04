@@ -9,7 +9,7 @@ from threading import Event
 from backend.adapters.tracing import cloud_exporter, trace_report
 from backend.agent.persona import JudgeKind
 from backend.agent.runtime import EventSink
-from backend.domain.execution import RunContext, RuntimeEvent, error_code
+from backend.domain.execution import RunContext, RuntimeEvent, error_code, event_metadata
 from backend.mcp.bridge import sdk_tool_name
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
@@ -25,6 +25,7 @@ from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.claude_agent.settings import load_runtime_settings
 from backend.providers.probe.ledger import exclusive
 from backend.providers.probe.settings import ProbeError, Provider, Settings
+from backend.tools.travel import live_definitions
 from backend.tools.workflow import WorkflowName
 
 
@@ -58,6 +59,7 @@ def run_live(
     judge_kind: JudgeKind = "persona",
     evaluation_variant: EvaluationVariant = "full",
     provider: Provider | None = None,
+    real_data: bool = False,
 ) -> dict[str, object]:
     try:
         validate_variant(
@@ -93,6 +95,8 @@ def run_live(
         if persona_judge
         else evaluation_definitions(evaluation_variant, database=database_dsn is not None)
     )
+    if real_data:
+        definitions = live_definitions(definitions)
     budget = runtime_budget(root, settings)
     budget.check_authorization()
     cli = find_cli(os.environ)
@@ -138,6 +142,7 @@ def run_live(
                     "persona_judge": persona_judge,
                     "judge_kind": judge_kind,
                     "evaluation_variant": evaluation_variant,
+                    "real_data": real_data,
                 },
                 cancelled=cancelled,
                 progress=reader.drain,
@@ -171,12 +176,29 @@ def run_live(
             # 旧 CLI 可能没有向 SDK 透出 stop_reason；费用仍按完整 usage 结算。
             report.update(status="error", code="provider_error", reason="incomplete_output")
         # 先保存执行证据，即使随后进程在导出期间被终止也能恢复结果。
+        stored = report_metadata_only(report) if real_data else report
+        if real_data and event_path.exists():
+            stored_events = stored.get("events", [])
+            assert isinstance(stored_events, list)
+            event_path.write_text(
+                "".join(
+                    json.dumps(event, ensure_ascii=False, default=str) + "\n"
+                    for event in stored_events
+                    if isinstance(event, dict)
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
         (directory / "report.json").write_text(
-            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
+            json.dumps(stored, ensure_ascii=False, indent=2, default=str) + "\n",
+            encoding="utf-8",
+            newline="\n",
         )
-        trace_report(report, directory, exporter)
+        trace_report(stored, directory, exporter)
         (directory / "report.json").write_text(
-            json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8", newline="\n"
+            json.dumps(stored, ensure_ascii=False, indent=2, default=str) + "\n",
+            encoding="utf-8",
+            newline="\n",
         )
         if emit is not None:
             code = report.get("code")
@@ -191,3 +213,21 @@ def run_live(
                     )
                 )
         return report
+
+
+def report_metadata_only(report: dict[str, object]) -> dict[str, object]:
+    from dataclasses import asdict
+
+    from pydantic import TypeAdapter
+
+    safe = dict(report)
+    events = TypeAdapter(list[RuntimeEvent]).validate_python(report.get("events", []))
+    safe["events"] = [asdict(event_metadata(event)) for event in events]
+    results = report.get("results")
+    if isinstance(results, list):
+        safe["results"] = [
+            {**result, "outcome": {**result["outcome"], "text": ""}}
+            for result in results
+            if isinstance(result, dict) and isinstance(result.get("outcome"), dict)
+        ]
+    return safe

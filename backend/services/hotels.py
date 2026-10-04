@@ -5,6 +5,7 @@ from uuid import UUID
 
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
+from backend.domain.external_data import ExternalDataError
 from backend.domain.hotels import HotelOffer, compare, quote
 from backend.domain.travel_request import TravelRequest
 from backend.persistence.travel import entity_evidence
@@ -52,11 +53,46 @@ class HotelService:
         rate_id: str | None = None,
         limit: int,
     ) -> tuple[EvidenceRecord, ...]:
+        if live := self.travel.live:
+            if not live.google or not live.rakuten:
+                raise ServiceError(503, "unavailable", "乐天酒店查询暂不可用：数据API配置缺失")
+            assert request.city
+            try:
+                point = await live.google.geocode(request.city)
+                offers = await live.rakuten.search(
+                    request, point, hotel_id=hotel_id, rate_id=rate_id, limit=limit
+                )
+            except ExternalDataError as error:
+                raise ServiceError(
+                    422 if error.validation else 503,
+                    "validation" if error.validation else "unavailable",
+                    "乐天酒店查询暂不可用：" + str(error),
+                ) from None
+            records = [
+                EvidenceRecord(
+                    entity_id=str(offer.offer_id),
+                    field_path="hotel_offer",
+                    value=offer.model_dump(mode="json"),
+                    kind="hotel_offer",
+                    request_revision=request.revision,
+                    conditions=evidence_conditions(request, "hotel_offer"),
+                    provider="rakuten_travel",
+                    source_ref=offer.booking_url,
+                    content_version=offer.quoted_at.isoformat(),
+                    retrieved_at=offer.quoted_at,
+                    valid_until=offer.expires_at,
+                    data_mode="live",
+                )
+                for offer in offers
+            ]
+            if records:
+                await self.travel.record_evidence(context, records)
+            return tuple(records)
         try:
             rates, version = load_rates()
         except (OSError, ValueError):
             raise ServiceError(503, "unavailable", "模拟酒店目录暂不可用") from None
-        records: list[EvidenceRecord] = []
+        records = []
         for rate in rates:
             if (hotel_id and rate.hotel_id != hotel_id) or (rate_id and rate.rate_id != rate_id):
                 continue

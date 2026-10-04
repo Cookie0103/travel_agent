@@ -9,9 +9,13 @@ from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from sqlalchemy.exc import SQLAlchemyError
 
+from backend.adapters.live_data import LiveData
+from backend.adapters.open_meteo import forecast
 from backend.domain.booking import HoldHotelInput
 from backend.domain.execution import RunContext
+from backend.domain.external_data import ExternalDataError
 from backend.domain.itinerary import ItineraryProposal, RouteInput
 from backend.domain.plans import StageInput
 from backend.domain.travel_request import RequestPatch
@@ -21,7 +25,7 @@ from backend.services.common import ServiceError
 from backend.services.hotels import HotelService, cards
 from backend.services.planning import PlanningService
 from backend.services.plans import PlanInput, PlanService
-from backend.services.travel import TravelService
+from backend.services.travel import TravelService, require_revision
 from backend.tools.contracts import RESULT_LIMIT, ToolDefinition, ToolResult
 from backend.tools.search import DEFINITIONS as SEARCH_DEFINITIONS
 from backend.tools.search import ContentSearchInput, PlaceSearchInput
@@ -46,6 +50,11 @@ class HotelSearchInput(BaseModel):
     expected_revision: int = Field(strict=True, ge=0)
     hotel_id: str | None = Field(default=None, min_length=1, max_length=100)
     limit: int = Field(default=4, strict=True, ge=1, le=6)
+
+
+class WeatherInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    expected_revision: int = Field(strict=True, ge=0)
 
 
 class RefreshOfferInput(BaseModel):
@@ -78,6 +87,11 @@ class PresentationInput(BaseModel):
 DEFINITIONS = (
     *SEARCH_DEFINITIONS,
     ToolDefinition(
+        "get_weather_forecast",
+        "按当前条件的城市与日期查询每日天气；超过16天或未定日期返回unknown。",
+        WeatherInput.model_json_schema(),
+    ),
+    ToolDefinition(
         "get_article",
         "按search_content返回的article_id读取原文和来源；不能传evidence_id。",
         EntityInput.model_json_schema(),
@@ -100,7 +114,7 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "search_hotel_offers",
-        "按当前已确认且完整的入住条件查询模拟酒店；返回报价和有效期。",
+        "按当前完整入住条件查询酒店；实时模式逐晚核算乐天含税报价，未知不猜测。",
         HotelSearchInput.model_json_schema(),
     ),
     ToolDefinition(
@@ -145,6 +159,7 @@ DEFINITIONS = (
     ),
 )
 SCHEMAS: dict[str, type[BaseModel]] = {
+    "get_weather_forecast": WeatherInput,
     "search_places": PlaceSearchInput,
     "search_content": ContentSearchInput,
     "get_article": EntityInput,
@@ -162,12 +177,41 @@ SCHEMAS: dict[str, type[BaseModel]] = {
 }
 
 
+def live_definitions(definitions: tuple[ToolDefinition, ...]) -> tuple[ToolDefinition, ...]:
+    return tuple(
+        replace(definition, timeout_seconds=75)
+        if definition.name
+        in {
+            "search_hotel_offers",
+            "refresh_hotel_offer",
+            "estimate_routes",
+            "present_travel_result",
+            "stage_plan_change",
+            "validate_itinerary",
+            "get_saved_plan",
+            "search_places",
+            "get_place_facts",
+            "get_weather_forecast",
+        }
+        else definition
+        for definition in definitions
+        if definition.name != "hold_hotel"
+    )
+
+
 class TravelToolExecutor:
     def __init__(
-        self, travel: TravelService, *, max_calls: int = 16, max_validations: int = 4
+        self,
+        travel: TravelService,
+        *,
+        live: LiveData | None = None,
+        max_calls: int = 16,
+        max_validations: int = 4,
     ) -> None:
         if type(max_validations) is not int or max_validations not in {1, 4}:
             raise ValueError("校验次数只允许默认4或单因素首次1")
+        if live is not None:
+            travel.live = live
         self.travel, self.catalog = travel, CatalogService(travel)
         self.hotels = HotelService(travel)
         self.planning = PlanningService(travel)
@@ -185,7 +229,8 @@ class TravelToolExecutor:
     async def execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
     ) -> ToolResult:
-        definition = next((d for d in DEFINITIONS if d.name == name), None)
+        definitions = live_definitions(DEFINITIONS) if self.travel.live else DEFINITIONS
+        definition = next((d for d in definitions if d.name == name), None)
         if definition is None:
             return ToolResult({}, code="blocked", suggestion="请选择已注册的旅行工具")
         async with self.lock:
@@ -226,13 +271,33 @@ class TravelToolExecutor:
                 )
             except ServiceError as error:
                 return ToolResult({}, code=error.code, suggestion=str(error))
+            except ExternalDataError as error:
+                return ToolResult(
+                    {},
+                    code="validation" if error.validation else "unavailable",
+                    suggestion=str(error),
+                )
             except TimeoutError:
                 return ToolResult({}, code="timeout", suggestion="本轮工具执行超时")
-            except (OSError, ValueError):
+            except (OSError, ValueError, SQLAlchemyError):
                 return ToolResult({}, code="unavailable", suggestion="本地业务数据暂不可用")
 
     async def _dispatch(self, context: RunContext, name: str, parsed: BaseModel) -> ToolResult:
+        if isinstance(parsed, WeatherInput):
+            request = await self.travel.get_request(context)
+            require_revision(request, parsed.expected_revision)
+            live = self.travel.live
+            if not live:
+                return ToolResult({}, code="unavailable", suggestion="离线模式不提供天气")
+            if not live.google or not request.city:
+                return ToolResult({}, code="validation", suggestion="请先指定城市并配置Google API")
+            point = await live.google.geocode(request.city)
+            return ToolResult(
+                await forecast(live.http, live.usage, point, request), data_mode="live"
+            )
         if isinstance(parsed, HoldHotelInput):
+            if self.travel.live:
+                raise ServiceError(403, "blocked", "实时酒店只支持查询和乐天链接，不暂留或下单")
             booking = await self.bookings.hold(context, parsed)
             return ToolResult(
                 booking.card(),
@@ -277,7 +342,10 @@ class TravelToolExecutor:
                     ]
                 },
                 evidence_ids=tuple(str(record.evidence_id) for record in records),
-                warnings=("自制双向路段估算，非实时路线或票价；费用按全员估算，无儿童折扣",),
+                data_mode="live" if self.travel.live else "fixture",
+                warnings=("Google Maps 路线查询，未知时长/票价不猜测",)
+                if self.travel.live
+                else ("自制双向路段估算，非实时路线或票价；费用按全员估算，无儿童折扣",),
             )
         if isinstance(parsed, ItineraryProposal):
             self._take_validation(parsed)
@@ -342,7 +410,11 @@ class TravelToolExecutor:
         context: RunContext,
         parsed: HotelSearchInput | RefreshOfferInput | PresentationInput,
     ) -> ToolResult:
-        warning = ("虚构酒店与模拟价格，非实时库存；仅住宿成本，不代表全程预算满足",)
+        warning = (
+            ("乐天实时查询，含税和服务费；未知明细不猜测，仅住宿成本，不代表全程预算满足",)
+            if self.travel.live
+            else ("虚构酒店与模拟价格，非实时库存；仅住宿成本，不代表全程预算满足",)
+        )
         if isinstance(parsed, PresentationInput):
             assert parsed.expected_revision is not None
             data = await self.hotels.present(context, parsed.expected_revision, parsed.offer_ids)
@@ -352,6 +424,7 @@ class TravelToolExecutor:
                 data,
                 evidence_ids=tuple(str(card["evidence_id"]) for card in presented),
                 warnings=warning,
+                data_mode="live" if self.travel.live else "fixture",
             )
         records = (
             await self.hotels.search(
@@ -365,6 +438,7 @@ class TravelToolExecutor:
             empty=not records,
             evidence_ids=tuple(str(record.evidence_id) for record in records),
             warnings=warning,
+            data_mode="live" if self.travel.live else "fixture",
         )
 
 
@@ -380,9 +454,14 @@ def catalog_result(result: CatalogResult, *, summary: bool = False) -> ToolResul
     return ToolResult(
         {result.collection: rows},
         empty=not rows,
-        data_mode="snapshot",
+        data_mode="live" if any(e.data_mode == "live" for e in result.evidence) else "snapshot",
         evidence_ids=tuple(str(e.evidence_id) for e in result.evidence),
-        warnings=("历史快照非实时事实；缺失字段未知；证据可追溯不等于信息已实时核实",),
+        warnings=result.warnings
+        + (
+            ("Google Maps 实时查询，缺失字段仍未知",)
+            if any(e.data_mode == "live" for e in result.evidence)
+            else ("历史快照非实时事实；缺失字段未知；证据可追溯不等于信息已实时核实",)
+        ),
     )
 
 

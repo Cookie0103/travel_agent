@@ -34,14 +34,25 @@ class SessionView:
 
 
 class SessionService:
-    def __init__(self, url: URL, *, demo_enabled: bool = False) -> None:
+    def __init__(self, url: URL, *, demo_enabled: bool = False, token_days: int = 30) -> None:
         self.database = Database(url)
         self.demo_enabled = demo_enabled
+        self.token_days = token_days
 
     @classmethod
     def from_environment(cls, environment: Mapping[str, str] | None = None) -> "SessionService":
         config = configuration(environment)
-        return cls(database_url(config), demo_enabled=config["DEMO_MODE"].casefold() == "true")
+        try:
+            days = int(config["DEMO_TOKEN_DAYS"] or 30)
+            if not 1 <= days <= 365:
+                raise ValueError
+        except ValueError:
+            raise ValueError("DEMO_TOKEN_DAYS 必须为1至365的整数") from None
+        return cls(
+            database_url(config),
+            demo_enabled=config["DEMO_MODE"].casefold() == "true",
+            token_days=days,
+        )
 
     async def health(self) -> None:
         async with transaction(self.database) as db:
@@ -51,7 +62,7 @@ class SessionService:
         if not self.demo_enabled:
             raise ServiceError(403, "blocked", "演示登录未启用")
         token = secrets.token_urlsafe(32)
-        expires = datetime.now(UTC) + timedelta(hours=24)
+        expires = datetime.now(UTC) + timedelta(days=self.token_days)
         async with transaction(self.database) as db:
             user = await sessions.create_user(
                 db, request.display_name, hashlib.sha256(token.encode()).hexdigest(), expires

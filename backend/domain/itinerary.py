@@ -10,8 +10,8 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 class ProposedItem(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     place_evidence_id: UUID
-    start: AwareDatetime = Field(description="含时区的ISO时间；京都当地时间使用+09:00")
-    end: AwareDatetime = Field(description="含时区的ISO时间；京都当地时间使用+09:00")
+    start: AwareDatetime = Field(description="含时区的ISO时间；日本时间使用+09:00")
+    end: AwareDatetime = Field(description="含时区的ISO时间；日本时间使用+09:00")
     route_evidence_id: UUID | None = None
 
 
@@ -33,7 +33,7 @@ class RouteLeg(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     from_evidence_id: UUID
     to_evidence_id: UUID
-    departure: AwareDatetime = Field(description="含时区的ISO出发时间；京都当地时间使用+09:00")
+    departure: AwareDatetime = Field(description="含时区的ISO出发时间；日本时间使用+09:00")
 
 
 class RouteInput(BaseModel):
@@ -81,7 +81,7 @@ class ValidationReport(BaseModel):
     checks: tuple[ValidationCheck, ...]
     known_cost: Decimal
     estimated_cost: Decimal
-    scope: str = "按当前快照和模拟报价校验；路线为估算，未覆盖实时天气、临时闭馆和未知费用"
+    scope: str = "按当前来源与报价校验；路线时长为估算，临时闭馆与未核实费用仍需出行前确认"
 
     def feedback(self) -> dict[str, object]:
         ordered = sorted(

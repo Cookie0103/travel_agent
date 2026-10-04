@@ -13,7 +13,7 @@ from pydantic import TypeAdapter
 
 from backend.agent.persona import JudgeKind, evaluation_judge_prompt, travel_prompt
 from backend.agent.runtime import Agent
-from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity
+from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, event_metadata
 from backend.providers.claude_agent.checkpoints import Checkpoints
 from backend.providers.claude_agent.database_tools import DatabaseTools, database_tools
 from backend.providers.claude_agent.evaluation import (
@@ -27,6 +27,7 @@ from backend.providers.probe.settings import Provider
 from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition, ToolExecutor
 from backend.tools.search import DEFINITIONS, SearchExecutor
+from backend.tools.travel import live_definitions
 from backend.tools.workflow import WorkflowName
 
 
@@ -94,6 +95,9 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
             evaluation_judge_prompt(judge_kind),
         )
     definitions = evaluation_definitions(variant, database=isinstance(dsn, str))
+    real_data = payload.get("real_data") is True
+    if real_data:
+        definitions = live_definitions(definitions)
     if variant == "no_tools":
         return await run_prompts(
             prompts,
@@ -108,7 +112,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
     if isinstance(dsn, str):
         supplier_url = payload.get("supplier_url")
         async with database_tools(
-            dsn, supplier_url if isinstance(supplier_url, str) else None
+            dsn, supplier_url if isinstance(supplier_url, str) else None, real_data=real_data
         ) as executor:
             if variant == "no_repairs":
                 executor.executor.max_validations = 1
@@ -124,7 +128,9 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
                 definitions,
                 executor,
                 system,
-                checkpoints=Checkpoints(Path.cwd()) if variant == "full" else None,
+                checkpoints=Checkpoints(Path.cwd())
+                if variant == "full" and not real_data
+                else None,
                 revision=revision,
                 preference_revision=preference_revision,
                 workflow=workflow,
@@ -163,11 +169,17 @@ async def run_prompts(
     if isinstance(executor, DatabaseTools):
         # 完整规划实测需8次工具往返+回答；保留3轮修复空间，HTTP/工具/费用边界不变。
         config = replace(config, max_turns=12)
+        if executor.travel.live:
+            config = replace(config, persist_session=False, timeout_seconds=115)
     agent = Agent(ClaudeRuntime(config, definitions, executor))
     events: list[RuntimeEvent] = []
 
     def emit(event: RuntimeEvent) -> None:
-        save_event(Path.cwd() / f"events-{event.context.run_id}.jsonl", event)
+        transient = isinstance(executor, DatabaseTools) and executor.travel.live is not None
+        save_event(
+            Path.cwd() / f"events-{event.context.run_id}.jsonl",
+            event_metadata(event) if transient else event,
+        )
         events.append(event)
 
     reference_id = None

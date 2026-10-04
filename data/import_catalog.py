@@ -167,6 +167,8 @@ def load_snapshot(folder: Path = SNAPSHOT) -> list[Place | Article]:
         ids = [e.place_id if isinstance(e, Place) else e.article_id for e in entries]
         if not ids or len(ids) != len(set(ids)):
             raise ValueError("整理目录为空或存在重复ID，拒绝导入")
+        if any(entry.city != "京都" for entry in entries):
+            raise ValueError("当前固定快照仅覆盖京都，整理目录城市不符")
         return entries
     return [
         *places(raw["osm.json"], manifest.files["osm.json"]),

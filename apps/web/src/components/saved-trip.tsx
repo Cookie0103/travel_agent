@@ -40,7 +40,11 @@ export function SavedTrip() {
         </div>
       )}
       {workspace.plan && (
-        <PlanResults plan={workspace.plan} disabled={workspace.busy} />
+        <PlanResults
+          plan={workspace.plan}
+          disabled={workspace.busy}
+          token={workspace.identity?.token}
+        />
       )}
       {!empty && (
         <p>

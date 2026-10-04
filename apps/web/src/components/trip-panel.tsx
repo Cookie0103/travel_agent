@@ -37,28 +37,61 @@ export function TripPanel({
       {request && (
         <section className="panel-block">
           <div className="section-heading">
-            <h3>旅行条件</h3>
+            {!editing && <h3>旅行条件</h3>}
             <button onClick={() => setEditing((value) => !value)}>
               {editing ? "收起" : "编辑"}
             </button>
           </div>
-          <p>
-            {request.city} · {request.start_date}—{request.end_date}
-          </p>
-          <p>
-            {partyLabel(request)} · {request.rooms} 间 · ¥{request.budget}
-          </p>
-          <p>
-            {transportLabels[request.transport ?? ""] ?? request.transport} ·{" "}
-            {request.departure_time} 出发
-          </p>
-          <p className="small muted">也可以直接在对话里告诉我。</p>
+          {!editing && (
+            <>
+              {request.city || request.start_date || request.adults ? (
+                <>
+                  <p>
+                    {[
+                      request.city,
+                      request.start_date &&
+                        `${request.start_date}—${request.end_date || "待定"}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                  <p>
+                    {[
+                      request.adults
+                        ? partyLabel(request)
+                        : request.rooms && `${request.rooms} 间房`,
+                      request.budget &&
+                        `¥${Number(request.budget).toLocaleString("ja-JP")}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                  <p>
+                    {[
+                      transportLabels[request.transport ?? ""],
+                      request.departure_time &&
+                        `${request.departure_time.slice(0, 5)} 出发`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                  <p className="small muted">也可以直接在对话里告诉我。</p>
+                </>
+              ) : (
+                <p className="muted">还没有设定条件，直接在对话里告诉我</p>
+              )}
+            </>
+          )}
           {editing && (
             <Conditions
               key={request.revision}
               request={request}
               disabled={workspace.busy}
-              save={workspace.saveConditions}
+              save={async (fields) => {
+                const saved = await workspace.saveConditions(fields);
+                if (saved) setEditing(false);
+                return saved;
+              }}
             />
           )}
         </section>
@@ -69,6 +102,7 @@ export function TripPanel({
           disabled={workspace.busy}
           confirm={workspace.confirm}
           lock={workspace.lock}
+          token={identity.token}
         />
       ) : (
         <section className="panel-block">

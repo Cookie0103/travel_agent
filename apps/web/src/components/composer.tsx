@@ -159,8 +159,30 @@ export function Composer({
           }
           value={text}
           onChange={(event) => setText(event.target.value)}
+          onInput={(event) => {
+            event.currentTarget.style.height = "auto";
+            event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 220)}px`;
+          }}
         />
         <div className="composer-bar">
+          <details className="composer-examples">
+            <summary>💡 示例</summary>
+            <div>
+              {[
+                "大阪三天两夜，2成人无儿童1间房，预算6万日元，想看景点并比较酒店",
+                "下雨天札幌有哪些室内景点？",
+                "帮我修改第二天下午，其他安排保留",
+              ].map((example) => (
+                <button
+                  type="button"
+                  key={example}
+                  onClick={() => setText(example)}
+                >
+                  {example}
+                </button>
+              ))}
+            </div>
+          </details>
           <ModelSelector
             mode={mode}
             setMode={setMode}

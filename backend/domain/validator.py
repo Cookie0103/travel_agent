@@ -79,7 +79,7 @@ def visit_checks(
         checks.append(check(subject, "unknown", "trip_dates", "旅行日期未完整确认"))
     elif start.date() < request.start_date or end.date() > request.end_date:
         checks.append(
-            check(subject, "conflict", "trip_dates", "停留超出当前旅行日期，按京都时区检查")
+            check(subject, "conflict", "trip_dates", "停留超出当前旅行日期，按日本时区检查")
         )
     else:
         checks.append(check(subject, "verified", "trip_dates", "停留日期符合旅行范围"))
@@ -279,5 +279,5 @@ def hotel_cost(
             check("hotel", "unknown", "hotel_total", "住宿缺税费，总价未知；已知金额只表示下界")
         ]
     return offer.total, [
-        check("hotel", "verified", "hotel_total", "模拟住宿报价包含税费，入住条件一致")
+        check("hotel", "verified", "hotel_total", "住宿报价包含税费，入住条件一致")
     ]

@@ -106,3 +106,25 @@ def terminal_event(context: RunContext, outcome: RuntimeOutcome) -> RuntimeEvent
         else "failed"
     )
     return RuntimeEvent(context, kind, code=outcome.code)
+
+
+def event_metadata(event: RuntimeEvent) -> RuntimeEvent:
+    """实时第三方内容只用于当前响应；持久事件保留步骤与业务引用。"""
+    from dataclasses import replace
+
+    presentation: dict[str, object] | None = None
+    if event.presentation is not None:
+        data = event.presentation.get("data")
+        if isinstance(data, dict):
+            # 乐天报价是本人会话私有证据；Google行程卡只保留按需补卡的业务引用。
+            safe = (
+                data
+                if data.get("component") == "hotel_comparison"
+                else {
+                    key: value
+                    for key, value in data.items()
+                    if key in {"component", "draft_id", "plan_id", "offer_ids", "expected_revision"}
+                }
+            )
+            presentation = {"data": safe}
+    return replace(event, text="", presentation=presentation)

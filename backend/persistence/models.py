@@ -1,6 +1,6 @@
 """业务表映射；身份/会话与公开快照独立存储，不把SDK transcript当数据库。"""
 
-from datetime import datetime
+from datetime import date, datetime
 from uuid import UUID, uuid4
 
 from sqlalchemy import Boolean, DateTime, ForeignKey, MetaData, String, Text, UniqueConstraint, func
@@ -17,6 +17,22 @@ class Base(DeclarativeBase):
             "pk": "pk_%(table_name)s",
         }
     )
+
+
+class ExternalApiUsageRow(Base):
+    __tablename__ = "external_api_usage"
+    day: Mapped[date] = mapped_column(primary_key=True)
+    api: Mapped[str] = mapped_column(String(20), primary_key=True)
+    calls: Mapped[int]
+
+
+class GoogleCoordinateRow(Base):
+    __tablename__ = "google_coordinates"
+    query: Mapped[str] = mapped_column(String(200), primary_key=True)
+    place_id: Mapped[str] = mapped_column(String(150))
+    latitude: Mapped[float]
+    longitude: Mapped[float]
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
 class UserRow(Base):

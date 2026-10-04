@@ -14,7 +14,7 @@ Transport = Literal["walk", "transit", "taxi"]
 class TravelConditions(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
 
-    city: Literal["京都"] | None = None
+    city: str | None = Field(default=None, min_length=1, max_length=40)
     start_date: date | None = None
     end_date: date | None = None
     timezone: Literal["Asia/Tokyo"] = "Asia/Tokyo"

@@ -27,8 +27,16 @@ LOGGER = logging.getLogger(__name__)
 
 
 class GuardedRuntime:
-    def __init__(self, root: Path, database_dsn: str, *, provider: Provider | None = None) -> None:
+    def __init__(
+        self,
+        root: Path,
+        database_dsn: str,
+        *,
+        provider: Provider | None = None,
+        real_data: bool = False,
+    ) -> None:
         self.root, self.database_dsn = root, database_dsn
+        self.real_data = real_data
         self.trace_metadata: TraceMetadata | None = None
         self.provider = provider or provider_name(os.environ)
         self.identity = RuntimeIdentity(
@@ -76,6 +84,7 @@ class GuardedRuntime:
                 cancelled=stop,
                 max_attempts=12,
                 provider=self.provider,
+                real_data=self.real_data,
             )
         )
         watcher = asyncio.create_task(cancelled.wait())

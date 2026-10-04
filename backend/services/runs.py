@@ -14,7 +14,13 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 from backend.adapters.tracing import TraceMetadata, write_trace
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent, Runtime
-from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, RuntimeOutcome
+from backend.domain.execution import (
+    RunContext,
+    RuntimeEvent,
+    RuntimeIdentity,
+    RuntimeOutcome,
+    event_metadata,
+)
 from backend.persistence import runs, sessions
 from backend.persistence.database import Database
 from backend.persistence.models import TaskRunRow
@@ -85,6 +91,7 @@ class RunService:
         self.persistence_failures: set[UUID] = set()
         self.recovery_pending = False
         self.recovery_lock = asyncio.Lock()
+        self.live_answers: dict[UUID, tuple[datetime, str]] = {}
 
     async def initialize(self, *, only_pending: bool = False) -> None:
         """单API进程启动：释放中断执行，不自动重复任何付费或预订操作。"""
@@ -143,6 +150,14 @@ class RunService:
             result = replace(result, presentations=await runs.presentations(db, run_id))
         if run_id in self.persistence_failures:
             raise ServiceError(503, "unavailable", "执行记录写入失败，需要恢复核对")
+        now = datetime.now(result.created_at.tzinfo)
+        self.live_answers = {
+            key: value
+            for key, value in self.live_answers.items()
+            if (now - value[0]).total_seconds() < 900
+        }
+        if run_id in self.live_answers:
+            result = replace(result, answer=self.live_answers[run_id][1])
         return result
 
     async def events(self, user_id: UUID, run_id: UUID, after: int) -> list[dict[str, object]]:
@@ -179,22 +194,28 @@ class RunService:
             Path(__file__).resolve().parents[2],
             self.database.engine.url.render_as_string(hide_password=False),
             provider=selected_provider(mode),
+            real_data=True,
         )
 
     async def _persist_events(
-        self, context: RunContext, queue: asyncio.Queue[RuntimeEvent | None]
+        self,
+        context: RunContext,
+        queue: asyncio.Queue[RuntimeEvent | None],
+        *,
+        transient: bool = False,
     ) -> None:
         while (event := await queue.get()) is not None:
             try:
                 async with transaction(self.database) as db:
-                    await runs.append_event(db, event)
+                    await runs.append_event(db, event_metadata(event) if transient else event)
             except Exception:
                 self.cancelled[context.run_id].set()
                 raise
 
     async def _execute(self, context: RunContext, message: MessageInput) -> None:
         queue: asyncio.Queue[RuntimeEvent | None] = asyncio.Queue()
-        consumer = asyncio.create_task(self._persist_events(context, queue))
+        transient = message.mode != "offline" and self.runtime_factory is None
+        consumer = asyncio.create_task(self._persist_events(context, queue, transient=transient))
         outcome = RuntimeOutcome(code="provider_error", reason="execution_failed")
         identity: RuntimeIdentity | None = None
         runtime: Runtime | None = None
@@ -232,6 +253,14 @@ class RunService:
             queue.put_nowait(None)
             try:
                 await consumer
+                if transient:
+                    self.live_answers[context.run_id] = (datetime.now().astimezone(), outcome.text)
+                    outcome = replace(
+                        outcome,
+                        text="实时回复仅供本轮查看；行程引用已保存，详情按需更新。"
+                        if outcome.code is None
+                        else f"执行未完成：{outcome.code}",
+                    )
                 async with transaction(self.database) as db:
                     await runs.finish(db, context, outcome)
                 if identity is not None:

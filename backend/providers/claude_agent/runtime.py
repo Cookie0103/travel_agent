@@ -31,6 +31,7 @@ class RuntimeConfig:
     timeout_seconds: float = 90
     workflow: WorkflowName | None = None
     disable_auto_compaction: bool = False
+    persist_session: bool = True
 
 
 class ClaudeRuntime:
@@ -152,6 +153,7 @@ class ClaudeRuntime:
             verbatim_prompts=True,
             resume=sdk_id,
             env={"DISABLE_AUTO_COMPACT": "1"} if self.config.disable_auto_compaction else {},
+            extra_args={} if self.config.persist_session else {"no-session-persistence": None},
         )
 
 

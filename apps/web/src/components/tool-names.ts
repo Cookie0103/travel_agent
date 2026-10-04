@@ -11,6 +11,7 @@ const labels: Record<string, string> = {
   validate_itinerary: "校验行程",
   stage_plan_change: "生成行程草稿",
   update_travel_request: "更新旅行条件",
+  get_weather_forecast: "查询天气",
   get_saved_plan: "读取已保存行程",
   present_travel_result: "整理结果卡片",
   load_skill: "载入技能",

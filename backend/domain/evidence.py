@@ -26,7 +26,7 @@ class EvidenceRecord(BaseModel):
     content_version: str | None = None
     retrieved_at: AwareDatetime
     valid_until: AwareDatetime
-    data_mode: Literal["fixture", "snapshot"]
+    data_mode: Literal["fixture", "snapshot", "live"]
 
     @model_validator(mode="after")
     def valid_period(self) -> Self:

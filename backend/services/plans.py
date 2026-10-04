@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.adapters.live_data import LiveData
 from backend.domain.catalog import Place
 from backend.domain.evidence import EvidenceRecord
 from backend.domain.execution import RunContext
@@ -27,14 +28,17 @@ from backend.domain.travel_request import TravelRequest
 from backend.persistence import operations, plans
 from backend.persistence import travel as requests
 from backend.persistence.models import PlanRow
+from backend.services.calendar import calendar
 from backend.services.common import ServiceError, transaction
 from backend.services.hotels import cards as hotel_cards
 from backend.services.planning import validate_proposal
 from backend.services.travel import (
     TravelService,
+    hydrate_records,
     request_from_row,
     require_revision,
 )
+from backend.services.views import PlanView
 
 
 class PlanInput(BaseModel):
@@ -51,6 +55,11 @@ class LockInput(BaseModel):
 class PlanService:
     def __init__(self, travel: TravelService) -> None:
         self.travel = travel
+
+    async def calendar(self, user_id: UUID, plan_id: UUID) -> tuple[str, int]:
+        view = PlanView.model_validate(await self.get(user_id, plan_id))
+        assert view.version is not None
+        return calendar(view), view.version
 
     async def stage(
         self,
@@ -72,7 +81,7 @@ class PlanService:
                 if datetime.now(UTC) >= saved.expires_at:
                     raise ServiceError(409, "conflict", "原草稿已过期，请重新查询后生成")
                 report = await validate_proposal(
-                    db, context, request, saved.content.proposal(request.revision)
+                    db, context, request, saved.content.proposal(request.revision), self.travel.live
                 )
                 return saved.model_copy(update={"validation": report})
             row = await plans.for_session(db, context)
@@ -104,7 +113,7 @@ class PlanService:
             proposal = content.proposal(request.revision)
             if before_validate is not None:
                 before_validate(proposal)
-            report = await validate_proposal(db, context, request, proposal)
+            report = await validate_proposal(db, context, request, proposal, self.travel.live)
             draft = PlanDraft(
                 plan_id=row.id,
                 base_version=row.current_version,
@@ -146,7 +155,7 @@ class PlanService:
             if row.current_version != draft.base_version:
                 raise ServiceError(409, "conflict", "正式版本已变化，请重新生成patch")
             report = await validate_proposal(
-                db, context, request, draft.content.proposal(request.revision)
+                db, context, request, draft.content.proposal(request.revision), self.travel.live
             )
             if report.status == "conflict":
                 raise ServiceError(409, "conflict", "草稿存在硬冲突，不能保存；请修正后重新确认")
@@ -186,6 +195,7 @@ class PlanService:
                     "validation": saved.validation.feedback(),
                     "historical": True,
                 },
+                self.travel.live,
             )
 
     async def get_draft(
@@ -213,7 +223,7 @@ class PlanService:
                 if version_changed:
                     raise ServiceError(409, "conflict", "草稿基于旧正式版本，请重新生成patch")
                 report = await validate_proposal(
-                    db, context, request, draft.content.proposal(request.revision)
+                    db, context, request, draft.content.proposal(request.revision), self.travel.live
                 )
             data = {
                 **draft.model_dump(mode="json", exclude={"content", "validation"}),
@@ -223,7 +233,7 @@ class PlanService:
                 "conditions_changed": request.revision != draft.request_revision,
                 "version_changed": version_changed,
             }
-            return await content_view(db, context, request, draft.content, data)
+            return await content_view(db, context, request, draft.content, data, self.travel.live)
 
     async def locks(self, user_id: UUID, plan_id: UUID, arguments: LockInput) -> SavedPlan:
         async with transaction(self.travel.database) as db:
@@ -266,12 +276,16 @@ async def content_view(
     request: TravelRequest,
     content: PlanContent,
     data: dict[str, object],
+    live: LiveData | None = None,
 ) -> dict[str, object]:
     """历史内容可以读取；过期或旧条件引用显式标记，不能伪装成当前事实。"""
     rows = await requests.find_evidence(
         db, context, content.proposal(request.revision).evidence_ids()
     )
-    evidence = {row.id: EvidenceRecord.model_validate(row.payload) for row in rows}
+    records = await hydrate_records(
+        tuple(EvidenceRecord.model_validate(row.payload) for row in rows), live
+    )
+    evidence = {record.evidence_id: record for record in records}
     stale = [
         str(row.id)
         for row in rows
@@ -283,7 +297,7 @@ async def content_view(
     cards = []
     for item in content.items:
         record = evidence.get(item.place_evidence_id)
-        place = Place.model_validate(record.value) if record else None
+        place = Place.model_validate(record.value) if record and record.value is not None else None
         cards.append(
             {
                 **item.model_dump(mode="json"),

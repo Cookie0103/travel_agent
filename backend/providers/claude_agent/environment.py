@@ -40,6 +40,7 @@ def worker_environment(
         "RAKUTEN_APP_ID",
         "RAKUTEN_ACCESS_KEY",
         "RAKUTEN_AFFILIATE_ID",
+        "RAKUTEN_REFERER",
         "GOOGLE_GEOCODE_DAILY_CAP",
         "GOOGLE_PLACES_DAILY_CAP",
         "GOOGLE_ROUTES_DAILY_CAP",

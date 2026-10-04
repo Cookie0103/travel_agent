@@ -16,7 +16,7 @@ class HotelCard(QuoteFields):
     request_revision: int
     total: str | None
     lodging_exceeds_trip_budget: bool | None
-    data_mode: Literal["fixture"]
+    data_mode: Literal["fixture", "live"]
     evidence_id: UUID
     source_ref: str | None
     content_version: str | None
@@ -31,7 +31,7 @@ class PlanCard(PlanItem):
     model_config = ConfigDict(json_schema_serialization_defaults_required=True)
     name: str
     source_ref: str | None
-    data_mode: Literal["fixture", "snapshot"]
+    data_mode: Literal["fixture", "snapshot", "live"]
 
 
 class PlanView(BaseModel):

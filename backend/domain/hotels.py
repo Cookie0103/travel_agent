@@ -19,7 +19,7 @@ class HotelRate(BaseModel):
     hotel_id: str
     hotel_name: str
     room_type: str
-    city: Literal["京都"] = "京都"
+    city: str = "京都"
     currency: Literal["JPY"] = "JPY"
     max_guests_per_room: int = Field(strict=True, ge=1, le=6)
     base_per_room_night: Money
@@ -45,8 +45,14 @@ class QuoteFields(BaseModel):
     base_amount: Money
     tax_amount: Money | None
     fee_amount: Money | None
-    breakfast: bool
-    refundable: bool
+    breakfast: bool | None
+    refundable: bool | None
+    image_url: str | None = None
+    review_average: float | None = None
+    booking_url: str | None = None
+    data_mode: Literal["fixture", "live"] = "fixture"
+    included_total: Money | None = None
+    total_reason: str | None = None
     quoted_at: AwareDatetime
     expires_at: AwareDatetime
 
@@ -62,6 +68,8 @@ class HotelOffer(QuoteFields):
 
     @property
     def total(self) -> Decimal | None:
+        if self.data_mode == "live":
+            return self.included_total
         if self.tax_amount is None or self.fee_amount is None:
             return None
         return self.base_amount + self.tax_amount + self.fee_amount
@@ -78,7 +86,7 @@ class HotelOffer(QuoteFields):
                 if total is not None and self.request.budget is not None
                 else None
             ),
-            "data_mode": "fixture",
+            "data_mode": self.data_mode,
         }
 
 
@@ -139,7 +147,13 @@ def compare(offers: tuple[HotelOffer, ...], now: datetime) -> dict[str, object]:
     if any(offer.currency != offer.request.currency for offer in offers):
         reasons.append("报价币种与旅行条件不匹配")
     if any(offer.total is None for offer in offers):
-        reasons.append("税费缺失，无法比较含税费总价")
+        reasons.extend(
+            dict.fromkeys(
+                offer.total_reason or "税费缺失，无法比较含税费总价"
+                for offer in offers
+                if offer.total is None
+            )
+        )
     if any(not offer.quoted_at <= now < offer.expires_at for offer in offers):
         reasons.append("报价未生效或已过期")
     totals = [offer.total for offer in offers if offer.total is not None]
@@ -152,5 +166,5 @@ def compare(offers: tuple[HotelOffer, ...], now: datetime) -> dict[str, object]:
             for offer in offers
             if minimum is not None and offer.total == minimum
         ],
-        "scope": "仅比较列出的模拟报价含税费住宿总价；早餐、退款分别展示；不代表全程预算满足",
+        "scope": "仅比较列出的含税费住宿总价；早餐、退款分别展示；不代表全程预算满足",
     }

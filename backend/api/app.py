@@ -7,7 +7,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, Path, Query, Request
-from fastapi.responses import JSONResponse, StreamingResponse
+from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 from backend.api.events import stream_events
 from backend.services.bookings import Booking, BookingService, HoldHotelInput
@@ -47,10 +47,10 @@ def create_app(
     booking_service: BookingService | None = None,
 ) -> FastAPI:
     sessions = service or SessionService.from_environment()
-    travel = TravelService(sessions.database)
     runs = runs_service or RunService(
         sessions.database, live_enabled=live_enabled, trace_cloud=trace_cloud
     )
+    travel = TravelService.from_environment(sessions.database, runs.live_enabled)
     plans = PlanService(travel)
     bookings = booking_service or BookingService(travel)
     preferences = PreferenceService(sessions.database)
@@ -63,6 +63,7 @@ def create_app(
             yield
         finally:
             await runs.close()
+            await travel.close_data()
             await sessions.close()
 
     app = FastAPI(title="Travel Agent", lifespan=lifespan)
@@ -173,6 +174,18 @@ def create_app(
     @app.get("/plans/{plan_id}")
     async def get_plan(plan_id: UUID, user_id: Annotated[UUID, Depends(identity)]) -> PlanView:
         return PlanView.model_validate(await plans.get(user_id, plan_id))
+
+    @app.get("/plans/{plan_id}/calendar.ics")
+    async def get_calendar(plan_id: UUID, user_id: Annotated[UUID, Depends(identity)]) -> Response:
+        content, version = await plans.calendar(user_id, plan_id)
+        return Response(
+            content,
+            media_type="text/calendar; charset=utf-8",
+            headers={
+                "Content-Disposition": f'attachment; filename="trip-v{version}.ics"',
+                "Cache-Control": "no-store",
+            },
+        )
 
     @app.post("/sessions/{session_id}/hotel-holds")
     async def hold_hotel(

@@ -1,18 +1,18 @@
 /* Chat-first travel assistant: calm surfaces, readable server evidence, responsive panel. */
 :root {
-  --bg: #f7f6f2;
+  --bg: #ffffff;
   --surface: #ffffff;
-  --surface-2: #f1f0ea;
-  --ink: #1d2a24;
-  --muted: #6b746e;
-  --line: #e3e4dd;
-  --brand: #2f5d47;
-  --brand-weak: #e7efe9;
+  --surface-2: #f7f7f8;
+  --ink: #18181b;
+  --muted: #71717a;
+  --line: #e4e4e7;
+  --brand: #4f46e5;
+  --brand-weak: #eef2ff;
   --live: #b7791f;
   --live-weak: #fbf1df;
-  --ok: #2f7a4f;
-  --warn: #a86b00;
-  --danger: #b42318;
+  --ok: #16a34a;
+  --warn: #d97706;
+  --danger: #dc2626;
   --radius: 12px;
   --radius-sm: 8px;
   --shadow: 0 1px 2px rgb(0 0 0 / 0.05), 0 6px 16px rgb(0 0 0 / 0.05);
@@ -25,14 +25,14 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family:
-    "PingFang SC", "Hiragino Sans", "Noto Sans SC", "Microsoft YaHei",
-    system-ui, sans-serif;
-  font-size: 14px;
-  line-height: 1.6;
+    var(--font-inter), var(--font-chinese), "PingFang SC", "Hiragino Sans",
+    "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.65;
 }
 h1 {
   margin: 0 0 8px;
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
 }
 h2,
@@ -153,10 +153,10 @@ button:disabled {
   border-color: var(--brand);
 }
 .primary:hover {
-  background: #244a38;
+  background: #4338ca;
 }
 .tag {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--brand);
   background: var(--brand-weak);
   border-radius: 5px;
@@ -271,7 +271,7 @@ summary {
   min-height: 0;
   overflow-y: auto;
   width: 100%;
-  max-width: 800px;
+  max-width: 760px;
   margin: 0 auto;
   padding: 12px 20px;
 }
@@ -317,7 +317,7 @@ summary {
 }
 .avatar {
   color: var(--brand);
-  line-height: 1.6;
+  line-height: 1.65;
 }
 .run-status {
   font-size: 12px;
@@ -358,7 +358,7 @@ summary {
 /* Composer */
 .composer-wrap {
   width: 100%;
-  max-width: 800px;
+  max-width: 760px;
   margin: 0 auto;
   padding: 0 20px 10px;
 }
@@ -377,7 +377,7 @@ summary {
   border: 0;
   background: transparent;
   min-height: 56px;
-  resize: vertical;
+  resize: none;
   padding: 4px;
 }
 .composer textarea:focus-visible {
@@ -490,7 +490,7 @@ summary {
   background: var(--surface);
 }
 .price {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
 }
 .lowest {
@@ -822,4 +822,60 @@ summary {
 }
 .run-steps ol {
   padding-left: 20px;
+}
+
+:root {
+  --bg-subtle: #f7f7f8;
+  --ink-2: #3f3f46;
+  --faint: #a1a1aa;
+  --line-strong: #d4d4d8;
+  --accent: #4f46e5;
+  --accent-hover: #4338ca;
+  --accent-soft: #eef2ff;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.05);
+}
+.trip-panel {
+  background: var(--bg-subtle);
+  border-left: 1px solid var(--line);
+}
+h2,
+h3 {
+  font-size: 16px;
+}
+.hotel-card {
+  box-shadow: var(--shadow-sm);
+}
+.hotel-image {
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+}
+.composer-examples {
+  position: relative;
+}
+.composer-examples summary {
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 12px;
+}
+.composer-examples > div {
+  position: absolute;
+  bottom: 36px;
+  left: 0;
+  width: 260px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 8px;
+  z-index: 12;
+}
+.composer-examples button {
+  text-align: left;
+  width: 100%;
+  margin: 4px 0;
+}
+.data-notes {
+  margin-top: 20px;
 }

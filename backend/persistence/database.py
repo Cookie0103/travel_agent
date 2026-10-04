@@ -17,6 +17,7 @@ CONFIG_KEYS = (
     "POSTGRES_DB",
     "POSTGRES_PORT",
     "DEMO_MODE",
+    "DEMO_TOKEN_DAYS",
 )
 
 

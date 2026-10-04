@@ -19,7 +19,7 @@ import {
 } from "./api";
 import type { components } from "./api-types";
 
-const STORAGE = "travel-demo-v1";
+const STORAGE = "travel-demo-v2";
 const message = (error: unknown) =>
   error instanceof Error ? error.message : "操作失败，请重试。";
 
@@ -46,7 +46,7 @@ export function useWorkspace({
       generation.current += 1;
       stream.current?.abort();
       cursor.current = 0;
-      sessionStorage.removeItem(STORAGE);
+      localStorage.removeItem(STORAGE);
       setIdentity(undefined);
       setRequest(undefined);
       setRun(undefined);
@@ -60,7 +60,7 @@ export function useWorkspace({
   }, []);
 
   const remember = useCallback((value: Identity) => {
-    sessionStorage.setItem(STORAGE, JSON.stringify(value));
+    localStorage.setItem(STORAGE, JSON.stringify(value));
     setIdentity(value);
   }, []);
 
@@ -86,6 +86,14 @@ export function useWorkspace({
             plan_id: displayed.plan_id,
             run_id: undefined,
           });
+      } else if ("plan_id" in data && data.plan_id) {
+        const displayed = await readConfirmedPlan({
+          plan_id: data.plan_id,
+          token: current.token,
+        });
+        if (!active() || !displayed) return;
+        setPlan(displayed);
+        remember({ ...current, plan_id: displayed.plan_id, run_id: undefined });
       }
     },
     [remember],
@@ -148,7 +156,7 @@ export function useWorkspace({
     const active = () => mounted && generation.current === started;
     async function restore() {
       try {
-        const stored = sessionStorage.getItem(STORAGE);
+        const stored = localStorage.getItem(STORAGE);
         if (!stored) return;
         const current = JSON.parse(stored) as Identity;
         if ((current.pending_message?.mode as string) === "live") {
@@ -157,7 +165,7 @@ export function useWorkspace({
           setSendError("旧版实时消息不能重试，请选择模型后重新发送。");
         }
         if (Date.parse(current.expires_at) <= Date.now()) {
-          sessionStorage.removeItem(STORAGE);
+          localStorage.removeItem(STORAGE);
           return;
         }
         if (!active()) return;
@@ -222,8 +230,10 @@ export function useWorkspace({
     try {
       const active = () => generation.current === started;
       await work(readWhile(active), active);
+      return active();
     } catch (failure) {
       if (generation.current === started) fail(failure);
+      return false;
     } finally {
       if (generation.current === started) setBusy(false);
     }
@@ -269,7 +279,7 @@ export function useWorkspace({
     fields: Partial<components["schemas"]["TravelConditions"]>,
   ) {
     if (!identity || !request) return;
-    await action(async (read, active) => {
+    return await action(async (read, active) => {
       const result = await read(
         api<components["schemas"]["RequestUpdate"]>(
           `/sessions/${identity.session_id}/request`,

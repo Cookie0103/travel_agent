@@ -8,22 +8,22 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 class Source(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    provider: Literal["osm", "wikivoyage"]
+    provider: Literal["osm", "wikivoyage", "google_places"]
     source_ref: str = Field(min_length=1)
     content_version: str = Field(min_length=1)
     retrieved_at: AwareDatetime
     license: str = Field(min_length=1)
     license_url: str = Field(min_length=1)
     attribution: str = Field(min_length=1)
-    data_mode: Literal["snapshot"] = "snapshot"
+    data_mode: Literal["snapshot", "live"] = "snapshot"
 
 
 class Place(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     place_id: str
-    osm_id: str
-    city: Literal["京都"] = "京都"
+    osm_id: str | None = None
+    city: str = "京都"
     name: str = Field(min_length=1)
     aliases: tuple[str, ...] = Field(
         default=(), description="有来源的别名和历史检索名；不替代当前名称，不表示街区边界"
@@ -42,7 +42,7 @@ class Article(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     article_id: str
-    city: Literal["京都"] = "京都"
+    city: str = "京都"
     title: str
     text: str = Field(min_length=1, max_length=3000)
     category: str = "guide"
@@ -70,7 +70,7 @@ def search(rows: list[dict[str, object]], arguments: ContentSearchInput) -> list
     query = arguments.query.casefold()
     found: list[dict[str, object]] = []
     for row in rows:
-        if row.get("city") != city:
+        if str(row.get("city", "")).casefold() != city.casefold():
             continue
         if arguments.category and row.get("category") != arguments.category:
             continue
