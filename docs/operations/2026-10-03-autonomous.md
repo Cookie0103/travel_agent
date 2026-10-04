@@ -672,3 +672,6 @@ B1 v2已停止并诊断真实输出失败：派生3ca3b17f原63已执行（25pas
 
 
 同fa169源码B1最终完整120已严格load/compare通过：38pass/48failed/34error、0not_run，原13→14→63→120 lineage保留，原三个partial文件不改，原实际slot0重放。exec96685已自动进入no_skills .cache/eval/20261004T035158Z-2c33dbaf，随后no_preferences/no_repairs/no_compaction。单一公开证据更新四组；对每组120原SDK report上下文核对，补真实工具次数与context_compacted观测、报告有序hash摘要，配置关闭不是机制生效或因果改善。全文不含原prompt/arguments/UUID/keys；完整参数审阅准备仅绑定不正确，human/expected仍0。地图检查10通过，0新模型HTTP。
+
+
+2026-10-04 FINAL RELEASE：按用户冻结的PROJECT_STATUS仅完成F1/F2，不恢复研究批次。应用原三文件到期补丁，现有四PG分支保留、两处测试类型错误修正；17预订PG通过，check224文件三平台/分层/格式/地图通过，完整769passed/2live deselected（212.63s），独立窄审查通过。正常钩子/push 9db5702及两CI37178553760/37178551128成功。web-check14/14与build通过，stack-up/status/smoke/down/up/verify全部exit0，保留卷、V2/订单ID/事件一致；容器保持运行。0新模型请求，原账本/失败/partial/human0保留。最后仅正常保存交付记录并核对HEAD/远端/CI，之后停止，最终入口PROJECT_STATUS。
