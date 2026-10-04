@@ -1,0 +1,76 @@
+{
+  "reviewer": "independent Codex autonomy_review, retrospective legal-path annotations, not blind/human or preregistered unique answers",
+  "selection": "original full first repeat first4, fixed order, no score-based selection",
+  "cases": [
+    {
+      "case_id": "test-article-source",
+      "total": 3,
+      "correct": 2,
+      "incorrect": 0,
+      "unknown": 1,
+      "accuracy": null,
+      "events_consistent": true
+    },
+    {
+      "case_id": "test-content-higashiyama",
+      "total": 2,
+      "correct": 0,
+      "incorrect": 0,
+      "unknown": 2,
+      "accuracy": null,
+      "events_consistent": true
+    },
+    {
+      "case_id": "test-nijo-detail",
+      "total": 2,
+      "correct": 2,
+      "incorrect": 0,
+      "unknown": 0,
+      "accuracy": 1.0,
+      "events_consistent": true
+    },
+    {
+      "case_id": "test-search-gion",
+      "total": 4,
+      "correct": 0,
+      "incorrect": 0,
+      "unknown": 4,
+      "accuracy": null,
+      "events_consistent": true
+    }
+  ],
+  "total": 11,
+  "correct": 4,
+  "incorrect": 0,
+  "unknown": 7,
+  "accuracy": null,
+  "new_model_http": 0,
+  "limitations": "Only four Evidence-bound calls can be reviewed; remaining seven ambiguous/empty joins unknown, no extrapolation to379.",
+  "artifacts_sha256": {
+    "manifest.json": "1fd2b353e4d40f2cb4ff00fa340a279e95e1a797f5260d716f9e57a311818171",
+    "summary.json": "87aabf1c42e02d034327839585f9299f4097a34b5156590839c9e0dc1f212626",
+    "test-article-source\\actual.json": "2f2f4e28795e75dd3ad7350d2d19b9ba51efa8e048e2e33a25109266cf85cc4a",
+    "test-article-source\\events.jsonl": "7ac71da1cb1132d0e9af9d776f42b44b2c728e66ca170727e128e0c8e77a055c",
+    "test-article-source\\expected.json": "1740a580e6248e582bb3e22ca50a0125d04a04a11c18b001d9139d593f706831",
+    "test-article-source\\result.json": "bfbcab91549b002cc72c9a9e4e0b9f10181e8fe13777cea89b341a13bd51b4da",
+    "test-article-source\\review-input.json": "a3639f1aef4ae19f3be4d99ac4c16f985ba3f5b7423ca3e01457b84cf21085d3",
+    "test-content-higashiyama\\actual.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "test-content-higashiyama\\events.jsonl": "5b14106a52f6f59c21132ee3d0625829e068e33922471235d241f495f6c6ba48",
+    "test-content-higashiyama\\expected.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "test-content-higashiyama\\result.json": "00f6190cfbc7ea8d46e92df135c157502d68710f661c81486d4e55dd2988b3a1",
+    "test-content-higashiyama\\review-input.json": "d7258778e61c11d3814139901e7845f3c173cb683a42bf1298ea6b4b128f2636",
+    "test-nijo-detail\\actual.json": "d6cc05a4cee1123a01c1ea921a54e6f2cef15e5734a61b6269797e1623ca273e",
+    "test-nijo-detail\\events.jsonl": "f20560f8383ee173ab51242c5a8adb8c66e41537c00e75cc41e06ef69d902efd",
+    "test-nijo-detail\\expected.json": "de7ea755ee840538ab762925ef0c4bb2a33b21578b79e0e5713aecff02008233",
+    "test-nijo-detail\\result.json": "7902d78429f708fd7cedeac34325bd413c9ff3b0ccc810772dc5c18bfdbc5ef9",
+    "test-nijo-detail\\review-input.json": "eee893346466b8d63f34657821be199d5498a922be7585d65bbe6a703b8abfb3",
+    "test-search-gion\\actual.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "test-search-gion\\events.jsonl": "acdfdf03c48b622f00035b94dde26206bc467cf4135355fac7de740a8a7a6239",
+    "test-search-gion\\expected.json": "a5338d955b09046ec0b16f3a9625b7955c763aae07dc722e474e6078745f932f",
+    "test-search-gion\\result.json": "5e0b700256a45054c15f57ba4e6c778803c656856384feec40e8f314b2547282",
+    "test-search-gion\\review-input.json": "d465b99a9c617c4e4f656aaddf6296d72dd51649dc5020abd9870a807749b411"
+  },
+  "binding": "same original checkpoint context and SDK session; unique same-name tool_result joined by exact nonempty Evidence IDs; empty/ambiguous joins omitted",
+  "original_model_results_unchanged": true,
+  "global_379_accuracy": null
+}
