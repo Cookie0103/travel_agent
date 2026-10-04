@@ -1,0 +1,26 @@
+{
+  "status": "scored",
+  "case_id": "plan-complete-control-voice",
+  "http_attempts": 1,
+  "currency": "CNY",
+  "cost_upper": "0.002122",
+  "trace_id": "a637bf02dc340727432cea0bc87c1eeb",
+  "identity": {
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "sdk_version": "0.2.163",
+    "cli_version": "2.1.114"
+  },
+  "score": 4,
+  "temperatures": [
+    0
+  ],
+  "tool_count": 0,
+  "grant_attempts": 80,
+  "grant_cost_upper_cny": "2.076890",
+  "guard_failures": [],
+  "human_pairs": 0,
+  "calibration_status": "pending",
+  "source": "one actual legacy dev answer; private candidate and judgement reason omitted",
+  "manifest_sha256": "828cc0ebac29bfe01c1860bb0edb1d3f7d5d48a6472fed62c1f478c4e0549996"
+}
