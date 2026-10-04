@@ -20,4 +20,4 @@ DeepSeek固定模型/温度0、零工具/无业务库；累计/每日额度同�
 原准备/离线校准0请求；随后按已记录选择做content→persona各一次真实评分：40HTTP/0.072812CNY。
 内容19有效/1缺reason失败保留，语气20有效；没有付费重试/代填真人分。
 真人配对仍0、一致率null，不是全40质量或事实准确估计；见docs/evidence/m07-model-review-first20-2026-10-04.json。
-模型内容分不证明事实准确；事实附件入口见[评测指南](../../docs/evaluation.md)。
+模型内容分不证明事实准确；事实附件入口见[评测指南](../../docs/guides/evaluation.md)。

@@ -62,7 +62,7 @@
 | 工作流切换 | verified | 连续推进与可恢复记录，不再要求逐项人工审阅 | 602669b；70 离线测试、独立审查修复 |
 | M0.1 | verified（历史本地增量） | 工程骨架、开发命令、上游固定版本 | fce98f9；原审阅材料保留 |
 | 旧 M0.2 探针 | partial（历史实验） | Messages 最小工具往返，不是 SDK runtime | 3819723；2 次真实请求 |
-| 新 M0.2 | verified | SDK 接入与费用/工具/进程边界 | d2a1b13；SDK 0.2.163、MCP 2.3.0、CLI 2.1.114；123 离线测试，2 次 live 请求；见 [证据](../protocol-agent-sdk.md) |
+| 新 M0.2 | verified | SDK 接入与费用/工具/进程边界 | d2a1b13；SDK 0.2.163、MCP 2.3.0、CLI 2.1.114；123 离线测试，2 次 live 请求；见 [证据](../protocols/protocol-agent-sdk.md) |
 | M0.3 | verified | 应用边界、会话引用、MCP 桥接 | e2d848d；149 离线测试/独立审查通过；两项审查问题有回归保护 |
 | M0.4 | verified | 旅行搜索与 CLI | 727778b；20 景点/12 攻略 fixture；166 离线测试；SDK 本地续接及 3 次请求真实查询通过；[证据](../evidence/travel-query-2026-10-03.json) |
 | M0.5 | verified（实际SDK Cloud与页面已验） | 本地 Trace 和显式云导出 | 真实认证/4 spans上传读回/Chrome页面一致、25专项；[观测记录](../blocked/langfuse.md)，实际SDK历史3HTTP/19773tokens/DeepSeek页面已验，模型子调用仍unknown |
@@ -210,7 +210,7 @@ baseline_b2明确按plan05 B2同时关闭自动压缩/当前长期偏好注入�
 fd17edc正常check/完整默认Python钩子通过，保存内容事实/人工评审入口，无push、无模型新费用。当前恢复点：完整钩子已结束；最新55专项与215静态通过，原SDK/PG/web结果保留；下一步补通用内容LLM辅助评分，仍复用原固定温度评审的run_live/worker/SDK/Guard，不增加另一调用循环。私有judge_kind默认persona，content只在已启用零工具评审路径选择固定相关性/解释/取舍rubric，类型/混用/供应商均启动前拒绝；三个0–5输出与真人三维记录分开，现有calibration按维度复用，非法JSON仍judge_error。实现/本机SDK证明不当真实质量或人工校准。随后继续不同dev坏例矩阵/验收阈值偏差审计；原累计80HTTP/2.076890及外部验收缺口不变。
 
 
-内容辅助评审恢复点：78 passed/567 deselected（13.93秒）、check216通过；offline --kind content 后补真人分不重新付费。移动共享calibration后新测试导入导致一次mypy attr-defined，改正确来源eval.persona后静态通过，未改业务/原断言。eval包说明缩成短地图，详细用法集中docs/evaluation.md；真人与事实核验界限保持明确。当前独立窄复核与正常全量提交钩子待执行；模型新费用0。
+内容辅助评审恢复点：78 passed/567 deselected（13.93秒）、check216通过；offline --kind content 后补真人分不重新付费。移动共享calibration后新测试导入导致一次mypy attr-defined，改正确来源eval.persona后静态通过，未改业务/原断言。eval包说明缩成短地图，详细用法集中docs/guides/evaluation.md；真人与事实核验界限保持明确。当前独立窄复核与正常全量提交钩子待执行；模型新费用0。
 
 内容辅助评分窄独立复核无P1/P2，离线校准与文档两跟进关闭；78专项与check216通过。准备正常本地提交，完整默认Python钩子期间不改跟踪文件；未产生真实模型新费用，实际校准未满足。
 

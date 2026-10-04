@@ -68,7 +68,7 @@ uv run python scripts/fetch_upstream.py
 ```
 
 这些命令用于开发准备，不是启动旅行助手。setup 按 uv.lock 安装依赖并安装本地提交钩子；每次提交执行同一套 check 与离线 test。
-默认测试排除 live，不需要 API key。SDK 接入证据见 docs/protocol-agent-sdk.md。
+默认测试排除 live，不需要 API key。SDK 接入证据见 docs/protocols/protocol-agent-sdk.md。
 `dev eval-dev` 跑30条历史用例并输出规则分；默认固定工具脚本，分数不代表模型能力。真实基线需显式 `--live`，入口及结果说明见 [eval](eval/README.md)。
 
 本机的 Python 3.12 已装入被忽略的 .cache/python，.venv 已绑定该解释器。
@@ -105,7 +105,7 @@ uv run python scripts/dev.py stack-down
 两条线路独立记账，不自动换汇或借用余额；兼容 API 的 SDK 名称不改变计费来源。
 0 表示禁用该线路；空白、非法或缺少预算时拒绝真实调用。预算不能替代用户授权，最新DeepSeek每日15 CNY硬限及未授权USD0见执行计划；未结预占与旧费继续计入，日界沿用UTC。
 `uv --env-file .env`加载配置；`LLM_PROVIDER`默认deepseek，也可显式anthropic。DeepSeek使用DEEPSEEK_MODEL；Claude使用ANTHROPIC_MODEL，当前仅核定固定claude-haiku-4-5-20251001。共用Claude Agent SDK、旅行工具与费用守卫；原币种报告和账本隔离，USD累计授权0金额/0次数会在SDK启动前拦截。真实SDK/CLI本地脚本已验证，Anthropic真实服务与最新Sonnet协议未验，不因填key/每日预算自动调用。
-旧Messages探针的最小实测与有限授权记录保留；不要删除.cache账本重复获得额度。当前SDK接入与业务验证见[SDK实测](docs/protocol-agent-sdk.md)，旧探针[实测矩阵](docs/protocol-deepseek.md)不能代替当前runtime验收。
+旧Messages探针的最小实测与有限授权记录保留；不要删除.cache账本重复获得额度。当前SDK接入与业务验证见[SDK实测](docs/protocols/protocol-agent-sdk.md)，旧探针[实测矩阵](docs/protocols/protocol-deepseek.md)不能代替当前runtime验收。
 旧探针两请求授权已用完；本轮长程开发的 DeepSeek 整体额度见执行计划，同时遵守 .env 每日预算。SDK 美元估算不能代替人民币预算。新接入验收与费用边界见 [ADR-003](docs/adr/003-claude-agent-sdk-runtime.md)。
 历史批次限制见 [M0.2 准备记录](docs/operations/2026-10-03-m02-preparation.md)。
 
@@ -142,6 +142,6 @@ check 不连接数据库；test 会检查真实事务和用户隔离。CI 已配
 - [修复与环境核对记录](docs/operations/2026-10-03-development-errors.md)：从这里判断现在的检查结果。
 - [M0.1 审阅材料](docs/review/M0.1.md)：阅读顺序、失败证据和理解问题。
 - [修复批次总结](docs/review/batch/2026-10-03-m0-repair.md)、[首次批次记录](docs/review/batch/2026-10-02-m0-core.md)。
-- [文档汇总](docs/README.md)、[阻塞记录汇总](docs/blocked/README.md)、[待审阅决定](docs/decisions-pending.md)、[上游复用清单](docs/reuse.md)。
+- [文档汇总](docs/README.md)、[阻塞记录汇总](docs/blocked/README.md)、[待审阅决定](docs/adr/decisions-pending.md)、[上游复用清单](docs/guides/reuse.md)。
 
 恢复前先检查 Git 状态；日志“开始”不代表成功。工程修复与旧探针增量已由 batch/2026-10-03-travel-autonomous 承接，按执行计划持续推进；旧批次和审阅记录保留作历史证据。

@@ -38,4 +38,4 @@ M0.2 做 SDK 接入验证 → 自动验证/独立审查 → M0.3 固定适配边
 
 - [SDK 概览](https://code.claude.com/docs/en/agent-sdk/overview)、[自定义工具](https://code.claude.com/docs/en/agent-sdk/custom-tools)。
 - DeepSeek 提供 [Claude Code 接入说明](https://api-docs.deepseek.com/zh-cn/quick_start/agent_integrations/claude_code/)；Anthropic [网关说明](https://code.claude.com/docs/en/llm-gateway) 不保证非 Claude 模型支持；二者不等于本项目端到端已通过。
-- 运行实验按 [M0 规格](../tasks/M0.md)；旧证据见 [Messages 探针](../protocol-deepseek.md)，不能替代 SDK 验收。若 SDK 无法在既定权限/费用/Windows 条件下工作，M0.2 保持未通过并记录失败。
+- 运行实验按 [M0 规格](../tasks/M0.md)；旧证据见 [Messages 探针](../protocols/protocol-deepseek.md)，不能替代 SDK 验收。若 SDK 无法在既定权限/费用/Windows 条件下工作，M0.2 保持未通过并记录失败。

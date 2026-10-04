@@ -7,13 +7,27 @@
 
 - [ARCHITECTURE](../ARCHITECTURE.md)：模块入口、依赖方向与状态来源。
 - [DESIGN](DESIGN.md)：设计实施与简洁复用；业务设计继续链接plan。
-- [FRONTEND](FRONTEND.md)：界面状态、金额、SSE、失败恢复及浏览器验收。
+- [FRONTEND](guides/FRONTEND.md)：界面状态、金额、SSE、失败恢复及浏览器验收。
 - [RELIABILITY](RELIABILITY.md)、[SECURITY](SECURITY.md)：关键不变量与故障测试位置。
 - [验收测试矩阵](execution/verification.md)：功能/正常与异常路径/跨模块证据/剩余缺口。
-- [评测指南](evaluation.md)：运行、对照、私有事实标注和校准口径。
-- [QUALITY_SCORE](QUALITY_SCORE.md)：按能力标证据与缺口，不用主观总分包装完成度。
+- [评测指南](guides/evaluation.md)：运行、对照、私有事实标注和校准口径。
+- [QUALITY_SCORE](guides/QUALITY_SCORE.md)：按能力标证据与缺口，不用主观总分包装完成度。
 
 `dev check`会检查入口长度与这些地图的仓库链接；不扫描历史/缓存，不发起网络请求。
+
+## 目录一览
+
+根目录只放 README 与三份核心约定（DESIGN、RELIABILITY、SECURITY），其余按用途归档：
+
+| 目录 | 放什么 |
+| --- | --- |
+| [guides/](guides/) | 开发指南：[FRONTEND](guides/FRONTEND.md)、[QUALITY_SCORE](guides/QUALITY_SCORE.md)、[evaluation](guides/evaluation.md)、[reuse](guides/reuse.md) |
+| [proposals/](proposals/) | 尚未实施的提案与调查：[产品 V2 原型实施计划](proposals/PRODUCT-V2-PLAN.md)（当前主方案，交给 Codex 实现）、[前端 Redesign 方案](proposals/FRONTEND-REDESIGN.md)、[后端改造调查](proposals/BACKEND-CHANGE-INVESTIGATION.md) |
+| [protocols/](protocols/) | 模型接入协议实测：[Claude Agent SDK](protocols/protocol-agent-sdk.md)、[DeepSeek](protocols/protocol-deepseek.md) |
+| [adr/](adr/) | 技术决策记录，含[待审阅决定](adr/decisions-pending.md) |
+| [execution/](execution/)、[tasks/](tasks/) | 执行计划与各里程碑任务规格 |
+| [review/](review/)、[evidence/](evidence/) | 里程碑集中记录、脱敏证据 |
+| [operations/](operations/)、[blocked/](blocked/README.md) | 执行记录与阻塞记录 |
 
 | 你想了解什么 | 去哪里看 | 什么时候写 |
 | --- | --- | --- |
@@ -24,8 +38,8 @@
 | 实际执行过哪些步骤，如何恢复 | [operations/](operations/) | 边做边记录；JSONL 保存命令与输出 |
 | 每个任务应当交付什么 | [tasks/M0.md](tasks/M0.md) | 实施规格；不是完成报告 |
 | 为什么选择某个工具 | [adr/](adr/) | 技术决策发生时记录 |
-| 哪些选择等你审阅 | [decisions-pending.md](decisions-pending.md) | 有可回退的临时选择时记录 |
-| 参考了哪些上游思路 | [reuse.md](reuse.md) | 阅读上游后记录，不能当作本项目能力 |
+| 哪些选择等你审阅 | [decisions-pending.md](adr/decisions-pending.md) | 有可回退的临时选择时记录 |
+| 参考了哪些上游思路 | [reuse.md](guides/reuse.md) | 阅读上游后记录，不能当作本项目能力 |
 
 ## 本次可直接打开的记录
 
@@ -37,7 +51,7 @@
 - [M2 可靠执行规格](tasks/M2.md)、[M2 集中记录](review/M2.md)。
 - [M3 上下文与对照规格](tasks/M3.md)、[M3 集中记录](review/M3.md)：偏好、外部只读MCP与评测；未测能力不计完成。
 - [M1 业务集中记录](review/M1.md)、[基础 API 真实 HTTP 证据](evidence/m11-api-smoke-2026-10-03.json)、[M1 规格](tasks/M1.md)。
-- [M0 集中审查记录](review/M0.md)、[SDK 真实接入结果](protocol-agent-sdk.md)、[旅行工具真实查询证据](evidence/travel-query-2026-10-03.json)。
+- [M0 集中审查记录](review/M0.md)、[SDK 真实接入结果](protocols/protocol-agent-sdk.md)、[旅行工具真实查询证据](evidence/travel-query-2026-10-03.json)。
 - [本地 Trace 与云导出决策](adr/005-observability-export.md)、[Langfuse 页面验收缺口](blocked/langfuse.md)。
 - [初始真实评测](evidence/m06-baseline-2026-10-03.json)、[范围坏例回归](evidence/m07-scope-regression-2026-10-03.json)、[角色校准待办](blocked/persona-calibration.md)。
 
@@ -47,7 +61,7 @@
 
 以下按发生时保留，历史的“尚未开始”或旧设计不能覆盖上面的当前路线：
 
-- 2026-10-03：[M0.2 阅读说明](review/M0.2.md)、[协议验证矩阵](protocol-deepseek.md)、[执行记录](operations/2026-10-03-m02-protocol.md)。离线 70 项通过，两次真实请求跑通最小往返；完整关卡尚未完成。
+- 2026-10-03：[M0.2 阅读说明](review/M0.2.md)、[协议验证矩阵](protocols/protocol-deepseek.md)、[执行记录](operations/2026-10-03-m02-protocol.md)。离线 70 项通过，两次真实请求跑通最小往返；完整关卡尚未完成。
 - 2026-10-03：[人民币 / 美元两条预算线路](operations/2026-10-03-budget-currencies.md)。用户要求的配置调整；当时尚未实现费用拦截；后续旧探针已有保护，新 SDK 路线仍须独立验证。
 - 2026-10-03：[M0.2 配置准备与少量调用限制](operations/2026-10-03-m02-preparation.md)。仅记录准备要求，尚未开始真实模型调用。
 - 2026-10-03：[报错修复和 Docker/PostgreSQL 核对](operations/2026-10-03-development-errors.md)、[修复批次总结](review/batch/2026-10-03-m0-repair.md)。工程检查与 37 个离线测试通过。

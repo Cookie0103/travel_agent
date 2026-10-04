@@ -1,6 +1,6 @@
 # 上游阅读与复用清单
 
-本文件记录阅读与复用依据；下方旧批次说明仅代表当时的事实。未运行或复制上游应用。当前 SDK 验证见 [接入记录](protocol-agent-sdk.md)，实施状态见 [执行计划](execution/travel-agent.md)。
+本文件记录阅读与复用依据；下方旧批次说明仅代表当时的事实。未运行或复制上游应用。当前 SDK 验证见 [接入记录](../protocols/protocol-agent-sdk.md)，实施状态见 [执行计划](../execution/travel-agent.md)。
 
 ## 2026-10-03：SDK 优先、简洁复用
 

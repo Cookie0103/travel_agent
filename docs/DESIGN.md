@@ -11,5 +11,5 @@
 - 当前架构内的可回退选择自主实施；改变产品目标或业务安全不变量按[工作流](execution/workflow.md)处理。
 - 设计和代码出现偏差时修正其实际来源，其他文档链接过去，不复制一份“新版规则”。
 
-界面约定见[FRONTEND](FRONTEND.md)，工程可执行标准见[standards](execution/standards.md)，验证缺口见[QUALITY_SCORE](QUALITY_SCORE.md)。
+界面约定见[FRONTEND](guides/FRONTEND.md)，工程可执行标准见[standards](execution/standards.md)，验证缺口见[QUALITY_SCORE](guides/QUALITY_SCORE.md)。
 此方式借鉴[Harness engineering](https://openai.com/index/harness-engineering/)的渐进导航、机械约束与文档维护。

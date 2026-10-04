@@ -28,7 +28,7 @@
 
 共 2 次，保守累计 0.002954 CNY；缓存输入也按未命中高峰价估算，不冒充供应商实际账单。guard_failures 为空，SDK terminal_reason=completed。每次 2.113536 CNY 预占均在完整 usage 后结算，无未结预占。
 
-脱敏事件证据：[JSON 摘要](evidence/sdk-roundtrip-2026-10-03.json)。真实账本在 `.cache/model-budget/deepseek.jsonl`，SDK session 文件不提交。
+脱敏事件证据：[JSON 摘要](../evidence/sdk-roundtrip-2026-10-03.json)。真实账本在 `.cache/model-budget/deepseek.jsonl`，SDK session 文件不提交。
 后续 live 使用 `python -X utf8 -m pytest ... -p no:cacheprovider`，避免控制台编码和缓存警告。
 
 ## 已知限制
@@ -38,4 +38,4 @@
 - 启动守卫是应用边界，不是恶意本机进程的 OS 沙箱。原始 SDK 会话仅留在被忽略的私有 .cache 目录。
 - Flash 每次要先有约 2.11 CNY 可用余额才能按最大上下文预占；真实用量很小也可能因保守预占提前停止。这是费用保护的取舍，不自动扩大额度。
 
-依据：[SDK Python](https://code.claude.com/docs/en/agent-sdk/python)、[DeepSeek Claude Code 接入](https://api-docs.deepseek.com/zh-cn/quick_start/agent_integrations/claude_code/)、[人民币价格](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)、[本项目 ADR-004](adr/004-sdk-request-budget-boundary.md)。
+依据：[SDK Python](https://code.claude.com/docs/en/agent-sdk/python)、[DeepSeek Claude Code 接入](https://api-docs.deepseek.com/zh-cn/quick_start/agent_integrations/claude_code/)、[人民币价格](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)、[本项目 ADR-004](../adr/004-sdk-request-budget-boundary.md)。

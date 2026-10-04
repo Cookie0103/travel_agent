@@ -105,7 +105,7 @@ SDK 管消息往返、工具结果回填和会话上下文；应用管业务状�
 
 DeepSeek 官方提供 [Claude Code 接入配置](https://api-docs.deepseek.com/zh-cn/quick_start/agent_integrations/claude_code/)；Anthropic 则说明不支持通过网关将 Claude Code 路由至非 Claude 模型（[官方说明](https://code.claude.com/docs/en/llm-gateway)）。本项目选择将 DeepSeek 作为**待验证的兼容线路**，不把它写成 Anthropic 官方保证。
 
-现有 [协议探针](../../docs/protocol-deepseek.md) 只完成了两次 Messages 请求。SDK 还多了 CLI 进程、环境配置、工具注册、停止和会话行为，必须单独验收：
+现有 [协议探针](../../docs/protocols/protocol-deepseek.md) 只完成了两次 Messages 请求。SDK 还多了 CLI 进程、环境配置、工具注册、停止和会话行为，必须单独验收：
 
 | 项目 | 验收证据 |
 | --- | --- |

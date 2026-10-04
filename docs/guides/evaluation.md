@@ -6,7 +6,7 @@
 历史21+9文件和期望不改。冻结版本、hash、20dev/40test、历史来源及正常对照由suites校验；未冻结/内容漂移拒绝运行。test不用于模型调优。
 
 调用链：load_suite → temporary_database → database_evaluation → prepare/observe/assess → grade → report。
-独立数据开发实验：`uv run python -m eval.run --database --catalog-dir data/supplements/kyoto-matcha-v1 --case-id kyoto-matcha`。仅legacy dev可指定目录；原冻结/test拒绝使用此开关。仍用随机临时库，目录完整匹配所选包，否则拒绝、不覆盖。data_version绑定manifest SHA且另存实际目录SHA；新增数据结果不能称作原数据同版本改善，详情见[ADR013](adr/013-curated-catalog-supplement.md)。
+独立数据开发实验：`uv run python -m eval.run --database --catalog-dir data/supplements/kyoto-matcha-v1 --case-id kyoto-matcha`。仅legacy dev可指定目录；原冻结/test拒绝使用此开关。仍用随机临时库，目录完整匹配所选包，否则拒绝、不覆盖。data_version绑定manifest SHA且另存实际目录SHA；新增数据结果不能称作原数据同版本改善，详情见[ADR013](../adr/013-curated-catalog-supplement.md)。
 DB模式只创建本次随机本地 `travel_agent_eval_<uuid>`，迁移/导入既定快照；正常退出仅清理该库，保留父库及输出。不读取已有用户数据。硬断电可能留下本次孤立库，恢复不自动删除其他库。
 InitialState使用现有服务构造正式行程/锁、报价过期/条件失效、held/unknown、偏好/墓碑与历史。setup与实际运行分开run_id，setup事件不计成绩；业务历史种子不等于原生SDK长会话。
 供应商故障只注入本次本机HTTP `/holds`；unknown订单setup在用户确认后丢响应。模型没有确认/对账工具，必须保留unknown并说明用户/API查询，不能据此声称模型对账成功。
@@ -28,9 +28,9 @@ InitialState使用现有服务构造正式行程/锁、报价过期/条件失效
 
 预订分项仅统计已声明的模拟暂留、unknown保持及hold供应商预期故障，沿用实际同run/调用/Evidence/HTTP故障关联，并要求无新增订单、无未确认保存。它不代表付款或完整下单正确率。当前冻结套件不执行带原目标的恢复动作，恢复完成率保持unmeasured；独立PG/kill恢复测试证明机制，不替代模型恢复统计。
 
-实施证据见[业务分项](evidence/m42-business-metrics-2026-10-04.json)：0新模型请求，原full/B0仍94/120和17/120；两组各缺120项业务观测，原费用/规则记录未写回。
+实施证据见[业务分项](../evidence/m42-business-metrics-2026-10-04.json)：0新模型请求，原full/B0仍94/120和17/120；两组各缺120项业务观测，原费用/规则记录未写回。
 
-语气/内容评审：`python -m eval.judge <私有JSONL>`默认只准备；显式--live复用同SDK/费用守卫、固定模型/temperature0/零工具。完整回答与评分私有，解析错误单列judge_error；运行异常停止余下样本，真人分不生成。校准/调用说明见[calibration](../eval/calibration/README.md)。
+语气/内容评审：`python -m eval.judge <私有JSONL>`默认只准备；显式--live复用同SDK/费用守卫、固定模型/temperature0/零工具。完整回答与评分私有，解析错误单列judge_error；运行异常停止余下样本，真人分不生成。校准/调用说明见[calibration](../../eval/calibration/README.md)。
 ## 工具参数与首次进度指标
 
 逐调用报告保留correct/incorrect/unknown；成功返回不能证明参数符合用户目标。缺少整个指标的旧报告全量计数为null，已测小计单列。首次进度自动只计实际工具事件和展示卡片，排除started/心跳及未分类文本ACK；纯文本回答未人工分类时该测量为unknown。
@@ -41,7 +41,7 @@ InitialState使用现有服务构造正式行程/锁、报价过期/条件失效
 
 实际模型评测可加 `--variant full|no_tools|baseline_b2|no_skills|no_preferences|no_repairs|no_compaction`（需--database --live与既有授权）。full为B3；no_tools为B0，不给数据库事实或工具；固定--workflow为B1；baseline_b2为B2，保留工具/Skill/校验，同时关闭自动压缩和当前持久偏好注入。这是两项组合基线，不是单因素对照。其余分别只关闭按需Skill、当前持久偏好注入、校验后的修复轮次或自动压缩。非full单轮/fresh SDK，不与--workflow或辅助评审混用；每例仍独立业务身份和原结果评分。反思关闭不跳过首次/最终校验，冲突草稿可展示但用户确认必须拒绝。manifest绑定实际variant/组别/schema/Skills。FixtureRuntime不模拟这些效果，非full离线CLI拒绝；实际SDK+本机脚本/PG测试只证明配置机制。
 
-关闭自动压缩使用SDK公共options.env与官方DISABLE_AUTO_COMPACT=1，限已验证SDK0.2.163/CLI2.1.114；未知版本在初始化/模型请求前拒绝，意外压缩事件中断而非计成功。实际原生SDK在相同人工usage/阈值下默认发生压缩、no_compaction/B2不压缩；这不代表真实模型摘要质量或效果已测。带工具的get_context_usage会触发辅助请求，因此不逐轮查询、不放宽费用守卫、不改写transcript。长期偏好关闭只隔离保存的偏好值，保留用户当前条件与合法近期对话/删除墓碑，不声称删除所有历史线索。详见[ADR012](adr/012-evaluation-variants.md)。
+关闭自动压缩使用SDK公共options.env与官方DISABLE_AUTO_COMPACT=1，限已验证SDK0.2.163/CLI2.1.114；未知版本在初始化/模型请求前拒绝，意外压缩事件中断而非计成功。实际原生SDK在相同人工usage/阈值下默认发生压缩、no_compaction/B2不压缩；这不代表真实模型摘要质量或效果已测。带工具的get_context_usage会触发辅助请求，因此不逐轮查询、不放宽费用守卫、不改写transcript。长期偏好关闭只隔离保存的偏好值，保留用户当前条件与合法近期对话/删除墓碑，不声称删除所有历史线索。详见[ADR012](../adr/012-evaluation-variants.md)。
 
 ## 事实与内容的私有评审
 

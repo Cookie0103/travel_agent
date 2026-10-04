@@ -59,7 +59,7 @@ API只处理身份/HTTP；RunService管理业务任务和事件；SDK负责模�
 
 语气评审从[eval.judge](../../eval/judge.py)进入同一SDK，零工具/无DB；出站Guard显式温度0，严格评分解析失败为judge_error。一次真实小样本不等于20真人校准；这部分可以与任务事实/约束评分分别理解。
 
-事实/内容评测沿[评测指南](../evaluation.md)读eval/content、eval/judge与eval/persona：SDK评语气或三维内容，事实校验依赖独立必需事实与Evidence字段，真人配对不代填；错误JSON/未知附件/缺标注不是零分或完美分。[M3真实坏例矩阵](M3.md)包含原失败、修复与仍未满足的邻例和历史阈值偏差。
+事实/内容评测沿[评测指南](../guides/evaluation.md)读eval/content、eval/judge与eval/persona：SDK评语气或三维内容，事实校验依赖独立必需事实与Evidence字段，真人配对不代填；错误JSON/未知附件/缺标注不是零分或完美分。[M3真实坏例矩阵](M3.md)包含原失败、修复与仍未满足的邻例和历史阈值偏差。
 
 新业务指标从[assess_business](../../eval/state.py)到[business_summary](../../eval/business_metrics.py)：与原checks共享一次PG观测，当前条件重新验证草稿，完整check_counts不受展示截断影响。partial和无冲突不是全条件验证通过；没执行恢复目标就没有恢复率。原付费批次状态未捕获时保持unknown，不能事后用新代码推测原表现。
 

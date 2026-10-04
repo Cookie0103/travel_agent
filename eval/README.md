@@ -13,7 +13,7 @@
 业务分项复用当前PG校验；partial不当完整约束通过，未观测恢复不算成功，旧记录不补造。
 FixtureRuntime仅证明设施，不代表模型效果；规则通过不等于事实正确。
 
-- [运行、对照配置、参数与事实评审详解](../docs/evaluation.md)。
+- [运行、对照配置、参数与事实评审详解](../docs/guides/evaluation.md)。
 - [固定温度语气/内容辅助评分与真人校准](calibration/README.md)。
 - [验收测试矩阵](../docs/execution/verification.md)。
 - [当前进度与恢复点](../docs/execution/travel-agent.md)。
