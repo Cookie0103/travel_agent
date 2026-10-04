@@ -3,6 +3,7 @@
 import argparse
 import json
 import time
+import traceback
 from uuid import UUID, uuid4
 
 import httpx
@@ -94,10 +95,10 @@ def exercise(client: httpx.Client) -> State:
         json={
             "client_message_id": str(uuid4()),
             "text": "不应产生模型请求",
-            "mode": "live",
+            "mode": "claude",
         },
     )
-    assert live.status_code == 403
+    assert live.status_code == 403, f"真实模型模式未被拒绝：status={live.status_code}"
 
     comparison = run_demo(client, session.session_id, "演示：比较酒店")
     hotels = presentation(comparison, HotelPresentation)
@@ -167,6 +168,24 @@ def verify(client: httpx.Client, state: State) -> None:
         ]
 
 
+def locator(error: BaseException) -> str:
+    """非敏感失败定位：异常类、HTTP方法+路径+状态码、断言消息与脚本行号；绝不含令牌/头/正文。"""
+    parts = [type(error).__name__]
+    if isinstance(error, httpx.HTTPStatusError):
+        parts.append(
+            f"{error.request.method} {error.request.url.path} -> {error.response.status_code}"
+        )
+    elif isinstance(error, httpx.RequestError):
+        parts.append(f"{error.request.method} {error.request.url.path}")
+    if isinstance(error, AssertionError) and error.args:
+        parts.append(str(error.args[0]))
+    frames = traceback.extract_tb(error.__traceback__)
+    here = [f for f in frames if f.filename == __file__]
+    if here:
+        parts.append(f"{here[-1].name}:{here[-1].lineno}")
+    return " | ".join(parts)
+
+
 def main() -> int:
     configure_environment()
     parser = argparse.ArgumentParser(description=__doc__)
@@ -195,8 +214,9 @@ def main() -> int:
             )
         )
         return 0
-    except (httpx.HTTPError, ValueError, OSError, AssertionError):
+    except (httpx.HTTPError, ValueError, OSError, AssertionError) as error:
         print("failed: 离线交付验证未通过；未输出令牌或原响应，请检查服务与私有状态")
+        print("locator: " + locator(error))
         return 1
 
 
