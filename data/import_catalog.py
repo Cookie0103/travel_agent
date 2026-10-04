@@ -86,9 +86,12 @@ def places(raw: str, file: SnapshotFile) -> list[Place]:
                 name=tags["name"],
                 aliases=tuple(
                     dict.fromkeys(
-                        v
+                        alias.strip()
                         for k, v in tags.items()
-                        if k.startswith("name:") or k in {"alt_name", "short_name"}
+                        if k.startswith(("name:", "old_name:"))
+                        or k in {"alt_name", "short_name", "old_name"}
+                        for alias in v.split(";")
+                        if alias.strip()
                     )
                 ),
                 latitude=latitude,

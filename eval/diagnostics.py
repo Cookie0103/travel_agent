@@ -128,6 +128,13 @@ def bind_call(
     if not events or fact.context != events[0].context:
         return None
     matches = [(i, e) for i, e in enumerate(events) if e.tool_call_id == fact.tool_call_id]
+    if (
+        any(e.context != fact.context for _, e in matches)
+        or len({e.tool_name for _, e in matches if e.tool_name is not None}) > 1
+    ):
+        return None
+    # 展示卡片与成功调用共用ID，但不是第二次工具开始或结束。
+    matches = [(i, e) for i, e in matches if e.kind in {"tool_started", "tool_finished"}]
     if len(matches) != 2:
         return None
     (index, start), (_, end) = matches

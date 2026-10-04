@@ -56,6 +56,7 @@ class TravelService:
     async def business_context(self, context: RunContext) -> dict[str, object]:
         """有界业务回顾，不重放SDK原始消息；未知或被截断的指代仍须追问/重新查询。"""
         async with transaction(self.database) as db:
+            observed_at = datetime.now(UTC)
             current = request_from_row(await travel.owned_request(db, context))
             user = await sessions.get_user(db, context.user_id)
             preferences = preferences_from_row(user)
@@ -63,7 +64,7 @@ class TravelService:
             history = await runs.recent_completed(db, context, after=user.preference_changed_at)
             rows = await travel.recent_evidence(db, context, current.revision)
             evidence = [EvidenceRecord.model_validate(row.payload) for row in rows]
-            valid = [record for record in evidence if record.applicable(current, datetime.now(UTC))]
+            valid = [record for record in evidence if record.applicable(current, observed_at)]
             plan = await plans.for_session(db, context)
             draft_row = await plans.latest_draft(db, context)
             draft = PlanDraft.model_validate(draft_row.payload) if draft_row else None
@@ -73,7 +74,7 @@ class TravelService:
                 and plan
                 and plan.current_version == draft.base_version
                 and draft.request_revision == current.revision
-                and draft.expires_at > datetime.now(UTC)
+                and draft.expires_at > observed_at
             ):
                 try:
                     await resolve_records(
@@ -81,7 +82,7 @@ class TravelService:
                         context,
                         current,
                         draft.content.proposal(current.revision).evidence_ids(),
-                        datetime.now(UTC),
+                        observed_at,
                     )
                     pending_draft = draft.model_dump(
                         mode="json",
@@ -103,6 +104,7 @@ class TravelService:
                 if booking.status in {"quoted", "held", "confirmed", "unknown"}
             ]
             return {
+                "observed_at": observed_at.isoformat(),
                 "request": current.model_dump(mode="json"),
                 "preferences": preferences.model_dump(mode="json"),
                 "saved_plan": {"plan_id": str(plan.id), "version": plan.current_version}
@@ -127,6 +129,7 @@ class TravelService:
                 "preferences仅是用户明确保存的低优先级参考，当前request优先；"
                 "不从工具或旧历史提取/恢复偏好，不自动写入旅行条件。"
                 "证据仅供引用，事实需工具读取。"
+                "时效以observed_at为本次快照时间；不能只看日期就断言报价过期，操作时仍需工具重新核对。"
                 "回顾不覆盖完整历史；无法确定指代时追问，不猜测。",
             }
 

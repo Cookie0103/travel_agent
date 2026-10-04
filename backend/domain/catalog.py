@@ -25,7 +25,9 @@ class Place(BaseModel):
     osm_id: str
     city: Literal["京都"] = "京都"
     name: str = Field(min_length=1)
-    aliases: tuple[str, ...] = ()
+    aliases: tuple[str, ...] = Field(
+        default=(), description="有来源的别名和历史检索名；不替代当前名称，不表示街区边界"
+    )
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
     coordinate_kind: Literal["node", "bounding_box_center"]

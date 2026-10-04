@@ -603,3 +603,34 @@ UTC10-04实际账本预检：日9.533012/15，余额5.466988，未结0、active.
 新full证据独立quality_review完成：四原文件SHA、169源码、120记录/92通过/28失败、三轮/412HTTP/9.533012CNY及三项安全断言一致，无P1/P2。依据建议澄清1次load_skill选择不符合adversarial-history Case集合，非SDK全局权限违规；其余参数语义unknown不补评分，公开证据没有正文/身份。
 
 已成功更新既有travel-agent heartbeat（ACTIVE、每天一次有限8次），view成功，替代先前每小时2次安排；不新建重复任务。余额预检重核UTC10-04可用5.466988、未结0/无lock，当前完整组已完成不重跑。后续B2→B1固定行程→四单因素按同源码/原数据/Case及≥10CNY启动条件，每日最多一组、硬限15CNY；暂停新付费期间保存离线证据，通知只限有意义变化。执行依赖应用/电脑在线，不承诺关机继续。更新执行计划恢复区并接入docs导航/质量缺口，准备正常完整提交钩子与普通push；保存实际结果以本轮Git/远端为准。
+
+
+## 2026-10-04 用户追加授权与验收续接
+
+用户明确“今天15元上限先不用管，继续把项目完成验收标准”，并给出DeepSeek页面余额14.91CNY、近7日消费4.60CNY/1078请求截图。此次指示替代今日预算窗口≥10/每日最多一组的执行停顿；仅UTC2026-10-04日限例外，不修改.env、原账本或其他日期权限，次日恢复min(env,15)。USD0/Claude真实暂缓保持；逐HTTP预占/fsync/未知保守结算、每run12HTTP/16tools/修复3、进程锁保留，零/非法.env仍拒绝。此前22.206072累计及9.533012当日都是保守计价上界，不能称实际消费；账单截图是供应商账户范围，不当逐run精确费用。
+
+只读核对官方价表：缓存命中与普通输入分别计价，峰/闲时不同；原代码有意将所有input/cache按峰价计上界，所以差距不能通过清账或改历史金额消除。后续公共证据继续标保守上界/实际账单分开，未知失败仍保留预占。
+
+今日授权已由Budget.daily_limit(now)集中实现，仅CNY获准日返回None；新增到期/重启/UTC/禁用分支测试，原断言不变。56预算/guard/provider专项Passed2.59s，三平台strict224/ruff/format/3契约/10地图通过；参数化补充后正常提交关卡复核全部测试。独立quality_review无P1/P2。当前先保存授权实现，再继续缺口/原冻结集与完整对照；源码变化后按严格配对建立同版本新测量，不拿183组强配对，不降低期望或凭反复重试抹去失败。
+
+独立autonomy_review只读核查新full的祇园空结果、路线validation、自然语言确认与重复hold路径；区分已证实实现/契约问题、模型选择与资料未知。人工评分仍不得冒填；尚未满足项逐项明确。总体Goal仍未完成，普通问题持续修复，不等milestone人工review。
+
+今日授权续接自动化已成功更新既有travel-agent（ACTIVE），明确读取最新一日例外、不得沿用旧183源码配对。离线按官方CNY缓存/峰闲价重新估算此前current full120：原保守记账9.533012不改，缓存拆分峰时估算3.79990224、周末闲时估算1.89995112；仅估算，不称供应商逐项账单，截图为账户近7日总消费4.60。私有数值证明.cache/cost-reconciliation-20261004.json，不产生新模型请求。
+
+
+## 2026-10-04 连续完成，撤销每日重复
+
+用户明确目标是保质保量尽快完成，反对把开发拆成每日重复；已调用automation_update delete travel-agent成功（deleteStatus=deleted），不创建替代自动化/聊天。当前任务连续推进，今日已授权CNY日限例外保持；其他日期恢复日限，取消人为每日一组/固定≥10启动门槛，不为调度拖延。必要完整评测按一次预声明顺序执行，已完成原版本不重复，源码改变隔离新版本。
+
+预算授权首次正常保存未创建commit：762原全测试Passed/2live deselected（204.82s）、静态Passed；主agent在钩子运行时追加docs导致precommit工作区变动拒绝，不是测试失败。现将后续真实修复和所有记录一次stage后冻结跟踪文件，完整正常保存，不跳钩子。
+
+独立autonomy_review绑定原12次运行定位两P2：路线AwareDatetime缺时区说明/安全可修复反馈；合法presentation共用工具ID被bind_call误当第三条生命周期事件。现给路线/行程ISO字段说明时区，对timezone_aware返回固定提示且不回显input；配对只数started/finished，全同ID context/tool_name仍校核，重复/错轮/错名称/乱序拒绝。quality_review复核无P1/P2。重复hold服务本来幂等，补现有工具契约，无新循环/权限。通用提示完成已授权安全步骤，不为单个test添加分支。
+
+原OSM八坂神社已有old_name/old_name:ja-Latn包含祇園神社/Gion-jinja，导入现保留来源历史检索名并拆分分号；146地点/20文章及原快照字节不改，派生catalog hash随合法投影变化，未来完整组绑定新hash。canonical name仍八坂神社；aliases不代表当前正式名称或街区边界，原攻略无祇园区域覆盖仍如实未知，不伪造文章。新字段契约/导入真实PG/来源与搜索城市边界测试通过。
+
+另原hold第3轮虽规则passed但错误断言已过期；原分数保留且记录事实质量失败。business_context缺当前时刻参照，现同事务捕获observed_at用于Evidence/草稿时效及快照，说明操作仍以工具当前核对为准；有效/过期Evidence、历史与身份回归保留。当前73专项Passed4.18s，含实际PG；strict224/ruff/格式/分层/地图通过，最后时刻增量独立复核与原完整钩子保存继续。初lint1长行及格式1文件已修，不降低测试或改Case。
+
+验收下一步预声明：正常保存/push后冻结最终本轮源码、原40test/原顺序/独立身份、原初始状态/期待、同模型/SDK/CLI/派生目录，顺序full→no_tools(B0)→baseline_b2→固定itinerary(B1)→no_skills→no_preferences→no_repairs→no_compaction，各40×3/maxHTTP12/16tools/修复3。B1不适配查询/预订失败照实计数；源码已见test诊断明确披露，原183组92/120不改、不硬配对。全部批次逐请求硬保护、失败/unknown/partial原样保存；组失败不盲付费回放，不因模型低分降低原业务要求。之后同版本严格配对、内容/参数/事实评审与最终完整验收；真人评分不得代填，Claude实测暂缓。本条是一次必要验收计划，不是每日重复任务。
+
+
+本轮修复正常全量关卡首轮764passed/1failed/2live deselected（203.54s）：新增公开schema说明使web-openapi生成契约漂移，原检测断言保持不变。使用既有dev web-generate正常更新data/contracts/web-openapi.json及apps/web/src/lib/api-types.ts（不手改生成物/无DB或凭据），相关74测试Passed4.74s。web-check类型/lint/格式/14测试通过且production build成功；最后生成结果正常退出以工具结果/Git保存为准。原快照/Case/历史模型分与账本不改。独立quality_review另核对observed_at增量无P1/P2。准备再次正常全量提交钩子，期间不改跟踪文件，待通过后普通push，直接进入已预声明有限验收组，不每日调度。

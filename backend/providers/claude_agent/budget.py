@@ -14,6 +14,8 @@ from backend.providers.probe.settings import Currency, ProbeError, read_budget
 GRANT = "2026-10-03-travel-autonomous"
 # 用户新授权只限制每日15CNY；None表示没有累计上限，不用伪造大数。
 DAILY_CNY_AUTHORIZATION = Decimal("15.00")
+# 用户明确仅今日暂停日限；原账本和其他日期的限制不变。
+UNCAPPED_CNY_DAY = "2026-10-04"
 LIMITS: dict[Currency, tuple[Decimal | None, int | None]] = {
     "CNY": (None, None),
     "USD": (Decimal(0), 0),
@@ -45,6 +47,14 @@ class Budget:
         amount, count = LIMITS[self.currency]
         if (amount is not None and amount <= 0) or (count is not None and count <= 0):
             raise ProbeError("blocked", "美元累计金额和次数授权均为0；日预算不能授予调用权限")
+
+    def daily_limit(self, now: datetime) -> Decimal | None:
+        """None仅表示获准日期无日限；零配置仍在预占前拒绝。"""
+        if self.currency == "CNY":
+            if now.astimezone(UTC).date().isoformat() == UNCAPPED_CNY_DAY:
+                return None
+            return min(self.daily, DAILY_CNY_AUTHORIZATION)
+        return self.daily
 
     def check_minimum_requests(self, minimum: int) -> None:
         """只做必要条件预检；实际费用/辅助调用仍逐HTTP预占，不承诺整集足够。"""
@@ -122,10 +132,8 @@ class Budget:
             total_limit is not None and total + amount > total_limit
         ):
             raise ProbeError("blocked", "已达用户累计调用授权上限")
-        daily_limit = (
-            min(self.daily, DAILY_CNY_AUTHORIZATION) if self.currency == "CNY" else self.daily
-        )
-        if daily + amount > daily_limit:
+        daily_limit = self.daily_limit(now)
+        if daily_limit is not None and daily + amount > daily_limit:
             raise ProbeError("blocked", "今日原币种余额不足")
         request_id = str(uuid4())
         # 不变量：先 fsync 才联网；没有结算记录的尝试始终按全部预占计费。

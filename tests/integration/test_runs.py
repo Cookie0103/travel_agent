@@ -240,6 +240,9 @@ def test_next_turn_gets_bounded_owned_dialogue_and_valid_evidence(
             )
             await asyncio.gather(*tuple(service.tasks.values()))
         recalled = await travel.business_context(context)
+        observed_at = datetime.fromisoformat(str(recalled["observed_at"]))
+        assert valid.valid_until is not None
+        assert valid.retrieved_at <= observed_at < valid.valid_until
         assert recalled["recent_dialogue"] == [
             {"user": f"提问{i}", "assistant": runtime.outcome.text, "truncated": False}
             for i in (1, 2)

@@ -39,6 +39,21 @@ def test_modified_snapshot_is_rejected_before_import(tmp_path: Path) -> None:
         load_snapshot(tmp_path)
 
 
+def test_source_backed_historical_names_are_searchable_without_renaming_places() -> None:
+    """R03：历史名只供检索，不伪造祇园街区目录或攻略。"""
+    entries = load_snapshot()
+    places = [e for e in entries if isinstance(e, Place)]
+    yasaka = next(p for p in places if p.place_id == "osm:way/328903218")
+    assert yasaka.name == "八坂神社" and "祇園神社" in yasaka.aliases
+    assert "Gion-jinja" in yasaka.aliases
+    assert all(";" not in alias for alias in yasaka.aliases)
+    rows = [p.model_dump(mode="json") for p in places]
+    found = search(rows, PlaceSearchInput(city="京都", query="Gion"))
+    assert any(row["place_id"] == yasaka.place_id for row in found)
+    assert not search(rows, PlaceSearchInput(city="大阪", query="Gion"))
+    assert yasaka.field_sources["aliases"] == yasaka.source.source_ref
+
+
 @pytest.mark.parametrize(
     ("hours", "start", "end", "expected"),
     [

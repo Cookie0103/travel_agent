@@ -9,7 +9,7 @@ import pytest
 
 from backend.domain.execution import RunContext, RuntimeEvent
 from backend.domain.travel_request import TravelConditions
-from eval.diagnostics import ArgumentFact, ConditionFact, diagnose
+from eval.diagnostics import ArgumentFact, ConditionFact, bind_call, diagnose
 
 
 def evidence() -> tuple[tuple[RuntimeEvent, ...], ArgumentFact]:
@@ -92,3 +92,17 @@ def test_distinct_roots_are_not_arbitrarily_selected() -> None:
         invalid.context, call, TravelConditions(adults=2), TravelConditions(adults=3), 2
     )
     assert diagnose((*events, *wrong), (invalid, fact), business_passed=False).cause == "unknown"
+
+
+def test_presentation_keeps_one_lifecycle_pair_and_rejects_foreign_context() -> None:
+    """R17：展示与调用共用ID，不能误计重复；跨轮卡片仍不证明配对。"""
+    events, fact = evidence()
+    start = replace(events[1], tool_name="present_travel_result")
+    end = replace(events[2], tool_name="present_travel_result", code=None)
+    card = replace(end, kind="presentation", presentation={"cards": []})
+    assert bind_call((start, end, card), fact) == (0, start, end)
+    assert bind_call((start, end, card, end), fact) is None
+    assert bind_call((end, start, card), fact) is None
+    foreign = replace(card, context=replace(fact.context, run_id=uuid4()))
+    assert bind_call((start, end, foreign), fact) is None
+    assert bind_call((start, end, replace(card, tool_name="search_places")), fact) is None

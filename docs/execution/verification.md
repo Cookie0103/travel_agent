@@ -116,3 +116,21 @@ M0.5 API实际用量传递已实施：CLI/API共用report_metadata/TraceMetadata
 约束分项33适用、26候选全部partial、7no_candidate、0complete；整体完整硬约束比率null（覆盖不完整），不是100%或单纯规则76.67%。参数387调用、386unknown/1次工具选择不符合Case允许集合（非全局权限违规）、整体accuracy null；真人0、事实语义未验。原旧full94/120/B0 17/120不改，新源码不与旧组强配对/不宣称提升或倒填历史阈值。第一/二轮失败集合及第三轮仍存路线参数验证/遗漏工具，全部保留；0原断言降低/付费挑失败重跑。
 
 UTC10-04实际账本预检：日9.533012/15，余额5.466988，未结0、active.lock不存在；累计1076HTTP/22.206072CNY，旧探针.10仍在10-03不改。剩余同源码B2/B1与单因素完整组未满足≥10CNY的启动条件，不启动注定不足的全组、不自动用尽今日额度。183fdd3两CI均success；普通完整保存证据关卡及独立只读证据审查继续。只读核对锁定OTel exporter错误日志路径，无新增已证实生产问题/未改SDK依赖或vendor。总体Goal未完成，下一预算窗口按计划续接，不要求用户逐项review。
+
+
+## 2026-10-04 连续完成，撤销每日重复
+
+用户明确目标是保质保量尽快完成，反对把开发拆成每日重复；已调用automation_update delete travel-agent成功（deleteStatus=deleted），不创建替代自动化/聊天。当前任务连续推进，今日已授权CNY日限例外保持；其他日期恢复日限，取消人为每日一组/固定≥10启动门槛，不为调度拖延。必要完整评测按一次预声明顺序执行，已完成原版本不重复，源码改变隔离新版本。
+
+预算授权首次正常保存未创建commit：762原全测试Passed/2live deselected（204.82s）、静态Passed；主agent在钩子运行时追加docs导致precommit工作区变动拒绝，不是测试失败。现将后续真实修复和所有记录一次stage后冻结跟踪文件，完整正常保存，不跳钩子。
+
+独立autonomy_review绑定原12次运行定位两P2：路线AwareDatetime缺时区说明/安全可修复反馈；合法presentation共用工具ID被bind_call误当第三条生命周期事件。现给路线/行程ISO字段说明时区，对timezone_aware返回固定提示且不回显input；配对只数started/finished，全同ID context/tool_name仍校核，重复/错轮/错名称/乱序拒绝。quality_review复核无P1/P2。重复hold服务本来幂等，补现有工具契约，无新循环/权限。通用提示完成已授权安全步骤，不为单个test添加分支。
+
+原OSM八坂神社已有old_name/old_name:ja-Latn包含祇園神社/Gion-jinja，导入现保留来源历史检索名并拆分分号；146地点/20文章及原快照字节不改，派生catalog hash随合法投影变化，未来完整组绑定新hash。canonical name仍八坂神社；aliases不代表当前正式名称或街区边界，原攻略无祇园区域覆盖仍如实未知，不伪造文章。新字段契约/导入真实PG/来源与搜索城市边界测试通过。
+
+另原hold第3轮虽规则passed但错误断言已过期；原分数保留且记录事实质量失败。business_context缺当前时刻参照，现同事务捕获observed_at用于Evidence/草稿时效及快照，说明操作仍以工具当前核对为准；有效/过期Evidence、历史与身份回归保留。当前73专项Passed4.18s，含实际PG；strict224/ruff/格式/分层/地图通过，最后时刻增量独立复核与原完整钩子保存继续。初lint1长行及格式1文件已修，不降低测试或改Case。
+
+验收下一步预声明：正常保存/push后冻结最终本轮源码、原40test/原顺序/独立身份、原初始状态/期待、同模型/SDK/CLI/派生目录，顺序full→no_tools(B0)→baseline_b2→固定itinerary(B1)→no_skills→no_preferences→no_repairs→no_compaction，各40×3/maxHTTP12/16tools/修复3。B1不适配查询/预订失败照实计数；源码已见test诊断明确披露，原183组92/120不改、不硬配对。全部批次逐请求硬保护、失败/unknown/partial原样保存；组失败不盲付费回放，不因模型低分降低原业务要求。之后同版本严格配对、内容/参数/事实评审与最终完整验收；真人评分不得代填，Claude实测暂缓。本条是一次必要验收计划，不是每日重复任务。
+
+
+本轮修复正常全量关卡首轮764passed/1failed/2live deselected（203.54s）：新增公开schema说明使web-openapi生成契约漂移，原检测断言保持不变。使用既有dev web-generate正常更新data/contracts/web-openapi.json及apps/web/src/lib/api-types.ts（不手改生成物/无DB或凭据），相关74测试Passed4.74s。web-check类型/lint/格式/14测试通过且production build成功；最后生成结果正常退出以工具结果/Git保存为准。原快照/Case/历史模型分与账本不改。独立quality_review另核对observed_at增量无P1/P2。准备再次正常全量提交钩子，期间不改跟踪文件，待通过后普通push，直接进入已预声明有限验收组，不每日调度。

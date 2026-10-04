@@ -8,7 +8,7 @@ import pytest
 
 from backend.providers.claude_agent.budget import LIMITS, Budget
 from backend.providers.probe.ledger import Entry, Ledger
-from backend.providers.probe.settings import ProbeError
+from backend.providers.probe.settings import Currency, ProbeError
 
 NOW = datetime(2026, 10, 3, 12, tzinfo=UTC)
 
@@ -140,3 +140,41 @@ def test_lower_configured_budget_and_usd_zero_grant_are_preserved(tmp_path: Path
     with pytest.raises(ProbeError, match="美元"):
         usd.reserve(Decimal("0.01"), NOW)
     assert not budget.path.exists() and not usd.path.exists()
+
+
+def test_today_exception_retains_ledger_and_expires_at_utc_midnight(tmp_path: Path) -> None:
+    """用户今日追加授权不重置账本，也不能通过重启延长到明天。"""
+    path, legacy = tmp_path / "current", tmp_path / "legacy"
+    today = NOW + timedelta(days=1)
+    budget = Budget(path, legacy, Decimal(15))
+    first = budget.reserve(Decimal(16), today)
+    budget.settle(first, Decimal(16))
+    before = path.read_bytes()
+    resumed = Budget(path, legacy, Decimal(15))
+    assert resumed.daily_limit(today) is None
+    resumed.reserve(Decimal(16), today)
+    assert path.read_bytes().startswith(before)
+    assert resumed.totals() == (2, Decimal(32))
+    tomorrow = today + timedelta(days=1)
+    assert resumed.daily_limit(tomorrow) == Decimal(15)
+    with pytest.raises(ProbeError, match="今日"):
+        resumed.reserve(Decimal("15.01"), tomorrow)
+    assert resumed.totals() == (2, Decimal(32))
+
+
+@pytest.mark.parametrize("currency", ["CNY", "USD"])
+def test_today_exception_keeps_disabled_budget_and_usd_blocked(
+    tmp_path: Path, currency: Currency
+) -> None:
+    today = NOW + timedelta(days=1)
+    budget = Budget(tmp_path / currency, tmp_path / "legacy", Decimal(0), currency)
+    with pytest.raises(ProbeError):
+        budget.reserve(Decimal(1), today)
+    assert not budget.path.exists()
+
+
+def test_today_exception_uses_utc_day_and_preserves_lower_limits_afterward(tmp_path: Path) -> None:
+    budget = Budget(tmp_path / "current", tmp_path / "legacy", Decimal(1))
+    local_midnight = datetime.fromisoformat("2026-10-05T00:00:00+09:00")
+    assert budget.daily_limit(local_midnight) is None
+    assert budget.daily_limit(datetime(2026, 10, 5, tzinfo=UTC)) == Decimal(1)

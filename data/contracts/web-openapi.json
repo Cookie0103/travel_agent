@@ -1972,12 +1972,14 @@
           "start": {
             "type": "string",
             "format": "date-time",
-            "title": "Start"
+            "title": "Start",
+            "description": "含时区的ISO时间；京都当地时间使用+09:00"
           },
           "end": {
             "type": "string",
             "format": "date-time",
-            "title": "End"
+            "title": "End",
+            "description": "含时区的ISO时间；京都当地时间使用+09:00"
           },
           "route_evidence_id": {
             "anyOf": [
@@ -2081,12 +2083,14 @@
           "start": {
             "type": "string",
             "format": "date-time",
-            "title": "Start"
+            "title": "Start",
+            "description": "含时区的ISO时间；京都当地时间使用+09:00"
           },
           "end": {
             "type": "string",
             "format": "date-time",
-            "title": "End"
+            "title": "End",
+            "description": "含时区的ISO时间；京都当地时间使用+09:00"
           },
           "route_evidence_id": {
             "anyOf": [
@@ -3481,11 +3485,13 @@
             "type": "string"
           },
           "start": {
+            "description": "含时区的ISO时间；京都当地时间使用+09:00",
             "format": "date-time",
             "title": "Start",
             "type": "string"
           },
           "end": {
+            "description": "含时区的ISO时间；京都当地时间使用+09:00",
             "format": "date-time",
             "title": "End",
             "type": "string"
@@ -3560,11 +3566,13 @@
             "type": "string"
           },
           "start": {
+            "description": "含时区的ISO时间；京都当地时间使用+09:00",
             "format": "date-time",
             "title": "Start",
             "type": "string"
           },
           "end": {
+            "description": "含时区的ISO时间；京都当地时间使用+09:00",
             "format": "date-time",
             "title": "End",
             "type": "string"

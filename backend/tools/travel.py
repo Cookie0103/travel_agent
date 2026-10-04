@@ -131,7 +131,8 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "hold_hotel",
-        "暂留本人本会话查询到的有效完整模拟报价；返回预订ID与到期时间，不能下单，用户必须在页面确认。",
+        "暂留本人本会话查询到的有效完整模拟报价；重复同一报价返回已有预订状态，不创建第二条。"
+        "返回预订ID与到期时间，不能下单，用户必须在页面确认。",
         HoldHotelInput.model_json_schema(),
         kind="state",
     ),
@@ -206,7 +207,16 @@ class TravelToolExecutor:
                         {}, code="blocked", suggestion="结果过长，请缩小limit或查询范围"
                     )
                 return result
-            except ValidationError:
+            except ValidationError as error:
+                if any(
+                    item["type"] == "timezone_aware"
+                    for item in error.errors(include_input=False, include_context=False)
+                ):
+                    return ToolResult(
+                        {},
+                        code="validation",
+                        suggestion="日期时间必须带时区；京都当地时间使用+09:00",
+                    )
                 return ToolResult(
                     {},
                     code="validation",

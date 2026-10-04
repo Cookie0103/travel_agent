@@ -148,3 +148,35 @@ def test_tool_calls_are_serialized_and_failures_count_toward_limit(
         assert exhausted.code == "blocked" and executor.calls == 3
 
     runner.run(exercise())
+
+
+def test_naive_route_time_has_safe_repair_feedback_without_input_echo(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """R06：缺时区必须拒绝并可修复，不能回显私有时间或原异常。"""
+    runner, service, context = travel_setup
+
+    async def exercise() -> None:
+        executor = TravelToolExecutor(service)
+        result = await executor.execute(
+            context,
+            "estimate_routes",
+            {
+                "expected_revision": 1,
+                "legs": [
+                    {
+                        "from_evidence_id": str(uuid4()),
+                        "to_evidence_id": str(uuid4()),
+                        "departure": "2026-11-03T10:11:12",
+                    }
+                ],
+            },
+        )
+        assert result.code == "validation"
+        assert "+09:00" in result.suggestion and "时区" in result.suggestion
+        assert "10:11:12" not in result.suggestion
+        assert executor.calls == 1
+        schema = SCHEMAS["estimate_routes"].model_json_schema()
+        assert "+09:00" in str(schema)
+
+    runner.run(exercise())

@@ -27,6 +27,7 @@ def test_repeat_snapshot_import_preserves_count_and_source(postgres_url: URL) ->
             expected = {e.place_id: e for e in entries if isinstance(e, Place)}
             # 数据库按稳定ID排序，与Overpass响应的数字ID顺序不同。
             for row in rows["places"]:
+                assert row["aliases"] == list(expected[str(row["place_id"])].aliases)
                 assert row["source"] == expected[str(row["place_id"])].source.model_dump(
                     mode="json"
                 )

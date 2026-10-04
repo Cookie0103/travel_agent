@@ -10,8 +10,8 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validato
 class ProposedItem(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     place_evidence_id: UUID
-    start: AwareDatetime
-    end: AwareDatetime
+    start: AwareDatetime = Field(description="含时区的ISO时间；京都当地时间使用+09:00")
+    end: AwareDatetime = Field(description="含时区的ISO时间；京都当地时间使用+09:00")
     route_evidence_id: UUID | None = None
 
 
@@ -33,7 +33,7 @@ class RouteLeg(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     from_evidence_id: UUID
     to_evidence_id: UUID
-    departure: AwareDatetime
+    departure: AwareDatetime = Field(description="含时区的ISO出发时间；京都当地时间使用+09:00")
 
 
 class RouteInput(BaseModel):

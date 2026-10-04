@@ -646,11 +646,13 @@ export interface components {
             /**
              * Start
              * Format: date-time
+             * @description 含时区的ISO时间；京都当地时间使用+09:00
              */
             start: string;
             /**
              * End
              * Format: date-time
+             * @description 含时区的ISO时间；京都当地时间使用+09:00
              */
             end: string;
             /** Route Evidence Id */
@@ -692,11 +694,13 @@ export interface components {
             /**
              * Start
              * Format: date-time
+             * @description 含时区的ISO时间；京都当地时间使用+09:00
              */
             start: string;
             /**
              * End
              * Format: date-time
+             * @description 含时区的ISO时间；京都当地时间使用+09:00
              */
             end: string;
             /** Route Evidence Id */
@@ -1216,11 +1220,13 @@ export interface components {
             /**
              * Start
              * Format: date-time
+             * @description 含时区的ISO时间；京都当地时间使用+09:00
              */
             start: string;
             /**
              * End
              * Format: date-time
+             * @description 含时区的ISO时间；京都当地时间使用+09:00
              */
             end: string;
             /**
@@ -1258,11 +1264,13 @@ export interface components {
             /**
              * Start
              * Format: date-time
+             * @description 含时区的ISO时间；京都当地时间使用+09:00
              */
             start: string;
             /**
              * End
              * Format: date-time
+             * @description 含时区的ISO时间；京都当地时间使用+09:00
              */
             end: string;
             /**
