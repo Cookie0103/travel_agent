@@ -9,6 +9,7 @@ from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext
 from backend.tools.contracts import ToolDefinition, ToolExecutor, ToolResult
 from backend.tools.execution import execute_observed
+from backend.tools.fencing import fence_payload
 
 
 def sdk_tool_name(name: str) -> str:
@@ -40,7 +41,8 @@ def _build_tool(
             result = await execute_observed(
                 executor, context, definition.name, arguments, emit, definition=definition
             )
-            payload = json.dumps(result.payload(), ensure_ascii=False)
+            # 唯一围栏点：仅实时模型路径；评测/API/离线演示读取未围栏的ToolResult。
+            payload = json.dumps(fence_payload(result.payload()), ensure_ascii=False)
         except Exception:
             # 事件接收器/序列化也可能抛异常；不能交给 SDK 的 str(error) 透传。
             result = ToolResult({}, code="unavailable")
