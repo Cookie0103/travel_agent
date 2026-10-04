@@ -1,257 +1,165 @@
-/** Main interaction surface; offline presets and paid SDK execution are visibly separate. */
+/** Chat-first orchestration; mode, billing consent and draft text live here, never in the hook. */
 "use client";
 import { useState } from "react";
 import { useWorkspace } from "@/lib/use-workspace";
 import { ArticleReference } from "./articles";
-import { Conditions } from "./conditions";
-import { HotelResults, PlanResults } from "./results";
-import { Bookings } from "./bookings";
-import { PreferencePanel } from "./preferences";
+import { ActivityDrawer, toolCallCount } from "./activity-drawer";
+import { Banner } from "./banner";
+import { Composer, type Mode } from "./composer";
+import { Conversation, Welcome, type SentMessage } from "./conversation";
+import { TripPanel } from "./trip-panel";
+
+export type Workspace = ReturnType<typeof useWorkspace>;
 
 export function Workbench({ articleId }: { articleId?: string }) {
   const workspace = useWorkspace();
   const [text, setText] = useState("");
-  const [mode, setMode] = useState<"offline" | "live">("offline");
+  const [mode, setMode] = useState<Mode>("offline");
   const [liveConsent, setLiveConsent] = useState(false);
-  const active =
-    workspace.run && ["running", "cancelling"].includes(workspace.run.status);
+  const [sent, setSent] = useState<SentMessage[]>([]);
+  const [collapsed, setCollapsed] = useState(false);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [activityOpen, setActivityOpen] = useState(false);
+  const active = !!(
+    workspace.run && ["running", "cancelling"].includes(workspace.run.status)
+  );
+  const { identity } = workspace;
+  const submit = (message: string, via: Mode) => {
+    if (via === "live" && !liveConsent) return;
+    if (!message.trim() || workspace.busy) return;
+    const pending = identity?.pending_message;
+    // A mismatched text is rejected by the hook; do not show it as sent.
+    if (!pending || (pending.text === message && pending.mode === via))
+      setSent((old) => [...old, { id: old.length, text: message }]);
+    if (!pending) setText("");
+    void workspace.send(message, via);
+  };
+  const attention =
+    !!workspace.plan?.draft_id ||
+    workspace.bookings.some((booking) => booking.status === "held");
+  const panelClass = `trip-panel${collapsed ? " is-collapsed" : ""}${sheetOpen ? " is-sheet-open" : ""}`;
   return (
-    <main>
-      <header>
-        <div>
-          <p className="eyebrow">TRAVEL AGENT / KYOTO</p>
-          <h1>让每一步旅行都有依据</h1>
-          <p className="subtitle">
-            比较住宿，检查行程，保留修改。你确认后才保存。
-          </p>
-        </div>
-        <div className="header-status">
-          <span className="status-dot" />
-          本地演示 · 无真实订单
-        </div>
-      </header>
-      <div className="notice">
-        景点与攻略来自历史快照，酒店是虚构测试数据，路线是估算。这里展示可验证的规划流程。
-      </div>
-      {articleId && (
-        <ArticleReference
-          articleId={articleId}
-          select={(id) => setText(`请参考攻略 ${id}，帮我规划京都旅行。`)}
-        />
-      )}
-      {workspace.error && (
-        <div className="error-box" role="alert">
-          {workspace.error}
-          {workspace.identity && (
-            <button
-              disabled={workspace.busy}
-              onClick={() => void workspace.refresh()}
-            >
-              读取最新条件与行程
-            </button>
+    <main className="chat-main">
+      {!identity ? (
+        <>
+          {workspace.error && <Banner kind="error">{workspace.error}</Banner>}
+          {articleId && (
+            <ArticleReference
+              articleId={articleId}
+              select={(id) => setText(`请参考攻略 ${id}，帮我规划京都旅行。`)}
+            />
           )}
-          {workspace.run && (
-            <button
-              disabled={workspace.busy}
-              onClick={() => void workspace.reconnect()}
-            >
-              重新连接进度
-            </button>
-          )}
-        </div>
-      )}
-      {workspace.identity?.pending_message && (
-        <div className="warning">
-          上一条消息的响应未知；刷新也保留去重ID。
-          <button
-            disabled={
-              workspace.busy ||
-              (workspace.identity.pending_message.mode === "live" &&
-                !liveConsent)
-            }
-            onClick={() => {
-              const pending = workspace.identity?.pending_message;
-              if (pending) void workspace.send(pending.text, pending.mode);
-            }}
-          >
-            重试未获响应的消息
-          </button>
-        </div>
-      )}
-      {!workspace.identity ? (
-        <section className="welcome">
-          <h2>开始一次京都旅行</h2>
-          <p>
-            创建本地演示身份后，条件、事件与确认版本会保存在项目数据库。刷新页面可续接当前会话。
-          </p>
-          <button
-            className="primary"
-            disabled={workspace.busy || workspace.restoring}
-            onClick={() => void workspace.login()}
-          >
-            创建演示会话
-          </button>
-        </section>
+          <Welcome workspace={workspace} />
+        </>
       ) : (
-        <div className="workspace">
-          <aside>
-            {workspace.request && (
-              <Conditions
-                key={workspace.request.revision}
-                request={workspace.request}
-                disabled={workspace.busy}
-                save={workspace.saveConditions}
-              />
-            )}
-            <PreferencePanel
-              key={workspace.identity.user_id}
-              identity={workspace.identity}
-              onError={workspace.fail}
-            />
-            <p className="muted small">
-              会话 {workspace.identity.session_id.slice(0, 8)} ·
-              令牌仅保留在此标签页，24 小时有效。
-            </p>
-          </aside>
-          <div className="main-column">
-            <section className="conversation">
-              <div className="section-heading">
-                <h2>旅行助手</h2>
-                <select
-                  aria-label="执行模式"
-                  disabled={workspace.busy}
-                  value={mode}
-                  onChange={(e) => {
-                    setMode(e.target.value as typeof mode);
-                    setLiveConsent(false);
-                  }}
-                >
-                  <option value="offline">免费离线演示</option>
-                  <option value="live">DeepSeek / Claude Agent SDK</option>
-                </select>
-              </div>
-              {mode === "offline" ? (
-                <>
-                  <p className="muted">
-                    下面是固定脚本，使用真实业务工具与数据库；不代表模型自主规划能力。
-                  </p>
-                  <div className="actions">
-                    {["比较酒店", "生成行程", "修改第二天下午"].map((label) => (
-                      <button
-                        key={label}
-                        disabled={
-                          workspace.busy || !workspace.request?.revision
-                        }
-                        onClick={() =>
-                          void workspace.send(`演示：${label}`, "offline")
-                        }
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <label className="consent">
-                  <input
-                    type="checkbox"
-                    checked={liveConsent}
-                    onChange={(e) => setLiveConsent(e.target.checked)}
-                  />
-                  允许本次消息产生 API
-                  费用；服务端还须启用真实模式并通过累计与每日预算。
-                </label>
-              )}
-              <div className="dialogue" aria-live="polite">
-                {workspace.run ? (
-                  <>
-                    <p className="run-status">
-                      执行状态：
-                      {workspace.busy ? "处理中…" : workspace.run.status}
-                    </p>
-                    {workspace.run.answer && (
-                      <p className="answer">{workspace.run.answer}</p>
-                    )}
-                  </>
-                ) : (
-                  <p className="empty">
-                    先保存左侧条件，再比较酒店或生成草稿。
-                  </p>
-                )}
-                {workspace.events
-                  .filter((event) => event.kind === "tool_finished")
-                  .map((event) => (
-                    <p className="tool-event" key={event.sequence}>
-                      {event.code ? "失败" : "完成"} · {event.tool_name}
-                    </p>
-                  ))}
-              </div>
-              <form
-                className="composer"
-                onSubmit={(event) => {
-                  event.preventDefault();
-                  if (mode === "offline" || liveConsent)
-                    void workspace.send(text, mode);
-                }}
+        <div className="chat-layout">
+          <section className="chat-pane">
+            <div className="chat-toolbar">
+              <button
+                className={active ? "pulse" : undefined}
+                aria-expanded={activityOpen}
+                onClick={() => setActivityOpen((value) => !value)}
               >
-                <label className="sr-only" htmlFor="message">
-                  消息
-                </label>
-                <textarea
-                  id="message"
-                  maxLength={4000}
-                  placeholder={
-                    mode === "offline"
-                      ? "例如：京都室内景点（离线只做固定查询）"
-                      : "描述你想查询或修改的内容"
-                  }
-                  value={text}
-                  onChange={(e) => setText(e.target.value)}
-                />
-                <button
-                  className="primary"
-                  disabled={
-                    workspace.busy ||
-                    !text.trim() ||
-                    (mode === "live" && !liveConsent)
-                  }
-                >
-                  发送
-                </button>
-              </form>
-              {active && (
-                <button onClick={() => void workspace.cancel()}>
-                  取消当前执行
-                </button>
+                Agent 活动{" "}
+                <span className="tag">{toolCallCount(workspace.events)}</span>
+              </button>
+              <button
+                className="only-wide"
+                aria-expanded={!collapsed}
+                onClick={() => setCollapsed((value) => !value)}
+              >
+                本次行程
+                {attention && <span className="dot" aria-label="有待处理" />}
+              </button>
+              <button
+                className="only-narrow"
+                aria-expanded={sheetOpen}
+                onClick={() => setSheetOpen((value) => !value)}
+              >
+                本次行程
+                {attention && <span className="dot" aria-label="有待处理" />}
+              </button>
+            </div>
+            <div className="chat-scroll">
+              {workspace.error && (
+                <Banner kind="error">
+                  {workspace.error}
+                  <button
+                    disabled={workspace.busy}
+                    onClick={() => void workspace.refresh()}
+                  >
+                    读取最新条件与行程
+                  </button>
+                  {workspace.run && (
+                    <button
+                      disabled={workspace.busy}
+                      onClick={() => void workspace.reconnect()}
+                    >
+                      重新连接进度
+                    </button>
+                  )}
+                </Banner>
               )}
-            </section>
-            {workspace.hotels && (
-              <HotelResults
-                hotels={workspace.hotels}
-                disabled={workspace.busy}
-                revision={workspace.request?.revision}
-                hold={workspace.holdOffer}
+              {identity.pending_message && (
+                <Banner kind="warning">
+                  上一条消息的响应未知；刷新也保留去重ID。
+                  <button
+                    disabled={
+                      workspace.busy ||
+                      (identity.pending_message.mode === "live" && !liveConsent)
+                    }
+                    onClick={() => {
+                      const pending = identity.pending_message;
+                      if (pending)
+                        void workspace.send(pending.text, pending.mode);
+                    }}
+                  >
+                    重试未获响应的消息
+                  </button>
+                </Banner>
+              )}
+              <Conversation
+                workspace={workspace}
+                sent={sent}
+                mode={mode}
+                send={submit}
+                fill={setText}
+                openPanel={() => {
+                  setCollapsed(false);
+                  setSheetOpen(true);
+                }}
               />
-            )}
-            <Bookings
-              bookings={workspace.bookings}
-              revision={workspace.request?.revision}
-              disabled={workspace.busy}
-              hold={workspace.holdOffer}
-              act={workspace.bookingAction}
+            </div>
+            <Composer
+              mode={mode}
+              setMode={setMode}
+              consent={liveConsent}
+              setConsent={setLiveConsent}
+              text={text}
+              setText={setText}
+              busy={workspace.busy}
+              active={active}
+              send={submit}
+              cancel={() => void workspace.cancel()}
+              articleId={articleId}
             />
-            {workspace.plan && (
-              <PlanResults
-                plan={workspace.plan}
-                disabled={workspace.busy}
-                confirm={workspace.confirm}
-                lock={workspace.lock}
-              />
-            )}
-          </div>
+          </section>
+          {activityOpen && (
+            <ActivityDrawer
+              workspace={workspace}
+              close={() => setActivityOpen(false)}
+            />
+          )}
+          <TripPanel
+            workspace={workspace}
+            className={panelClass}
+            close={() => {
+              setCollapsed(true);
+              setSheetOpen(false);
+            }}
+          />
         </div>
       )}
-      <footer>条件 → 工具事实 → 校验 → 草稿 → 你的确认</footer>
     </main>
   );
 }

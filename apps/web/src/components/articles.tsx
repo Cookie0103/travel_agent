@@ -1,28 +1,28 @@
-/** Read attributed guide snapshots as plain text, then explicitly enter the existing workbench. */
+/** Read attributed guide snapshots as plain text, then explicitly enter the chat. */
 "use client";
 import Link from "next/link";
 import { sourceHref } from "@/lib/api";
+import { Banner } from "./banner";
 import { useArticles } from "@/lib/use-articles";
 
 export function Articles({ articleId }: { articleId?: string }) {
   const guide = useArticles(articleId);
   return (
-    <main>
-      <p className="eyebrow">KYOTO / GUIDE SNAPSHOTS</p>
-      <h1>{articleId ? "阅读京都攻略" : "从京都攻略开始"}</h1>
+    <main className="page">
+      <h1>来源资料</h1>
       <p className="notice">
         攻略来自 Wikivoyage
         历史快照。文章是参考资料，营业时间、价格与当前条件仍需工具核验。
       </p>
-      {articleId && <Link href="/articles">返回全部攻略</Link>}
+      {articleId && <Link href="/articles">返回全部来源资料</Link>}
       {guide.loading && <p role="status">正在读取攻略…</p>}
       {guide.error && (
-        <div className="error-box" role="alert">
+        <Banner kind="error">
           {guide.error} <button onClick={guide.retry}>重新读取攻略</button>
-        </div>
+        </Banner>
       )}
       {!guide.loading && !guide.error && !guide.articles.length && (
-        <p>暂时没有攻略，可以先进入规划工作台。</p>
+        <p>暂时没有来源资料，可以先回到对话。</p>
       )}
       <div className="guide-grid">
         {guide.articles.map((article) => (
@@ -72,7 +72,7 @@ export function Articles({ articleId }: { articleId?: string }) {
               <Link
                 href={`/?article=${encodeURIComponent(article.article_id)}`}
               >
-                以这篇攻略开始规划
+                基于这篇提问
               </Link>
             </div>
           </article>

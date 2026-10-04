@@ -2,7 +2,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { planUnavailable, expiredHotels, partyLabel } from "@/lib/availability";
-import type { Hotels, Plan } from "@/lib/api";
+import { sourceHref, type Hotels, type Plan } from "@/lib/api";
 import type { components } from "@/lib/api-types";
 const date = (value: string) =>
   new Date(value).toLocaleString("zh-CN", {
@@ -13,6 +13,28 @@ const date = (value: string) =>
     minute: "2-digit",
     hour12: false,
   });
+
+const dayFormat = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Asia/Tokyo",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** Group plan cards by Asia/Tokyo calendar day; `index` stays the global 0-based position. */
+export function planDays(plan: Plan) {
+  const days: {
+    day: string;
+    items: { item: Plan["cards"][number]; index: number }[];
+  }[] = [];
+  plan.cards.forEach((item, index) => {
+    const day = dayFormat.format(new Date(item.start));
+    const last = days.at(-1);
+    if (last?.day === day) last.items.push({ item, index });
+    else days.push({ day, items: [{ item, index }] });
+  });
+  return days;
+}
 
 export function useClock() {
   const [now, setNow] = useState(0);
@@ -25,10 +47,22 @@ export function useClock() {
   return now;
 }
 
+/** Guide/source references link out only when they are valid HTTPS URLs. */
+export function SourceRef({ value }: { value: string | null }) {
+  const href = value ? sourceHref(value) : undefined;
+  return href ? (
+    <a href={href} target="_blank" rel="noopener noreferrer">
+      {value}
+    </a>
+  ) : (
+    <>{value ?? "未知"}</>
+  );
+}
+
 function Hotel({ card }: { card: components["schemas"]["UiHotelCard"] }) {
   return (
     <article className="hotel-card">
-      <span className="tag">模拟报价 · JPY</span>
+      <span className="tag">模拟报价</span>
       <h3>{card.hotel_name}</h3>
       <p>{card.room_type}</p>
       <p className="small">
@@ -46,15 +80,19 @@ function Hotel({ card }: { card: components["schemas"]["UiHotelCard"] }) {
         {card.breakfast ? "含早餐" : "不含早餐"} ·{" "}
         {card.refundable ? "可退" : "不可退"}
       </p>
-      <p className="muted small">
-        有效至 {date(card.expires_at)}
-        <br />
-        {card.source_ref}
-        <br />
-        报价条件版本 {card.request_revision}
-        <br />
-        来源版本 {card.content_version?.slice(0, 12) || "未知"}
-      </p>
+      <details>
+        <summary>来源与版本</summary>
+        <p className="muted small">
+          有效至 {date(card.expires_at)}
+          <br />
+          来源：
+          <SourceRef value={card.source_ref} />
+          <br />
+          报价条件版本 {card.request_revision}
+          <br />
+          来源版本 {card.content_version?.slice(0, 12) || "未知"}
+        </p>
+      </details>
       {card.lodging_exceeds_trip_budget && (
         <p className="error">住宿已超过全程预算</p>
       )}
@@ -66,7 +104,9 @@ export function HotelResults({
   disabled,
   revision,
   hold,
+  compact = false,
 }: {
+  compact?: boolean;
   hotels: Hotels;
   disabled: boolean;
   revision?: number;
@@ -74,10 +114,9 @@ export function HotelResults({
 }) {
   const expired = expiredHotels(hotels, useClock());
   return (
-    <section className="results-section">
+    <section className={`results-section${compact ? " is-compact" : ""}`}>
       <div className="section-heading">
         <h2>酒店比较</h2>
-        <span className="tag">虚构酒店 · 非实时库存</span>
       </div>
       <p className="muted">{hotels.comparison.scope}</p>
       {expired && (
@@ -134,9 +173,7 @@ export function PlanResults({
         <h2>{plan.draft_id ? "待确认行程" : `正式行程 · V${plan.version}`}</h2>
         <span className="tag">条件版本 {plan.request_revision}</span>
       </div>
-      <p
-        className={plan.validation.status === "conflict" ? "error" : "warning"}
-      >
+      <p className={`status-bar status-bar-${plan.validation.status}`}>
         {plan.validation.status === "conflict"
           ? "有硬冲突，不能确认"
           : plan.validation.status === "partial"
@@ -166,7 +203,7 @@ export function PlanResults({
       )}
       <p className="muted small">{plan.validation.scope}</p>
       {plan.base_version !== undefined && plan.base_version !== null && (
-        <p>
+        <p className="base-version">
           基于正式版本 V{plan.base_version} · {plan.changes?.length || 0} 项变化
           · 酒店{plan.hotel_changed ? "有变化" : "保留"}
         </p>
@@ -181,33 +218,48 @@ export function PlanResults({
                 : change.op === "add"
                   ? "新增"
                   : "移除"}
-              ：{change.before ? date(change.before.start) : "无"} →{" "}
-              {change.after ? date(change.after.start) : "无"}
+              ：
+              {plan.cards.find((card) => card.item_id === change.item_id)
+                ?.name ?? "已移除项目"}{" "}
+              <span className="tabular">
+                {change.before ? date(change.before.start) : "无"} →{" "}
+                {change.after ? date(change.after.start) : "无"}
+              </span>
             </p>
           ))}
         </details>
       )}
       <div className="itinerary">
-        {plan.cards.map((item, index) => (
-          <article key={item.item_id} className="visit">
-            <span className="visit-number">{index + 1}</span>
-            <div>
-              <h3>{item.name}</h3>
-              <p>
-                {date(item.start)} — {date(item.end)}
-              </p>
-              <p className="muted small">历史快照 · {item.source_ref}</p>
-            </div>
-            {!plan.draft_id && lock && (
-              <button
-                disabled={disabled}
-                onClick={() => void lock(item.item_id)}
-                aria-label={`${item.locked ? "解锁" : "锁定"}第${index + 1}项`}
-              >
-                {item.locked ? "已锁定" : "锁定"}
-              </button>
-            )}
-          </article>
+        {planDays(plan).map(({ day, items }, dayIndex) => (
+          <div key={day} className="day">
+            <h3 className="day-heading">
+              Day {dayIndex + 1}{" "}
+              <span className="muted small">{day.slice(5)}</span>
+            </h3>
+            {items.map(({ item, index }) => (
+              <article key={item.item_id} className="visit">
+                <span className="visit-number">{index + 1}</span>
+                <div>
+                  <h3>{item.name}</h3>
+                  <p className="tabular">
+                    {date(item.start)} — {date(item.end)}
+                  </p>
+                  <p className="muted small">
+                    历史快照 · <SourceRef value={item.source_ref} />
+                  </p>
+                </div>
+                {!plan.draft_id && lock && (
+                  <button
+                    disabled={disabled}
+                    onClick={() => void lock(item.item_id)}
+                    aria-label={`${item.locked ? "解锁" : "锁定"}第${index + 1}项`}
+                  >
+                    {item.locked ? "已锁定" : "锁定"}
+                  </button>
+                )}
+              </article>
+            ))}
+          </div>
         ))}
       </div>
       {plan.hotel && (

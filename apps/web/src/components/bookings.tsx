@@ -1,7 +1,7 @@
 /** User confirmation and canonical booking recovery; unknown states only reconcile. */
 "use client";
 import type { Booking } from "@/lib/api";
-import { useClock } from "./results";
+import { SourceRef, useClock } from "./results";
 import { bookingCanConfirm, partyLabel } from "@/lib/availability";
 
 const labels: Record<Booking["status"], string> = {
@@ -40,7 +40,9 @@ export function Bookings({
         return (
           <article className="hotel-card" key={booking.booking_id}>
             <h3>{booking.offer.hotel_name}</h3>
-            <strong>{labels[booking.status]}</strong>
+            <strong className={`status-chip status-${booking.status}`}>
+              {labels[booking.status]}
+            </strong>
             <p>
               ¥ {booking.total} {booking.offer.currency} ·{" "}
               {booking.offer.room_type}
@@ -54,12 +56,15 @@ export function Bookings({
               {booking.offer.refundable ? "可退报价" : "不可退报价"} ·{" "}
               {booking.offer.breakfast ? "含早餐" : "不含早餐"}
             </p>
-            <p className="muted small">
-              报价条件版本 {booking.offer.request.revision} ·{" "}
-              {booking.source_ref}
-              <br />
-              预订 {booking.booking_id}
-            </p>
+            <details>
+              <summary>来源与版本</summary>
+              <p className="muted small">
+                报价条件版本 {booking.offer.request.revision} ·{" "}
+                <SourceRef value={booking.source_ref} />
+                <br />
+                预订 {booking.booking_id}
+              </p>
+            </details>
             {booking.expires_at && (
               <p>
                 暂留到期{" "}

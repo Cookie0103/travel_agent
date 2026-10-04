@@ -1,10 +1,10 @@
 /** Workbench shell; the browser receives application data, never supplier keys. */
 import type { Metadata } from "next";
-import Link from "next/link";
+import { SiteNav } from "@/components/site-nav";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "京都旅行工作台",
-  description: "可核验的旅行规划演示",
+  title: "旅程助手",
+  description: "对话式旅行规划助手：比较、校验、保留修改",
 };
 export default function RootLayout({
   children,
@@ -12,11 +12,7 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body>
-        <nav className="site-nav" aria-label="页面导航">
-          <Link href="/articles">京都攻略</Link>
-          <Link href="/">规划工作台</Link>
-          <Link href="/plans">已保存行程</Link>
-        </nav>
+        <SiteNav />
         {children}
       </body>
     </html>
