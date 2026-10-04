@@ -2,12 +2,14 @@
 
 from datetime import date, datetime
 from decimal import Decimal
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
-from pydantic import JsonValue
+from pydantic import JsonValue, TypeAdapter
 
-from backend.adapters.google_maps import _Hours, broad_region, opening_hours
+from backend.adapters.google_maps import _Hours, _Places, broad_region, opening_hours
+from backend.adapters.open_meteo import Forecast
 from backend.adapters.rakuten import Rakuten, candidates
 from backend.domain.execution import RunContext, RuntimeEvent, event_metadata
 from backend.domain.external_data import ExternalDataError
@@ -60,31 +62,19 @@ def test_multiple_opening_periods_and_full_day() -> None:
 
 
 def sample() -> dict[str, JsonValue]:
-    return {
-        "hotels": [
-            [
-                {
-                    "hotelBasicInfo": {
-                        "hotelNo": 1,
-                        "hotelName": "合成样本",
-                        "hotelInformationUrl": "https://travel.rakuten.co.jp/1",
-                    }
-                },
-                {
-                    "roomInfo": [
-                        {"roomBasicInfo": {"roomClass": "double", "roomName": "双床", "planId": 2}},
-                        {
-                            "dailyCharge": {
-                                "stayDate": "2026-11-06",
-                                "rakutenCharge": 5000,
-                                "chargeFlag": 0,
-                            }
-                        },
-                    ]
-                },
-            ]
-        ]
-    }
+    return fixture("rakuten_vacant_sample.json")
+
+
+def fixture(name: str) -> dict[str, JsonValue]:
+    return TypeAdapter(dict[str, JsonValue]).validate_json(
+        (Path(__file__).parent / "fixtures" / name).read_text(encoding="utf-8")
+    )
+
+
+def test_synthetic_supplier_samples_parse_without_network() -> None:
+    assert _Places.model_validate(fixture("google_places_sample.json")).places[0].id
+    assert Forecast.model_validate(fixture("open_meteo_sample.json")).daily.weather_code == [61]
+    assert fixture("google_routes_sample.json")["routes"]
 
 
 def test_rakuten_first_night_charge_units_and_missing_date() -> None:

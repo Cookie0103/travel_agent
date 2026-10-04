@@ -1,5 +1,7 @@
 # 前端 Redesign 方案 v2（Chat-first 旅行 Agent）
 
+> 历史方案：视觉和本轮实施边界已由 [PRODUCT-V2-PLAN](PRODUCT-V2-PLAN.md) 取代。本页保留原设计背景，不作为待办或完成状态入口。
+
 > 给实现者（Sonnet 等）：本轮只改 `apps/web/src/components/*`、`apps/web/src/app/*`、`globals.css`。
 > **不改** `lib/use-workspace.ts`、`lib/api.ts`、`lib/availability.ts`、`lib/api-types.ts`（生成文件）、后端、契约。
 > 不新增 npm 依赖（FRONTEND.md：新依赖先写 ADR）。纯 CSS + React。

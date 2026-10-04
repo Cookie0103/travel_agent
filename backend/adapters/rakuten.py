@@ -151,6 +151,8 @@ class Rakuten:
         limit: int = 4,
     ) -> tuple[HotelOffer, ...]:
         assert request.start_date and request.end_date and request.adults and request.rooms
+        nights = (request.end_date - request.start_date).days
+        self.usage.run_caps["rakuten"] = min(8, nights + 1)
         if point.broad:
             raise ExternalDataError(
                 "目的地区域过大；酒店只能查询中心3公里，请先指定具体城市或住宿地点", validation=True
@@ -169,7 +171,6 @@ class Rakuten:
             if (not hotel_id or str(item.hotel.hotelNo) == hotel_id)
             and (not rate_id or item.key == rate_id)
         )[:limit]
-        nights = (request.end_date - request.start_date).days
         reason = (
             "儿童计价未知"
             if request.child_ages

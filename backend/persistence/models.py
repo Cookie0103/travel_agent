@@ -35,6 +35,15 @@ class GoogleCoordinateRow(Base):
     fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
 
 
+class WeatherForecastRow(Base):
+    __tablename__ = "weather_forecasts"
+    city: Mapped[str] = mapped_column(String(40), primary_key=True)
+    start_date: Mapped[date] = mapped_column(primary_key=True)
+    end_date: Mapped[date] = mapped_column(primary_key=True)
+    payload: Mapped[dict[str, object]] = mapped_column(JSONB)
+    fetched_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class UserRow(Base):
     __tablename__ = "users"
 

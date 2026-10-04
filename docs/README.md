@@ -22,7 +22,7 @@
 | 目录 | 放什么 |
 | --- | --- |
 | [guides/](guides/) | 开发指南：[FRONTEND](guides/FRONTEND.md)、[QUALITY_SCORE](guides/QUALITY_SCORE.md)、[evaluation](guides/evaluation.md)、[reuse](guides/reuse.md) |
-| [proposals/](proposals/) | 尚未实施的提案与调查：[产品 V2 原型实施计划](proposals/PRODUCT-V2-PLAN.md)（当前主方案，交给 Codex 实现）、[前端 Redesign 方案](proposals/FRONTEND-REDESIGN.md)、[后端改造调查](proposals/BACKEND-CHANGE-INVESTIGATION.md) |
+| [proposals/](proposals/) | [产品 V2 实现与验收范围](proposals/PRODUCT-V2-PLAN.md)；[前端方案](proposals/FRONTEND-REDESIGN.md)和[后端调查](proposals/BACKEND-CHANGE-INVESTIGATION.md)保留为历史背景 |
 | [protocols/](protocols/) | 模型接入协议实测：[Claude Agent SDK](protocols/protocol-agent-sdk.md)、[DeepSeek](protocols/protocol-deepseek.md) |
 | [adr/](adr/) | 技术决策记录，含[待审阅决定](adr/decisions-pending.md) |
 | [execution/](execution/)、[tasks/](tasks/) | 执行计划与各里程碑任务规格 |
@@ -42,6 +42,8 @@
 | 参考了哪些上游思路 | [reuse.md](guides/reuse.md) | 阅读上游后记录，不能当作本项目能力 |
 
 ## 本次可直接打开的记录
+
+- [V2 验收记录](operations/product-v2.md)：真实 Google / 乐天 / Open-Meteo / DeepSeek、四城规划、日历导入和剩余范围；当前进度仍只维护在执行计划。
 
 - [源码学习索引](review/learning.md)、[三段可重放演示](review/demos.md)、[项目表述审计稿](review/resume-draft.md)：集中学习入口，分别标注 SDK、真实业务服务和离线脚本的证据边界。
 

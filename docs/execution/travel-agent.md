@@ -1,6 +1,19 @@
 # Travel Agent 长程执行计划
 
-## 当前任务：V2 核心实现与真实端到端（用户 2026-10-04 最新 DoD）
+## V2 补齐与文档收敛（2026-10-04，最新恢复入口）
+
+用户要求将遗漏功能补齐并收敛Markdown；替代下方上一轮“停止、不再开发”的恢复指示。本轮只补天气三小时PG缓存、乐天住宿晚数+1上限、手动接口探针/单城冒烟、四份合成结构样本、札幌/那霸/箱根真实规划和个人Google Calendar导入。三城草稿均completed，日历6/6导入成功；那霸主流程酒店失败后降级，独立单晚/两晚接口均成功，详情见[唯一V2验收汇总](../operations/product-v2.md)。
+
+Google存储修正继续按用户已批准边界，不恢复完整详情缓存。今日Places达到25时正确阻断，用户明确批准最多额外3次；仅进程环境临时28，最终已重启恢复.env的25，PG最终28/未清账，当天新景点查询仍会被拦截。其他计数geocode5/routes5/rakuten23/weather4；V2共37模型HTTP/新增1.367988CNY保守上界，不是账单。个人日历的扩展文件权限由用户临时开启并已确认关闭。
+
+当前分支仍 `batch/2026-10-04-product-v2`，已核对本机2026-10-04日期并复用同日分支。新0012迁移已应用；16初始专项通过，独立审查的三项P2已修并复核无P1/P2。最终默认全量回归 **798 passed、3 live deselected、215.45s**；239文件三平台strict、ruff/格式、3分层契约通过，文档地图补齐目标后10份入口通过，git diff --check通过。前端无新增改动，复用上一轮14测试/type/lint/format/build通过的结果。
+
+本轮补齐 **DONE**，没有已知P0/P1。用户2026-10-04 21:35（日本时间）明确要求将全部完成改动提交并push到 `batch/2026-10-04-product-v2`，替代之前保留工作区给用户提交的安排；本次正常执行提交钩子，随后普通push并核对远端，实际结果以Git和本段续记为准。上一轮744f410及以前已push不变。.env仍被忽略，本轮仅补正确的本地乐天Referer，密钥没有进入代码/日志/提交。不提高永久配额，不继续evaluation或refactor。Railway V2/Claude API/V2同轮Cloud实测仍未做，其他历史记录不作为当前待办。
+
+<details>
+<summary>历史执行记录（旧完成结论和研究队列保留，不作为当前待办）</summary>
+
+## 历史：V2 第一轮核心实现与真实端到端
 
 本轮停机条件以用户最新 DoD 为准：核心功能可用、正常请求完整处理、常见缺字段/超时/API或模型失败合理处理、至少一轮真实数据API+DeepSeek+PostgreSQL+Agent tools返回前端可展示并操作的行程、无已知P0/P1且必要检查通过。达到后立即停止，不再寻找新优化/重构/评测项。优先级P0运行阻塞→P1真实集成→P2核心功能/异常→P3必要整理；Railway为P4可选，P5暂停。最少必要真实调用已获授权，普通实现不逐步等待review。
 
@@ -433,3 +446,5 @@ B1 v2已停止并诊断真实输出失败：派生3ca3b17f原63已执行（25pas
 
 
 同fa169源码B1最终完整120已严格load/compare通过：38pass/48failed/34error、0not_run，原13→14→63→120 lineage保留，原三个partial文件不改，原实际slot0重放。exec96685已自动进入no_skills .cache/eval/20261004T035158Z-2c33dbaf，随后no_preferences/no_repairs/no_compaction。单一公开证据更新四组；对每组120原SDK report上下文核对，补真实工具次数与context_compacted观测、报告有序hash摘要，配置关闭不是机制生效或因果改善。全文不含原prompt/arguments/UUID/keys；完整参数审阅准备仅绑定不正确，human/expected仍0。地图检查10通过，0新模型HTTP。
+
+</details>
