@@ -18,6 +18,7 @@ import {
   type Booking,
 } from "./api";
 import type { components } from "./api-types";
+import { isCardEvent } from "./early-cards";
 
 const STORAGE = "travel-demo-v2";
 const message = (error: unknown) =>
@@ -69,6 +70,7 @@ export function useWorkspace({
       event: { presentation?: unknown },
       current: Identity,
       active: () => boolean,
+      persist = true,
     ) => {
       const payload = event.presentation as
         { data?: Hotels | Plan } | undefined;
@@ -80,7 +82,7 @@ export function useWorkspace({
         const displayed = await readDraft(data.draft_id, current.token);
         if (!active()) return;
         setPlan(displayed);
-        if (!displayed.draft_id)
+        if (!displayed.draft_id && persist)
           remember({
             ...current,
             plan_id: displayed.plan_id,
@@ -93,7 +95,12 @@ export function useWorkspace({
         });
         if (!active() || !displayed) return;
         setPlan(displayed);
-        remember({ ...current, plan_id: displayed.plan_id, run_id: undefined });
+        if (persist)
+          remember({
+            ...current,
+            plan_id: displayed.plan_id,
+            run_id: undefined,
+          });
       }
     },
     [remember],
@@ -108,6 +115,8 @@ export function useWorkspace({
       const active = () =>
         !controller.signal.aborted && generation.current === started;
       cursor.current = after;
+      // 早期出卡按事件顺序串行；失败静默，运行结束后的 hydrate 为准。
+      let early = Promise.resolve();
       try {
         await readEvents(
           runId,
@@ -118,8 +127,13 @@ export function useWorkspace({
             if (event.sequence <= cursor.current || !active()) return;
             cursor.current = event.sequence;
             setEvents((old) => [...old.slice(-79), event]);
+            if (isCardEvent(event))
+              early = early
+                .then(() => hydrate(event, current, active, false))
+                .catch(() => undefined);
           },
         );
+        await early;
         if (!active()) return;
         const final = await api<Run>(`/runs/${runId}`, current.token);
         if (!active()) return;
