@@ -4,7 +4,8 @@ RUN npm install --global pnpm@11.19.0
 COPY apps/web/package.json apps/web/pnpm-lock.yaml apps/web/pnpm-workspace.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY apps/web ./
-ENV TRAVEL_API_ORIGIN=http://api:8000 NEXT_TELEMETRY_DISABLED=1
+ARG TRAVEL_API_ORIGIN=http://api:8000
+ENV TRAVEL_API_ORIGIN=$TRAVEL_API_ORIGIN NEXT_TELEMETRY_DISABLED=1
 RUN pnpm run build
 
 FROM node:24.12.0-alpine

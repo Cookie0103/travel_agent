@@ -675,3 +675,5 @@ B1 v2已停止并诊断真实输出失败：派生3ca3b17f原63已执行（25pas
 
 
 2026-10-04 FINAL RELEASE：按用户冻结的PROJECT_STATUS仅完成F1/F2，不恢复研究批次。应用原三文件到期补丁，现有四PG分支保留、两处测试类型错误修正；17预订PG通过，check224文件三平台/分层/格式/地图通过，完整769passed/2live deselected（212.63s），独立窄审查通过。正常钩子/push 9db5702及两CI37178553760/37178551128成功。web-check14/14与build通过，stack-up/status/smoke/down/up/verify全部exit0，保留卷、V2/订单ID/事件一致；容器保持运行。0新模型请求，原账本/失败/partial/human0保留。最后仅正常保存交付记录并核对HEAD/远端/CI，之后停止，最终入口PROJECT_STATUS。
+
+2026-10-04 Railway 新任务：用户授权部署既有项目，以公网web域名注册乐天。当前分支2026-10-04-frontend-redesign、工作区原clean；PRODUCT-V2-PLAN仍待实施。仅修改next私网代理白名单与Docker构建ARG。web-check在Railway私网origin下14测试/类型/lint/build通过。Railway项目449ee30a-0ff4-437a-a35a-53ddc5c4ef93，production f55b4a24-a222-4ee1-922d-32d49e5b1aff；api 9ebc2005-f231-4e3d-822b-71c73809e4cb，web 93d5e90b-cfa8-4b1e-a37d-ec812ba065c5，supplier 05489f6d-d2ff-4774-a969-ed4d9acd36b9，现有Postgres75e1c043-374c-4b5b-bf26-06509aefbd98不删卷。API已暂存Dockerfile/PG引用/DEMO_MODE/私网supplier/PORT8000、bootstrap后离线server启动/health；supplier已连同仓库与当前分支、独立mock启动。配置尚未点Deploy，web与supplier变量需完成；不上传.env/模型key，不启用live、不调用Google/乐天/模型。后续正常commit/push再Deploy，核对健康、公网页面/同源API/离线流程，更新最终结果。

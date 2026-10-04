@@ -1,5 +1,9 @@
 # Travel Agent 长程执行计划
 
+## 当前任务：Railway 部署现有 Demo（用户 2026-10-04 新授权）
+
+用户需要公网 web 地址注册乐天应用。本轮只部署当前 2026-10-04-frontend-redesign 分支的现有离线 Demo，不实施 PRODUCT-V2-PLAN 的真实数据功能，不上传本地 .env/模型密钥、不启用 live。复用现有 Postgres、web、api、supplier；仅补前端私网代理地址与构建参数，变量使用 Railway 服务引用。验收：正常 check/test/web-check/commit/push，Railway 健康部署，公网页面与同源 API 可访问、能执行现有离线核心流程；给用户 web 域名及乐天填写项。保留旧完成结论，部署状态另记过程与恢复点。
+
 ## 当前目标：FINAL RELEASE / STABILIZATION（2026-10-04）
 
 用户最新指令覆盖下面历史研究性完成队列。本轮 Goal：保留现有实现，仅关闭已证实的暂留到期缺陷，验证可运行 Demo，保存最终交付并停止。
