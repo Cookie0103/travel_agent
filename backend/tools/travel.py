@@ -27,7 +27,13 @@ from backend.services.hotels import HotelService, cards
 from backend.services.planning import PlanningService
 from backend.services.plans import PlanInput, PlanService
 from backend.services.travel import TravelService, require_revision
-from backend.tools.contracts import RESULT_LIMIT, ToolDefinition, ToolResult, validation_paths
+from backend.tools.contracts import (
+    RESULT_LIMIT,
+    ToolDefinition,
+    ToolResult,
+    validation_paths,
+    with_repair_rounds,
+)
 from backend.tools.search import DEFINITIONS as SEARCH_DEFINITIONS
 from backend.tools.search import ContentSearchInput, PlaceSearchInput
 
@@ -184,6 +190,18 @@ SCHEMAS: dict[str, type[BaseModel]] = {
 
 
 LIVE_TOOL_TIMEOUT = 75
+
+
+def repair_definitions(
+    definitions: tuple[ToolDefinition, ...], max_validations: int
+) -> tuple[ToolDefinition, ...]:
+    """模型可见的修复轮数随档位；DEFINITIONS本身(基准/指纹)不变。"""
+    return tuple(
+        replace(d, description=with_repair_rounds(d.description, max_validations))
+        if d.name == "validate_itinerary"
+        else d
+        for d in definitions
+    )
 
 
 def live_definitions(definitions: tuple[ToolDefinition, ...]) -> tuple[ToolDefinition, ...]:
@@ -449,8 +467,11 @@ class TravelToolExecutor:
             await self.travel.get_request(context)
             if parsed.name in self.loaded_skills:
                 return ToolResult({"name": parsed.name, "already_loaded": True})
-            text = (Path(__file__).resolve().parent / "skills" / (parsed.name + ".md")).read_text(
-                encoding="utf-8"
+            text = with_repair_rounds(
+                (Path(__file__).resolve().parent / "skills" / (parsed.name + ".md")).read_text(
+                    encoding="utf-8"
+                ),
+                self.max_validations,
             )
             self.loaded_skills.add(parsed.name)
             return ToolResult(

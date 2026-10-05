@@ -26,9 +26,9 @@ from backend.providers.claude_agent.limits import Provider
 from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.runtime import ClaudeRuntime, RuntimeConfig
 from backend.services.common import ServiceError
-from backend.tools.contracts import ToolDefinition, ToolExecutor
+from backend.tools.contracts import ToolDefinition, ToolExecutor, repair_rounds
 from backend.tools.search import DEFINITIONS, SearchExecutor
-from backend.tools.travel import live_definitions
+from backend.tools.travel import live_definitions, repair_definitions
 from backend.tools.workflow import WorkflowName
 from backend.trace_log import trace
 
@@ -121,7 +121,9 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
             snapshot, revision, preference_revision = await executor.context_snapshot(
                 context, include_preferences=variant not in {"no_preferences", "baseline_b2"}
             )
-            system = travel_prompt() + snapshot
+            rounds = executor.executor.max_validations
+            definitions = repair_definitions(definitions, rounds)
+            system = travel_prompt(repair_rounds(rounds)) + snapshot
             return await run_prompts(
                 prompts,
                 context,
@@ -214,7 +216,15 @@ async def run_prompts(
                     executor.loop, executor.travel.database, executor.supplier_url
                 )
                 agent.runtime = ClaudeRuntime(
-                    replace(config, system_prompt=travel_prompt() + snapshot), definitions, executor
+                    replace(
+                        config,
+                        system_prompt=travel_prompt(
+                            repair_rounds(executor.executor.max_validations)
+                        )
+                        + snapshot,
+                    ),
+                    definitions,
+                    executor,
                 )
         result = await agent.run(context, prompt, emit, reference_id=reference_id)
         results.append(asdict(result))

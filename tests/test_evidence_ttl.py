@@ -3,6 +3,7 @@
 import asyncio
 from datetime import date, datetime, timedelta
 from decimal import Decimal
+from pathlib import Path
 from typing import Any, cast
 
 import httpx
@@ -230,3 +231,37 @@ def test_live_database_tools_use_profile_repair_rounds(
     finally:
         loop.close()
     assert tools.executor.max_validations == rounds
+
+
+OLD_TOOL = "检查引用证据的行程；冲突需修正，未知保留警告。首次校验后最多修复3轮，不能改写报告。"
+OLD_PROMPT = (
+    "展示行程前调用validate_itinerary；conflict按具体反馈修正，"
+    "首次校验后最多3轮，不放宽用户硬条件。"
+)
+OLD_SKILL = "提出PlanPatch后校验营业时间、路段、时区和预算；冲突最多修复3轮，未知信息保留警告。"
+
+
+def rendered_texts(limit: int) -> tuple[str, str, str]:
+    from backend.agent.persona import travel_prompt
+    from backend.tools.contracts import repair_rounds, with_repair_rounds
+    from backend.tools.travel import DEFINITIONS, repair_definitions
+
+    tool = next(
+        d for d in repair_definitions(DEFINITIONS, limit) if d.name == "validate_itinerary"
+    ).description
+    skill_path = Path(__file__).resolve().parents[1] / "backend/tools/skills/itinerary-revision.md"
+    skill = with_repair_rounds(skill_path.read_text(encoding="utf-8"), limit)
+    return tool, travel_prompt(repair_rounds(limit)), skill
+
+
+@pytest.mark.parametrize("limit", [1, 4])
+def test_static_repair_text_is_unchanged_for_default_and_eval_variant(limit: int) -> None:
+    tool, prompt, skill = rendered_texts(limit)
+    assert tool == OLD_TOOL and OLD_PROMPT in prompt and OLD_SKILL in skill
+
+
+def test_static_repair_text_follows_human_profile() -> None:
+    tool, prompt, skill = rendered_texts(50)
+    assert tool == OLD_TOOL.replace("修复3轮", "修复49轮")
+    assert "首次校验后最多49轮，不放宽" in prompt and "冲突最多修复49轮" in skill
+    assert not any("3轮" in text for text in (tool, prompt, skill))

@@ -71,12 +71,6 @@ class DatabaseTools:
                 if self.executor.max_validations == 1
                 else ""
             )
-            + (
-                f"\n本次首次校验后最多修复{self.executor.max_validations - 1}轮，"
-                "以此为准（覆盖前文的3轮说法）。"
-                if self.executor.max_validations > 4
-                else ""
-            )
             + "\n服务端业务状态与有界回顾（以当前revision为准）：\n"
             + json.dumps(state, ensure_ascii=False),
             request["revision"],

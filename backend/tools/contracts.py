@@ -10,6 +10,23 @@ from backend.domain.execution import ErrorCode, RunContext
 RESULT_LIMIT = 8000
 
 
+DEFAULT_REPAIR_ROUNDS = 3  # 静态文本的基准修复轮数(=DEFAULT/RELAXED的max_validations-1)
+
+
+def repair_rounds(max_validations: int) -> int:
+    """模型可见的修复轮数=首次校验之外的轮数；评测单因素(1)另有专门文案，仍按基准。"""
+    if max_validations > DEFAULT_REPAIR_ROUNDS + 1:
+        return max_validations - 1
+    return DEFAULT_REPAIR_ROUNDS
+
+
+def with_repair_rounds(text: str, max_validations: int) -> str:
+    """把静态文本里的“最多修复3轮”换成当前档位的实际轮数；基准档位字节不变。"""
+    return text.replace(
+        f"最多修复{DEFAULT_REPAIR_ROUNDS}轮", f"最多修复{repair_rounds(max_validations)}轮"
+    )
+
+
 @dataclass(frozen=True)
 class ToolDefinition:
     name: str
