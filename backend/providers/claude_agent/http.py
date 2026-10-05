@@ -9,6 +9,7 @@ from pathlib import Path
 
 from backend.providers.claude_agent.limits import ProbeError, Provider
 from backend.providers.claude_agent.process import run_process
+from backend.providers.claude_agent.profile import current
 
 MAX_RESPONSE_BYTES = 1_048_576
 
@@ -20,7 +21,16 @@ def forward_messages(provider: Provider, api_key: str, body: bytes) -> tuple[int
         k: v
         for k, v in os.environ.items()
         if k.upper()
-        in {"SYSTEMROOT", "WINDIR", "PATH", "TEMP", "TMP", "SSL_CERT_FILE", "SSL_CERT_DIR"}
+        in {
+            "SYSTEMROOT",
+            "WINDIR",
+            "PATH",
+            "TEMP",
+            "TMP",
+            "SSL_CERT_FILE",
+            "SSL_CERT_DIR",
+            "TRAVEL_PROFILE",
+        }
     }
     env.update(PYTHONPATH=str(root), PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
     try:
@@ -28,7 +38,7 @@ def forward_messages(provider: Provider, api_key: str, body: bytes) -> tuple[int
             [sys.executable, "-m", "backend.providers.claude_agent.http"],
             root,
             env,
-            50,
+            current().upstream_timeout,
             json.dumps({"provider": provider, "key": api_key, "body": body.decode("utf-8")}),
         )
     except subprocess.TimeoutExpired:
@@ -37,6 +47,8 @@ def forward_messages(provider: Provider, api_key: str, body: bytes) -> tuple[int
         raise ProbeError("unavailable", "上游请求工作进程失败")
     try:
         raw = json.loads(result.stdout)
+        if raw.get("status") == "error" and raw.get("code") == "timeout":
+            raise ProbeError("timeout", "上游请求超时，保留预占")
         if raw.get("status") != "ok" or type(raw.get("http_status")) is not int:
             raise ValueError
         content = raw["content"]
@@ -58,7 +70,7 @@ def _direct_request(
         if provider == "deepseek"
         else ("api.anthropic.com", "/v1/messages", "x-api-key")
     )
-    connection = http.client.HTTPSConnection(host, timeout=45)
+    connection = http.client.HTTPSConnection(host, timeout=current().upstream_timeout - 5)
     try:
         connection.request(
             "POST",
@@ -91,6 +103,8 @@ def main() -> None:
             "http_status": status,
             "content": content.decode("utf-8"),
         }
+    except TimeoutError:
+        response = {"status": "error", "code": "timeout"}
     except (OSError, ValueError, KeyError, TypeError, http.client.HTTPException, ProbeError):
         response = {"status": "error"}
     print(json.dumps(response))

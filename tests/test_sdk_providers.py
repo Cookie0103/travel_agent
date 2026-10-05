@@ -176,9 +176,17 @@ def test_claude_cache_write_is_bounded_at_one_hour_rate_and_reported_in_usd() ->
         ("anthropic", "api.anthropic.com", "/v1/messages", {"x-api-key": "synthetic"}),
     ],
 )
+@pytest.mark.parametrize("profile,socket_timeout", [("default", 85), ("relaxed", 115)])
 def test_https_transport_only_uses_fixed_host_path_and_auth(
-    monkeypatch: pytest.MonkeyPatch, provider: str, host: str, path: str, auth: dict[str, str]
+    monkeypatch: pytest.MonkeyPatch,
+    provider: str,
+    host: str,
+    path: str,
+    auth: dict[str, str],
+    profile: str,
+    socket_timeout: int,
 ) -> None:
+    monkeypatch.setenv("TRAVEL_PROFILE", profile)
     calls: list[object] = []
 
     class Response:
@@ -189,8 +197,8 @@ def test_https_transport_only_uses_fixed_host_path_and_auth(
             return b"synthetic response"
 
     class Connection:
-        def __init__(self, hostname: str, timeout: int) -> None:
-            assert (hostname, timeout) == (host, 45)
+        def __init__(self, hostname: str, timeout: float) -> None:
+            assert (hostname, timeout) == (host, socket_timeout)
 
         def request(self, method: str, url: str, body: bytes, headers: dict[str, str]) -> None:
             assert (method, url, body) == ("POST", path, b"{}")

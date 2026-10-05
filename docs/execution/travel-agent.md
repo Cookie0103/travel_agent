@@ -1,5 +1,13 @@
 # Travel Agent 长程执行计划
 
+## Railway旅行数据配置（2026-10-05，当前恢复入口）
+
+用户反馈DeepSeek可用但京都11月6–7日两天行程的景点/天气/酒店数据均报配置缺失。检查确认云端只有模型变量；本地已有Google/乐天凭据。用户明确授权将GOOGLE_MAPS_API_KEY、RAKUTEN_APP_ID、RAKUTEN_ACCESS_KEY、RAKUTEN_AFFILIATE_ID配置到既有Railway api；已通过其Chrome发布遮罩变量、现有公网RAKUTEN_REFERER和五个原额度（50/25/150/150/200），未输出或提交密钥。保留模型15CNY/USD0、卷账本与非rootAPI。天气本身无需key，但工具先依赖Google获取城市坐标；原日期超出16天窗口，最早10月23日可覆盖两日，不能用历史天气替代。独立配置审查无遗漏/新增P1/P2。
+
+真实云端工具验证：原条件保持京都2026-11-06至07/2成人/1房/60000JPY/公共交通。run c1a0a2a3-bc94-4c54-b2da-fe20684de3ef的景点、酒店、路线和日期范围判断6步骤均成功，但第6个模型HTTP因上游50秒期限失败；6模型HTTP/2.259656CNY保守占用，不是账单。一次复用证据恢复9259c1f2-24bd-4fb2-b5ea-5c184b620377仍在第5HTTP相同上游期限失败，4工具成功/新增2.265514CNY保守占用；模型主动刷新3地点和酒店，虽然提示不重新搜索仍有新API计数，不能称零查询。两个失败均保留，没有当成完成。独立通过Railway Console复用项目LiveData/ApiUsage做一次10月12–13日天气探针，verified/2日/Open-Meteo，天气HTTP1且计数落PG；城市坐标命中已查缓存，未改用户旅行日期/条件。云端当日PG计数geocode1/places6/rakuten2/routes5/weather1；模型云端累计16HTTP/4.648616CNY保守占用，历史与未结预占均未清。
+
+根据两次相同失败修正期限配置，不继续盲目付费：DEFAULT上游总期限90秒、socket85、SDK客户端100、worker210、父进程220、API240；RELAXED上游120并保持原280/290/300外层。统一复用现有profile与HTTP回收进程，额外只转发非敏感档位；原次数/轮数/输出量/数据配额/费用上限不变。真实上游socket/进程timeout映射timeout，显式cancelled保持优先，避免被SDK解析失败盖成provider_error。83离线专项通过（超时只预占一次、无自动重试、无密钥泄漏、API分类和档位一致性）；独立只读源码审查两项P2已修复并复核无剩余P1/P2；正常完整钩子与部署后一次恢复待核对，不新增依赖或runtime。
+
 ## Railway DeepSeek启用（2026-10-05，当前恢复入口）
 
 用户要求解决模型选择器“未以live启动”，并明确允许将本地已有DEEPSEEK_API_KEY配置到既有Railway api服务；替代下节上一轮不上传密钥、不启用live的部署范围。已通过用户Chrome配置deepseek-flash、LLM_PROVIDER=deepseek、DAILY_BUDGET_CNY=15.00、DAILY_BUDGET_USD=0，并以--live启动。密钥只进入Railway遮罩变量，没有输出或提交.env；Google/乐天/Anthropic凭据未上传。

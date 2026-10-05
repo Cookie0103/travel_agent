@@ -85,7 +85,7 @@ def worker_environment(
             "ENABLE_TOOL_SEARCH": "false",
             "CLAUDE_CODE_DISABLE_AUTO_MEMORY": "1",
             "CLAUDE_CODE_DISABLE_1M_CONTEXT": "1",
-            "API_TIMEOUT_MS": "45000",
+            "API_TIMEOUT_MS": str(int((current(source).upstream_timeout + 10) * 1000)),
             "NO_PROXY": "127.0.0.1,localhost",
             "no_proxy": "127.0.0.1,localhost",
         }

@@ -17,7 +17,10 @@ from backend.providers.claude_agent.guard import Forward, Guard
 from backend.providers.claude_agent.limits import ProbeError, Settings
 
 
-@pytest.mark.parametrize("failure", ["cancelled", "worker_exit", "guard_failure"])
+@pytest.mark.parametrize(
+    "failure",
+    ["cancelled", "cancelled_timeout", "worker_exit", "guard_failure", "upstream_timeout"],
+)
 def test_parent_failure_never_publishes_worker_completed(
     failure: str, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
@@ -52,6 +55,12 @@ def test_parent_failure_never_publishes_worker_completed(
         if failure == "guard_failure":
             guards[0].failures.append("blocked")
             return {"status": "success"}
+        if failure in {"upstream_timeout", "cancelled_timeout"}:
+            guards[0].failures.extend(["timeout", "client_disconnected"])
+            return {
+                "status": "error",
+                "code": "cancelled" if failure == "cancelled_timeout" else "provider_error",
+            }
         return {"status": "error", "code": failure}
 
     monkeypatch.setenv("DEEPSEEK_API_KEY", "offline-only")
@@ -67,10 +76,16 @@ def test_parent_failure_never_publishes_worker_completed(
     monkeypatch.setattr(live, "trace_report", lambda *a, **k: None)
     report = live.run_live("offline", context, tmp_path, emit=emitted.append)
     assert report["status"] == "error" and len(emitted) == 1
-    assert emitted[0].kind == ("cancelled" if failure == "cancelled" else "failed")
-    if failure == "cancelled":
+    assert emitted[0].kind == (
+        "cancelled" if failure in {"cancelled", "cancelled_timeout"} else "failed"
+    )
+    if failure in {"cancelled", "cancelled_timeout"}:
         assert report["code"] == "cancelled"
         assert emitted[0].code == "cancelled"
+    if failure == "upstream_timeout":
+        assert report["code"] == "timeout"
+        assert emitted[0].code == "timeout"
+        assert application.outcome(report, context).code == "timeout"
     with pytest.raises(ProbeError, match="conflict"):
         live.run_live("offline", context, tmp_path)
 

@@ -15,6 +15,7 @@ from urllib.parse import urlsplit
 
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.limits import ProbeError, Settings, price_for
+from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.request import MAX_BYTES, TOOL_NAME, validate_request
 from backend.providers.claude_agent.response import summarize
 
@@ -97,7 +98,7 @@ def handler_for(guard: Guard) -> type[BaseHTTPRequestHandler]:
             """本地请求包含令牌；不输出标准 HTTP 访问日志。"""
 
         def do_POST(self) -> None:
-            self.connection.settimeout(50)
+            self.connection.settimeout(current().upstream_timeout + 5)
             try:
                 length = int(self.headers.get("Content-Length", "0"))
                 if not 0 < length <= MAX_BYTES or self.headers.get("Transfer-Encoding"):
@@ -133,4 +134,4 @@ def serve(guard: Guard) -> Iterator[str]:
     finally:
         server.shutdown()
         server.server_close()
-        thread.join(timeout=55)
+        thread.join(timeout=current().upstream_timeout + 5)

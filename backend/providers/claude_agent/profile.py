@@ -10,6 +10,7 @@ class Limits:
     max_calls: int
     max_turns: int
     max_attempts: int
+    upstream_timeout: float
     worker_timeout: float
     process_timeout: float
     run_timeout: float
@@ -19,12 +20,12 @@ class Limits:
 
 
 DEFAULT = Limits(
-    16, 12, 12, 115, 120, 150.0, 2048,
+    16, 12, 12, 90, 210, 220, 240.0, 2048,
     {"geocode": 2, "places": 3, "routes": 12, "rakuten": 8, "weather": 1},
     {"geocode": 50, "places": 25, "routes": 150, "rakuten": 150, "weather": 200},
 )  # fmt: skip
 RELAXED = Limits(
-    40, 30, 30, 280, 290, 300.0, 4096,
+    40, 30, 30, 120, 280, 290, 300.0, 4096,
     {"geocode": 5, "places": 15, "routes": 40, "rakuten": 20, "weather": 2},
     {"geocode": 100, "places": 150, "routes": 400, "rakuten": 300, "weather": 300},
 )  # fmt: skip

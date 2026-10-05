@@ -163,6 +163,8 @@ def run_live(
             )
         if guard.failures:
             report["status"] = "error"
+            if "timeout" in guard.failures and report.get("code") != "cancelled":
+                report.update(code="timeout", reason="upstream_timeout")
         if (
             report.get("status") == "success"
             and guard.observations

@@ -83,3 +83,17 @@ python -c 'import os; os.chown("/app/.cache",10001,10001); os.setgroups([]); os.
 部署55f9a0ad-7b2d-48ea-954d-8c50e4abc786 Active；启动日志确认CLI2.1.286、bootstrap166项成功、API启动完成及health200，证明挂载/可写/CLI前置检查通过。独立复核该补齐无新增P1/P2；不清空任何旧账本或锁。生产后续push仍沿用该挂载和启动命令。
 
 Chrome实际选中DeepSeek，发送“你好，请只用一句话介绍你能帮我做什么，不调用任何工具。”，页面显示“完成”及真实模型介绍回复。一次云端模型流程，未重放；没有工具步骤、真实旅行数据查询、订单或付款。逐HTTP云端账本本轮未读取，请求次数/金额不冒报；15CNY配置与既有守卫不等同实付账单。私有截图railway-deepseek-live.jpg保存于本次Codex可视化目录；不进入仓库。简单回复仅证明模型可执行，不代替Google/乐天真实规划或Cloud trace验收。
+
+## Railway旅行数据接线（2026-10-05）
+
+用户实际在公网输入京都2026-11-06至07两天一夜；模型能回复，但景点、天气、酒店工具报配置缺失。云端变量检查确认缺Google/乐天；本地已有。用户明确允许把四个现有Google/乐天凭据保存到既有api服务后，Chrome发布GOOGLE_MAPS_API_KEY、RAKUTEN_APP_ID、RAKUTEN_ACCESS_KEY、RAKUTEN_AFFILIATE_ID（全部遮罩），以及RAKUTEN_REFERER=https://web-production-0aaac.up.railway.app/。明确五个原daily caps：geocode50/places25/routes150/rakuten150/weather200；没有提高原额度，未更改供应商账号权限、凭据或来源注册。没有上传整个.env或输出任何凭据。
+
+独立接线审查确认API与SDK工作进程均接收变量，无遗漏/新增P1/P2。天气使用Open-Meteo，不需key；当前工具先用Google定位城市，原缺Google也连带阻断天气。11/06–07超出10/05起16天窗口，合法结果应为unknown；最早10/23可覆盖两日。模型参数/日期不被偷偷改变，不补造远期天气。
+
+发布后一次原条件重试run c1a0a2a3-bc94-4c54-b2da-fe20684de3ef：天气日期判断、search_places三次、search_hotel_offers一次、estimate_routes一次，共6成功工具步骤。Google/乐天真实响应证明凭据与来源有效；最后模型HTTP超过现有50秒上游总期限，guard记录timeout/client_disconnected，最终provider_error，无草稿，不冒称整轮完成。6模型HTTP，新增2.259656CNY保守占用（包括超时未结预占，非账单）。下一次仅要求复用证据恢复；实际查询次数以下文记录为准，不清账、不重复原消息。
+
+另经用户Chrome的Railway Console，用已部署项目LiveData、ApiUsage和forecast验证10/12–13天气：verified/2日/Open-Meteo，weather1请求计入同一真实PG；Google坐标命中此前缓存，无额外geocode。探针进程写缓存前降UID/GID10001并umask077，用户会话日期未修改，无额外模型或酒店查询。该时点云端PG当日计数geocode1/places3/rakuten1/routes5/weather1；模型累计11HTTP/2.383102CNY保守占用（含先前模型验收和用户原失败流程），旧账本/预占保持不动。后续根据确定的故障修代码，部署后仅做一次有依据的恢复验收，不循环付费。
+
+证据复用恢复run9259c1f2-24bd-4fb2-b5ea-5c184b620377再次在上游50秒总期限失败，5HTTP/新增2.265514CNY保守占用。3个get_place_facts及1个search_hotel_offers成功，模型实际主动刷新数据，不能将提示“不重新搜索”当作实际零查询证据。云端累计16模型HTTP/4.648616CNY保守占用，PG当天geocode1/places6/rakuten2/routes5/weather1；两条失败原样保留，未生成/确认/预订。两次相同失败后只先修代码期限，不再盲目重试。
+
+根据[DeepSeek请求保活说明](https://api-docs.deepseek.com/quick_start/rate_limit/)，流式响应可能等待并持续发保活注释；本项目此前即使仍有保活也会被整个上游进程50秒硬期限终止。现复用profile统一有界期限：DEFAULT上游90、socket85、SDK客户端100、worker210、父进程220、API240秒；RELAXED上游120、socket115、客户端130，外层保持280/290/300。只新增档位字段，不加第二套运行时、传输重试或依赖；原模型次数/输出/数据次数和15CNY/USD0保持不变。guard上游socket/进程timeout成为API timeout，但不覆盖显式cancelled，避免通用解析错误掩盖根因。83离线专项通过，覆盖两档传输、秘密不继承、超时预占不退/只尝试一次、终态分类与内外期限一致；独立审查识别socket误分类和取消被覆盖两项P2，均已修复并补回归，复核无剩余P1/P2，正常完整提交钩子待完成。外层运行期限不含有界guard清理，不能宣称为整轮硬墙钟上限。
