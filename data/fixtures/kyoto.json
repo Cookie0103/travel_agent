@@ -1,0 +1,548 @@
+{
+  "description": "人工编写的最小测试集；地名用于定位，类别/室内标签为测试设置，不代表实时事实。M1.2 再导入有署名的真实快照。",
+  "places": [
+    {
+      "place_id": "00000000-0000-4000-8000-000000000001",
+      "city": "京都",
+      "name": "京都鉄道博物館",
+      "aliases": [
+        "京都铁道博物馆"
+      ],
+      "category": "museum",
+      "indoor": true,
+      "tags": [
+        "铁路",
+        "亲子",
+        "室内"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000002",
+      "city": "京都",
+      "name": "京都国立博物館",
+      "aliases": [
+        "京都国立博物馆"
+      ],
+      "category": "museum",
+      "indoor": true,
+      "tags": [
+        "历史",
+        "室内"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000003",
+      "city": "京都",
+      "name": "京都国際マンガミュージアム",
+      "aliases": [
+        "京都国际漫画博物馆"
+      ],
+      "category": "museum",
+      "indoor": true,
+      "tags": [
+        "漫画",
+        "室内"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000004",
+      "city": "京都",
+      "name": "京都市京セラ美術館",
+      "aliases": [
+        "京都市京瓷美术馆"
+      ],
+      "category": "gallery",
+      "indoor": true,
+      "tags": [
+        "艺术",
+        "室内"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000005",
+      "city": "京都",
+      "name": "京都水族館",
+      "aliases": [
+        "京都水族馆"
+      ],
+      "category": "aquarium",
+      "indoor": true,
+      "tags": [
+        "亲子",
+        "室内"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000006",
+      "city": "京都",
+      "name": "京都文化博物館",
+      "aliases": [
+        "京都文化博物馆"
+      ],
+      "category": "museum",
+      "indoor": true,
+      "tags": [
+        "文化",
+        "室内"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000007",
+      "city": "京都",
+      "name": "京都伝統産業ミュージアム",
+      "aliases": [
+        "京都传统产业博物馆"
+      ],
+      "category": "museum",
+      "indoor": true,
+      "tags": [
+        "手工艺",
+        "室内"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000008",
+      "city": "京都",
+      "name": "京都駅",
+      "aliases": [
+        "京都站"
+      ],
+      "category": "station",
+      "indoor": true,
+      "tags": [
+        "交通",
+        "室内"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000009",
+      "city": "京都",
+      "name": "錦市場",
+      "aliases": [
+        "锦市场"
+      ],
+      "category": "market",
+      "indoor": false,
+      "tags": [
+        "美食",
+        "市场"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000010",
+      "city": "京都",
+      "name": "清水寺",
+      "aliases": [
+        "清水寺"
+      ],
+      "category": "temple",
+      "indoor": false,
+      "tags": [
+        "寺庙",
+        "历史"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000011",
+      "city": "京都",
+      "name": "鹿苑寺",
+      "aliases": [
+        "金阁寺"
+      ],
+      "category": "temple",
+      "indoor": false,
+      "tags": [
+        "寺庙",
+        "庭园"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000012",
+      "city": "京都",
+      "name": "慈照寺",
+      "aliases": [
+        "银阁寺"
+      ],
+      "category": "temple",
+      "indoor": false,
+      "tags": [
+        "寺庙",
+        "庭园"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000013",
+      "city": "京都",
+      "name": "伏見稲荷大社",
+      "aliases": [
+        "伏见稻荷大社"
+      ],
+      "category": "shrine",
+      "indoor": false,
+      "tags": [
+        "神社",
+        "步行"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000014",
+      "city": "京都",
+      "name": "嵐山",
+      "aliases": [
+        "岚山"
+      ],
+      "category": "park",
+      "indoor": false,
+      "tags": [
+        "自然",
+        "户外"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000015",
+      "city": "京都",
+      "name": "京都御苑",
+      "aliases": [
+        "京都御苑"
+      ],
+      "category": "park",
+      "indoor": false,
+      "tags": [
+        "公园",
+        "户外"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000016",
+      "city": "京都",
+      "name": "二条城",
+      "aliases": [
+        "二条城"
+      ],
+      "category": "castle",
+      "indoor": false,
+      "tags": [
+        "历史",
+        "城堡"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000017",
+      "city": "京都",
+      "name": "平安神宮",
+      "aliases": [
+        "平安神宫"
+      ],
+      "category": "shrine",
+      "indoor": false,
+      "tags": [
+        "神社",
+        "庭园"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000018",
+      "city": "京都",
+      "name": "南禅寺",
+      "aliases": [
+        "南禅寺"
+      ],
+      "category": "temple",
+      "indoor": false,
+      "tags": [
+        "寺庙",
+        "步行"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000019",
+      "city": "京都",
+      "name": "円山公園",
+      "aliases": [
+        "圆山公园"
+      ],
+      "category": "park",
+      "indoor": false,
+      "tags": [
+        "公园",
+        "户外"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    },
+    {
+      "place_id": "00000000-0000-4000-8000-000000000020",
+      "city": "京都",
+      "name": "哲学の道",
+      "aliases": [
+        "哲学之道"
+      ],
+      "category": "walk",
+      "indoor": false,
+      "tags": [
+        "散步",
+        "户外"
+      ],
+      "opening_hours": null,
+      "source_ref": "fixture:kyoto-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00"
+    }
+  ],
+  "articles": [
+    {
+      "article_id": "10000000-0000-4000-8000-000000000001",
+      "city": "京都",
+      "title": "京都测试攻略：室内 雨天",
+      "text": "自编测试案例 1：用“室内 雨天”标签检索并比较候选活动。此段落仅用于功能测试，营业时间、可达性和费用需要真实来源核验；不要把测试分类当作实时旅行建议。",
+      "tags": [
+        "室内",
+        "雨天"
+      ],
+      "source_ref": "fixture:kyoto-guide-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00",
+      "attribution": "Travel Agent 项目自编测试文本",
+      "category": "rainy_day"
+    },
+    {
+      "article_id": "10000000-0000-4000-8000-000000000002",
+      "city": "京都",
+      "title": "京都测试攻略：亲子 铁路",
+      "text": "自编测试案例 2：用“亲子 铁路”标签检索并比较候选活动。此段落仅用于功能测试，营业时间、可达性和费用需要真实来源核验；不要把测试分类当作实时旅行建议。",
+      "tags": [
+        "亲子",
+        "铁路"
+      ],
+      "source_ref": "fixture:kyoto-guide-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00",
+      "attribution": "Travel Agent 项目自编测试文本",
+      "category": "family"
+    },
+    {
+      "article_id": "10000000-0000-4000-8000-000000000003",
+      "city": "京都",
+      "title": "京都测试攻略：历史 博物馆",
+      "text": "自编测试案例 3：用“历史 博物馆”标签检索并比较候选活动。此段落仅用于功能测试，营业时间、可达性和费用需要真实来源核验；不要把测试分类当作实时旅行建议。",
+      "tags": [
+        "历史",
+        "博物馆"
+      ],
+      "source_ref": "fixture:kyoto-guide-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00",
+      "attribution": "Travel Agent 项目自编测试文本",
+      "category": "history"
+    },
+    {
+      "article_id": "10000000-0000-4000-8000-000000000004",
+      "city": "京都",
+      "title": "京都测试攻略：漫画 室内",
+      "text": "自编测试案例 4：用“漫画 室内”标签检索并比较候选活动。此段落仅用于功能测试，营业时间、可达性和费用需要真实来源核验；不要把测试分类当作实时旅行建议。",
+      "tags": [
+        "漫画",
+        "室内"
+      ],
+      "source_ref": "fixture:kyoto-guide-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00",
+      "attribution": "Travel Agent 项目自编测试文本",
+      "category": "museum"
+    },
+    {
+      "article_id": "10000000-0000-4000-8000-000000000005",
+      "city": "京都",
+      "title": "京都测试攻略：艺术 美术馆",
+      "text": "自编测试案例 5：用“艺术 美术馆”标签检索并比较候选活动。此段落仅用于功能测试，营业时间、可达性和费用需要真实来源核验；不要把测试分类当作实时旅行建议。",
+      "tags": [
+        "艺术",
+        "美术馆"
+      ],
+      "source_ref": "fixture:kyoto-guide-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00",
+      "attribution": "Travel Agent 项目自编测试文本",
+      "category": "gallery"
+    },
+    {
+      "article_id": "10000000-0000-4000-8000-000000000006",
+      "city": "京都",
+      "title": "京都测试攻略：亲子 水族馆",
+      "text": "自编测试案例 6：用“亲子 水族馆”标签检索并比较候选活动。此段落仅用于功能测试，营业时间、可达性和费用需要真实来源核验；不要把测试分类当作实时旅行建议。",
+      "tags": [
+        "亲子",
+        "水族馆"
+      ],
+      "source_ref": "fixture:kyoto-guide-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00",
+      "attribution": "Travel Agent 项目自编测试文本",
+      "category": "family"
+    },
+    {
+      "article_id": "10000000-0000-4000-8000-000000000007",
+      "city": "京都",
+      "title": "京都测试攻略：文化 展览",
+      "text": "自编测试案例 7：用“文化 展览”标签检索并比较候选活动。此段落仅用于功能测试，营业时间、可达性和费用需要真实来源核验；不要把测试分类当作实时旅行建议。",
+      "tags": [
+        "文化",
+        "展览"
+      ],
+      "source_ref": "fixture:kyoto-guide-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00",
+      "attribution": "Travel Agent 项目自编测试文本",
+      "category": "culture"
+    },
+    {
+      "article_id": "10000000-0000-4000-8000-000000000008",
+      "city": "京都",
+      "title": "京都测试攻略：手工艺 体验",
+      "text": "自编测试案例 8：用“手工艺 体验”标签检索并比较候选活动。此段落仅用于功能测试，营业时间、可达性和费用需要真实来源核验；不要把测试分类当作实时旅行建议。",
+      "tags": [
+        "手工艺",
+        "体验"
+      ],
+      "source_ref": "fixture:kyoto-guide-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00",
+      "attribution": "Travel Agent 项目自编测试文本",
+      "category": "craft"
+    },
+    {
+      "article_id": "10000000-0000-4000-8000-000000000009",
+      "city": "京都",
+      "title": "京都测试攻略：美食 市场",
+      "text": "自编测试案例 9：用“美食 市场”标签检索并比较候选活动。此段落仅用于功能测试，营业时间、可达性和费用需要真实来源核验；不要把测试分类当作实时旅行建议。",
+      "tags": [
+        "美食",
+        "市场"
+      ],
+      "source_ref": "fixture:kyoto-guide-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00",
+      "attribution": "Travel Agent 项目自编测试文本",
+      "category": "food"
+    },
+    {
+      "article_id": "10000000-0000-4000-8000-000000000010",
+      "city": "京都",
+      "title": "京都测试攻略：寺庙 庭园",
+      "text": "自编测试案例 10：用“寺庙 庭园”标签检索并比较候选活动。此段落仅用于功能测试，营业时间、可达性和费用需要真实来源核验；不要把测试分类当作实时旅行建议。",
+      "tags": [
+        "寺庙",
+        "庭园"
+      ],
+      "source_ref": "fixture:kyoto-guide-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00",
+      "attribution": "Travel Agent 项目自编测试文本",
+      "category": "temple"
+    },
+    {
+      "article_id": "10000000-0000-4000-8000-000000000011",
+      "city": "京都",
+      "title": "京都测试攻略：自然 户外",
+      "text": "自编测试案例 11：用“自然 户外”标签检索并比较候选活动。此段落仅用于功能测试，营业时间、可达性和费用需要真实来源核验；不要把测试分类当作实时旅行建议。",
+      "tags": [
+        "自然",
+        "户外"
+      ],
+      "source_ref": "fixture:kyoto-guide-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00",
+      "attribution": "Travel Agent 项目自编测试文本",
+      "category": "nature"
+    },
+    {
+      "article_id": "10000000-0000-4000-8000-000000000012",
+      "city": "京都",
+      "title": "京都测试攻略：交通 车站",
+      "text": "自编测试案例 12：用“交通 车站”标签检索并比较候选活动。此段落仅用于功能测试，营业时间、可达性和费用需要真实来源核验；不要把测试分类当作实时旅行建议。",
+      "tags": [
+        "交通",
+        "车站"
+      ],
+      "source_ref": "fixture:kyoto-guide-v1",
+      "data_mode": "fixture",
+      "retrieved_at": "2026-10-03T00:00:00+09:00",
+      "attribution": "Travel Agent 项目自编测试文本",
+      "category": "transport"
+    }
+  ]
+}

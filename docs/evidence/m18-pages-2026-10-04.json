@@ -1,0 +1,50 @@
+{
+  "date": "2026-10-04 Asia/Tokyo; same 2026-10-03 UTC budget day",
+  "scope": "M1.8 missing guide and saved pages; local actual Next/API/PostgreSQL, zero paid calls",
+  "base_commit": "bf6dc5254ae95623dc5cb45a4e3edcffe2f2d324",
+  "browser_scenarios": [
+    "Public list exposes 20 attributed snapshots, detail renders canonical historical text",
+    "Original encoded-colon detail returned 404; boundary decode fixed and same article retested successfully",
+    "Missing article shows safe error and explicit retry",
+    "Anonymous saved page shows empty state without creating identity",
+    "Article reference fills canonical ID only; no automatic send, save or order",
+    "Explicit demo login, conditions revision1, offline generation and user confirmation produce formal V1",
+    "Navigation to /plans reads V1 and six cards with unknown cost and route warnings; no confirm or lock buttons",
+    "Stop owned demo API then reload /plans: safe HTTP500 proxy error and retry shown; identity retained",
+    "Restart same API then click retry: original V1 returned; reload keeps V1",
+    "Original pre-existing demo state read-only smoke verifies after stack rebuild"
+  ],
+  "checks": {
+    "article_api": "11 passed, 680 deselected, 5.52s; real temporary PostgreSQL",
+    "frontend": "Final TypeScript, ESLint, Prettier, 12 native Node tests and Next production build passed; zero skipped",
+    "guard": "63 passed, 11.57s; original actual CLI no-tool rubric assertions retained",
+    "static": "Final 219 files three-platform strict types, ruff/format, three layer contracts, ten document maps Passed in normal commit hooks",
+    "final_hooks": "7d1d0f6 normal dev check + complete default offline Python hooks Passed; no bypass",
+    "remote_ci": "7d1d0f6 push37132750339/PR37132753268 running at record update; prior bf6dc52 failure retained and corrected"
+  },
+  "independent_review": {
+    "closed_p2": [
+      "Saved page retry must use persisted plan_id even after first read failure",
+      "Unmount must increment generation to prevent late identity storage overwrite"
+    ],
+    "guard": "No P1/P2 after response allowlist and settlement boundary review"
+  },
+  "screenshots": [
+    "m18-saved-page-2026-10-04.jpg"
+  ],
+  "limitations": [
+    "Scripted offline generation is not model planning quality",
+    "Delayed login/unmount browser race not injected; source review plus existing Promise/microtask regression only",
+    "Full semantic model and human calibration acceptance remains open"
+  ],
+  "paid_http_requests": 0,
+  "source_sha256": {
+    "apps/web/src/app/articles/[articleId]/page.tsx": "79b65df69ffb128cff674e44e24c49e656c3873efc04245929b668a3b9a1b42b",
+    "apps/web/src/lib/use-workspace.ts": "f3cdf763cd58545330c49de4f88c83d7976e001c296e4043f532e0799b8d8300",
+    "apps/web/src/components/saved-trip.tsx": "e5a4ca7f723ca6424a26d1fd08430a5aabff5e46a41180c1fce2bbb2f181913d",
+    "backend/services/catalog.py": "16a1f192521cd4a13ec92d30863a8369278ad2ee8a02f3f3d1c1391dc6935094",
+    "backend/api/app.py": "2d8bafe1a2b377c15183c46e8967a92756a3a86371a57e7254293d380db46402"
+  },
+  "saved_commit": "7d1d0f60b5fc3c18ed46ca758f8be81d7d233684",
+  "push": "confirmed by exact ls-remote SHA"
+}
