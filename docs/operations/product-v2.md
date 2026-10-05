@@ -138,3 +138,7 @@ HUMAN 无每日CNY上限（README 已同步）；调用上限、编排与预算�
 
 **路段冲突提示与TRACE标签（2026-10-05）**：生产症状为一次 `estimate_routes` 把所有leg都用默认09:00出发，产生 `route_unexpected`×1 与 `route_departure`×3，修复轮次耗尽。规则不变（零容差，出发须在前一项结束与后一项开始之间，每天首项不接路段），只改文字：`estimate_routes` 描述与 `RouteLeg.departure` 说明要求先定各项时间、每段用前一项结束时间出发、调整顺序后重估；`route_departure`/`route_unexpected`/`route_scope` 的校验消息带京都时区的具体时刻和补救动作（check code/status不变）。
 TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:conflict@d{天}i{当天第几项}`（从1起）及 `dep= pe= ns=`（出发/前项结束/后项开始，HH:MM），每条≤60字符，只含数字与时刻，不含名称、ID或消息正文；标签存于 `ValidationCheck` 私有属性，不进API，无OpenAPI变更。
+
+## 回复不暴露内部编号（2026-10-05）
+
+提示词新增规则：回复文字不得出现offer_id/evidence_id/draft_id/plan_id或UUID；另在 `services/runs.py` 对最终回答文本（`domain.execution.scrub_internal_ids`）兜底删除带标签编号与36位UUID，不改工具结果和展示卡片。

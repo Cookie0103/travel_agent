@@ -21,6 +21,7 @@ from backend.domain.execution import (
     RuntimeIdentity,
     RuntimeOutcome,
     event_metadata,
+    scrub_internal_ids,
     upstream_error_text,
 )
 from backend.persistence import runs, sessions
@@ -266,6 +267,7 @@ class RunService:
                 if deadline.expired()
                 else result.outcome
             )
+            outcome = replace(outcome, text=scrub_internal_ids(outcome.text))
         except asyncio.CancelledError:
             outcome = RuntimeOutcome(code="cancelled", reason="cancelled")
         except TimeoutError:

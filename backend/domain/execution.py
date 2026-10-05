@@ -1,5 +1,6 @@
 """应用执行的数据契约；业务身份和事件不依赖 SDK 消息或会话文件。"""
 
+import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Literal, cast, get_args
@@ -28,6 +29,29 @@ type EventKind = Literal[
     "partial",
     "awaiting_user",
 ]
+
+
+_ID_LABEL = re.compile(
+    r"[ \t]*\b(?:offer_id|evidence_id|draft_id|plan_id|evidence)\b[ \t]*[:=：]?[ \t]*"
+    r"(?=[0-9a-fA-F-]*\d)[0-9a-fA-F][0-9a-fA-F-]{5,35}(?![0-9A-Za-z_])"
+    r"(?:…|\.{3})?(?:[ \t]*[，,、；;][ \t]*)?"
+)
+_UUID = re.compile(
+    r"(?<![0-9A-Za-z])[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
+    r"(?![0-9A-Za-z])"
+)
+_EMPTY_BRACKETS = re.compile(r"[（(][ \t，,、；;]*[）)]")
+_EDGE_SEPARATORS = re.compile(r"(?<=[（(])[ \t]*[，,、；;][ \t]*|[ \t]*[，,、；;][ \t]*(?=[）)])")
+
+
+def scrub_internal_ids(text: str) -> str:
+    """最终回复的兜底：仅删除带标签的内部编号与36位UUID，其余文本原样保留；幂等。"""
+    if not text:
+        return text
+    cleaned = _UUID.sub("", _ID_LABEL.sub("", text))
+    if cleaned == text:
+        return text
+    return _EMPTY_BRACKETS.sub("", _EDGE_SEPARATORS.sub("", cleaned))
 
 
 def error_code(value: object) -> ErrorCode:
