@@ -13,6 +13,9 @@ class ProposedItem(BaseModel):
     start: AwareDatetime = Field(description="含时区的ISO时间；日本时间使用+09:00")
     end: AwareDatetime = Field(description="含时区的ISO时间；日本时间使用+09:00")
     route_evidence_id: UUID | None = None
+    note: str | None = Field(
+        default=None, max_length=80, description="一句话概述，模型撰写，非来源核实"
+    )
 
 
 class ItineraryProposal(BaseModel):

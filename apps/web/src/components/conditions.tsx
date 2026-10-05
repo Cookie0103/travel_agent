@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { components } from "@/lib/api-types";
 import type { RequestState } from "@/lib/api";
+import { PACES, currentPace, mergePace, type Pace } from "@/lib/pace";
 
 export function Conditions({
   request,
@@ -28,6 +29,9 @@ export function Conditions({
     request.transport || "walk",
   );
   const [departure, setDeparture] = useState(request.departure_time || "09:00");
+  const [pace, setPace] = useState<Pace>(
+    currentPace(request.soft_constraints || []),
+  );
   const [formError, setFormError] = useState("");
   return (
     <form
@@ -57,6 +61,7 @@ export function Conditions({
           currency: "JPY",
           transport,
           departure_time: departure,
+          soft_constraints: mergePace(request.soft_constraints || [], pace),
         });
       }}
     >
@@ -158,6 +163,16 @@ export function Conditions({
           />
         </label>
       </div>
+      <label>
+        节奏
+        <select value={pace} onChange={(e) => setPace(e.target.value as Pace)}>
+          {PACES.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+      </label>
       {formError && (
         <p role="alert" className="error">
           {formError}

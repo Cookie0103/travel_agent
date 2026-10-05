@@ -156,9 +156,15 @@ export function Conversation({
             {workspace.hotels && (
               <HotelResults
                 hotels={workspace.hotels}
-                disabled={workspace.busy}
+                disabled={workspace.busy || running}
                 revision={workspace.request?.revision}
                 hold={workspace.holdOffer}
+                choose={(card) =>
+                  send(
+                    `我选择酒店「${card.hotel_name}」（evidence_id=${card.evidence_id}），请按它重排每天行程，每天结束于酒店。`,
+                    mode,
+                  )
+                }
                 compact
               />
             )}

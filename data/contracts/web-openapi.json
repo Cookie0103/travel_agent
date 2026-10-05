@@ -2271,6 +2271,19 @@
             ],
             "title": "Route Evidence Id"
           },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "一句话概述，模型撰写，非来源核实"
+          },
           "item_id": {
             "type": "string",
             "format": "uuid",
@@ -2313,6 +2326,7 @@
           "start",
           "end",
           "route_evidence_id",
+          "note",
           "item_id",
           "locked",
           "name",
@@ -2382,6 +2396,19 @@
               }
             ],
             "title": "Route Evidence Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 80
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note",
+            "description": "一句话概述，模型撰写，非来源核实"
           },
           "item_id": {
             "type": "string",
@@ -3877,6 +3904,20 @@
             "default": null,
             "title": "Route Evidence Id"
           },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "一句话概述，模型撰写，非来源核实",
+            "title": "Note"
+          },
           "item_id": {
             "format": "uuid",
             "title": "Item Id",
@@ -3917,6 +3958,7 @@
           "start",
           "end",
           "route_evidence_id",
+          "note",
           "item_id",
           "locked",
           "name",
@@ -3958,6 +4000,20 @@
             ],
             "default": null,
             "title": "Route Evidence Id"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "一句话概述，模型撰写，非来源核实",
+            "title": "Note"
           },
           "item_id": {
             "format": "uuid",

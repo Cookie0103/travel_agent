@@ -142,9 +142,11 @@ export function HotelResults({
   disabled,
   revision,
   hold,
+  choose,
   compact = false,
 }: {
   compact?: boolean;
+  choose?: (card: components["schemas"]["UiHotelCard"]) => void;
   hotels: Hotels;
   disabled: boolean;
   revision?: number;
@@ -172,16 +174,23 @@ export function HotelResults({
           <div key={card.offer_id}>
             <Hotel card={card} />
             {card.data_mode === "live" ? (
-              card.booking_url && (
-                <a
-                  className="button-link primary"
-                  href={card.booking_url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  去乐天查看 ↗
-                </a>
-              )
+              <>
+                {card.booking_url && (
+                  <a
+                    className="button-link primary"
+                    href={card.booking_url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    去乐天查看 ↗
+                  </a>
+                )}
+                {choose && (
+                  <button disabled={disabled} onClick={() => choose(card)}>
+                    选用此酒店
+                  </button>
+                )}
+              </>
             ) : (
               <button
                 disabled={
@@ -294,14 +303,23 @@ export function PlanResults({
               <article key={item.item_id} className="visit">
                 <span className="visit-number">{index + 1}</span>
                 <div>
-                  <h3>{item.name}</h3>
+                  <h3>
+                    {sourceHref(item.source_ref ?? "") ? (
+                      <a
+                        href={sourceHref(item.source_ref ?? "")}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {item.name}
+                      </a>
+                    ) : (
+                      item.name
+                    )}
+                  </h3>
                   <p className="tabular">
                     {date(item.start)} — {date(item.end)}
                   </p>
-                  <p className="muted small">
-                    {item.data_mode === "live" ? "Google Maps" : "历史快照"} ·{" "}
-                    <SourceRef value={item.source_ref} />
-                  </p>
+                  {item.note && <p className="muted small">{item.note}</p>}
                 </div>
                 {!plan.draft_id && lock && (
                   <button
@@ -314,6 +332,9 @@ export function PlanResults({
                 )}
               </article>
             ))}
+            {plan.hotel && dayIndex < planDays(plan).length - 1 && (
+              <p className="muted small">住宿：{plan.hotel.hotel_name}</p>
+            )}
           </div>
         ))}
       </div>

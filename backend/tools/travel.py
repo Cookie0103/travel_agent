@@ -478,6 +478,7 @@ def catalog_summary(row: dict[str, object]) -> dict[str, object]:
         "longitude",
         "coordinate_kind",
         "indoor",
+        "opening_hours",
         "source",
     }
     result = {key: value for key, value in row.items() if key in fields}

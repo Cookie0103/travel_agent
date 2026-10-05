@@ -362,3 +362,25 @@ def test_walking_fare_is_zero_but_transit_without_fare_stays_unknown() -> None:
     assert not any(code == "route_fare" for _, code, _ in route_report(google_route()))
     transit = route_report(google_route(transport="transit"), transport="transit")
     assert any(code == "route_fare" and status == "unknown" for status, code, _ in transit)
+
+
+def test_item_note_is_limited_to_80_characters() -> None:
+    def make(note: str | None = None) -> ProposedItem:
+        return ProposedItem(
+            place_evidence_id=uuid4(), start=NOW, end=NOW + timedelta(hours=1), note=note
+        )
+
+    assert make("字" * 80).note == "字" * 80
+    assert make().note is None
+    with pytest.raises(ValidationError):
+        make("字" * 81)
+
+
+def test_item_note_flows_into_plan_item() -> None:
+    from backend.domain.plans import PlanItem
+
+    item = ProposedItem(
+        place_evidence_id=uuid4(), start=NOW, end=NOW + timedelta(hours=1), note="枯山水名园"
+    )
+    assert PlanItem(**item.model_dump()).note == "枯山水名园"
+    assert PlanItem(**item.model_dump()).proposed().note == "枯山水名园"

@@ -731,6 +731,11 @@ export interface components {
             /** Route Evidence Id */
             route_evidence_id: string | null;
             /**
+             * Note
+             * @description 一句话概述，模型撰写，非来源核实
+             */
+            note: string | null;
+            /**
              * Item Id
              * Format: uuid
              */
@@ -778,6 +783,11 @@ export interface components {
             end: string;
             /** Route Evidence Id */
             route_evidence_id?: string | null;
+            /**
+             * Note
+             * @description 一句话概述，模型撰写，非来源核实
+             */
+            note?: string | null;
             /**
              * Item Id
              * Format: uuid
@@ -1333,6 +1343,12 @@ export interface components {
              */
             route_evidence_id: string | null;
             /**
+             * Note
+             * @description 一句话概述，模型撰写，非来源核实
+             * @default null
+             */
+            note: string | null;
+            /**
              * Item Id
              * Format: uuid
              */
@@ -1376,6 +1392,12 @@ export interface components {
              * @default null
              */
             route_evidence_id: string | null;
+            /**
+             * Note
+             * @description 一句话概述，模型撰写，非来源核实
+             * @default null
+             */
+            note: string | null;
             /**
              * Item Id
              * Format: uuid
