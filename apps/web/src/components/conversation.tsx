@@ -5,6 +5,7 @@ import { toolLabel } from "./tool-names";
 import { HotelResults, planDays } from "./results";
 import type { Mode } from "./composer";
 import { RunSteps } from "./activity-drawer";
+import { Markdown } from "./markdown";
 
 const runStatusLabels: Record<string, string> = {
   running: "处理中",
@@ -141,7 +142,11 @@ export function Conversation({
                 )}
               </p>
             )}
-            {run.answer && <p className="answer">{run.answer}</p>}
+            {run.answer && (
+              <div className="answer">
+                <Markdown text={run.answer} />
+              </div>
+            )}
             {run.error_code && !run.answer && (
               <p className="error">
                 执行未完成：{run.error_code}。请检查模型配置或调用额度。
@@ -185,23 +190,6 @@ export function Conversation({
           </p>
         </div>
       )}
-      <details className="small muted data-notes">
-        <summary>数据说明</summary>
-        <p>
-          实时景点和路线：Google
-          Maps。酒店：乐天实时查询，报价以供应商页面为准。
-        </p>
-        <p>
-          天气数据：
-          <a
-            href="https://open-meteo.com/"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Open-Meteo.com（CC BY 4.0）
-          </a>
-        </p>
-      </details>
     </div>
   );
 }

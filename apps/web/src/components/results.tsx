@@ -262,18 +262,6 @@ export function PlanResults({
             </li>
           ))}
       </ul>
-      {plan.validation.truncated && (
-        <p className="muted small">
-          展示优先级最高的 12 项；完整校验仍由服务端执行。
-        </p>
-      )}
-      <p className="muted small">{plan.validation.scope}</p>
-      {plan.base_version !== undefined && plan.base_version !== null && (
-        <p className="base-version">
-          基于正式版本 V{plan.base_version} · {plan.changes?.length || 0} 项变化
-          · 酒店{plan.hotel_changed ? "有变化" : "保留"}
-        </p>
-      )}
       {!!plan.changes?.length && (
         <details>
           <summary>查看本次差异</summary>
@@ -337,7 +325,6 @@ export function PlanResults({
       )}
       {plan.draft_id && confirm && (
         <div className="confirm-bar">
-          <p>确认只保存此草稿；unknown 保留，不创建订单或付款。</p>
           <button
             className="primary"
             disabled={disabled || blocked || plan.status === "confirmed"}
@@ -347,7 +334,6 @@ export function PlanResults({
           </button>
         </div>
       )}
-      <p className="muted small">{plan.guidance}</p>
     </section>
   );
 }

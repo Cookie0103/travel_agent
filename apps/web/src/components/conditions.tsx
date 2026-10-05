@@ -64,9 +64,6 @@ export function Conditions({
         <h2>编辑条件</h2>
         <span className="tag">版本 {request.revision}</span>
       </div>
-      <p className="muted">
-        日本国内 · 日本时间 · 日元。空儿童年龄表示明确无儿童。
-      </p>
       <label>
         目的地
         <input

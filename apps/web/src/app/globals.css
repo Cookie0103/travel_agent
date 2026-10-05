@@ -23,6 +23,12 @@
   --space-3: 12px;
   --space-4: 16px;
   --space-5: 24px;
+  --fs-body: 17px;
+  --fs-sm: 15px;
+  --fs-xs: 14px;
+  --fs-h1: 30px;
+  --fs-h2: 20px;
+  --fs-h3: 18px;
   --shadow: 0 1px 2px rgb(15 23 42 / 0.06), 0 6px 16px rgb(15 23 42 / 0.06);
 }
 * {
@@ -35,19 +41,19 @@ body {
   font-family:
     var(--font-inter), var(--font-chinese), "PingFang SC", "Hiragino Sans",
     "Noto Sans SC", "Microsoft YaHei", system-ui, sans-serif;
-  font-size: 20px;
+  font-size: var(--fs-body);
   line-height: 1.6;
 }
 h1 {
   margin: 0 0 8px;
-  font-size: 36px;
+  font-size: var(--fs-h1);
   line-height: 1.3;
   font-weight: 700;
 }
 h2,
 h3 {
   margin: 0;
-  font-size: 24px;
+  font-size: var(--fs-h2);
   line-height: 1.4;
   font-weight: 600;
 }
@@ -61,7 +67,7 @@ a {
   color: var(--muted);
 }
 .small {
-  font-size: 18px;
+  font-size: var(--fs-sm);
   overflow-wrap: anywhere;
 }
 .sr-only {
@@ -100,7 +106,7 @@ a {
 }
 .site-nav a {
   color: var(--muted);
-  font-size: 20px;
+  font-size: 16px;
   text-decoration: none;
   padding: 6px 2px;
   border-bottom: 2px solid transparent;
@@ -113,7 +119,7 @@ a {
 .site-nav .brand {
   color: var(--brand-strong);
   font-weight: 700;
-  font-size: 24px;
+  font-size: 20px;
   margin-right: 12px;
   border-bottom: 0;
 }
@@ -121,7 +127,7 @@ a {
 /* Controls */
 label {
   display: block;
-  font-size: 18px;
+  font-size: var(--fs-sm);
   font-weight: 500;
   margin: 12px 0;
 }
@@ -146,7 +152,7 @@ select {
 button {
   cursor: pointer;
   font: inherit;
-  font-size: 19px;
+  font-size: 16px;
   font-weight: 500;
   color: var(--brand-strong);
   background: var(--surface);
@@ -170,7 +176,7 @@ button:disabled {
   background: var(--brand-strong);
 }
 .tag {
-  font-size: 18px;
+  font-size: var(--fs-xs);
   color: var(--brand-strong);
   background: var(--brand-weak);
   border-radius: 6px;
@@ -211,7 +217,7 @@ button:disabled {
   gap: 12px;
 }
 details {
-  font-size: 18px;
+  font-size: var(--fs-sm);
 }
 summary {
   cursor: pointer;
@@ -231,7 +237,7 @@ summary {
   padding: 12px 16px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
-  font-size: 19px;
+  font-size: 16px;
 }
 .banner-error {
   color: var(--danger);
@@ -253,7 +259,7 @@ summary {
   color: var(--warn);
   padding: 8px 12px;
   border-radius: var(--radius-sm);
-  font-size: 18px;
+  font-size: var(--fs-sm);
 }
 
 /* Chat layout */
@@ -319,6 +325,7 @@ summary {
   border: 1px solid #99d5cd;
   border-radius: var(--radius);
   padding: 10px 16px;
+  font-size: 17px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -336,13 +343,25 @@ summary {
   line-height: 1.6;
 }
 .run-status {
-  font-size: 18px;
+  font-size: var(--fs-sm);
   color: var(--muted);
   margin: 0 0 4px;
 }
 .answer {
-  white-space: pre-wrap;
+  font-size: 17px;
   overflow-wrap: anywhere;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 10px 14px;
+}
+.answer p {
+  margin: 6px 0;
+}
+.answer ul,
+.answer ol {
+  margin: 6px 0;
+  padding-left: 22px;
 }
 .reply-failed .answer,
 .reply-failed .run-status {
@@ -490,20 +509,20 @@ summary {
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: 14px;
-  font-size: 19px;
+  font-size: var(--fs-sm);
   overflow-wrap: anywhere;
   background: var(--surface);
 }
 .price {
-  font-size: 30px;
+  font-size: 22px;
   font-weight: 700;
 }
 .lowest {
-  font-size: 18px;
+  font-size: var(--fs-sm);
   color: var(--ok);
 }
 .checks {
-  font-size: 18px;
+  font-size: var(--fs-xs);
   color: var(--warn);
   padding-left: 20px;
 }
@@ -525,7 +544,7 @@ summary {
   line-height: 28px;
   text-align: center;
   border-radius: 50%;
-  font-size: 18px;
+  font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--ink);
 }
@@ -540,7 +559,7 @@ summary {
   padding: 10px 0;
   background: var(--bg-subtle);
   border-top: 1px solid var(--line);
-  font-size: 19px;
+  font-size: 16px;
 }
 .confirm-bar .primary {
   width: 100%;
@@ -574,7 +593,7 @@ summary {
   margin-top: 16px;
 }
 .notice {
-  font-size: 18px;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 .empty-state {
@@ -651,7 +670,7 @@ summary {
 }
 .status-chip {
   display: inline-block;
-  font-size: 18px;
+  font-size: var(--fs-sm);
   padding: 1px 10px;
   border-radius: 999px;
   background: var(--surface-2);
@@ -679,7 +698,7 @@ summary {
   padding: 10px;
 }
 .is-compact .price {
-  font-size: 21px;
+  font-size: 19px;
 }
 @media (prefers-reduced-motion: reduce) {
   .pulse {
@@ -691,7 +710,7 @@ summary {
 .status-bar {
   padding: 8px 12px;
   border-radius: var(--radius-sm);
-  font-size: 18px;
+  font-size: var(--fs-sm);
   background: var(--brand-weak);
   color: var(--ok);
 }
@@ -705,12 +724,12 @@ summary {
 }
 .day-heading {
   margin: 16px 0 0;
-  font-size: 19px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--brand-strong);
 }
 .base-version {
-  font-size: 18px;
+  font-size: var(--fs-sm);
 }
 .button-link {
   display: inline-block;
@@ -759,12 +778,12 @@ summary {
   background: var(--surface-2);
 }
 .model-option.is-disabled {
-  opacity: 0.5;
+  opacity: 0.6;
   cursor: default;
 }
 .run-steps {
   margin: 8px 0;
-  font-size: 18px;
+  font-size: var(--fs-sm);
   color: var(--muted);
 }
 .run-steps summary {
@@ -797,31 +816,80 @@ summary {
   object-fit: cover;
   border-radius: var(--radius-sm);
 }
+
 .composer-examples {
-  position: relative;
+  margin: 0 0 6px;
+  color: var(--muted);
+  font-size: var(--fs-xs);
 }
-.composer-examples summary {
-  cursor: pointer;
-  white-space: nowrap;
-  font-size: 18px;
-}
-.composer-examples > div {
-  position: absolute;
-  bottom: 40px;
-  left: 0;
-  width: 300px;
-  background: var(--surface);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 8px;
-  z-index: 12;
-}
-.composer-examples button {
+.composer-examples .link-button {
+  display: inline;
+  margin-right: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: 400;
   text-align: left;
-  width: 100%;
-  margin: 4px 0;
+  text-decoration: underline;
+}
+.composer-examples .link-button:hover {
+  background: none;
+  color: var(--brand-strong);
+}
+.trip-panel {
+  font-size: var(--fs-sm);
+}
+.trip-panel h3 {
+  font-size: 17px;
+}
+.visit h3 {
+  font-size: 16px;
+}
+.visit p {
+  font-size: 14px;
+}
+.hotel-card h3 {
+  font-size: 16px;
+}
+.trip-panel .conditions label {
+  font-size: 14px;
+  margin: 8px 0;
+}
+.trip-panel .conditions input {
+  padding: 6px 8px;
 }
 .data-notes {
-  margin-top: 20px;
+  position: fixed;
+  left: 12px;
+  bottom: 10px;
+  z-index: 30;
+}
+.data-notes > button {
+  padding: 2px 8px;
+  border-color: var(--line);
+  background: var(--surface);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+  font-weight: 400;
+}
+.data-notes-pop {
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 0;
+  width: 320px;
+  max-width: calc(100vw - 24px);
+  padding: 8px 12px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow);
+  color: var(--muted);
+  font-size: var(--fs-xs);
+}
+@media (max-width: 999px) {
+  .data-notes-label {
+    display: none;
+  }
 }

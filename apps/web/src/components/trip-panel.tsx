@@ -75,7 +75,6 @@ export function TripPanel({
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
-                  <p className="small muted">也可以直接在对话里告诉我。</p>
                 </>
               ) : (
                 <p className="muted">还没有设定条件，直接在对话里告诉我</p>

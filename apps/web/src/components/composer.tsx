@@ -3,6 +3,7 @@
 import { useId, useRef, useState } from "react";
 import type { ModelOption, Mode } from "@/lib/models";
 import { modeLabel } from "@/lib/models";
+import { shouldSubmitOnEnter } from "@/lib/composer-keys";
 import { ArticleReference } from "./articles";
 export type { Mode } from "@/lib/models";
 
@@ -93,13 +94,12 @@ function ModelSelector({
             >
               <strong>{option.label}</strong>
               <span className="small muted">
-                {option.id === "offline"
-                  ? "免费 · 模拟数据"
-                  : "实时数据 · 按 API 计费"}
+                {!option.available && option.reason
+                  ? option.reason.replace(/^[a-z_]+:\s*/i, "")
+                  : option.id === "offline"
+                    ? "免费 · 模拟数据"
+                    : "实时数据 (API 计费)"}
               </span>
-              {option.reason && (
-                <span className="small muted">{option.reason}</span>
-              )}
             </div>
           ))}
         </div>
@@ -139,6 +139,23 @@ export function Composer({
           select={(id) => setText(`请参考攻略 ${id}，帮我规划京都旅行。`)}
         />
       )}
+      <div className="composer-examples small muted">
+        示例：
+        {[
+          "大阪三天两夜，2成人无儿童1间房，预算6万日元，想看景点并比较酒店",
+          "下雨天札幌有哪些室内景点？",
+          "帮我修改第二天下午，其他安排保留",
+        ].map((example) => (
+          <button
+            type="button"
+            className="link-button"
+            key={example}
+            onClick={() => setText(example)}
+          >
+            {example}
+          </button>
+        ))}
+      </div>
       <form
         className="composer"
         onSubmit={(event) => {
@@ -159,30 +176,28 @@ export function Composer({
           }
           value={text}
           onChange={(event) => setText(event.target.value)}
+          onKeyDown={(event) => {
+            if (
+              shouldSubmitOnEnter(
+                {
+                  key: event.key,
+                  shiftKey: event.shiftKey,
+                  keyCode: event.keyCode,
+                  isComposing: event.nativeEvent.isComposing,
+                },
+                !busy && !active && !!text.trim(),
+              )
+            ) {
+              event.preventDefault();
+              event.currentTarget.form?.requestSubmit();
+            }
+          }}
           onInput={(event) => {
             event.currentTarget.style.height = "auto";
             event.currentTarget.style.height = `${Math.min(event.currentTarget.scrollHeight, 220)}px`;
           }}
         />
         <div className="composer-bar">
-          <details className="composer-examples">
-            <summary>💡 示例</summary>
-            <div>
-              {[
-                "大阪三天两夜，2成人无儿童1间房，预算6万日元，想看景点并比较酒店",
-                "下雨天札幌有哪些室内景点？",
-                "帮我修改第二天下午，其他安排保留",
-              ].map((example) => (
-                <button
-                  type="button"
-                  key={example}
-                  onClick={() => setText(example)}
-                >
-                  {example}
-                </button>
-              ))}
-            </div>
-          </details>
           <ModelSelector
             mode={mode}
             setMode={setMode}
@@ -190,9 +205,7 @@ export function Composer({
             disabled={busy}
           />
           <span className="composer-hint small muted">
-            {mode === "offline"
-              ? "固定演示 · 不调用模型"
-              : "费用受服务端预算与调用上限限制"}
+            {mode === "offline" && "固定演示 · 不调用模型"}
           </span>
           {active ? (
             <button type="button" onClick={cancel}>
