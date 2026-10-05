@@ -85,6 +85,15 @@ a {
   outline: 3px solid var(--brand);
   outline-offset: 2px;
 }
+input:focus,
+input:focus-visible,
+textarea:focus,
+textarea:focus-visible,
+select:focus,
+select:focus-visible {
+  outline: none;
+  box-shadow: none;
+}
 .tabular,
 .price,
 .money {
@@ -343,12 +352,12 @@ summary {
   line-height: 1.6;
 }
 .run-status {
-  font-size: var(--fs-sm);
+  font-size: 14px;
   color: var(--muted);
   margin: 0 0 4px;
 }
 .answer {
-  font-size: 17px;
+  font-size: 15.5px;
   overflow-wrap: anywhere;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -416,8 +425,12 @@ summary {
   outline: none;
 }
 .composer:focus-within {
-  outline: 2px solid var(--brand);
-  outline-offset: 1px;
+  outline: none;
+}
+.composer button:focus-visible,
+.composer summary:focus-visible {
+  outline: 1px solid var(--brand);
+  outline-offset: 0;
 }
 .composer-bar {
   display: flex;
@@ -485,6 +498,28 @@ summary {
 .trip-panel .conditions,
 .trip-panel .conversation {
   padding: 8px 0 0;
+}
+
+/* Preferences form: stacked fields, wrapped button row */
+.preference-panel form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 10px;
+  margin-top: 12px;
+}
+.preference-panel form > label,
+.preference-panel form > p {
+  flex: 0 0 100%;
+  margin: 0;
+}
+.preference-panel label select,
+.preference-panel label textarea {
+  display: block;
+  margin-top: 6px;
+}
+.preference-panel select {
+  padding: 8px 12px;
+  min-width: 160px;
 }
 
 /* Cards */
