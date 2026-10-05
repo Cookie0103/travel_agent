@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import time
 from collections.abc import Callable
 from dataclasses import dataclass, replace
 from datetime import datetime
@@ -25,11 +26,12 @@ from backend.persistence import runs, sessions
 from backend.persistence.database import Database
 from backend.persistence.models import TaskRunRow
 from backend.providers.claude_agent.application import GuardedRuntime
-from backend.providers.claude_agent.profile import current
+from backend.providers.claude_agent.profile import current, profile_name
 from backend.services.common import ServiceError, database_error_details, transaction
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolExecutor
 from backend.tools.travel import TravelToolExecutor
+from backend.trace_log import trace
 
 LOGGER = logging.getLogger(__name__)
 RUN_TIMEOUT: float | None = None  # 测试可覆盖；默认取 profile
@@ -139,6 +141,13 @@ class RunService:
             )
             result = view(row)
         context = RunContext(user_id, session_id, result.run_id)
+        trace(
+            "run_submitted",
+            result.run_id,
+            mode=message.mode,
+            provider={"claude": "anthropic", "deepseek": "deepseek"}.get(message.mode, "offline"),
+            profile=profile_name(),
+        )
         self.cancelled[result.run_id] = asyncio.Event()
         self.tasks[result.run_id] = asyncio.create_task(self._execute(context, message))
         return result
@@ -219,6 +228,17 @@ class RunService:
         outcome = RuntimeOutcome(code="provider_error", reason="execution_failed")
         identity: RuntimeIdentity | None = None
         runtime: Runtime | None = None
+        started = time.monotonic()
+        limit = RUN_TIMEOUT or current().run_timeout
+
+        def expired() -> None:
+            trace(
+                "timeout_fired",
+                context.run_id,
+                layer="run",
+                limit_s=limit,
+                elapsed_ms=round((time.monotonic() - started) * 1000),
+            )
 
         def emit(event: RuntimeEvent) -> None:
             # 终态由finish和状态原子落库，避免SSE先看到完成、数据库却仍在运行。
@@ -230,7 +250,7 @@ class RunService:
             runtime = self._runtime(message.mode, executor)
             identity = runtime.identity
             agent = Agent(runtime)
-            deadline = asyncio.timeout(RUN_TIMEOUT or current().run_timeout)
+            deadline = asyncio.timeout(limit)
             async with deadline:
                 result = await agent.run(
                     context,
@@ -238,6 +258,8 @@ class RunService:
                     emit,
                     cancelled=self.cancelled[context.run_id],
                 )
+            if deadline.expired():
+                expired()
             outcome = (
                 RuntimeOutcome(text=result.outcome.text, code="timeout", reason="run_timeout")
                 if deadline.expired()
@@ -246,11 +268,20 @@ class RunService:
         except asyncio.CancelledError:
             outcome = RuntimeOutcome(code="cancelled", reason="cancelled")
         except TimeoutError:
+            expired()
             outcome = RuntimeOutcome(code="timeout", reason="run_timeout")
         except Exception:
             outcome = RuntimeOutcome(code="provider_error", reason="execution_failed")
         finally:
             queue.put_nowait(None)
+            trace(
+                "run_finished",
+                context.run_id,
+                status="completed" if outcome.code is None else outcome.code,
+                error_code=outcome.code,
+                reason=outcome.reason,
+                elapsed_ms=round((time.monotonic() - started) * 1000),
+            )
             try:
                 await consumer
                 if transient:

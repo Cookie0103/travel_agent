@@ -1,10 +1,22 @@
 """共用的工具事件转换；SDK和离线演示走同一业务入口，不负责选择或调度工具。"""
 
-from uuid import uuid4
+import json
+import time
+from uuid import UUID, uuid4
 
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent
 from backend.tools.contracts import ToolDefinition, ToolExecutor, ToolResult
+from backend.trace_log import trace
+
+_CALLS: dict[UUID, int] = {}  # 仅用于TRACE的调用序号，按run计数
+
+
+def _chars(result: ToolResult) -> int:
+    try:
+        return len(json.dumps(result.payload(), ensure_ascii=False, default=str))
+    except (TypeError, ValueError):
+        return -1
 
 
 async def execute_observed(
@@ -31,10 +43,28 @@ async def execute_observed(
             argument_keys=keys,
         )
     )
+    if len(_CALLS) > 256:
+        _CALLS.clear()
+    index = _CALLS[context.run_id] = _CALLS.get(context.run_id, 0) + 1
+    trace("tool_start", context.run_id, name=safe_name, call_index=index)
+    started, error_class = time.monotonic(), None
     try:
         result = await executor.execute(context, name, arguments)
-    except Exception:
+    except Exception as error:
+        error_class = type(error).__name__
         result = ToolResult({}, code="unavailable")
+    trace(
+        "tool_end",
+        context.run_id,
+        name=safe_name,
+        call_index=index,
+        code=result.code,
+        elapsed_ms=round((time.monotonic() - started) * 1000),
+        result_chars=_chars(result),
+        timed_out=result.code == "timeout",
+        limit_s=definition.timeout_seconds if definition else None,
+        error_class=error_class,
+    )
     revision = result.data.get("request_revision")
     emit(
         RuntimeEvent(

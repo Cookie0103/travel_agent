@@ -13,6 +13,7 @@ from threading import Event
 from backend.providers.claude_agent.limits import ProbeError
 from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.windows_job import WindowsJob
+from backend.trace_log import trace
 
 
 def run_process(
@@ -121,6 +122,7 @@ def invoke_worker(
     progress: Callable[[], None] | None = None,
 ) -> dict[str, object]:
     """探针和正式 CLI 共用退出码、期限与 JSON 边界；不回传原始 stderr。"""
+    started = time.monotonic()
     try:
         result = run_process(
             [sys.executable, "-m", module, str(cli)],
@@ -132,6 +134,12 @@ def invoke_worker(
             progress=progress,
         )
     except subprocess.TimeoutExpired:
+        trace(
+            "timeout_fired",
+            layer="process",
+            limit_s=current().process_timeout,
+            elapsed_ms=round((time.monotonic() - started) * 1000),
+        )
         return {"status": "error", "code": "timeout"}
     except ProbeError as error:
         return {"status": "error", "code": error.code}

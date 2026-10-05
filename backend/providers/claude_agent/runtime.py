@@ -1,6 +1,7 @@
 """在隔离工作进程内调用 SDK；SDK 负责循环，本模块负责生命周期和事件转换。"""
 
 import asyncio
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -19,6 +20,7 @@ from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, 
 from backend.mcp.bridge import build_server, sdk_tool_name
 from backend.tools.contracts import ToolDefinition, ToolExecutor
 from backend.tools.workflow import OrderedTools, WorkflowName, workflow_guidance
+from backend.trace_log import trace
 
 
 @dataclass(frozen=True)
@@ -93,8 +95,15 @@ class ClaudeRuntime:
             async with asyncio.timeout(self.config.timeout_seconds):
                 async with ClaudeSDKClient(options=options) as client:
                     await client.query(prompt)
+                    trace("sdk_turn_start", context.run_id, turn=0, max_turns=self.config.max_turns)
                     return await self._collect(client, context, emit)
         except TimeoutError:
+            trace(
+                "timeout_fired",
+                context.run_id,
+                layer="worker_sdk",
+                limit_s=self.config.timeout_seconds,
+            )
             return RuntimeOutcome(code="timeout", reason="runtime_timeout")
         except asyncio.CancelledError:
             raise
@@ -107,8 +116,35 @@ class ClaudeRuntime:
         self, client: ClaudeSDKClient, context: RunContext, emit: EventSink
     ) -> RuntimeOutcome:
         allowed = {sdk_tool_name(d.name) for d in self.definitions}
+        turn, mark = 0, time.monotonic()
         async for message in client.receive_response():
+            if isinstance(message, AssistantMessage):
+                # 一次助手消息=模型一轮响应结束；elapsed为距上一边界（含工具执行+模型等待）。
+                trace(
+                    "sdk_turn_end",
+                    context.run_id,
+                    turn=turn,
+                    elapsed_ms=round((time.monotonic() - mark) * 1000),
+                    stop_reason=message.stop_reason,
+                    blocks=len(message.content),
+                    tools=[b.name for b in message.content if isinstance(b, ToolUseBlock)],
+                    output_tokens=(message.usage or {}).get("output_tokens"),
+                )
+                turn, mark = turn + 1, time.monotonic()
+            if isinstance(message, ResultMessage):
+                trace(
+                    "sdk_result",
+                    context.run_id,
+                    subtype=message.subtype,
+                    terminal_reason=message.terminal_reason,
+                    stop_reason=message.stop_reason,
+                    num_turns=message.num_turns,
+                    duration_ms=message.duration_ms,
+                    duration_api_ms=message.duration_api_ms,
+                    api_error_status=message.api_error_status,
+                )
             if isinstance(message, SystemMessage) and message.subtype == "compact_boundary":
+                trace("context_compacted", context.run_id, turn=turn)
                 emit(RuntimeEvent(context, "context_compacted"))
                 if self.config.disable_auto_compaction:
                     await client.interrupt()

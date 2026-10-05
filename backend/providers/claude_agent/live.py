@@ -2,6 +2,7 @@
 
 import json
 import os
+import time
 from functools import partial
 from pathlib import Path
 from threading import Event
@@ -11,6 +12,7 @@ from backend.agent.persona import JudgeKind
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, error_code, event_metadata
 from backend.mcp.bridge import sdk_tool_name
+from backend.providers.claude_agent import http as upstream
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
 from backend.providers.claude_agent.evaluation import (
@@ -28,6 +30,7 @@ from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.settings import load_runtime_settings
 from backend.tools.travel import live_definitions
 from backend.tools.workflow import WorkflowName
+from backend.trace_log import FILE_ENV, RUN_ENV, Tail, trace
 
 
 def runtime_budget(root: Path, settings: Settings) -> Budget:
@@ -91,6 +94,14 @@ def run_live(
     directory = cache / "sessions" / str(context.user_id) / str(context.session_id)
     event_path = directory / f"events-{context.run_id}.jsonl"
     reader = EventReader(event_path, context, emit)
+    # 子进程（worker/上游转发器）的TRACE写入此文件，父进程每0.2秒转印到自己的stdout。
+    trace_path = directory / f"trace-{context.run_id}.jsonl"
+    tail, run = Tail(trace_path), str(context.run_id)
+
+    def drain() -> None:
+        tail.drain()
+        reader.drain()
+
     definitions = (
         ()
         if persona_judge
@@ -112,15 +123,20 @@ def run_live(
             allowed_tools=frozenset(sdk_tool_name(d.name) for d in definitions),
             max_attempts=max_attempts,
         )
+        guard.run = run[:8]
+        upstream.child_trace = (trace_path, run[:8])  # 每个run开始时覆盖；独占锁保证一次一个
         if persona_judge:
             guard.temperature = 0
         with serve(guard) as endpoint:
             env = worker_environment(
                 os.environ, directory, root, endpoint, guard.token, settings.model
             )
+            env.update({FILE_ENV: str(trace_path), RUN_ENV: run[:8]})
             version = run_process([str(cli), "--version"], directory, env, timeout=10)
             if version.returncode:
                 raise ProbeError("unavailable", "Claude CLI 版本检查失败")
+            trace("worker_spawned", run, provider=settings.provider, real_data=real_data)
+            worker_started = time.monotonic()
             report = invoke_worker(
                 cli,
                 directory,
@@ -144,7 +160,19 @@ def run_live(
                     "real_data": real_data,
                 },
                 cancelled=cancelled,
-                progress=reader.drain,
+                progress=drain,
+            )
+            tail.drain()  # 超时/被杀时也要转印已写出的子进程TRACE
+            trace(
+                "worker_exited",
+                run,
+                status=report.get("status"),
+                code=report.get("code"),
+                reason=report.get("reason"),
+                exit_code=report.get("exit_code"),
+                elapsed_ms=round((time.monotonic() - worker_started) * 1000),
+                http_attempts=guard.attempts,
+                guard_failures=guard.failures,
             )
         count, charge = budget.totals()
         report.update(
@@ -164,6 +192,14 @@ def run_live(
         if guard.failures:
             report["status"] = "error"
             if "timeout" in guard.failures and report.get("code") != "cancelled":
+                trace(
+                    "timeout_fired",
+                    run,
+                    layer="upstream",
+                    limit_s=current().upstream_timeout,
+                    elapsed_ms=round((time.monotonic() - worker_started) * 1000),
+                    guard_failures=guard.failures,
+                )
                 report.update(code="timeout", reason="upstream_timeout")
         if (
             report.get("status") == "success"
@@ -175,6 +211,7 @@ def run_live(
             }
         ):
             # 旧 CLI 可能没有向 SDK 透出 stop_reason；费用仍按完整 usage 结算。
+            trace("incomplete_output", run, stop_reason=guard.observations[-1]["stop_reason"])
             report.update(status="error", code="provider_error", reason="incomplete_output")
         # 先保存执行证据，即使随后进程在导出期间被终止也能恢复结果。
         stored = report_metadata_only(report) if real_data else report

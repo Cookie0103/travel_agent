@@ -30,6 +30,7 @@ from backend.tools.contracts import ToolDefinition, ToolExecutor
 from backend.tools.search import DEFINITIONS, SearchExecutor
 from backend.tools.travel import live_definitions
 from backend.tools.workflow import WorkflowName
+from backend.trace_log import trace
 
 
 async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
@@ -248,6 +249,7 @@ async def run_prompts(
 
 
 def main() -> None:
+    trace("worker_start")
     try:
         value: object = json.loads(sys.stdin.read())
         if not isinstance(value, dict):
@@ -257,6 +259,7 @@ def main() -> None:
         result = {"status": "error", "code": error.code, "reason": "business_snapshot_unavailable"}
     except Exception:
         result = {"status": "error", "code": "provider_error", "reason": "worker_failure"}
+    trace("worker_end", status=result.get("status"), code=result.get("code"))
     print(json.dumps(result, ensure_ascii=False, default=str))
 
 

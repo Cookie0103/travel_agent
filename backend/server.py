@@ -11,10 +11,39 @@ import uvicorn
 from dotenv import load_dotenv
 
 from backend.api.app import create_app
+from backend.providers.claude_agent.profile import current, profile_name
+from backend.services import runs
+from backend.tools.travel import LIVE_TOOL_TIMEOUT
+from backend.trace_log import enable_stdout, trace
 
 
 def loop_factory() -> asyncio.AbstractEventLoop:
     return asyncio.SelectorEventLoop()
+
+
+def log_boot() -> None:
+    """启动时打印生效限额，便于从部署日志确认 profile。"""
+    limits = current()
+    trace(
+        "boot",
+        profile=profile_name(),
+        limits={
+            **{
+                key: getattr(limits, key)
+                for key in (
+                    "max_calls",
+                    "max_turns",
+                    "max_attempts",
+                    "upstream_timeout",
+                    "worker_timeout",
+                    "process_timeout",
+                )
+            },
+            "run_timeout": runs.RUN_TIMEOUT or limits.run_timeout,
+            "live_tool_timeout": LIVE_TOOL_TIMEOUT,
+            "run_caps": dict(limits.run_caps),
+        },
+    )
 
 
 if __name__ == "__main__":
@@ -30,6 +59,8 @@ if __name__ == "__main__":
     arguments = parser.parse_args()
     if arguments.relaxed:
         os.environ["TRAVEL_PROFILE"] = "relaxed"
+    enable_stdout()  # Railway只收集stdout
+    log_boot()
     uvicorn.run(
         create_app(live_enabled=arguments.live, trace_cloud=arguments.trace_cloud),
         host=arguments.host,

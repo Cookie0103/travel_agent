@@ -39,3 +39,7 @@ PROFILES = {"relaxed": RELAXED, "human": HUMAN}  # 人工手测用human；机器
 
 def current(env: Mapping[str, str] = os.environ) -> Limits:
     return PROFILES.get(env.get("TRAVEL_PROFILE", ""), DEFAULT)
+
+
+def profile_name(env: Mapping[str, str] = os.environ) -> str:
+    return next((name for name, limits in PROFILES.items() if limits is current(env)), "default")

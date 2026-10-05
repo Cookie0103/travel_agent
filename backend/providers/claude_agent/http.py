@@ -5,14 +5,20 @@ import json
 import os
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 from backend.providers.claude_agent.limits import ProbeError, Provider
 from backend.providers.claude_agent.process import run_process
 from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.response import message_stopped
+from backend.trace_log import FILE_ENV, RUN_ENV, trace
 
 MAX_RESPONSE_BYTES = 1_048_576
+
+
+# live.py 在独占锁内（同一时刻仅一个live run）设置；保持forward_messages签名不变以兼容替身。
+child_trace: tuple[Path, str] | None = None
 
 
 def forward_messages(provider: Provider, api_key: str, body: bytes) -> tuple[int, bytes]:
@@ -34,6 +40,11 @@ def forward_messages(provider: Provider, api_key: str, body: bytes) -> tuple[int
         }
     }
     env.update(PYTHONPATH=str(root), PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
+    target = child_trace
+    run = target[1] if target else ""
+    if target:  # 转发子进程的TRACE写入文件，由父进程Tail转印
+        env.update({FILE_ENV: str(target[0]), RUN_ENV: run})
+    started = time.monotonic()
     try:
         result = run_process(
             [sys.executable, "-m", "backend.providers.claude_agent.http"],
@@ -43,12 +54,27 @@ def forward_messages(provider: Provider, api_key: str, body: bytes) -> tuple[int
             json.dumps({"provider": provider, "key": api_key, "body": body.decode("utf-8")}),
         )
     except subprocess.TimeoutExpired:
+        trace(
+            "timeout_fired",
+            run,
+            layer="upstream_process",
+            limit_s=current().upstream_timeout,
+            elapsed_ms=round((time.monotonic() - started) * 1000),
+        )
         raise ProbeError("timeout", "上游请求总期限已到，保留预占") from None
     if result.returncode != 0:
+        trace("model_req_child_failed", run, exit_code=result.returncode)
         raise ProbeError("unavailable", "上游请求工作进程失败")
     try:
         raw = json.loads(result.stdout)
         if raw.get("status") == "error" and raw.get("code") == "timeout":
+            trace(
+                "timeout_fired",
+                run,
+                layer="upstream_socket",
+                limit_s=current().upstream_timeout - 5,
+                elapsed_ms=round((time.monotonic() - started) * 1000),
+            )
             raise ProbeError("timeout", "上游请求超时，保留预占")
         if raw.get("status") != "ok" or type(raw.get("http_status")) is not int:
             raise ValueError
@@ -72,6 +98,11 @@ def _direct_request(
         else ("api.anthropic.com", "/v1/messages", "x-api-key")
     )
     connection = http.client.HTTPSConnection(host, timeout=current().upstream_timeout - 5)
+    started, phase = time.monotonic(), "send"  # 仅用于TRACE：失败发生在哪个阶段
+
+    def since() -> int:
+        return round((time.monotonic() - started) * 1000)
+
     try:
         connection.request(
             "POST",
@@ -83,18 +114,28 @@ def _direct_request(
                 "anthropic-version": "2023-06-01",
             },
         )
+        phase = "headers"
+        trace("model_req_sent", ms=since())
         response = connection.getresponse()
+        phase = "body"
+        trace("model_req_first_byte", ms=since(), http_status=response.status)
         content = (
-            _read_sse(response) if response.status == 200 else response.read(MAX_RESPONSE_BYTES + 1)
+            _read_sse(response, started)
+            if response.status == 200
+            else response.read(MAX_RESPONSE_BYTES + 1)
         )
         if len(content) > MAX_RESPONSE_BYTES:
             raise ProbeError("provider_error", "上游响应超过实验上限")
+        trace("model_req_body_done", ms=since(), resp_bytes=len(content))
         return response.status, content
+    except BaseException as error:
+        trace("model_req_child_error", phase=phase, error_class=type(error).__name__, ms=since())
+        raise
     finally:
         connection.close()
 
 
-def _read_sse(response: http.client.HTTPResponse) -> bytes:
+def _read_sse(response: http.client.HTTPResponse, started: float | None = None) -> bytes:
     """message_stop已到即可关连接，避免完整响应继续等HTTP EOF。"""
     content = bytearray()
     pending = b""
@@ -102,6 +143,8 @@ def _read_sse(response: http.client.HTTPResponse) -> bytes:
         chunk = response.read1(min(65536, MAX_RESPONSE_BYTES + 1 - len(content)))
         if not chunk:
             return bytes(content)
+        if started is not None and not content:
+            trace("model_req_first_chunk", ms=round((time.monotonic() - started) * 1000))
         content.extend(chunk)
         if len(content) > MAX_RESPONSE_BYTES:
             raise ProbeError("provider_error", "上游响应超过实验上限")

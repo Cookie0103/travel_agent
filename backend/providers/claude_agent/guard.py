@@ -4,6 +4,7 @@ import http.client
 import json
 import secrets
 import threading
+import time
 from collections.abc import Callable, Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
@@ -18,6 +19,7 @@ from backend.providers.claude_agent.limits import ProbeError, Settings, price_fo
 from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.request import MAX_BYTES, TOOL_NAME, validate_request
 from backend.providers.claude_agent.response import summarize
+from backend.trace_log import trace
 
 Forward = Callable[[bytes], tuple[int, bytes]]
 
@@ -37,12 +39,14 @@ class Guard:
     max_attempts: int = 4
     allowed_tools: frozenset[str] = frozenset({TOOL_NAME})
     temperature: Literal[0] | None = None
+    run: str = ""  # 仅TRACE用的run标识
 
     def accept(self, path: str, token: str, body: bytes) -> tuple[int, bytes]:
         if not secrets.compare_digest(token, "Bearer " + self.token):
             return self.reject("unauthorized")
         if urlsplit(path).path != "/v1/messages":
             return self.reject("unsupported_endpoint")
+        started: float | None = None
         try:
             if not (
                 self.settings.currency
@@ -57,10 +61,31 @@ class Guard:
                 raise ProbeError("blocked", "当前实验已停止或达到请求上限")
             request_id = self.budget.reserve(request.charge, datetime.now(UTC))
             self.attempts += 1
+            trace(
+                "model_req_start",
+                self.run,
+                attempt=self.attempts,
+                req_bytes=len(request.body),
+                stream=True,  # validate_request只接受stream=true
+                max_tokens=request.max_output,
+            )
+            started = time.monotonic()
             status, content = self.forward(request.body)
             if status != 200:
                 raise ProbeError("provider_error", f"上游 HTTP {status}")
             observation = summarize(content, request, self.settings.model, self.settings.currency)
+            trace(
+                "model_req_end",
+                self.run,
+                attempt=self.attempts,
+                status=status,
+                elapsed_ms=round((time.monotonic() - started) * 1000),
+                resp_bytes=len(content),
+                input_tokens=observation.get("input_tokens"),
+                output_tokens=observation.get("output_tokens"),
+                stop_reason=observation.get("stop_reason"),
+                tools=observation.get("tool_names"),
+            )
             self.budget.settle(request_id, Decimal(str(observation["usage_cost_upper"])))
             self.observations.append(observation)
             # 已发生的费用照实结算；违规工具响应不能交给 CLI 继续发请求。
@@ -70,9 +95,22 @@ class Guard:
             return 200, content
         except ProbeError as error:
             self.failure_details.append(str(error))
+            self._trace_failure(error.code, started)
             return self.reject(error.code)
-        except (OSError, http.client.HTTPException):
+        except (OSError, http.client.HTTPException) as error:
+            self._trace_failure("unavailable", started, type(error).__name__)
             return self.reject("unavailable")
+
+    def _trace_failure(self, code: str, started: float | None, error_class: str = "") -> None:
+        trace(
+            "model_req_end",
+            self.run,
+            attempt=self.attempts,
+            status="error",
+            error=code,
+            error_class=error_class,
+            elapsed_ms=None if started is None else round((time.monotonic() - started) * 1000),
+        )
 
     def reject(self, code: str) -> tuple[int, bytes]:
         self.failures.append(code)
@@ -118,6 +156,7 @@ def handler_for(guard: Guard) -> type[BaseHTTPRequestHandler]:
                 self.end_headers()
                 self.wfile.write(content)
             except (BrokenPipeError, ConnectionResetError):
+                trace("client_disconnected", guard.run, attempt=guard.attempts)
                 guard.failures.append("client_disconnected")
 
     return Handler

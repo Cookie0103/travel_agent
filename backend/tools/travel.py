@@ -177,9 +177,12 @@ SCHEMAS: dict[str, type[BaseModel]] = {
 }
 
 
+LIVE_TOOL_TIMEOUT = 75
+
+
 def live_definitions(definitions: tuple[ToolDefinition, ...]) -> tuple[ToolDefinition, ...]:
     return tuple(
-        replace(definition, timeout_seconds=75)
+        replace(definition, timeout_seconds=LIVE_TOOL_TIMEOUT)
         if definition.name
         in {
             "search_hotel_offers",
