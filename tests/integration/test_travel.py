@@ -122,10 +122,12 @@ def test_changed_dates_invalidate_offers_and_routes_atomically(
             rows = await repository.find_evidence(db, context, [r.evidence_id for r in records])
             flags = {row.kind: row.invalidated for row in rows}
         assert flags == {"hotel_offer": True, "route": True, "place": False}
-        for record in records:
+        for record in records[:2]:
             with pytest.raises(ServiceError) as error:
                 await service.resolve_evidence(context, [record.evidence_id])
             assert error.value.code == "conflict"
+        # 地点事实只随城市适用，日期变化后仍可解析（产品决策：不随revision失效）。
+        assert await service.resolve_evidence(context, [records[2].evidence_id]) == (records[2],)
 
     runner.run(exercise())
 

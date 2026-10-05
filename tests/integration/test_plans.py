@@ -213,6 +213,12 @@ def test_competing_drafts_lock_versions_and_user_owned_locks(
             context, RequestPatch.model_validate({"expected_revision": 1, "set": {"rooms": 2}})
         )
         view = await service.get(context.user_id, saved.plan_id)
+        # 人数/房间变化不影响仅含地点事实的计划（地点证据只随城市适用）。
+        assert view["needs_refresh"] == [] and view["historical"] is True
+        await travel.patch_request(
+            context, RequestPatch.model_validate({"expected_revision": 2, "set": {"city": "大阪"}})
+        )
+        view = await service.get(context.user_id, saved.plan_id)
         assert view["needs_refresh"] and view["historical"] is True
         assert await service.confirm(context.user_id, first.draft_id) == saved
 
