@@ -56,7 +56,7 @@
 
 ## 剩余范围
 
-截至2026-10-04，Railway V2发布、Claude真实API、V2同轮Cloud trace实测未进行。2026-10-05代码发布见下节；云端真实模型/供应商能力仍未开启。核心流程没有已知P0/P1；额度耗尽是实际运行限制，不能通过清账隐藏。旧Cloud证据和已接线代码不能替代本轮实测。
+截至2026-10-04，Railway V2发布、Claude真实API、V2同轮Cloud trace实测未进行。2026-10-05代码发布和DeepSeek启用见下文；云端Google/乐天凭据仍未配置，简单模型回复不替代真实旅行数据验收。核心流程没有已知P0/P1；额度耗尽是实际运行限制，不能通过清账隐藏。旧Cloud证据和已接线代码不能替代本轮实测。
 
 ## Railway代码更新（2026-10-05）
 
@@ -67,3 +67,19 @@
 公网 [web](https://web-production-0aaac.up.railway.app)：同源health HTTP200/status=ok，models HTTP200且仅offline可用，articles HTTP200/20条。复用 `scripts.smoke_demo`、只在运行时改BASE和STATE，完整core_flows退出0：比较酒店、生成/确认行程、修改第二天下午、模拟供应商确认幂等、非法版本/其他用户拒绝、live拒绝、SSE末次游标读取与恢复均通过。合成身份/模拟订单的私有恢复状态在ignored `.cache/railway-v2-smoke/state.json`，不写入提交或日志。Chrome实际进入最新版工作台，分景点/酒店/天气的数据说明及官方链接均可见。此次0真实模型或旅行数据API调用，不操作真实订单/付款；模型/供应商密钥和.env未上传，云端未以--live启动。
 
 环境恢复：首次正常提交的610项非PG测试通过，187项PG用例因Docker未运行而setup失败；未跳过测试。启动Desktop后发现两处残留AF_UNIX套接字导致后台崩溃。仅元数据检查确认 `C:/Users/user/AppData/Local/Docker/run` 及 `C:/Users/user/AppData/Local/docker-secrets-engine` 含0字节运行时套接字、无凭据/配置/数据后，核对精确绝对路径，原目录重命名备份并重建。保留 `Docker/run.travel-agent-20261005-0310`、`Docker/run.travel-agent-20261005-0311` 和 `docker-secrets-engine.travel-agent-20261005-0311`；未删除任何文件、修改安全设置或触碰数据库卷。Docker28.5.1恢复，dev db-up退出0/既有项目PG Healthy，重新正常提交钩子全部Passed。自动审批拒绝展开云端变量值（可能暴露DATABASE_URL）后保持遮罩，通过日志/健康/既有API脚本完成部署验收，未读取数据库凭据。
+
+## Railway DeepSeek live启用（2026-10-05）
+
+用户随后要求启用live，并明确允许将本地已有DeepSeek密钥写入该项目api服务。已在用户Chrome发布变量：DEEPSEEK_API_KEY（遮罩）、LLM_PROVIDER=deepseek、DEEPSEEK_MODEL=deepseek-flash、DAILY_BUDGET_CNY=15.00、DAILY_BUDGET_USD=0。没有输出或提交密钥，没有上传整个.env；Anthropic及Google/乐天凭据未配置。健康接口200，模型选择器DeepSeek available=true/无拒绝原因，Claude仍因缺凭据禁用。
+
+独立只读审查识别两项部署问题：现有CLI查找器只查显式路径/PATH，镜像内SDK bundled CLI需要显式指定；原/app/.cache是容器临时目录，会因重部署丢失预算。已配置TRAVEL_CLAUDE_CLI=/app/.venv/lib/python3.12/site-packages/claude_agent_sdk/_bundled/claude，新建api-volume（ea80d5f1-0425-44b9-82d1-7c87cf2a7f7b）挂载/app/.cache，保留单副本。依据[Railway卷权限说明](https://docs.railway.com/volumes)，仅启动初始化使用RAILWAY_RUN_UID=0；下面命令立即清补充组并降到既有10001用户，模型、迁移和API均保持非root。无新依赖或业务源码变化。
+
+当前Start Command（非密钥）：
+
+```sh
+python -c 'import os; os.chown("/app/.cache",10001,10001); os.setgroups([]); os.setgid(10001); os.setuid(10001); os.umask(0o077); os.execvp("sh",["sh","-c","test \"$RAILWAY_VOLUME_MOUNT_PATH\" = /app/.cache && test -w /app/.cache && \"$TRAVEL_CLAUDE_CLI\" --version && python -m scripts.bootstrap_demo && exec python -m backend.server --host 0.0.0.0 --live"])'
+```
+
+部署55f9a0ad-7b2d-48ea-954d-8c50e4abc786 Active；启动日志确认CLI2.1.286、bootstrap166项成功、API启动完成及health200，证明挂载/可写/CLI前置检查通过。独立复核该补齐无新增P1/P2；不清空任何旧账本或锁。生产后续push仍沿用该挂载和启动命令。
+
+Chrome实际选中DeepSeek，发送“你好，请只用一句话介绍你能帮我做什么，不调用任何工具。”，页面显示“完成”及真实模型介绍回复。一次云端模型流程，未重放；没有工具步骤、真实旅行数据查询、订单或付款。逐HTTP云端账本本轮未读取，请求次数/金额不冒报；15CNY配置与既有守卫不等同实付账单。私有截图railway-deepseek-live.jpg保存于本次Codex可视化目录；不进入仓库。简单回复仅证明模型可执行，不代替Google/乐天真实规划或Cloud trace验收。

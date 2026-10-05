@@ -1,5 +1,13 @@
 # Travel Agent 长程执行计划
 
+## Railway DeepSeek启用（2026-10-05，当前恢复入口）
+
+用户要求解决模型选择器“未以live启动”，并明确允许将本地已有DEEPSEEK_API_KEY配置到既有Railway api服务；替代下节上一轮不上传密钥、不启用live的部署范围。已通过用户Chrome配置deepseek-flash、LLM_PROVIDER=deepseek、DAILY_BUDGET_CNY=15.00、DAILY_BUDGET_USD=0，并以--live启动。密钥只进入Railway遮罩变量，没有输出或提交.env；Google/乐天/Anthropic凭据未上传。
+
+独立配置复核发现CLI查找和容器账本持久化缺口，已补TRAVEL_CLAUDE_CLI指向已安装SDK的bundled CLI，并新建api-volume挂载/app/.cache。Railway运行时卷默认root所有权；初始化仅chown该目录后清补充组、降UID/GID10001、umask077，再执行原bootstrap与API。启动断言真实挂载和可写，并检查CLI --version；后续服务保持非root、单副本，无新依赖、业务源码或runtime变化。部署55f9a0ad-7b2d-48ea-954d-8c50e4abc786 Active，日志CLI2.1.286、bootstrap166项、API startup complete/health200；原阻塞独立复核无新增P1/P2。
+
+公网models确认DeepSeek available=true；Chrome已实际选中DeepSeek并发送一条不调用工具的简短介绍请求，返回“完成”及真实回复。仅一个云端模型流程，不重放、不调用旅行数据工具或真实订单；未读取云端逐HTTP账本，不冒报请求数/费用。账本及active.lock保存在持久卷，不因文档push清账。纯记录保存复用同源码刚通过的完整离线测试，仅跳过重复project-test、保留project-check；普通push后只核对自动部署和模型配置，不再次付费实测。部署配置及恢复命令见[原V2记录](../operations/product-v2.md)。
+
 ## Railway更新（2026-10-05，当前恢复入口）
 
 用户明确授权将本地最新代码部署到既有Railway项目 `449ee30a-0ff4-437a-a35a-53ddc5c4ef93`，并要求操作其已登录Chrome。起点本地/远端均 `427e51f318ddc67c73205e79789bffccb0de9805`。已将api/web/supplier从旧 `2026-10-04-frontend-redesign` 切到 `batch/2026-10-04-product-v2`，保留自动部署。旧API健康失败已按ADR-008修复：只允许固定模拟供应商私网名称，27专项通过；236文件三平台strict、ruff/格式、3分层契约、10文档入口通过，独立只读审查无P0/P1/P2。正常commit的check及完整test钩子均Passed，功能提交 `75318535b5494bd247d862d37eeaeb4146f26080` 普通push成功，远端完整SHA一致。
