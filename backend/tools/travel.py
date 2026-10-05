@@ -219,6 +219,9 @@ def report_detail(report: ValidationReport) -> tuple[str, ...]:
     )
 
 
+MAX_VALIDATIONS_CAP = 50  # 构造上限，与HUMAN档一致；更大值只能是配置错误
+
+
 class TravelToolExecutor:
     def __init__(
         self,
@@ -228,8 +231,8 @@ class TravelToolExecutor:
         max_calls: int = 16,
         max_validations: int = 4,
     ) -> None:
-        if type(max_validations) is not int or max_validations not in {1, 4}:
-            raise ValueError("校验次数只允许默认4或单因素首次1")
+        if type(max_validations) is not int or not 1 <= max_validations <= MAX_VALIDATIONS_CAP:
+            raise ValueError("校验次数只允许1(单因素首次)到档位上限")
         if live is not None:
             travel.live = live
         self.travel, self.catalog = travel, CatalogService(travel)
@@ -467,9 +470,9 @@ class TravelToolExecutor:
             return
         if self.validations >= self.max_validations:
             message = (
-                "首次校验和3轮修复已用完，请说明仍存冲突或未知"
-                if self.max_validations == 4
-                else "本次评测仅允许首次校验，不再修复；请说明仍存冲突或未知"
+                "本次评测仅允许首次校验，不再修复；请说明仍存冲突或未知"
+                if self.max_validations == 1
+                else f"首次校验和{self.max_validations - 1}轮修复已用完，请说明仍存冲突或未知"
             )
             raise ServiceError(429, "blocked", message, "repair_limit")
         self.validations += 1

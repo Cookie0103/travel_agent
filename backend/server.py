@@ -37,6 +37,8 @@ def log_boot() -> None:
                     "upstream_timeout",
                     "worker_timeout",
                     "process_timeout",
+                    "evidence_ttl_minutes",
+                    "max_validations",
                 )
             },
             "run_timeout": runs.RUN_TIMEOUT or limits.run_timeout,

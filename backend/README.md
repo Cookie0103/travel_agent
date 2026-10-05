@@ -1,6 +1,6 @@
 # 后端代码
 
-这里是整个旅行规划后端：FastAPI 接口、业务规则、工具契约、Claude Agent SDK 适配、外部数据适配和 PostgreSQL 持久化。默认离线（fixture 运行时，不联网、不花钱）；真实模型需显式 `--live` 并通过费用守卫。`--relaxed` 只放宽次数与超时（见 `providers/claude_agent/profile.py`），每日15 CNY上限不变；人工手测另有 `TRAVEL_PROFILE=human`（default/relaxed/human；HUMAN无每日CNY上限，以API账户余额为实际止损，上游HTTP错误如402显示在对话；default/relaxed仍为每日15 CNY，要恢复上限设 `TRAVEL_PROFILE=relaxed`）。
+这里是整个旅行规划后端：FastAPI 接口、业务规则、工具契约、Claude Agent SDK 适配、外部数据适配和 PostgreSQL 持久化。默认离线（fixture 运行时，不联网、不花钱）；真实模型需显式 `--live` 并通过费用守卫。`--relaxed` 只放宽次数与超时（见 `providers/claude_agent/profile.py`），每日15 CNY上限不变；人工手测另有 `TRAVEL_PROFILE=human`（default/relaxed/human；HUMAN无每日CNY上限，以API账户余额为实际止损，上游HTTP错误如402显示在对话；default/relaxed仍为每日15 CNY，要恢复上限设 `TRAVEL_PROFILE=relaxed`）。HUMAN另有证据有效期30分钟、修复上限50轮（default/relaxed 为15分钟/4轮），酒店报价不再绑定请求revision（见 `providers/claude_agent/profile.py`）。
 
 | 子目录 | 负责什么 |
 | --- | --- |

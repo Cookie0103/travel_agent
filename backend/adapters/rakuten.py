@@ -11,6 +11,7 @@ from backend.adapters.external_api import ApiUsage, parse_response, request_json
 from backend.domain.external_data import ExternalDataError, GeoPoint
 from backend.domain.hotels import HotelOffer, Money
 from backend.domain.travel_request import TravelRequest
+from backend.providers.claude_agent.profile import current
 
 
 class Basic(BaseModel):
@@ -224,7 +225,7 @@ class Rakuten:
                 else item.room.withBreakfastFlag == 1,
                 refundable=None,
                 quoted_at=now,
-                expires_at=now + timedelta(minutes=15),
+                expires_at=now + timedelta(minutes=current().evidence_ttl_minutes),
                 image_url=item.hotel.hotelImageUrl,
                 review_average=item.hotel.reviewAverage,
                 booking_url=item.room.reserveUrl

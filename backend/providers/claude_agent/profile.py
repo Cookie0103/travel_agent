@@ -20,6 +20,8 @@ class Limits:
     first_byte_timeout: float = 0.0  # 秒；0=关闭。仅在尚无任何响应头时触发
     daily_cny_cap: bool = True  # False=不施加每日CNY上限(仅HUMAN)；账本预占/结算照常记录
     upstream_retries: int = 0  # 首字节停滞后的重试次数（每次独立预占并计入attempts）
+    evidence_ttl_minutes: int = 15  # 酒店报价与路线估算证据的有效分钟数（地点/文章另计）
+    max_validations: int = 4  # 首次校验+修复轮次总数；评测单因素变体另固定为1
 
     @property
     def request_worst_case(self) -> float:
@@ -42,6 +44,7 @@ HUMAN = Limits(
     {"geocode": 10, "places": 60, "routes": 80, "rakuten": 30, "weather": 5},
     {"geocode": 100, "places": 300, "routes": 600, "rakuten": 300, "weather": 300},
     first_byte_timeout=25.0, upstream_retries=2, daily_cny_cap=False,
+    evidence_ttl_minutes=30, max_validations=50,
 )  # fmt: skip
 PROFILES = {"relaxed": RELAXED, "human": HUMAN}  # 人工手测用human；机器/评测保持default
 

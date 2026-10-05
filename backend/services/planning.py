@@ -10,8 +10,13 @@ from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
 from backend.domain.travel_request import TravelRequest
-from backend.domain.validator import validate_itinerary
+from backend.domain.validator import (
+    HOTEL_CONDITIONS_REASON,
+    HOTEL_EXPIRED_REASON,
+    validate_itinerary,
+)
 from backend.persistence import travel as requests
+from backend.providers.claude_agent.profile import current
 from backend.providers.routes_fixture import RouteRate, estimate, load_routes
 from backend.services.common import ServiceError, transaction
 from backend.services.travel import (
@@ -24,6 +29,7 @@ from backend.services.travel import (
 
 PLACE_REF_REASON = "地点引用必须是place证据"
 HOTEL_REF_REASON = "酒店引用必须是hotel_offer证据"
+HOTEL_REMEDY = {HOTEL_CONDITIONS_REASON, HOTEL_EXPIRED_REASON}  # 固定文案自带补救指引
 
 
 class PlanningService:
@@ -108,7 +114,7 @@ class PlanningService:
                     source_ref="https://maps.google.com/" if live else "fixture:kyoto-routes-v1",
                     content_version=now.isoformat() if live else version,
                     retrieved_at=now,
-                    valid_until=now + timedelta(minutes=15),
+                    valid_until=now + timedelta(minutes=current().evidence_ttl_minutes),
                     data_mode="live" if live else "fixture",
                 )
             )
@@ -139,6 +145,8 @@ async def validate_proposal(
         # 校验器的ValueError是固定中文文案(无插值)，可整体作reason；pydantic错误含输入值，只记类名。
         reason = str(error) if type(error) is ValueError else "evidence_model_invalid"
         message = "行程引用的证据类型、条件或内容不一致"
+        if reason in HOTEL_REMEDY:
+            message += "。" + reason
         if reason == PLACE_REF_REASON:
             by_id = {record.evidence_id: record.kind for record in records}
             kinds = sorted(

@@ -102,11 +102,15 @@ def test_child_trace_file_is_relayed_only_when_line_is_complete(
     Tail(tmp_path / "absent.jsonl").drain()  # 文件不存在也不抛错
 
 
-@pytest.mark.parametrize("profile,upstream,worker", [("human", 120, 840), ("", 90, 210)])
+@pytest.mark.parametrize(
+    "profile,upstream,worker,ttl,rounds", [("human", 120, 840, 30, 50), ("", 90, 210, 15, 4)]
+)
 def test_boot_line_reports_effective_profile_limits(
     profile: str,
     upstream: int,
     worker: int,
+    ttl: int,
+    rounds: int,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
@@ -116,6 +120,7 @@ def test_boot_line_reports_effective_profile_limits(
     limits = cast(dict[str, object], record["limits"])
     assert record["ev"] == "boot" and record["profile"] == (profile or "default")
     assert limits["upstream_timeout"] == upstream and limits["worker_timeout"] == worker
+    assert limits["evidence_ttl_minutes"] == ttl and limits["max_validations"] == rounds
     assert limits["live_tool_timeout"] == 75 and "run_timeout" in limits
     assert set(cast(dict[str, object], limits["run_caps"])) >= {"rakuten", "places"}
 

@@ -132,4 +132,6 @@ HUMAN 新增 Limits：`first_byte_timeout=25`、`upstream_retries=2`——仅当
 
 **失效证据指引与报价精简（2026-10-05 续）**：`evidence_stale` 的模型可见提示按种类（route/hotel_offer/place/article）给固定补救文案，TRACE 为 `evidence_stale:<种类>`；`地点引用必须是place证据` 另附 `place_ref_kind=<种类>` 与静态提示；`applicable()` 不再要求 route/hotel_offer 的 `request_revision` 相等（预算/兴趣等无关修改不再使其过期，入住/路线条件变化、过期、`invalidated` 仍失效）。
 `search_hotel_offers`/`refresh_hotel_offer` 结果先去掉每卡重复字段（stay/request_revision/image_url），仍超8000字按总价由低到高整卡保留并加警告，不截断JSON；`offer_ids` 也接受卡片的 `evidence_id`。
-HUMAN 无每日CNY上限（README 已同步）；修复轮次上限、调用上限、编排与预算代码未改。
+HUMAN 无每日CNY上限（README 已同步）；调用上限、编排与预算代码未改。
+
+**证据有效期与修复轮次（HUMAN，2026-10-05）**：run b5d23210 中 `update_travel_request`（为 `estimate_routes` 设交通）在 `search_hotel_offers` 之后，使请求revision递增，`validator.hotel_cost` 因 `offer.request.revision != request.revision` 连续拒绝（第5轮撞 `repair_limit`）。现 `hotel_cost` 不再比较revision，仍要求 offer_id 一致、入住条件（城市/日期/人数/儿童年龄/房间/币种）逐字段相等、`quoted_at <= now < expires_at`；条件不符与过期为两条固定文案（都提示重新 `search_hotel_offers`），模型可见。新增 Limits：`evidence_ttl_minutes`（酒店报价与路线估算有效期；DEFAULT/RELAXED 15，HUMAN 30，地点24h/文章不变）与 `max_validations`（DEFAULT/RELAXED 4，HUMAN 50，仅 live 数据库工具路径使用；评测单因素变体仍为1）；二者进 boot 行。HUMAN 下提示词追加实际修复轮数（49）。保留的revision比较：暂留/确认订单仍要求条件未变（bookings.py），该路径不在本次范围。50轮最坏墙钟：每轮约模型2–5秒+工具毫秒，约250秒，低于worker840/process850/run900秒。

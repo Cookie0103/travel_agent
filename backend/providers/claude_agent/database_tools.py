@@ -33,7 +33,11 @@ class DatabaseTools:
         self.travel = TravelService(
             database, LiveData.from_environment(os.environ, database) if real_data else None
         )
-        self.executor = TravelToolExecutor(self.travel, max_calls=current().max_calls)
+        self.executor = TravelToolExecutor(
+            self.travel,
+            max_calls=current().max_calls,
+            max_validations=current().max_validations,
+        )
         self.executor.bookings.supplier = SupplierClient(supplier_url)
 
     async def execute(
@@ -65,6 +69,12 @@ class DatabaseTools:
             + (
                 "\n本次评测仅首次校验，不允许反馈后修复；暂存和用户确认仍须校验。"
                 if self.executor.max_validations == 1
+                else ""
+            )
+            + (
+                f"\n本次首次校验后最多修复{self.executor.max_validations - 1}轮，"
+                "以此为准（覆盖前文的3轮说法）。"
+                if self.executor.max_validations > 4
                 else ""
             )
             + "\n服务端业务状态与有界回顾（以当前revision为准）：\n"

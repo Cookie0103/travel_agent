@@ -260,6 +260,12 @@ def budget_checks(
     return known, estimated, checks
 
 
+HOTEL_CONDITIONS_REASON = (
+    "住宿报价与当前住宿条件不一致（日期/人数/房间/币种/城市变了），请重新search_hotel_offers"
+)
+HOTEL_EXPIRED_REASON = "住宿报价已过期，请重新search_hotel_offers"
+
+
 def hotel_cost(
     request: TravelRequest, record: EvidenceRecord, now: datetime
 ) -> tuple[Decimal, list[ValidationCheck]]:
@@ -270,14 +276,15 @@ def hotel_cost(
             check("hotel", "unknown", "hotel_source", "住宿报价缺来源，不计为已知成本")
         ]
     offer = HotelOffer.model_validate(record.value)
-    if (
-        str(offer.offer_id) != record.entity_id
-        or evidence_conditions(offer.request, "hotel_offer")
-        != evidence_conditions(request, "hotel_offer")
-        or offer.request.revision != request.revision
-        or not offer.quoted_at <= now < offer.expires_at
+    if str(offer.offer_id) != record.entity_id:
+        raise ValueError("住宿报价与证据不一致")
+    # 不绑定请求revision：预算/交通/兴趣等无关更新不应使报价失效；影响报价的条件逐字段比较。
+    if evidence_conditions(offer.request, "hotel_offer") != evidence_conditions(
+        request, "hotel_offer"
     ):
-        raise ValueError("住宿报价与证据条件或有效期不一致")
+        raise ValueError(HOTEL_CONDITIONS_REASON)
+    if not offer.quoted_at <= now < offer.expires_at:
+        raise ValueError(HOTEL_EXPIRED_REASON)
     if offer.currency != request.currency:
         return Decimal(0), [check("hotel", "conflict", "currency", "住宿报价币种与当前条件不同")]
     if offer.total is None:
