@@ -12,6 +12,7 @@ from backend.domain.travel_request import RequestPatch
 from backend.services.common import ServiceError
 from backend.services.hotels import HotelService
 from backend.tools.travel import TravelToolExecutor
+from tests.integration.test_planning import destinations
 from tests.integration.test_travel import travel_setup as travel_setup
 
 pytestmark = pytest.mark.integration
@@ -142,5 +143,39 @@ def test_unknown_and_foreign_ids_are_distinguished_in_trace_detail(
                 foreign, (UUID(str(offers[0]["offer_id"])),)
             )
         assert caught.value.status == 404 and caught.value.reason == "offer_other_session"
+
+    runner.run(exercise())
+
+
+def test_hotel_ref_kind_label_and_hint_and_valid_offer_passes(
+    travel_setup: tuple[asyncio.Runner, object, RunContext],
+) -> None:
+    runner, travel, context = travel_setup
+    executor = TravelToolExecutor(travel)  # type: ignore[arg-type]
+
+    async def exercise() -> None:
+        offers = await search(executor, context, 1)
+        hotel = str(offers[0]["evidence_id"])
+        place = str((await destinations(travel, context))[0].evidence_id)  # type: ignore[arg-type]
+        start = datetime(2026, 11, 3, 10, tzinfo=UTC)
+        item = {
+            "place_evidence_id": place,
+            "start": start.isoformat(),
+            "end": (start + timedelta(hours=1)).isoformat(),
+        }
+        bad = await executor.execute(
+            context,
+            "validate_itinerary",
+            {"expected_revision": 1, "items": [item], "hotel_evidence_id": place},
+        )
+        assert bad.code == "validation"
+        assert "validator:酒店引用必须是hotel_offer证据:hotel_ref_kind=place" in bad.detail
+        assert "不是offer_id" in bad.suggestion
+        good = await executor.execute(
+            context,
+            "validate_itinerary",
+            {"expected_revision": 1, "items": [item], "hotel_evidence_id": hotel},
+        )
+        assert good.code is None, good.detail
 
     runner.run(exercise())

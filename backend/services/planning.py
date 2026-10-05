@@ -23,6 +23,7 @@ from backend.services.travel import (
 )
 
 PLACE_REF_REASON = "地点引用必须是place证据"
+HOTEL_REF_REASON = "酒店引用必须是hotel_offer证据"
 
 
 class PlanningService:
@@ -148,5 +149,17 @@ async def validate_proposal(
             message += (
                 "。place_evidence_id只能用search_places/get_place_facts返回的地点证据；"
                 "酒店报价证据只能填hotel_evidence_id"
+            )
+        if reason == HOTEL_REF_REASON:
+            by_id = {record.evidence_id: record.kind for record in records}
+            kind = (
+                by_id.get(proposal.hotel_evidence_id, "unknown")
+                if proposal.hotel_evidence_id
+                else "unknown"
+            )
+            reason += ":hotel_ref_kind=" + kind
+            message += (
+                "。hotel_evidence_id只能填search_hotel_offers返回的酒店卡片的evidence_id"
+                "（不是offer_id，也不是地点证据）；没有酒店卡片证据就省略hotel_evidence_id"
             )
         raise ServiceError(422, "validation", message, "validator:" + reason) from None

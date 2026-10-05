@@ -65,7 +65,7 @@ class RefreshOfferInput(BaseModel):
 
 
 class PresentationInput(BaseModel):
-    """酒店比较填component=hotel_comparison、expected_revision和offer_ids；行程只填component=itinerary和stage返回的draft_id。两类参数不得混填。offer_ids填酒店卡片的offer_id。"""
+    """酒店比较填component=hotel_comparison、expected_revision和offer_ids；行程只填component=itinerary和stage返回的draft_id。两类参数不得混填。offer_ids填酒店卡片的offer_id；行程的hotel_evidence_id填卡片的evidence_id。"""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
     component: Literal["hotel_comparison", "itinerary"]
@@ -115,7 +115,7 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "search_hotel_offers",
-        "按当前完整入住条件查询酒店；实时模式逐晚核算乐天含税报价，未知不猜测。",
+        "按当前完整入住条件查询酒店；实时模式逐晚核算乐天含税报价，未知不猜测。每张卡的offer_id用于present/refresh，evidence_id用于行程hotel_evidence_id。",
         HotelSearchInput.model_json_schema(),
     ),
     ToolDefinition(

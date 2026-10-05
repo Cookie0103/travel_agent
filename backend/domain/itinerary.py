@@ -22,7 +22,10 @@ class ItineraryProposal(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     expected_revision: int = Field(strict=True, ge=0)
     items: tuple[ProposedItem, ...] = Field(min_length=1, max_length=24)
-    hotel_evidence_id: UUID | None = None
+    hotel_evidence_id: UUID | None = Field(
+        default=None,
+        description="酒店卡片(search_hotel_offers)的evidence_id，不是offer_id；无卡片则省略",
+    )
 
     def evidence_ids(self) -> tuple[UUID, ...]:
         ids = [item.place_evidence_id for item in self.items]
