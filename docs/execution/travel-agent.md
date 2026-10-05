@@ -6,9 +6,13 @@
 
 真实云端工具验证：原条件保持京都2026-11-06至07/2成人/1房/60000JPY/公共交通。run c1a0a2a3-bc94-4c54-b2da-fe20684de3ef的景点、酒店、路线和日期范围判断6步骤均成功，但第6个模型HTTP因上游50秒期限失败；6模型HTTP/2.259656CNY保守占用，不是账单。一次复用证据恢复9259c1f2-24bd-4fb2-b5ea-5c184b620377仍在第5HTTP相同上游期限失败，4工具成功/新增2.265514CNY保守占用；模型主动刷新3地点和酒店，虽然提示不重新搜索仍有新API计数，不能称零查询。两个失败均保留，没有当成完成。独立通过Railway Console复用项目LiveData/ApiUsage做一次10月12–13日天气探针，verified/2日/Open-Meteo，天气HTTP1且计数落PG；城市坐标命中已查缓存，未改用户旅行日期/条件。云端当日PG计数geocode1/places6/rakuten2/routes5/weather1；模型云端累计16HTTP/4.648616CNY保守占用，历史与未结预占均未清。
 
-根据两次相同失败修正期限配置，不继续盲目付费：DEFAULT上游总期限90秒、socket85、SDK客户端100、worker210、父进程220、API240；RELAXED上游120并保持原280/290/300外层。统一复用现有profile与HTTP回收进程，额外只转发非敏感档位；原次数/轮数/输出量/数据配额/费用上限不变。真实上游socket/进程timeout映射timeout，显式cancelled保持优先，避免被SDK解析失败盖成provider_error。83离线专项通过（超时只预占一次、无自动重试、无密钥泄漏、API分类和档位一致性）；独立只读源码审查两项P2已修复并复核无剩余P1/P2；正常完整钩子与部署后一次恢复待核对，不新增依赖或runtime。
+根据两次相同失败修正期限配置，不继续盲目付费：DEFAULT上游总期限90秒、socket85、SDK客户端100、worker210、父进程220、API240；RELAXED上游120并保持原280/290/300外层。统一复用现有profile与HTTP回收进程，额外只转发非敏感档位；原次数/轮数/输出量/数据配额/费用上限不变。真实上游socket/进程timeout映射timeout，显式cancelled保持优先，避免被SDK解析失败盖成provider_error。83离线专项通过（超时只预占一次、无自动重试、无密钥泄漏、API分类和档位一致性）；独立只读源码审查两项P2已修复并复核无剩余P1/P2；正常完整钩子已通过；部署及一次恢复结果见下文，不新增依赖或runtime。
 
-## Railway DeepSeek启用（2026-10-05，当前恢复入口）
+源码修复提交9326a53ea3a7df1c737d2bbee0e3ef655a91b47b已普通push，远端完整SHA一致；正常project-check和project-test钩子均Passed。完整离线807 passed/1 live deselected（211.18s），237文件三平台strict、ruff/格式、3分层契约与10文档入口通过。首次钩子识别测试通过http.sys访问未显式导出，改为标准库sys导入后正常重跑钩子通过，没有跳过PG或断言。api/web/supplier均Active且Details精确关联功能提交；部署分别833aa872-df95-487f-a1cb-708579b23a49、bc43f226-cd0e-4b72-aa5d-698455153c8f、dc7156e9-d88d-4ad1-911e-e325d046f37c。api启动CLI2.1.286、bootstrap166项与health200，持久卷和非root启动命令不变。重新部署后、付费验收前只读核对模型账本仍16HTTP/4.648616CNY与PG原计数一致，证明没有清账。
+
+修复后仅一次原条件验收run abcf3785-0572-4789-acd2-d37b99f4a6e1仍failed，但已正确显示timeout/upstream_timeout。3模型HTTP/新增2.177554CNY保守占用；search_places两次、search_hotel_offers及get_weather_forecast共4成功工具，Google/酒店可用、远期天气unknown判断正常。最终上游仍超过新90秒总期限；不将期限延长当作完成规划证据。云端当日累计19HTTP/6.826170CNY保守占用（含三轮未结预占，非实付账单），PG geocode1/places8/rakuten3/routes5/weather1。没有行程草稿、确认或真实预订。三类数据接线及实际接口验证完成，整轮生成仍有DeepSeek上游等待问题；停止付费重复，不清账或进一步放宽限额。恢复只读核对当前部署/记录；无新的故障证据不重跑同一请求。仅文档交付提交复用上述同源码完整回归，保留project-check、跳过重复project-test；push后核对最终部署，不再付费测试。
+
+## Railway DeepSeek启用（2026-10-05，历史恢复入口）
 
 用户要求解决模型选择器“未以live启动”，并明确允许将本地已有DEEPSEEK_API_KEY配置到既有Railway api服务；替代下节上一轮不上传密钥、不启用live的部署范围。已通过用户Chrome配置deepseek-flash、LLM_PROVIDER=deepseek、DAILY_BUDGET_CNY=15.00、DAILY_BUDGET_USD=0，并以--live启动。密钥只进入Railway遮罩变量，没有输出或提交.env；Google/乐天/Anthropic凭据未上传。
 
