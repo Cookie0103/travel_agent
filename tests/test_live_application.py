@@ -9,7 +9,14 @@ from uuid import uuid4
 
 import pytest
 
-from backend.domain.execution import RunContext, RunResult, RuntimeEvent, RuntimeOutcome, error_code
+from backend.domain.execution import (
+    RunContext,
+    RunResult,
+    RuntimeEvent,
+    RuntimeOutcome,
+    error_code,
+    upstream_error_text,
+)
 from backend.providers.claude_agent import application, live
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.events import save_event
@@ -19,7 +26,14 @@ from backend.providers.claude_agent.limits import ProbeError, Settings
 
 @pytest.mark.parametrize(
     "failure",
-    ["cancelled", "cancelled_timeout", "worker_exit", "guard_failure", "upstream_timeout"],
+    [
+        "cancelled",
+        "cancelled_timeout",
+        "worker_exit",
+        "guard_failure",
+        "upstream_timeout",
+        "upstream_402",
+    ],
 )
 def test_parent_failure_never_publishes_worker_completed(
     failure: str, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
@@ -61,6 +75,10 @@ def test_parent_failure_never_publishes_worker_completed(
                 "status": "error",
                 "code": "cancelled" if failure == "cancelled_timeout" else "provider_error",
             }
+        if failure == "upstream_402":
+            guards[0].failures.append("provider_error")
+            guards[0].upstream_status = 402
+            return {"status": "error", "code": "provider_error"}
         return {"status": "error", "code": failure}
 
     monkeypatch.setenv("DEEPSEEK_API_KEY", "offline-only")
@@ -82,6 +100,10 @@ def test_parent_failure_never_publishes_worker_completed(
     if failure in {"cancelled", "cancelled_timeout"}:
         assert report["code"] == "cancelled"
         assert emitted[0].code == "cancelled"
+    if failure == "upstream_402":
+        assert report["code"] == "provider_error" and report["reason"] == "upstream_http_402"
+        result = application.outcome(report, context)
+        assert (result.code, result.reason) == ("provider_error", "upstream_http_402")
     if failure == "upstream_timeout":
         assert report["code"] == "timeout"
         assert emitted[0].code == "timeout"
@@ -319,3 +341,40 @@ def test_external_error_normalization_preserves_application_codes(code: str) -> 
     assert error_code(code) == code
     assert error_code("worker_exit") == "provider_error"
     assert error_code(None) == "provider_error"
+
+
+@pytest.mark.parametrize("status", [True, "402", 99, 600, None])
+def test_invalid_upstream_status_falls_back_to_generic_reason(status: object) -> None:
+    report = {"status": "error", "code": "provider_error", "upstream_http_status": status}
+    assert application.outcome(report, RunContext(uuid4())).reason == "live_failed"
+
+
+def test_cancelled_report_never_claims_upstream_status() -> None:
+    report = {"status": "error", "code": "cancelled", "upstream_http_status": 402}
+    assert application.outcome(report, RunContext(uuid4())).reason == "live_failed"
+
+
+@pytest.mark.parametrize(
+    "reason,text",
+    [
+        ("upstream_http_402", "DeepSeek 返回 402：账户余额不足，请充值后重试"),
+        ("upstream_http_401", "DeepSeek 返回 401：密钥无效或无权限，请检查 API Key"),
+        ("upstream_http_403", "DeepSeek 返回 403：密钥无效或无权限，请检查 API Key"),
+        ("upstream_http_429", "DeepSeek 返回 429：请求过于频繁或速率受限，请稍后重试"),
+        ("upstream_http_500", "DeepSeek 返回 500：服务暂时不可用，请稍后重试"),
+        ("upstream_http_503", "DeepSeek 返回 503：服务暂时不可用，请稍后重试"),
+        ("upstream_http_400", "DeepSeek 返回 400：请求被拒绝"),
+        ("upstream_http_418", "上游返回 HTTP 418"),
+        ("live_failed", None),
+        ("upstream_http_", None),
+        ("upstream_http_4o2", None),
+        ("upstream_http_99", None),
+        ("upstream_http_600", None),
+        ("upstream_http_４０２", None),
+        ("upstream_timeout", None),
+    ],
+)
+def test_upstream_error_text_is_fixed_mapping_from_status_only(
+    reason: str, text: str | None
+) -> None:
+    assert upstream_error_text(reason) == text

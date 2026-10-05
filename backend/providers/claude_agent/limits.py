@@ -20,6 +20,14 @@ class ProbeError(RuntimeError):
         super().__init__(f"{code}: {reason}")
 
 
+class StallError(ProbeError):
+    """上游在首字节期限内无任何响应头：唯一可重试的失败（此时没有响应字节到达）。"""
+
+    def __init__(self, last_phase: str, waited_s: float) -> None:
+        self.last_phase, self.waited_s = last_phase, waited_s
+        super().__init__("timeout", "上游首字节期限已到，保留预占")
+
+
 @dataclass(frozen=True)
 class Settings:
     """本次探针的私有配置，密钥不参与 repr。"""

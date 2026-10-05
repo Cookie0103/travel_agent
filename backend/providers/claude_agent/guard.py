@@ -15,7 +15,7 @@ from typing import Literal
 from urllib.parse import urlsplit
 
 from backend.providers.claude_agent.budget import Budget
-from backend.providers.claude_agent.limits import ProbeError, Settings, price_for
+from backend.providers.claude_agent.limits import ProbeError, Settings, StallError, price_for
 from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.request import MAX_BYTES, TOOL_NAME, validate_request
 from backend.providers.claude_agent.response import summarize
@@ -40,6 +40,7 @@ class Guard:
     allowed_tools: frozenset[str] = frozenset({TOOL_NAME})
     temperature: Literal[0] | None = None
     run: str = ""  # 仅TRACE用的run标识
+    upstream_status: int | None = None  # 最近一次非200的上游状态码(仅数字，不含正文)
 
     def accept(self, path: str, token: str, body: bytes) -> tuple[int, bytes]:
         if not secrets.compare_digest(token, "Bearer " + self.token):
@@ -57,21 +58,40 @@ class Guard:
             request = validate_request(
                 body, self.settings.model, self.allowed_tools, temperature=self.temperature
             )
-            if self.failures or self.attempts >= self.max_attempts:
-                raise ProbeError("blocked", "当前实验已停止或达到请求上限")
-            request_id = self.budget.reserve(request.charge, datetime.now(UTC), self.run)
-            self.attempts += 1
-            trace(
-                "model_req_start",
-                self.run,
-                attempt=self.attempts,
-                req_bytes=len(request.body),
-                stream=True,  # validate_request只接受stream=true
-                max_tokens=request.max_output,
-            )
-            started = time.monotonic()
-            status, content = self.forward(request.body)
+            retries = 0
+            while True:  # 仅首字节停滞会重试；每次尝试各自预占并计入attempts
+                if self.failures or self.attempts >= self.max_attempts:
+                    raise ProbeError("blocked", "当前实验已停止或达到请求上限")
+                request_id = self.budget.reserve(request.charge, datetime.now(UTC), self.run)
+                self.attempts += 1
+                trace(
+                    "model_req_start",
+                    self.run,
+                    attempt=self.attempts,
+                    req_bytes=len(request.body),
+                    stream=True,  # validate_request只接受stream=true
+                    max_tokens=request.max_output,
+                )
+                started = time.monotonic()
+                try:
+                    status, content = self.forward(request.body)
+                    break
+                except StallError as stall:
+                    if retries >= current().upstream_retries:
+                        raise
+                    retries += 1
+                    # 停滞的那次预占不退款，保持已占用；SDK此时尚未收到任何字节。
+                    self._trace_failure(stall.code, started, why=str(stall))
+                    trace(
+                        "upstream_retry",
+                        self.run,
+                        n=retries,
+                        reason="first_byte_stall",
+                        last_phase=stall.last_phase,
+                        waited_s=stall.waited_s,
+                    )
             if status != 200:
+                self.upstream_status = status
                 raise ProbeError("provider_error", f"上游 HTTP {status}")
             observation = summarize(content, request, self.settings.model, self.settings.currency)
             trace(

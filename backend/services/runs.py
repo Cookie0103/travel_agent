@@ -21,6 +21,7 @@ from backend.domain.execution import (
     RuntimeIdentity,
     RuntimeOutcome,
     event_metadata,
+    upstream_error_text,
 )
 from backend.persistence import runs, sessions
 from backend.persistence.database import Database
@@ -285,12 +286,17 @@ class RunService:
             try:
                 await consumer
                 if transient:
-                    self.live_answers[context.run_id] = (datetime.now().astimezone(), outcome.text)
+                    # 供应商HTTP错误：固定说明(仅由状态码生成)同时作为本轮可见回复和落库文本。
+                    detail = upstream_error_text(outcome.reason) if outcome.code else None
+                    self.live_answers[context.run_id] = (
+                        datetime.now().astimezone(),
+                        outcome.text or detail or "",
+                    )
                     outcome = replace(
                         outcome,
                         text="实时回复仅供本轮查看；行程引用已保存，详情按需更新。"
                         if outcome.code is None
-                        else f"执行未完成：{outcome.code}",
+                        else detail or f"执行未完成：{outcome.code}",
                     )
                 async with transaction(self.database) as db:
                     await runs.finish(db, context, outcome)

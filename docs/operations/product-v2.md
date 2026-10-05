@@ -120,3 +120,8 @@ Chrome实际选中DeepSeek，发送“你好，请只用一句话介绍你能帮
 ## TRAVEL_PROFILE=human（人工手测档）
 
 `TRAVEL_PROFILE=human` 供人工手动测试：工具80次/模型60轮/整轮900秒（worker840<process850<run900，upstream120<API_TIMEOUT），外部API次数大于relaxed；default/relaxed/human三档，CI与评测保持default。每日15 CNY授权、预占/结算与Claude USD(0,0)不变。景点/文章证据只按城市适用，不随请求版本失效；酒店与路线证据仍绑定版本。
+
+**上游首字节看门狗与有界重试（HUMAN，2026-10-05）**：run 1da5c298 的第5次模型请求在 `model_req_start` 后120秒内转发子进程无任何 TRACE（未到 `model_req_sent`），说明停滞发生在发送之前（spawn/导入、stdin、DNS/TCP/TLS 之一，未区分）。现转发子进程增加阶段 TRACE：`child_start`(pid、boot_ms)、`child_stdin_read`、`child_connecting`、`child_connected`(DNS+TCP)、`child_tls_done`，并保留 `model_req_sent/first_byte/first_chunk/body_done/child_error`；父进程记 `child_spawned`，并在等待期间读取同一 trace 文件，超时时输出 `child_last_phase`。
+HUMAN 新增 Limits：`first_byte_timeout=25`、`upstream_retries=2`——仅当尚无任何响应头时，杀掉子进程并用同一请求体重试（每次重试各自 `reserve`，停滞的预占不退款，计入 `max_attempts`，TRACE 为 `upstream_retry`）；已收到响应头、HTTP 错误状态、未授权工具响应、部分正文都不重试。DEFAULT/RELAXED 均为0（行为不变）。单请求最坏约 2×25+120=170 秒，`API_TIMEOUT_MS` 改按 `upstream_timeout+重试×首字节期限+10` 推导（HUMAN 180秒，DEFAULT 100秒/RELAXED 130秒不变）。这是定位并缓解，不是已证明的根因修复。
+
+**供应商HTTP错误直接显示（2026-10-05）**：guard 记录最近一次非200状态码（仅数字），live 报告携带 `upstream_http_status`，`RuntimeOutcome.reason=upstream_http_<码>`（也进入 `run_finished` TRACE）。RunService 对 live 失败按固定表生成说明并作为本轮回复显示：402「账户余额不足，请充值后重试」、401/403「密钥无效或无权限」、429「请求过于频繁或速率受限」、5xx「服务暂时不可用」、400「请求被拒绝」、其他「上游返回 HTTP n」。只用状态码，不含上游响应正文、头或密钥；error_code 仍为 provider_error，超时与其他失败文案不变；无迁移、无OpenAPI变更、未改 apps/web。

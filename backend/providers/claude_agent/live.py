@@ -10,7 +10,13 @@ from threading import Event
 from backend.adapters.tracing import cloud_exporter, trace_report
 from backend.agent.persona import JudgeKind
 from backend.agent.runtime import EventSink
-from backend.domain.execution import RunContext, RuntimeEvent, error_code, event_metadata
+from backend.domain.execution import (
+    UPSTREAM_REASON,
+    RunContext,
+    RuntimeEvent,
+    error_code,
+    event_metadata,
+)
 from backend.mcp.bridge import sdk_tool_name
 from backend.providers.claude_agent import http as upstream
 from backend.providers.claude_agent.budget import Budget
@@ -201,6 +207,12 @@ def run_live(
                     guard_failures=guard.failures,
                 )
                 report.update(code="timeout", reason="upstream_timeout")
+            elif guard.upstream_status is not None and report.get("code") != "cancelled":
+                # 供应商HTTP错误(402/401/429/5xx…)：仅传状态码，UI据此显示固定说明。
+                report.update(
+                    reason=f"{UPSTREAM_REASON}{guard.upstream_status}",
+                    upstream_http_status=guard.upstream_status,
+                )
         if (
             report.get("status") == "success"
             and guard.observations

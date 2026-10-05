@@ -264,3 +264,42 @@ def test_next_turn_gets_bounded_owned_dialogue_and_valid_evidence(
             await travel.business_context(RunContext(uuid4(), context.session_id))
 
     runner.run(exercise())
+
+
+@pytest.mark.parametrize(
+    "reason,expected",
+    [
+        ("upstream_http_402", "DeepSeek 返回 402：账户余额不足，请充值后重试"),
+        ("live_failed", ""),
+    ],
+)
+def test_live_upstream_http_error_is_shown_in_run_answer(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+    monkeypatch: pytest.MonkeyPatch,
+    reason: str,
+    expected: str,
+) -> None:
+    """供应商HTTP错误的状态码说明进入本轮answer；其他失败保持原通用文案。"""
+    runner, travel, context = travel_setup
+    service = RunService(travel.database, live_enabled=True)
+    monkeypatch.setattr(
+        RunService,
+        "_runtime",
+        lambda self, mode, executor: FakeRuntime(
+            RuntimeOutcome(code="provider_error", reason=reason)
+        ),
+    )
+
+    async def exercise() -> None:
+        run = await service.submit(
+            context.user_id,
+            context.session_id,
+            MessageInput(client_message_id=uuid4(), text="查询", mode="deepseek"),
+        )
+        await asyncio.gather(*tuple(service.tasks.values()))
+        final = await service.get(context.user_id, run.run_id)
+        assert final.error_code == "provider_error" and final.answer == expected
+        assert "secret" not in final.answer
+        await service.close()
+
+    runner.run(exercise())

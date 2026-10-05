@@ -39,6 +39,29 @@ def error_code(value: object) -> ErrorCode:
     )
 
 
+UPSTREAM_REASON = "upstream_http_"  # RuntimeOutcome.reason前缀，后接三位HTTP状态码
+
+
+def upstream_error_text(reason: str) -> str | None:
+    """上游HTTP错误 -> 固定中文说明；只依据状态码，绝不包含上游响应正文、头或密钥。"""
+    digits = reason.removeprefix(UPSTREAM_REASON)
+    if not reason.startswith(UPSTREAM_REASON) or not (digits.isascii() and digits.isdigit()):
+        return None
+    status = int(digits)
+    if not 100 <= status <= 599:
+        return None
+    explanation = {
+        400: "请求被拒绝",
+        401: "密钥无效或无权限，请检查 API Key",
+        402: "账户余额不足，请充值后重试",
+        403: "密钥无效或无权限，请检查 API Key",
+        429: "请求过于频繁或速率受限，请稍后重试",
+    }.get(status)
+    if explanation is None and status >= 500:
+        explanation = "服务暂时不可用，请稍后重试"
+    return f"DeepSeek 返回 {status}：{explanation}" if explanation else f"上游返回 HTTP {status}"
+
+
 @dataclass(frozen=True)
 class RunContext:
     """由服务端生成的业务 ID；不能把 SDK session_id 当成用户身份。"""

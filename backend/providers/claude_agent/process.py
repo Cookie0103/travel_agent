@@ -7,6 +7,7 @@ import subprocess
 import sys
 import time
 from collections.abc import Callable
+from contextvars import ContextVar
 from pathlib import Path
 from threading import Event
 
@@ -14,6 +15,10 @@ from backend.providers.claude_agent.limits import ProbeError
 from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.windows_job import WindowsJob
 from backend.trace_log import trace
+
+# 调用方线程内的环境进度钩子：不改run_process调用形状（含测试替身），显式progress优先。
+progress_hook: ContextVar[Callable[[], None] | None] = ContextVar("progress_hook", default=None)
+spawn_hook: ContextVar[Callable[[int], None] | None] = ContextVar("spawn_hook", default=None)
 
 
 def run_process(
@@ -27,6 +32,7 @@ def run_process(
     progress: Callable[[], None] | None = None,
 ) -> subprocess.CompletedProcess[str]:
     """先由 worker 自行取消；父期限到达才对自己创建的进程树强制终止。"""
+    progress = progress or progress_hook.get()
     flags = 0
     if sys.platform == "win32":
         flags = subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP
@@ -46,6 +52,9 @@ def run_process(
         start_new_session=os.name != "nt",
     ) as process:
         try:
+            on_spawn = spawn_hook.get()
+            if on_spawn is not None:
+                on_spawn(process.pid)
             if job is not None:
                 job.assign(process.pid)
             stdout, stderr = communicate(

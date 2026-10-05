@@ -217,3 +217,16 @@ def test_claude_reservation_bounds_cache_write_worst_case() -> None:
 def test_context_byte_limit_unchanged() -> None:
     with pytest.raises(ProbeError, match="上限"):
         validate_request(_sized("deepseek-flash", 1024, 131072), "deepseek-flash")
+
+
+def test_upstream_http_error_records_status_only_and_never_leaks_body(tmp_path: Path) -> None:
+    budget = Budget(tmp_path / "ledger", tmp_path / "old", Decimal(5))
+    guard = Guard(
+        Settings("secret", "deepseek-flash", Decimal(5), Decimal(0)),
+        budget,
+        lambda _: (402, b'{"error":"secret-upstream-body sk-live"}'),
+    )
+    status, content = guard.accept("/v1/messages", "Bearer " + guard.token, request_body())
+    assert status == 400 and guard.upstream_status == 402
+    assert guard.failures == ["provider_error"] and budget.totals()[0] == 1
+    assert b"secret-upstream-body" not in content and b"sk-live" not in content
