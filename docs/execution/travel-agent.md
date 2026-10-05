@@ -1,5 +1,11 @@
 # Travel Agent 长程执行计划
 
+## 今日分支保存（2026-10-05，当前 Git 恢复入口）
+
+用户要求沿用既有batch/年-月-日-主题格式保存今天的最新代码。工作区起点干净，前一分支batch/2026-10-04-product-v2与origin均为5a5ee5b8d5fa2f8f2ea51a68f528a659bff192f5，包含c9e1d7d的DeepSeek请求及SSE修复和最终真实验收记录。已从该HEAD创建并切换到batch/2026-10-05-product-v2，git push -u origin成功，ls-remote确认该完整SHA一致，已设置远端跟踪。此续记仅更新恢复入口，复用上一轮同源码完整测试，保留project-check、跳过重复project-test后提交并普通push。
+
+本轮仅保存Git分支；Railway仍跟踪10月4日分支，未更改部署配置或新增真实API调用。整轮行程尚有上游90秒等待问题，真实结果和后续定位约束见下节；不因分支已推送将其标为解决。恢复先核对当前Git分支及远端，再按用户下一步指令执行。
+
 ## 京都10月7–8日超时定位（2026-10-05，当前恢复入口）
 
 用户再次反馈近日期两天一夜规划失败，cloud run bda36dd5-c24c-47a5-87d7-5d57106772ce从04:22:06.647至04:23:49.635UTC（约103秒），update_travel_request和search_places两次成功；第一模型HTTP9180input/1709output/tool_use，第二模型HTTP超过90秒上游总期限，guard仅timeout，没有预算拒绝。新增2HTTP/2.145568CNY保守占用，云端累计21HTTP/8.971738CNY，PG当天geocode1/places10/rakuten3/routes5/weather1。不是密钥缺失，也不能把页面通用提示当额度不足证据。当前近日期在天气窗口内，原远期天气限制不解释这次失败。
