@@ -2,13 +2,13 @@
 
 ## Railway更新（2026-10-05，当前恢复入口）
 
-用户明确授权将本地最新代码部署到既有Railway项目 `449ee30a-0ff4-437a-a35a-53ddc5c4ef93`，并要求操作其已登录Chrome。起点分支 `batch/2026-10-04-product-v2`、本地/远端HEAD均 `427e51f318ddc67c73205e79789bffccb0de9805`、工作区干净。云端仍绑定旧 `2026-10-04-frontend-redesign`，API上一轮健康检查失败；代码核对确认SupplierClient拒绝固定模拟供应商私网地址。按ADR-008补精确名称和失败路径测试，27专项通过。正在将api/web/supplier切换到当前V2分支；保留Postgres卷、原运行模式与凭据边界，不复制本地.env，不自动启动真实模型/API实验。待静态/完整离线检查、独立审查、提交push后发布并验证公网。
+用户明确授权将本地最新代码部署到既有Railway项目 `449ee30a-0ff4-437a-a35a-53ddc5c4ef93`，并要求操作其已登录Chrome。起点本地/远端均 `427e51f318ddc67c73205e79789bffccb0de9805`。已将api/web/supplier从旧 `2026-10-04-frontend-redesign` 切到 `batch/2026-10-04-product-v2`，保留自动部署。旧API健康失败已按ADR-008修复：只允许固定模拟供应商私网名称，27专项通过；236文件三平台strict、ruff/格式、3分层契约、10文档入口通过，独立只读审查无P0/P1/P2。正常commit的check及完整test钩子均Passed，功能提交 `75318535b5494bd247d862d37eeaeb4146f26080` 普通push成功，远端完整SHA一致。
 
-恢复点：三个服务分支更新已暂存，Railway Details逐项确认仅3项Branch变化，尚未点击Deploy Changes。dev check通过（236文件三平台strict、ruff/格式、3分层契约、10文档入口），只读独立审查无P0/P1/P2。正常commit钩子check通过，test为610 passed/1 deselected/187 setup errors（本地PostgreSQL不可用），因此commit尚未生成。已启动既有Docker Desktop；WSL的docker-desktop仍Stopped，Docker弹出error-dialog，官方status/restart命令无返回，已终止悬挂CLI等待。已向用户询问Docker窗口状态；待引擎恢复后dev db-up、正常commit（完整测试）、push、Railway Deploy Changes、公网页面/API/离线流程验收。自动审批拒绝展开变量值（可能暴露DATABASE_URL），保持遮罩继续，不读取或复制数据库凭据。云端仅5个演示服务变量，API原启动命令未启用--live，真实V2供应商/模型能力本次尚不具备配置。
+Railway三项Branch变化已发布，api/web/supplier与Postgres全部Online；API及web详情关联上述完整提交。公网 [web](https://web-production-0aaac.up.railway.app) 的同源 `/api/health` HTTP200/status=ok、`/models` HTTP200（offline可用、deepseek/claude禁用）、`/articles` HTTP200/20条。复用既有smoke_demo仅改运行时BASE/STATE：云端酒店比较、生成/确认/局部修改、模拟预订/确认幂等、归属隔离、版本冲突、live拒绝、SSE游标读取与保存恢复均Passed；私有测试状态仅在ignored `.cache/railway-v2-smoke/state.json`。Chrome实际进入工作台，最新版分来源数据说明及链接可见。0真实模型/供应商调用，无真实订单或付款；未上传.env/密钥，未启用--live。代码发布完成，云端真实V2能力仍需专门配置和授权。部署ID和环境恢复过程集中在[原V2记录](../operations/product-v2.md)。
 
-Docker环境阻塞已解除：日志确认两处残留AF_UNIX套接字导致Desktop启动崩溃；只读核对后，按精确路径将 `Docker/run` 和 `docker-secrets-engine` 的仅含0字节套接字的临时目录重命名保留，未删除文件或触碰凭据/配置/卷。备份位于用户LocalAppData下，后缀 `travel-agent-20261005-0310/0311`。恢复后Docker28.5.1正常，`dev db-up`退出0，既有 `travel-agent-postgres-1` Healthy。继续正常commit钩子，不跳过数据库测试。
+恢复时只核对本次发布和当前Git，不重跑付费流程或恢复旧研究队列。纯部署记录提交复用同源码已通过的完整test与线上离线验收，保存时仅跳过重复project-test，保留project-check；其push会自动发布同源码的文档提交，需核对最终服务Online。Docker环境问题已解除，原卷保留，备份的临时套接字目录未删除；自动审批拒绝变量展开后改用遮罩和健康接口完成验收，未读取数据库凭据。
 
-## V2 补齐与文档收敛（2026-10-04，最新恢复入口）
+## V2 补齐与文档收敛（2026-10-04，历史恢复入口）
 
 用户要求将遗漏功能补齐并收敛Markdown；替代下方上一轮“停止、不再开发”的恢复指示。本轮只补天气三小时PG缓存、乐天住宿晚数+1上限、手动接口探针/单城冒烟、四份合成结构样本、札幌/那霸/箱根真实规划和个人Google Calendar导入。三城草稿均completed，日历6/6导入成功；那霸主流程酒店失败后降级，独立单晚/两晚接口均成功，详情见[唯一V2验收汇总](../operations/product-v2.md)。
 
