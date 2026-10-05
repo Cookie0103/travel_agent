@@ -10,7 +10,7 @@ from sqlalchemy import text
 
 from backend.domain.external_data import ExternalDataError
 from backend.persistence.database import Database
-from backend.providers.claude_agent.profile import current
+from backend.providers.claude_agent.profile import DEFAULT, current
 
 ApiName = Literal["geocode", "places", "routes", "rakuten", "weather"]
 CAP_NAMES: dict[ApiName, str] = {
@@ -32,6 +32,7 @@ class ApiUsage:
         limits = current(environment)
         self.run_caps = {api: limits.run_caps[api] for api in CAP_NAMES}
         self.run_limits = run_limits
+        self.default_profile = limits is DEFAULT
         for api, name in CAP_NAMES.items():
             try:
                 cap = int(environment.get(name, "").strip() or limits.daily_defaults[api])

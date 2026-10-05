@@ -6,7 +6,7 @@ from decimal import Decimal
 import pytest
 from pydantic import ValidationError
 
-from backend.domain.evidence import EvidenceRecord, evidence_conditions
+from backend.domain.evidence import EvidenceKind, EvidenceRecord, evidence_conditions
 from backend.domain.travel_request import (
     RequestConflict,
     RequestPatch,
@@ -102,3 +102,39 @@ def test_evidence_missing_source_is_unknown_and_wrong_conditions_rejected() -> N
     assert not record.applicable(request.model_copy(update={"adults": 2}), now)
     assert not record.applicable(request.model_copy(update={"revision": 3}), now)
     assert not record.applicable(request, now + timedelta(minutes=5))
+
+
+def _record(request: TravelRequest, kind: EvidenceKind, now: datetime) -> EvidenceRecord:
+    return EvidenceRecord(
+        entity_id="x:1",
+        field_path="value",
+        value="v",
+        kind=kind,
+        request_revision=request.revision,
+        conditions=evidence_conditions(request, kind),
+        retrieved_at=now,
+        valid_until=now + timedelta(minutes=5),
+        data_mode="fixture",
+    )
+
+
+@pytest.mark.parametrize("kind", ["place", "article"])
+def test_place_and_article_evidence_survive_revision_bump_but_not_city_or_expiry(
+    kind: EvidenceKind,
+) -> None:
+    now = datetime.now(UTC)
+    request = TravelRequest(city="京都", revision=2)
+    record = _record(request, kind, now)
+    later = request.model_copy(update={"revision": 5, "adults": 2})
+    assert record.applicable(later, now)
+    assert not record.applicable(later.model_copy(update={"city": "大阪"}), now)
+    assert not record.applicable(later, now + timedelta(minutes=5))
+
+
+@pytest.mark.parametrize("kind", ["hotel_offer", "route"])
+def test_hotel_and_route_evidence_stay_bound_to_revision(kind: EvidenceKind) -> None:
+    now = datetime.now(UTC)
+    request = TravelRequest(city="京都", revision=2)
+    record = _record(request, kind, now)
+    assert record.applicable(request, now)
+    assert not record.applicable(request.model_copy(update={"revision": 3}), now)

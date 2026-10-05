@@ -1,6 +1,6 @@
 # 后端代码
 
-这里是整个旅行规划后端：FastAPI 接口、业务规则、工具契约、Claude Agent SDK 适配、外部数据适配和 PostgreSQL 持久化。默认离线（fixture 运行时，不联网、不花钱）；真实模型需显式 `--live` 并通过费用守卫。`--relaxed` 只放宽次数与超时（见 `providers/claude_agent/profile.py`），费用上限不变。
+这里是整个旅行规划后端：FastAPI 接口、业务规则、工具契约、Claude Agent SDK 适配、外部数据适配和 PostgreSQL 持久化。默认离线（fixture 运行时，不联网、不花钱）；真实模型需显式 `--live` 并通过费用守卫。`--relaxed` 只放宽次数与超时（见 `providers/claude_agent/profile.py`），费用上限不变；人工手测另有 `TRAVEL_PROFILE=human`（default/relaxed/human，仅放宽次数与时限）。
 
 | 子目录 | 负责什么 |
 | --- | --- |

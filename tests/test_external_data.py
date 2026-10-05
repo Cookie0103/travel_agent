@@ -1,18 +1,28 @@
 """V2必要纯规则：结构错误、营业期、报价未知、事件引用和日历编码。"""
 
+import asyncio
 from datetime import date, datetime
 from decimal import Decimal
 from pathlib import Path
+from typing import Any, cast
 from uuid import uuid4
 
+import httpx
 import pytest
 from pydantic import JsonValue, TypeAdapter
 
-from backend.adapters.google_maps import _Hours, _Places, broad_region, opening_hours
+from backend.adapters.external_api import ApiUsage
+from backend.adapters.google_maps import (
+    GoogleMaps,
+    _Hours,
+    _Places,
+    broad_region,
+    opening_hours,
+)
 from backend.adapters.open_meteo import Forecast
 from backend.adapters.rakuten import Rakuten, candidates
 from backend.domain.execution import RunContext, RuntimeEvent, event_metadata
-from backend.domain.external_data import ExternalDataError
+from backend.domain.external_data import ExternalDataError, GeoPoint
 from backend.domain.opening_hours import opening_state
 from backend.services.calendar import escape, fold
 from tests.test_hotels import request
@@ -111,3 +121,70 @@ def test_calendar_text_escaping_and_utf8_folding() -> None:
     lines = fold("SUMMARY:" + "旅行" * 100).split("\r\n")
     assert all(len(line.encode("utf-8")) <= 75 for line in lines)
     assert all(line.startswith(" ") for line in lines[1:])
+
+
+class _CountingUsage(ApiUsage):
+    """不连数据库：只计外部调用次数。"""
+
+    def __init__(self, env: dict[str, str]) -> None:
+        super().__init__(cast(Any, None), env)
+        self.calls = 0
+
+    async def consume(self, api: str) -> None:
+        self.calls += 1
+
+
+def test_google_place_details_is_cached_after_first_fetch() -> None:
+    body = {
+        "id": "synthetic-place",
+        "displayName": {"text": "合成美术馆"},
+        "location": {"latitude": 35, "longitude": 135},
+        "types": ["museum"],
+    }
+
+    async def exercise() -> None:
+        usage = _CountingUsage({})
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(lambda _: httpx.Response(200, json=body))
+        ) as http:
+            google = GoogleMaps("test", http, usage)
+            first = await google.details("gplace:synthetic-place", "京都")
+            second = await google.details("gplace:synthetic-place", "京都")
+        assert first.name == second.name == "合成美术馆" and usage.calls == 1
+
+    asyncio.run(exercise())
+
+
+def test_google_place_details_failure_is_not_cached() -> None:
+    async def exercise() -> None:
+        usage = _CountingUsage({})
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(lambda _: httpx.Response(500, json={}))
+        ) as http:
+            google = GoogleMaps("test", http, usage)
+            for _ in range(2):
+                with pytest.raises(ExternalDataError):
+                    await google.details("gplace:missing", "京都")
+        assert usage.calls == 2 and not google.places
+
+    asyncio.run(exercise())
+
+
+@pytest.mark.parametrize(
+    "env,expected",
+    [({}, 2), ({"TRAVEL_PROFILE": "relaxed"}, 20), ({"TRAVEL_PROFILE": "human"}, 30)],
+)
+def test_rakuten_run_cap_default_follows_nights_and_other_profiles_keep_config(
+    env: dict[str, str], expected: int
+) -> None:
+    async def exercise() -> None:
+        usage = _CountingUsage(env)
+        trip = request().model_copy(update={"end_date": date(2026, 11, 7)})  # 1晚
+        async with httpx.AsyncClient() as http:
+            provider = Rakuten("test", "test", "", "", http, usage)
+            point = GeoPoint(name="京都", latitude=35, longitude=135, broad=True)
+            with pytest.raises(ExternalDataError, match="区域过大"):
+                await provider.search(trip, point)
+        assert usage.run_caps["rakuten"] == expected and usage.calls == 0
+
+    asyncio.run(exercise())

@@ -106,7 +106,6 @@ def test_matching_evidence_is_scored_and_missing_required_fact_reduces_coverage(
         {"value": 200},
         {"value": True},
         {"source_ref": None},
-        {"request_revision": 1},
         {"conditions": {"city": None}},
         {"valid_until": datetime.now(UTC) - timedelta(seconds=1)},
     ],

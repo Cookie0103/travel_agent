@@ -1,4 +1,4 @@
-"""开发期限额档位；relaxed 只放宽次数与时限，费用授权/预算上限不在此处。"""
+"""开发期限额档位；relaxed/human 只放宽次数与时限，费用授权/预算上限不在此处。"""
 
 import os
 from collections.abc import Mapping
@@ -29,7 +29,13 @@ RELAXED = Limits(
     {"geocode": 5, "places": 15, "routes": 40, "rakuten": 20, "weather": 2},
     {"geocode": 100, "places": 150, "routes": 400, "rakuten": 300, "weather": 300},
 )  # fmt: skip
+HUMAN = Limits(
+    80, 60, 40, 120, 840, 850, 900.0, 8192,
+    {"geocode": 10, "places": 60, "routes": 80, "rakuten": 30, "weather": 5},
+    {"geocode": 100, "places": 300, "routes": 600, "rakuten": 300, "weather": 300},
+)  # fmt: skip
+PROFILES = {"relaxed": RELAXED, "human": HUMAN}  # 人工手测用human；机器/评测保持default
 
 
 def current(env: Mapping[str, str] = os.environ) -> Limits:
-    return RELAXED if env.get("TRAVEL_PROFILE") == "relaxed" else DEFAULT
+    return PROFILES.get(env.get("TRAVEL_PROFILE", ""), DEFAULT)

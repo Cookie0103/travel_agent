@@ -116,3 +116,7 @@ Chrome实际选中DeepSeek，发送“你好，请只用一句话介绍你能帮
 付费前云端同一个真实SDK离线探针证实forward thinking_present=true/type disabled、output_config省略、2048max_tokens/2013bytes/1工具、guard无错误；0真实上游HTTP/数据API。云端原账本21HTTP/8.971738CNY及原PG计数保持，未清预算。随后只重跑一次用户原10月7–8日请求，run20804855-a69b-4f94-89ef-ef75eee052f7从04:41:50.885至04:43:33.238UTC（约102秒）仍failed/timeout/upstream_timeout。天气、景点4次、酒店共6成功工具；前3HTTP输出130/160/171tokens，最后第4HTTP超过90秒。明确配置修复已落实，但未证明彻底解决云端等待；尚无该HTTP收到的字节/帧进度记录，不能断言供应商排队、网络慢流或终态缺失中的某一项。没有草稿、正式确认或预订。
 
 本次模型新增4HTTP/2.187588CNY保守占用，云端累计25HTTP/11.159326CNY（含五轮未结预占，非实付账单）；PG geocode1/places13/rakuten4/routes5/weather2。官方[限速与连接保持说明](https://api-docs.deepseek.com/quick_start/rate_limit/)允许推理前发送keep-alive等待，但这不是此run排队的实测证据；[官方状态页](https://status.deepseek.com/)当时显示正常，不能称全站故障。不清账、不新增重复付费探针或再放宽期限。剩余问题是单次上游响应的等待定位与整轮草稿生成，三类数据接线没有缺key证据。恢复先读当前失败报告；若继续修复，应先补最小脱敏传输阶段/字节/终态进度证据，再决定一次有依据的验收，不能盲目重发。此次仅文档续记复用同源码正常完整回归，保留project-check、跳过重复project-test；push后仅核对部署，不再次付费。
+
+## TRAVEL_PROFILE=human（人工手测档）
+
+`TRAVEL_PROFILE=human` 供人工手动测试：工具80次/模型60轮/整轮900秒（worker840<process850<run900，upstream120<API_TIMEOUT），外部API次数大于relaxed；default/relaxed/human三档，CI与评测保持default。每日15 CNY授权、预占/结算与Claude USD(0,0)不变。景点/文章证据只按城市适用，不随请求版本失效；酒店与路线证据仍绑定版本。

@@ -3,7 +3,7 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from sqlalchemy import select, update
+from sqlalchemy import or_, select, update
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -81,7 +81,10 @@ async def recent_evidence(
             EvidenceRow.user_id == context.user_id,
             EvidenceRow.session_id == context.session_id,
             EvidenceRow.invalidated.is_(False),
-            EvidenceRow.payload["request_revision"].as_integer() == revision,
+            or_(
+                EvidenceRow.payload["request_revision"].as_integer() == revision,
+                EvidenceRow.kind.in_(("place", "article")),  # 只按城市适用，不随版本失效
+            ),
         )
         .order_by(EvidenceRow.payload["retrieved_at"].as_string().desc(), EvidenceRow.id)
         .limit(20)

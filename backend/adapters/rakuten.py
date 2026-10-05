@@ -152,7 +152,8 @@ class Rakuten:
     ) -> tuple[HotelOffer, ...]:
         assert request.start_date and request.end_date and request.adults and request.rooms
         nights = (request.end_date - request.start_date).days
-        self.usage.run_caps["rakuten"] = min(8, nights + 1)
+        if self.usage.default_profile:  # 其他档位按配置的run_caps原值
+            self.usage.run_caps["rakuten"] = min(8, nights + 1)
         if point.broad:
             raise ExternalDataError(
                 "目的地区域过大；酒店只能查询中心3公里，请先指定具体城市或住宿地点", validation=True

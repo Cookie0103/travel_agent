@@ -293,7 +293,9 @@ class GoogleMaps:
                 "id,displayName,location,types,regularOpeningHours,googleMapsUri"
             ),
         )
-        return place_from_response(parse_response(_GooglePlace, payload), city)
+        place = place_from_response(parse_response(_GooglePlace, payload), city)
+        self.places[place.place_id] = place
+        return place
 
     async def route(
         self, origin: Place, dest: Place, transport: Transport, departure: datetime, people: int
