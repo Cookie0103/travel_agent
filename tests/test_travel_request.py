@@ -1,6 +1,6 @@
 """R04/R05：条件更新只改指定字段；证据必须匹配当前版本、条件和有效期。"""
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, time, timedelta
 from decimal import Decimal
 
 import pytest
@@ -100,7 +100,7 @@ def test_evidence_missing_source_is_unknown_and_wrong_conditions_rejected() -> N
     )
     assert record.status == "unknown" and record.applicable(request, now)
     assert not record.applicable(request.model_copy(update={"adults": 2}), now)
-    assert not record.applicable(request.model_copy(update={"revision": 3}), now)
+    assert record.applicable(request.model_copy(update={"revision": 3}), now)
     assert not record.applicable(request, now + timedelta(minutes=5))
 
 
@@ -132,9 +132,48 @@ def test_place_and_article_evidence_survive_revision_bump_but_not_city_or_expiry
 
 
 @pytest.mark.parametrize("kind", ["hotel_offer", "route"])
-def test_hotel_and_route_evidence_stay_bound_to_revision(kind: EvidenceKind) -> None:
+def test_hotel_and_route_evidence_no_longer_bound_to_revision(kind: EvidenceKind) -> None:
     now = datetime.now(UTC)
     request = TravelRequest(city="京都", revision=2)
     record = _record(request, kind, now)
     assert record.applicable(request, now)
-    assert not record.applicable(request.model_copy(update={"revision": 3}), now)
+    assert record.applicable(request.model_copy(update={"revision": 3}), now)
+    assert not record.applicable(request.model_copy(update={"city": "大阪"}), now)
+
+
+def test_route_and_offer_evidence_survive_unrelated_edits_but_not_their_own_conditions() -> None:
+    """revision不再绑定：预算/兴趣变化保留；入住或路线条件变化、过期仍失效。"""
+    now = datetime.now(UTC)
+    base = TravelRequest(
+        city="京都",
+        start_date=date(2026, 11, 3),
+        end_date=date(2026, 11, 5),
+        adults=2,
+        child_ages=(),
+        rooms=1,
+        transport="transit",
+        revision=2,
+    )
+    offer, route = _record(base, "hotel_offer", now), _record(base, "route", now)
+    unrelated = base.model_copy(
+        update={"budget": Decimal("90000"), "interests": ("寺",), "revision": 7}
+    )
+    assert offer.applicable(unrelated, now) and route.applicable(unrelated, now)
+    changes: tuple[tuple[str, object], ...] = (
+        ("start_date", date(2026, 11, 4)),
+        ("adults", 3),
+        ("rooms", 2),
+        ("child_ages", (5,)),
+    )
+    for field, value in changes:
+        changed = base.model_copy(update={field: value})
+        assert not offer.applicable(changed, now), field
+    route_changes: tuple[tuple[str, object], ...] = (
+        ("transport", "taxi"),
+        ("departure_time", time(9, 0)),
+    )
+    for field, value in route_changes:
+        changed = base.model_copy(update={field: value})
+        assert not route.applicable(changed, now), field
+    assert offer.applicable(base.model_copy(update={"transport": "taxi"}), now)  # 报价与交通无关
+    assert not route.applicable(base, now + timedelta(minutes=5))

@@ -48,7 +48,8 @@ class EvidenceRecord(BaseModel):
             raise ValueError("证据检查需要带时区的时间")
         return (
             self.retrieved_at <= now < self.valid_until
-            and (self.kind in ("place", "article") or self.request_revision == request.revision)
+            # 不绑定revision：预算/兴趣等无关修改不应使仍有效的路段/报价过期；
+            # 影响证据的条件由conditions逐字段比较，入住/路线条件变化时仍会失效。
             and self.conditions == evidence_conditions(request, self.kind)
         )
 

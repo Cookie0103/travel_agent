@@ -114,3 +114,31 @@ def test_tool_end_trace_carries_detail_and_omits_it_when_absent(
     assert ends[0]["detail"] == ["service:409", "revision_stale"] and ends[0]["code"] == "conflict"
     assert ends[1]["detail"] is None
     assert "now" not in ends[0] and datetime.now(UTC).year >= 2026
+
+
+def test_oversized_hotel_search_is_compacted_then_trimmed_whole_cards() -> None:
+    from backend.tools.contracts import RESULT_LIMIT
+    from backend.tools.travel import bounded_offers
+
+    offers: list[dict[str, object]] = [
+        {
+            "offer_id": str(uuid4()),
+            "evidence_id": str(uuid4()),
+            "hotel_name": "酒店" * 10,
+            "total": str(20000 - index * 100),
+            "booking_url": "https://example.test/" + "a" * 1500,
+            "stay": {"city": "京都"},
+            "image_url": "https://example.test/i.jpg",
+            "request_revision": 1,
+        }
+        for index in range(6)
+    ]
+    kept, trimmed = bounded_offers(offers, ("w",))
+    assert trimmed and 1 <= len(kept) < 6
+    totals = [str(o["total"]) for o in kept]
+    assert totals == sorted(totals)  # 低价优先
+    assert all("stay" not in o and "image_url" not in o for o in kept)
+    payload = ToolResult({"offers": kept}, warnings=("w", "x" * 60)).payload()
+    assert len(json.dumps(payload, ensure_ascii=False)) <= RESULT_LIMIT
+    small, untouched = bounded_offers(offers[:2], ("w",))
+    assert len(small) == 2 and not untouched

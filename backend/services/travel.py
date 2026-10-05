@@ -255,6 +255,17 @@ async def hydrate_records(
     return tuple(hydrated)
 
 
+STALE_REMEDY = {
+    "route": (
+        "路段证据已失效或与当前行程顺序不符："
+        "请对调整后的相邻景点重新调用estimate_routes，再validate"
+    ),
+    "hotel_offer": "酒店报价已失效：请重新search_hotel_offers",
+    "place": "地点证据已失效：请重新search_places",
+    "article": "文章证据已失效：请重新search_content",
+}
+
+
 async def resolve_records(
     db: AsyncSession,
     context: RunContext,
@@ -269,8 +280,17 @@ async def resolve_records(
     if set(ids) != rows.keys():
         raise ServiceError(404, "blocked", "证据不存在或不属于当前会话", "evidence_missing")
     records = tuple(EvidenceRecord.model_validate(rows[key].payload) for key in ids)
-    if any(row.invalidated for row in rows.values()) or any(
-        not record.applicable(request, now) for record in records
-    ):
-        raise ServiceError(409, "conflict", "证据已失效，请重新查询", "evidence_stale")
+    stale = sorted(
+        {
+            record.kind
+            for record in records
+            if rows[record.evidence_id].invalidated or not record.applicable(request, now)
+        }
+    )
+    if stale:
+        # 只用固定文案与种类标签(无用户/第三方文本)，供模型按种类重查、供TRACE定位。
+        remedies = "；".join(STALE_REMEDY[kind] for kind in stale)
+        raise ServiceError(
+            409, "conflict", "证据已失效：" + remedies, "evidence_stale:" + ",".join(stale)
+        )
     return records

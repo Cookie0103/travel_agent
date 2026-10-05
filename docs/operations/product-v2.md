@@ -119,7 +119,7 @@ Chrome实际选中DeepSeek，发送“你好，请只用一句话介绍你能帮
 
 ## TRAVEL_PROFILE=human（人工手测档）
 
-`TRAVEL_PROFILE=human` 供人工手动测试：工具80次/模型60轮/整轮900秒（worker840<process850<run900，upstream120<API_TIMEOUT），外部API次数大于relaxed；default/relaxed/human三档，CI与评测保持default。每日15 CNY授权、预占/结算与Claude USD(0,0)不变。景点/文章证据只按城市适用，不随请求版本失效；酒店与路线证据仍绑定版本。
+`TRAVEL_PROFILE=human` 供人工手动测试：工具80次/模型60轮/整轮900秒（worker840<process850<run900，upstream120<API_TIMEOUT），外部API次数大于relaxed；default/relaxed/human三档，CI与评测保持default。每日15 CNY授权、预占/结算与Claude USD(0,0)不变。景点/文章证据只按城市适用，不随请求版本失效；路线与酒店报价证据不再绑定请求版本（见下方 2026-10-05 续），仅看有效期、`invalidated` 与条件逐字段相等。
 
 **上游首字节看门狗与有界重试（HUMAN，2026-10-05）**：run 1da5c298 的第5次模型请求在 `model_req_start` 后120秒内转发子进程无任何 TRACE（未到 `model_req_sent`），说明停滞发生在发送之前（spawn/导入、stdin、DNS/TCP/TLS 之一，未区分）。现转发子进程增加阶段 TRACE：`child_start`(pid、boot_ms)、`child_stdin_read`、`child_connecting`、`child_connected`(DNS+TCP)、`child_tls_done`，并保留 `model_req_sent/first_byte/first_chunk/body_done/child_error`；父进程记 `child_spawned`，并在等待期间读取同一 trace 文件，超时时输出 `child_last_phase`。
 HUMAN 新增 Limits：`first_byte_timeout=25`、`upstream_retries=2`——仅当尚无任何响应头时，杀掉子进程并用同一请求体重试（每次重试各自 `reserve`，停滞的预占不退款，计入 `max_attempts`，TRACE 为 `upstream_retry`）；已收到响应头、HTTP 错误状态、未授权工具响应、部分正文都不重试。DEFAULT/RELAXED 均为0（行为不变）。单请求最坏约 2×25+120=170 秒，`API_TIMEOUT_MS` 改按 `upstream_timeout+重试×首字节期限+10` 推导（HUMAN 180秒，DEFAULT 100秒/RELAXED 130秒不变）。这是定位并缓解，不是已证明的根因修复。
@@ -129,3 +129,7 @@ HUMAN 新增 Limits：`first_byte_timeout=25`、`upstream_retries=2`——仅当
 **stdin>64KiB 交接死锁（根因，2026-10-05）**：`run_process` 原先用 `communicate(input=…, timeout=0.2)` 循环，首次超时后改传 `input=None` 续调；在 Python 3.12 下这不会继续写 stdin，超过管道容量（64KiB）的 key+body 永远卡住，子进程停在 `child_start`（Python 3.14 行为正常，所以系统 python 复现不出）。现由独立线程写入并关闭 stdin，`communicate` 只读输出；转发子进程与 SDK worker 共用此路径。
 
 **工具失败原因进入TRACE（2026-10-05）**：`tool_end` 增加 `detail`（仅标签，不含输入值/模型自造字段名/消息正文）：pydantic 失败为 `schema` + 至多6条 `路径:错误类型`（如 `items:too_long`、`items.3.note:string_too_long`）；ServiceError 为 `service:<HTTP码>` + 固定 reason 标签（`revision_stale`、`evidence_missing/stale`、`validator:<固定校验文案>`、`repair_limit`、`tool_call_cap` 等，未标注为 `untagged`）；校验报告为 `report:<状态>`、`counts:v/u/c` 与未通过检查的 `code:status`；校验/暂存调用另附 `repair_round:n`、`max_validations:m`。
+
+**失效证据指引与报价精简（2026-10-05 续）**：`evidence_stale` 的模型可见提示按种类（route/hotel_offer/place/article）给固定补救文案，TRACE 为 `evidence_stale:<种类>`；`地点引用必须是place证据` 另附 `place_ref_kind=<种类>` 与静态提示；`applicable()` 不再要求 route/hotel_offer 的 `request_revision` 相等（预算/兴趣等无关修改不再使其过期，入住/路线条件变化、过期、`invalidated` 仍失效）。
+`search_hotel_offers`/`refresh_hotel_offer` 结果先去掉每卡重复字段（stay/request_revision/image_url），仍超8000字按总价由低到高整卡保留并加警告，不截断JSON；`offer_ids` 也接受卡片的 `evidence_id`。
+HUMAN 无每日CNY上限（README 已同步）；修复轮次上限、调用上限、编排与预算代码未改。

@@ -22,6 +22,8 @@ from backend.services.travel import (
     resolve_records,
 )
 
+PLACE_REF_REASON = "地点引用必须是place证据"
+
 
 class PlanningService:
     def __init__(self, travel: TravelService) -> None:
@@ -135,6 +137,16 @@ async def validate_proposal(
     except ValueError as error:
         # 校验器的ValueError是固定中文文案(无插值)，可整体作reason；pydantic错误含输入值，只记类名。
         reason = str(error) if type(error) is ValueError else "evidence_model_invalid"
-        raise ServiceError(
-            422, "validation", "行程引用的证据类型、条件或内容不一致", "validator:" + reason
-        ) from None
+        message = "行程引用的证据类型、条件或内容不一致"
+        if reason == PLACE_REF_REASON:
+            by_id = {record.evidence_id: record.kind for record in records}
+            kinds = sorted(
+                {by_id.get(item.place_evidence_id, "unknown") for item in proposal.items}
+                - {"place"}
+            )
+            reason += ":place_ref_kind=" + ",".join(kinds)
+            message += (
+                "。place_evidence_id只能用search_places/get_place_facts返回的地点证据；"
+                "酒店报价证据只能填hotel_evidence_id"
+            )
+        raise ServiceError(422, "validation", message, "validator:" + reason) from None

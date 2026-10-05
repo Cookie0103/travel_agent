@@ -2,6 +2,7 @@
 
 import asyncio
 from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -71,7 +72,7 @@ def test_second_run_in_same_session_still_finds_first_run_offers(
     runner.run(exercise())
 
 
-def test_non_stay_change_bumps_revision_so_old_revision_is_conflict_not_404(
+def test_unrelated_edit_keeps_offers_but_stay_change_stales_them_with_kind_and_remedy(
     travel_setup: tuple[asyncio.Runner, object, RunContext],
 ) -> None:
     runner, travel, context = travel_setup
@@ -80,15 +81,45 @@ def test_non_stay_change_bumps_revision_so_old_revision_is_conflict_not_404(
     async def exercise() -> None:
         offers = await search(executor, context, 1)
         ids = [str(o["offer_id"]) for o in offers]
-        patch = RequestPatch.model_validate(
-            {"expected_revision": 1, "set": {"transport": "transit"}}
-        )
-        await travel.patch_request(context, patch)  # type: ignore[attr-defined]
+        budget = RequestPatch.model_validate({"expected_revision": 1, "set": {"budget": "90000"}})
+        await travel.patch_request(context, budget)  # type: ignore[attr-defined]
         old = await executor.execute(context, "present_travel_result", present(1, ids))
-        assert old.code == "conflict", (old.code, old.detail)
-        new = await executor.execute(context, "present_travel_result", present(2, ids))
-        # 报价绑定旧revision，非住宿字段变化也使其过期；需要重新查询。
-        assert new.code == "conflict" and "evidence_stale" in new.detail, (new.code, new.detail)
+        assert old.code == "conflict", (old.code, old.detail)  # 版本仍需最新
+        kept = await executor.execute(context, "present_travel_result", present(2, ids))
+        assert kept.code is None, kept.detail  # 预算变化不使仍有效的报价过期
+        stay = RequestPatch.model_validate({"expected_revision": 2, "set": {"rooms": 2}})
+        await travel.patch_request(context, stay)  # type: ignore[attr-defined]
+        stale = await executor.execute(context, "present_travel_result", present(3, ids))
+        assert stale.code == "conflict"
+        assert stale.detail[-1] == "evidence_stale:hotel_offer"
+        assert "search_hotel_offers" in stale.suggestion
+
+    runner.run(exercise())
+
+
+def test_hotel_evidence_used_as_place_reports_kind_and_static_hint(
+    travel_setup: tuple[asyncio.Runner, object, RunContext],
+) -> None:
+    runner, travel, context = travel_setup
+    executor = TravelToolExecutor(travel)  # type: ignore[arg-type]
+
+    async def exercise() -> None:
+        offers = await search(executor, context, 1)
+        hotel = str(offers[0]["evidence_id"])
+        start = datetime(2026, 11, 3, 10, tzinfo=UTC)
+        item = {
+            "place_evidence_id": hotel,
+            "start": start.isoformat(),
+            "end": (start + timedelta(hours=1)).isoformat(),
+        }
+        result = await executor.execute(
+            context,
+            "validate_itinerary",
+            {"expected_revision": 1, "items": [item], "hotel_evidence_id": hotel},
+        )
+        assert result.code == "validation"
+        assert "validator:地点引用必须是place证据:place_ref_kind=hotel_offer" in result.detail
+        assert "hotel_evidence_id" in result.suggestion
 
     runner.run(exercise())
 

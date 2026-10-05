@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import json
 from dataclasses import replace
+from decimal import Decimal
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
@@ -501,11 +502,12 @@ class TravelToolExecutor:
             if isinstance(parsed, HotelSearchInput)
             else await self.hotels.refresh(context, parsed.expected_revision, parsed.offer_id)
         )
+        offers, trimmed = bounded_offers(cards(records), warning)
         return ToolResult(
-            {"offers": cards(records)},
+            {"offers": offers},
             empty=not records,
-            evidence_ids=tuple(str(record.evidence_id) for record in records),
-            warnings=warning,
+            evidence_ids=tuple(str(offer["evidence_id"]) for offer in offers),
+            warnings=(*warning, TRIMMED_WARNING) if trimmed else warning,
             data_mode="live" if self.travel.live else "fixture",
         )
 
@@ -554,6 +556,33 @@ def catalog_summary(row: dict[str, object]) -> dict[str, object]:
     if isinstance(text, str):
         result.update(text=text[:600], text_truncated=len(text) > 600)
     return result
+
+
+TRIMMED_WARNING = "报价过多，仅保留价格最低的部分；可用hotel_id缩小范围"
+OFFER_DROP = ("stay", "request_revision", "image_url")  # 同一次查询共用的入住条件/展示字段
+
+
+def bounded_offers(
+    offers: list[dict[str, object]], warning: tuple[str, ...]
+) -> tuple[list[dict[str, object]], bool]:
+    """先去掉每张卡重复/非决策字段，仍超长再按总价从低到高保留整张卡；不截断JSON。"""
+    rows = sorted(
+        ({k: v for k, v in o.items() if k not in OFFER_DROP} for o in offers),
+        key=lambda o: Decimal(str(o["total"])) if o.get("total") is not None else Decimal("1e99"),
+    )
+    kept = len(rows)
+
+    def size(count: int) -> int:
+        probe = ToolResult(
+            {"offers": rows[:count]},
+            evidence_ids=tuple(str(o["evidence_id"]) for o in rows[:count]),
+            warnings=(*warning, TRIMMED_WARNING),
+        )
+        return len(json.dumps(probe.payload(), ensure_ascii=False))
+
+    while kept > 1 and size(kept) > RESULT_LIMIT:
+        kept -= 1
+    return rows[:kept], kept < len(rows)
 
 
 def bounded_plan(result: ToolResult) -> ToolResult:
