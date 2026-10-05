@@ -18,6 +18,7 @@ class Limits:
     run_caps: Mapping[str, int]  # 每个run的外部API次数
     daily_defaults: Mapping[str, int]  # 环境变量未设置时的每日上限
     first_byte_timeout: float = 0.0  # 秒；0=关闭。仅在尚无任何响应头时触发
+    daily_cny_cap: bool = True  # False=不施加每日CNY上限(仅HUMAN)；账本预占/结算照常记录
     upstream_retries: int = 0  # 首字节停滞后的重试次数（每次独立预占并计入attempts）
 
     @property
@@ -40,7 +41,7 @@ HUMAN = Limits(
     80, 60, 40, 120, 840, 850, 900.0, 8192,
     {"geocode": 10, "places": 60, "routes": 80, "rakuten": 30, "weather": 5},
     {"geocode": 100, "places": 300, "routes": 600, "rakuten": 300, "weather": 300},
-    first_byte_timeout=25.0, upstream_retries=2,
+    first_byte_timeout=25.0, upstream_retries=2, daily_cny_cap=False,
 )  # fmt: skip
 PROFILES = {"relaxed": RELAXED, "human": HUMAN}  # 人工手测用human；机器/评测保持default
 

@@ -125,3 +125,5 @@ Chrome实际选中DeepSeek，发送“你好，请只用一句话介绍你能帮
 HUMAN 新增 Limits：`first_byte_timeout=25`、`upstream_retries=2`——仅当尚无任何响应头时，杀掉子进程并用同一请求体重试（每次重试各自 `reserve`，停滞的预占不退款，计入 `max_attempts`，TRACE 为 `upstream_retry`）；已收到响应头、HTTP 错误状态、未授权工具响应、部分正文都不重试。DEFAULT/RELAXED 均为0（行为不变）。单请求最坏约 2×25+120=170 秒，`API_TIMEOUT_MS` 改按 `upstream_timeout+重试×首字节期限+10` 推导（HUMAN 180秒，DEFAULT 100秒/RELAXED 130秒不变）。这是定位并缓解，不是已证明的根因修复。
 
 **供应商HTTP错误直接显示（2026-10-05）**：guard 记录最近一次非200状态码（仅数字），live 报告携带 `upstream_http_status`，`RuntimeOutcome.reason=upstream_http_<码>`（也进入 `run_finished` TRACE）。RunService 对 live 失败按固定表生成说明并作为本轮回复显示：402「账户余额不足，请充值后重试」、401/403「密钥无效或无权限」、429「请求过于频繁或速率受限」、5xx「服务暂时不可用」、400「请求被拒绝」、其他「上游返回 HTTP n」。只用状态码，不含上游响应正文、头或密钥；error_code 仍为 provider_error，超时与其他失败文案不变；无迁移、无OpenAPI变更、未改 apps/web。
+
+**stdin>64KiB 交接死锁（根因，2026-10-05）**：`run_process` 原先用 `communicate(input=…, timeout=0.2)` 循环，首次超时后改传 `input=None` 续调；在 Python 3.12 下这不会继续写 stdin，超过管道容量（64KiB）的 key+body 永远卡住，子进程停在 `child_start`（Python 3.14 行为正常，所以系统 python 复现不出）。现由独立线程写入并关闭 stdin，`communicate` 只读输出；转发子进程与 SDK worker 共用此路径。

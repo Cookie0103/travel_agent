@@ -42,6 +42,7 @@ def log_boot() -> None:
             "run_timeout": runs.RUN_TIMEOUT or limits.run_timeout,
             "live_tool_timeout": LIVE_TOOL_TIMEOUT,
             "run_caps": dict(limits.run_caps),
+            "daily_cap": limits.daily_cny_cap,
         },
     )
 

@@ -10,6 +10,7 @@ from uuid import uuid4
 
 from backend.providers.claude_agent.ledger import Ledger
 from backend.providers.claude_agent.limits import Currency, ProbeError, read_budget
+from backend.providers.claude_agent.profile import current
 from backend.trace_log import trace
 
 GRANT = "2026-10-03-travel-autonomous"
@@ -56,6 +57,8 @@ class Budget:
     def daily_limit(self, now: datetime) -> Decimal | None:
         """None仅表示获准日期无日限；零配置仍在预占前拒绝。"""
         if self.currency == "CNY":
+            if not current().daily_cny_cap:  # HUMAN档：以供应商账户余额为准，不设每日上限
+                return None
             if now.astimezone(UTC).date().isoformat() == UNCAPPED_CNY_DAY:
                 return None
             return min(self.daily, DAILY_CNY_AUTHORIZATION)
@@ -130,12 +133,14 @@ class Budget:
             ),
             Decimal(0),
         )
+        capped = self.currency != "CNY" or current().daily_cny_cap
         daily_limit = self.daily_limit(now) if self.daily.is_finite() else None
         numbers = {  # 仅数字/日期，供TRACE判断是哪个额度触发
             "day": day,
             "daily_spent": str(daily),
             "request_amount": str(amount),
             "daily_limit": None if daily_limit is None else str(daily_limit),
+            "daily_cap": capped,
             "entries_today": sum(1 for d, _ in charges.values() if d == day),
             "unsettled_today": sum(
                 1
@@ -145,7 +150,11 @@ class Budget:
             ),
             "currency": self.currency,
         }
-        if not amount.is_finite() or amount <= 0 or not self.daily.is_finite() or self.daily <= 0:
+        if (
+            not amount.is_finite()
+            or amount <= 0
+            or (capped and (not self.daily.is_finite() or self.daily <= 0))
+        ):
             trace("budget_block", run, cause="invalid", **numbers)
             raise ProbeError("blocked", "日预算非法或已禁用")
         total_limit, request_limit = LIMITS[self.currency]

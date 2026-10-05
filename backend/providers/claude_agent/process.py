@@ -9,7 +9,7 @@ import time
 from collections.abc import Callable
 from contextvars import ContextVar
 from pathlib import Path
-from threading import Event
+from threading import Event, Thread
 
 from backend.providers.claude_agent.limits import ProbeError
 from backend.providers.claude_agent.profile import current
@@ -57,9 +57,14 @@ def run_process(
                 on_spawn(process.pid)
             if job is not None:
                 job.assign(process.pid)
-            stdout, stderr = communicate(
-                process, "start\n" + input_text, timeout, cancelled, progress
-            )
+            # 根因：Python 3.12 的 communicate(input=…, timeout=…) 在首次超时后以 input=None
+            # 续调时不再继续写 stdin，>64KiB(管道容量)的载荷会永远卡在管道里。
+            # 因此 stdin 由独立线程写完并关闭，communicate 只负责读 stdout/stderr。
+            feeder = _feed(process, "start\n" + input_text)
+            try:
+                stdout, stderr = communicate(process, "", timeout, cancelled, progress)
+            finally:
+                feeder.join(timeout=1)
         except subprocess.TimeoutExpired:
             if job is not None:
                 job.close()
@@ -79,6 +84,28 @@ def run_process(
             if job is not None:
                 job.close()
         return subprocess.CompletedProcess(args, process.returncode, stdout, stderr)
+
+
+def _feed(process: subprocess.Popen[str], payload: str) -> Thread:
+    stream = process.stdin
+    assert stream is not None
+    process.stdin = None  # 使communicate不接管(也不提前关闭)stdin
+
+    def write() -> None:
+        try:
+            stream.write(payload)
+            stream.flush()
+        except (BrokenPipeError, OSError, ValueError):
+            pass  # 子进程已退出/被终止：由退出码和期限分类
+        finally:
+            try:
+                stream.close()
+            except (BrokenPipeError, OSError, ValueError):
+                pass
+
+    thread = Thread(target=write, daemon=True)
+    thread.start()
+    return thread
 
 
 def communicate(
