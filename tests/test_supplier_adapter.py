@@ -21,11 +21,37 @@ from backend.domain.booking import OrderInput, SupplierOrder
         "http://localhost?next=evil",
         "http://localhost:broken",
         "http://localhost:65536",
+        "http://api.railway.internal:8000",
+        "http://supplier.railway.internal.example.com:8001",
+        "https://supplier.railway.internal:8001",
+        "http://user:secret@supplier.railway.internal:8001",
+        "http://supplier.railway.internal:8001/orders",
     ],
 )
 def test_supplier_url_cannot_reach_unapproved_hosts(url: str) -> None:
     with pytest.raises(ValueError, match="本地模拟"):
         SupplierClient(url)
+
+
+@pytest.mark.asyncio
+async def test_railway_private_mock_supplier_can_be_queried() -> None:
+    """R10：云端固定模拟服务可读对账，仍通过现有HTTP适配器。"""
+    requests: list[httpx.Request] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        requests.append(request)
+        return httpx.Response(200, json={"order": None, "absence_final": True})
+
+    client = SupplierClient(
+        "http://supplier.railway.internal:8001", transport=httpx.MockTransport(respond)
+    )
+    client_ref = uuid4()
+    result = await client.lookup(client_ref)
+    assert result.order is None and result.absence_final
+    assert len(requests) == 1
+    assert requests[0].url.host == "supplier.railway.internal"
+    assert requests[0].url.port == 8001
+    assert requests[0].url.params["client_ref"] == str(client_ref)
 
 
 @pytest.mark.parametrize("value", ["nan", "-1", "0.1", "broken", "１"])

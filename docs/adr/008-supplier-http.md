@@ -8,4 +8,6 @@
 
 模拟URL只允许loopback或Compose固定服务名mock_supplier，不能由模型指定；本机默认8001。HTTP失败或响应结构/关联ID不符不能当作订单成功。429的Retry-After仅提供有限退避建议，预订服务同时限制尝试与总时长。写响应不明先对账，读失败保持unknown。
 
+2026-10-05 Railway部署补充：用户授权更新既有云端项目。该项目独立模拟供应商的固定私网名称是 `supplier.railway.internal`，将此精确名称加入同一白名单；不接受任意 `.railway.internal` 主机、公共域名、重定向、URL凭据或路径。不改变仅模拟预订的边界，不引入依赖；测试覆盖正常私网读取与其他私网/伪造后缀/HTTPS/凭据/路径拒绝。
+
 不建立通用provider/插件框架、不自动fallback真实供应商；无真实订单/付款。契约复用domain.booking与HotelOffer，测试使用真实PG及本机TCP HTTP故障。

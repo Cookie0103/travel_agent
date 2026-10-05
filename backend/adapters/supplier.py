@@ -44,7 +44,9 @@ class SupplierClient:
             raise ValueError("只允许有效的本地模拟供应商地址") from None
         if (
             parsed.scheme != "http"
-            or parsed.hostname not in {"127.0.0.1", "localhost", "mock_supplier"}
+            # 不变量：仅访问固定的模拟供应商；Railway 私网不开放任意服务名。
+            or parsed.hostname
+            not in {"127.0.0.1", "localhost", "mock_supplier", "supplier.railway.internal"}
             or parsed.username
             or parsed.password
             or parsed.query
