@@ -22,7 +22,7 @@ from backend.services.common import transaction
 from backend.services.runs import MessageInput, RunService
 from backend.services.travel import TravelService
 from tests.fakes import FakeRuntime
-from tests.integration.sdk_helper import run_database_worker
+from tests.integration.sdk_helper import inflate_usage, run_database_worker
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import evidence
 from tests.integration.test_travel import travel_setup as travel_setup
@@ -61,7 +61,7 @@ def test_native_auto_compaction_keeps_current_trip_and_paired_tool_results(
         status, response = scripted(body)
         if len(requests) == 1:
             # 人工usage与较低阈值只用于触发SDK机制，不当真实token或模型摘要质量。
-            response = response.replace(b'"input_tokens": 100', b'"input_tokens": 40000')
+            response = inflate_usage(response, body)
         return status, response
 
     first, guard = run_database_worker(
@@ -231,7 +231,7 @@ def test_summary_dependency_failure_does_not_save_a_complete_sdk_checkpoint(
             return 503, b'{"error":{"type":"api_error","message":"fixture-summary-unavailable"}}'
         status, response = scripted(body)
         if calls == 1:
-            response = response.replace(b'"input_tokens": 100', b'"input_tokens": 40000')
+            response = inflate_usage(response, body)
         return status, response
 
     report, guard = run_database_worker(

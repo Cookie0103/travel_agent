@@ -19,7 +19,7 @@ from backend.services.common import ServiceError, transaction
 from backend.services.preferences import PreferenceService
 from backend.services.travel import TravelService
 from backend.tools.travel import TravelToolExecutor
-from tests.integration.sdk_helper import run_database_worker
+from tests.integration.sdk_helper import inflate_usage, run_database_worker
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import travel_setup as travel_setup
 from tests.test_sdk_cli_offline import scripted_response
@@ -240,7 +240,7 @@ def test_native_compaction_control_with_same_usage_and_trip(
                 tool_calls=((sdk_tool_name("load_skill"), {"name": "hotel-comparison"}),),
             )
             # 两配置完全相同的人工usage/阈值；不当真实token/模型摘要质量。
-            return status, content.replace(b'"input_tokens": 100', b'"input_tokens": 40000')
+            return status, inflate_usage(content, body)
         return scripted_response(
             json.dumps(
                 {

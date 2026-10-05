@@ -16,6 +16,16 @@ from backend.services.travel import TravelService
 from backend.tools.workflow import WorkflowName
 
 
+def inflate_usage(response: bytes, body: bytes) -> bytes:
+    """把假上游的input_tokens抬高到足以触发SDK压缩阈值，但不超过守卫的预占上界。
+
+    预占按请求体字节*1.25+1024个token计价(request.py)；真实上游用量不会超过它，
+    超过则守卫按设计失败关闭。故人工usage取上界再留200token余量(含输出计价)，而不是固定4万。
+    """
+    tokens = len(body) * 5 // 4 + 1024 - 200
+    return response.replace(b'"input_tokens": 100', f'"input_tokens": {tokens}'.encode())
+
+
 def run_database_worker(
     travel: TravelService,
     context: RunContext,
