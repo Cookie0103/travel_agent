@@ -23,6 +23,20 @@ def check(subject: str, status: CheckStatus, code: str, message: str) -> Validat
     return ValidationCheck(subject=subject, status=status, code=code, message=message)
 
 
+def hhmm(value: datetime) -> str:
+    return value.astimezone(KYOTO).strftime("%H:%M")
+
+
+def traced(
+    entry: ValidationCheck, proposal: ItineraryProposal, index: int, times: str = ""
+) -> ValidationCheck:
+    """附加只含序号与时刻的TRACE标签：d{第几天}i{当天第几项}（均从1起）。"""
+    dates = [item.start.astimezone(KYOTO).date() for item in proposal.items]
+    day = len(dict.fromkeys(dates[: index + 1]))
+    position = dates[: index + 1].count(dates[index])
+    return entry.tagged(f"{entry.code}:{entry.status}@d{day}i{position}{times}")
+
+
 def validate_itinerary(
     request: TravelRequest,
     proposal: ItineraryProposal,
@@ -142,11 +156,16 @@ def route_checks(
     ):
         return (
             [
-                check(
-                    subject,
-                    "conflict",
-                    "route_unexpected",
-                    "当天首项不接受上一日或不存在的前项路段",
+                traced(
+                    check(
+                        subject,
+                        "conflict",
+                        "route_unexpected",
+                        "当天首项不带路段：请去掉该项的route_evidence_id"
+                        "（路段只接在同一天前一项之后）",
+                    ),
+                    proposal,
+                    index,
                 )
             ]
             if item.route_evidence_id
@@ -168,17 +187,35 @@ def route_checks(
         route.from_place_id,
         route.to_place_id,
     ) != endpoints or route.transport != request.transport:
-        return [check(subject, "conflict", "route_scope", "路段起终点或交通方式与行程不一致")]
-    if route.departure < previous.end:
-        return [check(subject, "conflict", "route_departure", "路段出发早于前一项结束")]
-    if route.departure > item.start:
         return [
-            check(
-                subject,
-                "conflict",
-                "route_departure",
-                "路段出发已晚于下一项开始，未知耗时也不能到达",
+            traced(
+                check(
+                    subject,
+                    "conflict",
+                    "route_scope",
+                    "路段起终点或交通方式与行程不一致：请按行程顺序，用前一项与本项的place证据ID"
+                    "和当前交通方式重新estimate_routes该段",
+                ),
+                proposal,
+                index,
             )
+        ]
+    times = f" dep={hhmm(route.departure)} pe={hhmm(previous.end)} ns={hhmm(item.start)}"
+    if route.departure < previous.end:
+        message = (
+            f"路段出发({hhmm(route.departure)})早于前一项结束({hhmm(previous.end)})："
+            f"请用{hhmm(previous.end)}作为出发时间重新estimate_routes该段"
+        )
+        return [
+            traced(check(subject, "conflict", "route_departure", message), proposal, index, times)
+        ]
+    if route.departure > item.start:
+        message = (
+            f"路段出发({hhmm(route.departure)})晚于下一项开始({hhmm(item.start)})："
+            f"请重新安排时间，或用不晚于{hhmm(item.start)}的出发时间重新估算"
+        )
+        return [
+            traced(check(subject, "conflict", "route_departure", message), proposal, index, times)
         ]
     if route.minutes is None:
         message = (

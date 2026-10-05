@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import Literal, Self
 from uuid import UUID, uuid4
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, PrivateAttr, model_validator
 
 
 class ProposedItem(BaseModel):
@@ -39,7 +39,12 @@ class RouteLeg(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     from_evidence_id: UUID
     to_evidence_id: UUID
-    departure: AwareDatetime = Field(description="含时区的ISO出发时间；日本时间使用+09:00")
+    departure: AwareDatetime = Field(
+        description=(
+            "含时区的ISO出发时间，日本时间用+09:00；必须落在前一项结束时间与后一项开始时间之间，"
+            "通常直接用前一项的结束时间，不要统一填默认时间"
+        )
+    )
 
 
 class RouteInput(BaseModel):
@@ -79,6 +84,15 @@ class ValidationCheck(BaseModel):
     status: CheckStatus
     code: str
     message: str
+    _trace: str | None = PrivateAttr(default=None)  # 仅TRACE用的安全位置/时间标签，不进API
+
+    def tagged(self, label: str) -> "ValidationCheck":
+        self._trace = label
+        return self
+
+    @property
+    def trace_label(self) -> str:
+        return self._trace or f"{self.code}:{self.status}"
 
 
 class ValidationReport(BaseModel):

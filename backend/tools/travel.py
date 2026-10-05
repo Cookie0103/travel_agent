@@ -125,7 +125,12 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "estimate_routes",
-        "按当前交通方式查询自制路段估算；起终点用当前place证据ID，未覆盖保持unknown。",
+        (
+            "按当前交通方式查询自制路段估算；起终点用当前place证据ID，未覆盖保持unknown。"
+            "先定好各项时间，再按行程顺序逐段估算（每次最多6段），每段departure取前一项结束时间，"
+            "须介于前一项结束与后一项开始之间；每天首项不接路段，不要给它route_evidence_id；"
+            "调整顺序或时间后，对受影响的相邻项重新估算。"
+        ),
         RouteInput.model_json_schema(),
     ),
     ToolDefinition(
@@ -215,7 +220,7 @@ def report_detail(report: ValidationReport) -> tuple[str, ...]:
     return (
         f"report:{report.status}",
         "counts:" + "/".join(f"{k[0]}{v}" for k, v in counts.items()),
-        *(f"{c.code}:{c.status}" for c in worst[:5]),
+        *(c.trace_label for c in worst[:5]),
     )
 
 
