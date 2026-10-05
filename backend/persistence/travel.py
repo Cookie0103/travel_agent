@@ -72,6 +72,25 @@ async def find_evidence(
     return list(rows)
 
 
+async def hotel_offer_elsewhere(db: AsyncSession, ids: Sequence[str]) -> bool:
+    """仅用于TRACE诊断：这些ID是否属于其他会话/用户的报价；不返回任何内容。"""
+    uuids = []
+    for value in ids:
+        try:
+            uuids.append(UUID(value))
+        except ValueError:
+            continue
+    found = await db.scalar(
+        select(EvidenceRow.id)
+        .where(
+            EvidenceRow.kind == "hotel_offer",
+            or_(EvidenceRow.id.in_(uuids), EvidenceRow.payload["entity_id"].as_string().in_(ids)),
+        )
+        .limit(1)
+    )
+    return found is not None
+
+
 async def recent_evidence(
     db: AsyncSession, context: RunContext, revision: int
 ) -> list[EvidenceRow]:

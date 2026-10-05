@@ -8,7 +8,7 @@ from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
 from backend.domain.hotels import HotelOffer, compare, quote
 from backend.domain.travel_request import TravelRequest
-from backend.persistence.travel import entity_evidence
+from backend.persistence.travel import entity_evidence, find_evidence, hotel_offer_elsewhere
 from backend.providers.hotel_fixture import load_rates
 from backend.services.common import ServiceError, transaction
 from backend.services.travel import TravelService, require_revision
@@ -134,14 +134,30 @@ class HotelService:
     async def known_quotes(
         self, context: RunContext, ids: tuple[UUID, ...]
     ) -> tuple[EvidenceRecord, ...]:
+        wanted = tuple(str(id) for id in ids)
         async with transaction(self.travel.database) as db:
-            rows = await entity_evidence(db, context, "hotel_offer", tuple(str(id) for id in ids))
+            rows = await entity_evidence(db, context, "hotel_offer", wanted)
+            by_offer = {row.payload["entity_id"]: row for row in rows}
+            # 卡片同时含offer_id与evidence_id，模型常把后者当offer_id传入；同会话内按证据ID也认。
+            missing = [id for id in ids if str(id) not in by_offer]
+            by_evidence = {
+                row.id: row
+                for row in await find_evidence(db, context, missing)
+                if row.kind == "hotel_offer"
+            }
+            if any(id not in by_evidence for id in missing):
+                other = await hotel_offer_elsewhere(db, wanted)
+                raise ServiceError(
+                    404,
+                    "blocked",
+                    "报价ID不存在或不属于此会话",
+                    "offer_other_session" if other else "offer_unknown_id",
+                )
+        picked = [by_offer[str(id)] if str(id) in by_offer else by_evidence[id] for id in ids]
         records = {
-            row.payload["entity_id"]: EvidenceRecord.model_validate(row.payload) for row in rows
-        }
-        if set(records) != {str(id) for id in ids} or len(rows) != len(set(ids)):
-            raise ServiceError(404, "blocked", "报价ID不存在或不属于此会话", "offer_not_found")
-        return tuple(records[str(id)] for id in ids)
+            row.id: EvidenceRecord.model_validate(row.payload) for row in picked
+        }  # 同一报价的两种ID合并
+        return tuple(records.values())
 
     async def present(
         self, context: RunContext, revision: int, ids: tuple[UUID, ...]

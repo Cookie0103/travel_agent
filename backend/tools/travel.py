@@ -64,7 +64,7 @@ class RefreshOfferInput(BaseModel):
 
 
 class PresentationInput(BaseModel):
-    """酒店比较填component=hotel_comparison、expected_revision和offer_ids；行程只填component=itinerary和stage返回的draft_id。两类参数不得混填。"""
+    """酒店比较填component=hotel_comparison、expected_revision和offer_ids；行程只填component=itinerary和stage返回的draft_id。两类参数不得混填。offer_ids填酒店卡片的offer_id。"""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
     component: Literal["hotel_comparison", "itinerary"]
