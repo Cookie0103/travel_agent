@@ -59,7 +59,7 @@ class Guard:
             )
             if self.failures or self.attempts >= self.max_attempts:
                 raise ProbeError("blocked", "当前实验已停止或达到请求上限")
-            request_id = self.budget.reserve(request.charge, datetime.now(UTC))
+            request_id = self.budget.reserve(request.charge, datetime.now(UTC), self.run)
             self.attempts += 1
             trace(
                 "model_req_start",
@@ -95,13 +95,15 @@ class Guard:
             return 200, content
         except ProbeError as error:
             self.failure_details.append(str(error))
-            self._trace_failure(error.code, started)
+            self._trace_failure(error.code, started, why=str(error))
             return self.reject(error.code)
         except (OSError, http.client.HTTPException) as error:
             self._trace_failure("unavailable", started, type(error).__name__)
             return self.reject("unavailable")
 
-    def _trace_failure(self, code: str, started: float | None, error_class: str = "") -> None:
+    def _trace_failure(
+        self, code: str, started: float | None, error_class: str = "", why: str = ""
+    ) -> None:
         trace(
             "model_req_end",
             self.run,
@@ -109,6 +111,7 @@ class Guard:
             status="error",
             error=code,
             error_class=error_class,
+            why=why,  # 我方静态原因文案，不含正文/URL
             elapsed_ms=None if started is None else round((time.monotonic() - started) * 1000),
         )
 

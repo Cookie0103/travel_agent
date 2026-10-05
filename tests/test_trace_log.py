@@ -213,3 +213,37 @@ async def test_api_call_logs_host_and_path_but_never_query_or_key(
     assert record["ev"] == "api_call" and record["api"] == "rakuten"
     assert record["error_class"] == ("ReadTimeout" if fail else None)
     assert record["status"] == (None if fail else 200)
+
+
+def test_budget_block_and_reserved_trace_numbers_and_guard_why(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    from datetime import UTC, datetime
+
+    from backend.providers.claude_agent.limits import ProbeError
+
+    now = datetime(2026, 10, 5, 1, tzinfo=UTC)
+    budget = Budget(tmp_path / "ledger", tmp_path / "legacy", Decimal(5))
+    budget.reserve(Decimal(3), now, "abcdef01")
+    with pytest.raises(ProbeError, match="今日原币种余额不足"):
+        budget.reserve(Decimal(3), now, "abcdef01")
+    reserved, blocked = records(capsys.readouterr().out)
+    assert reserved["ev"] == "budget_reserved" and reserved["run"] == "abcdef01"
+    assert reserved["request_amount"] == "3" and reserved["daily_spent"] == "3"
+    assert blocked["ev"] == "budget_block" and blocked["cause"] == "daily"
+    assert blocked["day"] == "2026-10-05" and blocked["daily_spent"] == "3"
+    assert blocked["request_amount"] == "3" and blocked["daily_limit"] == "5"
+    assert blocked["entries_today"] == 1 and blocked["unsettled_today"] == 1
+    assert blocked["currency"] == "CNY"
+
+    guard = Guard(
+        Settings(SECRET, "deepseek-flash", Decimal(5), Decimal(0)),
+        Budget(tmp_path / "l2", tmp_path / "legacy", Decimal(5)),
+        lambda body: (200, b""),
+        run="abcdef01",
+    )
+    guard.failures.append("blocked")
+    guard.accept("/v1/messages", "Bearer " + guard.token, request_body())
+    end = records(capsys.readouterr().out)[-1]
+    assert end["error"] == "blocked" and "请求上限" in str(end["why"])
+    assert trace_log._clean("why", "a?b") == "[redacted]" and SECRET not in str(end)

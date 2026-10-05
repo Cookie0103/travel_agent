@@ -10,6 +10,7 @@ from uuid import uuid4
 
 from backend.providers.claude_agent.ledger import Ledger
 from backend.providers.claude_agent.limits import Currency, ProbeError, read_budget
+from backend.trace_log import trace
 
 GRANT = "2026-10-03-travel-autonomous"
 # 用户新授权只限制每日15CNY；None表示没有累计上限，不用伪造大数。
@@ -114,7 +115,7 @@ class Budget:
             handle.flush()
             os.fsync(handle.fileno())
 
-    def reserve(self, amount: Decimal, now: datetime) -> str:
+    def reserve(self, amount: Decimal, now: datetime, run: object = None) -> str:
         self.check_authorization()
         entries = self.entries()
         charges = _charges(entries)
@@ -129,19 +130,41 @@ class Budget:
             ),
             Decimal(0),
         )
+        daily_limit = self.daily_limit(now) if self.daily.is_finite() else None
+        numbers = {  # 仅数字/日期，供TRACE判断是哪个额度触发
+            "day": day,
+            "daily_spent": str(daily),
+            "request_amount": str(amount),
+            "daily_limit": None if daily_limit is None else str(daily_limit),
+            "entries_today": sum(1 for d, _ in charges.values() if d == day),
+            "unsettled_today": sum(
+                1
+                for rid, (d, _) in charges.items()
+                if d == day
+                and not any(e.request_id == rid and e.kind == "settled" for e in entries)
+            ),
+            "currency": self.currency,
+        }
         if not amount.is_finite() or amount <= 0 or not self.daily.is_finite() or self.daily <= 0:
+            trace("budget_block", run, cause="invalid", **numbers)
             raise ProbeError("blocked", "日预算非法或已禁用")
         total_limit, request_limit = LIMITS[self.currency]
         if (request_limit is not None and len(charges) >= request_limit) or (
             total_limit is not None and total + amount > total_limit
         ):
+            trace("budget_block", run, cause="cumulative", **numbers)
             raise ProbeError("blocked", "已达用户累计调用授权上限")
-        daily_limit = self.daily_limit(now)
         if daily_limit is not None and daily + amount > daily_limit:
+            trace("budget_block", run, cause="daily", **numbers)
             raise ProbeError("blocked", "今日原币种余额不足")
         request_id = str(uuid4())
         # 不变量：先 fsync 才联网；没有结算记录的尝试始终按全部预占计费。
         self.append(Entry(GRANT, request_id, "attempt", day, str(amount), self.currency))
+        trace(
+            "budget_reserved",
+            run,
+            **{**numbers, "daily_spent": str(daily + amount)},
+        )
         return request_id
 
     def settle(self, request_id: str, amount: Decimal) -> None:
