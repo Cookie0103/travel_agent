@@ -3,6 +3,8 @@
 from dataclasses import dataclass
 from typing import Literal, Protocol
 
+from pydantic import ValidationError
+
 from backend.domain.execution import ErrorCode, RunContext
 
 RESULT_LIMIT = 8000
@@ -18,6 +20,19 @@ class ToolDefinition:
     max_result_chars: int = RESULT_LIMIT
 
 
+def validation_paths(error: ValidationError, limit: int = 6) -> tuple[str, ...]:
+    """pydantic错误 -> 'loc.path:error_type'；不含输入值和消息；extra字段名不原样记录。"""
+    paths: list[str] = []
+    for item in error.errors(include_input=False, include_context=False, include_url=False):
+        loc = [str(part) for part in item["loc"]]
+        if item["type"] == "extra_forbidden" and loc:
+            loc[-1] = "<extra>"
+        paths.append((".".join(loc) + ":" + item["type"])[:60])
+        if len(paths) == limit:
+            break
+    return tuple(paths)
+
+
 @dataclass(frozen=True)
 class ToolResult:
     data: dict[str, object]
@@ -27,6 +42,7 @@ class ToolResult:
     evidence_ids: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
     suggestion: str = ""
+    detail: tuple[str, ...] = ()  # 仅供TRACE的脱敏诊断标签，不进入payload/模型
 
     def payload(self) -> dict[str, object]:
         """正文状态是工具契约的一部分，兼容忽略 MCP is_error 的模型。"""

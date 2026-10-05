@@ -22,7 +22,9 @@ class HotelService:
         request = await self.travel.get_request(context)
         require_revision(request, revision)
         if missing := request.hotel_requirements():
-            raise ServiceError(422, "validation", "missing_fields: " + ", ".join(missing))
+            raise ServiceError(
+                422, "validation", "missing_fields: " + ", ".join(missing), "hotel_missing_fields"
+            )
         return request
 
     async def search(
@@ -55,7 +57,12 @@ class HotelService:
     ) -> tuple[EvidenceRecord, ...]:
         if live := self.travel.live:
             if not live.google or not live.rakuten:
-                raise ServiceError(503, "unavailable", "乐天酒店查询暂不可用：数据API配置缺失")
+                raise ServiceError(
+                    503,
+                    "unavailable",
+                    "乐天酒店查询暂不可用：数据API配置缺失",
+                    "hotel_api_unconfigured",
+                )
             assert request.city
             try:
                 point = await live.google.geocode(request.city)
@@ -67,6 +74,9 @@ class HotelService:
                     422 if error.validation else 503,
                     "validation" if error.validation else "unavailable",
                     "乐天酒店查询暂不可用：" + str(error),
+                    "hotel_external_validation"
+                    if error.validation
+                    else "hotel_external_unavailable",
                 ) from None
             records = [
                 EvidenceRecord(
@@ -130,7 +140,7 @@ class HotelService:
             row.payload["entity_id"]: EvidenceRecord.model_validate(row.payload) for row in rows
         }
         if set(records) != {str(id) for id in ids} or len(rows) != len(set(ids)):
-            raise ServiceError(404, "blocked", "报价ID不存在或不属于此会话")
+            raise ServiceError(404, "blocked", "报价ID不存在或不属于此会话", "offer_not_found")
         return tuple(records[str(id)] for id in ids)
 
     async def present(

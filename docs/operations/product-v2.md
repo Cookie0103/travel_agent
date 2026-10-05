@@ -127,3 +127,5 @@ HUMAN 新增 Limits：`first_byte_timeout=25`、`upstream_retries=2`——仅当
 **供应商HTTP错误直接显示（2026-10-05）**：guard 记录最近一次非200状态码（仅数字），live 报告携带 `upstream_http_status`，`RuntimeOutcome.reason=upstream_http_<码>`（也进入 `run_finished` TRACE）。RunService 对 live 失败按固定表生成说明并作为本轮回复显示：402「账户余额不足，请充值后重试」、401/403「密钥无效或无权限」、429「请求过于频繁或速率受限」、5xx「服务暂时不可用」、400「请求被拒绝」、其他「上游返回 HTTP n」。只用状态码，不含上游响应正文、头或密钥；error_code 仍为 provider_error，超时与其他失败文案不变；无迁移、无OpenAPI变更、未改 apps/web。
 
 **stdin>64KiB 交接死锁（根因，2026-10-05）**：`run_process` 原先用 `communicate(input=…, timeout=0.2)` 循环，首次超时后改传 `input=None` 续调；在 Python 3.12 下这不会继续写 stdin，超过管道容量（64KiB）的 key+body 永远卡住，子进程停在 `child_start`（Python 3.14 行为正常，所以系统 python 复现不出）。现由独立线程写入并关闭 stdin，`communicate` 只读输出；转发子进程与 SDK worker 共用此路径。
+
+**工具失败原因进入TRACE（2026-10-05）**：`tool_end` 增加 `detail`（仅标签，不含输入值/模型自造字段名/消息正文）：pydantic 失败为 `schema` + 至多6条 `路径:错误类型`（如 `items:too_long`、`items.3.note:string_too_long`）；ServiceError 为 `service:<HTTP码>` + 固定 reason 标签（`revision_stale`、`evidence_missing/stale`、`validator:<固定校验文案>`、`repair_limit`、`tool_call_cap` 等，未标注为 `untagged`）；校验报告为 `report:<状态>`、`counts:v/u/c` 与未通过检查的 `code:status`；校验/暂存调用另附 `repair_round:n`、`max_validations:m`。

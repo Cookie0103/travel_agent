@@ -64,6 +64,7 @@ async def execute_observed(
         timed_out=result.code == "timeout",
         limit_s=definition.timeout_seconds if definition else None,
         error_class=error_class,
+        detail=list(result.detail) if result.detail else None,
     )
     revision = result.data.get("request_revision")
     emit(

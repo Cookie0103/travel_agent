@@ -37,7 +37,9 @@ class PlanningService:
     ) -> tuple[EvidenceRecord, ...]:
         request = await self.current(context, arguments.expected_revision)
         if request.transport is None:
-            raise ServiceError(422, "validation", "missing_fields: transport")
+            raise ServiceError(
+                422, "validation", "missing_fields: transport", "route_missing_transport"
+            )
         ids = tuple(
             dict.fromkeys(
                 id for leg in arguments.legs for id in (leg.from_evidence_id, leg.to_evidence_id)
@@ -45,7 +47,9 @@ class PlanningService:
         )
         records = await self.travel.resolve_evidence(context, ids)
         if any(record.kind != "place" or record.status != "verified" for record in records):
-            raise ServiceError(422, "validation", "起终点必须是有来源的当前place证据")
+            raise ServiceError(
+                422, "validation", "起终点必须是有来源的当前place证据", "route_endpoint_not_place"
+            )
         places = {record.evidence_id: record.entity_id for record in records}
         live = self.travel.live
         rates: tuple[RouteRate, ...] = ()
@@ -128,5 +132,9 @@ async def validate_proposal(
     records = await hydrate_records(records, live)
     try:
         return validate_itinerary(request, proposal, records, datetime.now(UTC))
-    except ValueError:
-        raise ServiceError(422, "validation", "行程引用的证据类型、条件或内容不一致") from None
+    except ValueError as error:
+        # 校验器的ValueError是固定中文文案(无插值)，可整体作reason；pydantic错误含输入值，只记类名。
+        reason = str(error) if type(error) is ValueError else "evidence_model_invalid"
+        raise ServiceError(
+            422, "validation", "行程引用的证据类型、条件或内容不一致", "validator:" + reason
+        ) from None

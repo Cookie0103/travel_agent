@@ -40,8 +40,9 @@ def database_failure_reason(error: BaseException) -> str:
 
 
 class ServiceError(RuntimeError):
-    def __init__(self, status: int, code: ErrorCode, message: str) -> None:
-        self.status, self.code = status, code
+    def __init__(self, status: int, code: ErrorCode, message: str, reason: str = "") -> None:
+        # reason是仅供TRACE的固定英文标签(不含用户/第三方文本)；message可能含插值，不进日志。
+        self.status, self.code, self.reason = status, code, reason
         super().__init__(message)
 
 

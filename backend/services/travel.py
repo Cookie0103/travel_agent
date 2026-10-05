@@ -39,7 +39,7 @@ def request_from_row(row: TravelRequestRow | None) -> TravelRequest:
 
 def require_revision(request: TravelRequest, revision: int) -> None:
     if request.revision != revision:
-        raise ServiceError(409, "conflict", "旅行条件已变化，请读取最新revision")
+        raise ServiceError(409, "conflict", "旅行条件已变化，请读取最新revision", "revision_stale")
 
 
 @dataclass(frozen=True)
@@ -167,9 +167,11 @@ class TravelService:
             try:
                 updated, changed = apply_request_patch(current, patch)
             except RequestConflict as error:
-                raise ServiceError(409, "conflict", str(error)) from None
+                raise ServiceError(409, "conflict", str(error), "request_conflict") from None
             except ValidationError:
-                raise ServiceError(422, "validation", "合并后的旅行条件无效") from None
+                raise ServiceError(
+                    422, "validation", "合并后的旅行条件无效", "request_merge_invalid"
+                ) from None
             if changed:
                 await travel.update_request(
                     db, row, updated, invalidated_kinds(changed), context.run_id
@@ -191,7 +193,9 @@ class TravelService:
         async with transaction(self.database) as db:
             current = request_from_row(await travel.owned_request(db, context))
             if any(not record.applicable(current, datetime.now(UTC)) for record in records):
-                raise ServiceError(409, "conflict", "证据与当前条件或有效期不符")
+                raise ServiceError(
+                    409, "conflict", "证据与当前条件或有效期不符", "evidence_not_applicable"
+                )
             stored = []
             for record in records:
                 if record.provider in {"google_places", "google_routes"}:
@@ -260,13 +264,13 @@ async def resolve_records(
 ) -> tuple[EvidenceRecord, ...]:
     """共用Evidence规则，可纳入确认事务，不另开事务留下检查/写入间隙。"""
     if len(ids) > 50:
-        raise ServiceError(422, "validation", "一次最多读取50条证据")
+        raise ServiceError(422, "validation", "一次最多读取50条证据", "evidence_over_50")
     rows = {row.id: row for row in await travel.find_evidence(db, context, ids)}
     if set(ids) != rows.keys():
-        raise ServiceError(404, "blocked", "证据不存在或不属于当前会话")
+        raise ServiceError(404, "blocked", "证据不存在或不属于当前会话", "evidence_missing")
     records = tuple(EvidenceRecord.model_validate(rows[key].payload) for key in ids)
     if any(row.invalidated for row in rows.values()) or any(
         not record.applicable(request, now) for record in records
     ):
-        raise ServiceError(409, "conflict", "证据已失效，请重新查询")
+        raise ServiceError(409, "conflict", "证据已失效，请重新查询", "evidence_stale")
     return records

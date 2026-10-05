@@ -16,7 +16,7 @@ from backend.adapters.open_meteo import forecast
 from backend.domain.booking import HoldHotelInput
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
-from backend.domain.itinerary import ItineraryProposal, RouteInput
+from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
 from backend.domain.plans import StageInput
 from backend.domain.travel_request import RequestPatch
 from backend.services.bookings import BookingService
@@ -26,7 +26,7 @@ from backend.services.hotels import HotelService, cards
 from backend.services.planning import PlanningService
 from backend.services.plans import PlanInput, PlanService
 from backend.services.travel import TravelService, require_revision
-from backend.tools.contracts import RESULT_LIMIT, ToolDefinition, ToolResult
+from backend.tools.contracts import RESULT_LIMIT, ToolDefinition, ToolResult, validation_paths
 from backend.tools.search import DEFINITIONS as SEARCH_DEFINITIONS
 from backend.tools.search import ContentSearchInput, PlaceSearchInput
 
@@ -202,6 +202,22 @@ def live_definitions(definitions: tuple[ToolDefinition, ...]) -> tuple[ToolDefin
     )
 
 
+def report_detail(report: ValidationReport) -> tuple[str, ...]:
+    """校验报告 -> 状态、各状态计数、未通过检查的code:status(不含名称/文案)。"""
+    counts = {
+        s: sum(c.status == s for c in report.checks) for s in ("verified", "unknown", "conflict")
+    }
+    worst = sorted(
+        (c for c in report.checks if c.status != "verified"),
+        key=lambda c: c.status != "conflict",
+    )
+    return (
+        f"report:{report.status}",
+        "counts:" + "/".join(f"{k[0]}{v}" for k, v in counts.items()),
+        *(f"{c.code}:{c.status}" for c in worst[:5]),
+    )
+
+
 class TravelToolExecutor:
     def __init__(
         self,
@@ -232,16 +248,38 @@ class TravelToolExecutor:
     async def execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
     ) -> ToolResult:
+        result = await self._execute(context, name, arguments)
+        if name in {"validate_itinerary", "stage_plan_change"}:
+            # 每次校验调用都记录修复轮次(含被拒绝的调用)。
+            rounds = (f"repair_round:{self.validations}", f"max_validations:{self.max_validations}")
+            result = replace(result, detail=(*result.detail, *rounds))
+        return result
+
+    async def _execute(
+        self, context: RunContext, name: str, arguments: dict[str, object]
+    ) -> ToolResult:
         definitions = live_definitions(DEFINITIONS) if self.travel.live else DEFINITIONS
         definition = next((d for d in definitions if d.name == name), None)
         if definition is None:
-            return ToolResult({}, code="blocked", suggestion="请选择已注册的旅行工具")
+            return ToolResult(
+                {},
+                code="blocked",
+                suggestion="请选择已注册的旅行工具",
+                detail=("unregistered_tool",),
+            )
         async with self.lock:
             if self.context is not None and self.context != context:
-                return ToolResult({}, code="blocked", suggestion="执行器不能跨run或用户复用")
+                return ToolResult(
+                    {},
+                    code="blocked",
+                    suggestion="执行器不能跨run或用户复用",
+                    detail=("context_reuse",),
+                )
             self.context = context
             if self.calls >= self.max_calls:
-                return ToolResult({}, code="blocked", suggestion="本轮工具次数已达上限")
+                return ToolResult(
+                    {}, code="blocked", suggestion="本轮工具次数已达上限", detail=("tool_call_cap",)
+                )
             self.calls += 1
             try:
                 parsed = SCHEMAS[name].model_validate(arguments)
@@ -252,7 +290,10 @@ class TravelToolExecutor:
                     > definition.max_result_chars
                 ):
                     return ToolResult(
-                        {}, code="blocked", suggestion="结果过长，请缩小limit或查询范围"
+                        {},
+                        code="blocked",
+                        suggestion="结果过长，请缩小limit或查询范围",
+                        detail=("result_too_long",),
                     )
                 return result
             except ValidationError as error:
@@ -264,6 +305,7 @@ class TravelToolExecutor:
                         {},
                         code="validation",
                         suggestion="日期时间必须带时区；京都当地时间使用+09:00",
+                        detail=("schema", *validation_paths(error)),
                     )
                 return ToolResult(
                     {},
@@ -271,19 +313,33 @@ class TravelToolExecutor:
                     suggestion=(PresentationInput.__doc__ or "检查工具参数")
                     if name == "present_travel_result"
                     else "检查工具参数；不接受用户/会话身份字段",
+                    detail=("schema", *validation_paths(error)),
                 )
             except ServiceError as error:
-                return ToolResult({}, code=error.code, suggestion=str(error))
+                return ToolResult(
+                    {},
+                    code=error.code,
+                    suggestion=str(error),
+                    detail=(f"service:{error.status}", error.reason or "untagged"),
+                )
             except ExternalDataError as error:
                 return ToolResult(
                     {},
                     code="validation" if error.validation else "unavailable",
                     suggestion=str(error),
+                    detail=("external_data", "validation" if error.validation else "unavailable"),
                 )
             except TimeoutError:
-                return ToolResult({}, code="timeout", suggestion="本轮工具执行超时")
-            except (OSError, ValueError, SQLAlchemyError):
-                return ToolResult({}, code="unavailable", suggestion="本地业务数据暂不可用")
+                return ToolResult(
+                    {}, code="timeout", suggestion="本轮工具执行超时", detail=("tool_timeout",)
+                )
+            except (OSError, ValueError, SQLAlchemyError) as error:
+                return ToolResult(
+                    {},
+                    code="unavailable",
+                    suggestion="本地业务数据暂不可用",
+                    detail=("local_error", type(error).__name__),
+                )
 
     async def _dispatch(self, context: RunContext, name: str, parsed: BaseModel) -> ToolResult:
         if isinstance(parsed, WeatherInput):
@@ -300,7 +356,12 @@ class TravelToolExecutor:
             )
         if isinstance(parsed, HoldHotelInput):
             if self.travel.live:
-                raise ServiceError(403, "blocked", "实时酒店只支持查询和乐天链接，不暂留或下单")
+                raise ServiceError(
+                    403,
+                    "blocked",
+                    "实时酒店只支持查询和乐天链接，不暂留或下单",
+                    "live_hold_disabled",
+                )
             booking = await self.bookings.hold(context, parsed)
             return ToolResult(
                 booking.card(),
@@ -313,7 +374,10 @@ class TravelToolExecutor:
                 parsed,
                 before_validate=lambda proposal: self._take_validation(proposal, staging=True),
             )
-            return ToolResult(draft.summary())
+            return ToolResult(
+                draft.summary(),
+                detail=report_detail(draft.validation),
+            )
         if isinstance(parsed, PlanInput):
             data = await self.plans.get(
                 context.user_id, parsed.plan_id, session_id=context.session_id
@@ -358,7 +422,8 @@ class TravelToolExecutor:
                 {
                     **report.feedback(),
                     "repair_rounds_remaining": self.max_validations - self.validations,
-                }
+                },
+                detail=report_detail(report),
             )
         if isinstance(parsed, HotelSearchInput | RefreshOfferInput | PresentationInput):
             return await self._hotel_result(context, parsed)
@@ -405,7 +470,7 @@ class TravelToolExecutor:
                 if self.max_validations == 4
                 else "本次评测仅允许首次校验，不再修复；请说明仍存冲突或未知"
             )
-            raise ServiceError(429, "blocked", message)
+            raise ServiceError(429, "blocked", message, "repair_limit")
         self.validations += 1
 
     async def _hotel_result(

@@ -79,7 +79,9 @@ class PlanService:
                 if current_plan is None or current_plan.current_version != saved.base_version:
                     raise ServiceError(409, "conflict", "正式行程版本已变化，请重新读取")
                 if datetime.now(UTC) >= saved.expires_at:
-                    raise ServiceError(409, "conflict", "原草稿已过期，请重新查询后生成")
+                    raise ServiceError(
+                        409, "conflict", "原草稿已过期，请重新查询后生成", "draft_expired"
+                    )
                 report = await validate_proposal(
                     db, context, request, saved.content.proposal(request.revision), self.travel.live
                 )
@@ -90,7 +92,9 @@ class PlanService:
             if isinstance(change, InitialStage):
                 require_revision(request, change.proposal.expected_revision)
                 if previous is not None:
-                    raise ServiceError(409, "conflict", "已有正式行程，请读取后使用局部patch")
+                    raise ServiceError(
+                        409, "conflict", "已有正式行程，请读取后使用局部patch", "plan_exists"
+                    )
                 content = initial_content(change.proposal)
                 if row is None:
                     row = PlanRow(
@@ -108,7 +112,7 @@ class PlanService:
                     content = apply_plan_patch(previous, change.patch)
                 except ValueError:
                     raise ServiceError(
-                        422, "validation", "patch引用不存在、锁定或无效的行程项"
+                        422, "validation", "patch引用不存在、锁定或无效的行程项", "patch_invalid"
                     ) from None
             proposal = content.proposal(request.revision)
             if before_validate is not None:
@@ -249,7 +253,9 @@ class PlanService:
             if len(ids) != len(arguments.locked_item_ids) or ids - {
                 item.item_id for item in current.content.items
             }:
-                raise ServiceError(422, "validation", "锁定列表包含重复或不存在的item_id")
+                raise ServiceError(
+                    422, "validation", "锁定列表包含重复或不存在的item_id", "lock_invalid"
+                )
             content = PlanContent(
                 items=tuple(
                     item.model_copy(update={"locked": item.item_id in ids})
