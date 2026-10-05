@@ -9,18 +9,45 @@ export function DataNotes() {
       {open && (
         <div role="dialog" aria-label="数据说明" className="data-notes-pop">
           <p>
-            实时景点和路线：Google
-            Maps。酒店：乐天实时查询，报价以供应商页面为准。
-          </p>
-          <p>
-            天气数据：
+            <strong>景点与路线</strong>
             <a
-              href="https://open-meteo.com/"
+              href="https://developers.google.com/maps/documentation"
               target="_blank"
               rel="noopener noreferrer"
             >
-              Open-Meteo.com（CC BY 4.0）
+              Google Maps Platform
             </a>
+            （Places / Routes / Geocoding）
+          </p>
+          <p>
+            <strong>酒店</strong>
+            <a
+              href="https://webservice.rakuten.co.jp/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              乐天トラベル（Rakuten Web Service）
+            </a>
+            ，报价以供应商页面为准
+          </p>
+          <p>
+            <strong>天气</strong>
+            <a
+              href="https://open-meteo.com/en/docs"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Open-Meteo.com
+            </a>
+            （
+            <a
+              href="https://creativecommons.org/licenses/by/4.0/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              CC BY 4.0
+            </a>
+            ）
           </p>
         </div>
       )}
