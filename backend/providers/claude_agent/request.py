@@ -6,9 +6,9 @@ from decimal import Decimal
 from typing import Literal
 
 from backend.providers.claude_agent.limits import ProbeError, price_for
+from backend.providers.claude_agent.profile import current
 
 MAX_BYTES = 131072
-MAX_OUTPUT = 2048
 MAX_INPUT_TOKENS = 1_048_576
 TOOL_NAME = "mcp__probe__echo"
 
@@ -58,7 +58,7 @@ def validate_request(
     if set(raw) - allowed:
         raise ProbeError("blocked", "SDK 请求含尚未验证的协议功能")
     output = raw.get("max_tokens")
-    if type(output) is not int or not 1 <= output <= MAX_OUTPUT:
+    if type(output) is not int or not 1 <= output <= current().max_output:
         raise ProbeError("blocked", "SDK 输出超过接入实验上限")
     if raw.get("stream") is not True:
         raise ProbeError("validation", "接入实验仅接受流式 Messages")

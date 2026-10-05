@@ -11,6 +11,7 @@ from pathlib import Path
 from threading import Event
 
 from backend.providers.claude_agent.limits import ProbeError
+from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.windows_job import WindowsJob
 
 
@@ -125,7 +126,7 @@ def invoke_worker(
             [sys.executable, "-m", module, str(cli)],
             cwd=directory,
             env=env,
-            timeout=120,
+            timeout=current().process_timeout,
             input_text=json.dumps(payload) if payload is not None else "",
             cancelled=cancelled,
             progress=progress,

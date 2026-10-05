@@ -24,6 +24,7 @@ from backend.providers.claude_agent.http import forward_messages
 from backend.providers.claude_agent.ledger import exclusive
 from backend.providers.claude_agent.limits import ProbeError, Provider, Settings
 from backend.providers.claude_agent.process import invoke_worker, run_process
+from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.settings import load_runtime_settings
 from backend.tools.travel import live_definitions
 from backend.tools.workflow import WorkflowName
@@ -74,12 +75,12 @@ def run_live(
         judge_kind not in ("persona", "content")
         or (judge_kind != "persona" and not persona_judge)
         or type(max_attempts) is not int
-        or not 1 <= max_attempts <= 12
+        or not 1 <= max_attempts <= current().max_attempts
         or (workflow is not None and database_dsn is None)
         or type(persona_judge) is not bool
         or (persona_judge and any((database_dsn, supplier_url, workflow)))
     ):
-        raise ProbeError("validation", "对照需数据库工具；请求上限须为1至12")
+        raise ProbeError("validation", f"对照需数据库工具；请求上限须为1至{current().max_attempts}")
     exporter = cloud_exporter(os.environ) if trace_cloud else None
     settings = load_runtime_settings(
         {**os.environ, "LLM_PROVIDER": provider} if provider is not None else os.environ

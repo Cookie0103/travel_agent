@@ -25,13 +25,14 @@ from backend.persistence import runs, sessions
 from backend.persistence.database import Database
 from backend.persistence.models import TaskRunRow
 from backend.providers.claude_agent.application import GuardedRuntime
+from backend.providers.claude_agent.profile import current
 from backend.services.common import ServiceError, database_error_details, transaction
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolExecutor
 from backend.tools.travel import TravelToolExecutor
 
 LOGGER = logging.getLogger(__name__)
-RUN_TIMEOUT = 150.0
+RUN_TIMEOUT: float | None = None  # 测试可覆盖；默认取 profile
 
 
 class MessageInput(BaseModel):
@@ -229,7 +230,7 @@ class RunService:
             runtime = self._runtime(message.mode, executor)
             identity = runtime.identity
             agent = Agent(runtime)
-            deadline = asyncio.timeout(RUN_TIMEOUT)
+            deadline = asyncio.timeout(RUN_TIMEOUT or current().run_timeout)
             async with deadline:
                 result = await agent.run(
                     context,

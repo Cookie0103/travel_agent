@@ -6,6 +6,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from backend.providers.claude_agent.limits import ProbeError
+from backend.providers.claude_agent.profile import current
 
 
 def find_cli(environment: Mapping[str, str]) -> Path:
@@ -46,6 +47,7 @@ def worker_environment(
         "GOOGLE_ROUTES_DAILY_CAP",
         "RAKUTEN_DAILY_CAP",
         "WEATHER_DAILY_CAP",
+        "TRAVEL_PROFILE",
     }
     env = {k: v for k, v in source.items() if k.upper() in names}
     if os.name == "nt":
@@ -74,7 +76,7 @@ def worker_environment(
             "ANTHROPIC_DEFAULT_OPUS_MODEL": model,
             "ANTHROPIC_SMALL_FAST_MODEL": model,
             "CLAUDE_CODE_MAX_RETRIES": "0",
-            "CLAUDE_CODE_MAX_OUTPUT_TOKENS": "2048",
+            "CLAUDE_CODE_MAX_OUTPUT_TOKENS": str(current(source).max_output),
             "MAX_THINKING_TOKENS": "0",
             "CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC": "1",
             "DISABLE_AUTOUPDATER": "1",

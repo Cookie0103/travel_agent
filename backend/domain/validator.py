@@ -181,9 +181,16 @@ def route_checks(
             )
         ]
     if route.minutes is None:
-        return [check(subject, "unknown", "route_duration", "自制路段表未覆盖此路线")]
+        message = (
+            "路线查询失败或达到调用上限，无法确认耗时"
+            if record.data_mode == "live"
+            else "自制路段表未覆盖此路线"
+        )
+        return [check(subject, "unknown", "route_duration", message)]
     if route.departure + timedelta(minutes=route.minutes) > item.start:
         return [check(subject, "conflict", "route_gap", "两项之间的时间不足以完成估算路段")]
+    if record.data_mode == "live":
+        return [check(subject, "verified", "route_live", "Google路线估算耗时内，排程时间足够")]
     return [
         check(
             subject,
@@ -224,6 +231,8 @@ def budget_checks(
             )
             if route and route.fare is not None:
                 estimated += route.fare
+            elif route and route.minutes is not None and route.transport == "walk":
+                pass  # 步行已有耗时估算，费用为0
             else:
                 checks.append(
                     check("budget", "unknown", "route_fare", "路段缺全员费用估算，不能当作免费")

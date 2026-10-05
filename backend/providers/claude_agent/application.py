@@ -21,6 +21,7 @@ from backend.domain.execution import (
 )
 from backend.providers.claude_agent.limits import ProbeError, Provider
 from backend.providers.claude_agent.live import run_live
+from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.settings import model_name, provider_name
 
 LOGGER = logging.getLogger(__name__)
@@ -82,7 +83,7 @@ class GuardedRuntime:
                 database_dsn=self.database_dsn,
                 emit=forward,
                 cancelled=stop,
-                max_attempts=12,
+                max_attempts=current().max_attempts,
                 provider=self.provider,
                 real_data=self.real_data,
             )

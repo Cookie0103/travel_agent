@@ -23,6 +23,7 @@ from backend.providers.claude_agent.evaluation import (
 )
 from backend.providers.claude_agent.events import save_event
 from backend.providers.claude_agent.limits import Provider
+from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.runtime import ClaudeRuntime, RuntimeConfig
 from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition, ToolExecutor
@@ -168,9 +169,11 @@ async def run_prompts(
     )
     if isinstance(executor, DatabaseTools):
         # 完整规划实测需8次工具往返+回答；保留3轮修复空间，HTTP/工具/费用边界不变。
-        config = replace(config, max_turns=12)
+        config = replace(config, max_turns=current().max_turns)
         if executor.travel.live:
-            config = replace(config, persist_session=False, timeout_seconds=115)
+            config = replace(
+                config, persist_session=False, timeout_seconds=current().worker_timeout
+            )
     agent = Agent(ClaudeRuntime(config, definitions, executor))
     events: list[RuntimeEvent] = []
 

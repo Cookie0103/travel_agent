@@ -13,6 +13,7 @@ from backend.adapters.live_data import LiveData
 from backend.adapters.supplier import SupplierClient
 from backend.domain.execution import RunContext
 from backend.persistence.database import Database
+from backend.providers.claude_agent.profile import current
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolResult
 from backend.tools.travel import TravelToolExecutor
@@ -32,7 +33,7 @@ class DatabaseTools:
         self.travel = TravelService(
             database, LiveData.from_environment(os.environ, database) if real_data else None
         )
-        self.executor = TravelToolExecutor(self.travel)
+        self.executor = TravelToolExecutor(self.travel, max_calls=current().max_calls)
         self.executor.bookings.supplier = SupplierClient(supplier_url)
 
     async def execute(
@@ -58,7 +59,7 @@ class DatabaseTools:
             # 不修改持久偏好/条件或历史墓碑；只隔离本次系统上下文的当前长期偏好值。
             state.pop("preferences")
         return (
-            f"\n每个用户轮次最多{self.executor.max_calls}次工具调用；失败也计数。"
+            "\n每个用户轮次的工具调用次数有限，失败也计数；上限由系统静默执行，回复用户时不要提及具体次数。"
             "找到相关结果后不要重复搜索，保留调用次数完成用户要求的校验/暂存/展示。"
             "目录详情使用place_id/article_id，行程与路线使用evidence_id，不互换。"
             + (

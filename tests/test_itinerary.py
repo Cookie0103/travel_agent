@@ -309,3 +309,56 @@ def test_incomplete_total_with_known_base_above_budget_still_conflicts() -> None
     report = validate_itinerary(current, proposal, (destination, hotel), NOW)
     assert report.known_cost >= offer.base_amount and report.status == "conflict"
     assert any(c.code == "hotel_total" and c.status == "unknown" for c in report.checks)
+
+
+def route_report(
+    route: RouteEstimate, mode: str = "live", transport: str = "walk"
+) -> list[tuple[str, str, str]]:
+    current = request().model_copy(update={"transport": transport})
+    first, second = record(place(), current), record(place("osm:way/314446153"), current)
+    stored = record(route, current).model_copy(update={"data_mode": mode})
+    proposal = ItineraryProposal(
+        expected_revision=1,
+        items=(
+            item(first),
+            item(second, "2026-11-03T12:00+09:00", "2026-11-03T13:00+09:00", stored),
+        ),
+    )
+    report = validate_itinerary(current, proposal, (first, second, stored), NOW)
+    assert report.status != "complete"  # other_costs 永远未知
+    return [(c.status, c.code, c.message) for c in report.checks]
+
+
+def google_route(**values: object) -> RouteEstimate:
+    base: dict[str, object] = {
+        "from_place_id": place().place_id,
+        "to_place_id": "osm:way/314446153",
+        "transport": "walk",
+        "departure": datetime.fromisoformat("2026-11-03T11:00+09:00"),
+        "confidence": "estimate",
+        "minutes": 20,
+    }
+    return RouteEstimate.model_validate({**base, **values})
+
+
+def test_live_route_failure_message_differs_from_offline_table_miss() -> None:
+    failed = google_route(confidence="unknown", minutes=None)
+    live_message = "路线查询失败或达到调用上限，无法确认耗时"
+    assert ("unknown", "route_duration", live_message) in route_report(failed)
+    assert ("unknown", "route_duration", "自制路段表未覆盖此路线") in route_report(
+        failed, "fixture"
+    )
+
+
+def test_successful_live_route_is_not_flagged_route_estimate_but_offline_is() -> None:
+    live = route_report(google_route())
+    assert not any(code == "route_estimate" for _, code, _ in live)
+    assert any(code == "route_live" and status == "verified" for status, code, _ in live)
+    offline = route_report(google_route(), "fixture")
+    assert any(code == "route_estimate" and status == "unknown" for status, code, _ in offline)
+
+
+def test_walking_fare_is_zero_but_transit_without_fare_stays_unknown() -> None:
+    assert not any(code == "route_fare" for _, code, _ in route_report(google_route()))
+    transit = route_report(google_route(transport="transit"), transport="transit")
+    assert any(code == "route_fare" and status == "unknown" for status, code, _ in transit)

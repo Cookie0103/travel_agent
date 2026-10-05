@@ -10,14 +10,15 @@ from sqlalchemy import text
 
 from backend.domain.external_data import ExternalDataError
 from backend.persistence.database import Database
+from backend.providers.claude_agent.profile import current
 
 ApiName = Literal["geocode", "places", "routes", "rakuten", "weather"]
-CAPS: dict[ApiName, tuple[str, int, int]] = {
-    "geocode": ("GOOGLE_GEOCODE_DAILY_CAP", 50, 2),
-    "places": ("GOOGLE_PLACES_DAILY_CAP", 25, 3),
-    "routes": ("GOOGLE_ROUTES_DAILY_CAP", 150, 12),
-    "rakuten": ("RAKUTEN_DAILY_CAP", 150, 8),
-    "weather": ("WEATHER_DAILY_CAP", 200, 1),
+CAP_NAMES: dict[ApiName, str] = {
+    "geocode": "GOOGLE_GEOCODE_DAILY_CAP",
+    "places": "GOOGLE_PLACES_DAILY_CAP",
+    "routes": "GOOGLE_ROUTES_DAILY_CAP",
+    "rakuten": "RAKUTEN_DAILY_CAP",
+    "weather": "WEATHER_DAILY_CAP",
 }
 
 
@@ -28,11 +29,12 @@ class ApiUsage:
         self.database = database
         self.daily: dict[ApiName, int] = {}
         self.used: dict[ApiName, int] = {}
-        self.run_caps = {api: values[2] for api, values in CAPS.items()}
+        limits = current(environment)
+        self.run_caps = {api: limits.run_caps[api] for api in CAP_NAMES}
         self.run_limits = run_limits
-        for api, (name, default, _) in CAPS.items():
+        for api, name in CAP_NAMES.items():
             try:
-                cap = int(environment.get(name, "").strip() or default)
+                cap = int(environment.get(name, "").strip() or limits.daily_defaults[api])
                 if cap < 0:
                     raise ValueError
             except ValueError:

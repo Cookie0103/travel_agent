@@ -133,6 +133,7 @@ check 不连接数据库；test 会检查真实事务和用户隔离。CI 已配
 查询 `/runs/{id}`，进度读 `/runs/{id}/events`（SSE，可带 `Last-Event-ID`），取消用 `POST /runs/{id}/cancel`。
 重复消息ID返回原执行；新一轮需新UUID。离线固定流程用于检查工具和数据，不代表模型自主规划。
 需要真实模型时，显式用 `uv run --env-file .env python -m backend.server --live` 启动，并把该条消息的mode设为live；DeepSeek遵守每日15 CNY/更低配置及每run保护，USD仍未授权，不自动切换供应商。
+手动试用可加 `--relaxed`（工具40次/模型30轮/超时约300秒及更大的外部API次数；每日15 CNY等费用上限不变），默认档位不变。
 
 ## 审阅与中断恢复
 
