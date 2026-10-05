@@ -1,6 +1,14 @@
 # Travel Agent 长程执行计划
 
-## Railway旅行数据配置（2026-10-05，当前恢复入口）
+## 京都10月7–8日超时定位（2026-10-05，当前恢复入口）
+
+用户再次反馈近日期两天一夜规划失败，cloud run bda36dd5-c24c-47a5-87d7-5d57106772ce从04:22:06.647至04:23:49.635UTC（约103秒），update_travel_request和search_places两次成功；第一模型HTTP9180input/1709output/tool_use，第二模型HTTP超过90秒上游总期限，guard仅timeout，没有预算拒绝。新增2HTTP/2.145568CNY保守占用，云端累计21HTTP/8.971738CNY，PG当天geocode1/places10/rakuten3/routes5/weather1。不是密钥缺失，也不能把页面通用提示当额度不足证据。当前近日期在天气窗口内，原远期天气限制不解释这次失败。
+
+在用户Chrome Railway Console用真实SDK和bundled CLI2.1.286、本地合成Messages及独立temp预算做离线协议核对并复核thinking字段确实省略：runtime.options已经thinking disabled，但实际forward body省略thinking，output_config.effort=high，2048max_tokens/1899bytes/1工具；0真实上游HTTP/数据API，进程先降10001/umask077，不读取或输出密钥/提示/思考正文。依据[DeepSeek思考模式文档](https://api-docs.deepseek.com/guides/thinking_mode/)，省略时默认开启且high。已证明CLI选项未落实到DeepSeek出站协议；不能仅再加期限。独立审查另用纯内存HTTPResponse证明完整SSE message_stop后没有HTTP结束chunk时，旧read(1MiB+1)仍等待并timeout；尚无旧真实失败收到终态的证据，不能断言每次均由EOF缺陷导致。
+
+最小源码修复：DeepSeek请求在已有校验边界显式thinking disabled并移除effort，保留其他output_config字段；显式启用思考拒绝，Anthropic原文不变。HTTP read1增量读完整SSE帧后终止，保留原响应交给既有usage/工具/终态校验、1MiB上限、原90秒期限与所有费用/次数不变量。前端timeout提示改为真实等待超时，已完成步骤保留，不再暗示Key/额度错误。133离线专项通过；238文件三平台strict/ruff/分层/docs检查及前端25测试/type/lint/format/build通过，独立复核修复非空失败answer仍显示timeout的P2后无剩余P1/P2。正常完整commit钩子、push/deploy及一次原条件真实验收待完成。原21HTTP账本和四轮未结预占保持，不清账或反复付费试错。没有新增依赖或runtime。
+
+## Railway旅行数据配置（2026-10-05，历史恢复入口）
 
 用户反馈DeepSeek可用但京都11月6–7日两天行程的景点/天气/酒店数据均报配置缺失。检查确认云端只有模型变量；本地已有Google/乐天凭据。用户明确授权将GOOGLE_MAPS_API_KEY、RAKUTEN_APP_ID、RAKUTEN_ACCESS_KEY、RAKUTEN_AFFILIATE_ID配置到既有Railway api；已通过其Chrome发布遮罩变量、现有公网RAKUTEN_REFERER和五个原额度（50/25/150/150/200），未输出或提交密钥。保留模型15CNY/USD0、卷账本与非rootAPI。天气本身无需key，但工具先依赖Google获取城市坐标；原日期超出16天窗口，最早10月23日可覆盖两日，不能用历史天气替代。独立配置审查无遗漏/新增P1/P2。
 

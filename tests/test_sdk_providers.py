@@ -50,6 +50,37 @@ def test_provider_is_explicit_and_keys_do_not_select_or_fallback() -> None:
         load_runtime_settings(config)
 
 
+@pytest.mark.parametrize("thinking", [False, True])
+def test_deepseek_wire_disables_default_thinking_and_removes_cli_effort(thinking: bool) -> None:
+    extra: dict[str, object] = {"output_config": {"effort": "high"}}
+    if thinking:
+        extra["thinking"] = {"type": "disabled"}
+    request = validate_request(request_body(**extra), "deepseek-flash")
+    actual = json.loads(request.body)
+    assert actual["thinking"] == {"type": "disabled"}
+    assert "output_config" not in actual
+    assert actual["tools"] and actual["max_tokens"] == 1024
+
+
+@pytest.mark.parametrize("thinking", [{"type": "enabled"}, {"type": "adaptive"}])
+def test_unexpected_deepseek_thinking_is_rejected_before_transmission(thinking: object) -> None:
+    with pytest.raises(ProbeError, match="非思考"):
+        validate_request(request_body(thinking=thinking), "deepseek-flash")
+
+
+def test_anthropic_thinking_and_effort_body_is_preserved() -> None:
+    body = request_body(
+        model=MODEL, thinking={"type": "adaptive"}, output_config={"effort": "high"}
+    )
+    assert validate_request(body, MODEL).body == body
+
+
+def test_deepseek_keeps_other_output_configuration() -> None:
+    config = {"effort": "high", "format": {"type": "json_schema", "schema": {"type": "object"}}}
+    raw = json.loads(validate_request(request_body(output_config=config), "deepseek-flash").body)
+    assert raw["output_config"] == {"format": config["format"]}
+
+
 @pytest.mark.parametrize(
     "changes",
     [
@@ -191,9 +222,13 @@ def test_https_transport_only_uses_fixed_host_path_and_auth(
 
     class Response:
         status = 200
+        sent = False
 
-        def read(self, limit: int) -> bytes:
-            assert limit == 1048577
+        def read1(self, limit: int) -> bytes:
+            assert limit == 65536
+            if self.sent:
+                return b""
+            self.sent = True
             return b"synthetic response"
 
     class Connection:

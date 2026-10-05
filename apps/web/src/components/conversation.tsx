@@ -147,11 +147,14 @@ export function Conversation({
                 <Markdown text={run.answer} />
               </div>
             )}
-            {run.error_code && !run.answer && (
-              <p className="error">
-                执行未完成：{run.error_code}。请检查模型配置或调用额度。
-              </p>
-            )}
+            {run.error_code &&
+              (run.error_code === "timeout" || !run.answer) && (
+                <p className="error">
+                  {run.error_code === "timeout"
+                    ? "模型或工具响应超时，本轮执行未完成。已完成的步骤仍保留；超时不代表密钥或额度有误。"
+                    : `执行未完成：${run.error_code}。请检查模型配置或调用额度。`}
+                </p>
+              )}
             <RunSteps events={workspace.events} />
             {workspace.hotels && (
               <HotelResults

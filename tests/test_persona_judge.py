@@ -114,9 +114,11 @@ def report() -> dict[str, object]:
     }
 
 
-def test_normal_travel_bytes_unchanged_and_judge_temperature_proved(tmp_path: Path) -> None:
+def test_travel_keeps_sampling_and_judge_temperature_proved(tmp_path: Path) -> None:
     body = request_body(temperature=1)
-    assert validate_request(body, "deepseek-flash").body == body
+    assert json.loads(validate_request(body, "deepseek-flash").body) == {
+        **json.loads(body), "thinking": {"type": "disabled"},
+    }  # fmt: skip
     captured: list[bytes] = []
 
     def forward(body: bytes) -> tuple[int, bytes]:

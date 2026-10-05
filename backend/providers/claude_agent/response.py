@@ -6,6 +6,14 @@ from backend.providers.claude_agent.limits import Currency, ProbeError, price_fo
 from backend.providers.claude_agent.request import Request
 
 
+def message_stopped(frame: bytes) -> bool:
+    """完整SSE帧标记协议结束；费用和内容仍由summarize统一校验。"""
+    try:
+        return any(event.get("type") == "message_stop" for event in _events(frame))
+    except (ValueError, UnicodeError):
+        raise ProbeError("provider_error", "上游SSE帧格式无效，保留预占") from None
+
+
 def summarize(
     content: bytes, request: Request, model: str, currency: Currency = "CNY"
 ) -> dict[str, object]:

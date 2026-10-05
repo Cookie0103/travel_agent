@@ -80,8 +80,21 @@ def validate_request(
         ):
             raise ProbeError("blocked", "固定温度评审只支持无工具且关闭思考的DeepSeek")
         raw["temperature"] = 0
-        # 锁定CLI省略disabled字段；评审在实际转发层显式关闭思考以使温度生效。
+    if model.startswith("deepseek-"):
+        # CLI对未知模型省略disabled且仍传high；落实SDK已选择的非思考模式。
+        if "thinking" in raw and raw["thinking"] != {"type": "disabled"}:
+            raise ProbeError("blocked", "DeepSeek接入仅允许已配置的非思考模式")
         raw["thinking"] = {"type": "disabled"}
+        config = raw.get("output_config")
+        if config is not None:
+            if not isinstance(config, dict):
+                raise ProbeError("validation", "输出配置必须为对象")
+            config = {key: value for key, value in config.items() if key != "effort"}
+            if config:
+                raw["output_config"] = config
+            else:
+                raw.pop("output_config", None)
+    if temperature is not None or model.startswith("deepseek-"):
         body = json.dumps(raw, ensure_ascii=False).encode("utf-8")
         if len(body) > MAX_BYTES:
             raise ProbeError("blocked", "SDK 输入超过接入实验上限")

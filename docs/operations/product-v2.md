@@ -102,3 +102,11 @@ Chrome实际选中DeepSeek，发送“你好，请只用一句话介绍你能帮
 源码修复提交9326a53ea3a7df1c737d2bbee0e3ef655a91b47b已普通push，远端完整SHA一致；正常project-check和project-test钩子均Passed。完整离线807 passed/1 live deselected（211.18s），237文件三平台strict、ruff/格式、3分层契约与10文档入口通过。首次钩子识别测试通过http.sys访问未显式导出，改为标准库sys导入后正常重跑钩子通过，没有跳过PG或断言。api/web/supplier均Active且Details精确关联功能提交；部署分别833aa872-df95-487f-a1cb-708579b23a49、bc43f226-cd0e-4b72-aa5d-698455153c8f、dc7156e9-d88d-4ad1-911e-e325d046f37c。api启动CLI2.1.286、bootstrap166项与health200，持久卷和非root启动命令不变。重新部署后、付费验收前只读核对模型账本仍16HTTP/4.648616CNY与PG原计数一致，证明没有清账。
 
 修复后仅一次原条件验收run abcf3785-0572-4789-acd2-d37b99f4a6e1仍failed，但已正确显示timeout/upstream_timeout。3模型HTTP/新增2.177554CNY保守占用；search_places两次、search_hotel_offers及get_weather_forecast共4成功工具，Google/酒店可用、远期天气unknown判断正常。最终上游仍超过新90秒总期限；不将期限延长当作完成规划证据。云端当日累计19HTTP/6.826170CNY保守占用（含三轮未结预占，非实付账单），PG geocode1/places8/rakuten3/routes5/weather1。没有行程草稿、确认或真实预订。三类数据接线及实际接口验证完成，整轮生成仍有DeepSeek上游等待问题；停止付费重复，不清账或进一步放宽限额。恢复只读核对当前部署/记录；无新的故障证据不重跑同一请求。仅文档交付提交复用上述同源码完整回归，保留project-check、跳过重复project-test；push后核对最终部署，不再付费测试。
+
+## 京都10月7–8日超时定位（2026-10-05，当前恢复入口）
+
+用户再次反馈近日期两天一夜规划失败，cloud run bda36dd5-c24c-47a5-87d7-5d57106772ce从04:22:06.647至04:23:49.635UTC（约103秒），update_travel_request和search_places两次成功；第一模型HTTP9180input/1709output/tool_use，第二模型HTTP超过90秒上游总期限，guard仅timeout，没有预算拒绝。新增2HTTP/2.145568CNY保守占用，云端累计21HTTP/8.971738CNY，PG当天geocode1/places10/rakuten3/routes5/weather1。不是密钥缺失，也不能把页面通用提示当额度不足证据。当前近日期在天气窗口内，原远期天气限制不解释这次失败。
+
+在用户Chrome Railway Console用真实SDK和bundled CLI2.1.286、本地合成Messages及独立temp预算做离线协议核对并复核thinking字段确实省略：runtime.options已经thinking disabled，但实际forward body省略thinking，output_config.effort=high，2048max_tokens/1899bytes/1工具；0真实上游HTTP/数据API，进程先降10001/umask077，不读取或输出密钥/提示/思考正文。依据[DeepSeek思考模式文档](https://api-docs.deepseek.com/guides/thinking_mode/)，省略时默认开启且high。已证明CLI选项未落实到DeepSeek出站协议；不能仅再加期限。独立审查另用纯内存HTTPResponse证明完整SSE message_stop后没有HTTP结束chunk时，旧read(1MiB+1)仍等待并timeout；尚无旧真实失败收到终态的证据，不能断言每次均由EOF缺陷导致。
+
+最小源码修复：DeepSeek请求在已有校验边界显式thinking disabled并移除effort，保留其他output_config字段；显式启用思考拒绝，Anthropic原文不变。HTTP read1增量读完整SSE帧后终止，保留原响应交给既有usage/工具/终态校验、1MiB上限、原90秒期限与所有费用/次数不变量。前端timeout提示改为真实等待超时，已完成步骤保留，不再暗示Key/额度错误。133离线专项通过；238文件三平台strict/ruff/分层/docs检查及前端25测试/type/lint/format/build通过，独立复核修复非空失败answer仍显示timeout的P2后无剩余P1/P2。正常完整commit钩子、push/deploy及一次原条件真实验收待完成。原21HTTP账本和四轮未结预占保持，不清账或反复付费试错。没有新增依赖或runtime。

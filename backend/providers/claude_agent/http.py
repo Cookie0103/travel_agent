@@ -10,6 +10,7 @@ from pathlib import Path
 from backend.providers.claude_agent.limits import ProbeError, Provider
 from backend.providers.claude_agent.process import run_process
 from backend.providers.claude_agent.profile import current
+from backend.providers.claude_agent.response import message_stopped
 
 MAX_RESPONSE_BYTES = 1_048_576
 
@@ -83,12 +84,32 @@ def _direct_request(
             },
         )
         response = connection.getresponse()
-        content = response.read(MAX_RESPONSE_BYTES + 1)
+        content = (
+            _read_sse(response) if response.status == 200 else response.read(MAX_RESPONSE_BYTES + 1)
+        )
         if len(content) > MAX_RESPONSE_BYTES:
             raise ProbeError("provider_error", "上游响应超过实验上限")
         return response.status, content
     finally:
         connection.close()
+
+
+def _read_sse(response: http.client.HTTPResponse) -> bytes:
+    """message_stop已到即可关连接，避免完整响应继续等HTTP EOF。"""
+    content = bytearray()
+    pending = b""
+    while True:
+        chunk = response.read1(min(65536, MAX_RESPONSE_BYTES + 1 - len(content)))
+        if not chunk:
+            return bytes(content)
+        content.extend(chunk)
+        if len(content) > MAX_RESPONSE_BYTES:
+            raise ProbeError("provider_error", "上游响应超过实验上限")
+        pending = (pending + chunk).replace(b"\r\n", b"\n")
+        while b"\n\n" in pending:
+            frame, _, pending = pending.partition(b"\n\n")
+            if message_stopped(frame):
+                return bytes(content)
 
 
 def main() -> None:
