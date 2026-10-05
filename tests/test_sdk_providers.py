@@ -169,7 +169,7 @@ def test_mismatched_model_budget_currency_never_forwards(tmp_path: Path) -> None
 
 def test_claude_cache_write_is_bounded_at_one_hour_rate_and_reported_in_usd() -> None:
     request = validate_request(request_body(model=MODEL), MODEL)
-    assert request.charge == Decimal("0.40512")
+    assert request.charge == Decimal("0.007672")  # 旧值0.40512按整个200k上下文预占
     content = response_body(
         model=MODEL,
         usage={

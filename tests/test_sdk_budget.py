@@ -6,7 +6,8 @@ from pathlib import Path
 
 import pytest
 
-from backend.providers.claude_agent.budget import LIMITS, Budget
+from backend.providers.claude_agent.budget import GRANT, LIMITS, Budget
+from backend.providers.claude_agent.budget import Entry as BudgetEntry
 from backend.providers.claude_agent.ledger import Entry, Ledger
 from backend.providers.claude_agent.limits import Currency, ProbeError
 
@@ -178,3 +179,19 @@ def test_today_exception_uses_utc_day_and_preserves_lower_limits_afterward(tmp_p
     local_midnight = datetime.fromisoformat("2026-10-05T00:00:00+09:00")
     assert budget.daily_limit(local_midnight) is None
     assert budget.daily_limit(datetime(2026, 10, 5, tzinfo=UTC)) == Decimal(1)
+
+
+def test_unsettled_counts_full_reservation_settled_counts_usage(tmp_path: Path) -> None:
+    budget = Budget(tmp_path / "new", tmp_path / "old", Decimal(15))
+    budget.reserve(Decimal("0.13"), NOW)
+    settled = budget.reserve(Decimal("0.13"), NOW)
+    budget.settle(settled, Decimal("0.04"))
+    assert budget.totals() == (2, Decimal("0.17"))
+
+
+def test_daily_limit_blocks_when_spent_plus_reservation_exceeds_15(tmp_path: Path) -> None:
+    budget = Budget(tmp_path / "new", tmp_path / "old", Decimal(15))
+    budget.append(BudgetEntry(GRANT, "old-unsettled", "attempt", "2026-10-03", "13.866924", "CNY"))
+    budget.reserve(Decimal("1.133076"), NOW)  # 15.000000 允许恰好等于上限
+    with pytest.raises(ProbeError, match="今日原币种余额不足"):
+        budget.reserve(Decimal("0.000001"), NOW)

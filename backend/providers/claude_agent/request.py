@@ -11,6 +11,10 @@ from backend.providers.claude_agent.profile import current
 MAX_BYTES = 131072
 MAX_INPUT_TOKENS = 1_048_576
 TOOL_NAME = "mcp__probe__echo"
+# 预占输入token上界 = 请求体UTF-8字节数 * 5/4 + 固定开销。任何分词器每token至少1字节，
+# 转义后的多字节JSON文本字节数仍不小于token数；x1.25与固定1024覆盖上游把tools/system
+# 渲染进聊天模板时额外增加的文本。DeepSeek思考已被强制关闭且max_tokens含思考token。
+INPUT_MARGIN_NUM, INPUT_MARGIN_DEN, INPUT_OVERHEAD_TOKENS = 5, 4, 1024
 
 
 @dataclass(frozen=True)
@@ -99,8 +103,14 @@ def validate_request(
         if len(body) > MAX_BYTES:
             raise ProbeError("blocked", "SDK 输入超过接入实验上限")
     price = price_for(model)
-    # 不变量：按模型整个上下文与最高缓存写价预占，不猜文本字节/token比例。
-    charge = price.usage_upper(int(price.input_limit * price.cache_write_multiplier), output)
+    # 不变量：预占=该请求可能的最大费用（输入token<=字节上界，按最高输入价即
+    # 未命中价*缓存写倍数；输出<=max_tokens）。无结算的尝试仍按此全额计费。
+    # 单价只有一档未命中价（缓存读更便宜），故以其为最高价。
+    inputs = min(
+        len(body) * INPUT_MARGIN_NUM // INPUT_MARGIN_DEN + INPUT_OVERHEAD_TOKENS,
+        price.input_limit,
+    )
+    charge = price.usage_upper(int(inputs * price.cache_write_multiplier), output)
     return Request(body, charge, output, temperature)
 
 

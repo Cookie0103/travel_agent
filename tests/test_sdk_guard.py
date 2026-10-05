@@ -8,7 +8,7 @@ import pytest
 
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.guard import Guard
-from backend.providers.claude_agent.limits import ProbeError, Settings
+from backend.providers.claude_agent.limits import ProbeError, Settings, price_for
 from backend.providers.claude_agent.request import TOOL_NAME, validate_request
 from tests.test_sdk_cli_offline import scripted_response
 
@@ -174,3 +174,46 @@ def test_local_endpoint_and_token_checked_before_reserving(tmp_path: Path) -> No
         guard.accept("/v1/messages/count_tokens", "Bearer " + guard.token, request_body())[0] == 400
     )
     assert budget.totals()[0] == 0
+
+
+def _sized(model: str, max_tokens: int, size: int) -> bytes:
+    return request_body(
+        model=model, max_tokens=max_tokens, messages=[{"role": "user", "content": "行" * size}]
+    )
+
+
+@pytest.mark.parametrize("model", ["deepseek-flash", "deepseek-v4-pro"])
+@pytest.mark.parametrize("max_tokens", [1, 1024, 2048])
+@pytest.mark.parametrize("size", [0, 1, 500, 8000, 20000])
+def test_reservation_bounds_worst_case_charge(
+    monkeypatch: pytest.MonkeyPatch, model: str, max_tokens: int, size: int
+) -> None:
+    """最坏用量：每个字节一个token（含转义后的多字节文本），输出打满max_tokens。"""
+    monkeypatch.setenv("TRAVEL_PROFILE", "default")
+    request = validate_request(_sized(model, max_tokens, size), model)
+    price = price_for(model)
+    worst = price.usage_upper(
+        int(len(request.body) * price.cache_write_multiplier), request.max_output
+    )
+    assert request.charge >= worst
+    assert request.charge < Decimal("1")  # 旧值>=9.4(v4-pro)
+
+
+def test_typical_request_reserves_cents_not_whole_context() -> None:
+    request = validate_request(_sized("deepseek-flash", 1024, 8000), "deepseek-flash")
+    assert len(request.body) > 24000
+    assert Decimal("0.05") < request.charge < Decimal("0.2")
+
+
+def test_claude_reservation_bounds_cache_write_worst_case() -> None:
+    model = "claude-haiku-4-5-20251001"
+    request = validate_request(_sized(model, 1024, 15000), model)
+    price = price_for(model)
+    assert request.charge >= price.usage_upper(
+        int(len(request.body) * price.cache_write_multiplier), 1024
+    )
+
+
+def test_context_byte_limit_unchanged() -> None:
+    with pytest.raises(ProbeError, match="上限"):
+        validate_request(_sized("deepseek-flash", 1024, 131072), "deepseek-flash")
