@@ -5,6 +5,8 @@ import type { ModelOption, Mode } from "@/lib/models";
 import { modeLabel } from "@/lib/models";
 import { shouldSubmitOnEnter } from "@/lib/composer-keys";
 import { ArticleReference } from "./articles";
+import { DataNotes } from "./data-notes";
+import { usePopover } from "./use-popover";
 export type { Mode } from "@/lib/models";
 
 function ModelSelector({
@@ -108,6 +110,43 @@ function ModelSelector({
   );
 }
 
+const EXAMPLES = [
+  "大阪三天两夜，2成人无儿童1间房，预算6万日元，想看景点并比较酒店",
+  "下雨天札幌有哪些室内景点？",
+  "帮我修改第二天下午，其他安排保留",
+];
+
+function Examples({ pick }: { pick: (text: string) => void }) {
+  const { open, toggle, rootProps } = usePopover();
+  return (
+    <div className="examples" {...rootProps}>
+      <button
+        type="button"
+        className="examples-trigger"
+        aria-expanded={open}
+        aria-haspopup="true"
+        onClick={toggle}
+      >
+        示例
+      </button>
+      {open && (
+        <div role="group" aria-label="示例" className="examples-pop">
+          {EXAMPLES.map((example) => (
+            <button
+              type="button"
+              className="examples-item"
+              key={example}
+              onClick={() => pick(example)}
+            >
+              {example}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function Composer({
   mode,
   setMode,
@@ -139,23 +178,7 @@ export function Composer({
           select={(id) => setText(`请参考攻略 ${id}，帮我规划京都旅行。`)}
         />
       )}
-      <div className="composer-examples small muted">
-        示例：
-        {[
-          "大阪三天两夜，2成人无儿童1间房，预算6万日元，想看景点并比较酒店",
-          "下雨天札幌有哪些室内景点？",
-          "帮我修改第二天下午，其他安排保留",
-        ].map((example) => (
-          <button
-            type="button"
-            className="link-button"
-            key={example}
-            onClick={() => setText(example)}
-          >
-            {example}
-          </button>
-        ))}
-      </div>
+      <Examples pick={setText} />
       <form
         className="composer"
         onSubmit={(event) => {
@@ -218,6 +241,7 @@ export function Composer({
           )}
         </div>
       </form>
+      <DataNotes />
       <div className="disclaimer small muted">
         {mode === "offline"
           ? "离线演示 · 酒店和订单为模拟数据"

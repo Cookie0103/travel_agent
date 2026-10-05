@@ -7,7 +7,6 @@ import { useModels } from "@/lib/models";
 import { Banner } from "./banner";
 import { Composer, type Mode } from "./composer";
 import { Conversation, Welcome, type SentMessage } from "./conversation";
-import { DataNotes } from "./data-notes";
 import { TripPanel } from "./trip-panel";
 
 export type Workspace = ReturnType<typeof useWorkspace>;
@@ -138,7 +137,6 @@ export function Workbench({ articleId }: { articleId?: string }) {
               setSheetOpen(false);
             }}
           />
-          <DataNotes />
         </div>
       )}
     </main>

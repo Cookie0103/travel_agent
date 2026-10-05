@@ -1,27 +1,11 @@
 /** Data attribution kept reachable but out of the chat: hover, click or focus opens it. */
 "use client";
-import { useState } from "react";
+import { usePopover } from "./use-popover";
 
 export function DataNotes() {
-  const [pinned, setPinned] = useState(false);
-  const [hover, setHover] = useState(false);
-  const open = pinned || hover;
+  const { open, toggle, rootProps } = usePopover();
   return (
-    <div
-      className="data-notes"
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget))
-          setPinned(false);
-      }}
-      onKeyDown={(event) => {
-        if (event.key === "Escape") {
-          setPinned(false);
-          setHover(false);
-        }
-      }}
-    >
+    <div className="data-notes" {...rootProps}>
       {open && (
         <div role="dialog" aria-label="数据说明" className="data-notes-pop">
           <p>
@@ -44,9 +28,9 @@ export function DataNotes() {
         type="button"
         aria-expanded={open}
         aria-label="数据说明"
-        onClick={() => setPinned((value) => !value)}
+        onClick={toggle}
       >
-        ⓘ<span className="data-notes-label"> 数据说明</span>
+        ⓘ 数据说明
       </button>
     </div>
   );
