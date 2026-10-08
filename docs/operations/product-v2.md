@@ -313,3 +313,4 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 最终Chrome路线提示3（由0!=3红→绿），景点提示0，对应PG失效route3/place0；正式V1仍可读，wrong draft notice0/saved notice1/hotel notice1。全程实际默认离线API，未改时钟或响应探针。只读PG仍1版本/V1哈希87e4…25f不变，前后POST/PATCH/DELETE均0。红截图只含版本上下文，错误提示在视口外，以实际AX/DOM计数证实；最终保存截图包含V1/保存提示/路线条目，已人工查看。证据t24-formal-expiry.json。
 - 最后前端 `pnpm --dir apps/web run test`62 passed/184.83ms，`run typecheck`/`run lint`/`run build`5路由通过；`uv run python scripts/dev.py check`254文件三平台strict/3契约/10入口退出0。路线修复后全部前端检查重跑；Python源码全程未变，完整离线回归仍在运行。独立只读初次及路线增量审查均无发现。
 - 完整 `uv run python scripts/dev.py test` 1027 passed/7 failed/1 skipped/1 live deselected/258.59s；7失败逐项同P-05，未改断言/跳过。Python源码全程未改，进程运行期间只补前端路线提示，其后前端62/type/lint/build/check全部重新通过。`git diff --check`/`scripts/check_docs.py`通过，独立审查两次无发现。
+- 实现 `9d3d521f5c4c8af5921e8b4fd121ba4b8555f7ef`提交/push后，远端SHA完全一致；P-19/task证据与STAR已落盘，恢复点为T2.5。
