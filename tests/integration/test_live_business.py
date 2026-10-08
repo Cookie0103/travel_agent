@@ -49,7 +49,8 @@ def test_api_runtime_completes_six_http_hotel_flow_with_real_sdk_and_pg(
                 content = results[-1]
                 data = json.loads(content if isinstance(content, str) else content[0]["text"])
                 offers.extend(o["offer_id"] for o in data["data"]["offers"])
-                assert len(offers) == 3
+                rows = data["data"]["offers"]
+                assert len(offers) == 6 and len({row["hotel_id"] for row in rows}) == 3
             if index in {3, 4}:
                 call = (
                     "refresh_hotel_offer",

@@ -170,7 +170,8 @@ def test_offline_workbench_compares_stages_confirms_and_changes_one_item(
         payload = comparison.presentations[0]["presentation"]
         assert isinstance(payload, dict)
         hotels = HotelPresentation.model_validate(payload["data"])
-        assert len(hotels.cards) == 3 and hotels.comparison.comparable
+        assert len(hotels.cards) == 6 and len({card.hotel_id for card in hotels.cards}) == 3
+        assert hotels.comparison.comparable
         initial = await run_demo(service, context, "演示：生成行程")
         assert initial.status == "completed", initial.answer
         assert initial.business_result and initial.business_result.kind == "draft_staged"

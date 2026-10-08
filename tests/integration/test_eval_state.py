@@ -239,16 +239,20 @@ def test_initial_quote_expiry_or_actual_date_change_requires_refresh(
                         select(EvidenceRow).where(EvidenceRow.session_id == context.session_id)
                     )
                 )
-            old = HotelOffer.model_validate(rows[0].payload["value"])
+            assert len(rows) == 2
             request = await business.travel.get_request(context)
-            with pytest.raises(ServiceError):
-                await BookingService(business.travel).hold(
-                    context,
-                    HoldHotelInput(
-                        offer_id=old.offer_id,
-                        expected_revision=request.revision,
-                    ),
-                )
+            for row in rows:
+                old = HotelOffer.model_validate(row.payload["value"])
+                with pytest.raises(ServiceError) as failed:
+                    await BookingService(business.travel).hold(
+                        context,
+                        HoldHotelInput(
+                            offer_id=old.offer_id,
+                            expected_revision=request.revision,
+                        ),
+                    )
+                assert failed.value.status == 409 and failed.value.code == "conflict"
+                assert failed.value.reason == "evidence_stale:hotel_offer"
             fresh = await HotelService(business.travel).refresh(
                 context, request.revision, old.offer_id
             )

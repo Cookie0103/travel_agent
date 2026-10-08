@@ -4,7 +4,6 @@ import asyncio
 import hashlib
 import json
 from dataclasses import replace
-from decimal import Decimal
 from pathlib import Path
 from typing import Literal
 from uuid import UUID
@@ -61,7 +60,13 @@ class HotelSearchInput(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     expected_revision: int = Field(strict=True, ge=0)
     hotel_id: str | None = Field(default=None, min_length=1, max_length=100)
-    limit: int = Field(default=4, strict=True, ge=1, le=6)
+    limit: int = Field(
+        default=4,
+        strict=True,
+        ge=1,
+        le=6,
+        description="不同酒店数；全结果最多6条报价，每家最多2套餐",
+    )
 
 
 class WeatherInput(BaseModel):
@@ -131,7 +136,7 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "search_hotel_offers",
-        "按当前完整入住条件查询酒店；实时模式逐晚核算乐天含税报价，未知不猜测。每张卡的offer_id用于present/refresh，evidence_id用于行程hotel_evidence_id。",
+        "按当前完整入住条件查询不同酒店（limit为酒店数）；整体最多6报价，每家最多2套餐，保持上游顺序。实时模式逐晚核算乐天含税报价，未知不猜测。每张卡的offer_id用于present/refresh，evidence_id用于行程hotel_evidence_id。",
         HotelSearchInput.model_json_schema(),
     ),
     ToolDefinition(
@@ -613,18 +618,15 @@ def catalog_summary(row: dict[str, object]) -> dict[str, object]:
     return result
 
 
-TRIMMED_WARNING = "报价过多，仅保留价格最低的部分；可用hotel_id缩小范围"
+TRIMMED_WARNING = "报价过多，按上游顺序保留部分报价；所列数量未必达到要求，可用hotel_id缩小范围"
 OFFER_DROP = ("stay", "request_revision", "image_url")  # 同一次查询共用的入住条件/展示字段
 
 
 def bounded_offers(
     offers: list[dict[str, object]], warning: tuple[str, ...]
 ) -> tuple[list[dict[str, object]], bool]:
-    """先去掉每张卡重复/非决策字段，仍超长再按总价从低到高保留整张卡；不截断JSON。"""
-    rows = sorted(
-        ({k: v for k, v in o.items() if k not in OFFER_DROP} for o in offers),
-        key=lambda o: Decimal(str(o["total"])) if o.get("total") is not None else Decimal("1e99"),
-    )
+    """去重复展示字段，仍超长按上游顺序保留整张卡；不按价格重排或截断JSON。"""
+    rows = [{k: v for k, v in offer.items() if k not in OFFER_DROP} for offer in offers]
     kept = len(rows)
 
     def size(count: int) -> int:

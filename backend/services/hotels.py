@@ -6,6 +6,7 @@ from uuid import UUID
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
+from backend.domain.hotel_selection import hotel_rate_indices
 from backend.domain.hotels import HotelOffer, compare, quote
 from backend.domain.travel_request import TravelRequest, lodging_budget_relation
 from backend.persistence.travel import entity_evidence, find_evidence, hotel_offer_elsewhere
@@ -106,12 +107,14 @@ class HotelService:
         except (OSError, ValueError):
             raise ServiceError(503, "unavailable", "模拟酒店目录暂不可用") from None
         records = []
+        rate_keys: list[tuple[str, str]] = []
         for rate in rates:
             if (hotel_id and rate.hotel_id != hotel_id) or (rate_id and rate.rate_id != rate_id):
                 continue
             offer = quote(rate, request, datetime.now(UTC))
             if offer is None:
                 continue
+            rate_keys.append((offer.hotel_id, offer.rate_id))
             records.append(
                 EvidenceRecord(
                     entity_id=str(offer.offer_id),
@@ -128,8 +131,7 @@ class HotelService:
                     data_mode="fixture",
                 )
             )
-            if len(records) >= limit:
-                break
+        records = [records[index] for index in hotel_rate_indices(rate_keys, limit)]
         if records:
             await self.travel.record_evidence(context, records)
         return tuple(records)

@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, JsonValue
 
 from backend.adapters.external_api import ApiUsage, parse_response, request_json
 from backend.domain.external_data import ExternalDataError, GeoPoint
+from backend.domain.hotel_selection import hotel_rate_indices
 from backend.domain.hotels import HotelOffer, Money
 from backend.domain.travel_request import TravelRequest
 from backend.profile import current
@@ -172,7 +173,13 @@ class Rakuten:
             for item in first
             if (not hotel_id or str(item.hotel.hotelNo) == hotel_id)
             and (not rate_id or item.key == rate_id)
-        )[:limit]
+        )
+        selected = tuple(
+            selected[index]
+            for index in hotel_rate_indices(
+                [(str(item.hotel.hotelNo), item.key) for item in selected], limit
+            )
+        )
         reason = (
             "儿童计价未知"
             if request.child_ages

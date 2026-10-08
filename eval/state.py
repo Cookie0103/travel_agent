@@ -187,22 +187,24 @@ async def prepare_offer(
     )
     if state.offer == "expired":
         expired = datetime.now(UTC) - timedelta(seconds=1)
-        old = record.model_copy(
-            update={
-                "valid_until": expired,
-                "retrieved_at": expired - timedelta(minutes=10),
-                "value": offer.model_copy(
-                    update={
-                        "quoted_at": expired - timedelta(minutes=10),
-                        "expires_at": expired,
-                    }
-                ).model_dump(mode="json"),
-            }
-        )
         async with transaction(travel.database) as db:
-            row = await db.get(EvidenceRow, record.evidence_id)
-            assert row is not None
-            row.payload = old.model_dump(mode="json")
+            for expired_record in records:
+                expired_offer = HotelOffer.model_validate(expired_record.value)
+                old = expired_record.model_copy(
+                    update={
+                        "valid_until": expired,
+                        "retrieved_at": expired - timedelta(minutes=10),
+                        "value": expired_offer.model_copy(
+                            update={
+                                "quoted_at": expired - timedelta(minutes=10),
+                                "expires_at": expired,
+                            }
+                        ).model_dump(mode="json"),
+                    }
+                )
+                row = await db.get(EvidenceRow, expired_record.evidence_id)
+                assert row is not None
+                row.payload = old.model_dump(mode="json")
     elif state.offer == "stale":
         assert request.start_date and request.end_date
         await travel.patch_request(

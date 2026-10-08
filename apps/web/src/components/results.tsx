@@ -10,6 +10,7 @@ import {
 } from "@/lib/availability";
 import { sourceHref, type Hotels, type Plan } from "@/lib/api";
 import type { components } from "@/lib/api-types";
+import { hotelGroups, selectedHotelOffer } from "@/lib/hotel-groups";
 import { CalendarButton } from "./calendar-button";
 export const formatYen = (value: string) =>
   Number(value).toLocaleString("ja-JP");
@@ -166,11 +167,13 @@ export function HotelResults({
   revision?: number;
   hold: (offerId: string, revision: number) => Promise<void>;
 }) {
-  const expired = expiredHotels(hotels, useClock());
+  const now = useClock();
+  const expired = expiredHotels(hotels, now);
+  const groups = hotelGroups(hotels.cards);
   return (
     <section className={`results-section${compact ? " is-compact" : ""}`}>
       <div className="section-heading">
-        <h2>酒店比较</h2>
+        <h2>酒店比较 · {groups.length}家</h2>
       </div>
       <p className="muted">{hotels.comparison.scope}</p>
       {hotels.comparison.budget_relation && (
@@ -187,45 +190,17 @@ export function HotelResults({
         </p>
       )}
       <div className="hotel-grid">
-        {hotels.cards.map((card) => (
-          <div key={card.offer_id}>
-            <Hotel card={card} />
-            {card.data_mode === "live" ? (
-              <>
-                {card.booking_url && (
-                  <a
-                    className="button-link primary"
-                    href={card.booking_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                  >
-                    去乐天查看 ↗
-                  </a>
-                )}
-                {choose && (
-                  <button disabled={disabled} onClick={() => choose(card)}>
-                    选用此酒店
-                  </button>
-                )}
-              </>
-            ) : (
-              <button
-                disabled={
-                  disabled ||
-                  expired ||
-                  card.total === null ||
-                  revision !== card.request_revision
-                }
-                onClick={() => void hold(card.offer_id, card.request_revision)}
-              >
-                暂留模拟房间
-              </button>
-            )}
-            {!expired &&
-              hotels.comparison.lowest_offer_ids.includes(card.offer_id) && (
-                <p className="lowest">所列同口径报价中的最低价</p>
-              )}
-          </div>
+        {groups.map((group) => (
+          <HotelPackage
+            key={group.hotel_id}
+            offers={group.offers}
+            disabled={disabled}
+            revision={revision}
+            hold={hold}
+            choose={choose}
+            expiredComparison={expired}
+            lowest={hotels.comparison.lowest_offer_ids}
+          />
         ))}
       </div>
       {hotels.cards.some((card) => card.data_mode === "live") && (
@@ -237,6 +212,96 @@ export function HotelResults({
     </section>
   );
 }
+function HotelPackage({
+  offers,
+  disabled,
+  revision,
+  hold,
+  choose,
+  lowest,
+  expiredComparison,
+}: {
+  offers: Hotels["cards"];
+  disabled: boolean;
+  revision?: number;
+  hold: (offerId: string, revision: number) => Promise<void>;
+  choose?: (card: Hotels["cards"][number]) => void;
+  lowest: string[];
+  expiredComparison: boolean;
+}) {
+  const [selected, setSelected] = useState<string>();
+  const card = selectedHotelOffer(offers, selected);
+  const now = useClock();
+  if (!card) return null;
+  const expired = now > 0 && Date.parse(card.expires_at) <= now;
+  return (
+    <div>
+      {offers.length > 1 && (
+        <label>
+          房型/套餐
+          <select
+            aria-label={`${card.hotel_name}的房型/套餐`}
+            value={card.offer_id}
+            onChange={(event) => setSelected(event.target.value)}
+          >
+            {offers.map((offer, index) => (
+              <option key={offer.offer_id} value={offer.offer_id}>
+                {index + 1}. {offer.room_type} ·{" "}
+                {offer.total === null
+                  ? "总价未知"
+                  : `¥ ${formatYen(offer.total)}`}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <Hotel card={card} />
+      {expired && (
+        <p className="warning">所选套餐报价已过期，请重新比较酒店。</p>
+      )}
+      {card.data_mode === "live" ? (
+        <>
+          {card.booking_url && (
+            <a
+              className="button-link primary"
+              href={card.booking_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              去乐天查看 ↗
+            </a>
+          )}
+          {choose && (
+            <button
+              disabled={
+                disabled || expired || revision !== card.request_revision
+              }
+              onClick={() => choose(card)}
+            >
+              选用此酒店
+            </button>
+          )}
+        </>
+      ) : (
+        <button
+          disabled={
+            disabled ||
+            expired ||
+            card.total === null ||
+            revision !== card.request_revision
+          }
+          onClick={() => void hold(card.offer_id, card.request_revision)}
+        >
+          暂留模拟房间
+        </button>
+      )}
+      {!expiredComparison && lowest.includes(card.offer_id) && (
+        <p className="lowest">所列同口径报价中的最低价</p>
+      )}
+    </div>
+  );
+}
+
 export function PlanResults({
   plan,
   disabled,

@@ -20,10 +20,11 @@ from backend.adapters.google_maps import (
     opening_hours,
 )
 from backend.adapters.open_meteo import Forecast
-from backend.adapters.rakuten import Rakuten, candidates
+from backend.adapters.rakuten import Candidate, Rakuten, candidates
 from backend.domain.execution import RunContext, RuntimeEvent, event_metadata
 from backend.domain.external_data import ExternalDataError, GeoPoint
 from backend.domain.opening_hours import opening_state
+from backend.domain.travel_request import TravelRequest
 from backend.services.calendar import escape, fold
 from tests.test_hotels import request
 
@@ -204,3 +205,45 @@ def test_google_missing_place_types_remain_unknown_instead_of_inventing_attracti
     assert mapped.category == "unknown"
     assert mapped.name == parsed.displayName.text
     assert mapped.latitude == parsed.location.latitude
+
+
+def test_rakuten_limit_covers_distinct_hotels_without_extra_nightly_calls() -> None:
+    seed = candidates(sample())[0]
+    rows = tuple(
+        seed.model_copy(
+            update={
+                "hotel": seed.hotel.model_copy(update={"hotelNo": hotel}),
+                "room": seed.room.model_copy(update={"planId": plan}),
+            }
+        )
+        for hotel, plan in [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (3, 1), (3, 2), (4, 1), (5, 1)]
+    )
+    calls: list[tuple[int, ...]] = []
+
+    class ControlledRakuten(Rakuten):
+        async def nightly(
+            self,
+            request: TravelRequest,
+            day: date,
+            point: GeoPoint,
+            hotel_ids: tuple[int, ...] = (),
+        ) -> tuple[Candidate, ...]:
+            calls.append(hotel_ids)
+            return tuple(
+                row.model_copy(update={"charge": seed.charge.model_copy(update={"stayDate": day})})
+                for row in rows
+                if seed.charge and (not hotel_ids or row.hotel.hotelNo in hotel_ids)
+            )
+
+    async def exercise() -> None:
+        usage = _CountingUsage({})
+        async with httpx.AsyncClient() as http:
+            provider = ControlledRakuten("test", "test", "", "", http, usage)
+            result = await provider.search(
+                request(), GeoPoint(name="京都", latitude=35, longitude=135), limit=4
+            )
+        assert [offer.hotel_id for offer in result] == ["1", "1", "2", "2", "3", "4"]
+        assert len(result) == 6 and all(offer.total == Decimal(30000) for offer in result)
+        assert calls == [(), (1, 2, 3, 4), (1, 2, 3, 4)]
+
+    asyncio.run(exercise())

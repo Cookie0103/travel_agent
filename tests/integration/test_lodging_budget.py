@@ -88,10 +88,14 @@ def test_old_rows_default_unknown_and_quote_snapshot_stays_legacy_readable(
             ),
         )
         records = await HotelService(travel).search(context, 2, limit=1)
-        assert len(records) == 1
-        value = records[0].value
-        assert isinstance(value, dict)
-        assert LegacyRequest.model_validate(value["request"]).revision == 2
+        assert len(records) == 2
+        hotel_ids = set()
+        for record in records:
+            value = record.value
+            assert isinstance(value, dict)
+            hotel_ids.add(value["hotel_id"])
+            assert LegacyRequest.model_validate(value["request"]).revision == 2
+        assert len(hotel_ids) == 1
         async with transaction(travel.database) as db:
             row = await db.get(TravelRequestRow, context.session_id)
             assert row

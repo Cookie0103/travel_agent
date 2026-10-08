@@ -163,3 +163,29 @@ def test_missing_children_empty_results_and_unavailable_are_distinct(
         assert failed.code == "unavailable" and "private" not in failed.suggestion
 
     runner.run(exercise())
+
+
+def test_search_four_hotels_keeps_unique_hotel_coverage_and_two_rates(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    from backend.providers.hotel_fixture import load_rates
+
+    rates, version = load_rates()
+    grouped = tuple(sorted(rates, key=lambda rate: rate.hotel_id))
+    monkeypatch.setattr("backend.services.hotels.load_rates", lambda: (grouped, version))
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        records = await HotelService(travel).search(context, 1, limit=4)
+        offers = [HotelOffer.model_validate(record.value) for record in records]
+        ids = [offer.hotel_id for offer in offers]
+        assert len(set(ids)) == 4 and len(offers) == 6
+        assert max(ids.count(id) for id in ids) == 2
+        presented = await HotelService(travel).present(
+            context, 1, tuple(offer.offer_id for offer in offers)
+        )
+        cards = presented["cards"]
+        assert isinstance(cards, list) and len(cards) == 6
+        assert [card["offer_id"] for card in cards] == [str(offer.offer_id) for offer in offers]
+
+    runner.run(exercise())

@@ -417,3 +417,20 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - Chrome实际红：打开编辑，开始标题107点击只focus年份110；截图无日历弹层。getByText exact因来源标签无匹配而超时，按实际AX标题点击，无猜坐标/数据修改。P47记录，拟复用原生showPicker、只click不focus触发，保留无支持浏览器/键盘输入。
 - 首实现web84/type/lint/build/check263通过，但Chrome AX标题点击绿测仍无日历；独立P3 label转发重复路径REASONED。未宣称通过；getByLabel exact同样因来源text标签不匹配超时，后续按截图文字与已观察DOM date控件验证。P48记录，成功打开后阻止默认、失败时保留默认。
 - 系统限制核实：cua.getApp Google Chrome找不到可见window；getState明确native apps失败因为Mac已锁定且无法自动解锁。Chrome扩展DOM/页面截图可用，但不能观察系统原生picker；先前“无弹层”只证明截图未捕获，不能证明实际picker未打开。DOM安全evaluate typeof showPicker未定义不能当作真实浏览器API无支持证明，未据此修改实现。已请求用户解锁，不绕过锁屏/换浏览器。T3.6保持doing/待原生弹窗与键盘验收；静态/type/lint/web84/build/check263通过，小型入口先保存WIP commit以保持下一独立任务开工clean，未宣称完成。
+
+## 2026-10-08 T4.1 酒店分组
+
+- 开工git status空/HEAD7bc3bdf/当前分支；T3.6 WIP已push、保持doing待系统解锁，不丢日期未完成状态。按需读rakuten/domain hotels/service/tool/cards/results/相关原测试；先在ADR014定保持flat契约、现有6报价上限与每家最多2套餐，limit不同酒店优先。P49记录；发现P50压缩层旧总价sorted违反D7，先新红再更正已过时旧测试，保8K/完整卡片验证。无扩供应商调用/付费/生产变更。
+- 先红：adapter/压缩2 failed/24 passed/0.27s；web84 pass/1 suite failed/288.65ms缺hotel-groups。新增PG首1 fail/4 pass/0.49s，源目录第一六家各一套餐，红为4家/4offers，未证明只2家；将受控fixture按酒店相邻组织后原断言仍红、实际2家/4offers，保原所有assert。
+- 首实现domain38 pass/1 fail/0.48s仅旧最低价排序assert；根据D7改为准确上游prefix，保整卡与8K断言。PG邻近6 failed/6 passed/4.47s是旧lookup固定helper limit2要求2offers；新酒店语义返回4，补P51，改输入limit1且原断言不变。最终领域44 passed/0.27s，web86 passed/402.82ms/type/lint通过。首check6类型错误（Evidence值JsonValue不能直接字符串索引、新测试dict invariance/卡片object未narrow），改用报价构造时已有typed rate keys与isinstance，不ignore。
+- 最终相关PG12 passed/4.81s；初次check264/三平台/3契约/10入口exit0、web86/type/lint/build5路由通过，独立只读无阻塞。Chrome复用T33本地京都rev8：新离线比较6offers/3家/3选择框，各两套餐；选家庭房offer9e9f…d47f，价格15000→20000、含早/可退、最低价标签消失。启动本地mock_supplier，核实loopback；服务实际使用本地PG（工具启动说明误称内存，此处更正），只点击暂留，不确认订单；PG booking held且offer匹配、supplier hold1/order0、Evidence9不增、rev8/原V1 hash不变。截图数量与套餐两份已查看，JSON脱敏落盘。完整回归执行中，T3.6锁屏问题没有因酒店DOM通过而关闭。
+- 首完整exit1：1120 passed/10 failed/1 skipped/1 live deselected/256.56s；原7外新增live_business/old_rows_snapshot/workbench三例，均旧limit套餐数量断言。SDK固定转发第3步assert3实际6导致HTTP线程中断/provider_error，非业务provider失败；另limit1实际同酒店2报价、demo3实际3酒店6报价。P51补记录，保六HTTP/工具顺序/旧快照/正式版本等原断言，只更正酒店+报价精确数量，并加强每条旧快照读回。
+
+- 第二完整1122 passed/8 failed/259.96s，原7外eval_state[expired]未抛：setup只将records0过期，第二套餐仍新鲜，SQL无序取第一行可能是它；非hold规则放宽。新P52记录，强化每条旧报价hold拒绝先红，然后expired准备器更新全体，不以排序/跳过规避。
+- 路径探查误猜backend/domain/presentations.py、tests/test_presentations.py、evaluation/evals不存在，已改用rg --files与实际eval/state.py；没有读取凭据/改变断言绕过失败。
+
+- P52逐条报价拒绝首红1 failed/1 passed/0.86s→全文件18 passed/7.22s。独立P2指出任何ServiceError可能由supplier503产生；断言加409/conflict/evidence_stale:hotel_offer以验证证据前置。为避免测试中途修改源码，主动停止刚开始的第三全量exit130（不是结果），加强测试后重新全量。静态check265仍通过。
+
+- 最终P52严格失败原因专项 `uv run python -m pytest tests/integration/test_eval_state.py -q`：18 passed/7.16s；`uv run python scripts/dev.py check` exit0，265文件三平台strict/3分层契约/文档10入口；完整第四次核对中（第三次主动中止未计成绩）。Python-only兼容/评测准备变更没有重复无关web测试，已建web86/type/lint/build证据仍有效。
+
+- 最终 `uv run python scripts/dev.py test`：1123 passed/7 failed/1 skipped/1 live deselected/262.37s（exit1）；对T3.5逐名比较失败集合完全相同，新增问题均消除，非全绿。严格失效PG18/.7.16、兼容15/7.44、酒店PG12/4.81、领域44/.27、web86/402.82ms/type/lint/build/check265已验收。独立P52错误原因边界关闭。无生产变更/付费调用。

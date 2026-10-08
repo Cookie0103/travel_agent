@@ -26,7 +26,7 @@ async def search(
     executor: TravelToolExecutor, context: RunContext, revision: int
 ) -> list[dict[str, object]]:
     result = await executor.execute(
-        context, "search_hotel_offers", {"expected_revision": revision, "limit": 2}
+        context, "search_hotel_offers", {"expected_revision": revision, "limit": 1}
     )
     assert result.code is None
     offers = result.data["offers"]

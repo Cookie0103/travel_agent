@@ -136,9 +136,20 @@ def test_oversized_hotel_search_is_compacted_then_trimmed_whole_cards() -> None:
     kept, trimmed = bounded_offers(offers, ("w",))
     assert trimmed and 1 <= len(kept) < 6
     totals = [str(o["total"]) for o in kept]
-    assert totals == sorted(totals)  # 低价优先
+    assert totals == [str(o["total"]) for o in offers[: len(kept)]]  # D7：上游顺序
     assert all("stay" not in o and "image_url" not in o for o in kept)
     payload = ToolResult({"offers": kept}, warnings=("w", "x" * 60)).payload()
     assert len(json.dumps(payload, ensure_ascii=False)) <= RESULT_LIMIT
     small, untouched = bounded_offers(offers[:2], ("w",))
     assert len(small) == 2 and not untouched
+
+
+def test_offer_compaction_preserves_upstream_order_instead_of_sorting_price() -> None:
+    from backend.tools.travel import bounded_offers
+
+    offers: list[dict[str, object]] = [
+        {"offer_id": str(uuid4()), "evidence_id": str(uuid4()), "total": str(price)}
+        for price in [30000, 10000, 20000]
+    ]
+    kept, trimmed = bounded_offers(offers, ())
+    assert not trimmed and [row["offer_id"] for row in kept] == [row["offer_id"] for row in offers]
