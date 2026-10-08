@@ -170,3 +170,13 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 开始前 `git status --short --branch`：指定分支、工作区干净；本地 HEAD 与本地 origin 跟踪引用均 `8d99da0`（VERIFIED，不代表新查询远端）。
 - 用户明确 D6：两个预算原值均保存，validator 计算 conflict/warning/无法判断，不另存冲突标志；D7：B08 本批部分修复；D8：当前 checkout 开发、每项开工前检查干净。同步计划 §2/§3.5/§4/§6，并更正 §7、P-01 假设 4。
 - `python3 scripts/check_docs.py`：退出 0，10 份入口及仓库链接通过。`git diff --check`：退出 0。文档自审核对用户决定逐项一致；本步未改业务代码、未操作 Railway、未调用模型或旅行数据 API。
+
+## 2026-10-08 T0.1 uv 配置复现与修复
+
+- 普通 `uv run python scripts/dev.py check`：先输出全局日期新增导致重新解析，随后 PyPI DNS 失败，退出 2；`uv lock --check --offline` 同样重新解析，因缓存缺失返回 1。全局配置实际为相对 `7 days`，不是计划中固定日期字面量。
+- 先红 `uv run --no-sync python -m pytest tests/test_dependency_resolution.py -q`：1 failed；临时用户策略 2000-01-01 使锁定 alembic 不可用。
+- 失败尝试：项目 `exclude-newer=false` 被 uv 0.11.7 拒绝（TOML Helper parse error）；改固定 `2026-10-08T00:00:00Z`。`uv lock --offline` 因 registry 缓存不足失败；获准联网 `uv lock` 退出 0、88 packages，diff 仅新增 options 日期，版本与制品均保持不变。
+- 绿色 `uv run python -m pytest tests/test_dependency_resolution.py -q`：1 passed / 0.08s。普通 `uv run python scripts/dev.py check`：退出 0，249 文件格式与三平台 strict，3 契约、10 文档地图通过。
+- 完整 `uv run python scripts/dev.py test`：沙箱 18 failed、788 passed、1 skipped、1 live deselected、195 errors / 15.65s。失败涉及 live_application（6）、persona_judge（6）、sdk_cli_offline（2）、sdk_lifecycle（1）、tracing（1）、travel_sdk_offline（2）；代表根因为本地 HTTPServer.bind PermissionError，非付费上游调用。获准启动本地替身后同一完整命令：806 passed、1 skipped、1 live deselected、195 PG setup errors / 45.41s。原 18 项全部转绿，PG 错误仍未解决。私有原输出在 ignored `.cache/t01-check.log`、`.cache/t01-test.log`、`.cache/t01-test-unrestricted.log`，不提交长日志。
+- 环境：Docker CLI 在 Docker.app 内，PATH 未包含；daemon 连接失败（/var/run/docker.sock 缺失），context 只有 default；本地 .env 存在、数据库配置有效且仅指向 localhost，连接不可用。未输出配置值或凭据；已异步告知用户启动现有 Docker Desktop。
+- 自审：固定策略覆盖用户配置；锁文件无升级；测试真实 CLI、不改 lock。独立只读审查：Windows 注入 APPDATA（原 P2）已修复并复核通过，macOS 专项 1 passed；Windows 行为依据官方配置目录文档为 REASONED，非在 Windows 实机运行。
