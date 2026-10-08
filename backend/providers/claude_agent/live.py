@@ -239,17 +239,19 @@ def run_live(
                 encoding="utf-8",
                 newline="\n",
             )
-        (directory / "report.json").write_text(
-            json.dumps(stored, ensure_ascii=False, indent=2, default=str) + "\n",
-            encoding="utf-8",
-            newline="\n",
-        )
+        report_path = directory / "report.json"
+
+        def save_report() -> None:
+            """trace_report 会就地补写 trace 字段；每次保存都重新序列化当前 stored。"""
+            report_path.write_text(
+                json.dumps(stored, ensure_ascii=False, indent=2, default=str) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+
+        save_report()
         trace_report(stored, directory, exporter)
-        (directory / "report.json").write_text(
-            json.dumps(stored, ensure_ascii=False, indent=2, default=str) + "\n",
-            encoding="utf-8",
-            newline="\n",
-        )
+        save_report()
         if emit is not None:
             code = report.get("code")
             if report.get("status") == "success":
