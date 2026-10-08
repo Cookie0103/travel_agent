@@ -198,3 +198,15 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 自审：历史不新增表；预算细节列是 T3.3 的增量迁移，保留旧 conditions 以兼容旧严格模型；warning 使用既有 unknown/partial，不引入第四状态。
 - 独立只读审查指出 explicit_fields 未明确参与幂等区分、来源 no-op 后缓存回执可能过时（P2）；已明确规范化 explicit_fields + 来源入口参与 operation identity，缓存命中重读来源，并列出对应 PG 测试。outbox 补身份/session 绑定和 401 失效。
 - `python3 scripts/check_docs.py`：退出 0，10 份入口；`git diff --check` 退出 0。独立复核 P2 关闭、无新增发现。纯文档提交复用 T0.2 同代码完整基线（已知 7 失败保留），仅 SKIP=project-test 避免重复；project-check 仍执行。
+
+## 2026-10-08 T0.5 保存与身份复核
+
+- `f2a6a61` 普通 push，新查询远端 SHA 完整一致，开工前 git status 干净；`uv run python scripts/dev.py check` 退出0、249文件/3契约/10文档入口。提交输出没有显示钩子执行，以上为显式命令证据，不声称 git 钩子实际运行。
+- 首次 `uv run python scripts/bootstrap_demo.py` 退出1，ModuleNotFoundError: backend；没有进入迁移。改项目容器使用的模块入口 `uv run python -m scripts.bootstrap_demo` 退出0，166样例导入（snapshot），不初始化真实用户或订单。
+- `DEMO_MODE=true uv run python -m backend.server` 默认 offline、仅127.0.0.1:8000；`pnpm --dir apps/web run start` 127.0.0.1:3000。Next 提示 standalone 应使用 node .next/standalone/server.js，当前 start 实际可用，未改部署入口。私有过程日志 ignored `.cache/t05-api.log`、`t05-web.log`。
+- 用户 Chrome 的 localhost 初始缓存已遭401，应用显示身份失效；该未知旧缓存不作为根因证据。新建两条合成会话用于受控复核，固定示例条件，0真实模型/供应商调用，0订单。
+- 案例A：点击生成/确认 POST200，正式V1；刷新→我的行程仍V1。针对已核对的新建会话临时将用户有效期改为过去（原时间保存在ignored cache），刷新 GET request401/“身份已失效”；再刷新“还没有确认的行程”。只读SQL在故障前后：plans.current_version=1、plan_versions行数1、plan_drafts确认行1；payload哈希相同 `b30de0e9e4df749639be1de7cf34b81248883e116334aca56cdb90bb1827165a`。用户原有效期已恢复，清理后的浏览器身份未伪造恢复。
+- 案例B：第二个合成草稿临时过期，点击确认 POST409/“草稿已过期，请重新生成”，卡片仍待确认；转我的行程空，SQL current_version=0/version_rows=0/confirmed_version=null，符合确未确认。草稿原有效期已恢复。仅改目标会话/草稿，连接工具强制URL host为loopback，不记录token/行程正文。
+- `uv run python -m pytest tests/integration/test_plans.py -q`：10 passed/2.08s；`pnpm --dir apps/web run test`：25 passed/0 failed/0 skipped。前者真实随机PG库，后者含恢复helper测试，不能当成实际hook竞争已验证。未改代码，复用T0.2同代码完整基线，7项SDK失败保留。
+- 脱敏摘要与4张本地页面截图在 docs/evidence/product-v2；原线上事件和确定性迟到hydrate仍未验证。P-01保持doing，T0.5只完成调查。
+- 独立只读审查：4截图/摘要/PG边界与C6一致，未见秘密或过度结论；T0.5可关闭为调查完成，P-01仍doing。check_docs 10入口、diff check通过；文档提交未改业务代码，完整同代码基线不重复运行。

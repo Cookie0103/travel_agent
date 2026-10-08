@@ -1,0 +1,33 @@
+{
+  "environment": "local/offline, code 3771886, contracts f2a6a61",
+  "authentication_case": {
+    "before": {
+      "current_version": 1,
+      "version_rows": 1,
+      "confirmed_drafts": 1
+    },
+    "after_401_and_second_refresh": {
+      "current_version": 1,
+      "version_rows": 1,
+      "confirmed_drafts": 1
+    },
+    "payload_sha256": "b30de0e9e4df749639be1de7cf34b81248883e116334aca56cdb90bb1827165a",
+    "payload_unchanged": true,
+    "expiry_restored": true,
+    "first_refresh": "身份已失效，请重新创建演示会话。",
+    "second_refresh": "还没有确认的行程"
+  },
+  "expired_draft_case": {
+    "confirm_http_status": 409,
+    "message": "草稿已过期，请重新生成",
+    "current_version": 0,
+    "version_rows": 0,
+    "confirmed_version": null,
+    "expiry_restored": true
+  },
+  "limits": [
+    "Synthetic local cases only; original production incident root cause remains unproven.",
+    "No deterministic late-hydrate race injection; no claim that this hypothesis is excluded.",
+    "No model/provider requests, no bookings, no production database access."
+  ]
+}
