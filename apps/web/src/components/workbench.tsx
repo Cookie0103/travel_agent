@@ -6,7 +6,7 @@ import { ArticleReference } from "./articles";
 import { useModels } from "@/lib/models";
 import { Banner } from "./banner";
 import { Composer, type Mode } from "./composer";
-import { Conversation, Welcome, type SentMessage } from "./conversation";
+import { Conversation, Welcome } from "./conversation";
 import { TripPanel } from "./trip-panel";
 
 export type Workspace = ReturnType<typeof useWorkspace>;
@@ -15,7 +15,6 @@ export function Workbench({ articleId }: { articleId?: string }) {
   const workspace = useWorkspace();
   const [text, setText] = useState("");
   const { mode, setMode, options } = useModels();
-  const [sent, setSent] = useState<SentMessage[]>([]);
   const [collapsed, setCollapsed] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const active = !!(
@@ -23,13 +22,10 @@ export function Workbench({ articleId }: { articleId?: string }) {
   );
   const { identity } = workspace;
   const submit = (message: string, via: Mode) => {
-    if (!message.trim() || workspace.busy) return;
-    const pending = identity?.pending_message;
-    // A mismatched text is rejected by the hook; do not show it as sent.
-    if (!pending || (pending.text === message && pending.mode === via))
-      setSent((old) => [...old, { id: old.length, text: message }]);
-    if (!pending) setText("");
-    void workspace.send(message, via);
+    if (!message.trim() || workspace.busy || workspace.restoring) return;
+    void workspace.send(message, via).then((accepted) => {
+      if (accepted) setText((current) => (current === message ? "" : current));
+    });
   };
   const attention =
     !!workspace.plan?.draft_id ||
@@ -106,7 +102,6 @@ export function Workbench({ articleId }: { articleId?: string }) {
               )}
               <Conversation
                 workspace={workspace}
-                sent={sent}
                 mode={mode}
                 send={submit}
                 fill={setText}
@@ -122,7 +117,7 @@ export function Workbench({ articleId }: { articleId?: string }) {
               options={options}
               text={text}
               setText={setText}
-              busy={workspace.busy}
+              busy={workspace.busy || workspace.restoring}
               active={active}
               send={submit}
               cancel={() => void workspace.cancel()}

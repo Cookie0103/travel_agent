@@ -23,3 +23,5 @@ uv run python scripts/dev.py web
 缓存由pnpm-workspace.yaml限定项目.cache；不执行unrs-resolver安装脚本。
 金额使用服务端字符串；模型不能代替确认。刷新恢复当前标签页身份/执行/正式行程。
 未知响应的消息保留原client_message_id，用户明确重试；重连只读事件，不重发消息。
+对话按服务端轮次列表恢复，history.ts负责按run_id/sequence合并早页及保留本标签全文。
+实时原回复沿用服务端临时保留策略，跨重启历史可能只显示已持久化的说明。

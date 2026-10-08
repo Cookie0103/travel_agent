@@ -7,11 +7,13 @@ import {
   messageInput,
   readDraft,
   readConfirmedPlan,
+  readRunHistory,
   readEvents,
   readWhile,
   type Identity,
   type RequestState,
   type Run,
+  type HistoricalRun,
   type Plan,
   type Hotels,
   type AppEvent,
@@ -19,6 +21,7 @@ import {
 } from "./api";
 import type { components } from "./api-types";
 import { isCardEvent } from "./early-cards";
+import { mergeHistory, mergeRun } from "./history";
 import type { Mode } from "./models";
 
 const STORAGE = "travel-demo-v2";
@@ -31,6 +34,9 @@ export function useWorkspace({
   const [identity, setIdentity] = useState<Identity>();
   const [request, setRequest] = useState<RequestState>();
   const [run, setRun] = useState<Run>();
+  const [history, setHistory] = useState<HistoricalRun[]>([]);
+  const [historyBefore, setHistoryBefore] = useState<string | null>(null);
+  const [historyError, setHistoryError] = useState("");
   const [events, setEvents] = useState<AppEvent[]>([]);
   const [hotels, setHotels] = useState<Hotels>();
   const [plan, setPlan] = useState<Plan>();
@@ -42,6 +48,7 @@ export function useWorkspace({
   const stream = useRef<AbortController | null>(null);
   const cursor = useRef(0);
   const generation = useRef(0);
+  const historyLoaded = useRef(false);
 
   const fail = useCallback((failure: unknown) => {
     if (failure instanceof ApiError && failure.status === 401) {
@@ -52,6 +59,9 @@ export function useWorkspace({
       setIdentity(undefined);
       setRequest(undefined);
       setRun(undefined);
+      setHistory([]);
+      setHistoryBefore(null);
+      historyLoaded.current = false;
       setEvents([]);
       setHotels(undefined);
       setPlan(undefined);
@@ -139,6 +149,11 @@ export function useWorkspace({
         const final = await api<Run>(`/runs/${runId}`, current.token);
         if (!active()) return;
         setRun(final);
+        setHistory((old) =>
+          old.map((row) =>
+            row.run_id === final.run_id ? { ...row, ...final } : row,
+          ),
+        );
         for (const event of final.presentations ?? [])
           await hydrate(event, current, active);
         if (!active()) return;
@@ -163,6 +178,49 @@ export function useWorkspace({
       }
     },
     [hydrate, fail],
+  );
+
+  const restoreConversation = useCallback(
+    async (current: Identity, active: () => boolean) => {
+      let latestId = current.run_id;
+      try {
+        const page = await readRunHistory(current);
+        if (!active()) return;
+        setHistory((old) =>
+          active() ? mergeHistory(old, page.items, current.session_id) : old,
+        );
+        if (!historyLoaded.current) {
+          setHistoryBefore(page.next_before);
+          historyLoaded.current = true;
+        }
+        setHistoryError("");
+        latestId = page.items.at(-1)?.run_id;
+      } catch (failure) {
+        if (!active()) return;
+        if (!(failure instanceof ApiError && failure.status === 404))
+          throw failure;
+        setHistoryError("当前服务版本暂不支持旅行历史。");
+      }
+      if (!latestId || !active()) return;
+      const saved = await api<Run>(`/runs/${latestId}`, current.token);
+      if (!active()) return;
+      setRun((old) => (active() ? mergeRun(old, saved) : old));
+      setHistory((old) =>
+        old.map((row) =>
+          row.run_id === saved.run_id
+            ? { ...row, ...mergeRun(row, saved) }
+            : row,
+        ),
+      );
+      for (const event of saved.presentations ?? [])
+        await hydrate(event, current, active);
+      if (!active()) return;
+      if (["running", "cancelling"].includes(saved.status)) {
+        setBusy(true);
+        void connect(current, saved.run_id, 0);
+      }
+    },
+    [connect, hydrate],
   );
 
   useEffect(() => {
@@ -203,21 +261,7 @@ export function useWorkspace({
           if (!active()) return;
           setPlan(savedPlan);
         }
-        if (current.run_id && !savedOnly) {
-          const saved = await api<Run>(
-            `/runs/${current.run_id}`,
-            current.token,
-          );
-          if (!active()) return;
-          setRun(saved);
-          for (const event of saved.presentations ?? [])
-            await hydrate(event, current, active);
-          if (!active()) return;
-          if (["running", "cancelling"].includes(saved.status)) {
-            setBusy(true);
-            void connect(current, saved.run_id, 0);
-          }
-        }
+        if (!savedOnly) await restoreConversation(current, active);
       } catch (failure) {
         if (active()) fail(failure);
       } finally {
@@ -231,7 +275,7 @@ export function useWorkspace({
       generation.current += 1;
       stream.current?.abort();
     };
-  }, [connect, hydrate, fail, remember, savedOnly]);
+  }, [restoreConversation, fail, remember, savedOnly]);
 
   async function action(
     work: (
@@ -277,6 +321,10 @@ export function useWorkspace({
       const current = { ...user, session_id: session.session_id };
       remember(current);
       setRun(undefined);
+      setHistory([]);
+      setHistoryBefore(null);
+      setHistoryError("");
+      historyLoaded.current = true;
       setHotels(undefined);
       setPlan(undefined);
       setBookings([]);
@@ -350,10 +398,11 @@ export function useWorkspace({
         );
         if (active()) setPlan(displayed);
       }
+      if (!savedOnly && active()) await restoreConversation(identity, active);
     });
   }
   async function send(text: string, mode: Mode) {
-    if (!identity || !text.trim() || busy) return;
+    if (!identity || !text.trim() || busy) return false;
     const started = generation.current;
     const read = readWhile(() => generation.current === started);
     setBusy(true);
@@ -370,7 +419,7 @@ export function useWorkspace({
           body,
         ),
       );
-      if (generation.current !== started) return;
+      if (generation.current !== started) return false;
       const current = {
         ...identity,
         run_id: submitted.run_id,
@@ -378,16 +427,27 @@ export function useWorkspace({
       };
       remember(current);
       setRun(submitted);
+      setHistory((old) =>
+        generation.current === started
+          ? mergeHistory(
+              old,
+              [{ ...submitted, prompt: body.text }],
+              current.session_id,
+            )
+          : old,
+      );
       setEvents([]);
       cursor.current = 0;
       await connect(current, submitted.run_id, 0);
+      return generation.current === started;
     } catch (failure) {
-      if (generation.current !== started) return;
+      if (generation.current !== started) return false;
       if (failure instanceof ApiError && failure.status < 500)
         remember({ ...identity, pending_message: undefined });
       fail(failure);
       setSendError(message(failure));
       setBusy(false);
+      return false;
     }
   }
   async function confirm() {
@@ -482,6 +542,17 @@ export function useWorkspace({
     setBusy(true);
     await connect(identity, run.run_id, cursor.current);
   }
+  async function loadEarlier() {
+    if (!identity || !historyBefore || busy) return;
+    await action(async (read, active) => {
+      const page = await read(readRunHistory(identity, historyBefore));
+      if (!active()) return;
+      setHistory((old) =>
+        active() ? mergeHistory(old, page.items, identity.session_id) : old,
+      );
+      setHistoryBefore(page.next_before);
+    });
+  }
   async function cancel() {
     if (identity && run) {
       await action(async (read, active) => {
@@ -496,6 +567,9 @@ export function useWorkspace({
     identity,
     request,
     run,
+    history,
+    historyBefore,
+    historyError,
     events,
     hotels,
     plan,
@@ -513,6 +587,7 @@ export function useWorkspace({
     bookingAction,
     lock,
     reconnect,
+    loadEarlier,
     refresh,
     cancel,
   };

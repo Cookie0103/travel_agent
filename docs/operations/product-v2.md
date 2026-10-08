@@ -222,3 +222,15 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 独立只读审查发现测试固定STAMP但新session用机器now（P2）；改明确STAMP+4h，runs页间新增也用固定delta。复核P2关闭，业务/归属/兼容/复用无其他发现；修正后专项与完整测试结果待补。
 - 时间修正后的 `pytest tests/integration/test_history.py -q`：19 passed/16.29s；最终 dev check 退出0，252文件三平台strict/格式/3契约/10文档。完整同增量test仍运行，不能提前报全绿。
 - 完整 `uv run python scripts/dev.py test`：1013 passed/7 failed/1 skipped/1 live deselected，253.10s；7失败名称与T0.2/P-05逐项一致，没有新增失败。完整运行期间最后仅修测试时间固定，故另用修正后的19专项覆盖；业务实现/生成契约未变。不跳过失败或放宽断言。
+
+
+## 2026-10-08 T1.2 多轮对话恢复
+
+- 开工前 `d180541`、git status 干净；只读列表作为历史来源，不把对话正文写入浏览器持久历史、不提交恢复消息。确认后清除本地 run_id 的旧路径仍能从 session 列表找到轮次。
+- 首红：T0.5 Chrome 先确认再刷新，正式 V1 可读但对话无回复；新前端 recovery 测试首跑为25 passed/1 suite failed（模块缺失，不冒称三项行为断言失败）。接入API/helper后28 passed；新增刷新第一页保留早页回归后29 passed。
+- 独立审查P2：直接替换历史页会抹掉已翻页及本标签实时全文；首次改merge后，复核还发现最新 GET 同sequence被900秒缓存淘汰后的简短说明覆盖。新增最新 GET 回归在返回incoming的旧行为下29 passed/1 failed，实际差异为answer全文→固定说明；修复后30 passed/0 failed/0 skipped（148.64ms）。合并按run_id/sequence，保留同序列已持有全文，接受服务端状态/卡片更新；固定持久化说明可升级为内存全文。没有改变服务端实时回复保留策略。
+- `pnpm --dir apps/web run typecheck`、`lint` 退出0；最终 `test` 30 passed；`build` 退出0、5路由。第一次 standalone 使用错误的apps/web/server.js路径，退出1找不到模块；按实际生成目录改 `.next/standalone/server.js`，复制ignored static后本地启动成功。修复脚本首次调用无python命令，未写文件，改项目 `uv run python` 后执行；没有把随后检查通过误算为脚本成功。
+- Chrome实际hook/路由：第二个T0.5合成会话，过期草稿轮次保留；新增草稿确认正式V1，再加普通查询，共3轮。确认后刷新→3轮消息/答案可读，进入我的行程V1→返回对话3轮仍可读。初始恢复中一度出现空欢迎，增加restoring/error保护后重新构建复测。
+- 本地PG只读复核前后均run_rows=3/current_version=1/version_rows=1/confirmed_drafts=1，正式内容SHA256相同。恢复只GET，不产生新轮次/确认/供应商调用。截图及脱敏摘要见docs/evidence/product-v2/t12-*。分页接口与helper已测试；浏览器此次仅3轮，没有验证超过20轮按钮；实时原回复跨重启无法完整恢复为既有限制（本轮合成PG验证如下，不冒称真实模型实测）；卡片归属待T1.4。
+- 补充保留边界characterization：`pytest tests/integration/test_runs.py tests/integration/test_history.py -q` 为28 passed/16.79s。只在隔离PG直接创建合成已完成deepseek轮次，填本地RunService.live_answers：GET全文、history固定说明；901秒过期与新RunService都返回固定说明且sequence=3，tasks空，0模型调用。这核实既有服务保留边界，首次即通过，不声称它是业务修复的首红。新增测试晚于完整测试收集，专项覆盖最终测试版本；再次dev check 252文件/三平台strict/3契约/10入口退出0。
+- 完整 `uv run python scripts/dev.py test`：1013 passed/7 failed/1 skipped/1 live deselected，256.29s；失败名与P-05同7项一致。新增保留边界测试晚于收集，由最终PG28项专项覆盖，不冒称本次全量包含它。自审与独立复核两轮P2关闭，新characterization/脱敏证据审查无发现；未部署、未调用真实模型或供应商。

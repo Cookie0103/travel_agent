@@ -1,0 +1,35 @@
+{
+  "environment": "loopback local demo; synthetic session only",
+  "verification": "VERIFIED offline Chrome navigation and read-only PostgreSQL",
+  "scenario": [
+    "confirm second draft as V1",
+    "third plain offline query",
+    "refresh: three prompts and three replies",
+    "plans: formal V1",
+    "return to conversation: all three turns",
+    "final build refresh: all three turns"
+  ],
+  "before_navigation": {
+    "run_rows": 3,
+    "phase": "before-navigation",
+    "current_version": 1,
+    "version_rows": 1,
+    "confirmed_drafts": 1,
+    "payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+    "source": "Earlier read-only probe stdout recorded before navigation; not a separate saved raw log"
+  },
+  "after_final_refresh": {
+    "run_rows": 3,
+    "phase": "final-refresh",
+    "current_version": 1,
+    "version_rows": 1,
+    "confirmed_drafts": 1,
+    "payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f"
+  },
+  "limits": [
+    "Only three browser turns, pagination helpers and PG checked separately",
+    "No real model or supplier calls",
+    "Full live replies across process restart remain outside existing persistence policy",
+    "Cards binding deferred to T1.4"
+  ]
+}

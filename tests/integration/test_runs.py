@@ -303,3 +303,43 @@ def test_live_upstream_http_error_is_shown_in_run_answer(
         await service.close()
 
     runner.run(exercise())
+
+
+def test_live_reply_cache_and_history_have_distinct_retention_boundaries(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """T1.2：真实PG+合成已完成轮次核验保留边界，不调用模型。"""
+    from datetime import UTC, datetime, timedelta
+
+    from backend.services.common import transaction
+    from backend.services.history import HistoryService
+
+    runner, travel, context = travel_setup
+    service = RunService(travel.database)
+    notice = "实时回复仅供本轮查看；行程引用已保存，详情按需更新。"
+
+    async def exercise() -> None:
+        async with transaction(travel.database) as db:
+            row = await runs.create(
+                db, context.user_id, context.session_id, uuid4(), "合成实时问题", "deepseek"
+            )
+            row.status = "completed"
+            row.answer = notice
+            row.last_sequence = 3
+            row.finished_at = datetime.now(UTC)
+            run_id = row.id
+        service.live_answers[run_id] = (datetime.now(UTC), "合成实时全文")
+        current = await service.get(context.user_id, run_id)
+        page = await HistoryService(travel.database).runs(
+            context.user_id, context.session_id, 20, None
+        )
+        assert current.answer == "合成实时全文"
+        assert page.items[0].answer == notice and page.items[0].prompt == "合成实时问题"
+        service.live_answers[run_id] = (datetime.now(UTC) - timedelta(seconds=901), current.answer)
+        expired = await service.get(context.user_id, run_id)
+        restarted = await RunService(travel.database).get(context.user_id, run_id)
+        assert expired.answer == restarted.answer == notice
+        assert current.last_sequence == expired.last_sequence == restarted.last_sequence == 3
+        assert not service.tasks and not service.live_answers
+
+    runner.run(exercise())

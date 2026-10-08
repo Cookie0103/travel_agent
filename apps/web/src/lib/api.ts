@@ -3,6 +3,8 @@ import type { components } from "./api-types";
 import type { Mode } from "./models";
 export type RequestState = components["schemas"]["TravelRequest"];
 export type Run = components["schemas"]["RunView"];
+export type HistoricalRun = components["schemas"]["HistoricalRun"];
+export type RunPage = components["schemas"]["RunPage"];
 export type Plan = components["schemas"]["UiPlanView"];
 export type Article = components["schemas"]["Article"];
 export type Hotels = components["schemas"]["UiHotelPresentation"];
@@ -67,6 +69,18 @@ export async function readConfirmedPlan(
   return identity.plan_id
     ? api<Plan>(`/plans/${identity.plan_id}`, identity.token)
     : undefined;
+}
+
+export async function readRunHistory(
+  identity: Pick<Identity, "session_id" | "token">,
+  before?: string,
+): Promise<RunPage> {
+  const query = new URLSearchParams({ limit: "20" });
+  if (before) query.set("before", before);
+  return api<RunPage>(
+    `/sessions/${identity.session_id}/runs?${query}`,
+    identity.token,
+  );
 }
 
 export async function api<T>(

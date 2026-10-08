@@ -1,4 +1,4 @@
-/** Chat stream: user messages from this tab, the latest run's reply and the cards it produced. */
+/** Persisted conversation turns plus the latest run's streamed reply and current cards. */
 "use client";
 import type { Workspace } from "./workbench";
 import { toolLabel } from "./tool-names";
@@ -24,8 +24,6 @@ const examples = [
   "下雨天京都有哪些室内景点？",
   "帮我比较这几天京都的酒店",
 ];
-
-export type SentMessage = { id: number; text: string };
 
 function currentStep(workspace: Workspace): string | undefined {
   const finished = new Set(
@@ -65,14 +63,12 @@ export function Welcome({ workspace }: { workspace: Workspace }) {
 
 export function Conversation({
   workspace,
-  sent,
   mode,
   send,
   fill,
   openPanel,
 }: {
   workspace: Workspace;
-  sent: SentMessage[];
   mode: Mode;
   send: (text: string, mode: Mode) => void;
   fill: (text: string) => void;
@@ -83,47 +79,86 @@ export function Conversation({
   const running =
     workspace.busy || ["running", "cancelling"].includes(run?.status ?? "");
   const noRevision = !workspace.request?.revision;
+  const currentPrompt = workspace.history.find(
+    (row) => row.run_id === run?.run_id,
+  )?.prompt;
   return (
     <div className="conversation-stream" aria-live="polite">
-      {!sent.length && !run && (
-        <div className="empty-chat">
-          <h1>想去哪里玩？</h1>
-          <p className="muted">直接告诉我旅行计划，也可以先试试下面的示例。</p>
-          <div className="chips">
-            {mode === "offline"
-              ? presets.map((label) => (
-                  <button
-                    key={label}
-                    className="chip"
-                    disabled={workspace.busy || noRevision}
-                    onClick={() => send(`演示：${label}`, "offline")}
-                  >
-                    {label}
-                  </button>
-                ))
-              : examples.map((example) => (
-                  <button
-                    key={example}
-                    className="chip"
-                    onClick={() => fill(example)}
-                  >
-                    {example}
-                  </button>
-                ))}
-          </div>
-          {mode === "offline" && noRevision && (
-            <p className="small muted">先在右侧确认旅行条件</p>
-          )}
-          <p className="small muted">
-            实时规划支持日本国内；离线演示使用京都样本。
-          </p>
-        </div>
+      {workspace.restoring && <p role="status">正在恢复对话历史…</p>}
+      {workspace.historyError && <p role="alert">{workspace.historyError}</p>}
+      {workspace.historyBefore && (
+        <button
+          disabled={workspace.busy}
+          onClick={() => void workspace.loadEarlier()}
+        >
+          加载更早对话
+        </button>
       )}
-      {sent.map((message) => (
-        <div className="bubble-user" key={message.id}>
-          {message.text}
-        </div>
-      ))}
+      {!workspace.restoring &&
+        !workspace.historyError &&
+        !workspace.error &&
+        !workspace.history.length &&
+        !run &&
+        !workspace.identity?.pending_message && (
+          <div className="empty-chat">
+            <h1>想去哪里玩？</h1>
+            <p className="muted">
+              直接告诉我旅行计划，也可以先试试下面的示例。
+            </p>
+            <div className="chips">
+              {mode === "offline"
+                ? presets.map((label) => (
+                    <button
+                      key={label}
+                      className="chip"
+                      disabled={workspace.busy || noRevision}
+                      onClick={() => send(`演示：${label}`, "offline")}
+                    >
+                      {label}
+                    </button>
+                  ))
+                : examples.map((example) => (
+                    <button
+                      key={example}
+                      className="chip"
+                      onClick={() => fill(example)}
+                    >
+                      {example}
+                    </button>
+                  ))}
+            </div>
+            {mode === "offline" && noRevision && (
+              <p className="small muted">先在右侧确认旅行条件</p>
+            )}
+            <p className="small muted">
+              实时规划支持日本国内；离线演示使用京都样本。
+            </p>
+          </div>
+        )}
+      {workspace.history
+        .filter((row) => row.run_id !== run?.run_id)
+        .map((row) => (
+          <section className="conversation-turn" key={row.run_id}>
+            <div className="bubble-user">{row.prompt}</div>
+            <div className={`reply reply-${row.status}`}>
+              <span className="avatar" aria-hidden="true">
+                ◆
+              </span>
+              <div className="reply-body">
+                <p className="run-status">{runStatus(row.status)}</p>
+                {row.answer && (
+                  <div className="answer">
+                    <Markdown text={row.answer} />
+                  </div>
+                )}
+                {row.error_code && !row.answer && (
+                  <p className="error">执行未完成：{row.error_code}</p>
+                )}
+              </div>
+            </div>
+          </section>
+        ))}
+      {currentPrompt && <div className="bubble-user">{currentPrompt}</div>}
       {run && (
         <div className={`reply reply-${run.status}`}>
           <span className="avatar" aria-hidden="true">
@@ -190,6 +225,11 @@ export function Conversation({
               </section>
             )}
           </div>
+        </div>
+      )}
+      {workspace.identity?.pending_message && (
+        <div className="bubble-user">
+          {workspace.identity.pending_message.text}
         </div>
       )}
       {workspace.sendError && (
