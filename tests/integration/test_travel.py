@@ -45,6 +45,11 @@ def travel_setup(postgres_url: URL) -> Iterator[tuple[asyncio.Runner, TravelServ
                                 "adults": 2,
                                 "child_ages": [],
                                 "rooms": 1,
+                                "hard_constraints": [
+                                    "住宿：无要求",
+                                    "房型：无要求",
+                                    "床型：无要求",
+                                ],
                                 "start_date": "2026-11-03",
                                 "end_date": "2026-11-05",
                             },

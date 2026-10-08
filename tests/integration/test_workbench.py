@@ -50,6 +50,7 @@ def test_http_workbench_flow_and_read_only_reconnect(postgres_url: URL) -> None:
             "adults": 2,
             "child_ages": [],
             "rooms": 1,
+            "hard_constraints": ["住宿：无要求", "房型：无要求", "床型：无要求"],
             "budget": "50000",
             "transport": "walk",
             "departure_time": "09:00",

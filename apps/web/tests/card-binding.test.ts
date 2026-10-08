@@ -112,6 +112,7 @@ test("owned empty/error panel replaces prior success and never inherits another 
     component: "hotel_comparison",
     cards: [],
     comparison: {
+      room_preferences_question: null,
       budget_relation: null,
       comparable: false,
       lowest_offer_ids: [],

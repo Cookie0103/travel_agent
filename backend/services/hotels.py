@@ -9,6 +9,7 @@ from backend.domain.external_data import ExternalDataError
 from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.hotel_selection import hotel_rate_indices
 from backend.domain.hotels import HotelOffer, compare, quote
+from backend.domain.room_preferences import room_assessment, room_order, room_preferences_question
 from backend.domain.travel_request import TravelRequest, lodging_budget_relation
 from backend.persistence.travel import (
     entity_evidence,
@@ -65,6 +66,8 @@ class HotelService:
         rate_id: str | None = None,
         limit: int,
     ) -> tuple[EvidenceRecord, ...]:
+        if question := room_preferences_question(request):
+            raise ServiceError(422, "validation", question, "hotel_room_preferences_missing")
         if live := self.travel.live:
             if not live.google or not live.rakuten:
                 raise ServiceError(
@@ -138,6 +141,11 @@ class HotelService:
                     data_mode="fixture",
                 )
             )
+        ordered = room_order(
+            [HotelOffer.model_validate(record.value).room_type for record in records], request
+        )
+        records = [records[index] for index in ordered]
+        rate_keys = [rate_keys[index] for index in ordered]
         records = [records[index] for index in hotel_rate_indices(rate_keys, limit)]
         if records:
             await self.travel.record_evidence(context, records)
@@ -185,6 +193,7 @@ class HotelService:
             "comparison": {
                 **compare(offers, datetime.now(UTC)),
                 "budget_relation": lodging_budget_relation(request).model_dump(mode="json"),
+                "room_preferences_question": room_preferences_question(request),
             },
         }
 
@@ -196,9 +205,17 @@ def cards(
         {
             **HotelOffer.model_validate(record.value).card(request),
             **(record.display_details or HotelDisplayDetails()).model_dump(mode="json"),
+            **room_assessment(
+                HotelOffer.model_validate(record.value).room_type, request
+            ).model_dump(mode="json"),
             "evidence_id": str(record.evidence_id),
             "source_ref": record.source_ref,
             "content_version": record.content_version,
         }
-        for record in records
+        for record in (
+            records[index]
+            for index in room_order(
+                [HotelOffer.model_validate(record.value).room_type for record in records], request
+            )
+        )
     ]

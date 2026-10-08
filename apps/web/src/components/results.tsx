@@ -93,6 +93,17 @@ function Hotel({ card }: { card: components["schemas"]["UiHotelCard"] }) {
       </span>
       <h3>{card.hotel_name}</h3>
       <p>{card.room_type}</p>
+      {!!card.room_tags?.length && (
+        <p className="muted small">{card.room_tags.join(" · ")}</p>
+      )}
+      {card.qualification_unknown && (
+        <p className="warning">
+          房型资格未知，请先核实限制；不能据此判断适合。
+        </p>
+      )}
+      {card.room_preference_mismatch && (
+        <p className="warning">此房型为宿舍或舱房，不符合独立房间偏好。</p>
+      )}
       <p className="small">{card.address ?? "地址未知"}</p>
       <p className="small">
         {card.review_average != null ? `★ ${card.review_average}` : "评分未知"}
@@ -231,6 +242,9 @@ export function HotelResults({
         <h2>酒店比较 · {groups.length}家</h2>
       </div>
       <p className="muted">{hotels.comparison.scope}</p>
+      {hotels.comparison.room_preferences_question && (
+        <p className="warning">{hotels.comparison.room_preferences_question}</p>
+      )}
       {groups.length === 0 && <p>当前没有可展示的酒店报价。</p>}
       {hotels.comparison.budget_relation && (
         <p className="warning">{hotels.comparison.budget_relation.message}</p>

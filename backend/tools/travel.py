@@ -17,6 +17,7 @@ from backend.domain.booking import HoldHotelInput
 from backend.domain.condition_labels import update_message
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
+from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
 from backend.domain.plans import StageInput
 from backend.domain.travel_request import (
@@ -547,6 +548,16 @@ class TravelToolExecutor:
             data = await self.hotels.present(context, parsed.expected_revision, parsed.offer_ids)
             presented = data["cards"]
             assert isinstance(presented, list)
+            # 可选展示字段为null时省略给工具/页面的重复键；报价身份/金额/资格信息保留。
+            # 完整服务读回仍保留显式null，UI模型默认值兼容旧卡；不提高输出长度上限。
+            data["cards"] = [
+                {
+                    key: value
+                    for key, value in card.items()
+                    if value is not None or key not in HotelDisplayDetails.model_fields
+                }
+                for card in presented
+            ]
             return ToolResult(
                 data,
                 evidence_ids=tuple(str(card["evidence_id"]) for card in presented),

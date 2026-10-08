@@ -11,6 +11,7 @@ from backend.agent.fixture_conditions import missing_question
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.plans import PlanItem
+from backend.domain.room_preferences import room_preferences_question
 from backend.domain.travel_request import TravelRequest
 from backend.services.common import ServiceError
 from backend.tools.contracts import ToolExecutor, ToolResult
@@ -47,8 +48,15 @@ async def demo_command(
 
     try:
         request = await executor.travel.get_request(context)
-        if prompt in COMMANDS[:2] and request.hotel_requirements():
-            text = missing_question(request)
+        if prompt in COMMANDS[:2] and (
+            request.hotel_requirements() or room_preferences_question(request)
+        ):
+            text = (
+                missing_question(request)
+                if request.hotel_requirements()
+                else room_preferences_question(request)
+            )
+            assert text is not None
             emit(RuntimeEvent(context, "text", text=text))
             return RuntimeOutcome(text, str(uuid4()))
         if prompt in COMMANDS[:2] and request.city != "京都":

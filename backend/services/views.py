@@ -35,7 +35,11 @@ class RequestView(TravelRequest):
 
 
 class HotelCard(QuoteFields, HotelDisplayDetails):
-    model_config = ConfigDict(json_schema_serialization_defaults_required=True)
+    model_config = ConfigDict(json_schema_serialization_defaults_required=False)
+    offer_id: UUID
+    room_tags: tuple[str, ...] = ()
+    qualification_unknown: bool = False
+    room_preference_mismatch: bool = False
     stay: dict[str, object]
     request_revision: int
     total: str | None
@@ -84,6 +88,8 @@ class PlanView(BaseModel):
 
 
 class Comparison(BaseModel):
+    model_config = ConfigDict(json_schema_serialization_defaults_required=False)
+    room_preferences_question: str | None = None
     budget_relation: BudgetRelation | None = None
     comparable: bool
     reasons: tuple[str, ...]

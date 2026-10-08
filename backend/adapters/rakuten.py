@@ -12,6 +12,7 @@ from backend.domain.external_data import ExternalDataError, GeoPoint
 from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.hotel_selection import hotel_rate_indices
 from backend.domain.hotels import HotelOffer, Money
+from backend.domain.room_preferences import room_order
 from backend.domain.travel_request import TravelRequest
 from backend.profile import current
 
@@ -179,6 +180,10 @@ class Rakuten:
             for item in first
             if (not hotel_id or str(item.hotel.hotelNo) == hotel_id)
             and (not rate_id or item.key == rate_id)
+        )
+        selected = tuple(
+            selected[index]
+            for index in room_order([item.room.roomName for item in selected], request)
         )
         selected = tuple(
             selected[index]

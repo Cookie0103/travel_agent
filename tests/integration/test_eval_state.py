@@ -38,6 +38,7 @@ REQUEST = {
     "adults": 2,
     "child_ages": [],
     "rooms": 1,
+    "hard_constraints": ["住宿：无要求", "房型：无要求", "床型：无要求"],
     "transport": "walk",
     "departure_time": "09:00",
     "budget": "50000",

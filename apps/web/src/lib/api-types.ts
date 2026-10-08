@@ -643,19 +643,19 @@ export interface components {
         /** HotelCard */
         HotelCard: {
             /** Address */
-            address: string | null;
+            address?: string | null;
             /** Latitude */
-            latitude: number | null;
+            latitude?: number | null;
             /** Longitude */
-            longitude: number | null;
+            longitude?: number | null;
             /** Review Count */
-            review_count: number | null;
+            review_count?: number | null;
             /** Hotel Info Url */
-            hotel_info_url: string | null;
+            hotel_info_url?: string | null;
             /** Plan List Url */
-            plan_list_url: string | null;
+            plan_list_url?: string | null;
             /** Reservation Url */
-            reservation_url: string | null;
+            reservation_url?: string | null;
             /**
              * Offer Id
              * Format: uuid
@@ -682,20 +682,20 @@ export interface components {
             /** Refundable */
             refundable: boolean | null;
             /** Image Url */
-            image_url: string | null;
+            image_url?: string | null;
             /** Review Average */
-            review_average: number | null;
+            review_average?: number | null;
             /** Booking Url */
-            booking_url: string | null;
+            booking_url?: string | null;
             /**
              * Data Mode
              * @enum {string}
              */
             data_mode: "fixture" | "live";
             /** Included Total */
-            included_total: string | null;
+            included_total?: string | null;
             /** Total Reason */
-            total_reason: string | null;
+            total_reason?: string | null;
             /**
              * Quoted At
              * Format: date-time
@@ -706,6 +706,21 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+            /**
+             * Room Tags
+             * @default []
+             */
+            room_tags: string[];
+            /**
+             * Qualification Unknown
+             * @default false
+             */
+            qualification_unknown: boolean;
+            /**
+             * Room Preference Mismatch
+             * @default false
+             */
+            room_preference_mismatch: boolean;
             /** Stay */
             stay: {
                 [key: string]: unknown;
@@ -717,7 +732,7 @@ export interface components {
             /** Lodging Exceeds Trip Budget */
             lodging_exceeds_trip_budget: boolean | null;
             /** Lodging Exceeds Lodging Budget */
-            lodging_exceeds_lodging_budget: boolean | null;
+            lodging_exceeds_lodging_budget?: boolean | null;
             /**
              * Evidence Id
              * Format: uuid
@@ -1551,6 +1566,11 @@ export interface components {
         };
         /** Comparison */
         UiComparison: {
+            /**
+             * Room Preferences Question
+             * @default null
+             */
+            room_preferences_question: string | null;
             /** @default null */
             budget_relation: components["schemas"]["UiBudgetRelation"] | null;
             /** Comparable */
@@ -1664,6 +1684,21 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+            /**
+             * Room Tags
+             * @default []
+             */
+            room_tags: string[];
+            /**
+             * Qualification Unknown
+             * @default false
+             */
+            qualification_unknown: boolean;
+            /**
+             * Room Preference Mismatch
+             * @default false
+             */
+            room_preference_mismatch: boolean;
             /** Stay */
             stay: {
                 [key: string]: unknown;

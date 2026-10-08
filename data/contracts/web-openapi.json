@@ -2382,6 +2382,24 @@
             "format": "date-time",
             "title": "Expires At"
           },
+          "room_tags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Room Tags",
+            "default": []
+          },
+          "qualification_unknown": {
+            "type": "boolean",
+            "title": "Qualification Unknown",
+            "default": false
+          },
+          "room_preference_mismatch": {
+            "type": "boolean",
+            "title": "Room Preference Mismatch",
+            "default": false
+          },
           "stay": {
             "additionalProperties": true,
             "type": "object",
@@ -2455,13 +2473,6 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
-          "address",
-          "latitude",
-          "longitude",
-          "review_count",
-          "hotel_info_url",
-          "plan_list_url",
-          "reservation_url",
           "offer_id",
           "rate_id",
           "hotel_id",
@@ -2473,19 +2484,13 @@
           "fee_amount",
           "breakfast",
           "refundable",
-          "image_url",
-          "review_average",
-          "booking_url",
           "data_mode",
-          "included_total",
-          "total_reason",
           "quoted_at",
           "expires_at",
           "stay",
           "request_revision",
           "total",
           "lodging_exceeds_trip_budget",
-          "lodging_exceeds_lodging_budget",
           "evidence_id",
           "source_ref",
           "content_version"
@@ -4878,6 +4883,18 @@
       },
       "UiComparison": {
         "properties": {
+          "room_preferences_question": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Room Preferences Question"
+          },
           "budget_relation": {
             "anyOf": [
               {
@@ -5170,6 +5187,24 @@
             "title": "Expires At",
             "type": "string"
           },
+          "room_tags": {
+            "default": [],
+            "items": {
+              "type": "string"
+            },
+            "title": "Room Tags",
+            "type": "array"
+          },
+          "qualification_unknown": {
+            "default": false,
+            "title": "Qualification Unknown",
+            "type": "boolean"
+          },
+          "room_preference_mismatch": {
+            "default": false,
+            "title": "Room Preference Mismatch",
+            "type": "boolean"
+          },
           "stay": {
             "additionalProperties": true,
             "title": "Stay",
@@ -5242,13 +5277,6 @@
           }
         },
         "required": [
-          "address",
-          "latitude",
-          "longitude",
-          "review_count",
-          "hotel_info_url",
-          "plan_list_url",
-          "reservation_url",
           "offer_id",
           "rate_id",
           "hotel_id",
@@ -5260,19 +5288,13 @@
           "fee_amount",
           "breakfast",
           "refundable",
-          "image_url",
-          "review_average",
-          "booking_url",
           "data_mode",
-          "included_total",
-          "total_reason",
           "quoted_at",
           "expires_at",
           "stay",
           "request_revision",
           "total",
           "lodging_exceeds_trip_budget",
-          "lodging_exceeds_lodging_budget",
           "evidence_id",
           "source_ref",
           "content_version"

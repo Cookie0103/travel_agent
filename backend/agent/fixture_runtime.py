@@ -15,6 +15,7 @@ from backend.agent.fixture_conditions import (
 )
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, RuntimeOutcome
+from backend.domain.travel_request import TravelRequest
 from backend.tools.contracts import ToolExecutor
 from backend.tools.execution import execute_observed
 from backend.tools.search import DEFINITIONS
@@ -39,7 +40,9 @@ class FixtureRuntime:
         if prompt.startswith("演示："):
             return await demo_command(self.executor, context, prompt, emit, cancelled)
         if isinstance(self.executor, TravelToolExecutor):
-            request = await self.executor.travel.get_request(context)
+            view = await self.executor.travel.get_request_view(context)
+            request: TravelRequest = view
+            protect_hard = view.field_sources.get("hard_constraints") == "user_form"
             if unsupported_trip_currency(prompt):
                 text = (
                     "全程预算目前只支持日元，离线演示未更新任何条件。"
@@ -54,7 +57,12 @@ class FixtureRuntime:
                 )
                 emit(RuntimeEvent(context, "text", text=text))
                 return RuntimeOutcome(text, sdk_session_id or str(uuid4()))
-            patch = fixture_patch(prompt, request, datetime.now(ZoneInfo("Asia/Tokyo")).date())
+            patch = fixture_patch(
+                prompt,
+                request,
+                datetime.now(ZoneInfo("Asia/Tokyo")).date(),
+                protect_hard_constraints=protect_hard,
+            )
             if patch["set"] or patch["clear"]:
                 if cancelled.is_set():
                     return RuntimeOutcome(code="cancelled", reason="cancelled")
@@ -79,6 +87,13 @@ class FixtureRuntime:
                     text = "离线演示：有限表达提取，不调用模型。\n" + (
                         message if isinstance(message, str) else ""
                     )
+                    explicit_fields = patch["explicit_fields"]
+                    if (
+                        protect_hard
+                        and isinstance(explicit_fields, list)
+                        and "hard_constraints" in explicit_fields
+                    ):
+                        text += "\n手动房型中未明确改动的项已保留。"
                     relation = result.data.get("budget_relation")
                     if isinstance(relation, dict) and relation.get("status") == "conflict":
                         text += "\n" + str(relation["message"])

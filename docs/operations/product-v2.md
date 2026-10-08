@@ -510,3 +510,22 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 最终实际命令：`uv run python -m pytest tests/test_hotel_metadata.py tests/test_hotel_links.py tests/test_hotel_link_missing_info.py tests/test_hotel_selection.py tests/test_external_data.py -q` 38 passed/0.28s；`uv run python -m pytest tests/integration/test_hotel_metadata.py tests/integration/test_hotel_links.py tests/integration/test_hotels.py tests/integration/test_hotel_offer_lookup.py -q` 15 passed/1.33s；`uv run python scripts/dev.py check` exit0/277；`uv run python scripts/dev.py web-check` web89/343.886ms/type/lint/buildexit0；`uv run python scripts/dev.py test` 1222 passed/7 failed/1 skipped/1 live deselected/262.74s exit1，FAILED与P56–59逐名一致。这是分列版最终结果，未取代真实fixture验收或P05门禁。
 
 - 实现992a0e5已提交/push，P61关闭；真实fixture待用户决定，T4.4/P60仍doing，C24暂不归档完成；独立T4.5可继续。
+
+## 2026-10-08 T4.5 房型资格降级
+
+- 开工048eb61/git status空；ADR014/015先定派生标签/两稳定组/偏好hard_constraints复用。预算/调用/上游序与旧报价保持；仅有限名称识别不冒称全面资格检查，缺偏好对话澄清。文档patch首次ADR015标题锚点不匹配失败、未落任何文件；读实际末尾再补，失败不计依据。
+- 独立设计建议两P2已纳入ADR：search/refresh共用入口在任何供应商查询前检查明确房型偏好（可明确无要求），不改报价模型/历史读回；硬条件整字段手填优先，新增/对应组修改保无关航班等，普通追加不能跨字段猜明确授权。现有固定测试种子需显式提供新必要条件，保原业务断言，不以放松守卫适配旧输入。
+# T4.5 资格门槛/输出投影增量（2026-10-08）
+- 最终`uv run python scripts/dev.py test`：1243passed/原7SDKfailed/1skip/1live/264.90s，FAILED逐名集合与上次T4.4一致（或第一T4.5原7子集），不是全绿。最终check280/三平台/3契约/10入口，web89/290.811ms/type/lint/build5routes，领域72/.22、实际PG86/14.03。
+- Chrome sid7cfc1941-439d-4398-b35a-cb3a15800bf5：基础事实只update且追问；缺偏好compare0工具；回答三偏好只update；纯MockTransport两晚/2次，五合成酒店2/5/1/3/4仅资格排序，36k/20k/4k/6k/7.2k价格保持；4k最低价宿舍有资格未知与不符标签。混合推荐句与无需双床各0工具，不增revision。只读PG rev2/5Evidence/0booking/0hold/0order/原V1一行hash87e4b4…25f；脱敏JSON/三个截图保存并查看。
+- P65第二P2真实混合表达runtime红2/.35（推荐落入景点查询，不是澄清）；改共用room_updates返回None标识矛盾，ambiguous分支先返回0工具/不改revision。最终相关领域72/.22、PG86/14.03，包括两混合、两手填、live0provider/旧quote、qualification截断、原预订流程。
+- 第一全量1232passed/9failed/1skip/1live/265.22：原7SDK+2明确输入种子缺偏好；HTTP种子补三项，长条件保持20hard/20interests/20soft，hard17×200+3声明偏好，增加原全请求JSON>8000压力断言，其他原断言不改。第二全量启动时仍旧种子已被导入，结果按中间版保存，不替代最终post-review版。
+- 第一稳定版领域81/.23，PG42/10.21，check280/3平台/3契约/10入口，web89/290.811ms/type/lint/build5routes。该版完整回归仍在运行，后独立P2导致代码追加，不代替最终版。
+- P64跨组手填两个方向红2/.36；P65直接否定/全无要求红4/9passed/.24；修复后领域72/.23，PG29/2.70。误读RequestView.request第一修复21PG失败已纠正；最后一个mypy对象membership错误改成真实list窄化。
+- 工具投影原null回退首18PG/3.05全过；三URL/四元数据完整服务保持，未改其原断言。Web新Comparison默认投影字段在openapi-typescript默认规则仍必填，显式合成TS fixture补null，运行时历史旧模型缺字段仍默认读。
+- 一次web-generate误设web cwd导致.cache重定向失败，一次启动误猜依赖bin/node不存在；都未执行目标操作。重读目录确认实际/opt/homebrew/bin/node并已成功启动本地Web，无安装/权限变更。
+- 首红PG1 failed/0.29s（缺偏好不拒绝）；领域初collection缺模块不算业务红，空实现后7 failed/.06；相关领域80 passed/.23。
+- 第一PG35例3失败：新测试误读RequestUpdate.revision改request.revision；两demo为结果过长。直接demo2例1失败明确blocked/结果过长。第一次check mypy五测试错误已定位（返回类型/回执读取），未改业务断言。
+- 错方案服务卡去null：40PG38passed/2failed（原T4.2/T4.4显式null断言）；恢复原服务卡，只工具白名单未知展示键可省略，并更新UI可选schema。上限仍8000。
+- 保留冻结v1/legacy全部文件与hash，机制种子明确合成无要求；不向eval prepare暗补输入。R6新规格实验前另建版本披露。
+- 两次apply_patch上下文不匹配未修改代码，重读精确行再修；一条rg未确认fixture文件、一条shell glob不存在，均只读失败，无数据变化。

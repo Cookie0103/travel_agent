@@ -4,6 +4,7 @@ import re
 from datetime import date, timedelta
 from decimal import Decimal
 
+from backend.domain.room_preferences import room_preferences_question
 from backend.domain.travel_request import TravelRequest
 
 NUMBER = (
@@ -33,14 +34,40 @@ def number(text: str) -> int:
     return int(text) if text.isdecimal() else SMALL_NUMBERS[text]
 
 
+def room_updates(text: str) -> list[tuple[str, str, re.Match[str]]] | None:
+    """返回明确分组与原匹配位置；None表示已识别矛盾，runtime必须先澄清。"""
+    updates: list[tuple[str, str, re.Match[str]]] = []
+    all_free = re.search(r"房型(?:改为|改成)?无要求", text)
+    for prefix, pattern, values in (
+        (
+            "住宿：",
+            r"(?:住宿(?:改为|改成)?\s*)?(独立房间|接受宿舍|接受舱房|住宿无要求)",
+            {"住宿无要求": "无要求"},
+        ),
+        ("房型：", r"(?:房型(?:改为|改成)?\s*)?(禁烟无要求|禁烟)", {"禁烟无要求": "无要求"}),
+        ("床型：", r"(?:床型(?:改为|改成)?\s*)?(床型无要求|双床|大床)", {"床型无要求": "无要求"}),
+    ):
+        matches = list(re.finditer(pattern, text))
+        found = {values.get(match[1], match[1]) for match in matches}
+        if len(found) > 1 or (all_free and found - {"无要求"}):
+            return None
+        if all_free:
+            updates.append((prefix, "无要求", all_free))
+        elif matches:
+            match = matches[-1]
+            updates.append((prefix, values.get(match[1], match[1]), match))
+    return updates
+
+
 def ambiguous_expression(prompt: str) -> bool:
     return bool(
         re.search(
-            r"如果|可能|也许|考虑|不确定|大概|不要|不想|不改|不清空|不能|暂不|不去|或|还是|二选一|不是|举例|只是提到",
+            r"如果|可能|也许|考虑|不确定|大概|不要|不用|不需要|无需|不要求|不想|不改|不清空|不能|暂不|不去|或|还是|二选一|不是|举例|只是提到",
             prompt,
         )
         or re.search(r"(?:^|[，,。；;]|请)\s*别(?:改|去|清空|更新|记录|保存)", prompt)
         or len(set(re.findall(CITIES, prompt.replace("東京", "东京")))) > 1
+        or room_updates(prompt) is None
         or re.search(
             r"[\d一二两三四五六七八九十零百千万]+(?:个|间)?(?:大人|成人|人|房间|房)?\s*"
             r"(?:到|至|[-–—~])\s*[\d一二两三四五六七八九十零百千万]+(?:个|间)?(?:大人|成人|人(?!民|均)|房间|房)",
@@ -58,7 +85,9 @@ def unsupported_trip_currency(prompt: str) -> bool:
     return any(currency[1] not in ("JPY", "日元", "円") for currency in currencies)
 
 
-def fixture_patch(prompt: str, request: TravelRequest, today: date) -> dict[str, object]:
+def fixture_patch(
+    prompt: str, request: TravelRequest, today: date, *, protect_hard_constraints: bool = False
+) -> dict[str, object]:
     """有限词汇/金额/日期样例输入转工具参数；不扫描历史或第三方资料。"""
     text = prompt.replace("（", "(").replace("）", ")")
     if ambiguous_expression(text) or unsupported_trip_currency(text):
@@ -73,13 +102,16 @@ def fixture_patch(prompt: str, request: TravelRequest, today: date) -> dict[str,
     explicit: set[str] = set()
     clear: list[str] = []
 
-    def put(name: str, value: object, match: re.Match[str]) -> None:
-        fields[name] = value
-        if (
+    def is_explicit(match: re.Match[str]) -> bool:
+        return bool(
             re.search(r"改成|改为|改到|改去", match[0])
             or re.search(r"(?:改成|改为|改到|改去)\s*$", text[: match.start()])
             or text[max(0, match.start() - 1) : match.start() + 1] == "改去"
-        ):
+        )
+
+    def put(name: str, value: object, match: re.Match[str]) -> None:
+        fields[name] = value
+        if is_explicit(match):
             explicit.add(name)
 
     city = re.search(rf"(?:去|目的地(?:改成|改为|是)?\s*[:：]?\s*)({CITIES})", text) or re.search(
@@ -144,6 +176,15 @@ def fixture_patch(prompt: str, request: TravelRequest, today: date) -> dict[str,
             + ["节奏：" + ("标准" if pace[0] == "标准节奏" else pace[0])],
             pace,
         )
+    constraints = list(request.hard_constraints)
+    updates = room_updates(text)
+    assert updates is not None  # 入口ambiguous_expression已拦截；不得空patch落入查询。
+    any_explicit = any(is_explicit(match) for _, _, match in updates)
+    for prefix, value, match in updates:
+        if protect_hard_constraints and any_explicit and not is_explicit(match):
+            continue
+        constraints = [c for c in constraints if not c.startswith(prefix)] + [prefix + value]
+        put("hard_constraints", constraints.copy(), match)
     for name, label in (("budget", "全程预算"), ("lodging_budget", "住宿预算")):
         if re.search(rf"清空{label}|{label}(?:清空|改为未知)", text):
             fields.pop(name, None)
@@ -173,4 +214,6 @@ def missing_question(request: TravelRequest) -> str:
         c in ("节奏：标准", "节奏：慢节奏", "节奏：特种兵") for c in request.soft_constraints
     ):
         return "旅行条件已记录。你想要标准、慢节奏还是特种兵节奏？"
+    if question := room_preferences_question(request):
+        return question
     return "旅行条件已记录。接下来想比较酒店，还是生成行程？"

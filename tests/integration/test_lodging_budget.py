@@ -190,6 +190,7 @@ def test_api_reads_computed_relation_and_never_accepts_stored_relation_flag(
                         "set": {
                             "budget": "50000",
                             "rooms": 1,
+                            "hard_constraints": ["住宿：无要求", "房型：无要求", "床型：无要求"],
                             "start_date": "2026-11-03",
                             "end_date": "2026-11-05",
                             "lodging_budget": budget(),

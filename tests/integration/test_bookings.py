@@ -108,7 +108,8 @@ def test_long_valid_conditions_keep_hold_result_bounded_and_recoverable(
                     "set": {
                         "interests": ["景" * 200] * 20,
                         "soft_constraints": ["慢" * 200] * 20,
-                        "hard_constraints": ["休" * 200] * 20,
+                        "hard_constraints": ["休" * 200] * 17
+                        + ["住宿：无要求", "房型：无要求", "床型：无要求"],
                     },
                 }
             ),
@@ -116,6 +117,9 @@ def test_long_valid_conditions_keep_hold_result_bounded_and_recoverable(
         executor = TravelToolExecutor(travel)
         executor.bookings.supplier = SupplierService(travel.database)
         body = await select_offer(travel, context)
+        current = await travel.get_request(context)
+        assert len(current.hard_constraints) == 20
+        assert len(json.dumps(current.model_dump(mode="json"), ensure_ascii=False)) > 8000
         for _ in range(2):
             result = await executor.execute(context, "hold_hotel", body.model_dump(mode="json"))
             assert result.code is None and result.data["status"] == "held"
@@ -450,6 +454,7 @@ def test_booking_http_user_confirmation_and_recovery_are_private(postgres_url: U
                     "adults": 2,
                     "child_ages": [],
                     "rooms": 1,
+                    "hard_constraints": ["住宿：无要求", "房型：无要求", "床型：无要求"],
                 },
             },
         )
