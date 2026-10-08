@@ -82,7 +82,7 @@ DataMind 根目录没有 LICENSE。本项目只参考业务场景和设计思路
 
 ## 5. 当前待实测清单
 
-新版 M0.2 / M0.3 按 [规格](../../docs/tasks/M0.md) 验收；旧探针结果见 [记录](../../docs/protocols/protocol-deepseek.md)，不能替代 SDK 证据。
+新版 M0.2 / M0.3 按 [规格](../tasks/M0.md) 验收；旧探针结果见 [记录](../protocols/protocol-deepseek.md)，不能替代 SDK 证据。
 
 - [ ] 锁定 Python SDK / 实际 CLI / MCP 组合，在 Windows 启停并隔离凭据与配置
 - [ ] SDK 通过 DeepSeek 完成进程内工具往返、核实实际模型与流式事件

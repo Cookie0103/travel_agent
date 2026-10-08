@@ -13,7 +13,7 @@
 
 ## 状态与证据
 
-- plan/04 定义任务和依赖；docs/execution/travel-agent.md 是唯一实时执行状态，不维护两份完成清单。
+- 里程碑任务见 [design/04](../design/04-roadmap.md)；修复/开发批次的任务与唯一状态见 [docs/plans/](../plans/README.md) 当前批次文件（2026-10-08 前为 travel-agent.md），不维护两份完成清单。
 - 标记 todo / in_progress / verified / blocked，并分别说明“代码完成、离线验证、真实验证、独立审查”。四者不能混为一谈。
 - SDK 实测欠缺时，不将替身当真实 runtime；可以继续与未知 SDK 行为隔离的业务代码，不把不确定语义固化为下游公共接口。
 - 没有 Claude 凭据、预算不足、待人工角色校准等只影响相应验收；保留待办，推进其他工作。所有必需标准未满足时不能声称项目“全部通过”。

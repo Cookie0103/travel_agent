@@ -1,6 +1,6 @@
 # ADR-012：评测对照复用同一SDK与业务边界
 
-状态：接受实施；依据plan/05 §4，不新增依赖或第二套runtime。
+状态：接受实施；依据design/05 §4，不新增依赖或第二套runtime。
 
 现有固定workflow只覆盖B1。增加私有evaluation_variant配置，用户消息API不接收：full为当前完整配置（含原生压缩及长期偏好）；no_tools为B0，不注册工具、不注入数据库事实、不保存/恢复业务checkpoint；no_skills仅移除load_skill；no_preferences仅不注入当前持久偏好值，仍保留旅行条件和当前合法对话；no_repairs仅允许首次校验，取消反馈后修复轮次，最后候选暂存/用户确认仍走原业务校验。
 

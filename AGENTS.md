@@ -5,8 +5,8 @@
 
 ## 开始或恢复时
 
-1. [执行计划](docs/execution/travel-agent.md)：目标、当前进度、授权、决定、证据和下一步；持续更新。
-2. [计划地图](plan/README.md) → [任务定义与依赖](plan/实操计划/04-开发任务计划.md)。
+1. **当前批次计划** [docs/plans/2026-10-08-product-v2.md](docs/plans/2026-10-08-product-v2.md)：范围、待决事项、任务状态、每日进展；按 [记录规则](docs/plans/README.md) 持续更新。2026-10-08 前的历史见 [旧执行计划](docs/execution/travel-agent.md)。
+2. [设计地图](docs/design/README.md) → [任务定义与依赖](docs/design/04-roadmap.md)。
 3. [当前验收规格](docs/tasks/M4.md)及本次涉及的 02/03/05、ADR；按需读，不全仓灌入上下文。
 4. [工作流](docs/execution/workflow.md)、[工程标准](docs/execution/standards.md)；先核对 git status，不覆盖已有工作。
 5. 按任务查[架构地图](ARCHITECTURE.md)及[设计/前端/可靠性/安全/质量导航](docs/README.md)，不每轮全部重读。
@@ -23,7 +23,7 @@
 
 ## 保持的边界
 
-- 设计唯一来源是 plan/；执行计划维护实施进度，不另造业务设计。设计冲突先定位依据；需改变产品目标、SDK 路线或安全不变量时才问用户。
+- 设计唯一来源是 docs/design/；执行计划维护实施进度，不另造业务设计。设计冲突先定位依据；需改变产品目标、SDK 路线或安全不变量时才问用户。
 - runtime 使用 Claude Agent SDK；旅行业务、tools、校验和事务独立实现。不引入第二套 runtime，不做 C 档代码。
 - 遵守工程标准：类型、格式、分层、失败路径测试、真实 PostgreSQL 事务测试、Windows/UTF-8。
 - **SDK 优先、简洁复用**：先查现有函数/接口和 SDK 公共能力，再写代码；不重复实现运行时，不为假想扩展加抽象。具体规则见 [工程标准 §3.4](docs/execution/standards.md#34-sdk-优先与简洁复用)，上游阅读依据见 [复用清单](docs/guides/reuse.md)。独立审查必须检查重复与过度设计。
@@ -34,8 +34,8 @@
 
 ## 记录与停机
 
-- 执行计划是唯一实时进度入口；每个可验证增量记录commit、push结果、命令结果、剩余问题、下一步。
-- docs/operations 保存过程；docs/review 保存审查/最终学习材料；docs/blocked 只记真实阻塞；统一从 docs/README.md 导航。
+- 当前批次计划是唯一实时进度入口；按 [docs/plans/README](docs/plans/README.md) 记录任务状态、每日进展和问题解决记录（P-条目：假设与排除、根因证据、方案取舍、先红后绿测试、commit）。
+- docs/operations 保存命令与原始过程；docs/review/cases 保存面试案例；docs/blocked 只记真实阻塞；统一从 docs/README.md 导航。
 - 不为每个小任务新增一份要求用户阅读的报告；合并进里程碑记录，最终集中交付。
 - 普通失败自主定位修复；同根因持续无进展时记录并转做独立工作，不通过改断言/跳过检查来过关。
 - 仅缺凭据/授权、不可逆外部操作、实质产品架构冲突需要用户介入；隔离受影响工作并继续其他任务。

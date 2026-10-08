@@ -1,6 +1,6 @@
 # 安全边界与验证入口
 
-本项目本机演示范围与设计见[plan/02](../plan/实操计划/02-Agent架构与实现设计.md)。费用/密钥规则唯一来源：[standards §5](execution/standards.md)。
+本项目本机演示范围与设计见[design/02](design/02-architecture.md)。费用/密钥规则唯一来源：[standards §5](execution/standards.md)。
 
 | 边界 | 实施要求与验证 |
 | --- | --- |

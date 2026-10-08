@@ -70,7 +70,7 @@
 - 2026-10-03：[目录整理操作记录](operations/2026-10-03-directory-cleanup.md)。
 - 2026-10-02：[M0.1 批次总结](review/batch/2026-10-02-m0-core.md)、[未完成原因](blocked/2026-10-02-m0-core.md)、[详细操作记录](operations/2026-10-02-m0-core.md)。
 
-设计目标与任务顺序仍以 [plan/](../plan/README.md) 为准。这里解释实际做过什么，不会把目录占位写成已经实现的功能。
+设计目标与任务顺序仍以 [docs/design/](design/README.md) 为准。这里解释实际做过什么，不会把目录占位写成已经实现的功能。
 
 - [M4真实零工具三轮对照](evidence/m42-no-tools-repeat-2026-10-03.json)：同版本40×3，原规则失败保留。
 
@@ -78,7 +78,9 @@
 
 - [本轮有限同版本验收测量](evidence/m42-controlled-sweep-2026-10-04.json)：fa9930b原40test×3，完整组97/120规则通过；余下实验已停止，partial与语义/真人unknown保留。本轮交付范围与最终结果见 [PROJECT_STATUS](../PROJECT_STATUS.md)，不重复每日运行。
 
-## 2026-10-08 修复批次入口
+## 当前批次（2026-10-08 起）
 
-- [完整问题与修复设计](../plan/实操计划/07-2026-10-08-product-v2-问题修复.md)：19项核查问题、澄清项、酒店touch bar与阶段验收。
-- [过程记录](operations/product-v2.md#2026-10-08-调查与修复准备)、[面试案例索引](review/learning.md#2026-10-08-产品修复候选案例)：保留调查证据、方案取舍与限制。实时状态仅见[执行计划](execution/travel-agent.md)。
+- [批次计划与记录规则](plans/README.md)：目录职责、状态标注、开发中何时记录什么、面试案例模板。
+- [2026-10-08 Product V2 修复批次](plans/2026-10-08-product-v2.md)：B01–B19 核实结论、待决事项 D1–D5、任务表与**唯一状态**、每日进展、问题解决记录。
+- [命令与原始过程](operations/product-v2.md#2026-10-08-调查与修复准备)、[面试案例](review/cases/2026-10-08-product-v2.md)。
+- 长期设计已从 `plan/` 迁到 [docs/design/](design/README.md)（英文文件名，正文中文）。

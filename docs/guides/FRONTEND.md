@@ -1,6 +1,6 @@
 # 前端实施与验收约定
 
-范围：[M1.8规格](../tasks/M1.md)、[plan/02 API](../../plan/实操计划/02-Agent架构与实现设计.md)。前端工作区apps/web，当前是否可运行看[执行计划](../execution/travel-agent.md)。
+范围：[M1.8规格](../tasks/M1.md)、[design/02 API](../design/02-architecture.md)。前端工作区apps/web，当前是否可运行看[执行计划](../execution/travel-agent.md)。
 
 - /articles列表与详情提供历史快照来源及明确规划引用；/工作台完成条件、聊天、报价、差异与确认；/plans只读已确认版本。
 - 攻略引用只填消息，不自动发送；正式页复用卡片/身份恢复，首读失败后按持久plan_id重读。导航卸载撤销迟到请求写回。

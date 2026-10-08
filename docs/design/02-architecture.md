@@ -1,7 +1,7 @@
 # 02 Agent 架构与实现设计
 
 本文说明 Agent 怎么运行：一次请求经过哪些模块，状态存在哪里，出错时怎么办。
-领域字段见 [03](03-数据工具与外部API.md)，测试标准见 [05](05-评测与验收.md)，上游依据见 [06](06-来源与待验证事项.md)。
+领域字段见 [03](03-data-tools.md)，测试标准见 [05](05-validation.md)，上游依据见 [06](06-sources.md)。
 
 ## 0. 先读这 6 个概念
 
@@ -16,7 +16,7 @@
 
 ## 1. 一次请求的主调用链
 
-2026-10-03 用户确认：**Claude Agent SDK 负责通用运行时，旅行业务和工具由本项目实现；commerce-agents 用来理解机制和参考接入。** 决策记录见 [ADR-003](../../docs/adr/003-claude-agent-sdk-runtime.md)。本页为目标架构，实际实施状态见[执行计划](../../docs/execution/travel-agent.md)。
+2026-10-03 用户确认：**Claude Agent SDK 负责通用运行时，旅行业务和工具由本项目实现；commerce-agents 用来理解机制和参考接入。** 决策记录见 [ADR-003](../adr/003-claude-agent-sdk-runtime.md)。本页为目标架构，实际实施状态见[执行计划](../execution/travel-agent.md)。
 
 ```text
 用户发消息 → FastAPI：身份检查、消息去重、创建 TaskRun
@@ -105,7 +105,7 @@ SDK 管消息往返、工具结果回填和会话上下文；应用管业务状�
 
 DeepSeek 官方提供 [Claude Code 接入配置](https://api-docs.deepseek.com/zh-cn/quick_start/agent_integrations/claude_code/)；Anthropic 则说明不支持通过网关将 Claude Code 路由至非 Claude 模型（[官方说明](https://code.claude.com/docs/en/llm-gateway)）。本项目选择将 DeepSeek 作为**待验证的兼容线路**，不把它写成 Anthropic 官方保证。
 
-现有 [协议探针](../../docs/protocols/protocol-deepseek.md) 只完成了两次 Messages 请求。SDK 还多了 CLI 进程、环境配置、工具注册、停止和会话行为，必须单独验收：
+现有 [协议探针](../protocols/protocol-deepseek.md) 只完成了两次 Messages 请求。SDK 还多了 CLI 进程、环境配置、工具注册、停止和会话行为，必须单独验收：
 
 | 项目 | 验收证据 |
 | --- | --- |

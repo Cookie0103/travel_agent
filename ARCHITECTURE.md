@@ -1,6 +1,6 @@
 # 代码架构地图
 
-业务设计唯一来源：[plan/02](plan/实操计划/02-Agent架构与实现设计.md)、[领域与工具](plan/实操计划/03-数据工具与外部API.md)。
+业务设计唯一来源：[design/02](docs/design/02-architecture.md)、[领域与工具](docs/design/03-data-tools.md)。
 当前实施/缺口看[执行计划](docs/execution/travel-agent.md)。此处只帮助定位代码，不另定义业务。
 
 | 目录 | 职责与入口 |

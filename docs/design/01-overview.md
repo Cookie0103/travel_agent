@@ -29,7 +29,7 @@
 **参考来源**：
 - Agent 设计参考 Anthropic 的 Commerce Agents：一个主 Agent 持有对话，工具执行和安全检查放在代码里。
 - 业务场景参考 DataMind 的旅游内容推荐：用户从攻略文章出发规划行程。
-- 依据见 [06](06-来源与待验证事项.md)。
+- 依据见 [06](06-sources.md)。
 
 ## 4. 用户怎么用
 
@@ -70,4 +70,4 @@
 | 可观测 | OpenTelemetry + Langfuse（自托管） | 记录每次模型调用和工具调用，提供查看界面 |
 | 评测 | pytest + 自写 eval runner | 用例集、规则断言、LLM 评审、模型对比 |
 
-运行时采用 Claude Agent SDK，见 [ADR-003](../../docs/adr/003-claude-agent-sdk-runtime.md)。不再手写通用循环，不同时引入 LangChain / LangGraph；Redis、消息队列、向量库仍不引入。OpenAI / Gemini 的扩展需另行设计，不承诺 SDK 原生兼容。
+运行时采用 Claude Agent SDK，见 [ADR-003](../adr/003-claude-agent-sdk-runtime.md)。不再手写通用循环，不同时引入 LangChain / LangGraph；Redis、消息队列、向量库仍不引入。OpenAI / Gemini 的扩展需另行设计，不承诺 SDK 原生兼容。

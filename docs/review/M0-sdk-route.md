@@ -3,7 +3,7 @@
 当前决定：SDK 承担通用 runtime；通过 commerce-agents 理解机制；旅行业务、工具和评测由我们编写。**这次只改文档，还没有接入 SDK。**
 
 ## 阅读顺序
-1. [02 架构 §1–4](../../plan/实操计划/02-Agent架构与实现设计.md)：看主调用链和职责。
+1. [02 架构 §1–4](../design/02-architecture.md)：看主调用链和职责。
 2. [ADR-003](../adr/003-claude-agent-sdk-runtime.md)：看为什么换、代价和兼容性边界。
 3. [M0 规格](../tasks/M0.md)：看下一步的实际产出和验收。
 4. [上游阅读线](../guides/reuse.md)：先读 orchestrator/turn 理解机制，再读 SDK 的 make_options/run_turn/build_sdk_tools。

@@ -145,7 +145,7 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 
 ## 2026-10-08 调查与修复准备
 
-用户本轮要求先理解与规划，不修业务代码；授权创建`batch-2026-10-08-product-V2`并切Railway api/web/supplier分支，要求后续一功能一commit、记录根因/过程/取舍/边界以备面试。完整设计见[07修复规划](../../plan/实操计划/07-2026-10-08-product-v2-问题修复.md)，实时状态见执行计划。
+用户本轮要求先理解与规划，不修业务代码；授权创建`batch-2026-10-08-product-V2`并切Railway api/web/supplier分支，要求后续一功能一commit、记录根因/过程/取舍/边界以备面试。完整设计与实时状态见[批次计划](../plans/2026-10-08-product-v2.md)（原 07 规划已迁入）。
 
 | 操作/证据 | 实际结果与限制 |
 | --- | --- |

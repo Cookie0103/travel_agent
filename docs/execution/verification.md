@@ -1,6 +1,6 @@
 # 功能与验收测试矩阵
 
-2026-10-03 用户补充 Goal / Acceptance Criteria 后建立。设计来源仍为 plan/01–06、docs/tasks 与已接受 ADR；仓库目前没有 docs/spec 目录，不因此另造一套需求。
+2026-10-03 用户补充 Goal / Acceptance Criteria 后建立。设计来源仍为 design/01–06、docs/tasks 与已接受 ADR；仓库目前没有 docs/spec 目录，不因此另造一套需求。
 本表映射需求到验证方法与缺口；实时状态、命令结果和提交只在[执行计划](travel-agent.md)维护。
 单元/离线SDK/真实SDK本地脚本/真实模型/真实PG/浏览器/人工证据分别标明；M1.8已提交d239cc7；验证和独立审查结果从执行计划读取。
 

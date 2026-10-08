@@ -1,6 +1,6 @@
 # 可靠性边界与故障验证
 
-设计依据：[plan/02 §6](../plan/实操计划/02-Agent架构与实现设计.md)、[M1/M2实施规格入口](README.md)。
+设计依据：[design/02 §6](design/02-architecture.md)、[M1/M2实施规格入口](README.md)。
 本文件说明需要保护什么、在哪里验证；完成状态统一看[执行计划](execution/travel-agent.md)。
 
 | 边界 | 必须保持的规则 | 验证入口 |
