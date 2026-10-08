@@ -10,7 +10,12 @@ from pydantic import ValidationError
 from backend.domain.catalog import Place
 from backend.domain.evidence import EvidenceKind, EvidenceRecord, evidence_conditions
 from backend.domain.hotels import HotelOffer, quote
-from backend.domain.itinerary import ItineraryProposal, ProposedItem, RouteEstimate
+from backend.domain.itinerary import (
+    ItineraryProposal,
+    ProposedItem,
+    RouteEstimate,
+    ValidationReport,
+)
 from backend.domain.travel_request import TravelRequest
 from backend.domain.validator import validate_itinerary
 from backend.providers.hotel_fixture import load_rates
@@ -384,3 +389,176 @@ def test_item_note_flows_into_plan_item() -> None:
     )
     assert PlanItem(**item.model_dump()).note == "枯山水名园"
     assert PlanItem(**item.model_dump()).proposed().note == "枯山水名园"
+
+
+def sightseeing_report(
+    count: int,
+    pace: str = "",
+    category: str = "museum",
+    *,
+    sourced: bool = True,
+    hours: str | None = "24/7",
+) -> ValidationReport:
+    current = request().model_copy(update={"soft_constraints": (f"节奏：{pace}",) if pace else ()})
+    records = tuple(
+        record(
+            place().model_copy(
+                update={
+                    "place_id": f"fixture:sight-{i}",
+                    "category": category,
+                    "opening_hours": hours,
+                }
+            ),
+            current,
+        ).model_copy(update={"provider": "test-fixture" if sourced else None})
+        for i in range(count)
+    )
+    start = datetime.fromisoformat("2026-11-03T09:00+09:00")
+    proposal = ItineraryProposal(
+        expected_revision=1,
+        items=tuple(
+            ProposedItem(
+                place_evidence_id=r.evidence_id,
+                start=start + timedelta(hours=i),
+                end=start + timedelta(hours=i, minutes=30),
+            )
+            for i, r in enumerate(records)
+        ),
+    )
+    return validate_itinerary(current, proposal, records, NOW)
+
+
+@pytest.mark.parametrize(
+    ("pace", "count", "warn"),
+    [
+        ("慢节奏", 3, False),
+        ("慢节奏", 4, True),
+        ("标准", 5, False),
+        ("标准", 8, True),
+        ("特种兵", 8, False),
+        ("特种兵", 9, True),
+        ("", 5, False),
+        ("", 8, True),
+    ],
+)
+def test_sightseeing_density_warns_only_above_known_pace_limit(
+    pace: str, count: int, warn: bool
+) -> None:
+    report = sightseeing_report(count, pace)
+    warnings = [c for c in report.checks if c.code == "pace_warning"]
+    assert bool(warnings) == warn
+    assert all(c.status == "unknown" and "提醒" in c.message for c in warnings)
+    assert report.status == "partial"
+
+
+@pytest.mark.parametrize(
+    "category",
+    [
+        "hotel",
+        "lodging",
+        "hostel",
+        "restaurant",
+        "cafe",
+        "train_station",
+        "transit_station",
+        "unknown",
+    ],
+)
+def test_non_sightseeing_places_never_inflate_daily_density(category: str) -> None:
+    assert not any(
+        c.code == "pace_warning" for c in sightseeing_report(9, "慢节奏", category).checks
+    )
+
+
+def test_unsourced_places_cannot_prove_sightseeing_density() -> None:
+    assert not any(
+        c.code == "pace_warning" for c in sightseeing_report(9, "慢节奏", sourced=False).checks
+    )
+
+
+@pytest.mark.parametrize(
+    ("category", "warn"),
+    [("museum", True), ("hotel", False), ("restaurant", False), ("train_station", False)],
+)
+def test_repeated_place_entity_across_days_is_a_warning_even_with_distinct_evidence(
+    category: str, warn: bool
+) -> None:
+    records = tuple(
+        record(place().model_copy(update={"category": category, "opening_hours": "24/7"}))
+        for _ in range(3)
+    )
+    assert len({r.evidence_id for r in records}) == 3 and len({r.entity_id for r in records}) == 1
+    proposal = ItineraryProposal(
+        expected_revision=1,
+        items=tuple(
+            item(r, f"2026-11-0{3 + i}T10:00+09:00", f"2026-11-0{3 + i}T11:00+09:00")
+            for i, r in enumerate(records)
+        ),
+    )
+    report = validate_itinerary(request(), proposal, records, NOW)
+    repeated = [c for c in report.checks if c.code == "repeated_place_warning"]
+    assert bool(repeated) == warn and report.status == "partial"
+    if warn:
+        assert len(repeated) == 1 and repeated[0].status == "unknown"
+        assert "3次" in repeated[0].message and "2026-11-05" in repeated[0].message
+
+
+def test_density_groups_by_japan_day_and_does_not_mutate_proposal() -> None:
+    current = request().model_copy(update={"soft_constraints": ("节奏：慢节奏",)})
+    records = tuple(
+        record(place().model_copy(update={"place_id": f"fixture:jst-{i}", "opening_hours": "24/7"}))
+        for i in range(6)
+    )
+    starts = [datetime(2026, 11, 3, hour, tzinfo=UTC) for hour in (6, 7, 8, 18, 19, 20)]
+    proposal = ItineraryProposal(
+        expected_revision=1,
+        items=tuple(
+            ProposedItem(
+                place_evidence_id=r.evidence_id, start=start, end=start + timedelta(minutes=30)
+            )
+            for r, start in zip(records, starts, strict=True)
+        ),
+    )
+    before = proposal.model_dump(mode="json")
+    report = validate_itinerary(current, proposal, records, NOW)
+    assert not any(c.code in ("pace_warning", "repeated_place_warning") for c in report.checks)
+    assert proposal.model_dump(mode="json") == before and current.soft_constraints == (
+        "节奏：慢节奏",
+    )
+
+
+def test_global_warnings_reach_bounded_feedback_even_when_opening_hours_are_unknown() -> None:
+    report = sightseeing_report(8, "标准", hours=None)
+    feedback = report.feedback()
+    checks = feedback["checks"]
+    assert isinstance(checks, list) and len(checks) == 12 and feedback["truncated"]
+    assert any(c["code"] == "pace_warning" for c in checks)
+    assert all(c["status"] != "conflict" for c in checks)
+
+
+@pytest.mark.parametrize(
+    "category", ["coffee_shop", "bed_and_breakfast", "apartment", "ferry_terminal"]
+)
+def test_other_known_non_sightseeing_categories_do_not_count(category: str) -> None:
+    assert not any(
+        c.code == "pace_warning" for c in sightseeing_report(9, "慢节奏", category).checks
+    )
+    repeated = record(place().model_copy(update={"category": category, "opening_hours": "24/7"}))
+    proposal = ItineraryProposal(
+        expected_revision=1,
+        items=(
+            item(repeated),
+            item(repeated, "2026-11-04T10:00+09:00", "2026-11-04T11:00+09:00"),
+        ),
+    )
+    report = validate_itinerary(request(), proposal, (repeated,), NOW)
+    assert not any(c.code == "repeated_place_warning" for c in report.checks)
+
+
+def test_hard_conflicts_stay_first_when_global_warnings_are_prioritized() -> None:
+    report = sightseeing_report(8, "标准", hours="Mo-Su 08:00-09:00")
+    feedback = report.feedback()
+    checks = feedback["checks"]
+    assert isinstance(checks, list) and report.status == "conflict"
+    assert all(c["status"] == "conflict" for c in checks[:8])
+    assert any(c["code"] == "pace_warning" and c["status"] == "unknown" for c in checks[8:])

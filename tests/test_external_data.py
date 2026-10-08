@@ -188,3 +188,19 @@ def test_rakuten_run_cap_default_follows_nights_and_other_profiles_keep_config(
         assert usage.run_caps["rakuten"] == expected and usage.calls == 0
 
     asyncio.run(exercise())
+
+
+def test_google_missing_place_types_remain_unknown_instead_of_inventing_attraction() -> None:
+    from backend.adapters.google_maps import place_from_response
+
+    response = fixture("google_places_sample.json")
+    assert isinstance(response, dict) and isinstance(response["places"], list)
+    entry = response["places"][0]
+    assert isinstance(entry, dict)
+    raw = dict(entry)
+    raw.pop("types", None)
+    parsed = _Places.model_validate({"places": [raw]}).places[0]
+    mapped = place_from_response(parsed, "京都")
+    assert mapped.category == "unknown"
+    assert mapped.name == parsed.displayName.text
+    assert mapped.latitude == parsed.location.latitude

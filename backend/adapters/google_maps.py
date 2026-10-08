@@ -121,7 +121,7 @@ def place_from_response(value: _GooglePlace, city: str) -> Place:
         latitude=value.location.latitude,
         longitude=value.location.longitude,
         coordinate_kind="node",
-        category=value.types[0] if value.types else "attraction",
+        category=value.types[0] if value.types else "unknown",
         opening_hours=opening_hours(value.regularOpeningHours),
         field_sources={},
         source=Source(

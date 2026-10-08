@@ -106,3 +106,20 @@ def test_foreign_trip_budget_is_not_silently_saved_as_yen() -> None:
 def test_any_explicit_foreign_trip_budget_in_the_sentence_requires_clarification() -> None:
     patch = fixture_patch("全程5万JPY，总预算8万美元", TravelRequest(), date(2026, 10, 8))
     assert patch["set"] == {} and patch["clear"] == []
+
+
+def test_other_soft_preferences_do_not_make_unspoken_pace_known() -> None:
+    from backend.agent.fixture_conditions import missing_question
+
+    request = TravelRequest.model_validate(
+        {
+            "city": "京都",
+            "start_date": "2026-11-03",
+            "end_date": "2026-11-05",
+            "adults": 2,
+            "child_ages": [],
+            "rooms": 1,
+            "soft_constraints": ["少走路"],
+        }
+    )
+    assert "节奏" in missing_question(request)

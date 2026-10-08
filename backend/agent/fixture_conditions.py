@@ -149,6 +149,8 @@ def missing_question(request: TravelRequest) -> str:
     missing = [labels[k] for k in request.hotel_requirements() if k in labels]
     if missing:
         return "请在对话里补充：" + "、".join(missing) + "。"
-    if not request.soft_constraints:
+    if not any(
+        c in ("节奏：标准", "节奏：慢节奏", "节奏：特种兵") for c in request.soft_constraints
+    ):
         return "旅行条件已记录。你想要标准、慢节奏还是特种兵节奏？"
     return "旅行条件已记录。接下来想比较酒店，还是生成行程？"

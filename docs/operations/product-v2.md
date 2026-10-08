@@ -388,3 +388,13 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - P39最终领域36 passed/0.07s、来源/HTTP/工具PG14 passed/1.49s；check263/三平台strict/3契约/10入口exit0。独立复核guard全部匹配与原币换算断言无新阻塞。实际Chrome/开发PG全程5万美元未写入/0tool/仍rev4/JPY60000，住宿EUR20000原币保存rev5/1房1晚总额EUR20000/关系unknown，明确恢复住宿JPY2–3万rev6且其他conditions完全相等；原V1/hash不变，0酒店/模型调用。证据JSON增加三阶段总11阶段PG；外币截图已查看，既有两张也已查看。最终完整测试运行中。
 - 最终完整 `uv run python scripts/dev.py test` exit1：1080 passed/原7 SDK failed/1 skipped/1 live deselected/259.55s；失败集合逐名与前一已闭环1074结果和P05相同，无新增失败。不是全绿，R6前仍须解决P05。dev check263、web81/type/lint/build5路由已通过（P39仅后端/测试，前端未再改）；git diff --check/check_docs10入口exit0。实现待commit/push。
 - 实现 `4108fb90fc84d4b7134c5038e41c9d6613f3b9e3`已提交/push；git ls-remote相同SHA，checkout干净。P30–39全部闭环，T3.7 done、C17 STAR落盘；恢复点T3.4。
+
+## 2026-10-08 T3.4 节奏与重复景点
+
+- 开工git status空/HEAD a41c6dd/当前分支，T3.7记录已push；首次猜测validator/design文件旧名不存在，按rg --files纠正，未改源码。按需读domain validator/itinerary/catalog/Evidence、既有itinerary与预算单测、design03 §5与05 R06/R07。拟沿用CheckStatus unknown/汇总partial表达非阻断警告，不新增报告字段/依赖/ADR；已知分类排除住宿/餐食/交通，按真实entity_id而非Evidence UUID计重复，以JST分天。
+- `uv run python -m pytest tests/test_itinerary.py tests/test_persona.py -q`首次红：6 failed/44 passed/0.52s，四密度（慢4/标准8/特种兵9/未知8）、同entity三不同Evidence跨日重复、固定提示仍默认标准；其余分类排除/日本日边界/来源缺失/旧失败路径控制通过。未削弱硬冲突或改断言。
+- 首绿validator/persona/预算70 passed/0.47s；初次check mypy同一函数两个循环复用visits（list[str] vs list[tuple[date,str]]）3错误，重命名第二循环变量，不ignore。P41补离线其他软条件少走路≠已知节奏，现missing_question跳过追问，领域红16 pass/1 fail/0.06s；改为检查已有规范节奏值，不删其他偏好、不默认标准。
+- P42自审有界反馈：8景点营业时间未知时8 opening+7 route unknown在前，新增全局密度提醒排在第16项，SDK feedback只取12会隐藏。新测试首编辑漏helper hours参数造成18 failed/25 passed（NameError/参数错误，非业务红），按真实签名补参后原断言重跑，正确红记录下一条；不通过删除unknown来过关。
+- P42正确红42 passed/1 failed/0.45s：反馈12项中无pace_warning；P43四类别+P42合跑42 passed/5 failed/0.50s，Google缺types映射16 passed/1 failed/0.22s。采用有限正向景点分类集合，其他/未知不计，不靠不断扩黑名单假称覆盖；Google仅缺类别回退改unknown，其他事实与请求数不变。
+- T3.4最终相关领域/提示/fixture/预算/外部映射单测110 passed/0.62s；P42同unknown内优先全局提醒，硬conflict优先测试8闭馆在前8，12上限不变。P43正向类别集合，非景点/未知不计；Google缺types保unknown且名称坐标不变。dev check263格式/三平台strict/3契约/10入口exit0；完整离线test/web兼容检查与独立增量复核运行中。未调用真实模型/供应商，无DB迁移/生产操作。
+- 最终 `uv run python scripts/dev.py test` exit1：1111 passed/原7 SDK failed/1 skipped/1 live deselected/259.98s；失败集合逐名与T3.7/P05相同，没有新增回归。web81 passed/363.27ms/typecheck/lint/build5路由exit0；最后dev check263/三平台strict/3契约/10入口exit0。独立只读P40–43复核无新增，不跑测试/不改文件。受控纯领域5案例t34-validator-warnings.json落盘，不冒称浏览器/实际模型验收；无新持久字段/付费/生产操作。git diff --check/check_docs10入口通过。

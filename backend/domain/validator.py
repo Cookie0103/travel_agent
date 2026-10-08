@@ -1,6 +1,6 @@
 """纯代码校验行程；区分已满足、未知与硬冲突，给SDK具体修复反馈而不代写模型循环。"""
 
-from datetime import datetime, timedelta
+from datetime import date, datetime, timedelta
 from decimal import Decimal
 from typing import Literal
 from uuid import UUID
@@ -51,6 +51,7 @@ def validate_itinerary(
     ):
         raise ValueError("行程证据缺失或已失效")
     checks: list[ValidationCheck] = []
+    places: list[Place | None] = []
     for index, item in enumerate(proposal.items):
         record = evidence[item.place_evidence_id]
         if record.kind != "place":
@@ -58,8 +59,10 @@ def validate_itinerary(
         place = Place.model_validate(record.value) if record.status == "verified" else None
         if place and place.place_id != record.entity_id:
             raise ValueError("地点证据实体不一致")
+        places.append(place)
         checks.extend(visit_checks(request, proposal, index, place))
         checks.extend(route_checks(request, proposal, index, evidence))
+    checks.extend(sightseeing_checks(request, proposal, places))
     known, estimated, costs = budget_checks(request, proposal, evidence, now)
     checks.extend(costs)
     if request.hard_constraints:
@@ -78,6 +81,97 @@ def validate_itinerary(
     return ValidationReport(
         status=status, checks=tuple(checks), known_cost=known, estimated_cost=estimated
     )
+
+
+SIGHTSEEING_CATEGORIES = {
+    "museum",
+    "castle",
+    "attraction",
+    "tourist_attraction",
+    "viewpoint",
+    "heritage",
+    "memorial",
+    "monument",
+    "ruins",
+    "archaeological_site",
+    "boundary_stone",
+    "wayside_shrine",
+    "place_of_worship",
+    "temple",
+    "shrine",
+    "church",
+    "mosque",
+    "synagogue",
+    "hindu_temple",
+    "buddhist_temple",
+    "art_gallery",
+    "gallery",
+    "artwork",
+    "zoo",
+    "aquarium",
+    "theme_park",
+    "amusement_park",
+    "park",
+    "garden",
+    "national_park",
+    "historical_landmark",
+    "cultural_landmark",
+    "historical_place",
+    "observation_deck",
+    "scenic_spot",
+    "natural_feature",
+}
+
+
+def sightseeing_checks(
+    request: TravelRequest, proposal: ItineraryProposal, places: list[Place | None]
+) -> list[ValidationCheck]:
+    """只提醒已核实景点；不把酒店/餐食/交通或未知类别当景点。"""
+    by_day: dict[date, list[str]] = {}
+    by_place: dict[str, list[tuple[date, str]]] = {}
+    for item, place in zip(proposal.items, places, strict=True):
+        if place is None:
+            continue
+        category = place.category.strip().casefold()
+        if category not in SIGHTSEEING_CATEGORIES:
+            continue
+        day = item.start.astimezone(KYOTO).date()
+        by_day.setdefault(day, []).append(place.place_id)
+        by_place.setdefault(place.place_id, []).append((day, place.name))
+    limits = {"慢节奏": 3, "标准": 5, "特种兵": 8}
+    pace = next(
+        (s.removeprefix("节奏：") for s in request.soft_constraints if s.startswith("节奏：")),
+        "",
+    )
+    limit = limits.get(pace, 5)
+    checks: list[ValidationCheck] = []
+    for day, visits in by_day.items():
+        if len(visits) > limit:
+            guidance = (
+                f"超过{pace}每日{limit}个的建议上限，请确认或减少景点。"
+                if pace in limits
+                else "密度较高且节奏未确认，请在对话里确认或调整。"
+            )
+            checks.append(
+                check(
+                    f"day:{day.isoformat()}",
+                    "unknown",
+                    "pace_warning",
+                    f"节奏提醒：{day.isoformat()}安排{len(visits)}个已知景点，{guidance}",
+                )
+            )
+    for place_id, repeated in by_place.items():
+        if len(repeated) > 1:
+            dates = "、".join(dict.fromkeys(day.isoformat() for day, _ in repeated))
+            checks.append(
+                check(
+                    f"place:{place_id}",
+                    "unknown",
+                    "repeated_place_warning",
+                    f"重复景点提醒：{repeated[0][1]}安排{len(repeated)}次（{dates}），请确认是否有意重访。",
+                )
+            )
+    return checks
 
 
 def visit_checks(

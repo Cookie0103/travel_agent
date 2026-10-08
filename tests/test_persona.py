@@ -68,3 +68,9 @@ def test_calibration_computes_real_pairs_without_filling_missing_scores() -> Non
     assert result["exact_rate"] == 0
     with pytest.raises(ValueError, match="重复"):
         calibration([samples[0], samples[0]])
+
+
+def test_trip_pace_is_asked_for_without_defaulting_unspoken_user_facts() -> None:
+    prompt = travel_prompt()
+    assert "未说明节奏按标准" not in prompt
+    assert "节奏未说明时留空" in prompt

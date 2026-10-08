@@ -106,7 +106,10 @@ class ValidationReport(BaseModel):
     def feedback(self) -> dict[str, object]:
         ordered = sorted(
             self.checks,
-            key=lambda check: {"conflict": 0, "unknown": 1, "verified": 2}[check.status],
+            key=lambda check: (
+                {"conflict": 0, "unknown": 1, "verified": 2}[check.status],
+                check.code not in ("pace_warning", "repeated_place_warning"),
+            ),
         )
         return {
             **self.model_dump(mode="json", exclude={"checks"}),
