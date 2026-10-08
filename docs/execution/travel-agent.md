@@ -1,5 +1,18 @@
 # Travel Agent 长程执行计划
 
+## 2026-10-08 当前恢复入口：产品修复规划
+
+- 用户最新范围：先调查/规划；只授权新分支与Railway分支准备，本轮不修改业务代码。旧自主评测队列不恢复。
+- 当前分支`batch-2026-10-08-product-V2`已创建并push，基线`b1e84bf0fac90b0325e51f67ae3d1d35427a9a96`；原分支`batch/2026-10-05-product-v2`保留。
+- 设计：[07修复规划](../../plan/实操计划/07-2026-10-08-product-v2-问题修复.md)。19项覆盖、澄清项、酒店5–8家横滚/所有酒店搜索/用户URL参考、阶段依赖、测试/回退与面试记录均已梳理；业务修复未开始。
+- Railway production的api/web/supplier分支三项变更已统一应用到新分支；auto deploy开启、Wait for CI=false，未更改Postgres/卷/变量。切分支不代表修复上线。
+- 验证：普通uv check受全局依赖时间限制阻断；`uv run --no-sync python scripts/dev.py check`通过全部静态检查。完整离线/PG/前端基线与真实修复验收尚未执行，本轮无付费API调用。
+- 独立规划审查已完成并落实五项修正。过程与面试入口见[本轮过程](../operations/product-v2.md#2026-10-08-调查与修复准备)、[案例索引](../review/learning.md#2026-10-08-产品修复候选案例)。
+- 下一步：本轮仅提交规划文档；后续从R0基线起，先按worktree流程隔离修复、核定历史/酒店参考最小内部契约，再按R1→R6推进。高优先失败不跨阶段。
+
+以下记录为历史恢复入口；若与上面本轮范围冲突，以上面用户最新范围为准。
+
+
 ## 今日分支保存（2026-10-05，当前 Git 恢复入口）
 
 用户要求沿用既有batch/年-月-日-主题格式保存今天的最新代码。工作区起点干净，前一分支batch/2026-10-04-product-v2与origin均为5a5ee5b8d5fa2f8f2ea51a68f528a659bff192f5，包含c9e1d7d的DeepSeek请求及SSE修复和最终真实验收记录。已从该HEAD创建并切换到batch/2026-10-05-product-v2，git push -u origin成功，ls-remote确认该完整SHA一致，已设置远端跟踪。此续记仅更新恢复入口，复用上一轮同源码完整测试，保留project-check、跳过重复project-test后提交并普通push。

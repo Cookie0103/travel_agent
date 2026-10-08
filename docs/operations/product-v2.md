@@ -142,3 +142,23 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 ## 回复不暴露内部编号（2026-10-05）
 
 提示词新增规则：回复文字不得出现offer_id/evidence_id/draft_id/plan_id或UUID；另在 `services/runs.py` 对最终回答文本（`domain.execution.scrub_internal_ids`）兜底删除带标签编号与36位UUID，不改工具结果和展示卡片。
+
+## 2026-10-08 调查与修复准备
+
+用户本轮要求先理解与规划，不修业务代码；授权创建`batch-2026-10-08-product-V2`并切Railway api/web/supplier分支，要求后续一功能一commit、记录根因/过程/取舍/边界以备面试。完整设计见[07修复规划](../../plan/实操计划/07-2026-10-08-product-v2-问题修复.md)，实时状态见执行计划。
+
+| 操作/证据 | 实际结果与限制 |
+| --- | --- |
+| git fetch/status/remote compare | 原checkout干净，旧分支`batch/2026-10-05-product-v2`与origin为0/0；基线`b1e84bf0fac90b0325e51f67ae3d1d35427a9a96`。 |
+| git switch -c / push -u | 创建并推送用户指定的新分支，未改业务文件。 |
+| Chrome配置核对 | 首次在另一个Chrome配置中Railway未登录；切到用户指定的个人黄色Chrome后已有项目权限。没有操作账号权限或请求密码。 |
+| Railway三项变更预览 | production的api/web/supplier各只有一项Branch，从旧分支切到新分支；Deploy Changes已应用，选择值新分支且待应用列表消失。 |
+| 既有部署与健康配置 | 三服务既有基线部署成功；api健康检查/health，supplier为/openapi.json。分支变更没有业务差异，不能把配置切换当Bug修复上线。 |
+| 发布门禁调查 | 三服务auto deploy开启、Wait for CI为false；本轮只切分支，未改其他开关。后续业务push前须完成相关本地Chrome与自动验证；仅开启Wait for CI不能替代体验验收。 |
+| 普通uv check | 全局exclude-newer为2026-10-01，与锁定要求python-dotenv>=1.2.4发布时间冲突，依赖解析失败。未改全局配置、依赖或锁文件。 |
+| uv run --no-sync python scripts/dev.py check | 使用已装虚拟环境：Ruff检查/248文件格式、win32/linux/darwin strict mypy、3项分层契约、10份文档地图均通过。静态通过不等同离线/PG/真实修复验收。 |
+| 独立只读规划审查 | 核对关键源码和19项覆盖，修正R4依赖R3、CI与浏览器验收分离、酒店位置字段尚缺、用户URL/无报价选择保留、worktree同分支不能重复检出。未改业务实现。 |
+
+源码已确认的类别原因：单run/组件内sent导致前端旧回复与用户消息无法完整恢复；酒店以报价套餐截取，未按不同酒店去重；reserveUrl优先使浏览入口直达预订；Markdown缺table分支。`plan_exists`只证明该服务会拒绝同会话已有正式版本后的initial草稿，原第23步仍缺绑定错误证据；B13隐藏默认值候选原因仍需回归。
+
+后续每项在本节下记录：Bug ID/输入前提/实际与期望、版本与run证据、根因假设和排除、首次失败测试、选定与拒绝方案、实现文件、回归命令/结果、commit与部署、回退/剩余限制。原失败保留；不上传token、密钥、原始私人对话或无关账号截图。

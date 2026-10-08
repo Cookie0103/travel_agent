@@ -77,3 +77,8 @@
 - [M4完整配对统计](evidence/m42-paired-comparison-2026-10-03.json)：绑定两组原文件，错误/未知不刷掉。
 
 - [本轮有限同版本验收测量](evidence/m42-controlled-sweep-2026-10-04.json)：fa9930b原40test×3，完整组97/120规则通过；余下实验已停止，partial与语义/真人unknown保留。本轮交付范围与最终结果见 [PROJECT_STATUS](../PROJECT_STATUS.md)，不重复每日运行。
+
+## 2026-10-08 修复批次入口
+
+- [完整问题与修复设计](../plan/实操计划/07-2026-10-08-product-v2-问题修复.md)：19项核查问题、澄清项、酒店touch bar与阶段验收。
+- [过程记录](operations/product-v2.md#2026-10-08-调查与修复准备)、[面试案例索引](review/learning.md#2026-10-08-产品修复候选案例)：保留调查证据、方案取舍与限制。实时状态仅见[执行计划](execution/travel-agent.md)。

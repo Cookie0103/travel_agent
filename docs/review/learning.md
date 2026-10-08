@@ -66,3 +66,17 @@ API只处理身份/HTTP；RunService管理业务任务和事件；SDK负责模�
 集中评分准备已从原full第一轮按用例顺序选前20条，含17规则通过/3失败，原回答仅本地`.cache/calibration-preparation/20261004-first20-v1/samples.jsonl`。两个评审入口默认准备均0请求，persona/content真人配对均0/比率null；选择依据与原文件hash见[准备证据](../evidence/calibration-preparation-2026-10-04.json)。它不是全40的质量估计，未代填真人分或外发候选。补分与rubric只读[校准说明](../../eval/calibration/README.md)。
 
 [原运行前4条独立字段审阅](../evidence/content-review-first4-2026-10-04.json)复用原Case/attempt/context/hash及captured Evidence：二条城和攻略来源23项字段陈述与快照一致，其他两条缺事实附件；正文事实、别名子集和地区关系未覆盖。四条完整性都false，整体准确率/覆盖率null，不能把23个匹配当全部事实正确；reviewer为独立Codex agent、无人类分。原文/标注/完整输出仅`.cache/content-review-preparation/20261004-first4-v1/`，公共证据只有hash/计数，0模型调用。
+
+## 2026-10-08 产品修复候选案例
+
+这些是待实施的面试故事方向，不能现在说已解决或编造指标。设计见[完整修复规划](../../plan/实操计划/07-2026-10-08-product-v2-问题修复.md)，过程证据见[本批次记录](../operations/product-v2.md#2026-10-08-调查与修复准备)。
+
+| 候选案例 | 需要形成的证据与可讨论取舍 |
+| --- | --- |
+| 旅行隔离/历史恢复（B01/B04/B05/B17） | 新旧session、迟到SSE、多标签/刷新、PG持久历史；为何localStorage只作缓存，复用身份而不是新登录。 |
+| 模型文本与业务提交（B02/B03/B12/B14） | 原失败code、草稿/校验/确认/读回、重复确认幂等；为何提示词不能保证数据库或硬约束成功。 |
+| 酒店推荐与可信报价（B06/B08–B11） | 不同酒店去重、来源位置/评价、全程与住宿预算、未知价/空房/URL参考；为何不凑数量或按最低价代替偏好匹配。 |
+| no-op/版本与失效（B13/B14） | 可见未改与隐藏标准节奏的实际差异、revision语义、正式版本与报价TTL分离；不放松原归属/事务保护。 |
+| 可回退发布 | 一个功能一个commit、本地Chrome+CI、兼容契约/迁移、部署失败及恢复；分支隔离不等于production隔离。 |
+
+每个故事按“触发场景→影响→追踪与排除→验证根因→方案与替代方案→回归/边界→commit/部署→限制”整理。批次完成后再补修复前后证据，注明AI协作与个人理解边界。
