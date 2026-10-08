@@ -339,3 +339,4 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - Chrome最终UI三次no-op（直接保存、2.0/01/50000.00、酒店卡片存在时2.0/01）：PG revision2/soft标准/PATCH1始终不变，唯一V1/哈希d254…505d不变。卡片验证前显式发1“演示：比较酒店”离线消息，真实生成1比较面板/3暂留按钮；保存后仍1/3，不冒称0总写入。P24相同0.50与09:00:30均validtrue/rangeUnderflowfalse/stepMismatchfalse，仅填不保存，reload丢弃。
 - 切换已有空白T2.2旅行：form所有条件输入/未知select值为空；未改保存后只读PG revision0/child_ages null/八字段null，PATCH总数仍1（仅旧UI红那次）。未知儿童不被置[]；儿童显式三状态留T3.2，空白页旧离线门槛仍留T3.7。证据t31-condition-noop.json，两截图人工查看；初次卡片截图位于上方看不到卡，滚动后替换为三酒店可见图，实际DOM计数与PG为验收依据。
 - 最终独立只读审查源码/测试/计划/ops/JSON/两截图，无阻止提交发现；P23/P24关闭。审查未运行测试/未修改文件。`git diff --check`与`uv run python scripts/check_docs.py`退出0；实现commit待完成。
+- 实现`1809aa567aa0ec5e98c2bdc89d508584e7b72323`已提交/push，远端SHA一致、checkout干净；T3.1/P02/P23/P24状态与C3 STAR回写，恢复点T3.2。
