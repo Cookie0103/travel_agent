@@ -210,3 +210,15 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - `uv run python -m pytest tests/integration/test_plans.py -q`：10 passed/2.08s；`pnpm --dir apps/web run test`：25 passed/0 failed/0 skipped。前者真实随机PG库，后者含恢复helper测试，不能当成实际hook竞争已验证。未改代码，复用T0.2同代码完整基线，7项SDK失败保留。
 - 脱敏摘要与4张本地页面截图在 docs/evidence/product-v2；原线上事件和确定性迟到hydrate仍未验证。P-01保持doing，T0.5只完成调查。
 - 独立只读审查：4截图/摘要/PG边界与C6一致，未见秘密或过度结论；T0.5可关闭为调查完成，P-01仍doing。check_docs 10入口、diff check通过；文档提交未改业务代码，完整同代码基线不重复运行。
+
+## 2026-10-08 T1.1 旅行与轮次历史接口
+
+- `2dad10d` push远端完整SHA一致，git status干净后开工；ADR-014已接受。新增API与具体SQL/只读用例位于各现有层，不改表/迁移，不接第二运行时。
+- 先红 `uv run python -m pytest tests/integration/test_history.py -q`：12 failed/1.00s，新增路径404（缺接口）；实现后相同命令12 passed/0.99s。测试日志可能含自动生成的本地临时测试令牌，仅存ignored `.cache/t11-red.log`，不上传原日志。
+- 新SQL带user_id/session_id归属；Session创建时间/UUID与Run创建时间/UUID keyset，取limit+1；分页期间新建旅行/消息不移旧边界；无条件值null、只有实际当前正式版本存在才返回plan metadata。每轮presentation复用现有4项读取，不生成/确认/调模型。
+- 扩展游标结构/版本/日期时区/UUID/limit、数据库失败非空列表等边界后，历史+sessions+runs+plans+契约专项：44 passed/28.60s（首次扩展版）。
+- 初次dev check发现测试UUID导入未用；下一次mypy指出__table__.insert类型6项，改现有sqlalchemy.insert(Model)，不加ignore。dev check随后252文件Ruff/格式、三平台strict、3契约、10文档入口通过。
+- 用 `uv run python -m scripts.export_web_schema` + `pnpm --dir apps/web run generate` 生成契约和类型，不手改生成文件；web-check typecheck/lint/test25 passed/build5路由全部退出0。
+- 独立只读审查发现测试固定STAMP但新session用机器now（P2）；改明确STAMP+4h，runs页间新增也用固定delta。复核P2关闭，业务/归属/兼容/复用无其他发现；修正后专项与完整测试结果待补。
+- 时间修正后的 `pytest tests/integration/test_history.py -q`：19 passed/16.29s；最终 dev check 退出0，252文件三平台strict/格式/3契约/10文档。完整同增量test仍运行，不能提前报全绿。
+- 完整 `uv run python scripts/dev.py test`：1013 passed/7 failed/1 skipped/1 live deselected，253.10s；7失败名称与T0.2/P-05逐项一致，没有新增失败。完整运行期间最后仅修测试时间固定，故另用修正后的19专项覆盖；业务实现/生成契约未变。不跳过失败或放宽断言。

@@ -13,6 +13,7 @@ from backend.api.events import stream_events
 from backend.services.bookings import Booking, BookingService, HoldHotelInput
 from backend.services.catalog import Article, CatalogService
 from backend.services.common import ServiceError
+from backend.services.history import HistoryService, RunPage, SessionPage
 from backend.services.models import ModelOption, model_options
 from backend.services.plans import LockInput, PlanService, SavedPlan
 from backend.services.preferences import (
@@ -55,6 +56,7 @@ def create_app(
     bookings = booking_service or BookingService(travel)
     preferences = PreferenceService(sessions.database)
     catalog = CatalogService(travel)
+    history = HistoryService(sessions.database)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
@@ -117,6 +119,23 @@ def create_app(
     @app.post("/sessions", status_code=201)
     async def new_session(user_id: Annotated[UUID, Depends(identity)]) -> SessionView:
         return await sessions.new_session(user_id)
+
+    @app.get("/sessions")
+    async def list_sessions(
+        user_id: Annotated[UUID, Depends(identity)],
+        limit: Annotated[int, Query(ge=1, le=50)] = 20,
+        cursor: Annotated[str | None, Query(max_length=256)] = None,
+    ) -> SessionPage:
+        return await history.sessions(user_id, limit, cursor)
+
+    @app.get("/sessions/{session_id}/runs")
+    async def list_runs(
+        session_id: UUID,
+        user_id: Annotated[UUID, Depends(identity)],
+        limit: Annotated[int, Query(ge=1, le=50)] = 20,
+        before: Annotated[str | None, Query(max_length=256)] = None,
+    ) -> RunPage:
+        return await history.runs(user_id, session_id, limit, before)
 
     @app.get("/sessions/{session_id}")
     async def get_session(

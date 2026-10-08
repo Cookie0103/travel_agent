@@ -115,10 +115,28 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        get?: never;
+        /** List Sessions */
+        get: operations["list_sessions_sessions_get"];
         put?: never;
         /** New Session */
         post: operations["new_session_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessions/{session_id}/runs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Runs */
+        get: operations["list_runs_sessions__session_id__runs_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -519,6 +537,48 @@ export interface components {
         HTTPValidationError: {
             /** Detail */
             detail?: components["schemas"]["ValidationError"][];
+        };
+        /** HistoricalRun */
+        HistoricalRun: {
+            /**
+             * Run Id
+             * Format: uuid
+             */
+            run_id: string;
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /** Status */
+            status: string;
+            /** Mode */
+            mode: string;
+            /** Answer */
+            answer: string;
+            /** Error Code */
+            error_code: string | null;
+            /** Last Sequence */
+            last_sequence: number;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /**
+             * Presentations
+             * @default []
+             */
+            presentations: {
+                [key: string]: unknown;
+            }[];
+            /**
+             * Prompt
+             * @default
+             */
+            prompt: string;
+            /** Draft Id */
+            draft_id?: string | null;
         };
         /** HoldHotelInput */
         HoldHotelInput: {
@@ -924,6 +984,13 @@ export interface components {
             /** Changed Fields */
             changed_fields: string[];
         };
+        /** RunPage */
+        RunPage: {
+            /** Items */
+            items: components["schemas"]["HistoricalRun"][];
+            /** Next Before */
+            next_before: string | null;
+        };
         /** RunView */
         RunView: {
             /**
@@ -977,6 +1044,41 @@ export interface components {
              * Format: date-time
              */
             saved_at: string;
+        };
+        /** SessionPage */
+        SessionPage: {
+            /** Items */
+            items: components["schemas"]["SessionSummary"][];
+            /** Next Cursor */
+            next_cursor: string | null;
+        };
+        /** SessionSummary */
+        SessionSummary: {
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+            /** City */
+            city: string | null;
+            /** Start Date */
+            start_date: string | null;
+            /** End Date */
+            end_date: string | null;
+            /** Plan Id */
+            plan_id: string | null;
+            /** Current Version */
+            current_version: number | null;
+            /**
+             * Last Activity At
+             * Format: date-time
+             */
+            last_activity_at: string;
         };
         /** SessionView */
         SessionView: {
@@ -1846,6 +1948,40 @@ export interface operations {
             };
         };
     };
+    list_sessions_sessions_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                cursor?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionPage"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     new_session_sessions_post: {
         parameters: {
             query?: never;
@@ -1864,6 +2000,42 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["SessionView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_runs_sessions__session_id__runs_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                before?: string | null;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RunPage"];
                 };
             };
             /** @description Validation Error */

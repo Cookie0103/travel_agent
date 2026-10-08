@@ -9,3 +9,5 @@
 `travel.owned_request`先锁住本人会话；条件revision更新与相关Evidence失效在同一事务完成。
 
 temporary.temporary_database为测试/评测创建随机本地专用库，迁移/check共用；仅删除本次成功创建库，不接受用户删除目标。
+
+history.session_page/run_page基于创建时间+UUID分页；正式摘要只选当前已存在版本，无迁移/写入。

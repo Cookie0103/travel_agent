@@ -18,3 +18,5 @@ resolve_records与validate_proposal供普通工具/展示/确认共用，确认�
 BookingService持久确认后才调供应商；confirmed/unknown只对账，同报价ID幂等，报价锁价与hold有效期分开。
 patch/stage业务键与结果同事务，重复工具ID仍返回原结果；缓存也核对当前revision/base/Evidence。
 RunService启动只读裁决旧执行；PG暂不可用保留安全503，恢复核对完成前禁止新执行。
+
+HistoryService只读旅行摘要与持久轮次；游标有界，来源归属由SQL约束，接口见ADR-014。
