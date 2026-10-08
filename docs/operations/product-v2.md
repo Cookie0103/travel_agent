@@ -456,3 +456,21 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 最终完整命令 `uv run python scripts/dev.py test`：1132 passed / 7 failed / 1 skipped / 1 live deselected（265.33s），exit1如实保留；七项FAILED集合与T41/T35逐名相等，P05仍是发布门禁。对照日志首次误用简称路径exit2，按rg --files查到实际full-test-closed/full-test文件后比对通过。
 
 - 代码 `2da2b16`提交/push，证据全部落盘；P53–54 closed/C21归档；恢复点T4.3，T3.6仍待原生弹窗。
+
+
+## 2026-10-08 T4.3 空/失败酒店面板
+
+- 开工git status空，HEAD/远端af83d73。按需读工具执行事件、真实酒店服务、离线脚本与既有hydrate/runCards；ADR014先定有限展示投影。保持成功显式present与所有守卫；空/失败复用同run持久事件，不新增字段/查询/报价。
+- 路径探查失败：误用不存在presentation.ts/hooks/use-workspace.ts、test_execution.py/test_runtime.py、03-implementation.md，rg exit2；已按rg --files定位lib/use-workspace.ts、early-cards.ts、test_business_result.py、03-data-tools.md，失败不计验证。后续仅已列出路径。
+
+- 事件首红19 failed/1 passed/0.32s（仅无关/成功边界通过）。首次PG4 failed/0.88s包含测试错误：RunView是dataclass无model_dump、住宿实际契约amount/basis=per_room_night；修正后有效首红3 failed/1 passed/0.82s。实现后事件相关31 passed/0.27s；PG3失败发现计数全schema共享了成功案例Evidence6，应按当前session过滤，已修正查询范围而非弱化零写入断言。
+
+- 相关PG最终23 passed/2.96s，原empty测试改契约但增加零卡片/最低价/empty wrapper断言。独立只读无P2/P3：有限投影不改变工具返回/错误/业务状态/守卫，无额外调用与runtime。首次strict检查10测试typing错误，修正类型/范围；前端首次测试遗漏现有必需可空budget_relation，补null，同时后端空比较明确None。前端最终89 passed/291.51ms/type/lint/build5路由exit0；strict尚余测试error值object索引需窄化，不ignore。完整正在运行，源码保持。
+
+- Chrome首加载ChunkLoadError，dev.logs给出精确chunk；本地当前.next/static存在，但standalone/.next/static不存在，补copytree当前静态文件（仅ignored构建物）后reload，不改产品或浏览器安全设置。
+
+- 完整 `uv run python scripts/dev.py test` 1156 passed/原7 SDK failed/1 skipped/1 live deselected/265.11s，exit1；FAILED逐名与T42一致。最后测试error索引仅补isinstance窄化，原业务断言不变，相关单测31/.27再次通过；dev check273/三平台/3契约/10入口最终exit0。
+- Chrome新标签同身份独立session 1c832335-ad27-4ca5-bbf6-4790d9cda541：12成人1房空匹配→面板0家/无最低价/刷新保留；改成2个大人→3家6套餐/原价；受控本地fixture OSError→unavailable/失败0家，原成功留历史禁行动，本轮零报价。故障API已停，恢复默认离线API；三态截图已查看。新标签资源可用，旧标签加载停留未据此判业务失败；无生产或付费调用。发现有限表达缺口P56另记待先红修复，不将未识别值自动写入。
+
+- 默认API恢复后Chrome刷新：两个0家（旧空/最新失败）、故障原因1，旧成功仍3家但行动disabled。只GET恢复，不重跑工具；本地PG三轮依次completed/empty/0卡，completed/ok/6卡，failed/unavailable/error/0卡；rev3/Evidence6/booking0/hold0/order0/原正式V1一行hash不变。JSON与三截图已检查，成功截图标题上沿略裁但三店/价格可见，DOM另证明3家6套餐。
+- 实際命令：领域 `uv run python -m pytest tests/test_hotel_empty_presentation.py tests/test_business_result.py tests/test_tool_failure_detail.py -q` 31 passed/0.27s；PG `uv run python -m pytest tests/integration/test_hotel_empty_presentation.py tests/integration/test_hotels.py tests/integration/test_lodging_budget.py tests/integration/test_workbench.py -q` 23 passed/2.96s；`uv run python scripts/dev.py check` exit0/273；`uv run python scripts/dev.py web-check` typecheck/lint/test89/build exit0；`uv run python scripts/dev.py test` exit1/1156/原7/265.11s。

@@ -6,7 +6,7 @@ import {
   runCards,
   hotelsForRun,
 } from "../src/lib/early-cards.ts";
-import { ApiError, readEvents, type Run } from "../src/lib/api.ts";
+import { ApiError, readEvents, type Run, type Hotels } from "../src/lib/api.ts";
 const run: Run = {
   session_id: "trip",
   run_id: "draft-turn",
@@ -103,6 +103,42 @@ test("clearing the live hotel cache preserves the producing turn's persisted car
   assert.deepEqual(hotelsForRun(comparison, undefined, run), hotels);
   assert.equal(
     hotelsForRun({ ...run, run_id: "query-turn" }, undefined, run),
+    undefined,
+  );
+});
+
+test("owned empty/error panel replaces prior success and never inherits another turn's cache", () => {
+  const empty: Hotels = {
+    component: "hotel_comparison",
+    cards: [],
+    comparison: {
+      budget_relation: null,
+      comparable: false,
+      lowest_offer_ids: [],
+      reasons: ["酒店查询超时"],
+      scope: "本轮没有报价",
+    },
+  };
+  const old = { component: "hotel_comparison", cards: [{ offer_id: "old" }] };
+  const prior = { ...card, presentation: { data: old } };
+  const failure = {
+    ...card,
+    presentation: { status: "error", error: { code: "timeout" }, data: empty },
+  };
+  assert.deepEqual(
+    runCards({ ...run, presentations: [prior, failure] }).hotels,
+    empty,
+  );
+  const next = {
+    ...run,
+    run_id: "next",
+    presentations: [
+      { ...failure, context: { session_id: "trip", run_id: "next" } },
+    ],
+  };
+  assert.deepEqual(hotelsForRun(next, empty, run), empty);
+  assert.equal(
+    hotelsForRun({ ...next, session_id: "other" }, empty, run),
     undefined,
   );
 });

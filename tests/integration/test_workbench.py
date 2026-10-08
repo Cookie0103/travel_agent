@@ -272,9 +272,15 @@ def test_demo_reports_no_matching_hotels_without_index_error(
         )
         service = RunService(travel.database)
         result = await run_demo(service, context, "演示：比较酒店")
-        assert result.status == "failed" and result.error_code == "unavailable"
-        assert "没有可用数据" in result.answer
-        assert not result.presentations
+        assert result.status == "completed" and result.error_code is None
+        assert "没有找到" in result.answer
+        assert len(result.presentations) == 1
+        payload = result.presentations[0]["presentation"]
+        assert isinstance(payload, dict)
+        assert payload["status"] == "empty" and payload["error"] is None
+        shown = HotelPresentation.model_validate(payload["data"])
+        assert shown.cards == () and not shown.comparison.comparable
+        assert shown.comparison.lowest_offer_ids == ()
         await service.close()
 
     runner.run(exercise())

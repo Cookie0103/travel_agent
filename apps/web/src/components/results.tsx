@@ -224,6 +224,7 @@ export function HotelResults({
         <h2>酒店比较 · {groups.length}家</h2>
       </div>
       <p className="muted">{hotels.comparison.scope}</p>
+      {groups.length === 0 && <p>当前没有可展示的酒店报价。</p>}
       {hotels.comparison.budget_relation && (
         <p className="warning">{hotels.comparison.budget_relation.message}</p>
       )}
@@ -234,7 +235,8 @@ export function HotelResults({
       )}
       {!hotels.comparison.comparable && (
         <p className="warning">
-          无法判定最低总价：{hotels.comparison.reasons.join("；")}
+          {groups.length === 0 ? "查询说明：" : "无法判定最低总价："}
+          {hotels.comparison.reasons.join("；")}
         </p>
       )}
       <div className="hotel-grid">

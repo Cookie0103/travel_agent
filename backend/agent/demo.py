@@ -39,7 +39,7 @@ async def demo_command(
         result = await execute_observed(
             executor, context, name, arguments, emit, definition=definition
         )
-        if result.empty:
+        if result.empty and not (prompt == COMMANDS[0] and name == "search_hotel_offers"):
             raise ServiceError(422, "unavailable", "演示工具没有可用数据，请检查条件或数据导入")
         if result.code:
             raise ServiceError(422, result.code, result.suggestion or "工具执行失败")
@@ -71,6 +71,10 @@ async def demo_command(
 async def compare_demo(call: DemoCall, request: TravelRequest) -> str:
     offers = await call("search_hotel_offers", {"expected_revision": request.revision, "limit": 3})
     rows = cast(list[dict[str, object]], offers.data["offers"])
+    if not rows:
+        return (
+            "没有找到符合当前条件的模拟酒店报价。请在对话中调整条件后重试；本轮没有进行价格比较。"
+        )
     await call(
         "present_travel_result",
         {

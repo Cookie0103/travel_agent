@@ -51,3 +51,12 @@
 - 此处不提前实现T4.4字段；同展示sidecar可在该任务ADR补充后复用。完整排序/新浏览功能仍附录A。字段独立保留原值，但页面链接复用sourceHref只允许HTTPS；“查看酒店”绝不用预订页fallback，缺介绍就显示未知，套餐与预订入口各标原义。
 - 取舍：直接扩QuoteFields会使旧extra=forbid在Evidence、Booking和SupplierHold恢复/协议拒绝，即使新增null也有风险；逐处legacy投影容易漏边界，采用一处内部排除加sidecar。独立只读已检查方案，非运行验收。
 - 验证：三URL各异/缺失/不安全scheme；重启后酒店与正式行程卡链接保留；旧报价/Booking/SupplierHold由冻结原模型读取；fixture供应商等值/幂等不退化；live暂留仍拒绝；旧writer与down/up保留sidecar；Chrome实际点击介绍页（合成URL且不预订），旧历史缺新字段可读。
+
+
+## R4 补充：空/失败酒店展示事件（2026-10-08，T4.3 前确定）
+
+- 复用HotelPresentation现有cards/comparison及ToolResult wrapper；不加接口/字段/表/迁移。注册的search_hotel_offers/refresh_hotel_offer空或失败，以及component=hotel_comparison的present_travel_result失败，在共用execute_observed的tool_finished后发一条同run/context/call_id的空hotel_comparison presentation。成功search仍仅返offer，由显式present从可信ID补全比较。其他工具/行程失败不生成酒店面板。
+- 空展示cards=[]、comparable=false、lowest_offer_ids=[]，固定中文scope/reasons说明没有报价或可信应用错误类别；保原wrapper status/error.code，工具返回对象与模型可见data不变，既有tool_finished错误/业务状态不变。不能把原异常、任意suggestion/detail、请求参数或不属于会话的ID放进展示。预算冲突仅显示无法比较/追问，以哪个值为准；不调用compare/查询证据，不生成最低价，也不保存冲突标志。
+- 保持present参数1–6个可信报价ID与现有版本/归属/预算守卫，不让空presentation绕过校验。空search自动发面板即可，无需模型再调用空IDs的present。空离线比较如实完成为无结果，不把空列表归因为供应商不可用；其他要求数据的脚本仍失败，既有失败码保留。
+- UI在零报价时明确说明没有可展示报价及查询原因；与非空报价的无法判定最低价区分。已有hydrate/runCards最后同组件覆盖与归属检查恢复空面板，不借用此前成功酒店、不自动重跑。持久事件/GET/history/SSE复用，仍最多4项presentation，无额外查询/供应商调用或订单。
+- 取舍：不新造酒店读取接口、不依赖模型一定调用present、不对失败伪造成功/报价；沿用共用事件层做有限的展示投影，SDK/离线一致。验证成功/空/失败、8类码/意外异常、预算与版本/错ID守卫不变、无私有输入、非酒店工具无事件、真实PG持久恢复/重启/归属以及Chrome三态刷新。

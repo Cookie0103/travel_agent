@@ -46,6 +46,41 @@ def stage_result(result: ToolResult) -> BusinessResult | None:
         return None
 
 
+def empty_hotel_payload(result: ToolResult) -> dict[str, object]:
+    """仅投影可信类别；不回显异常/参数/任意建议，不进行酒店比较。"""
+    reasons = {
+        None: "没有找到符合当前条件的酒店报价；请在对话中调整条件后重试。",
+        "validation": "查询条件或参数尚不完整；请在对话中补充或核对。",
+        "blocked": "报价不存在、不属于当前旅行或操作不被允许；请重新查询。",
+        "unavailable": "酒店查询服务暂不可用；请稍后重试。",
+        "timeout": "酒店查询超时；请稍后重试。",
+        "rate_limited": "酒店查询请求受限；请稍后重试。",
+        "provider_error": "酒店数据服务返回错误；请稍后重试。",
+        "conflict": "旅行条件或引用已变化；请核对当前条件后重新查询。",
+        "cancelled": "酒店查询已取消；需要时可重新查询。",
+    }
+    reason = reasons[result.code]
+    if result.code == "conflict" and "lodging_budget_conflict" in result.detail:
+        reason = "住宿预算下限超过全程预算，暂不能比较酒店。请在对话中确认以哪个为准。"
+    return {
+        **result.payload(),
+        "data": {
+            "component": "hotel_comparison",
+            "cards": [],
+            "comparison": {
+                "budget_relation": None,
+                "comparable": False,
+                "lowest_offer_ids": [],
+                "scope": "本轮没有可展示的酒店报价，未进行价格比较。",
+                "reasons": [reason],
+            },
+        },
+        "evidence_ids": [],
+        "warnings": [],
+        "error": {"code": result.code, "suggestion": reason} if result.code else None,
+    }
+
+
 async def execute_observed(
     executor: ToolExecutor,
     context: RunContext,
@@ -109,14 +144,26 @@ async def execute_observed(
             business_result=stage_result(result) if safe_name == "stage_plan_change" else None,
         )
     )
-    if name == "present_travel_result" and result.code is None:
+    payload = None
+    if safe_name == "present_travel_result" and result.code is None:
+        payload = result.payload()
+    elif (
+        safe_name in {"search_hotel_offers", "refresh_hotel_offer"}
+        and (result.empty or result.code is not None)
+    ) or (
+        safe_name == "present_travel_result"
+        and arguments.get("component") == "hotel_comparison"
+        and result.code is not None
+    ):
+        payload = empty_hotel_payload(result)
+    if payload is not None:
         emit(
             RuntimeEvent(
                 context,
                 "presentation",
                 tool_name=name,
                 tool_call_id=call_id,
-                presentation=result.payload(),
+                presentation=payload,
             )
         )
     return result
