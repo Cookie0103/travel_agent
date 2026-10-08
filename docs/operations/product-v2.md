@@ -410,3 +410,10 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 独立P2/P46：已有部分answer使普通失败与历史timeout说明隐藏（源码REASONED）；新增同一runErrorMessage入口，两处同用、保留原回答，stageGuidance优先。新测试缺export先80 pass/1 suite fail/302.30ms→最终web84 passed/293.93ms；type/lint和最终build5路由exit0，独立增量关闭P2/无新发现。全量Python未修改P46无须重启，仍执行中。
 - 最终完整 `uv run python scripts/dev.py test` exit1：1115 passed/原7 SDK failed/1 skipped/1 live deselected/256.98s；逐名比较T3.4原7完全一致，无新增失败，不宣称全绿。最终web84 passed/293.93ms/type/lint/build5路由、dev check263/三平台/3契约/10入口通过；最后check_docs与git diff --check exit0。P46独立只读关闭、无新发现。最终构建刷新两条历史错误均中文/raw validation0；未追加第三次失败写入。
 - 实现 `8fc7b94f16899d77ecf00d7f45cf8f727efb8ef5`已提交/push；ls-remote一致。P44–46 done、C19 STAR完成，恢复点T3.6。
+
+## 2026-10-08 T3.6 日期入口
+
+- 开工git status空/HEAD296e014/当前分支；T3.5记录push完成。按需读Conditions原生date两字段，无新API/日期库/ADR；先浏览器复现点击正文与label，保留原生键盘输入及未知空值。
+- Chrome实际红：打开编辑，开始标题107点击只focus年份110；截图无日历弹层。getByText exact因来源标签无匹配而超时，按实际AX标题点击，无猜坐标/数据修改。P47记录，拟复用原生showPicker、只click不focus触发，保留无支持浏览器/键盘输入。
+- 首实现web84/type/lint/build/check263通过，但Chrome AX标题点击绿测仍无日历；独立P3 label转发重复路径REASONED。未宣称通过；getByLabel exact同样因来源text标签不匹配超时，后续按截图文字与已观察DOM date控件验证。P48记录，成功打开后阻止默认、失败时保留默认。
+- 系统限制核实：cua.getApp Google Chrome找不到可见window；getState明确native apps失败因为Mac已锁定且无法自动解锁。Chrome扩展DOM/页面截图可用，但不能观察系统原生picker；先前“无弹层”只证明截图未捕获，不能证明实际picker未打开。DOM安全evaluate typeof showPicker未定义不能当作真实浏览器API无支持证明，未据此修改实现。已请求用户解锁，不绕过锁屏/换浏览器。T3.6保持doing/待原生弹窗与键盘验收；静态/type/lint/web84/build/check263通过，小型入口先保存WIP commit以保持下一独立任务开工clean，未宣称完成。

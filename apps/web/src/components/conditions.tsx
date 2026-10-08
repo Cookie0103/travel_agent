@@ -1,6 +1,6 @@
 /** Explicit conditions form; the server owns revisions and validation. */
 "use client";
-import { useState } from "react";
+import { useState, type MouseEvent } from "react";
 import type { RequestState } from "@/lib/api";
 import { PACES } from "@/lib/pace";
 import { sourceLabel } from "@/lib/condition-source";
@@ -9,6 +9,19 @@ import {
   conditionPatch,
   type ConditionPatch,
 } from "@/lib/condition-patch";
+
+function openDatePicker(event: MouseEvent<HTMLLabelElement>) {
+  const input =
+    event.currentTarget.querySelector<HTMLInputElement>('input[type="date"]');
+  if (!input || typeof input.showPicker !== "function") return;
+  try {
+    input.focus();
+    input.showPicker();
+    event.preventDefault();
+  } catch {
+    // Unsupported or restricted browsers retain the native icon and keyboard input.
+  }
+}
 
 export function Conditions({
   request,
@@ -57,7 +70,7 @@ export function Conditions({
           onChange={(event) => change("city", event.target.value)}
         />
       </label>
-      <label>
+      <label onClick={openDatePicker}>
         开始日期
         {source("start_date")}
         <input
@@ -66,7 +79,7 @@ export function Conditions({
           onChange={(e) => change("start_date", e.target.value)}
         />
       </label>
-      <label>
+      <label onClick={openDatePicker}>
         结束日期
         {source("end_date")}
         <input
