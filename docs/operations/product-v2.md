@@ -180,3 +180,13 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 完整 `uv run python scripts/dev.py test`：沙箱 18 failed、788 passed、1 skipped、1 live deselected、195 errors / 15.65s。失败涉及 live_application（6）、persona_judge（6）、sdk_cli_offline（2）、sdk_lifecycle（1）、tracing（1）、travel_sdk_offline（2）；代表根因为本地 HTTPServer.bind PermissionError，非付费上游调用。获准启动本地替身后同一完整命令：806 passed、1 skipped、1 live deselected、195 PG setup errors / 45.41s。原 18 项全部转绿，PG 错误仍未解决。私有原输出在 ignored `.cache/t01-check.log`、`.cache/t01-test.log`、`.cache/t01-test-unrestricted.log`，不提交长日志。
 - 环境：Docker CLI 在 Docker.app 内，PATH 未包含；daemon 连接失败（/var/run/docker.sock 缺失），context 只有 default；本地 .env 存在、数据库配置有效且仅指向 localhost，连接不可用。未输出配置值或凭据；已异步告知用户启动现有 Docker Desktop。
 - 自审：固定策略覆盖用户配置；锁文件无升级；测试真实 CLI、不改 lock。独立只读审查：Windows 注入 APPDATA（原 P2）已修复并复核通过，macOS 专项 1 passed；Windows 行为依据官方配置目录文档为 REASONED，非在 Windows 实机运行。
+
+## 2026-10-08 T0.2 完整基线
+
+- `3771886` 已普通 push；`git ls-remote origin refs/heads/batch-2026-10-08-product-V2` SHA 为 `37718867526cebbcfe4514f3650db2225d9ac7ee`，工作区干净后开始 T0.2。
+- 用户启动 Docker 后，临时 PATH 指向已安装 Docker.app CLI，运行原 `uv run python scripts/dev.py db-up`：Docker 29.7.2，postgres:17 拉取完成，项目本地容器 Healthy，退出 0；原数据卷不清理。
+- 普通 `uv run python scripts/dev.py check`：退出 0，249 文件格式/三平台 strict、3 分层契约、10 文档地图。
+- `uv run python scripts/dev.py web-check`：typecheck/lint 退出 0；test 25 passed / 0 failed / 0 skipped；build 因沙箱无法下载 Noto Sans SC/Geist 失败。获准联网单独 `pnpm --dir apps/web run build` 退出 0，5 条路由构建完成，未发布。
+- PG Healthy 后完整 `uv run python scripts/dev.py test`：994 passed、7 failed、1 skipped、1 live deselected / 237.45s。`uv run python -m pytest -m integration -q -ra`：180 passed、2 failed、821 deselected / 170.96s。两套结果重叠；未标 integration 的 evaluation_variants 五项不在 marker 专项内。两套均只用本机模拟模型/HTTP 与随机隔离 PG 库，无真实上游 HTTP/金额。私有日志 ignored `.cache/t02-check.log`、`t02-web.log`、`t02-build.log`、`t02-test.log`、`t02-pg.log`。
+- 7 项失败名完整列在计划 P-05；4 项有 `blocked/auto_compaction_capability, 0 attempts`，3 项缺压缩事件/summary请求。当前 `claude --version`=2.1.294；importlib metadata SDK=0.2.163；SDK bundled `--version`=2.1.286。旧 2.1.114 本机不存在；未更新/回退用户 CLI、未放宽门禁/断言。
+- 独立只读审查：T0.2 是基线采集，可按明文退出条件记录完成，但全量并未通过；环境问题关闭为 P-04，SDK 能力缺口记 P-05，R6 必须解决。默认 offline→FixtureRuntime 不经过上述门禁，T0.4 ADR 与 T0.5 保存复核可继续。
