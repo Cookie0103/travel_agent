@@ -1,0 +1,180 @@
+{
+  "created_at": "2026-10-03T22:26:43.935958+00:00",
+  "auth_http_status": 200,
+  "trace_status": "local_saved_cloud_sent",
+  "business_status": "success",
+  "model_http_requests": 0,
+  "local_trace_sha256": "bb26d75f9fa2c2d4cffd426fc7492547fd3d8779794f3b7d239768b4e42297c5",
+  "read_http_status": 200,
+  "observed_n": 4,
+  "expected_n": 4,
+  "exact_span_match": true,
+  "observation_names": [
+    "agent.fixture",
+    "tool.search_content",
+    "tool.search_places",
+    "travel.run"
+  ],
+  "version": "m05-langfuse-cloud-v1",
+  "endpoint_host": "jp.cloud.langfuse.com",
+  "trace_id_sha256": "91936504ea6f605ff2b1c1c99c488c9cf4a25822fcfad9edb567d2bbf67dc3dc",
+  "ui_verified": true,
+  "ui_reason": "Existing signed-in Chrome trace detail page verified; initial anonymous in-app failure retained in operations",
+  "runtime": "fixture/offline; no real model usage",
+  "source_sha256": {
+    "backend/adapters/tracing.py": "5bbfd648f0819140c3a54008cad3f92935b5349ddd5b66dd76e0ad10262a289d",
+    "backend/services/runs.py": "903477480f4ab7da3de8b0b303d820006cb237813aac61fb61c46620cfe52d30",
+    "backend/server.py": "76f6c518367a9c94a38368080a98d2bc627e5346823539f6ee66bfd271529ee2",
+    "tests/integration/test_run_trace.py": "e48512cd03e670ede8564dedc26cb6f2cc4e8a5e9a59ae71cae72493b2cb8165"
+  },
+  "verification": {
+    "related_tests": "23 passed in 2.67s",
+    "static": "222 source files strict win32/linux/darwin; ruff/format; 3 import contracts; 10 docs maps passed",
+    "independent_review": "quality_review no P1/P2; source and test review, no real cloud verification by reviewer",
+    "additional_recovery_tests": "15 passed in 15.45s; original intermittent recovery failure retained",
+    "commit": "70072de580b8690aceeb98487e1fce69ee337a10",
+    "hooks": "normal full static and default offline Python hooks passed; first failure retained",
+    "push": "ordinary push; exact full remote SHA verified",
+    "ci": "70072de: push 37159111962 and PR 37159114642 completed success; Python/web/docker-demo all success"
+  },
+  "limitations": [
+    "Offline trace has no real model tokens/cost or model subcall observations",
+    "No real network timeout injected",
+    "Human paired scores remain 0; Claude real calls deferred by user"
+  ],
+  "ui_observation_names": [
+    "travel.run",
+    "agent.fixture",
+    "tool.search_places",
+    "tool.search_content"
+  ],
+  "ui_business_status": "completed",
+  "typed_followup": {
+    "created_at": "2026-10-03T22:40:25.937436+00:00",
+    "auth_http_status": 200,
+    "trace_status": "local_saved_cloud_sent",
+    "business_status": "success",
+    "model_http_requests": 0,
+    "local_trace_sha256": "6c870b84d1a2da0429068fb9f229979f7fb1e0ab5634697a257c3ec3bf4594da",
+    "read_http_status": 200,
+    "observed_n": 4,
+    "expected_n": 4,
+    "exact_span_match": true,
+    "observation_types": {
+      "tool.search_content": "TOOL",
+      "tool.search_places": "TOOL",
+      "travel.run": "CHAIN",
+      "agent.fixture": "AGENT"
+    },
+    "exact_type_match": true,
+    "ui_verified": true,
+    "ui_business_status": "completed",
+    "source_sha256": {
+      "backend/adapters/tracing.py": "f381fdf63af0d3320816955d83acfc02302c9929ea7d4ae93ab9ef530a687ebf",
+      "tests/test_tracing.py": "0a3869f9ea2ecd6b72af19227d8ddcde76600de54d7b462d74929c89a060f406"
+    },
+    "related_tests": "25 passed in 2.72s",
+    "static": "222 source files strict three platforms; ruff/format/3 contracts/10 maps passed",
+    "independent_review": "quality_review no P1/P2",
+    "reason": "Explicit chain/agent/tool avoids classifying aggregate run or offline fixture as a model generation; real subcall costs remain unobserved"
+  },
+  "sdk_followup": {
+    "created_at": "2026-10-03T22:49:42.645238+00:00",
+    "auth_http_status": 200,
+    "trace_status": "local_saved_cloud_sent",
+    "business_status": "success",
+    "model_http_requests": 0,
+    "local_trace_sha256": "3d310e78fb8bbeca086bdd2a6552a754b56316b96a5742f7e9f7a2c79c3b964c",
+    "read_http_status": 200,
+    "observed_n": 4,
+    "expected_n": 4,
+    "exact_span_match": true,
+    "observation_types": {
+      "tool.get_place_facts": "TOOL",
+      "tool.search_places": "TOOL",
+      "travel.run": "CHAIN",
+      "agent.sdk": "AGENT"
+    },
+    "exact_type_match": true,
+    "identity": {
+      "provider": "deepseek",
+      "model": "deepseek-flash",
+      "sdk_version": "0.2.163",
+      "cli_version": "2.1.114"
+    },
+    "original_http_attempts": 3,
+    "original_first_time": "2026-10-03 14:04:25.246234+00:00",
+    "ui_verified": true,
+    "ui_tokens": 19773,
+    "ui_model": "deepseek-flash",
+    "ui_model_subcalls_observed": false,
+    "ui_input_output_empty": true,
+    "source_report_sha256": "5649d1bf4c651c280295fe46db4416ca6ad1720d0a1b86e0b47afc0ceb60481c",
+    "redacted_report_sha256": "adc9ea63325652caef57aed310a8ead153fa5c263fa9a331eea9038badbe140c",
+    "usage": {
+      "tool.search_places": {},
+      "tool.get_place_facts": {},
+      "agent.sdk": {
+        "gen_ai.request.model": "deepseek-flash",
+        "travel.model_subcalls_observed": false,
+        "travel.currency": "CNY",
+        "travel.usage_complete": true,
+        "travel.run_accounted": "0.042048",
+        "gen_ai.usage.input_tokens": 19356,
+        "gen_ai.usage.output_tokens": 417
+      },
+      "travel.run": {
+        "gen_ai.request.model": "deepseek-flash",
+        "travel.model_subcalls_observed": false
+      }
+    },
+    "privacy": "No original user/session/run identifiers; fresh random UUID. No text/prompt/answer/parameter values/Evidence IDs/SDK session IDs/credential. Only tool names/schema keys/status/model/version/token/CNY aggregate.",
+    "method": "Existing successful SDK report replayed through shared exporter; original event times/token/billing unchanged. Fresh random identity/tool IDs remove identifiers. Upload reads only reviewed redacted file; no original report read by network script. No new model request/cost.",
+    "review_resolution": "Initial combined original-report upload rejected by automatic approval. Offline explicit whitelist proof then safer sanitized-only upload approved and read back. Original source/report not overwritten."
+  },
+  "local_read_timeout_followup": {
+    "scope": "real local OTLP HTTP timeout and PostgreSQL committed state, not Cloud latency or real model",
+    "collector_delay_seconds": 5,
+    "actual_exporter_timeout_seconds": 3,
+    "task_wait_limit_seconds": 10,
+    "test_asserted_elapsed_seconds": [
+      2.5,
+      10
+    ],
+    "shutdown_calls": 1,
+    "committed_run": "completed, error_code null, request revision2",
+    "local_trace_preserved": true,
+    "private_text_and_secret_absent": true,
+    "verification": "40 PG/SDK/trace tests passed20.21s; final7 trace tests passed7.44s",
+    "new_model_http": 0
+  },
+  "api_usage_followup": {
+    "scope": "Production GuardedRuntime/live guard + real SDK/CLI + scripted local model HTTP + PostgreSQL committed events + actual local OTLP; no new paid model call or Cloud API business run",
+    "verification": "56 tests passed14.24s; ruff/format224, strict win32/linux/darwin224, 3 import contracts and 10 document maps passed",
+    "successful_run": {
+      "http_attempts": 2,
+      "observed_responses": 2,
+      "usage_complete": true,
+      "business_status": "completed"
+    },
+    "upstream_failure": {
+      "http_attempts": 2,
+      "observed_responses": 1,
+      "usage_complete": false,
+      "business_status": "failed"
+    },
+    "actual_cli_and_sdk_versions_forwarded": true,
+    "charge_matches_isolated_guard_ledger": true,
+    "local_otlp_trace_id_and_usage_match": true,
+    "cancelled_settled_usage_retained": true,
+    "bad_missing_cross_context_or_version_reports": "unknown metadata; business result unchanged unless original identity check rejects result",
+    "initial_runtime_identity_unchanged": true,
+    "new_paid_model_http": 0,
+    "failures_preserved": [
+      "Initial new integration tests used temporary root as worker Python source; two worker_exit failures. New test environment now uses actual project source with private ledger/session directory; original assertions unchanged.",
+      "First dev-check rejected implicit import of Guard; test now uses explicit public definition and typed signature."
+    ],
+    "independent_review": "quality_review no P1/P2: context/version/fee/unknown/privacy/committed PG truth/reuse checked; cancellation is unit verification, not claimed Cloud cancellation.",
+    "normal_save": "183fdd355dfaaa7b1334c9ae1095ad461190aada: original check/test hooks Passed, ordinary push and exact remote SHA verified"
+  }
+}

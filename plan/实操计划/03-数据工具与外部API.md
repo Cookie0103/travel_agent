@@ -77,7 +77,7 @@ EvidenceRecord: evidence_id, entity_id, field_path, value, provider, source_ref,
 | `hold_hotel` | offer ID → Booking（held） | 只能用本会话查到过的 offer；返回 hold 到期时间 | 否 |
 
 - 正式保存和下单**没有对应的模型工具**，只能通过页面确认 API（02 §6.2、§6.3）。
-- 标为「MCP：是」的只读工具同时由 MCP server 对外提供。MCP 版本和直接调用版本共用同一套实现和测试。
+- 表中「MCP」仅指 M3.3 的对外服务；标「是」的只读工具对外提供。SDK 内部的进程内 MCP 桥接也可调用条件修改、草稿、模拟 hold，但仍经过同一 ToolExecutor；确认保存和下单只走独立 API。内部桥接、对外服务和直接调用共用业务实现与测试。
 
 工具统一返回格式：
 
