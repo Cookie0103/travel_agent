@@ -529,3 +529,12 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 错方案服务卡去null：40PG38passed/2failed（原T4.2/T4.4显式null断言）；恢复原服务卡，只工具白名单未知展示键可省略，并更新UI可选schema。上限仍8000。
 - 保留冻结v1/legacy全部文件与hash，机制种子明确合成无要求；不向eval prepare暗补输入。R6新规格实验前另建版本披露。
 - 两次apply_patch上下文不匹配未修改代码，重读精确行再修；一条rg未确认fixture文件、一条shell glob不存在，均只读失败，无数据变化。
+# T5.1 Markdown表格（2026-10-08）
+- 首红pnpm exec node --test tests/markdown.test.ts：4pass/3fail/115.671875ms，header/escape/security的table类型断言失败；绿7/105.59025ms，原script标签与坏链接测试保留。
+- check280/三平台strict/3契约/10入口已过；web第一次TS2367测试assert窄化后重复比较，改用items保原文字断言；第二lint测试格式未更新，prettier已补，第三完整web-check运行中。CSS原未定义--border查root改--line。P66误写§9已移动回§8。
+- .cache/t51_seed.py只本地PG、同专门合成会话添加一条table回答，含img/script/js链接作为普通文字；不发模型/供应商/订单；供Chrome验证实际元素转义。
+- 开工550f95c已push/checkout干净，仅读相关Markdown parser/renderer与现测试；查设计按已确认02-architecture/03-data-tools/05-validation路径。一次先猜旧文件名只读失败，后用rg --files确认，未改设计来源。
+
+- 最终web-check94 passed/290.485166ms，typecheck/lint/build5routes退出0；先前92项版不代替最后增量版。独立两项静态反例先红7pass/2fail/116.788833ms，最终保列表边界/整段回退断言，静态复核无新发现。
+- Chrome本地合成历史table1/body4，HTML元素0/HTTPS链接1，三对齐；默认1056页面宽一致，390窄屏表格309/scroll320局部auto、整页390。桌面/窄屏截图已查看，窗口覆盖已reset。
+- 本地PG只读复核rev2/5报价/0booking/hold/order/原V1 hash87e4b4…25f不变；仅合成TaskRun回答，无工具/模型/供应商。未改后端，完整测试沿用最近T4.5的1243pass/原7fail作为已知基线，不宣称本任务全量通过。

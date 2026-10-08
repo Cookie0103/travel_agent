@@ -18,6 +18,40 @@ function Inline({ text }: { text: string }) {
 
 export function Markdown({ text }: { text: string }) {
   return parseBlocks(text).map((block, index) => {
+    if (block.type === "table")
+      return (
+        <div className="markdown-table" key={index}>
+          <table>
+            <thead>
+              <tr>
+                {block.headers.map((cell, column) => (
+                  <th
+                    scope="col"
+                    key={column}
+                    style={{ textAlign: block.alignments[column] }}
+                  >
+                    <Inline text={cell} />
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {block.rows.map((row, r) => (
+                <tr key={r}>
+                  {row.map((cell, column) => (
+                    <td
+                      key={column}
+                      style={{ textAlign: block.alignments[column] }}
+                    >
+                      <Inline text={cell} />
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      );
     const items = block.items.map((item, i) =>
       block.type === "p" ? (
         <Fragment key={i}>

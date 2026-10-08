@@ -1,4 +1,24 @@
 /* Chat-first travel assistant: calm surfaces, readable server evidence, responsive panel. */
+.markdown-table {
+  max-width: 100%;
+  overflow-x: auto;
+}
+.markdown-table table {
+  border-collapse: collapse;
+  min-width: 20rem;
+  width: 100%;
+}
+.markdown-table th,
+.markdown-table td {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--line);
+  vertical-align: top;
+  overflow-wrap: anywhere;
+}
+.markdown-table th {
+  background: var(--surface);
+  font-weight: 600;
+}
 :root {
   /* Bright and clean: white surfaces, slate ink, ONE teal accent. */
   --bg: #ffffff;

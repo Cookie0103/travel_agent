@@ -1,7 +1,14 @@
 /** Tiny, dependency-free Markdown subset for model answers; output is data, never HTML. */
 import { sourceHref } from "./api.ts";
 
-export type Block = { type: "p" | "ul" | "ol"; items: string[] };
+export type Block =
+  | { type: "p" | "ul" | "ol"; items: string[] }
+  | {
+      type: "table";
+      headers: string[];
+      rows: string[][];
+      alignments: ("left" | "center" | "right" | undefined)[];
+    };
 export type Inline =
   | { type: "text"; text: string }
   | { type: "bold"; text: string }
@@ -10,9 +17,67 @@ export type Inline =
 const UL = /^\s*[-*•]\s+/;
 const OL = /^\s*\d+[.)、]\s+/;
 
+function cells(line: string): string[] {
+  const parts: string[] = [];
+  let cell = "";
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === "\\" && line[i + 1] === "|") {
+      cell += "|";
+      i++;
+    } else if (line[i] === "|") {
+      parts.push(cell.trim());
+      cell = "";
+    } else cell += line[i];
+  }
+  parts.push(cell.trim());
+  if (line.trim().startsWith("|")) parts.shift();
+  if (parts.length > 1 && parts[parts.length - 1] === "") parts.pop();
+  return parts;
+}
+
 export function parseBlocks(text: string): Block[] {
   const blocks: Block[] = [];
-  for (const line of text.split(/\r?\n/)) {
+  const lines = text.split(/\r?\n/);
+  for (let index = 0; index < lines.length; index++) {
+    const line = lines[index];
+    const header = cells(line);
+    const separator =
+      lines[index + 1] === undefined ? [] : cells(lines[index + 1]);
+    if (
+      line.includes("|") &&
+      header.length &&
+      header.length === separator.length &&
+      separator.every((part) => /^:?-{3,}:?$/.test(part))
+    ) {
+      const rows: string[][] = [];
+      let end = index + 2;
+      while (
+        end < lines.length &&
+        lines[end].trim() &&
+        lines[end].includes("|") &&
+        !UL.test(lines[end]) &&
+        !OL.test(lines[end])
+      )
+        rows.push(cells(lines[end++]));
+      if (rows.every((row) => row.length === header.length)) {
+        blocks.push({
+          type: "table",
+          headers: header,
+          rows,
+          alignments: separator.map((part) =>
+            part.startsWith(":")
+              ? part.endsWith(":")
+                ? "center"
+                : "left"
+              : part.endsWith(":")
+                ? "right"
+                : undefined,
+          ),
+        });
+      } else blocks.push({ type: "p", items: lines.slice(index, end) });
+      index = end - 1;
+      continue;
+    }
     if (!line.trim()) {
       blocks.push({ type: "p", items: [] });
       continue;
@@ -21,12 +86,18 @@ export function parseBlocks(text: string): Block[] {
     const item =
       type === "p" ? line : line.replace(type === "ul" ? UL : OL, "");
     const last = blocks[blocks.length - 1];
-    if (last && last.type === type && last.items.length) last.items.push(item);
+    if (
+      last &&
+      last.type !== "table" &&
+      last.type === type &&
+      last.items.length
+    )
+      last.items.push(item);
     else if (last && last.type === "p" && !last.items.length && type === "p")
       last.items.push(item);
     else blocks.push({ type, items: [item] });
   }
-  return blocks.filter((block) => block.items.length);
+  return blocks.filter((block) => block.type === "table" || block.items.length);
 }
 
 export function parseInline(text: string): Inline[] {
