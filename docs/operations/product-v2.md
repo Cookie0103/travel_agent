@@ -303,3 +303,4 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 
 - 最后Chrome全文保护绿expectedFullKept=true/actual=true；步骤面板1、summary“执行了2步”。最初将summary误用button角色导致count0，按实际DOM纠正选择器并核对，JSON保存真实结果。探针0写请求、PG原answer/sequence7未改；已CtrlC停止探针、删除标志并恢复默认DEMO_MODE API，Chrome重载读取真实离线答复。原京都正式V1仍1行/哈希不变；八类映射为单测，Chrome实际错误类别只验证conflict。所有截图已人工查看，无凭据/真实用户私聊。
 - 最终 `pnpm --dir apps/web run test` 59 passed/190.75ms；`run typecheck`/`run lint`/`run build`退出0（5路由）。`uv run python scripts/dev.py check`254文件/三平台strict/3分层契约/10文档入口退出0。`uv run python scripts/dev.py test`在最后源码修复后运行，1027 passed/7 failed/1 skipped/1 live deselected，256.87s；7项逐一同P-05基线SDK压缩，无新增失败。先前257.21s回归是在P-18前，不作为最终结果。最终独立只读源码与记录审查均无新发现；commit待完成。
+- 实现commit `440afbea8ffa4481b36c1c2b4ce3e1925a3a078c`已push，`git ls-remote`与本地HEAD完全一致；最终diff check/check_docs通过。P-15–18验证与SHA已回写计划，STAR沉淀于同一批次案例。
