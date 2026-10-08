@@ -409,3 +409,4 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - Chrome最新构建：刷新历史旧失败已中文；新发同固定输入，当前/历史/横幅中文，原raw banner与错误额度归因count均0。只读PG两次failed仅started/failed、0工具/0Evidence/revision6不变/原V1一行hash不变；截图t35-chinese-errors.png已查看，固定JSON保存，真实模型语言仍未验证。
 - 独立P2/P46：已有部分answer使普通失败与历史timeout说明隐藏（源码REASONED）；新增同一runErrorMessage入口，两处同用、保留原回答，stageGuidance优先。新测试缺export先80 pass/1 suite fail/302.30ms→最终web84 passed/293.93ms；type/lint和最终build5路由exit0，独立增量关闭P2/无新发现。全量Python未修改P46无须重启，仍执行中。
 - 最终完整 `uv run python scripts/dev.py test` exit1：1115 passed/原7 SDK failed/1 skipped/1 live deselected/256.98s；逐名比较T3.4原7完全一致，无新增失败，不宣称全绿。最终web84 passed/293.93ms/type/lint/build5路由、dev check263/三平台/3契约/10入口通过；最后check_docs与git diff --check exit0。P46独立只读关闭、无新发现。最终构建刷新两条历史错误均中文/raw validation0；未追加第三次失败写入。
+- 实现 `8fc7b94f16899d77ecf00d7f45cf8f727efb8ef5`已提交/push；ls-remote一致。P44–46 done、C19 STAR完成，恢复点T3.6。
