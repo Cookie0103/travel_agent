@@ -591,3 +591,5 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - §4补计划外T0.6承接P05基线修复，仅已有R6全量门槛内，不改变产品范围；T0.2历史采集状态不改，T6.1不提前doing。当前恢复点：代码与审查完成，最后全量仍运行，尚未提交。本轮git改动均agent产生。
 
 - 最终 `uv run python scripts/dev.py test` 1263passed/0failed/1skipped/1live deselected/269.77s（exit0）。这是最后阶段守卫/5单位反例/事件顺序断言及实际精确pair的最终版，原七项未跳过/删除、全部执行绿。自审核对改动范围，独立最终关闭P2/P3，无新发现；提交前check_docs10入口/diff check通过。无真实模型/酒店/生产操作。
+
+- 实现提交 `153c041`，`git push origin batch-2026-10-08-product-V2`退出0、输出8baa394..153c041，提交后checkout干净/与origin一致。§4/§7/§8/§9关闭T0.6/P05，C27归档；T3.6/T4.4仅验收外部条件不足改blocked，不改历史失败记录。未改Railway跟踪、未部署，T5.3/R6仍按依赖等待。
