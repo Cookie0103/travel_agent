@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, JsonValue, model_validator
 
+from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.travel_request import TravelRequest
 
 EvidenceKind = Literal["place", "article", "hotel_offer", "route"]
@@ -27,6 +28,7 @@ class EvidenceRecord(BaseModel):
     retrieved_at: AwareDatetime
     valid_until: AwareDatetime
     data_mode: Literal["fixture", "snapshot", "live"]
+    display_details: HotelDisplayDetails | None = Field(default=None, exclude=True)
 
     @model_validator(mode="after")
     def valid_period(self) -> Self:

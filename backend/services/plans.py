@@ -9,7 +9,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.adapters.live_data import LiveData
 from backend.domain.catalog import Place
-from backend.domain.evidence import EvidenceRecord
 from backend.domain.execution import RunContext
 from backend.domain.itinerary import ItineraryProposal
 from backend.domain.plans import (
@@ -288,9 +287,7 @@ async def content_view(
     rows = await requests.find_evidence(
         db, context, content.proposal(request.revision).evidence_ids()
     )
-    records = await hydrate_records(
-        tuple(EvidenceRecord.model_validate(row.payload) for row in rows), live
-    )
+    records = await hydrate_records(tuple(requests.evidence_from_row(row) for row in rows), live)
     evidence = {record.evidence_id: record for record in records}
     stale = [
         str(row.id)

@@ -642,6 +642,12 @@ export interface components {
         };
         /** HotelCard */
         HotelCard: {
+            /** Hotel Info Url */
+            hotel_info_url: string | null;
+            /** Plan List Url */
+            plan_list_url: string | null;
+            /** Reservation Url */
+            reservation_url: string | null;
             /**
              * Offer Id
              * Format: uuid
@@ -713,6 +719,15 @@ export interface components {
             source_ref: string | null;
             /** Content Version */
             content_version: string | null;
+        };
+        /** HotelDisplayDetails */
+        HotelDisplayDetails: {
+            /** Hotel Info Url */
+            hotel_info_url?: string | null;
+            /** Plan List Url */
+            plan_list_url?: string | null;
+            /** Reservation Url */
+            reservation_url?: string | null;
         };
         /** HotelOffer */
         HotelOffer: {
@@ -1533,6 +1548,21 @@ export interface components {
         };
         /** HotelCard */
         UiHotelCard: {
+            /**
+             * Hotel Info Url
+             * @default null
+             */
+            hotel_info_url: string | null;
+            /**
+             * Plan List Url
+             * @default null
+             */
+            plan_list_url: string | null;
+            /**
+             * Reservation Url
+             * @default null
+             */
+            reservation_url: string | null;
             /**
              * Offer Id
              * Format: uuid

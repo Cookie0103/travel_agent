@@ -11,6 +11,7 @@ import {
 import { sourceHref, type Hotels, type Plan } from "@/lib/api";
 import type { components } from "@/lib/api-types";
 import { hotelGroups, selectedHotelOffer } from "@/lib/hotel-groups";
+import { hotelLinks } from "@/lib/hotel-links";
 import { CalendarButton } from "./calendar-button";
 export const formatYen = (value: string) =>
   Number(value).toLocaleString("ja-JP");
@@ -73,6 +74,7 @@ export function SourceRef({ value }: { value: string | null }) {
 }
 
 function Hotel({ card }: { card: components["schemas"]["UiHotelCard"] }) {
+  const links = hotelLinks(card);
   return (
     <article className="hotel-card">
       {/* 楽天图片按供应商原URL展示；避免图片代理和公共缓存。 */}
@@ -148,6 +150,52 @@ function Hotel({ card }: { card: components["schemas"]["UiHotelCard"] }) {
       )}
       {card.lodging_exceeds_trip_budget && (
         <p className="error">住宿已超过全程预算</p>
+      )}
+      {card.data_mode === "live" && (
+        <>
+          {links.info ? (
+            <a
+              className="button-link primary"
+              href={links.info}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              查看酒店 ↗
+            </a>
+          ) : (
+            <p className="small">酒店介绍链接未知</p>
+          )}
+          {links.plans && (
+            <a
+              className="button-link"
+              href={links.plans}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              套餐列表 ↗
+            </a>
+          )}
+          {links.reservation && (
+            <a
+              className="button-link"
+              href={links.reservation}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              预订页面 ↗
+            </a>
+          )}
+          {links.legacy && (
+            <a
+              className="button-link"
+              href={links.legacy}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              旧报价链接 ↗
+            </a>
+          )}
+        </>
       )}
     </article>
   );
@@ -261,16 +309,6 @@ function HotelPackage({
       )}
       {card.data_mode === "live" ? (
         <>
-          {card.booking_url && (
-            <a
-              className="button-link primary"
-              href={card.booking_url}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              去乐天查看 ↗
-            </a>
-          )}
           {choose && (
             <button
               disabled={

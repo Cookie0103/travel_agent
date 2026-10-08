@@ -42,3 +42,12 @@
 - 页面用hotel_id分组，一家一张卡，房型/套餐选择只改变本地所选offer；价格、来源、过期、预算与行动都绑定所选完整offer_id/evidence_id，不混用同酒店另套餐。新报价到达时旧offer不再存在就回退该组第一条，不自动hold/choose/confirm。名称不同同ID仍同一家，名称相同不同ID仍不同家。
 - 多晚依旧按同rate_id逐晚核对，保未知总价/现有调用与8K工具输出上限；整体报价超长仍以整条截断且告知数量不足。输出压缩不能偷偷按价格排序（D7），其余保持上游顺序。旧前端仍能读平面cards，新前端可分组旧cards；无存储迁移，回退不改报价事实。
 - 取舍：不把max报价扩成12或增加酒店调用来保全所有套餐；在现有6条上限内先覆盖不同酒店，再保有限第二套餐。本批最多酒店数不变，下一批8家/完整排序留附录A。验证同酒店两套餐、同名不同ID、重复rate、不够四家、多晚同计划与无额外请求、卡内切换价格/ID/过期/行动绑定。
+
+## R4 补充：三类酒店链接与回退兼容（2026-10-08，T4.2 前确定）
+
+- 原响应的hotelInformationUrl/planListUrl/reserveUrl分别映射hotel_info_url/plan_list_url/reservation_url，缺失null，不从booking_url逆猜。旧booking_url fallback保持原义与旧序列化；新增URL只用于展示，不改变价格/库存/资格/入住与调用量。
+- QuoteFields保持旧shape。HotelOffer与EvidenceRecord仅加内部可空display_details，Field(exclude=True)使嵌套Booking/HoldInput/SupplierHold与HTTP协议/payload默认dump均保持旧字段；fixture始终None，live hold继续硬拒绝。新HotelCard显式增加三个可空展示字段，新前端可读旧卡（介绍未知，旧报价链接单独标注），旧前端忽略新增卡片字段。既有RunView/history presentation是字典，可读增量字段，不重放。
+- evidence新增nullable JSONB display_details（0014），旧payload不变；add_evidence另存白名单细节，evidence_from_row将它放回内部record.display_details，不合并进value，不能覆盖ID/金额/入住条件。源仅既有provider解析，所有current/history/plan卡片读回共用。旧writer只更新payload时细节仍保留；downgrade保留列与数据，re-upgrade IF NOT EXISTS。旧记录无元数据时未知；无新表/接口/依赖。
+- 此处不提前实现T4.4字段；同展示sidecar可在该任务ADR补充后复用。完整排序/新浏览功能仍附录A。字段独立保留原值，但页面链接复用sourceHref只允许HTTPS；“查看酒店”绝不用预订页fallback，缺介绍就显示未知，套餐与预订入口各标原义。
+- 取舍：直接扩QuoteFields会使旧extra=forbid在Evidence、Booking和SupplierHold恢复/协议拒绝，即使新增null也有风险；逐处legacy投影容易漏边界，采用一处内部排除加sidecar。独立只读已检查方案，非运行验收。
+- 验证：三URL各异/缺失/不安全scheme；重启后酒店与正式行程卡链接保留；旧报价/Booking/SupplierHold由冻结原模型读取；fixture供应商等值/幂等不退化；live暂留仍拒绝；旧writer与down/up保留sidecar；Chrome实际点击介绍页（合成URL且不预订），旧历史缺新字段可读。

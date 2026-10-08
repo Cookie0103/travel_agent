@@ -2149,6 +2149,39 @@
       },
       "HotelCard": {
         "properties": {
+          "hotel_info_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hotel Info Url"
+          },
+          "plan_list_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan List Url"
+          },
+          "reservation_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reservation Url"
+          },
           "offer_id": {
             "type": "string",
             "format": "uuid",
@@ -2373,6 +2406,9 @@
         "additionalProperties": false,
         "type": "object",
         "required": [
+          "hotel_info_url",
+          "plan_list_url",
+          "reservation_url",
           "offer_id",
           "rate_id",
           "hotel_id",
@@ -2402,6 +2438,46 @@
           "content_version"
         ],
         "title": "HotelCard"
+      },
+      "HotelDisplayDetails": {
+        "properties": {
+          "hotel_info_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hotel Info Url"
+          },
+          "plan_list_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan List Url"
+          },
+          "reservation_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reservation Url"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "HotelDisplayDetails"
       },
       "HotelOffer": {
         "properties": {
@@ -4747,6 +4823,42 @@
       "UiHotelCard": {
         "additionalProperties": false,
         "properties": {
+          "hotel_info_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Hotel Info Url"
+          },
+          "plan_list_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Plan List Url"
+          },
+          "reservation_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Reservation Url"
+          },
           "offer_id": {
             "format": "uuid",
             "title": "Offer Id",
@@ -4975,6 +5087,9 @@
           }
         },
         "required": [
+          "hotel_info_url",
+          "plan_list_url",
+          "reservation_url",
           "offer_id",
           "rate_id",
           "hotel_id",

@@ -438,3 +438,19 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 实现 `8f53e88`已提交/push，P49–52 closed/C20归档；T3.6仍未满足原生弹窗验收。恢复点T4.2。
 - T3.6补验：开始2026-11-03→ArrowUp2027-11-03→ArrowDown还原；结束2026-11-05→2027-11-05→还原。未点保存；PG只读rev8、Evidence9/order0/原V1一行hash87e4…25f不变。截图t36-keyboard-restored.png已查看。cua.getState apps可列，getApp仍明确锁屏，不能把列表可读当解锁；T3.6保持doing。
 - P05独立只读研究：当前CLI仍读取DISABLE_AUTO_COMPACT/PCT_OVERRIDE，但有window/reactive/precompute分支。后续R6可仅在测试helper使用官方CLAUDE_CODE_AUTO_COMPACT_WINDOW=100000，先观察人工usage/compact_boundary/summaryHTTP与关闭对照，再把实测精确SDK/CLI pair加入guard；还没运行、原因仍REASONED。公开依据 https://code.claude.com/docs/en/env-vars 与 https://code.claude.com/docs/en/model-config#default-auto-compact-thresholds；不扩大Guard端点/费用/改全局CLI。
+
+## 2026-10-08 T4.2 三类酒店链接
+
+- 开工git status空/HEAD0c5d7ec/远端一致；按需读既有QuoteFields、HotelCard、证据读回、Bookings/Supplier协议和0013迁移。ADR014先定internal excluded display_details与nullable sidecar。独立指出最初只strip add_evidence遗漏Booking/Supplier，改一处serialization排除方案；Pydantic最小无网实验确认nested dump/serialization schema排除，但不冒称仓库验收。P53记录方案/兼容取舍，先红开始。
+
+- T42首红：pytest3 failed/0.28s（无内部细节字段/extra forbid）、PG2 failed/0.34s（字段无/不保存）；web86 passed/1 suite failed/293.46ms（helper不存在）。实现后领域34 passed/0.25s、三URL/酒店/旧预算快照PG20 passed/1.61s（down0013/up0014保数据、旧writer、livehold422、实际fixture Booking/SupplierHold冻结模型+幂等）。schema生成无DB/凭据；check270 strict三平台/3契约/10入口、web88/type/lint/build5路由通过。
+- 失败尝试：初ruff检查6import格式可自动修/1行长由format修，最终未忽略；邻近pytest首次误猜test_session_history.py，exit4/0 tests；按rg --files实际test_history.py补正确命令，不作为通过证据。0014仅本地开发PG增量迁移成功，生产未操作。
+
+- 独立P54：hotelInformationUrl仍必填，补missing/null/all_missing三例首红3 failed/0.28s；前次完整正在运行，没有中途改适配器。后续需改可空并复验，不把之前完整冒称涵盖新用例。Chrome当前三URL可读，实际点击介绍打开新tab精确https://example.com/?hotel-info=1（Example Domain），另两URL独立。截图两份已查看；仅一次示例导航，单测/业务无网络依赖，不预订。
+
+- 最终P54 missing/null/all_missing红3/.28→领域37/.29；正式V1 stage/confirm/reopened get读回三URL、版本payload前后相等，PG21/2.09s；共用Hotel展示所有链接，非仅比较卡。check271 strict三平台/3契约/10入口exit0，web88/329.15ms/type/lint/build5路由exit0。独立P54关闭/无新发现。
+- 前完整1128 passed/原7 SDK failed/1 skipped/1 live deselected/259.32s，未含新missing3和formal1；最终完整1132 passed/原7 SDK failed/1 skipped/1 live deselected/265.33s；逐名与T41/T35集合一致。未在前次完整执行期间改适配器，结果按版本分别记。
+- Chrome最终共用卡3链接/刷新保留，精确介绍href/实际新tab URL=https://example.com/?hotel-info=1；仅点击介绍，没有点预订/选用/模拟确认。合成RawResponse两晚2次MockTransport，0真实查询；PGsidecar1/Evidence10/rev8/order0/原正式V1 hash不变。两截图与JSON已查看。正式V1恢复为专用临时PG而非Chrome；不冒称真实乐天链接语义/线上数据验收。
+- 探查又误猜test_validator.py不存在，已直接用已读imports中实际test_planning.py；不计为测试证据。今后路径以rg --files确认。
+
+- 最终完整命令 `uv run python scripts/dev.py test`：1132 passed / 7 failed / 1 skipped / 1 live deselected（265.33s），exit1如实保留；七项FAILED集合与T41/T35逐名相等，P05仍是发布门禁。对照日志首次误用简称路径exit2，按rg --files查到实际full-test-closed/full-test文件后比对通过。

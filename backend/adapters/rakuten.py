@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, JsonValue
 
 from backend.adapters.external_api import ApiUsage, parse_response, request_json
 from backend.domain.external_data import ExternalDataError, GeoPoint
+from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.hotel_selection import hotel_rate_indices
 from backend.domain.hotels import HotelOffer, Money
 from backend.domain.travel_request import TravelRequest
@@ -18,7 +19,7 @@ from backend.profile import current
 class Basic(BaseModel):
     hotelNo: int
     hotelName: str
-    hotelInformationUrl: str
+    hotelInformationUrl: str | None = None
     planListUrl: str | None = None
     hotelImageUrl: str | None = None
     reviewAverage: float | None = None
@@ -238,6 +239,11 @@ class Rakuten:
                 booking_url=item.room.reserveUrl
                 or item.hotel.planListUrl
                 or item.hotel.hotelInformationUrl,
+                display_details=HotelDisplayDetails(
+                    hotel_info_url=item.hotel.hotelInformationUrl,
+                    plan_list_url=item.hotel.planListUrl,
+                    reservation_url=item.room.reserveUrl,
+                ),
                 data_mode="live",
             )
             for item in selected

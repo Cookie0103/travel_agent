@@ -9,6 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.evidence import EvidenceKind, EvidenceRecord
 from backend.domain.execution import RunContext
+from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.travel_request import TravelRequest, legacy_request
 from backend.persistence.models import EvidenceRow, TravelRequestRow
 from backend.persistence.sessions import get_session
@@ -61,10 +62,22 @@ async def add_evidence(
             session_id=context.session_id,
             kind=record.kind,
             payload=record.model_dump(mode="json"),
+            display_details=record.display_details.model_dump(mode="json")
+            if record.display_details is not None
+            else None,
         )
         for record in records
     )
     await db.flush()
+
+
+def evidence_from_row(row: EvidenceRow) -> EvidenceRecord:
+    record = EvidenceRecord.model_validate(row.payload)
+    if record.kind == "hotel_offer" and row.display_details is not None:
+        return record.model_copy(
+            update={"display_details": HotelDisplayDetails.model_validate(row.display_details)}
+        )
+    return record
 
 
 async def find_evidence(

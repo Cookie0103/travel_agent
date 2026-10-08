@@ -123,7 +123,7 @@ class TravelService:
             assert user is not None
             history = await runs.recent_completed(db, context, after=user.preference_changed_at)
             rows = await travel.recent_evidence(db, context, current.revision)
-            evidence = [EvidenceRecord.model_validate(row.payload) for row in rows]
+            evidence = [travel.evidence_from_row(row) for row in rows]
             valid = [record for record in evidence if record.applicable(current, observed_at)]
             plan = await plans.for_session(db, context)
             draft_row = await plans.latest_draft(db, context)
@@ -378,7 +378,7 @@ async def resolve_records(
     rows = {row.id: row for row in await travel.find_evidence(db, context, ids)}
     if set(ids) != rows.keys():
         raise ServiceError(404, "blocked", "证据不存在或不属于当前会话", "evidence_missing")
-    records = tuple(EvidenceRecord.model_validate(rows[key].payload) for key in ids)
+    records = tuple(travel.evidence_from_row(rows[key]) for key in ids)
     stale = sorted(
         {
             record.kind

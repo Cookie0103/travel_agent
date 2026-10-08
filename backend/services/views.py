@@ -5,6 +5,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
+from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.hotels import QuoteFields
 from backend.domain.itinerary import ValidationReport
 from backend.domain.plans import ItemDiff, PlanItem
@@ -33,7 +34,7 @@ class RequestView(TravelRequest):
         )
 
 
-class HotelCard(QuoteFields):
+class HotelCard(QuoteFields, HotelDisplayDetails):
     model_config = ConfigDict(json_schema_serialization_defaults_required=True)
     stay: dict[str, object]
     request_revision: int

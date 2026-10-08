@@ -6,10 +6,16 @@ from uuid import UUID
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
+from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.hotel_selection import hotel_rate_indices
 from backend.domain.hotels import HotelOffer, compare, quote
 from backend.domain.travel_request import TravelRequest, lodging_budget_relation
-from backend.persistence.travel import entity_evidence, find_evidence, hotel_offer_elsewhere
+from backend.persistence.travel import (
+    entity_evidence,
+    evidence_from_row,
+    find_evidence,
+    hotel_offer_elsewhere,
+)
 from backend.providers.hotel_fixture import load_rates
 from backend.services.common import ServiceError, transaction
 from backend.services.travel import TravelService, require_revision
@@ -87,6 +93,7 @@ class HotelService:
                     entity_id=str(offer.offer_id),
                     field_path="hotel_offer",
                     value=offer.model_dump(mode="json"),
+                    display_details=offer.display_details,
                     kind="hotel_offer",
                     request_revision=request.revision,
                     conditions=evidence_conditions(request, "hotel_offer"),
@@ -159,9 +166,7 @@ class HotelService:
                     "offer_other_session" if other else "offer_unknown_id",
                 )
         picked = [by_offer[str(id)] if str(id) in by_offer else by_evidence[id] for id in ids]
-        records = {
-            row.id: EvidenceRecord.model_validate(row.payload) for row in picked
-        }  # 同一报价的两种ID合并
+        records = {row.id: evidence_from_row(row) for row in picked}  # 同一报价的两种ID合并
         return tuple(records.values())
 
     async def present(
@@ -190,6 +195,7 @@ def cards(
     return [
         {
             **HotelOffer.model_validate(record.value).card(request),
+            **(record.display_details or HotelDisplayDetails()).model_dump(mode="json"),
             "evidence_id": str(record.evidence_id),
             "source_ref": record.source_ref,
             "content_version": record.content_version,
