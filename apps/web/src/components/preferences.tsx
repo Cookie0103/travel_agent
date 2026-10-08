@@ -46,21 +46,14 @@ export function PreferencePanel({
   }, [identity.token, onError, display]);
 
   useEffect(() => {
-    const started = ++generation.current;
-    api<Preferences>("/preferences", identity.token)
-      .then((value) => {
-        if (generation.current === started) display(value);
-      })
-      .catch((error: unknown) => {
-        if (generation.current === started) onError(error);
-      })
-      .finally(() => {
-        if (generation.current === started) setBusy(false);
-      });
+    ++generation.current;
+    // load 的全部 setState 都在 await 之后，规则无法跨 async 边界识别，实为误报。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load();
     return () => {
       generation.current += 1;
     };
-  }, [identity.token, onError, display]);
+  }, [load]);
 
   async function change(clear: boolean) {
     if (!saved || busy) return;
