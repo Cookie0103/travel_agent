@@ -44,7 +44,10 @@ export function TripPanel({
           </div>
           {!editing && (
             <>
-              {request.city || request.start_date || request.adults ? (
+              {request.city ||
+              request.start_date ||
+              request.adults ||
+              request.child_ages != null ? (
                 <>
                   <p>
                     {[
@@ -57,7 +60,7 @@ export function TripPanel({
                   </p>
                   <p>
                     {[
-                      request.adults
+                      request.adults || request.child_ages != null
                         ? partyLabel(request)
                         : request.rooms && `${request.rooms} 间房`,
                       request.budget && `¥${formatYen(request.budget)}`,

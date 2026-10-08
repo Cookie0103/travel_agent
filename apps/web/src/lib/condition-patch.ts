@@ -9,6 +9,7 @@ export type ConditionsForm = Record<
   | "end_date"
   | "adults"
   | "child_ages"
+  | "child_state"
   | "rooms"
   | "budget"
   | "transport"
@@ -30,6 +31,12 @@ export function conditionsForm(request: RequestState): ConditionsForm {
     end_date: text(request.end_date),
     adults: text(request.adults),
     child_ages: request.child_ages?.join(",") ?? "",
+    child_state:
+      request.child_ages == null
+        ? "unknown"
+        : request.child_ages.length
+          ? "ages"
+          : "none",
     rooms: text(request.rooms),
     budget: text(request.budget),
     transport: text(request.transport),
@@ -88,17 +95,25 @@ export function conditionPatch(
       set.transport = value as NonNullable<RequestState["transport"]>;
     } else set[key] = value;
   }
-  if (form.child_ages.trim() !== original.child_ages) {
+  if (form.child_state === "unknown") {
+    if (request.child_ages != null) clear.push("child_ages");
+  } else if (form.child_state === "none") {
+    if (request.child_ages == null || request.child_ages.length)
+      set.child_ages = [];
+  } else if (form.child_state === "ages") {
     const tokens = form.child_ages.split(/[,，]/).map((value) => value.trim());
-    const ages = form.child_ages.trim() ? tokens.map(Number) : [];
+    const ages = tokens.map(Number);
     if (
-      (ages.length && tokens.some((value) => !value)) ||
+      tokens.some((value) => !value) ||
+      ages.length > 8 ||
       ages.some((age) => !Number.isInteger(age) || age < 0 || age > 17)
     )
-      throw new Error("儿童年龄请填0–17的整数，用逗号分开。");
+      throw new Error(
+        "儿童年龄请填0–17的整数，用逗号分开，最多8名；婴儿可填0。",
+      );
     if (JSON.stringify(ages) !== JSON.stringify(request.child_ages))
       set.child_ages = ages;
-  }
+  } else throw new Error("请选择有效儿童情况。");
   if (form.pace !== original.pace) {
     if (form.pace && !PACES.includes(form.pace as Pace))
       throw new Error("请选择有效节奏。");

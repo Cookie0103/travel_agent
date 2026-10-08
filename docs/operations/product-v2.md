@@ -340,3 +340,13 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 切换已有空白T2.2旅行：form所有条件输入/未知select值为空；未改保存后只读PG revision0/child_ages null/八字段null，PATCH总数仍1（仅旧UI红那次）。未知儿童不被置[]；儿童显式三状态留T3.2，空白页旧离线门槛仍留T3.7。证据t31-condition-noop.json，两截图人工查看；初次卡片截图位于上方看不到卡，滚动后替换为三酒店可见图，实际DOM计数与PG为验收依据。
 - 最终独立只读审查源码/测试/计划/ops/JSON/两截图，无阻止提交发现；P23/P24关闭。审查未运行测试/未修改文件。`git diff --check`与`uv run python scripts/check_docs.py`退出0；实现commit待完成。
 - 实现`1809aa567aa0ec5e98c2bdc89d508584e7b72323`已提交/push，远端SHA一致、checkout干净；T3.1/P02/P23/P24状态与C3 STAR回写，恢复点T3.2。
+
+## 2026-10-08 T3.2 儿童三状态
+
+- 开工git status空/HEAD与远端825c4f5一致，读既有TravelConditions/RequestPatch/TravelService、PG no-op及ADR015边界；已支持null/[]/[0]与clear。选择使用仅表单本地child_state派生值，不新增持久字段/接口/ADR。未填不造[]；无儿童明确[]；有儿童年龄必须填、0合法。
+- `pnpm --dir apps/web run test`新三状态实际回归先红：现有form无child_state，unknown→none不能生成[]，选择有儿童空年龄不报错；输出73 passed/2 failed（完整时长见后续日志摘要）。后端现有事实契约不改，绿将直接验证这些行为。
+- 首红web73 passed/2 failed/260.10ms（新三状态/有儿童空年龄），实现后75 passed/273.98ms。既有年龄坏token测试加明确ages状态，空表单测试补unknown选择其余值空，不移除原断言；UI状态不持久。Chrome旧bundle实际儿童情况选择count0，expected1失败（VERIFIED）；新版Chrome三状态保存/读回待测。
+- 启动新版构建时首次误用monorepo standalone/apps/web路径失败，查实际输出standalone/server.js后修正；项目无public目录，其复制失败无静态文件丢失，static已复制，server正常127.0.0.1。Chrome儿童getByLabel getAttribute超时，改读实际combobox角色/选中DOM，不猜值。
+- Chrome仅无儿童保存，PG revision1/child[]/其他字段unknown/PATCH2（前1为T3.1红）但摘要无儿童count0且显示未设，明确断言红P26。补摘要以child_ages!=null显示既有partyLabel；不自动填成人/房间。Python源码没改，完整回归运行期间补前端后，最终前端全部重跑。
+- Chrome/PG同一已有空白旅行null/rev0→无儿童[]/rev1→婴儿[0]/rev2→clear后null/rev3；每次只变儿童字段，其他八字段仍unknown。空年龄点击保存只中文错误、PGrev1/PATCH2未变；最终未知no-op仍rev3/PATCH4，4包括旧T3.1红1+本任务三次更新。刷新无儿童摘要count1；刷新婴儿表单selected ages/value0；clear后刷新unknown/age输入0，均VERIFIED，JSON t32-children-states。未创建正式版本/未真实供应商或模型调用。两截图人工查看。
+- 最终web75 passed/304.54ms、type/lint/build5路由/check254三平台strict/3契约/10入口退出0；独立只读实现/P26复核无发现。完整 `uv run python scripts/dev.py test`1027 passed/原7 SDK failed/1 skipped/1 live deselected/258.13s，失败逐项同P-05；Python源码全程未变，前端检查在P26修后重跑。

@@ -90,13 +90,26 @@ export function Conditions({
         </label>
       </div>
       <label>
-        儿童年龄
-        <input
-          placeholder="儿童年龄待补充"
-          value={form.child_ages}
-          onChange={(e) => change("child_ages", e.target.value)}
-        />
+        儿童情况
+        <select
+          value={form.child_state}
+          onChange={(e) => change("child_state", e.target.value)}
+        >
+          <option value="unknown">未填</option>
+          <option value="none">无儿童</option>
+          <option value="ages">有儿童</option>
+        </select>
       </label>
+      {form.child_state === "ages" && (
+        <label>
+          儿童年龄
+          <input
+            placeholder="填写年龄；婴儿填0，多名用逗号分开"
+            value={form.child_ages}
+            onChange={(e) => change("child_ages", e.target.value)}
+          />
+        </label>
+      )}
       <label>
         全程预算（JPY）
         <input

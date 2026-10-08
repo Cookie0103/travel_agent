@@ -33,7 +33,12 @@ test("empty conditions have no hidden city, dates, party, budget or transport de
     soft_constraints: [],
   } as unknown as RequestState;
   const form = conditionsForm(empty);
-  assert.ok(Object.values(form).every((value) => value === ""));
+  assert.equal(form.child_state, "unknown");
+  assert.ok(
+    Object.entries(form)
+      .filter(([key]) => key !== "child_state")
+      .every(([, value]) => value === ""),
+  );
   assert.deepEqual(conditionPatch(empty, form), { set: {}, clear: [] });
 });
 
@@ -84,7 +89,12 @@ test("infant zero is retained and incomplete or invalid age tokens cannot invent
   });
   for (const child_ages of ["5,", ",5", "-1", "18", "1.5"]) {
     assert.throws(
-      () => conditionPatch(request, { ...conditionsForm(request), child_ages }),
+      () =>
+        conditionPatch(request, {
+          ...conditionsForm(request),
+          child_state: "ages",
+          child_ages,
+        }),
       /儿童年龄/,
     );
   }
@@ -98,5 +108,66 @@ test("equivalent integer counts are a no-op and cannot trigger card clearing", (
       rooms: "01",
     }),
     { set: {}, clear: [] },
+  );
+});
+
+test("children selection preserves three distinct facts and uses clear for unknown", () => {
+  assert.equal(conditionsForm(request).child_state, "unknown");
+  const none = { ...request, child_ages: [] };
+  const infant = { ...request, child_ages: [0] };
+  assert.equal(conditionsForm(none).child_state, "none");
+  assert.equal(conditionsForm(infant).child_state, "ages");
+  assert.deepEqual(
+    conditionPatch(request, {
+      ...conditionsForm(request),
+      child_state: "none",
+    }),
+    { set: { child_ages: [] }, clear: [] },
+  );
+  assert.deepEqual(
+    conditionPatch(none, { ...conditionsForm(none), child_state: "unknown" }),
+    { set: {}, clear: ["child_ages"] },
+  );
+  assert.deepEqual(
+    conditionPatch(infant, {
+      ...conditionsForm(infant),
+      child_state: "unknown",
+    }),
+    { set: {}, clear: ["child_ages"] },
+  );
+  assert.deepEqual(
+    conditionPatch(request, {
+      ...conditionsForm(request),
+      child_state: "ages",
+      child_ages: "0",
+    }),
+    { set: { child_ages: [0] }, clear: [] },
+  );
+  for (const fact of [request, none, infant])
+    assert.deepEqual(conditionPatch(fact, conditionsForm(fact)), {
+      set: {},
+      clear: [],
+    });
+});
+
+test("children selected without ages cannot silently become none or invent infant zero", () => {
+  for (const child_ages of ["", " ", "5,", ",5", "-1", "18", "1.5"]) {
+    assert.throws(
+      () =>
+        conditionPatch(request, {
+          ...conditionsForm(request),
+          child_state: "ages",
+          child_ages,
+        }),
+      /儿童年龄/,
+    );
+  }
+  assert.throws(
+    () =>
+      conditionPatch(request, {
+        ...conditionsForm(request),
+        child_state: "invalid",
+      }),
+    /儿童/,
   );
 });
