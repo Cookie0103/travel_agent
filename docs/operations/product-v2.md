@@ -314,3 +314,15 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 最后前端 `pnpm --dir apps/web run test`62 passed/184.83ms，`run typecheck`/`run lint`/`run build`5路由通过；`uv run python scripts/dev.py check`254文件三平台strict/3契约/10入口退出0。路线修复后全部前端检查重跑；Python源码全程未变，完整离线回归仍在运行。独立只读初次及路线增量审查均无发现。
 - 完整 `uv run python scripts/dev.py test` 1027 passed/7 failed/1 skipped/1 live deselected/258.59s；7失败逐项同P-05，未改断言/跳过。Python源码全程未改，进程运行期间只补前端路线提示，其后前端62/type/lint/build/check全部重新通过。`git diff --check`/`scripts/check_docs.py`通过，独立审查两次无发现。
 - 实现 `9d3d521f5c4c8af5921e8b4fd121ba4b8555f7ef`提交/push后，远端SHA完全一致；P-19/task证据与STAR已落盘，恢复点为T2.5。
+
+## 2026-10-08 T2.5 确认与读取失败边界
+
+- 开工`git status --short`空，HEAD/远端`cbb3b37ea2e101105239fcd751c465f93a2f2177`。读取confirm/action/refresh与真实PG并发确认测试。先前业务结果与最终读回需保留，确认POST事实与GET可用性分开；普通读取失败不能自动再写。
+- 客户端实际confirmPlan流程新增3测试：POST成功回执先于GET503、POST409绝不报成功/不读、GET401保留身份失效处理。首红62 passed/1 suite failed/282.91ms（export未实现）→65 passed/270.38ms。API小helper复用api，只把确认与独立读取边界显式化；hook同步confirming ref防同轮双击，确认回执即移除可确认草稿。回执是标签临时UI，恢复以服务端列表为准，不新增持久字段。Chrome红/绿与PG回归待验证。
+- Chrome新建专用合成旅行28c7…29e3，使用服务层设置离线京都固定条件，不更改已有旅行；显式生成1离线run。只读探针首次误假设PlanDraftRow有created_at导致AttributeError；更正为当前session恰一草稿断言，不绕过证据/确认。故障API仅指定plan成功认证GET返回503，POST确认仍实际事务执行。
+- Chrome旧bundle确认POST实际成功，指定合成plan的认证GET返回503；busy结束后保存按钮仍enabled=true、已保存回执heading count0，明确抛出T2.5失败断言，截图t25-red-confirm-read-failure。没有再次点保存；之后解除该只读故障，红案例将只读恢复；新UI绿将使用另一独立合成旅行，不把不同旅行版本合算为重复写。
+- 初次新UI绿旅行2475…4168：Chrome dblclick确认后已保存V1回执1、确认按钮0，POST目标计数待PG核对；但原run尚未保存标签count1，明确失败断言（P-21，计划外）。修为只依据同一草稿的可信POST回执、原planOrigin/session+run更新该轮次业务结果，保持最后GET/归属/generation。不重确认已知成功草稿；最终绿以另一独立合成旅行复核，所有版本分别核对。
+- 独立审查P2指出普通refresh空plan时不读回执plan_id，无presentation不能恢复；现有presentation虽能恢复但不清回执。Chrome初绿故障解除重试实际formal heading1/receipt heading1，明确断言红（P-22）。补同session receipt优先canonical GET/active后清回执，再restoreConversation。最终绿将先显式普通查询令最新轮次无presentation，再重试，验证不依赖旧卡片；不再次POST已确认草稿。
+- 最终第三独立合成旅行3d60…2dbb dblclick：receipt heading1/confirm buttons0/原轮次confirmed label1/unsaved0。精确认证GET503故障仍启用时，显式发1普通离线查询，PG最新run answer_only/presentation0；解除故障后只读重试formal V1 heading1/receipt0/save0，再刷新仍formal1/receipt0。计数targetconfirm1、总POST8/PATCH0重试前后完全相同；POST8包含红1confirm、初绿newsession+message+confirm、最终newsession+message+confirm+显式query，不冒称0总写入。
+- 只读PG三个独立案例每个formal V1/版本行1/draft.confirmed_version1/confirm HTTP1，原已有V1哈希87e4…25f不变；所有请求为本地默认离线样例。故障探针已CtrlC停止、flag移除，默认DEMO_MODE API已恢复。全部截图人工查看，无token/密钥/私人对话。证据t25-confirmation-readback.json/红与两类绿截图。
+- 最终前端 `pnpm --dir apps/web run test`65 passed/280.17ms；`run typecheck`/`run lint`/`run build`5路由退出0；`uv run python scripts/dev.py check`254文件/三平台strict/3契约/10入口通过。`uv run python scripts/dev.py test`1027 passed/7 failed/1 skipped/1 live deselected/255.38s，失败逐项同P-05；既有真实PG并发确认测试通过。全程Python源码未变，完整进程期间修前端P21/P22后前端全部检查重跑；不以旧前端检查代替最终状态。独立P2已修复并复核无新发现，最终只读源码/JSON无新发现，P3指出§7/P01陈旧“未实施”已按实测同步更正；commit待完成。

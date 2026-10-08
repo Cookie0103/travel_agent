@@ -72,6 +72,29 @@ export async function readConfirmedPlan(
     : undefined;
 }
 
+/** A confirmation receipt is reported before the independent canonical read. */
+export async function confirmPlan(
+  draftId: string,
+  token: string,
+  onConfirmed: (saved: components["schemas"]["SavedPlan"]) => void,
+): Promise<Plan> {
+  const saved = await api<components["schemas"]["SavedPlan"]>(
+    `/plan-drafts/${draftId}/confirm`,
+    token,
+    "POST",
+  );
+  onConfirmed(saved);
+  try {
+    return await api<Plan>(`/plans/${saved.plan_id}`, token);
+  } catch (failure) {
+    const explanation =
+      "确认已成功，正式行程读取失败。请重新读取，无需再次保存。";
+    if (failure instanceof ApiError)
+      throw new ApiError(explanation, failure.status);
+    throw new Error(explanation);
+  }
+}
+
 export type TripSummary = components["schemas"]["SessionSummary"];
 export type TripPage = components["schemas"]["SessionPage"];
 export function createTrip(token: string) {

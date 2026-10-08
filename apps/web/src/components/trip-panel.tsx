@@ -94,6 +94,18 @@ export function TripPanel({
           )}
         </section>
       )}
+      {workspace.confirmation?.session_id === identity.session_id && (
+        <section className="panel-block" role="status">
+          <h3>已确认保存 · V{workspace.confirmation.version}</h3>
+          <p>正在读取正式行程；读取失败可重试，无需再次保存。</p>
+          <button
+            disabled={workspace.busy || workspace.restoring}
+            onClick={() => void workspace.refresh()}
+          >
+            重新读取已保存行程
+          </button>
+        </section>
+      )}
       {plan ? (
         <PlanResults
           plan={plan}
@@ -103,10 +115,12 @@ export function TripPanel({
           token={identity.token}
         />
       ) : (
-        <section className="panel-block">
-          <h3>行程</h3>
-          <p className="muted">还没有行程草稿；在对话里让我生成。</p>
-        </section>
+        !workspace.confirmation && (
+          <section className="panel-block">
+            <h3>行程</h3>
+            <p className="muted">还没有行程草稿；在对话里让我生成。</p>
+          </section>
+        )
       )}
       <Bookings
         bookings={workspace.bookings}

@@ -10,6 +10,7 @@ import {
   readRunHistory,
   readTripHistory,
   createTrip,
+  confirmPlan,
   type TripSummary,
   readEvents,
   readWhile,
@@ -55,6 +56,13 @@ export function useWorkspace({
   const [events, setEvents] = useState<AppEvent[]>([]);
   const [hotels, setHotels] = useState<Hotels>();
   const [plan, setPlan] = useState<Plan>();
+  const [confirmation, setConfirmation] = useState<{
+    session_id: string;
+    draft_id: string;
+    plan_id: string;
+    version: number;
+  }>();
+  const confirming = useRef(false);
   const [planOrigin, setPlanOrigin] = useState<RunBinding>();
   const [hotelOrigin, setHotelOrigin] = useState<RunBinding>();
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -88,6 +96,7 @@ export function useWorkspace({
       setEvents([]);
       setHotels(undefined);
       setPlan(undefined);
+      setConfirmation(undefined);
       setPlanOrigin(undefined);
       setHotelOrigin(undefined);
       setBookings([]);
@@ -328,6 +337,7 @@ export function useWorkspace({
       });
       if (!active()) return;
       setPlan(savedPlan);
+      if (savedPlan) setConfirmation(undefined);
       setPlanOrigin(undefined);
       setIdentity((old) =>
         old?.token === current.token && old.session_id === current.session_id
@@ -413,6 +423,7 @@ export function useWorkspace({
       setTripCursor(null);
       setHotels(undefined);
       setPlan(undefined);
+      setConfirmation(undefined);
       setPlanOrigin(undefined);
       setHotelOrigin(undefined);
       setBookings([]);
@@ -460,6 +471,7 @@ export function useWorkspace({
         setEvents([]);
         setHotels(undefined);
         setPlan(undefined);
+        setConfirmation(undefined);
         setPlanOrigin(undefined);
         setHotelOrigin(undefined);
         setBookings([]);
@@ -551,7 +563,15 @@ export function useWorkspace({
       );
       if (!active()) return;
       setBookings(savedBookings);
-      if (plan) {
+      if (confirmation?.session_id === identity.session_id) {
+        const displayed = await read(
+          api<Plan>(`/plans/${confirmation.plan_id}`, identity.token),
+        );
+        if (!active()) return;
+        setPlan(displayed);
+        setPlanOrigin(undefined);
+        setConfirmation(undefined);
+      } else if (plan) {
         const displayed = await read(
           api<Plan>(
             plan.draft_id
@@ -615,41 +635,78 @@ export function useWorkspace({
     }
   }
   async function confirm() {
-    if (!identity || !plan?.draft_id) return;
-    await action(async (read, active) => {
-      const saved = await read(
-        api<components["schemas"]["SavedPlan"]>(
-          `/plan-drafts/${plan.draft_id}/confirm`,
-          identity.token,
-          "POST",
-        ),
-      );
-      if (!active()) return;
-      remember({ ...identity, plan_id: saved.plan_id, run_id: undefined });
-      const displayed = await read(
-        api<Plan>(`/plans/${saved.plan_id}`, identity.token),
-      );
-      if (!active()) return;
-      setPlan(displayed);
-      if (planOrigin) {
-        const source = await read(
-          api<Run>(`/runs/${planOrigin.run_id}`, identity.token),
+    if (
+      !identity ||
+      !plan?.draft_id ||
+      confirming.current ||
+      confirmation?.draft_id === plan.draft_id ||
+      plan.status === "confirmed"
+    )
+      return;
+    confirming.current = true;
+    try {
+      await action(async (read, active) => {
+        const displayed = await read(
+          confirmPlan(plan.draft_id!, identity.token, (saved) => {
+            if (!active()) return;
+            setConfirmation({
+              session_id: identity.session_id,
+              draft_id: plan.draft_id!,
+              plan_id: saved.plan_id,
+              version: saved.version,
+            });
+            setPlan(undefined);
+            if (planOrigin) {
+              const business_result: NonNullable<Run["business_result"]> = {
+                kind: "confirmed",
+                plan_id: saved.plan_id,
+                version: saved.version,
+              };
+              setRun((old) =>
+                old && matchesRun(old, planOrigin)
+                  ? { ...old, business_result }
+                  : old,
+              );
+              setHistory((old) =>
+                old.map((row) =>
+                  matchesRun(row, planOrigin)
+                    ? { ...row, business_result }
+                    : row,
+                ),
+              );
+            }
+            remember({
+              ...identity,
+              plan_id: saved.plan_id,
+              run_id: undefined,
+            });
+          }),
         );
         if (!active()) return;
-        if (!matchesRun(source, planOrigin))
-          throw new Error("确认结果不属于原旅行或轮次。");
-        setRun((old) =>
-          old?.run_id === source.run_id ? mergeRun(old, source) : old,
-        );
-        setHistory((old) =>
-          old.map((row) =>
-            row.run_id === source.run_id
-              ? { ...row, ...mergeRun(row, source) }
-              : row,
-          ),
-        );
-      }
-    });
+        setPlan(displayed);
+        setConfirmation(undefined);
+        if (planOrigin) {
+          const source = await read(
+            api<Run>(`/runs/${planOrigin.run_id}`, identity.token),
+          );
+          if (!active()) return;
+          if (!matchesRun(source, planOrigin))
+            throw new Error("确认结果不属于原旅行或轮次。");
+          setRun((old) =>
+            old?.run_id === source.run_id ? mergeRun(old, source) : old,
+          );
+          setHistory((old) =>
+            old.map((row) =>
+              row.run_id === source.run_id
+                ? { ...row, ...mergeRun(row, source) }
+                : row,
+            ),
+          );
+        }
+      });
+    } finally {
+      confirming.current = false;
+    }
   }
   async function holdOffer(offerId: string, revision: number) {
     if (!identity) return;
@@ -770,6 +827,7 @@ export function useWorkspace({
     events,
     hotels,
     plan,
+    confirmation,
     planOrigin,
     hotelOrigin,
     bookings,

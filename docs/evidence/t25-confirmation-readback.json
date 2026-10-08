@@ -1,0 +1,58 @@
+{
+  "local_synthetic_only": true,
+  "cases": [
+    {
+      "case": "red",
+      "session_id": "28c7f207-ed90-4e86-8703-f388d3f329e3",
+      "version": 1,
+      "version_rows": 1,
+      "draft_confirmed_version": 1,
+      "confirm_post_calls": 1
+    },
+    {
+      "case": "first_green",
+      "session_id": "247540ce-da38-4f14-8c58-e6e5294f4168",
+      "version": 1,
+      "version_rows": 1,
+      "draft_confirmed_version": 1,
+      "confirm_post_calls": 1
+    },
+    {
+      "case": "final_green",
+      "session_id": "3d603ba4-d344-4da7-82c1-f8b219cc2dbb",
+      "version": 1,
+      "version_rows": 1,
+      "draft_confirmed_version": 1,
+      "confirm_post_calls": 1
+    }
+  ],
+  "receipt_phase": {
+    "receipt": 1,
+    "save_buttons": 0,
+    "unsaved_labels": 0,
+    "confirmed_labels": 1
+  },
+  "retry_phase": {
+    "formal_v1": 1,
+    "receipt": 0,
+    "save_buttons": 0,
+    "unsaved_labels": 0
+  },
+  "retry_before_counts": {
+    "green_confirm_calls": 1,
+    "all_post_calls": 8,
+    "all_patch_calls": 0
+  },
+  "retry_after_counts": {
+    "green_confirm_calls": 1,
+    "all_post_calls": 8,
+    "all_patch_calls": 0
+  },
+  "latest_run_kind": "answer_only",
+  "latest_run_presentations": 0,
+  "original_version": 1,
+  "original_version_rows": 1,
+  "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+  "live_calls": 0,
+  "limits": "Chrome uses actual local offline staging/confirmation transactions and an authenticated, exact-plan canonical GET503 response probe. Red/first green/final green are distinct synthetic trips, each confirmed once; no repeat-confirmation on known receipts. An explicit query produced the final latest run without presentations before read-only retry. No production/live-provider reproduction."
+}
