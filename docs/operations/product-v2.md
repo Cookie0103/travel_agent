@@ -246,3 +246,14 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 临时ignored本地wrapper只绑定127.0.0.1、验证PG host为loopback、live=false：目标request延迟6秒，Chrome目标札幌已选中、仅恢复status、没有空欢迎/旧对话；GET sessions/runs模拟404，/plans显示版本不支持且没有“还没有确认”。已删除模式标记、停止wrapper、恢复项目默认离线API及最终web构建，重新读取京都V1；0真实模型/供应商/订单，未操作Railway。
 - 只读PG探针首次忘传database_url(configuration())，TypeError发生在连接前；修正后实际查询成功，不输出DSN/token/userUUID/行程正文。脱敏5截图及JSON在docs/evidence/product-v2/t13-*。outbox和local内容由真实helper调用测试，未读取浏览器隐藏storage；浏览器验收与存储helper证据分开。
 - `uv run python scripts/dev.py check`：252文件Ruff/格式、三平台strict/3契约/10入口退出0；完整 `dev test` 1014 passed/同P-05的7 failed/1 skipped/1 live deselected（256.41s），包含T1.2新保留characterization；本任务Python源码无改。最新front type/lint/test37/build5路由均通过，独立审查最新同步列表/模型存储修改无发现。
+
+
+## 2026-10-08 T1.4 卡片与事件归属
+
+- `1786c37` push后远端完整SHA一致，开工git status干净。原京都已过期V1尝试离线修改返回酒店/路线证据失效，未生成新草稿；改新合成旅行、新鲜默认京都条件→生成草稿→普通室内查询。真实DOM两个reply：生成轮无draft badge，普通查询有旧draft badge，B17已复现。当时截图存ignored，现已审核并复制至docs/evidence/product-v2/t14-red-inherited-draft.png；视口截图仅部分上下文，两轮完整归属由真实DOM记录证明。
+
+- 卡片来源helper首跑37 passed/1 suite failed（新模块缺失）；实现后40 passed。SSE错误原genericError导致401断言40 passed/1 failed，保留ApiError status后41 passed。审查P2历史酒店清缓存遮蔽持久引用：首次缺export suite失败，先抽原选择逻辑重新红41 passed/1 failed（undefined vs hotel_comparison）；cached存在且origin匹配才用后42 passed/163.25ms。typecheck/lint退出0；最终build5路由退出0。
+- Chrome同场景修后生成轮1引用、查询轮0卡；PG该查询presentations为空，排除真实新草稿。实际hook probe：ignored本地wrapper正常鉴权后SSE先注入foreign session/run seq999，本轮六步完整、日志0次foreign-draft读。cursor过滤helper只是独立测试，不称完整hook竞态。
+- 移除后台hydrate/读列表的identity持久化，仅内存持有plan_id，避免旧captured identity改共享选择。首次45秒延迟超过Next proxy timeout、500/socket hang up，不算成功；改18秒，另建新鲜合成草稿确认V1，再延迟GET /plan-drafts一次；旧标签恢复中另一标签选择札幌，旧标签后来显示已确认V1，另一标签刷新仍札幌。一次Chrome locator等待超时但诊断enabled，随后新AX确认成功；没有改等待断言假通过。
+- PG只读新合成旅行4轮/普通query0presentation/current_version1；原京都version_rows1/current_version1/payload SHA256与t12一致。只有新合成旅行显式确认1次，没有重确认原旅行。截图5张与脱敏JSON见t14-*；Fixture仍京都样本，不算真实札幌数据。停止wrapper/删除flags，默认API恢复、live=false，0付费调用。
+- `uv run python scripts/dev.py check`：252文件Ruff/格式、三平台strict、3契约/10入口退出0。完整 `dev test` 1014 passed/原7 failed/1 skipped/1 live deselected，257.51s，失败名与P-05一致；本任务Python源码未改。独立只读审查酒店缓存P2修复、复核后台storage变动无发现，全部实测证据后再提交。

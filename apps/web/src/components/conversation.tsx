@@ -3,6 +3,13 @@
 import type { Workspace } from "./workbench";
 import { toolLabel } from "./tool-names";
 import { HotelResults, planDays } from "./results";
+import type { Run } from "@/lib/api";
+import {
+  belongsToRun,
+  matchesRun,
+  runCards,
+  hotelsForRun,
+} from "@/lib/early-cards";
 import type { Mode } from "./composer";
 import { RunSteps } from "./activity-drawer";
 import { Markdown } from "./markdown";
@@ -26,12 +33,16 @@ const examples = [
 ];
 
 function currentStep(workspace: Workspace): string | undefined {
+  if (!workspace.run) return undefined;
+  const events = workspace.events.filter((event) =>
+    belongsToRun(event, workspace.run!),
+  );
   const finished = new Set(
-    workspace.events
+    events
       .filter((event) => event.kind === "tool_finished")
       .map((event) => event.tool_call_id),
   );
-  const open = workspace.events
+  const open = events
     .filter(
       (event) =>
         event.kind === "tool_started" && !finished.has(event.tool_call_id),
@@ -76,8 +87,7 @@ export function Conversation({
 }) {
   const { run } = workspace;
   const step = currentStep(workspace);
-  const running =
-    workspace.busy || ["running", "cancelling"].includes(run?.status ?? "");
+  const running = ["running", "cancelling"].includes(run?.status ?? "");
   const noRevision = !workspace.request?.revision;
   const currentPrompt = workspace.history.find(
     (row) => row.run_id === run?.run_id,
@@ -154,6 +164,14 @@ export function Conversation({
                 {row.error_code && !row.answer && (
                   <p className="error">执行未完成：{row.error_code}</p>
                 )}
+                <TurnCards
+                  workspace={workspace}
+                  run={row}
+                  latest={false}
+                  mode={mode}
+                  send={send}
+                  openPanel={openPanel}
+                />
               </div>
             </div>
           </section>
@@ -190,40 +208,19 @@ export function Conversation({
                     : `执行未完成：${run.error_code}。请检查模型配置或调用额度。`}
                 </p>
               )}
-            <RunSteps events={workspace.events} />
-            {workspace.hotels && (
-              <HotelResults
-                hotels={workspace.hotels}
-                disabled={workspace.busy || running}
-                revision={workspace.request?.revision}
-                hold={workspace.holdOffer}
-                choose={(card) =>
-                  send(
-                    `我选择酒店「${card.hotel_name}」（evidence_id=${card.evidence_id}），请按它重排每天行程，每天结束于酒店。`,
-                    mode,
-                  )
-                }
-                compact
-              />
-            )}
-            {workspace.plan?.draft_id && (
-              <section className="plan-summary">
-                <div>
-                  <strong>
-                    已生成 {planDays(workspace.plan).length} 天草稿
-                  </strong>{" "}
-                  ·{" "}
-                  {workspace.plan.validation.status === "conflict"
-                    ? "有硬冲突，不能确认"
-                    : workspace.plan.validation.status === "partial"
-                      ? "部分可校验"
-                      : "已通过当前范围校验"}
-                  <br />
-                  <span className="small muted">在右侧查看并确认</span>
-                </div>
-                <button onClick={openPanel}>查看行程</button>
-              </section>
-            )}
+            <RunSteps
+              events={workspace.events.filter((event) =>
+                belongsToRun(event, run),
+              )}
+            />
+            <TurnCards
+              workspace={workspace}
+              run={run}
+              latest
+              mode={mode}
+              send={send}
+              openPanel={openPanel}
+            />
           </div>
         </div>
       )}
@@ -240,5 +237,92 @@ export function Conversation({
         </div>
       )}
     </div>
+  );
+}
+
+function TurnCards({
+  workspace,
+  run,
+  latest,
+  mode,
+  send,
+  openPanel,
+}: {
+  workspace: Workspace;
+  run: Run;
+  latest: boolean;
+  mode: Mode;
+  send: (text: string, mode: Mode) => void;
+  openPanel: () => void;
+}) {
+  const references = runCards(run);
+  const plan = matchesRun(workspace.planOrigin, run)
+    ? workspace.plan
+    : undefined;
+  const hotels = hotelsForRun(run, workspace.hotels, workspace.hotelOrigin);
+  const disabled =
+    !latest ||
+    workspace.busy ||
+    workspace.restoring ||
+    ["running", "cancelling"].includes(run.status);
+  const view = () => {
+    if (plan) openPanel();
+    else
+      void workspace.viewRunPlan(run.run_id).then((loaded) => {
+        if (loaded) openPanel();
+      });
+  };
+  return (
+    <>
+      {hotels && (
+        <HotelResults
+          hotels={hotels}
+          disabled={disabled}
+          revision={workspace.request?.revision}
+          hold={workspace.holdOffer}
+          choose={(card) =>
+            send(
+              `我选择酒店「${card.hotel_name}」（evidence_id=${card.evidence_id}），请按它重排每天行程，每天结束于酒店。`,
+              mode,
+            )
+          }
+          compact
+        />
+      )}
+      {(plan || references.draftId || references.planId) && (
+        <section className="plan-summary">
+          <div>
+            {plan?.draft_id ? (
+              <>
+                <strong>已生成 {planDays(plan).length} 天草稿</strong> ·{" "}
+                {plan.validation.status === "conflict"
+                  ? "有硬冲突，不能确认"
+                  : plan.validation.status === "partial"
+                    ? "部分可校验"
+                    : "已通过当前范围校验"}
+              </>
+            ) : (
+              <strong>
+                {plan?.version
+                  ? `已确认行程 · V${plan.version}`
+                  : "本轮行程引用"}
+              </strong>
+            )}
+            <br />
+            <span className="small muted">
+              {latest
+                ? "在右侧查看行程"
+                : "历史轮次的行程引用，当前状态按需读取"}
+            </span>
+          </div>
+          <button
+            disabled={workspace.busy || workspace.restoring}
+            onClick={view}
+          >
+            查看本轮行程
+          </button>
+        </section>
+      )}
+    </>
   );
 }

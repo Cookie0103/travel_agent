@@ -143,7 +143,14 @@ export async function readEvents(
     headers: { Authorization: `Bearer ${token}` },
     signal,
   });
-  if (!response.ok || !response.body)
+  if (!response.ok) {
+    const detail = await response.json().catch(() => null);
+    throw new ApiError(
+      detail?.message || "进度连接失败，可以重新连接读取已保存事件。",
+      response.status,
+    );
+  }
+  if (!response.body)
     throw new Error("进度连接失败，可以重新连接读取已保存事件。");
   const reader = response.body.getReader();
   const decoder = new TextDecoder();

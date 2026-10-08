@@ -23,7 +23,12 @@ import {
   type Booking,
 } from "./api";
 import type { components } from "./api-types";
-import { isCardEvent } from "./early-cards";
+import {
+  isCardEvent,
+  belongsToRun,
+  matchesRun,
+  type RunBinding,
+} from "./early-cards";
 import {
   persistIdentity,
   restoreIdentity,
@@ -50,6 +55,8 @@ export function useWorkspace({
   const [events, setEvents] = useState<AppEvent[]>([]);
   const [hotels, setHotels] = useState<Hotels>();
   const [plan, setPlan] = useState<Plan>();
+  const [planOrigin, setPlanOrigin] = useState<RunBinding>();
+  const [hotelOrigin, setHotelOrigin] = useState<RunBinding>();
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [error, setError] = useState("");
   const [sendError, setSendError] = useState("");
@@ -81,6 +88,8 @@ export function useWorkspace({
       setEvents([]);
       setHotels(undefined);
       setPlan(undefined);
+      setPlanOrigin(undefined);
+      setHotelOrigin(undefined);
       setBookings([]);
       setBusy(false);
       setRestoring(false);
@@ -96,27 +105,23 @@ export function useWorkspace({
 
   const hydrate = useCallback(
     async (
-      event: { presentation?: unknown },
+      event: { presentation?: unknown; context?: unknown },
       current: Identity,
       active: () => boolean,
-      persist = true,
+      binding: RunBinding,
     ) => {
       const payload = event.presentation as
         { data?: Hotels | Plan } | undefined;
       const data = payload?.data;
-      if (!data || !active()) return;
-      if ("component" in data && data.component === "hotel_comparison")
+      if (!data || !active() || !belongsToRun(event, binding)) return;
+      if ("component" in data && data.component === "hotel_comparison") {
         setHotels(data);
-      else if ("draft_id" in data && data.draft_id) {
+        setHotelOrigin(binding);
+      } else if ("draft_id" in data && data.draft_id) {
         const displayed = await readDraft(data.draft_id, current.token);
         if (!active()) return;
         setPlan(displayed);
-        if (!displayed.draft_id && persist)
-          remember({
-            ...current,
-            plan_id: displayed.plan_id,
-            run_id: undefined,
-          });
+        setPlanOrigin(binding);
       } else if ("plan_id" in data && data.plan_id) {
         const displayed = await readConfirmedPlan({
           plan_id: data.plan_id,
@@ -124,15 +129,10 @@ export function useWorkspace({
         });
         if (!active() || !displayed) return;
         setPlan(displayed);
-        if (persist)
-          remember({
-            ...current,
-            plan_id: displayed.plan_id,
-            run_id: undefined,
-          });
+        setPlanOrigin(binding);
       }
     },
-    [remember],
+    [],
   );
 
   const connect = useCallback(
@@ -153,12 +153,18 @@ export function useWorkspace({
           after,
           controller.signal,
           (event) => {
-            if (event.sequence <= cursor.current || !active()) return;
+            const binding = { session_id: current.session_id, run_id: runId };
+            if (
+              !belongsToRun(event, binding) ||
+              event.sequence <= cursor.current ||
+              !active()
+            )
+              return;
             cursor.current = event.sequence;
             setEvents((old) => [...old.slice(-79), event]);
             if (isCardEvent(event))
               early = early
-                .then(() => hydrate(event, current, active, false))
+                .then(() => hydrate(event, current, active, binding))
                 .catch(() => undefined);
           },
         );
@@ -166,6 +172,10 @@ export function useWorkspace({
         if (!active()) return;
         const final = await api<Run>(`/runs/${runId}`, current.token);
         if (!active()) return;
+        if (
+          !matchesRun(final, { session_id: current.session_id, run_id: runId })
+        )
+          throw new Error("执行记录不属于当前旅行或轮次。");
         setRun(final);
         setHistory((old) =>
           old.map((row) =>
@@ -173,7 +183,7 @@ export function useWorkspace({
           ),
         );
         for (const event of final.presentations ?? [])
-          await hydrate(event, current, active);
+          await hydrate(event, current, active, final);
         if (!active()) return;
         const state = await api<RequestState>(
           `/sessions/${current.session_id}/request`,
@@ -222,6 +232,10 @@ export function useWorkspace({
       if (!latestId || !active()) return;
       const saved = await api<Run>(`/runs/${latestId}`, current.token);
       if (!active()) return;
+      if (
+        !matchesRun(saved, { session_id: current.session_id, run_id: latestId })
+      )
+        throw new Error("执行记录不属于当前旅行或轮次。");
       setRun((old) => (active() ? mergeRun(old, saved) : old));
       setHistory((old) =>
         old.map((row) =>
@@ -231,7 +245,7 @@ export function useWorkspace({
         ),
       );
       for (const event of saved.presentations ?? [])
-        await hydrate(event, current, active);
+        await hydrate(event, current, active, saved);
       if (!active()) return;
       if (["running", "cancelling"].includes(saved.status)) {
         setBusy(true);
@@ -309,10 +323,15 @@ export function useWorkspace({
       });
       if (!active()) return;
       setPlan(savedPlan);
-      if (planId) remember({ ...current, plan_id: planId });
+      setPlanOrigin(undefined);
+      setIdentity((old) =>
+        old?.token === current.token && old.session_id === current.session_id
+          ? { ...old, plan_id: planId }
+          : old,
+      );
       if (!savedOnly) await restoreConversation(current, active);
     },
-    [readTrips, remember, restoreConversation, savedOnly],
+    [readTrips, restoreConversation, savedOnly],
   );
 
   useEffect(() => {
@@ -389,6 +408,8 @@ export function useWorkspace({
       setTripCursor(null);
       setHotels(undefined);
       setPlan(undefined);
+      setPlanOrigin(undefined);
+      setHotelOrigin(undefined);
       setBookings([]);
       setEvents([]);
       const state = await read(
@@ -434,6 +455,8 @@ export function useWorkspace({
         setEvents([]);
         setHotels(undefined);
         setPlan(undefined);
+        setPlanOrigin(undefined);
+        setHotelOrigin(undefined);
         setBookings([]);
         remember(current);
         await loadTrip(current, active);
@@ -677,6 +700,18 @@ export function useWorkspace({
     setBusy(true);
     await connect(identity, run.run_id, cursor.current);
   }
+  async function viewRunPlan(runId: string) {
+    if (!identity || busy || restoring) return false;
+    return await action(async (read, active) => {
+      const selected = await read(api<Run>(`/runs/${runId}`, identity.token));
+      const binding = { session_id: identity.session_id, run_id: runId };
+      if (!active()) return;
+      if (!matchesRun(selected, binding))
+        throw new Error("行程引用不属于当前旅行或轮次。");
+      for (const event of selected.presentations ?? [])
+        await hydrate(event, identity, active, binding);
+    });
+  }
   async function loadEarlier() {
     if (!identity || !historyBefore || busy) return;
     await action(async (read, active) => {
@@ -710,6 +745,8 @@ export function useWorkspace({
     events,
     hotels,
     plan,
+    planOrigin,
+    hotelOrigin,
     bookings,
     error,
     sendError,
@@ -728,6 +765,7 @@ export function useWorkspace({
     lock,
     reconnect,
     loadEarlier,
+    viewRunPlan,
     refresh,
     cancel,
   };
