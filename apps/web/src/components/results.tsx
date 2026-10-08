@@ -1,6 +1,6 @@
 /** Render canonical business cards; money, provenance and conflicts come from the server. */
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import {
   planUnavailable,
   planRefreshNotice,
@@ -12,6 +12,7 @@ import { sourceHref, type Hotels, type Plan } from "@/lib/api";
 import type { components } from "@/lib/api-types";
 import { hotelGroups, selectedHotelOffer } from "@/lib/hotel-groups";
 import { hotelLinks } from "@/lib/hotel-links";
+import { validationGroups, checkTargets } from "@/lib/validation-groups";
 import { CalendarButton } from "./calendar-button";
 export const formatYen = (value: string) =>
   Number(value).toLocaleString("ja-JP");
@@ -380,6 +381,8 @@ export function PlanResults({
   const stale = planUnavailable(plan, now);
   const refreshNotice = planRefreshNotice(plan, now);
   const blocked = stale || plan.validation.status === "conflict";
+  const checkPrefix = useId();
+  const groups = validationGroups(plan.validation.checks);
   return (
     <section className="results-section">
       <div className="section-heading">
@@ -407,15 +410,39 @@ export function PlanResults({
           {refreshNotice}
         </p>
       )}
-      <ul className="checks">
-        {plan.validation.checks
-          .filter((check) => check.status !== "verified")
-          .map((check, index) => (
-            <li key={index}>
-              {check.status === "conflict" ? "冲突" : "未知"}：{check.message}
-            </li>
+      {!!groups.length && (
+        <div className="checks">
+          <p className="small">
+            校验提醒 · 冲突 {plan.validation.check_counts.conflict ?? 0} · 未知{" "}
+            {plan.validation.check_counts.unknown ?? 0}
+          </p>
+          {plan.validation.truncated && (
+            <p className="muted small">
+              下列分类计数仅含当前明细；其余校验未展开，上方为完整总数。
+            </p>
+          )}
+          {groups.map((group, index) => (
+            <details key={index}>
+              <summary>
+                {group.status === "conflict" ? "冲突" : "未知"} · {group.label}{" "}
+                · {group.checks.length}条
+              </summary>
+              <ul>
+                {group.checks.map((check, position) => (
+                  <li key={position}>
+                    {check.message}{" "}
+                    {checkTargets(check.subject, plan.cards).map((target) => (
+                      <a key={target} href={`#${checkPrefix}-item-${target}`}>
+                        第{target + 1}项：{plan.cards[target].name}{" "}
+                      </a>
+                    ))}
+                  </li>
+                ))}
+              </ul>
+            </details>
           ))}
-      </ul>
+        </div>
+      )}
       {!!plan.changes?.length && (
         <details>
           <summary>查看本次差异</summary>
@@ -445,7 +472,12 @@ export function PlanResults({
               <span className="muted small">{day.slice(5)}</span>
             </h3>
             {items.map(({ item, index }) => (
-              <article key={item.item_id} className="visit">
+              <article
+                key={item.item_id}
+                className="visit"
+                id={`${checkPrefix}-item-${index}`}
+                tabIndex={-1}
+              >
                 <span className="visit-number">{index + 1}</span>
                 <div>
                   <h3>

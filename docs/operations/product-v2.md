@@ -538,3 +538,13 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 最终web-check94 passed/290.485166ms，typecheck/lint/build5routes退出0；先前92项版不代替最后增量版。独立两项静态反例先红7pass/2fail/116.788833ms，最终保列表边界/整段回退断言，静态复核无新发现。
 - Chrome本地合成历史table1/body4，HTML元素0/HTTPS链接1，三对齐；默认1056页面宽一致，390窄屏表格309/scroll320局部auto、整页390。桌面/窄屏截图已查看，窗口覆盖已reset。
 - 本地PG只读复核rev2/5报价/0booking/hold/order/原V1 hash87e4b4…25f不变；仅合成TaskRun回答，无工具/模型/供应商。未改后端，完整测试沿用最近T4.5的1243pass/原7fail作为已知基线，不宣称本任务全量通过。
+
+# T5.2 警告分类（2026-10-08）
+- 开工2ab0cf7/干净；原feedback12条+完整状态计数；纯前端分组和精确subject定位，截断不冒称全类别总数。一次rg错误猜lib/workbench.ts/domain/models.py/services/projections.py、ADR大小写glob未命中，均只读；之后rg --files确认路径，未改状态或代码。
+
+- 首红分组/定位2fail/1pass/103.129208ms；第一次web-check97pass/293.175334ms/type/lint/build5routes。独立原型键P2静态后补反例，1fail/3pass再修Object.hasOwn，三个未知码回归保留；最终web-check运行中。
+- .cache/t52_seed.py仅读原正式V1卡片结构，专用本地合成会话添加两份UI报告（相同可读卡、虚构冲突/未知条数用于测试），提示明确合成，不作为validator事实/不能确认；未更改正式行程或条件/未发任何工具或供应商请求。新增TaskRun/展示事件是唯一写入。
+
+- 最终web-check98pass/289.411958ms/type/lint/build5routes；dev check280/三平台/3契约/10入口均退出0。原型码首红1fail/3pass/109.110709ms，独立复核关闭；无后端改动未重跑全量，T4.5原7SDK门槛仍未解决。
+- 初伪造未存在草稿ID使右侧GET404，失败，不能作为展示证据；.cache/t52_seed_real.py调用现CatalogService离线快照，额外一份opening_hours=None明确fixture证据，四项同景点两未知两闭馆，用实际PlanService.stage产conflict草稿8e3536e4-5d61-4d72-b34c-e8da33ad25f1。不确认、不保存正式版本。仅替换本轮脚本自造事件假ID与验收回答；现5hotel+2place证据，条件rev2/booking0/hold0/order0/原V1一行hash不变。
+- Chrome12当前明细按8组展示，完整冲突2/未知11另显/截断提示；打开营业时间未知2及路线3。普通DOM click未见hash/focus，不称通过；实际链接Enter定位第4项，focus=_r_1_-item-3/hash一致，20:00–21:00，确认禁用。两截图已查看，JSON保存。useId多实例仅静态REASONED，工作台实际只展示一份最新草稿。
