@@ -48,6 +48,50 @@ export function Workbench({ articleId }: { articleId?: string }) {
         <div className="chat-layout">
           <section className="chat-pane">
             <div className="chat-toolbar">
+              <label className="trip-picker">
+                旅行
+                <select
+                  aria-label="切换旅行"
+                  value={identity.session_id}
+                  disabled={workspace.busy || workspace.restoring}
+                  onChange={(event) =>
+                    void workspace
+                      .switchTrip(event.target.value)
+                      .then((changed) => {
+                        if (changed) setText("");
+                      })
+                  }
+                >
+                  {!workspace.trips.some(
+                    (trip) => trip.session_id === identity.session_id,
+                  ) && <option value={identity.session_id}>当前旅行</option>}
+                  {workspace.trips.map((trip) => (
+                    <option key={trip.session_id} value={trip.session_id}>
+                      {trip.city || "未设置目的地"}
+                      {trip.start_date ? ` · ${trip.start_date}` : ""}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                disabled={workspace.busy || workspace.restoring}
+                onClick={() =>
+                  void workspace.newTrip().then((changed) => {
+                    if (changed) setText("");
+                  })
+                }
+              >
+                新建旅行
+              </button>
+              {workspace.tripCursor && (
+                <button
+                  disabled={workspace.busy || workspace.restoring}
+                  onClick={() => void workspace.loadMoreTrips()}
+                >
+                  更多旅行
+                </button>
+              )}
+
               <button
                 className="only-wide"
                 aria-expanded={!collapsed}

@@ -118,7 +118,7 @@ export function TripPanel({
       <details className="panel-block">
         <summary>长期偏好</summary>
         <PreferencePanel
-          key={identity.user_id}
+          key={identity.session_id}
           identity={identity}
           onError={workspace.fail}
         />

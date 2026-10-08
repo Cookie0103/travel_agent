@@ -981,3 +981,17 @@ summary {
 .data-notes-pop a:hover {
   text-decoration: underline;
 }
+
+.trip-picker {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.trip-picker select {
+  max-width: 14rem;
+  min-width: 0;
+}
+.chat-toolbar {
+  flex-wrap: wrap;
+}

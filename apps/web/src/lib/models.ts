@@ -32,7 +32,11 @@ export function useModels() {
         setOptions(loaded);
         let remembered: string | null = null;
         try {
-          remembered = localStorage.getItem("travel-model-v2");
+          remembered =
+            sessionStorage.getItem("travel-model-v2") ??
+            localStorage.getItem("travel-model-v2");
+          if (remembered) sessionStorage.setItem("travel-model-v2", remembered);
+          localStorage.removeItem("travel-model-v2");
         } catch {
           /* Storage is optional. */
         }
@@ -50,7 +54,7 @@ export function useModels() {
     if (!options.some((item) => item.id === value && item.available)) return;
     updateMode(value);
     try {
-      localStorage.setItem("travel-model-v2", value);
+      sessionStorage.setItem("travel-model-v2", value);
     } catch {
       /* Storage is optional. */
     }

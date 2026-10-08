@@ -12,7 +12,8 @@ export type Booking = components["schemas"]["Booking"];
 export type AppEvent = components["schemas"]["UiRuntimeEvent"] & {
   sequence: number;
 };
-export type Identity = components["schemas"]["DemoIdentity"] & {
+export type Identity = {
+  token: string;
   session_id: string;
   run_id?: string;
   plan_id?: string;
@@ -69,6 +70,26 @@ export async function readConfirmedPlan(
   return identity.plan_id
     ? api<Plan>(`/plans/${identity.plan_id}`, identity.token)
     : undefined;
+}
+
+export type TripSummary = components["schemas"]["SessionSummary"];
+export type TripPage = components["schemas"]["SessionPage"];
+export function createTrip(token: string) {
+  return api<components["schemas"]["SessionView"]>("/sessions", token, "POST");
+}
+export async function readTripHistory(
+  token: string,
+  cursor?: string,
+): Promise<TripPage> {
+  const query = new URLSearchParams({ limit: "20" });
+  if (cursor) query.set("cursor", cursor);
+  try {
+    return await api<TripPage>(`/sessions?${query}`, token);
+  } catch (failure) {
+    if (failure instanceof ApiError && failure.status === 404)
+      throw new ApiError("当前服务版本暂不支持旅行历史。", 404);
+    throw failure;
+  }
 }
 
 export async function readRunHistory(

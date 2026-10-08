@@ -25,3 +25,7 @@ uv run python scripts/dev.py web
 未知响应的消息保留原client_message_id，用户明确重试；重连只读事件，不重发消息。
 对话按服务端轮次列表恢复，history.ts负责按run_id/sequence合并早页及保留本标签全文。
 实时原回复沿用服务端临时保留策略，跨重启历史可能只显示已持久化的说明。
+
+旅行菜单从归属历史接口读取；新建旅行沿用已有身份，京都等旧旅行仍可切回。
+localStorage只保留token/current session；模型选择和绑定身份/旅行的临时outbox使用sessionStorage。
+未获响应的消息需在原旅行明确重试；服务端确认接受后清outbox，不自动重放。

@@ -10,6 +10,7 @@ export function SavedTrip() {
   const empty =
     !workspace.restoring &&
     !workspace.error &&
+    !workspace.historyError &&
     (!workspace.identity || !workspace.plan);
   return (
     <main className="page">
@@ -30,6 +31,9 @@ export function SavedTrip() {
             </button>
           )}
         </Banner>
+      )}
+      {workspace.historyError && (
+        <Banner kind="error">{workspace.historyError}</Banner>
       )}
       {empty && (
         <div className="empty-state">

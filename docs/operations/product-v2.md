@@ -234,3 +234,15 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 本地PG只读复核前后均run_rows=3/current_version=1/version_rows=1/confirmed_drafts=1，正式内容SHA256相同。恢复只GET，不产生新轮次/确认/供应商调用。截图及脱敏摘要见docs/evidence/product-v2/t12-*。分页接口与helper已测试；浏览器此次仅3轮，没有验证超过20轮按钮；实时原回复跨重启无法完整恢复为既有限制（本轮合成PG验证如下，不冒称真实模型实测）；卡片归属待T1.4。
 - 补充保留边界characterization：`pytest tests/integration/test_runs.py tests/integration/test_history.py -q` 为28 passed/16.79s。只在隔离PG直接创建合成已完成deepseek轮次，填本地RunService.live_answers：GET全文、history固定说明；901秒过期与新RunService都返回固定说明且sequence=3，tasks空，0模型调用。这核实既有服务保留边界，首次即通过，不声称它是业务修复的首红。新增测试晚于完整测试收集，专项覆盖最终测试版本；再次dev check 252文件/三平台strict/3契约/10入口退出0。
 - 完整 `uv run python scripts/dev.py test`：1013 passed/7 failed/1 skipped/1 live deselected，256.29s；失败名与P-05同7项一致。新增保留边界测试晚于收集，由最终PG28项专项覆盖，不冒称本次全量包含它。自审与独立复核两轮P2关闭，新characterization/脱敏证据审查无发现；未部署、未调用真实模型或供应商。
+
+
+## 2026-10-08 T1.3 同身份旅行切换与临时outbox
+
+- `d0f0222` push后新查远端SHA一致、git status干净。按ADR-014复用POST /sessions及旅行摘要分页，列表状态不落浏览器历史副本；选择较旧当前session时逐页有界查询到其摘要，正式plan_id来自服务端。新建不demo login。
+- 首红 `pnpm --dir apps/web run test`：30 passed/1 suite failed（缺新API/storage模块）；实现后35 passed。随后定位跨标签归属问题，补旧标签A失败而shared local已有B测试，首次35 passed/1 failed；按owner精确清后首次仍失败于多余pending_message:undefined，改restore仅有合法pending才附字段，未修改行为断言，随后36 passed；旧API404语义回归加入后最终37 passed/0 failed/0 skipped（158.58ms）。
+- 3项独立P2：401错误清了当前shared local owner、切换加载误显空欢迎、savedOnly旧API404误显“未确认”。按原失败token清标签outbox且只删除相同local owner；changeTrip restoring+generation finally；SavedTrip historyError禁止empty及404明确版本提示。两次独立复核关闭，未删断言/跳过检查。
+- 保存条件同步当前旅行列表city/date时typecheck及build发现optional不兼容nullable；归一为null后typecheck/lint/build5路由均退出0，最新test37 passed。模型偏好移到sessionStorage并移除旧local键；Identity local只token/session，未响应消息以token/session绑定标签outbox；已接受/401清理，切换保留原旅行outbox、不自动重发，旧pending一次迁移。
+- Chrome真实页面：旧京都3轮+正式V1；点击新建旅行1次，编辑第二次为札幌、发1轮离线问题，切回京都3轮及V1仍可读，切回札幌仅1轮。当前免费Fixture仍返回京都样本，不能当札幌真实供应商验收。PG只读：same_user=true，京都revision1/run_rows3/current_version1/version_rows1，payloadSHA256保持t12一致；札幌revision1/run_rows1/无正式版本。本地API新runner日志POST demo/login=0、POST sessions=1。
+- 临时ignored本地wrapper只绑定127.0.0.1、验证PG host为loopback、live=false：目标request延迟6秒，Chrome目标札幌已选中、仅恢复status、没有空欢迎/旧对话；GET sessions/runs模拟404，/plans显示版本不支持且没有“还没有确认”。已删除模式标记、停止wrapper、恢复项目默认离线API及最终web构建，重新读取京都V1；0真实模型/供应商/订单，未操作Railway。
+- 只读PG探针首次忘传database_url(configuration())，TypeError发生在连接前；修正后实际查询成功，不输出DSN/token/userUUID/行程正文。脱敏5截图及JSON在docs/evidence/product-v2/t13-*。outbox和local内容由真实helper调用测试，未读取浏览器隐藏storage；浏览器验收与存储helper证据分开。
+- `uv run python scripts/dev.py check`：252文件Ruff/格式、三平台strict/3契约/10入口退出0；完整 `dev test` 1014 passed/同P-05的7 failed/1 skipped/1 live deselected（256.41s），包含T1.2新保留characterization；本任务Python源码无改。最新front type/lint/test37/build5路由均通过，独立审查最新同步列表/模型存储修改无发现。
