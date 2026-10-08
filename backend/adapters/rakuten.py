@@ -23,6 +23,11 @@ class Basic(BaseModel):
     planListUrl: str | None = None
     hotelImageUrl: str | None = None
     reviewAverage: float | None = None
+    address1: str | None = None
+    address2: str | None = None
+    latitude: float | None = Field(default=None, ge=-90, le=90)
+    longitude: float | None = Field(default=None, ge=-180, le=180)
+    reviewCount: int | None = Field(default=None, ge=0)
 
 
 class Room(BaseModel):
@@ -243,6 +248,10 @@ class Rakuten:
                     hotel_info_url=item.hotel.hotelInformationUrl,
                     plan_list_url=item.hotel.planListUrl,
                     reservation_url=item.room.reserveUrl,
+                    address=(item.hotel.address1 or "") + (item.hotel.address2 or "") or None,
+                    latitude=item.hotel.latitude,
+                    longitude=item.hotel.longitude,
+                    review_count=item.hotel.reviewCount,
                 ),
                 data_mode="live",
             )

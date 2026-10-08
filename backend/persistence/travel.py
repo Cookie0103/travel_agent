@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.evidence import EvidenceKind, EvidenceRecord
 from backend.domain.execution import RunContext
-from backend.domain.hotel_details import HotelDisplayDetails
+from backend.domain.hotel_details import HotelDisplayDetails, HotelMetadata
 from backend.domain.travel_request import TravelRequest, legacy_request
 from backend.persistence.models import EvidenceRow, TravelRequestRow
 from backend.persistence.sessions import get_session
@@ -62,8 +62,19 @@ async def add_evidence(
             session_id=context.session_id,
             kind=record.kind,
             payload=record.model_dump(mode="json"),
-            display_details=record.display_details.model_dump(mode="json")
+            display_details=record.display_details.model_dump(
+                mode="json", exclude=set(HotelMetadata.model_fields)
+            )
             if record.display_details is not None
+            else None,
+            hotel_metadata=record.display_details.model_dump(
+                mode="json", include=set(HotelMetadata.model_fields)
+            )
+            if record.display_details is not None
+            and any(
+                getattr(record.display_details, name) is not None
+                for name in HotelMetadata.model_fields
+            )
             else None,
         )
         for record in records
@@ -73,10 +84,14 @@ async def add_evidence(
 
 def evidence_from_row(row: EvidenceRow) -> EvidenceRecord:
     record = EvidenceRecord.model_validate(row.payload)
-    if record.kind == "hotel_offer" and row.display_details is not None:
-        return record.model_copy(
-            update={"display_details": HotelDisplayDetails.model_validate(row.display_details)}
-        )
+    if record.kind == "hotel_offer" and (
+        row.display_details is not None or row.hotel_metadata is not None
+    ):
+        details = HotelDisplayDetails.model_validate(row.display_details or {})
+        if row.hotel_metadata is not None:
+            metadata = HotelMetadata.model_validate(row.hotel_metadata)
+            details = details.model_copy(update=metadata.model_dump())
+        return record.model_copy(update={"display_details": details})
     return record
 
 

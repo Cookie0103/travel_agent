@@ -97,6 +97,7 @@ class EvidenceRow(Base):
     invalidated: Mapped[bool] = mapped_column(Boolean, default=False)
     payload: Mapped[dict[str, object]] = mapped_column(JSONB)
     display_details: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
+    hotel_metadata: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
 
 
 class TaskRunRow(Base):

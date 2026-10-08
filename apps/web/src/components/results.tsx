@@ -93,7 +93,14 @@ function Hotel({ card }: { card: components["schemas"]["UiHotelCard"] }) {
       </span>
       <h3>{card.hotel_name}</h3>
       <p>{card.room_type}</p>
-      {card.review_average != null && <p>★ {card.review_average}</p>}
+      <p className="small">{card.address ?? "地址未知"}</p>
+      <p className="small">
+        {card.review_average != null ? `★ ${card.review_average}` : "评分未知"}
+        {" · "}
+        {card.review_count != null
+          ? `${card.review_count}条评价`
+          : "评价数未知"}
+      </p>
       <p className="small">
         {String(card.stay.start_date)} — {String(card.stay.end_date)} ·{" "}
         {partyLabel(card.stay)}

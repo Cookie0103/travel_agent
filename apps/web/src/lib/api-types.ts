@@ -642,6 +642,14 @@ export interface components {
         };
         /** HotelCard */
         HotelCard: {
+            /** Address */
+            address: string | null;
+            /** Latitude */
+            latitude: number | null;
+            /** Longitude */
+            longitude: number | null;
+            /** Review Count */
+            review_count: number | null;
             /** Hotel Info Url */
             hotel_info_url: string | null;
             /** Plan List Url */
@@ -722,6 +730,14 @@ export interface components {
         };
         /** HotelDisplayDetails */
         HotelDisplayDetails: {
+            /** Address */
+            address?: string | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
+            /** Review Count */
+            review_count?: number | null;
             /** Hotel Info Url */
             hotel_info_url?: string | null;
             /** Plan List Url */
@@ -1548,6 +1564,26 @@ export interface components {
         };
         /** HotelCard */
         UiHotelCard: {
+            /**
+             * Address
+             * @default null
+             */
+            address: string | null;
+            /**
+             * Latitude
+             * @default null
+             */
+            latitude: number | null;
+            /**
+             * Longitude
+             * @default null
+             */
+            longitude: number | null;
+            /**
+             * Review Count
+             * @default null
+             */
+            review_count: number | null;
             /**
              * Hotel Info Url
              * @default null

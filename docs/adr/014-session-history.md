@@ -60,3 +60,11 @@
 - 保持present参数1–6个可信报价ID与现有版本/归属/预算守卫，不让空presentation绕过校验。空search自动发面板即可，无需模型再调用空IDs的present。空离线比较如实完成为无结果，不把空列表归因为供应商不可用；其他要求数据的脚本仍失败，既有失败码保留。
 - UI在零报价时明确说明没有可展示报价及查询原因；与非空报价的无法判定最低价区分。已有hydrate/runCards最后同组件覆盖与归属检查恢复空面板，不借用此前成功酒店、不自动重跑。持久事件/GET/history/SSE复用，仍最多4项presentation，无额外查询/供应商调用或订单。
 - 取舍：不新造酒店读取接口、不依赖模型一定调用present、不对失败伪造成功/报价；沿用共用事件层做有限的展示投影，SDK/离线一致。验证成功/空/失败、8类码/意外异常、预算与版本/错ID守卫不变、无私有输入、非酒店工具无事件、真实PG持久恢复/重启/归属以及Chrome三态刷新。
+
+## R4 补充：地址、坐标与评价数（2026-10-08，T4.4 前确定）
+
+- 复用内部HotelDisplayDetails，增量可空address、latitude、longitude、review_count；HotelCard同样输出，QuoteFields/持久value/Booking/SupplierHold不变，无新查询。四字段另存0015可空hotel_metadata侧列，0014的display_details仍只三个URL，旧三URL严格reader回退可读；两列分别白名单校验，新读取合并到内部展示对象，不能越界覆盖报价/URL。旧记录四字段null；禁止用城市中心代替酒店坐标或由评分猜评价数。
+- 原hotelBasicInfo.address1/address2仅拼接存在的原字符串；空/全缺为null；latitude/longitude按现有请求datumType=1保WGS度数，不换算或生成距离；reviewCount保原非负整数，0是已知0而不是未知。地址与评价数在共用卡显示，坐标保留在卡数据，完整排序/距离功能仍附录A。
+- 一手依据：[乐天空室API20170426](https://webservice.rakuten.co.jp/documentation/vacant-hotel-search)，2026-10-08读取，输入datumType与输出latitude/longitude明确1为WGS度数；address1/address2/reviewCount均在现有large响应。此为文档验证，不等于真实响应实测。
+- 验证：原响应结构的MockTransport完整/部分/缺失/null/0、日期/数量/价格/上游序与调用不变；PG侧列重开/旧writer/正式V1与冻结旧报价协议保持。仓库现有rakuten_vacant_sample明确合成，真实响应fixture需另取得脱敏真实来源，不冒称其已满足该验收；是否单次现有额度查询已问用户，等待决定期间仅离线。
+- 方案更正：初选同0014 JSON新增键，独立P61指出回退T4.2/T4.3 extra=forbid拒绝，即使null也拒绝，纯解析已复现；采用独立侧列而非改宽旧reader（已提交代码不能事后改写）。0015 downgrade保数据，re-upgrade IF NOT EXISTS；旧writer不读写新列，新reader保留元数据。需冻结三URL模型、实际PG down/up与旧shape读回验证，不把新代码读旧数据等同双向兼容。

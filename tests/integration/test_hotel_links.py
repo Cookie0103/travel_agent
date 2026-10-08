@@ -42,12 +42,13 @@ async def stored_link_quote(travel: TravelService, context: RunContext) -> Evide
     await travel.record_evidence(context, (record,))
     async with transaction(travel.database) as db:
         row = await db.get(EvidenceRow, record.evidence_id)
-        assert row and row.display_details == URLS
+        assert row and row.display_details == URLS and row.hotel_metadata is None
         assert "display_details" not in row.payload
         restored = LegacyOffer.model_validate(row.payload["value"])
         assert restored.offer_id == live.offer_id
         # 旧写入者更新旧payload，不能删除细节；新元数据不混入报价事实。
         row.payload = {**row.payload, "content_version": "old-writer"}
+        row.display_details = dict(URLS)  # T4.2旧侧列只有三URL，新读取须保持兼容。
     return record
 
 
@@ -83,7 +84,12 @@ def test_link_sidecar_survives_reopen_old_writer_and_rollback(
         known = (await hotels.known_quotes(context, (record.evidence_id,)))[0]
         resolved = (await reopened.resolve_evidence(context, (record.evidence_id,)))[0]
         assert known.display_details == resolved.display_details
-        assert known.display_details and known.display_details.model_dump() == URLS
+        assert known.display_details
+        details = known.display_details.model_dump()
+        assert {key: details[key] for key in URLS} == URLS
+        assert all(
+            details[key] is None for key in ("address", "latitude", "longitude", "review_count")
+        )
         assert known.content_version == "old-writer"
         presentation = await hotels.present(context, 1, (record.evidence_id,))
         cards = presentation["cards"]
