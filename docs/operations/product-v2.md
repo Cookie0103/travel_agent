@@ -162,3 +162,11 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 源码已确认的类别原因：单run/组件内sent导致前端旧回复与用户消息无法完整恢复；酒店以报价套餐截取，未按不同酒店去重；reserveUrl优先使浏览入口直达预订；Markdown缺table分支。`plan_exists`只证明该服务会拒绝同会话已有正式版本后的initial草稿，原第23步仍缺绑定错误证据；B13隐藏默认值候选原因仍需回归。
 
 后续每项在本节下记录：Bug ID/输入前提/实际与期望、版本与run证据、根因假设和排除、首次失败测试、选定与拒绝方案、实现文件、回归命令/结果、commit与部署、回退/剩余限制。原失败保留；不上传token、密钥、原始私人对话或无关账号截图。
+
+## 2026-10-08 D6–D8 决定落盘
+
+当前恢复入口为[批次计划](../plans/2026-10-08-product-v2.md)，任务状态仅在那里维护。
+
+- 开始前 `git status --short --branch`：指定分支、工作区干净；本地 HEAD 与本地 origin 跟踪引用均 `8d99da0`（VERIFIED，不代表新查询远端）。
+- 用户明确 D6：两个预算原值均保存，validator 计算 conflict/warning/无法判断，不另存冲突标志；D7：B08 本批部分修复；D8：当前 checkout 开发、每项开工前检查干净。同步计划 §2/§3.5/§4/§6，并更正 §7、P-01 假设 4。
+- `python3 scripts/check_docs.py`：退出 0，10 份入口及仓库链接通过。`git diff --check`：退出 0。文档自审核对用户决定逐项一致；本步未改业务代码、未操作 Railway、未调用模型或旅行数据 API。
