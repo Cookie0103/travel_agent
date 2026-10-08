@@ -19,6 +19,7 @@ from backend.providers.claude_agent.database_tools import DatabaseTools, databas
 from backend.providers.claude_agent.evaluation import (
     EvaluationVariant,
     evaluation_definitions,
+    judge_combo_invalid,
     validate_variant,
 )
 from backend.providers.claude_agent.events import save_event
@@ -71,19 +72,17 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         return {"status": "error", "code": "validation"}
     if variant != "full" and len(prompts) != 1:
         return {"status": "error", "code": "validation"}
+    # 子进程不可信输入仍重新验证组合规则；provider/单prompt边界是worker特有。
     if (
-        (judge_kind != "persona" and not persona_judge)
-        or type(persona_judge) is not bool
-        or (
-            persona_judge
-            and (
-                identity.provider != "deepseek"
-                or dsn
-                or workflow
-                or payload.get("supplier_url")
-                or len(prompts) != 1
-            )
+        judge_combo_invalid(
+            judge_kind,
+            bool(persona_judge),
+            database=bool(dsn),
+            supplier=bool(payload.get("supplier_url")),
+            workflow=workflow is not None,
         )
+        or type(persona_judge) is not bool
+        or (persona_judge and (identity.provider != "deepseek" or len(prompts) != 1))
     ):
         return {"status": "error", "code": "validation"}
     if persona_judge:

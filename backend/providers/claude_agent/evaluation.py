@@ -2,6 +2,7 @@
 
 from typing import Literal, get_args
 
+from backend.agent.persona import JudgeKind
 from backend.tools.contracts import ToolDefinition
 from backend.tools.search import DEFINITIONS as SEARCH_DEFINITIONS
 from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
@@ -25,6 +26,20 @@ def validate_variant(
         raise ValueError("评测对照不能混用固定workflow或语气评审")
     if variant not in {"full", "no_tools"} and not database:
         raise ValueError("业务评测对照需要数据库")
+
+
+def judge_combo_invalid(
+    judge_kind: JudgeKind,
+    persona_judge: bool,
+    *,
+    database: bool,
+    supplier: bool,
+    workflow: bool,
+) -> bool:
+    """评审组合的唯一规则：content 需显式评审开关；开启评审不携带数据库、供应商或固定流程。"""
+    return (judge_kind != "persona" and not persona_judge) or (
+        persona_judge and any((database, supplier, workflow))
+    )
 
 
 def evaluation_definitions(

@@ -24,6 +24,7 @@ from backend.providers.claude_agent.environment import find_cli, worker_environm
 from backend.providers.claude_agent.evaluation import (
     EvaluationVariant,
     evaluation_definitions,
+    judge_combo_invalid,
     validate_variant,
 )
 from backend.providers.claude_agent.events import EventReader
@@ -82,12 +83,17 @@ def run_live(
         raise ProbeError("validation", str(error)) from None
     if (
         judge_kind not in ("persona", "content")
-        or (judge_kind != "persona" and not persona_judge)
+        or judge_combo_invalid(
+            judge_kind,
+            persona_judge,
+            database=bool(database_dsn),
+            supplier=bool(supplier_url),
+            workflow=workflow is not None,
+        )
         or type(max_attempts) is not int
         or not 1 <= max_attempts <= current().max_attempts
         or (workflow is not None and database_dsn is None)
         or type(persona_judge) is not bool
-        or (persona_judge and any((database_dsn, supplier_url, workflow)))
     ):
         raise ProbeError("validation", f"对照需数据库工具；请求上限须为1至{current().max_attempts}")
     exporter = cloud_exporter(os.environ) if trace_cloud else None
