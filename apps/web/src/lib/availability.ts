@@ -26,6 +26,26 @@ export function planUnavailable(plan: Plan, now: number): boolean {
     !!(plan.expires_at && now >= Date.parse(plan.expires_at))
   );
 }
+/** A saved version remains readable; only its references/quotes need a fresh query. */
+export function hotelQuoteNeedsRefresh(plan: Plan, now: number): boolean {
+  return !!(
+    plan.hotel &&
+    ((plan.hotel_evidence_id &&
+      plan.needs_refresh.includes(plan.hotel_evidence_id)) ||
+      now >= Date.parse(plan.hotel.expires_at))
+  );
+}
+
+export function planRefreshNotice(plan: Plan, now: number): string | null {
+  if (plan.draft_id)
+    return planUnavailable(plan, now)
+      ? "草稿已失效或引用需更新：请读取当前条件并重新生成草稿，不能确认此草稿。"
+      : null;
+  return plan.needs_refresh.length > 0 || hotelQuoteNeedsRefresh(plan, now)
+    ? "正式行程仍已保存；部分报价或参考信息需更新，使用前请重新查询。"
+    : null;
+}
+
 export function expiredHotels(hotels: Hotels, now: number): boolean {
   return hotels.cards.some((card) => now >= Date.parse(card.expires_at));
 }

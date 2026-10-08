@@ -6,6 +6,8 @@ import {
   expiredHotels,
   bookingCanConfirm,
   partyLabel,
+  planRefreshNotice,
+  hotelQuoteNeedsRefresh,
 } from "../src/lib/availability.ts";
 import type { Plan, Hotels, Booking } from "../src/lib/api";
 
@@ -91,5 +93,75 @@ test("booking confirmation needs a current held quote and an unexpired hold", ()
   assert.equal(
     bookingCanConfirm({ ...booking, expires_at: null }, 2, expires - 1),
     false,
+  );
+});
+
+test("saved V1 keeps its identity when references require refresh and has no draft-expiry instruction", () => {
+  const plan = {
+    draft_id: null,
+    version: 1,
+    needs_refresh: ["place-old"],
+    hotel: null,
+    expired: false,
+    conditions_changed: false,
+    version_changed: false,
+    expires_at: null,
+  } as unknown as Plan;
+  assert.equal(
+    planRefreshNotice(plan, 0),
+    "正式行程仍已保存；部分报价或参考信息需更新，使用前请重新查询。",
+  );
+  assert.equal(plan.version, 1);
+  assert.deepEqual(plan.needs_refresh, ["place-old"]);
+  assert.equal(planRefreshNotice({ ...plan, needs_refresh: [] }, 0), null);
+  // Draft-only guards are not formal-version expiration, even in an old response.
+  assert.equal(
+    planRefreshNotice({ ...plan, needs_refresh: [], expired: true }, 0),
+    null,
+  );
+});
+
+test("draft restrictions remain distinct from the readability of saved versions", () => {
+  const plan = {
+    draft_id: "draft",
+    needs_refresh: [],
+    hotel: null,
+    expired: false,
+    conditions_changed: true,
+    version_changed: false,
+    expires_at: null,
+  } as unknown as Plan;
+  assert.equal(
+    planRefreshNotice(plan, 0),
+    "草稿已失效或引用需更新：请读取当前条件并重新生成草稿，不能确认此草稿。",
+  );
+  assert.equal(planUnavailable(plan, 0), true);
+  assert.equal(
+    planRefreshNotice({ ...plan, conditions_changed: false }, 0),
+    null,
+  );
+});
+
+test("hotel refresh is tied to its reference or quote expiry, not an unrelated place", () => {
+  const plan = {
+    draft_id: null,
+    hotel_evidence_id: "hotel",
+    hotel: { expires_at: "2026-11-01T00:00:00Z" },
+    needs_refresh: ["place"],
+  } as unknown as Plan;
+  const expires = Date.parse(plan.hotel!.expires_at);
+  assert.equal(hotelQuoteNeedsRefresh(plan, expires - 1), false);
+  assert.equal(hotelQuoteNeedsRefresh(plan, expires), true);
+  assert.equal(
+    hotelQuoteNeedsRefresh({ ...plan, needs_refresh: ["hotel"] }, expires - 1),
+    true,
+  );
+  assert.equal(
+    hotelQuoteNeedsRefresh({ ...plan, hotel: null }, expires),
+    false,
+  );
+  assert.equal(
+    planRefreshNotice({ ...plan, needs_refresh: [] }, expires),
+    "正式行程仍已保存；部分报价或参考信息需更新，使用前请重新查询。",
   );
 });

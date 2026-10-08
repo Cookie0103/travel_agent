@@ -1,7 +1,13 @@
 /** Render canonical business cards; money, provenance and conflicts come from the server. */
 "use client";
 import { useEffect, useState } from "react";
-import { planUnavailable, expiredHotels, partyLabel } from "@/lib/availability";
+import {
+  planUnavailable,
+  planRefreshNotice,
+  hotelQuoteNeedsRefresh,
+  expiredHotels,
+  partyLabel,
+} from "@/lib/availability";
 import { sourceHref, type Hotels, type Plan } from "@/lib/api";
 import type { components } from "@/lib/api-types";
 import { CalendarButton } from "./calendar-button";
@@ -233,7 +239,9 @@ export function PlanResults({
   lock?: (id: string) => Promise<void>;
   token?: string;
 }) {
-  const stale = planUnavailable(plan, useClock());
+  const now = useClock();
+  const stale = planUnavailable(plan, now);
+  const refreshNotice = planRefreshNotice(plan, now);
   const blocked = stale || plan.validation.status === "conflict";
   return (
     <section className="results-section">
@@ -257,9 +265,9 @@ export function PlanResults({
         · 已知 {plan.validation.known_cost} / 估算{" "}
         {plan.validation.estimated_cost} JPY
       </p>
-      {stale && (
-        <p role="alert" className="error">
-          草稿或引用已失效：请读取当前条件并重新生成；不会覆盖正式版本。
+      {refreshNotice && (
+        <p role="alert" className={plan.draft_id ? "error" : "warning"}>
+          {refreshNotice}
         </p>
       )}
       <ul className="checks">
@@ -319,6 +327,17 @@ export function PlanResults({
                   <p className="tabular">
                     {date(item.start)} — {date(item.end)}
                   </p>
+                  {plan.needs_refresh.includes(item.place_evidence_id) && (
+                    <p className="warning small">
+                      此景点参考信息需更新，使用前请重新查询。
+                    </p>
+                  )}
+                  {item.route_evidence_id &&
+                    plan.needs_refresh.includes(item.route_evidence_id) && (
+                      <p className="warning small">
+                        到此景点的路线信息需更新，使用前请重新查询。
+                      </p>
+                    )}
                   {item.note && <p className="muted small">{item.note}</p>}
                 </div>
                 {!plan.draft_id && lock && (
@@ -340,7 +359,14 @@ export function PlanResults({
       </div>
       {plan.hotel && (
         <details>
-          <summary>住宿报价</summary>
+          <summary>
+            住宿报价{hotelQuoteNeedsRefresh(plan, now) ? " · 需更新" : ""}
+          </summary>
+          {hotelQuoteNeedsRefresh(plan, now) && (
+            <p className="warning small">
+              此住宿报价需更新，价格与可订状态请重新查询。
+            </p>
+          )}
           <Hotel card={plan.hotel} />
         </details>
       )}

@@ -304,3 +304,12 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 最后Chrome全文保护绿expectedFullKept=true/actual=true；步骤面板1、summary“执行了2步”。最初将summary误用button角色导致count0，按实际DOM纠正选择器并核对，JSON保存真实结果。探针0写请求、PG原answer/sequence7未改；已CtrlC停止探针、删除标志并恢复默认DEMO_MODE API，Chrome重载读取真实离线答复。原京都正式V1仍1行/哈希不变；八类映射为单测，Chrome实际错误类别只验证conflict。所有截图已人工查看，无凭据/真实用户私聊。
 - 最终 `pnpm --dir apps/web run test` 59 passed/190.75ms；`run typecheck`/`run lint`/`run build`退出0（5路由）。`uv run python scripts/dev.py check`254文件/三平台strict/3分层契约/10文档入口退出0。`uv run python scripts/dev.py test`在最后源码修复后运行，1027 passed/7 failed/1 skipped/1 live deselected，256.87s；7项逐一同P-05基线SDK压缩，无新增失败。先前257.21s回归是在P-18前，不作为最终结果。最终独立只读源码与记录审查均无新发现；commit待完成。
 - 实现commit `440afbea8ffa4481b36c1c2b4ce3e1925a3a078c`已push，`git ls-remote`与本地HEAD完全一致；最终diff check/check_docs通过。P-15–18验证与SHA已回写计划，STAR沉淀于同一批次案例。
+
+## 2026-10-08 T2.4 正式版本与引用更新
+
+- 开工`git status --short`空，HEAD/远端`317edf8b6929e4d8f3cb4e3bf964476aad6b8541`一致。按需读取设计02/03/05、既有PlanView/content_view/PlanResults与availability测试。根因目前是源码REASONED：共用草稿失效说明；不改后端存储或正式版本。
+- `pnpm --dir apps/web run test` 首红54 passed/1 suite failed/199.53ms（既有availability文件增加3用例，helper export尚不存在导致该suite加载失败）；保存实际输出于.cache/t24-red.log。随后复用draft_id/needs_refresh/报价expires_at实现固定区分，不增加状态字段或后端接口。
+- 初步web绿62 passed/186.99ms，type/lint/build5路由/check254/3契约/10入口通过。Chrome真实原V1草稿失效提示红count1→新正式保存提示1/错误提示0；住宿展开显示需更新1。只读PG进一步查3个失效到达路线/0失效景点，现有渲染未提示路线，Chrome明确expected3/actual0断言红；补对应route_evidence_id引用说明，不新增helper/元数据。最后前端检查将重跑；完整Python源码未变，当前完整进程继续。
+- 最终Chrome路线提示3（由0!=3红→绿），景点提示0，对应PG失效route3/place0；正式V1仍可读，wrong draft notice0/saved notice1/hotel notice1。全程实际默认离线API，未改时钟或响应探针。只读PG仍1版本/V1哈希87e4…25f不变，前后POST/PATCH/DELETE均0。红截图只含版本上下文，错误提示在视口外，以实际AX/DOM计数证实；最终保存截图包含V1/保存提示/路线条目，已人工查看。证据t24-formal-expiry.json。
+- 最后前端 `pnpm --dir apps/web run test`62 passed/184.83ms，`run typecheck`/`run lint`/`run build`5路由通过；`uv run python scripts/dev.py check`254文件三平台strict/3契约/10入口退出0。路线修复后全部前端检查重跑；Python源码全程未变，完整离线回归仍在运行。独立只读初次及路线增量审查均无发现。
+- 完整 `uv run python scripts/dev.py test` 1027 passed/7 failed/1 skipped/1 live deselected/258.59s；7失败逐项同P-05，未改断言/跳过。Python源码全程未改，进程运行期间只补前端路线提示，其后前端62/type/lint/build/check全部重新通过。`git diff --check`/`scripts/check_docs.py`通过，独立审查两次无发现。
