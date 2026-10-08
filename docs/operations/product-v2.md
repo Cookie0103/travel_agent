@@ -350,3 +350,4 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - Chrome仅无儿童保存，PG revision1/child[]/其他字段unknown/PATCH2（前1为T3.1红）但摘要无儿童count0且显示未设，明确断言红P26。补摘要以child_ages!=null显示既有partyLabel；不自动填成人/房间。Python源码没改，完整回归运行期间补前端后，最终前端全部重跑。
 - Chrome/PG同一已有空白旅行null/rev0→无儿童[]/rev1→婴儿[0]/rev2→clear后null/rev3；每次只变儿童字段，其他八字段仍unknown。空年龄点击保存只中文错误、PGrev1/PATCH2未变；最终未知no-op仍rev3/PATCH4，4包括旧T3.1红1+本任务三次更新。刷新无儿童摘要count1；刷新婴儿表单selected ages/value0；clear后刷新unknown/age输入0，均VERIFIED，JSON t32-children-states。未创建正式版本/未真实供应商或模型调用。两截图人工查看。
 - 最终web75 passed/304.54ms、type/lint/build5路由/check254三平台strict/3契约/10入口退出0；独立只读实现/P26复核无发现。完整 `uv run python scripts/dev.py test`1027 passed/原7 SDK failed/1 skipped/1 live deselected/258.13s，失败逐项同P-05；Python源码全程未变，前端检查在P26修后重跑。
+- 实现`2f54458c19d3ccd48edb68d957bf9b938aa94147`已提交/push，远端一致且checkout干净；T3.2/P25/P26证据状态回写，STAR C15完成，恢复点T3.3。
