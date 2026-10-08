@@ -2,7 +2,7 @@
 
 import json
 
-from backend.providers.claude_agent.limits import Currency, ProbeError, price_for
+from backend.limits import Currency, ProbeError, price_for
 from backend.providers.claude_agent.request import Request
 
 

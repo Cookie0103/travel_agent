@@ -13,7 +13,7 @@ from backend.adapters.tracing import cloud_exporter, trace_report
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RuntimeEvent
-from backend.providers.claude_agent.limits import ProbeError
+from backend.limits import ProbeError
 from backend.providers.claude_agent.live import run_live
 from backend.tools.search import SearchExecutor
 

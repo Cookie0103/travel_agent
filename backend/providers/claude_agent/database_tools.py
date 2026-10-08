@@ -13,7 +13,7 @@ from backend.adapters.live_data import LiveData
 from backend.adapters.supplier import SupplierClient
 from backend.domain.execution import RunContext
 from backend.persistence.database import Database
-from backend.providers.claude_agent.profile import current
+from backend.profile import current
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolResult
 from backend.tools.travel import TravelToolExecutor

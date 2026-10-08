@@ -9,11 +9,11 @@ from pathlib import Path
 
 import pytest
 
+from backend.limits import Settings
 from backend.mcp.bridge import sdk_tool_name
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
 from backend.providers.claude_agent.guard import Guard, serve
-from backend.providers.claude_agent.limits import Settings
 from backend.providers.claude_agent.process import run_process
 from backend.providers.claude_agent.request import TOOL_NAME
 from backend.tools.search import DEFINITIONS

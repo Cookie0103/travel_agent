@@ -4,8 +4,8 @@ from pathlib import Path
 from typing import Any, cast
 
 from backend.adapters.external_api import ApiUsage
+from backend.profile import DEFAULT, HUMAN, RELAXED, current
 from backend.providers.claude_agent.environment import worker_environment
-from backend.providers.claude_agent.profile import DEFAULT, HUMAN, RELAXED, current
 
 
 def test_default_keeps_call_caps_with_bounded_planning_deadlines() -> None:

@@ -21,8 +21,8 @@ from backend.domain.validator import (
     validate_itinerary,
 )
 from backend.persistence.database import Database
+from backend.profile import DEFAULT, HUMAN, RELAXED
 from backend.providers.claude_agent.database_tools import DatabaseTools
-from backend.providers.claude_agent.profile import DEFAULT, HUMAN, RELAXED
 from backend.providers.hotel_fixture import load_rates
 from backend.services.common import ServiceError
 from backend.services.travel import TravelService

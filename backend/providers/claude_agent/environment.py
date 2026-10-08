@@ -5,8 +5,8 @@ import shutil
 from collections.abc import Mapping
 from pathlib import Path
 
-from backend.providers.claude_agent.limits import ProbeError
-from backend.providers.claude_agent.profile import current
+from backend.limits import ProbeError
+from backend.profile import current
 
 
 def find_cli(environment: Mapping[str, str]) -> Path:

@@ -21,6 +21,7 @@ from pydantic import TypeAdapter
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RunResult, RuntimeEvent
+from backend.limits import ProbeError
 from backend.persistence.database import configuration, database_url
 from backend.persistence.temporary import temporary_database
 from backend.providers.claude_agent.evaluation import (
@@ -29,7 +30,6 @@ from backend.providers.claude_agent.evaluation import (
     evaluation_metadata,
     validate_variant,
 )
-from backend.providers.claude_agent.limits import ProbeError
 from backend.providers.claude_agent.live import check_evaluation_size, run_live
 from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition

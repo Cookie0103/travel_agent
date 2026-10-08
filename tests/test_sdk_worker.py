@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from backend.limits import ProbeError
 from backend.providers.claude_agent.environment import find_cli, find_git_bash, worker_environment
-from backend.providers.claude_agent.limits import ProbeError
 
 
 def test_sdk_worker_does_not_inherit_real_credentials(tmp_path: Path) -> None:

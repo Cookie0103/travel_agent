@@ -17,7 +17,9 @@ from backend.domain.execution import (
     error_code,
     event_metadata,
 )
+from backend.limits import ProbeError, Provider, Settings
 from backend.mcp.bridge import sdk_tool_name
+from backend.profile import current
 from backend.providers.claude_agent import http as upstream
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
@@ -31,9 +33,7 @@ from backend.providers.claude_agent.events import EventReader
 from backend.providers.claude_agent.guard import Guard, serve
 from backend.providers.claude_agent.http import forward_messages
 from backend.providers.claude_agent.ledger import exclusive
-from backend.providers.claude_agent.limits import ProbeError, Provider, Settings
 from backend.providers.claude_agent.process import invoke_worker, run_process
-from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.settings import load_runtime_settings
 from backend.tools.travel import live_definitions
 from backend.tools.workflow import WorkflowName

@@ -15,10 +15,10 @@ from backend import server, trace_log
 from backend.adapters.external_api import ApiUsage, request_json
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
+from backend.limits import Settings
 from backend.providers.claude_agent import http
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.guard import Guard
-from backend.providers.claude_agent.limits import Settings
 from backend.tools.contracts import ToolDefinition, ToolResult
 from backend.tools.execution import execute_observed
 from backend.trace_log import FILE_ENV, RUN_ENV, Tail, trace
@@ -225,7 +225,7 @@ def test_budget_block_and_reserved_trace_numbers_and_guard_why(
 ) -> None:
     from datetime import UTC, datetime
 
-    from backend.providers.claude_agent.limits import ProbeError
+    from backend.limits import ProbeError
 
     now = datetime(2026, 10, 5, 1, tzinfo=UTC)
     budget = Budget(tmp_path / "ledger", tmp_path / "legacy", Decimal(5))

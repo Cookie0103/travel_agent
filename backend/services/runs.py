@@ -27,8 +27,8 @@ from backend.domain.execution import (
 from backend.persistence import runs, sessions
 from backend.persistence.database import Database
 from backend.persistence.models import TaskRunRow
+from backend.profile import current, profile_name
 from backend.providers.claude_agent.application import GuardedRuntime
-from backend.providers.claude_agent.profile import current, profile_name
 from backend.services.common import ServiceError, database_error_details, transaction
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolExecutor

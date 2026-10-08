@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 
 from backend import server
+from backend.limits import Currency, ProbeError
+from backend.profile import DEFAULT, HUMAN, RELAXED
 from backend.providers.claude_agent.budget import GRANT, Budget, Entry
-from backend.providers.claude_agent.limits import Currency, ProbeError
-from backend.providers.claude_agent.profile import DEFAULT, HUMAN, RELAXED
 
 NOW = datetime(2026, 10, 5, 1, tzinfo=UTC)
 

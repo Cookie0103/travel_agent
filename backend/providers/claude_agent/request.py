@@ -5,8 +5,8 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Literal
 
-from backend.providers.claude_agent.limits import ProbeError, price_for
-from backend.providers.claude_agent.profile import current
+from backend.limits import ProbeError, price_for
+from backend.profile import current
 
 MAX_BYTES = 131072
 MAX_INPUT_TOKENS = 1_048_576

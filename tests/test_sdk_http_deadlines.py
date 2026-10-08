@@ -9,10 +9,10 @@ from pathlib import Path
 
 import pytest
 
+from backend.limits import ProbeError, Settings
 from backend.providers.claude_agent import http
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.guard import Guard
-from backend.providers.claude_agent.limits import ProbeError, Settings
 from tests.test_sdk_guard import request_body
 
 

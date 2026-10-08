@@ -11,7 +11,7 @@ from pathlib import Path
 
 import pytest
 
-from backend.providers.claude_agent.limits import ProbeError
+from backend.limits import ProbeError
 from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.claude_agent.windows_job import WindowsJob
 

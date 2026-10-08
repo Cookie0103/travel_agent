@@ -9,7 +9,7 @@ import pytest
 
 from backend.agent.persona import JudgeKind
 from backend.domain.execution import RunContext
-from backend.providers.claude_agent.limits import ProbeError
+from backend.limits import ProbeError
 from backend.providers.claude_agent.live import run_live
 from backend.providers.claude_agent.worker import run as run_worker
 from eval.content import HumanQuality, QualityScore

@@ -11,7 +11,7 @@ import uvicorn
 from dotenv import load_dotenv
 
 from backend.api.app import create_app
-from backend.providers.claude_agent.profile import current, profile_name
+from backend.profile import current, profile_name
 from backend.services import runs
 from backend.tools.travel import LIVE_TOOL_TIMEOUT
 from backend.trace_log import enable_stdout, trace

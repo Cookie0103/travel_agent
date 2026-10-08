@@ -18,12 +18,12 @@ from opentelemetry.proto.collector.trace.v1.trace_service_pb2 import ExportTrace
 from backend.adapters.local_http import serve_http
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeOutcome
+from backend.limits import Settings
 from backend.mcp.bridge import sdk_tool_name
 from backend.providers.claude_agent import application, live
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import worker_environment
 from backend.providers.claude_agent.guard import Forward, Guard
-from backend.providers.claude_agent.limits import Settings
 from backend.services.runs import MessageInput, RunService
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolExecutor

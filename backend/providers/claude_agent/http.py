@@ -10,9 +10,9 @@ import tempfile
 import time
 from pathlib import Path
 
-from backend.providers.claude_agent.limits import ProbeError, Provider, StallError
+from backend.limits import ProbeError, Provider, StallError
+from backend.profile import current
 from backend.providers.claude_agent.process import progress_hook, run_process, spawn_hook
-from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.response import message_stopped
 from backend.trace_log import FILE_ENV, RUN_ENV, trace
 

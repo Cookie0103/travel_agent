@@ -6,14 +6,14 @@ from pathlib import Path
 
 import pytest
 
-from backend.providers.claude_agent.ledger import Entry, Ledger, exclusive
-from backend.providers.claude_agent.limits import (
+from backend.limits import (
     ProbeError,
     Settings,
     load_settings,
     price_for,
     read_budget,
 )
+from backend.providers.claude_agent.ledger import Entry, Ledger, exclusive
 
 NOW = datetime(2026, 10, 3, tzinfo=UTC)
 SETTINGS = Settings("fake-key-for-tests", "deepseek-flash", Decimal("5"), Decimal("0"))

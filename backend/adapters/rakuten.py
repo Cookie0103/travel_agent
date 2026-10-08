@@ -11,7 +11,7 @@ from backend.adapters.external_api import ApiUsage, parse_response, request_json
 from backend.domain.external_data import ExternalDataError, GeoPoint
 from backend.domain.hotels import HotelOffer, Money
 from backend.domain.travel_request import TravelRequest
-from backend.providers.claude_agent.profile import current
+from backend.profile import current
 
 
 class Basic(BaseModel):

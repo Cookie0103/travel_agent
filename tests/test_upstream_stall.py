@@ -12,12 +12,12 @@ from pathlib import Path
 import pytest
 
 from backend import trace_log
+from backend.limits import Settings
+from backend.profile import DEFAULT, HUMAN, RELAXED
 from backend.providers.claude_agent import http, process
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import worker_environment
 from backend.providers.claude_agent.guard import Guard
-from backend.providers.claude_agent.limits import Settings
-from backend.providers.claude_agent.profile import DEFAULT, HUMAN, RELAXED
 from backend.trace_log import FILE_ENV
 from tests.test_sdk_guard import request_body, response_body
 

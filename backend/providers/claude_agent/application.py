@@ -20,9 +20,9 @@ from backend.domain.execution import (
     RuntimeOutcome,
     error_code,
 )
-from backend.providers.claude_agent.limits import ProbeError, Provider
+from backend.limits import ProbeError, Provider
+from backend.profile import current
 from backend.providers.claude_agent.live import run_live
-from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.settings import model_name, provider_name
 
 LOGGER = logging.getLogger(__name__)

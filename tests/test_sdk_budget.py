@@ -6,10 +6,10 @@ from pathlib import Path
 
 import pytest
 
+from backend.limits import Currency, ProbeError
 from backend.providers.claude_agent.budget import GRANT, LIMITS, Budget
 from backend.providers.claude_agent.budget import Entry as BudgetEntry
 from backend.providers.claude_agent.ledger import Entry, Ledger
-from backend.providers.claude_agent.limits import Currency, ProbeError
 
 NOW = datetime(2026, 10, 3, 12, tzinfo=UTC)
 

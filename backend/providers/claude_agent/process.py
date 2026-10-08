@@ -11,8 +11,8 @@ from contextvars import ContextVar
 from pathlib import Path
 from threading import Event, Thread
 
-from backend.providers.claude_agent.limits import ProbeError
-from backend.providers.claude_agent.profile import current
+from backend.limits import ProbeError
+from backend.profile import current
 from backend.providers.claude_agent.windows_job import WindowsJob
 from backend.trace_log import trace
 

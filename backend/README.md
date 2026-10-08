@@ -1,6 +1,6 @@
 # 后端代码
 
-这里是整个旅行规划后端：FastAPI 接口、业务规则、工具契约、Claude Agent SDK 适配、外部数据适配和 PostgreSQL 持久化。默认离线（fixture 运行时，不联网、不花钱）；真实模型需显式 `--live` 并通过费用守卫。`--relaxed` 只放宽次数与超时（见 `providers/claude_agent/profile.py`），每日15 CNY上限不变；人工手测另有 `TRAVEL_PROFILE=human`（default/relaxed/human；HUMAN无每日CNY上限，以API账户余额为实际止损，上游HTTP错误如402显示在对话；default/relaxed仍为每日15 CNY，要恢复上限设 `TRAVEL_PROFILE=relaxed`）。HUMAN另有证据有效期30分钟、修复上限50轮（default/relaxed 为15分钟/4轮），酒店报价不再绑定请求revision（见 `providers/claude_agent/profile.py`）。
+这里是整个旅行规划后端：FastAPI 接口、业务规则、工具契约、Claude Agent SDK 适配、外部数据适配和 PostgreSQL 持久化。默认离线（fixture 运行时，不联网、不花钱）；真实模型需显式 `--live` 并通过费用守卫。`--relaxed` 只放宽次数与超时（见 `backend/profile.py`），每日15 CNY上限不变；人工手测另有 `TRAVEL_PROFILE=human`（default/relaxed/human；HUMAN无每日CNY上限，以API账户余额为实际止损，上游HTTP错误如402显示在对话；default/relaxed仍为每日15 CNY，要恢复上限设 `TRAVEL_PROFILE=relaxed`）。HUMAN另有证据有效期30分钟、修复上限50轮（default/relaxed 为15分钟/4轮），酒店报价不再绑定请求revision（见 `backend/profile.py`）。
 
 | 子目录 | 负责什么 |
 | --- | --- |
@@ -8,7 +8,7 @@
 | services | 一次业务用例：核对归属、调用规则、读写数据库、管理 run 生命周期 |
 | tools | 工具契约、旅行搜索/校验工具、工具执行事件；SDK 与离线演示共用同一入口 |
 | agent | 应用执行入口：会话归属、版本/模型切换、唯一终态；不自写模型循环 |
-| providers/claude_agent | Claude Agent SDK 的隔离 worker、费用守卫（limits/ledger/budget/guard）、HTTP 转发、事件转换 |
+| providers/claude_agent | Claude Agent SDK 的隔离 worker、费用守卫（ledger/budget/guard）、HTTP 转发、事件转换 |
 | adapters | 对接外部服务：供应商、地图、天气、Trace 导出；导入时不联网 |
 | persistence | 表映射、迁移、查询和事务 |
 | api | HTTP 与 SSE 薄入口，只调 services/agent，不直接读写数据库 |

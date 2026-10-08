@@ -16,7 +16,7 @@ from backend.domain.validator import (
     validate_itinerary,
 )
 from backend.persistence import travel as requests
-from backend.providers.claude_agent.profile import current
+from backend.profile import current
 from backend.providers.routes_fixture import RouteRate, estimate, load_routes
 from backend.services.common import ServiceError, transaction
 from backend.services.travel import (

@@ -14,6 +14,8 @@ from pydantic import TypeAdapter
 from backend.agent.persona import JudgeKind, evaluation_judge_prompt, travel_prompt
 from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, event_metadata
+from backend.limits import Provider
+from backend.profile import current
 from backend.providers.claude_agent.checkpoints import Checkpoints
 from backend.providers.claude_agent.database_tools import DatabaseTools, database_tools
 from backend.providers.claude_agent.evaluation import (
@@ -23,8 +25,6 @@ from backend.providers.claude_agent.evaluation import (
     validate_variant,
 )
 from backend.providers.claude_agent.events import save_event
-from backend.providers.claude_agent.limits import Provider
-from backend.providers.claude_agent.profile import current
 from backend.providers.claude_agent.runtime import ClaudeRuntime, RuntimeConfig
 from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition, ToolExecutor, repair_rounds

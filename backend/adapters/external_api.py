@@ -12,7 +12,7 @@ from sqlalchemy import text
 
 from backend.domain.external_data import ExternalDataError
 from backend.persistence.database import Database
-from backend.providers.claude_agent.profile import DEFAULT, current
+from backend.profile import DEFAULT, current
 from backend.trace_log import trace
 
 ApiName = Literal["geocode", "places", "routes", "rakuten", "weather"]

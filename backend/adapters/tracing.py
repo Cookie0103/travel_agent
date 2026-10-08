@@ -24,7 +24,7 @@ from opentelemetry.trace import Span, StatusCode, Tracer, set_span_in_context
 from pydantic import TypeAdapter
 
 from backend.domain.execution import RuntimeEvent, RuntimeIdentity
-from backend.providers.claude_agent.limits import Currency
+from backend.limits import Currency
 
 
 @dataclass(frozen=True)

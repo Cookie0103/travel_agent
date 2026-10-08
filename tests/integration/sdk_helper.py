@@ -5,12 +5,12 @@ from decimal import Decimal
 from pathlib import Path
 
 from backend.domain.execution import RunContext
+from backend.limits import Settings
 from backend.mcp.bridge import sdk_tool_name
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
 from backend.providers.claude_agent.evaluation import EvaluationVariant, evaluation_definitions
 from backend.providers.claude_agent.guard import Forward, Guard, serve
-from backend.providers.claude_agent.limits import Settings
 from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.services.travel import TravelService
 from backend.tools.workflow import WorkflowName

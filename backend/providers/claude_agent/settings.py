@@ -2,7 +2,7 @@
 
 from collections.abc import Mapping
 
-from backend.providers.claude_agent.limits import (
+from backend.limits import (
     ProbeError,
     Provider,
     Settings,

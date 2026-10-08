@@ -7,12 +7,12 @@ from uuid import uuid4
 import pytest
 
 from backend.domain.execution import RunContext
+from backend.limits import ProbeError
 from backend.providers.claude_agent.evaluation import (
     EvaluationVariant,
     evaluation_definitions,
     validate_variant,
 )
-from backend.providers.claude_agent.limits import ProbeError
 from backend.providers.claude_agent.live import run_live
 from backend.providers.claude_agent.worker import run as run_worker
 from backend.tools.travel import DEFINITIONS

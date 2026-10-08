@@ -5,8 +5,8 @@ from typing import Literal
 
 from pydantic import BaseModel
 
+from backend.limits import ProbeError
 from backend.providers.claude_agent.budget import check_authorization
-from backend.providers.claude_agent.limits import ProbeError
 from backend.providers.claude_agent.settings import load_runtime_settings
 
 
