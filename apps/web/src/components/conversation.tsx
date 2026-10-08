@@ -13,7 +13,7 @@ import {
 import type { Mode } from "./composer";
 import { RunSteps } from "./activity-drawer";
 import { Markdown } from "./markdown";
-import { runLabel } from "@/lib/business-status";
+import { runLabel, stageGuidance } from "@/lib/business-status";
 
 const presets = ["比较酒店", "生成行程", "修改第二天下午"];
 const examples = [
@@ -67,12 +67,14 @@ export function Conversation({
   mode,
   send,
   fill,
+  newTrip,
   openPanel,
 }: {
   workspace: Workspace;
   mode: Mode;
   send: (text: string, mode: Mode) => void;
   fill: (text: string) => void;
+  newTrip: () => void;
   openPanel: () => void;
 }) {
   const { run } = workspace;
@@ -146,14 +148,23 @@ export function Conversation({
               </span>
               <div className="reply-body">
                 <p className="run-status">{runLabel(row)}</p>
-                {row.answer && (
+                {row.answer && !stageGuidance(row) && (
                   <div className="answer">
                     <Markdown text={row.answer} />
                   </div>
                 )}
-                {row.error_code && !row.answer && (
+                {row.error_code && !row.answer && !stageGuidance(row) && (
                   <p className="error">执行未完成：{row.error_code}</p>
                 )}
+                <StageFailure
+                  workspace={workspace}
+                  run={row}
+                  latest={false}
+                  mode={mode}
+                  fill={fill}
+                  newTrip={newTrip}
+                  openPanel={openPanel}
+                />
                 <TurnCards
                   workspace={workspace}
                   run={row}
@@ -183,12 +194,13 @@ export function Conversation({
                 )}
               </p>
             )}
-            {run.answer && (
+            {run.answer && !stageGuidance(run) && (
               <div className="answer">
                 <Markdown text={run.answer} />
               </div>
             )}
             {run.error_code &&
+              !stageGuidance(run) &&
               (run.error_code === "timeout" || !run.answer) && (
                 <p className="error">
                   {run.error_code === "timeout"
@@ -196,6 +208,15 @@ export function Conversation({
                     : `执行未完成：${run.error_code}。请检查模型配置或调用额度。`}
                 </p>
               )}
+            <StageFailure
+              workspace={workspace}
+              run={run}
+              latest
+              mode={mode}
+              fill={fill}
+              newTrip={newTrip}
+              openPanel={openPanel}
+            />
             <RunSteps
               events={workspace.events.filter((event) =>
                 belongsToRun(event, run),
@@ -222,6 +243,56 @@ export function Conversation({
           <p className="error" role="alert">
             {workspace.sendError}
           </p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function StageFailure({
+  workspace,
+  run,
+  latest,
+  mode,
+  fill,
+  newTrip,
+  openPanel,
+}: {
+  workspace: Workspace;
+  run: Run;
+  latest: boolean;
+  mode: Mode;
+  fill: (text: string) => void;
+  newTrip: () => void;
+  openPanel: () => void;
+}) {
+  const guidance = stageGuidance(run);
+  if (!guidance) return null;
+  const disabled = workspace.busy || workspace.restoring;
+  return (
+    <div className="error">
+      <p>{guidance.message}</p>
+      {latest && guidance.existingPlan && (
+        <div className="chips">
+          <button
+            disabled={disabled}
+            onClick={() =>
+              void workspace.switchTrip(run.session_id).then((changed) => {
+                if (!changed) return;
+                openPanel();
+                fill(
+                  mode === "offline"
+                    ? "演示：修改第二天下午"
+                    : "请修改现有行程：",
+                );
+              })
+            }
+          >
+            修改现有行程
+          </button>
+          <button disabled={disabled} onClick={newTrip}>
+            新建另一趟旅行
+          </button>
         </div>
       )}
     </div>

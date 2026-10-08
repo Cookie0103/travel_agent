@@ -40,3 +40,35 @@ export function runLabel(run: Run): string {
     ? business
     : `${runStatus(run.status)} · ${business}`;
 }
+
+/** Reasons are server whitelist values; do not use a model answer as failure guidance. */
+export function stageGuidance(run: Run) {
+  const result = run.business_result;
+  if (result?.kind !== "stage_failed") return undefined;
+  switch (result.reason) {
+    case "plan_exists":
+      return {
+        message:
+          "这个旅行已有正式行程。可以说明要改的部分，在原行程上生成修改草稿；如果是另一趟旅行，请新建旅行。",
+        existingPlan: true,
+      };
+    case "patch_invalid":
+      return {
+        message:
+          "本次修改无法应用到现有行程，可能涉及已变化或锁定的项目。请先读取最新行程，再说明需要调整的部分。",
+        existingPlan: false,
+      };
+    case "repair_limit":
+      return {
+        message:
+          "本轮校验与修复次数已用完，草稿未生成。请缩小要改的范围，确认条件后再发起一轮规划。",
+        existingPlan: false,
+      };
+    default:
+      return {
+        message:
+          "本次未能生成草稿。请读取最新状态，查看执行步骤中的失败类别后再试。",
+        existingPlan: false,
+      };
+  }
+}

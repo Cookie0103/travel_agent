@@ -21,6 +21,10 @@ export function Workbench({ articleId }: { articleId?: string }) {
     workspace.run && ["running", "cancelling"].includes(workspace.run.status)
   );
   const { identity } = workspace;
+  const newTrip = () =>
+    void workspace.newTrip().then((changed) => {
+      if (changed) setText("");
+    });
   const submit = (message: string, via: Mode) => {
     if (!message.trim() || workspace.busy || workspace.restoring) return;
     void workspace.send(message, via).then((accepted) => {
@@ -75,11 +79,7 @@ export function Workbench({ articleId }: { articleId?: string }) {
               </label>
               <button
                 disabled={workspace.busy || workspace.restoring}
-                onClick={() =>
-                  void workspace.newTrip().then((changed) => {
-                    if (changed) setText("");
-                  })
-                }
+                onClick={newTrip}
               >
                 新建旅行
               </button>
@@ -149,6 +149,7 @@ export function Workbench({ articleId }: { articleId?: string }) {
                 mode={mode}
                 send={submit}
                 fill={setText}
+                newTrip={newTrip}
                 openPanel={() => {
                   setCollapsed(false);
                   setSheetOpen(true);

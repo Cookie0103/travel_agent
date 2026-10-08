@@ -279,3 +279,14 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 本地PG只读核对新旅行2轮，confirmed与answer_only分别归属本轮、新正式V1/version_rows1；旧旅行最新stage_failed/conflict/plan_exists、原V1/version_rows1/hash同t12。API日志仅1次confirm POST。证据`t21-business-result.json`及5张`t21-*.png`（docs/evidence/，合成数据）；初截图只显示上方旧轮次，读图后滚动至最新失败/普通查询重新保存，未冒称旧截图证明新状态。临时探针第一次未给PYTHONPATH导致ModuleNotFoundError，再用PYTHONPATH=.成功；只查loopbackPG，无生产访问。
 - web首红45 passed/1 suite failed（helper缺失）→47 passed；最终typecheck/lint/test47 passed/176.99ms，build5路由退出0。dev check254文件/三平台strict/3契约/10入口通过；修后完整回归仍在运行，最终结果随后追加。
 - 最后完整 `uv run python scripts/dev.py test`：1027 passed/7 failed/1 skipped/1 live deselected，256.32s；失败清单逐项同P-05的原SDK压缩7项，无新失败。7项不是通过、不跳过/改断言掩盖，R6不得发布。最后生成OpenAPI/TS成功、git diff --check通过；独立只读记录审查无发现，截图/JSON未见凭据或真实用户信息。
+
+## 2026-10-08 T2.2 失败原因与下一步
+
+- 开工前`git status --short`空，HEAD/远端均`0b5d000914f1c3e4177512ee2c35497da8992d89`。T2.1 Chrome/PG已经真实证明plan_exists，但旧UI出现“局部patch”、缺本轮操作引导（截图t21-stage-failed）。复用ADR014既有safe reason，无新字段/API/表/依赖。
+- 前端新增实际helper调用测试：`pnpm --dir apps/web run test`首次47 passed/1 suite failed（stageGuidance export不存在，186.19ms），实现后50 passed/169.89ms；覆盖已有正式行程、无效修改、修复次数耗尽、安全fallback、普通/旧回复不猜原因，输入含假称保存与内部参数但说明只用安全枚举。Conversation stage_failed只呈现固定说明，模型原answer仍由后端保留、UI不以其推断或重复原内部patch文案。
+- 最新plan_exists提供两个动作；修改复用同session switchTrip读回canonical正式计划，成功后打开右侧/预填composer，0自动消息、PATCH或确认；新建复用既有同身份newTrip并清输入。历史失败只给说明不渲染操作按钮；connect不再把stage_failed模型answer放在全局error banner。代码自审后交独立只读复核，项目type/lint/build/check/full正在运行，Chrome行为证据待补。
+- Chrome实际plan_exists说明含修改/新建选项，原内部patch回复不展示；修改点击复用同session读取，正式V1及预填“演示：修改第二天下午”可见。该阶段日志0POST/0PATCH、2次canonical GET200；未点击发送或确认。新建引导显式创建1个same-owner空session，0重新登录/消息/确认/PATCH，composer清空；旧V1保留。
+- 然后返回原京都旅行，再显式发送1次普通离线query以验证旧失败成为历史：说明保留，“修改现有行程/新建另一趟旅行”两个DOM按钮count均0；不是引导自动发送。只读PG新空session0run/0formal，原V1/version_rows1/hash同t12。脱敏JSON分阶段记录实际计数（最终1session/1显式message/0confirm/0PATCH/0login），4张截图已逐张读图；0真实模型/供应商。截图仍有正式引用过期措辞/新旅行离线门槛，分别待T2.4/T3.7，不冒称本任务修复。
+- `dev check`254文件三平台strict/3契约/10入口，webtype/lint/build5路由通过；独立只读实现审查无发现。完整test运行中，最终结果随后追加。
+- 最后完整 `uv run python scripts/dev.py test`：1027 passed/7 failed/1 skipped/1 live deselected，255.69s；逐项仍为P-05原SDK压缩7项，无新增失败，无改断言/跳过。`git diff --check`与`uv run python scripts/check_docs.py`通过。
+- 独立记录审查仅P3措辞补充：新建后查询是在返回原京都旅行后显式发送；已补明，避免与新session0run证据混淆。安全/过度结论无发现。
