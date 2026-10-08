@@ -24,6 +24,7 @@ import {
   type Booking,
 } from "./api";
 import type { components } from "./api-types";
+import { updateTripSummary } from "./trip-summary";
 import {
   isCardEvent,
   belongsToRun,
@@ -203,6 +204,9 @@ export function useWorkspace({
         );
         if (!active()) return;
         setRequest(state);
+        setTrips((old) =>
+          active() ? updateTripSummary(old, current.session_id, state) : old,
+        );
         const savedBookings = await api<Booking[]>(
           `/sessions/${current.session_id}/bookings`,
           current.token,
@@ -520,16 +524,7 @@ export function useWorkspace({
       setRequest(result.request);
       setTrips((old) =>
         active()
-          ? old.map((trip) =>
-              trip.session_id === identity.session_id
-                ? {
-                    ...trip,
-                    city: result.request.city ?? null,
-                    start_date: result.request.start_date ?? null,
-                    end_date: result.request.end_date ?? null,
-                  }
-                : trip,
-            )
+          ? updateTripSummary(old, identity.session_id, result.request)
           : old,
       );
       setHotels(undefined);
@@ -558,6 +553,9 @@ export function useWorkspace({
       );
       if (!active()) return;
       setRequest(state);
+      setTrips((old) =>
+        active() ? updateTripSummary(old, identity.session_id, state) : old,
+      );
       setHotels(undefined);
       const savedBookings = await read(
         api<Booking[]>(

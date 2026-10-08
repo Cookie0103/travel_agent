@@ -1113,6 +1113,11 @@ export interface components {
             request: components["schemas"]["RequestView"];
             /** Changed Fields */
             changed_fields: string[];
+            /**
+             * Skipped Fields
+             * @default []
+             */
+            skipped_fields: string[];
         };
         /** RequestView */
         RequestView: {
@@ -1168,6 +1173,10 @@ export interface components {
              */
             revision: number;
             budget_relation: components["schemas"]["BudgetRelation"];
+            /** Field Sources */
+            field_sources?: {
+                [key: string]: "conversation" | "user_form" | "none";
+            };
         };
         /** RunPage */
         RunPage: {

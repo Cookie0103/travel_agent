@@ -135,7 +135,11 @@ def test_tool_calls_are_serialized_and_failures_count_toward_limit(
                 executor.execute(
                     context,
                     "update_travel_request",
-                    {"expected_revision": 1, "set": {"adults": adults}},
+                    {
+                        "expected_revision": 1,
+                        "set": {"adults": adults},
+                        "explicit_fields": ["adults"],
+                    },
                 )
                 for adults in (3, 4)
             )

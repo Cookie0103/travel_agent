@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type { RequestState } from "@/lib/api";
 import { PACES } from "@/lib/pace";
+import { sourceLabel } from "@/lib/condition-source";
 import {
   conditionsForm,
   conditionPatch,
@@ -22,6 +23,11 @@ export function Conditions({
   const change = (key: keyof typeof form, value: string) =>
     setForm((old) => ({ ...old, [key]: value }));
   const [formError, setFormError] = useState("");
+  const source = (field: string) => (
+    <span className="small muted" aria-hidden="true">
+      {sourceLabel(request.field_sources, field)}
+    </span>
+  );
   return (
     <form
       className="conditions"
@@ -43,6 +49,7 @@ export function Conditions({
       </div>
       <label>
         目的地
+        {source("city")}
         <input
           maxLength={40}
           value={form.city}
@@ -52,6 +59,7 @@ export function Conditions({
       </label>
       <label>
         开始日期
+        {source("start_date")}
         <input
           type="date"
           value={form.start_date}
@@ -60,6 +68,7 @@ export function Conditions({
       </label>
       <label>
         结束日期
+        {source("end_date")}
         <input
           type="date"
           min={form.start_date}
@@ -70,6 +79,7 @@ export function Conditions({
       <div className="pair">
         <label>
           成人
+          {source("adults")}
           <input
             type="number"
             min="1"
@@ -80,6 +90,7 @@ export function Conditions({
         </label>
         <label>
           房间
+          {source("rooms")}
           <input
             type="number"
             min="1"
@@ -91,6 +102,7 @@ export function Conditions({
       </div>
       <label>
         儿童情况
+        {source("child_ages")}
         <select
           value={form.child_state}
           onChange={(e) => change("child_state", e.target.value)}
@@ -112,6 +124,7 @@ export function Conditions({
       )}
       <label>
         全程预算（JPY）
+        {source("budget")}
         <input
           type="number"
           min="0.01"
@@ -124,6 +137,7 @@ export function Conditions({
         <>
           <label>
             住宿预算口径
+            {source("lodging_budget")}
             <select
               value={form.lodging_basis}
               onChange={(e) =>
@@ -190,6 +204,7 @@ export function Conditions({
       <div className="pair">
         <label>
           交通
+          {source("transport")}
           <select
             value={form.transport}
             onChange={(e) => change("transport", e.target.value)}
@@ -202,6 +217,7 @@ export function Conditions({
         </label>
         <label>
           每日出发
+          {source("departure_time")}
           <input
             type="time"
             step="any"
@@ -212,6 +228,7 @@ export function Conditions({
       </div>
       <label>
         节奏
+        {source("soft_constraints")}
         <select
           value={form.pace}
           onChange={(e) => change("pace", e.target.value)}

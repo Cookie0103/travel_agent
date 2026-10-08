@@ -3,21 +3,33 @@
 from typing import Literal
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from backend.domain.hotels import QuoteFields
 from backend.domain.itinerary import ValidationReport
 from backend.domain.plans import ItemDiff, PlanItem
-from backend.domain.travel_request import BudgetRelation, TravelRequest, lodging_budget_relation
+from backend.domain.travel_request import (
+    BudgetRelation,
+    ConditionSource,
+    TravelRequest,
+    lodging_budget_relation,
+)
 
 
 class RequestView(TravelRequest):
     budget_relation: BudgetRelation
+    field_sources: dict[str, ConditionSource] = Field(default_factory=dict)
 
     @classmethod
-    def from_request(cls, request: TravelRequest) -> "RequestView":
+    def from_request(
+        cls, request: TravelRequest, field_sources: dict[str, ConditionSource] | None = None
+    ) -> "RequestView":
         return cls.model_validate(
-            {**request.model_dump(), "budget_relation": lodging_budget_relation(request)}
+            {
+                **request.model_dump(),
+                "budget_relation": lodging_budget_relation(request),
+                "field_sources": field_sources or {},
+            }
         )
 
 

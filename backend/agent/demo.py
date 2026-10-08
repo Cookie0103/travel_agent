@@ -7,6 +7,7 @@ from typing import cast
 from uuid import uuid4
 from zoneinfo import ZoneInfo
 
+from backend.agent.fixture_conditions import missing_question
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.plans import PlanItem
@@ -46,6 +47,14 @@ async def demo_command(
 
     try:
         request = await executor.travel.get_request(context)
+        if prompt in COMMANDS[:2] and request.hotel_requirements():
+            text = missing_question(request)
+            emit(RuntimeEvent(context, "text", text=text))
+            return RuntimeOutcome(text, str(uuid4()))
+        if prompt in COMMANDS[:2] and request.city != "京都":
+            text = f"已保留目的地{request.city}。离线酒店/行程样例仅覆盖京都；不会替换你的目的地。"
+            emit(RuntimeEvent(context, "text", text=text))
+            return RuntimeOutcome(text, str(uuid4()))
         if prompt == COMMANDS[0]:
             text = await compare_demo(call, request)
         elif prompt == COMMANDS[1]:
@@ -76,7 +85,7 @@ async def compare_demo(call: DemoCall, request: TravelRequest) -> str:
 
 async def generate_demo(call: DemoCall, request: TravelRequest) -> str:
     if not request.start_date or not request.end_date:
-        raise ServiceError(422, "validation", "请先保存完整旅行条件")
+        raise ServiceError(422, "validation", "请在对话里告诉我旅行的开始与结束日期")
     days = (request.end_date - request.start_date).days + 1
     if not 2 <= days <= 3:
         raise ServiceError(422, "validation", "固定演示仅覆盖京都二至三日游")

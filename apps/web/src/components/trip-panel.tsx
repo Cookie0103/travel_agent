@@ -7,6 +7,8 @@ import { formatYen, PlanResults } from "./results";
 import { Bookings } from "./bookings";
 import { PreferencePanel } from "./preferences";
 import { partyLabel } from "@/lib/availability";
+import { sourceRows } from "@/lib/condition-source";
+import { currentPace } from "@/lib/pace";
 
 const transportLabels: Record<string, string> = {
   walk: "步行",
@@ -25,6 +27,7 @@ export function TripPanel({
 }) {
   const { request, identity, plan } = workspace;
   const [editing, setEditing] = useState(false);
+  const pace = currentPace(request?.soft_constraints ?? []);
   if (!identity) return null;
   return (
     <aside className={className} aria-label="本次行程">
@@ -46,16 +49,21 @@ export function TripPanel({
             <>
               {request.city ||
               request.start_date ||
+              request.end_date ||
               request.adults ||
+              request.rooms ||
               request.child_ages != null ||
               request.budget ||
-              request.lodging_budget ? (
+              request.lodging_budget ||
+              request.transport ||
+              request.departure_time ||
+              pace ? (
                 <>
                   <p>
                     {[
                       request.city,
-                      request.start_date &&
-                        `${request.start_date}—${request.end_date || "待定"}`,
+                      (request.start_date || request.end_date) &&
+                        `${request.start_date || "开始待定"}—${request.end_date || "结束待定"}`,
                     ]
                       .filter(Boolean)
                       .join(" · ")}
@@ -75,6 +83,7 @@ export function TripPanel({
                       transportLabels[request.transport ?? ""],
                       request.departure_time &&
                         `${request.departure_time.slice(0, 5)} 出发`,
+                      pace,
                     ]
                       .filter(Boolean)
                       .join(" · ")}
@@ -93,6 +102,11 @@ export function TripPanel({
               {request.lodging_budget.basis === "per_room_night"
                 ? "每房每晚"
                 : "住宿总额"}
+            </p>
+          )}
+          {!editing && sourceRows(request.field_sources).length > 0 && (
+            <p className="small muted">
+              {sourceRows(request.field_sources).join("；")}
             </p>
           )}
           {request.budget_relation ? (

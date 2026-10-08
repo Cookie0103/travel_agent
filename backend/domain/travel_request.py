@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 Age = Annotated[int, Field(strict=True, ge=0, le=17)]
 Text = Annotated[str, Field(min_length=1, max_length=200)]
 Transport = Literal["walk", "transit", "taxi"]
+ConditionSource = Literal["conversation", "user_form", "none"]
 
 
 BudgetAmount = Annotated[Decimal, Field(gt=0, max_digits=12, decimal_places=2)]
@@ -110,6 +111,16 @@ class RequestPatch(BaseModel):
 
 class RequestConflict(ValueError):
     """由服务转换为conflict；不通过重试覆盖用户的新条件。"""
+
+
+class ConversationRequestPatch(RequestPatch):
+    explicit_fields: tuple[str, ...] = Field(default=(), max_length=15)
+
+    @model_validator(mode="after")
+    def explicit_subset(self) -> Self:
+        if set(self.explicit_fields) - (self.set_fields.model_fields_set | set(self.clear)):
+            raise ValueError("explicit_fields必须是本次set/clear字段的子集")
+        return self
 
 
 def apply_request_patch(

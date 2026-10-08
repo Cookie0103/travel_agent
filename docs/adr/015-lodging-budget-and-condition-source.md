@@ -67,3 +67,13 @@ GET request 与 PATCH 回执 request 用只读 RequestView，现算增量 `budge
 ## 必须验证
 
 领域：conflict / warning / unknown 各至少一例；相等边界、total 无数量、缺晚数/房间数、不同币种、单端区间、未知预算、Decimal no-op、不排除低价酒店。真实 PG：冲突两值都落库、回答只改指定字段/revision、默认旧行、旧 PATCH 保留新值、来源事务与旧模型读取兼容；同补丁模糊 no-op 后明确更新不复用旧结果、来源 no-op 更新后旧操作重试返回当前来源；确认再校验 conflict。对话/UI：不填表直接发消息、空字段不注入样例、来自对话标签、手填优先/明确改值回执、所有模式共享规则。ADR 确立契约不等于这些实现或实测已完成。
+
+## T3.7 实施来源与离线范围细节（2026-10-08）
+
+RequestView增量field_sources为字段→conversation/user_form/none；metadata只保存已知来源，source_revision等于当前revision才可信，缺失/旧写入者不匹配时统一none。业务更新后沿用未改字段可信来源，来源-only更新同事务但不增加业务revision、不刷新报价。PATCH入口固定user_form；工具ConversationRequestPatch扩展explicit_fields子集，入口固定conversation，无法由输入伪造user_form。手填字段不在explicit_fields时跳过，回执skipped_fields要求澄清；实际更新回执message标“已按对话更新”及真实字段/值，不能假称被跳过字段已更新。
+
+operations.key复用现有规范化，增加入口与规范化explicit_fields维度；旧无来源操作回执仅在还没有来源元数据时兼容回放，不据旧缓存推测标签；新操作重试重读当前来源，保留原revision检查。只存旧request投影/changed_fields/skipped_fields，判定和来源读回不冻结在缓存。
+
+实时提取仍由Claude Agent SDK通过工具完成；固定提示说明每轮从当前用户表达提取、模糊指代追问、未提事实不填。离线仍是已有FixtureRuntime：扩展有限的中文演示表达与样例（包括批次指定札幌/下周末/2成人/5岁/全程8万），驱动同一update工具；只在离线使用，不用于真实模式，也不声称通用自然语言理解。无法识别或未齐条件先在对话里追问，不回退京都/50000、不要求右侧输入；日期相对表达以Asia/Tokyo当前日为基准，“下周末”明确为下个日历周的周六至周日，并在回执显示实际日期以便纠正。显式“改成/改为”列入explicit_fields，模糊样例不覆盖手填。既有演示比较/生成只在其需要的已知条件与支持范围满足时继续，不用隐含京都样例覆盖札幌条件。
+
+有限金额表达必须读取明确币种后缀：住宿三字母币种及日元/美元/欧元/人民币沿用原币种保存，不把未支持后缀吞掉当JPY；当前全程预算契约仍仅JPY，明确非日元时不执行有限提取，直接对话说明边界/要求澄清，原句仍保存于对话历史。没有换汇，也不扩大真实调用。

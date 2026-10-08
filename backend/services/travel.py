@@ -2,7 +2,7 @@
 
 import os
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -16,8 +16,10 @@ from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
 from backend.domain.plans import PlanDraft
 from backend.domain.travel_request import (
+    ConditionSource,
     RequestConflict,
     RequestPatch,
+    TravelConditions,
     TravelRequest,
     apply_request_patch,
     invalidated_kinds,
@@ -54,12 +56,30 @@ def require_revision(request: TravelRequest, revision: int) -> None:
 class RequestUpdate:
     request: TravelRequest
     changed_fields: tuple[str, ...]
+    field_sources: dict[str, ConditionSource] = field(default_factory=dict)
+    skipped_fields: tuple[str, ...] = ()
 
 
 @dataclass(frozen=True)
 class RequestUpdateView:
     request: RequestView
     changed_fields: tuple[str, ...]
+    skipped_fields: tuple[str, ...] = ()
+
+
+def condition_sources(row: TravelRequestRow) -> dict[str, ConditionSource]:
+    details = row.request_details or {}
+    stored = details.get("field_sources")
+    trusted = (
+        stored
+        if isinstance(stored, dict) and details.get("source_revision") == row.revision
+        else {}
+    )
+    return {
+        name: value if value in ("conversation", "user_form") else "none"
+        for name in TravelConditions.model_fields
+        for value in (trusted.get(name),)
+    }
 
 
 class TravelService:
@@ -84,11 +104,20 @@ class TravelService:
         async with transaction(self.database) as db:
             return request_from_row(await travel.owned_request(db, context))
 
+    async def get_request_view(self, context: RunContext) -> RequestView:
+        async with transaction(self.database) as db:
+            row = await travel.owned_request(db, context)
+            request = request_from_row(row)
+            assert row is not None
+            return RequestView.from_request(request, condition_sources(row))
+
     async def business_context(self, context: RunContext) -> dict[str, object]:
         """有界业务回顾，不重放SDK原始消息；未知或被截断的指代仍须追问/重新查询。"""
         async with transaction(self.database) as db:
             observed_at = datetime.now(UTC)
-            current = request_from_row(await travel.owned_request(db, context))
+            request_row = await travel.owned_request(db, context)
+            current = request_from_row(request_row)
+            assert request_row is not None
             user = await sessions.get_user(db, context.user_id)
             preferences = preferences_from_row(user)
             assert user is not None
@@ -137,7 +166,9 @@ class TravelService:
             ]
             return {
                 "observed_at": observed_at.isoformat(),
-                "request": RequestView.from_request(current).model_dump(mode="json"),
+                "request": RequestView.from_request(
+                    current, condition_sources(request_row)
+                ).model_dump(mode="json"),
                 "preferences": preferences.model_dump(mode="json"),
                 "saved_plan": {"plan_id": str(plan.id), "version": plan.current_version}
                 if plan and plan.current_version
@@ -165,21 +196,61 @@ class TravelService:
                 "回顾不覆盖完整历史；无法确定指代时追问，不猜测。",
             }
 
-    async def patch_request(self, context: RunContext, patch: RequestPatch) -> RequestUpdate:
+    async def patch_request(
+        self,
+        context: RunContext,
+        patch: RequestPatch,
+        *,
+        source: ConditionSource = "user_form",
+        explicit_fields: tuple[str, ...] = (),
+    ) -> RequestUpdate:
+        if source not in ("user_form", "conversation") or set(explicit_fields) - (
+            patch.set_fields.model_fields_set | set(patch.clear)
+        ):
+            raise ServiceError(422, "validation", "条件来源或明确字段无效")
         async with transaction(self.database) as db:
             row = await travel.owned_request(db, context)
             current = request_from_row(row)
             assert row is not None
-            operation_key = operations.key(patch)
+            sources = condition_sources(row)
+            operation_key = operations.key(patch, source=source, explicit_fields=explicit_fields)
             cached = await operations.result(
                 db, context.session_id, "update_travel_request", operation_key
             )
+            if cached is None and "field_sources" not in (row.request_details or {}):
+                # 只兼容来源机制出现前的旧回执，不从旧操作推测来源。
+                legacy_patch = RequestPatch.model_validate(
+                    {
+                        "expected_revision": patch.expected_revision,
+                        "set": patch.set_fields.model_dump(exclude_unset=True),
+                        "clear": patch.clear,
+                    }
+                )
+                cached = await operations.result(
+                    db, context.session_id, "update_travel_request", operations.key(legacy_patch)
+                )
             if cached is not None:
                 saved = TypeAdapter(RequestUpdate).validate_python(cached)
                 require_revision(current, saved.request.revision)
-                return RequestUpdate(current, saved.changed_fields)
+                return RequestUpdate(current, saved.changed_fields, sources, saved.skipped_fields)
+            skipped = tuple(
+                sorted(
+                    name
+                    for name in patch.set_fields.model_fields_set | set(patch.clear)
+                    if source == "conversation"
+                    and sources[name] == "user_form"
+                    and name not in explicit_fields
+                )
+            )
+            accepted = RequestPatch.model_validate(
+                {
+                    "expected_revision": patch.expected_revision,
+                    "set": patch.set_fields.model_dump(exclude_unset=True, exclude=set(skipped)),
+                    "clear": [name for name in patch.clear if name not in skipped],
+                }
+            )
             try:
-                updated, changed = apply_request_patch(current, patch)
+                updated, changed = apply_request_patch(current, accepted)
             except RequestConflict as error:
                 raise ServiceError(409, "conflict", str(error), "request_conflict") from None
             except ValidationError:
@@ -190,7 +261,20 @@ class TravelService:
                 await travel.update_request(
                     db, row, updated, invalidated_kinds(changed), context.run_id
                 )
-            result = RequestUpdate(updated, tuple(sorted(changed)))
+            new_sources = dict(sources)
+            for name in accepted.set_fields.model_fields_set:
+                new_sources[name] = source
+            for name in accepted.clear:
+                new_sources[name] = "none"
+            if changed or new_sources != sources:
+                row.request_details = {
+                    **(row.request_details or {}),
+                    "field_sources": {
+                        name: value for name, value in new_sources.items() if value != "none"
+                    },
+                    "source_revision": updated.revision,
+                }
+            result = RequestUpdate(updated, tuple(sorted(changed)), new_sources, skipped)
             operations.save(
                 db,
                 context.session_id,
@@ -199,6 +283,7 @@ class TravelService:
                 {
                     "request": legacy_request(updated),
                     "changed_fields": list(result.changed_fields),
+                    "skipped_fields": list(result.skipped_fields),
                 },
             )
             return result

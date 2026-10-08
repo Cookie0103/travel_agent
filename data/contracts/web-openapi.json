@@ -3508,6 +3508,14 @@
             },
             "type": "array",
             "title": "Changed Fields"
+          },
+          "skipped_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Skipped Fields",
+            "default": []
           }
         },
         "type": "object",
@@ -3702,6 +3710,18 @@
           },
           "budget_relation": {
             "$ref": "#/components/schemas/BudgetRelation"
+          },
+          "field_sources": {
+            "additionalProperties": {
+              "type": "string",
+              "enum": [
+                "conversation",
+                "user_form",
+                "none"
+              ]
+            },
+            "type": "object",
+            "title": "Field Sources"
           }
         },
         "additionalProperties": false,

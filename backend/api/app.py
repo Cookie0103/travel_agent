@@ -146,14 +146,18 @@ def create_app(
     async def get_travel_request(
         session_id: UUID, user_id: Annotated[UUID, Depends(identity)]
     ) -> RequestView:
-        return RequestView.from_request(await travel.get_request(RunContext(user_id, session_id)))
+        return await travel.get_request_view(RunContext(user_id, session_id))
 
     @app.patch("/sessions/{session_id}/request")
     async def patch_travel_request(
         session_id: UUID, body: RequestPatch, user_id: Annotated[UUID, Depends(identity)]
     ) -> RequestUpdateView:
         result = await travel.patch_request(RunContext(user_id, session_id), body)
-        return RequestUpdateView(RequestView.from_request(result.request), result.changed_fields)
+        return RequestUpdateView(
+            RequestView.from_request(result.request, result.field_sources),
+            result.changed_fields,
+            result.skipped_fields,
+        )
 
     @app.post("/sessions/{session_id}/messages", status_code=202)
     async def message(

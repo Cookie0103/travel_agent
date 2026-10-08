@@ -33,7 +33,10 @@ def test_native_sdk_reads_snapshot_and_updates_database_conditions(
     runner.run(prepare())
     calls = (
         (sdk_tool_name("search_places"), {"city": "京都", "query": "二条", "limit": 1}),
-        (sdk_tool_name("update_travel_request"), {"expected_revision": 1, "set": {"rooms": 2}}),
+        (
+            sdk_tool_name("update_travel_request"),
+            {"expected_revision": 1, "set": {"rooms": 2}, "explicit_fields": ["rooms"]},
+        ),
     )
     report, guard = run_database_worker(
         travel,

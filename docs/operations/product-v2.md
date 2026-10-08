@@ -366,3 +366,24 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - Chrome/PG离线实际：rev5两预算50000/30000均存、缺晚数unknown；批量locator日期/时间fill未留到提交（PG为null），改原生AX setValue逐字段核对，补两晚/时间后rev6 conflict60000>50000。明确比较失败run1含一次search工具失败、0presentation；不是付费供应商比较。只改budget70000 rev7/住宿原样，diff仅budget；改全程50000/每晚20000–30000 rev8 warning40000–60000，成功run2/1presentation/3hotel_offer，15k/17.4k/19.8k上游序列，低于lower不被排除。刷新读回原值与警告。原V1一行/内容SHA256每次不变，证据product-v2/t33-budget-relations.json与两张已查看截图。只读probe首次误用TravelRequestRow.user_id AttributeError，改从SessionRow读取既有归属后通过，未改测试断言。
 - 最终项目命令：uv run python scripts/dev.py check exit0（258格式文件，win32/linux/darwin strict各258，3契约/0broken，文档10入口）；uv run python scripts/dev.py test exit1：1055 passed/原P05七个SDK失败/1 skipped/1 live deselected/257.68s，失败名单与原基线一致，无新增失败。pnpm --dir apps/web test exit0：77 passed/0 failed/306.24ms；typecheck、lint、build均exit0/5路由。旧完整测试因后端新修复CtrlC130不计入此结果；脚本编排一次JS语法失败未执行文件命令，后重跑证据汇总断言通过。
 - 本机开发库仅upgrade0013（先assertloopback），nullable列添加，无drop/reset；rollback/reupgrade仅随机测试数据库中实际验证。API与web已重启为最终离线bundle；无Railway/生产/付费调用。实现 `0febb2eaabdda7ad4b0e304de3e3b8c1c08dfd80` 已commit/push；git ls-remote读回相同SHA，无生产部署。
+
+## 2026-10-08 T3.7 对话优先与字段来源
+
+- 开工git status空，当前/远端a3f737a（刚push）；已按需读ADR015、design03条件/工具与02上下文边界、FixtureRuntime/demo/Conversation/TravelService/operations；第一次文件猜名不存在/未匹配zsh通配无源码操作，按rg返回路径继续。先补ADR明确来源只读回执/受阻字段、旧操作重试兼容、有限离线样例与JST相对日期范围，无新runtime/依赖/付费调用。
+
+- 红测：来源两个PG TypeError（source未实现）2 failed/0.31s；离线首轮札幌未保存/空demo failed 2 failed/0.72s；Chrome新旅行比较chipdisabled/formGate1断言红。实现后4 passed/0.80s；来源UI helper缺文件77 pass/1 suite失败→79 pass/297.60ms；领域/fixture边界26 pass/0.17s。初次check import排序与一长fstring2错误，修后check通过。
+- PG相邻37例先36 pass/1 fail/14.74s：旧并行工具测试未声明明确覆盖，现按user_form保护两次都no-op；测试原意验证真正并行写，参数补explicit_fields adults，保留原一成功/一conflict/计数断言，不放松结果。
+- 独立审查P32真实旧key缓存+新ConversationRequestPatch重试先红2 pass/1 fail；P33裸节奏格式/P34假设与否定3例先红（确数后补）；将legacy fallback投影原schema、复用“节奏：”前缀、有限句式拒绝假设/否定更新，不引入解析运行时。
+
+- P32首次legacy投影误用全model_dump注入默认null，邻近2 failed/3 passed/33 setup errors/2.40s；修正set.exclude_unset，原断言保留，38 passed/15.25s。类型测试budget用str被mypy拒绝，改Decimal不改变金额/断言。P34否定整句虽不写仍进入无关查询，真实HTTP另红2 pass/1 fail/0.82s；加明确未更新澄清、0工具，专项6 pass/0.89s。
+- Chrome首轮无需右侧：gateenabled/formGate0；直接规定札幌句→右侧目的地/10-17至10-18/2成人/5岁/8万和6来源标签，助手追问房间数。独立P35“特别”误判红12 pass/1 fail/0.06s；浏览器又发现P36选择框仍未设，rightCity已正确/selectedLabel未设断言红，接着复用现有摘要更新逻辑。两项继续先红后绿，不覆盖原7SDK基线。
+- P37 Chrome实际红：已保存慢节奏但收起摘要精确值count0；新增空旅行仅1间房，PG rooms1/rev1/其余未知，摘要roomValue0/empty1断言失败。未改数据/未补默认；将门槛补齐现有可展示字段并复用currentPace。
+- 完整回归本轮exit1：11 failed/1070 passed/1 skipped/1 deselected/256.74s；原7 SDK之外新增diagnostics2/eval_metrics1/sdk_database1。固定工具响应未声明明确覆盖手填字段，新语义保护导致no-op。P38先记录实际红，再仅补explicit_fields测试输入保持原断言；不放开业务保护、不算本轮全绿。前一正在运行full因新修复主动CtrlC130，没有最终计数。
+- 修后P35领域31 passed/0.18s；P33/P34同轮8 passed/4 failed/0.06s红→30 passed/0.17s；P36 helper文件缺失79 passed/1 suite红→81 passed。P38只补明确字段输入，专项8 passed/4.60s，原全部assert不变；首编辑误用python无命令未执行，改uv run python后重跑，未把无改动重跑当绿。
+- Chrome/本地PG：规定首句rev1六来源，未知留空；仅手填成人4rev2/user_form，模糊3rev2保留4，明确改成3rev3/仅adults差异并告知；否定清空原8万/rev3不变且0tool；全程6万/住宿每房每晚2–3万/房1/慢节奏rev4都原值保存。另一个空旅行仅room1 rev1，摘要red0/empty1→green1/empty0；特别想去札幌rev2/cityonly，未补日期/成人/儿童/预算/节奏，标题无reload已札幌。主旅行切回后慢节奏精确count1。全部run completed，0presentation/0evidence/0付费调用，原V1一行/hash未变。证据t37-conversation-conditions.json含8阶段PG/9UI断言，早期未按sequence排序的run_results省略，仅最终ordered lists保留；两截图均已人工查看。
+- 最终当前web81 passed/358.25ms；typecheck/lint/build5路由exit0；dev check263格式/三平台strict/3契约/10入口exit0。P37/P38独立只读增量无发现（未跑测试），完整回归重新运行中；不声明全绿。无Railway/生产/真实模型调用；实时SDK用既有提示与工具，无第二解析运行时，有限fixture范围在ADR015明确。
+- 完整修后回归exit1：1074 passed/原7 SDK failed/1 skipped/1 live deselected/255.85s，P38四新增失败已消失。之后收尾发现P39金额币种子串：全程5万美元→JPY、住宿EUR→JPY，新增领域红13 passed/2 failed/0.06s；不是把本轮1074结果宣称覆盖后续修复。全程现有仅JPY契约不扩展，非JPY明确拒绝有限提取/对话澄清，住宿保明确币种而不换汇，修后重跑完整。
+- P39 HTTP首次12 passed/1 failed/1.46s：测试错误要求异币种total_lower=None；既有T3.3规则在已知房晚时保留原币EUR40000并status unknown，不换成JPY。独立只读同样发现契约误解；仅改新测试为原币40000/EUR/unknown，保所有数值不转换断言。因断言修正主动停止未完成full exit130后重跑，不将它计作通过；未改变预算计算业务规则。
+- P39独立P2发现guard只检查首个预算，同句“全程5万JPY，总预算8万美元”会写首金额；有限匹配范围内红15 passed/1 failed/0.06s（实际时长以日志为准），改finditer任一外币整句澄清/零工具，同句HTTP也纳入；不会假装解析通用多金额表达。未完成full因真实后端新增修复再次CtrlC130，最终版本重新回归。
+- P39最终领域36 passed/0.07s、来源/HTTP/工具PG14 passed/1.49s；check263/三平台strict/3契约/10入口exit0。独立复核guard全部匹配与原币换算断言无新阻塞。实际Chrome/开发PG全程5万美元未写入/0tool/仍rev4/JPY60000，住宿EUR20000原币保存rev5/1房1晚总额EUR20000/关系unknown，明确恢复住宿JPY2–3万rev6且其他conditions完全相等；原V1/hash不变，0酒店/模型调用。证据JSON增加三阶段总11阶段PG；外币截图已查看，既有两张也已查看。最终完整测试运行中。
+- 最终完整 `uv run python scripts/dev.py test` exit1：1080 passed/原7 SDK failed/1 skipped/1 live deselected/259.55s；失败集合逐名与前一已闭环1074结果和P05相同，无新增失败。不是全绿，R6前仍须解决P05。dev check263、web81/type/lint/build5路由已通过（P39仅后端/测试，前端未再改）；git diff --check/check_docs10入口exit0。实现待commit/push。

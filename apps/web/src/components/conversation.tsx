@@ -80,7 +80,6 @@ export function Conversation({
   const { run } = workspace;
   const step = currentStep(workspace);
   const running = ["running", "cancelling"].includes(run?.status ?? "");
-  const noRevision = !workspace.request?.revision;
   const currentPrompt = workspace.history.find(
     (row) => row.run_id === run?.run_id,
   )?.prompt;
@@ -113,7 +112,7 @@ export function Conversation({
                     <button
                       key={label}
                       className="chip"
-                      disabled={workspace.busy || noRevision}
+                      disabled={workspace.busy}
                       onClick={() => send(`演示：${label}`, "offline")}
                     >
                       {label}
@@ -129,9 +128,6 @@ export function Conversation({
                     </button>
                   ))}
             </div>
-            {mode === "offline" && noRevision && (
-              <p className="small muted">先在右侧确认旅行条件</p>
-            )}
             <p className="small muted">
               实时规划支持日本国内；离线演示使用京都样本。
             </p>

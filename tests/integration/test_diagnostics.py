@@ -68,7 +68,11 @@ def test_single_injected_root_is_located_from_actual_tool_and_database_facts(
     async def execute(url: str) -> Fact:
         executor = TravelToolExecutor(travel)
         name = "update_travel_request"
-        arguments: dict[str, object] = {"expected_revision": 1, "set": {"adults": 3}}
+        arguments: dict[str, object] = {
+            "expected_revision": 1,
+            "set": {"adults": 3},
+            "explicit_fields": ["adults"],
+        }
         previous = await travel.get_request(context)
         record = None
         if cause == "tool_selection_or_args":
@@ -101,7 +105,11 @@ def test_single_injected_root_is_located_from_actual_tool_and_database_facts(
                     ),
                 )
         elif cause == "state_commit":
-            arguments = {"expected_revision": previous.revision - 1, "set": {"adults": 3}}
+            arguments = {
+                "expected_revision": previous.revision - 1,
+                "set": {"adults": 3},
+                "explicit_fields": ["adults"],
+            }
         result = await execute_observed(
             executor,
             context,
@@ -190,7 +198,7 @@ def test_normal_actual_tool_and_database_control_has_no_failure_cause(
             TravelToolExecutor(travel),
             context,
             "update_travel_request",
-            {"expected_revision": 1, "set": {"adults": 3}},
+            {"expected_revision": 1, "set": {"adults": 3}, "explicit_fields": ["adults"]},
             events.append,
             definition=next(d for d in DEFINITIONS if d.name == "update_travel_request"),
         )

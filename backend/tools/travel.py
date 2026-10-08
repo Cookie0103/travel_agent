@@ -15,11 +15,16 @@ from sqlalchemy.exc import SQLAlchemyError
 from backend.adapters.live_data import LiveData
 from backend.adapters.open_meteo import forecast
 from backend.domain.booking import HoldHotelInput
+from backend.domain.condition_labels import update_message
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
 from backend.domain.plans import StageInput
-from backend.domain.travel_request import RequestPatch, lodging_budget_relation
+from backend.domain.travel_request import (
+    ConversationRequestPatch,
+    RequestPatch,
+    lodging_budget_relation,
+)
 from backend.services.bookings import BookingService
 from backend.services.catalog import CatalogResult, CatalogService
 from backend.services.common import ServiceError
@@ -112,8 +117,11 @@ DEFINITIONS = (
         "update_travel_request",
         "只记录用户明确表达的条件；set/clear，必须检查expected_revision。"
         "全程budget与lodging_budget原值同时保留；后者是住宿分项，注明区间/口径/币种。"
+        "每轮提取用户说出的目的地/日期/同行者/房间/两预算/节奏，不要求先填右侧。"
+        "手填值优先；明确改成新值的字段列入explicit_fields，模糊提取不要列入。"
+        "回执skipped_fields未更新，必须追问；实际更新向用户告知回执message。"
         "返回预算冲突时先追问以哪个为准，回答后只改用户指定字段，不比较酒店。",
-        RequestPatch.model_json_schema(),
+        ConversationRequestPatch.model_json_schema(),
         kind="state",
     ),
     ToolDefinition(
@@ -178,7 +186,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "search_content": ContentSearchInput,
     "get_article": EntityInput,
     "get_place_facts": EntityInput,
-    "update_travel_request": RequestPatch,
+    "update_travel_request": ConversationRequestPatch,
     "load_skill": SkillInput,
     "search_hotel_offers": HotelSearchInput,
     "refresh_hotel_offer": RefreshOfferInput,
@@ -457,7 +465,13 @@ class TravelToolExecutor:
         if isinstance(parsed, HotelSearchInput | RefreshOfferInput | PresentationInput):
             return await self._hotel_result(context, parsed)
         if isinstance(parsed, RequestPatch):
-            update = await self.travel.patch_request(context, parsed)
+            assert isinstance(parsed, ConversationRequestPatch)
+            update = await self.travel.patch_request(
+                context,
+                parsed,
+                source="conversation",
+                explicit_fields=parsed.explicit_fields,
+            )
             return ToolResult(
                 {
                     "request_revision": update.request.revision,
@@ -466,6 +480,11 @@ class TravelToolExecutor:
                     ),
                     "hotel_requirements": update.request.hotel_requirements(),
                     "changed_fields": update.changed_fields,
+                    "skipped_fields": update.skipped_fields,
+                    "field_sources": update.field_sources,
+                    "message": update_message(
+                        update.request, update.changed_fields, update.skipped_fields
+                    ),
                 }
             )
         if isinstance(parsed, SkillInput):

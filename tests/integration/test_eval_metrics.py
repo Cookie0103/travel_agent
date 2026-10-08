@@ -19,10 +19,12 @@ def test_successful_database_patch_with_wrong_dates_does_not_get_accurate_call_c
     runner, travel, context = travel_setup
     expected: dict[str, object] = {
         "expected_revision": 1,
+        "explicit_fields": ["start_date", "end_date"],
         "set": {"start_date": "2026-11-03", "end_date": "2026-11-05"},
     }
     actual: dict[str, object] = {
         "expected_revision": 1,
+        "explicit_fields": ["start_date", "end_date"],
         "set": {"start_date": "2026-11-10", "end_date": "2026-11-12"},
     }
 
