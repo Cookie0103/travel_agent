@@ -2,6 +2,7 @@
 "use client";
 import type { Booking } from "@/lib/api";
 import { SourceRef, useClock } from "./results";
+import { errorExplanation } from "@/lib/error-explanation";
 import { bookingCanConfirm, partyLabel } from "@/lib/availability";
 
 const labels: Record<Booking["status"], string> = {
@@ -120,7 +121,9 @@ export function Bookings({
             )}
             {booking.order_id && <p>模拟订单号 {booking.order_id}</p>}
             {booking.error_code && (
-              <p className="warning">供应商状态：{booking.error_code}</p>
+              <p className="warning">
+                供应商状态：{errorExplanation(booking.error_code)}
+              </p>
             )}
             {["failed", "expired"].includes(booking.status) && (
               <p>请重新比较酒店获取新报价。</p>

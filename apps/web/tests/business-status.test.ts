@@ -1,7 +1,12 @@
 /** UI status is based on committed server tool facts, never on optimistic answer text. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { runLabel } from "../src/lib/business-status.ts";
+import {
+  runLabel,
+  runStatus,
+  runFailureMessage,
+  runErrorMessage,
+} from "../src/lib/business-status.ts";
 import type { Run } from "../src/lib/api.ts";
 const run: Run = {
   run_id: "run",
@@ -80,5 +85,51 @@ test("staged is not saved; only server confirmation reports a formal version", (
       },
     }),
     "已取消 · 草稿已暂存，部分可校验，尚未保存",
+  );
+});
+
+test("unknown and prototype statuses have a Chinese fallback", () => {
+  for (const status of ["new_status", "constructor", "toString", "__proto__"])
+    assert.equal(runStatus(status), "状态暂不明确");
+  assert.equal(runStatus("awaiting_user"), "等你操作");
+});
+test("run failures explain the real category without leaking codes or blaming credentials", () => {
+  assert.equal(
+    runFailureMessage("validation"),
+    "执行未完成：校验未通过：条件或修改不符合要求，请核对相关信息。",
+  );
+  assert.equal(
+    runFailureMessage("timeout"),
+    "执行未完成：响应超时：已完成的步骤仍保留；超时不代表密钥或额度有误。",
+  );
+  assert.equal(
+    runFailureMessage("constructor"),
+    "执行未完成：原因暂不明确：请读取最新状态或稍后重试。",
+  );
+});
+
+test("partial answers keep timeout and provider failure explanations, including history", () => {
+  for (const error_code of ["timeout", "provider_error"] as const) {
+    const failed = {
+      ...run,
+      status: "failed" as const,
+      answer: "京都東急ホテル已有信息",
+      error_code,
+    };
+    assert.equal(runErrorMessage(failed), runFailureMessage(error_code));
+    assert.equal(failed.answer, "京都東急ホテル已有信息");
+  }
+  assert.equal(runErrorMessage(run), undefined);
+  assert.equal(
+    runErrorMessage({
+      ...run,
+      error_code: "conflict",
+      business_result: {
+        kind: "stage_failed",
+        code: "conflict",
+        reason: "plan_exists",
+      },
+    }),
+    undefined,
   );
 });

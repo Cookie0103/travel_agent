@@ -399,3 +399,13 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - T3.4最终相关领域/提示/fixture/预算/外部映射单测110 passed/0.62s；P42同unknown内优先全局提醒，硬conflict优先测试8闭馆在前8，12上限不变。P43正向类别集合，非景点/未知不计；Google缺types保unknown且名称坐标不变。dev check263格式/三平台strict/3契约/10入口exit0；完整离线test/web兼容检查与独立增量复核运行中。未调用真实模型/供应商，无DB迁移/生产操作。
 - 最终 `uv run python scripts/dev.py test` exit1：1111 passed/原7 SDK failed/1 skipped/1 live deselected/259.98s；失败集合逐名与T3.7/P05相同，没有新增回归。web81 passed/363.27ms/typecheck/lint/build5路由exit0；最后dev check263/三平台strict/3契约/10入口exit0。独立只读P40–43复核无新增，不跑测试/不改文件。受控纯领域5案例t34-validator-warnings.json落盘，不冒称浏览器/实际模型验收；无新持久字段/付费/生产操作。git diff --check/check_docs10入口通过。
 - 实现 `c7f71ec8f8a0bc29dacf947f3ba65c85f431b6c8`已提交/push，远端SHA一致/checkout干净；T3.4与P40–43 done，C18 STAR完成；恢复点T3.5。
+
+## 2026-10-08 T3.5 中文状态与错误
+
+- 开工git status空/HEAD d28eeef/当前分支；仅本人T3.5 doing记录。按需读persona/fixture_runtime/前端errorExplanation与当前历史状态/预订模板/design05语言规则。
+- Chrome固定“演示：未知”实际failed，横幅和当前模板泄出validation且错误归因密钥/额度；只读本地PG revision6不变、0工具、0Evidence、原V1一行/hash不变；没有真实模型/供应商调用。P44/P45记录后开始固定红测。
+- 固定红：web80 passed/1 suite failed/289.19ms（runFailureMessage不存在），独立node断言runStatus new_status!=中文回退；pytest persona/查询3 failed/18 passed/0.38s（中文专名规则、来源模式与空结果类别）。修后pytest含酒店专名34 passed/0.35s、web83 passed/298.97ms。日文酒店/房型card原样保持；fixture名称/来源标识原样，不用“含汉字”假称中文。
+- 首check新增测试execute缺return annotation，mypy strict报1错误；补ToolResult类型、不ignore后check263/三平台/3契约/10入口exit0。web type/lint/build5路由exit0。本地服务首次猜错standalone/apps/web路径退出1；按实际standalone/server.js启动但未先复制static，Chrome ChunkLoadError。复制ignored static并重启后恢复，未改产品/部署配置。
+- Chrome最新构建：刷新历史旧失败已中文；新发同固定输入，当前/历史/横幅中文，原raw banner与错误额度归因count均0。只读PG两次failed仅started/failed、0工具/0Evidence/revision6不变/原V1一行hash不变；截图t35-chinese-errors.png已查看，固定JSON保存，真实模型语言仍未验证。
+- 独立P2/P46：已有部分answer使普通失败与历史timeout说明隐藏（源码REASONED）；新增同一runErrorMessage入口，两处同用、保留原回答，stageGuidance优先。新测试缺export先80 pass/1 suite fail/302.30ms→最终web84 passed/293.93ms；type/lint和最终build5路由exit0，独立增量关闭P2/无新发现。全量Python未修改P46无须重启，仍执行中。
+- 最终完整 `uv run python scripts/dev.py test` exit1：1115 passed/原7 SDK failed/1 skipped/1 live deselected/256.98s；逐名比较T3.4原7完全一致，无新增失败，不宣称全绿。最终web84 passed/293.93ms/type/lint/build5路由、dev check263/三平台/3契约/10入口通过；最后check_docs与git diff --check exit0。P46独立只读关闭、无新发现。最终构建刷新两条历史错误均中文/raw validation0；未追加第三次失败写入。

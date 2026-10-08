@@ -135,3 +135,11 @@ def test_lodging_limit_uses_current_sub_budget_not_trip_total_or_lower_bound() -
         }
     )
     assert cheap.card(foreign)["lodging_exceeds_lodging_budget"] is None
+
+
+def test_hotel_card_preserves_japanese_supplier_name_without_translation() -> None:
+    value = offer().model_copy(
+        update={"hotel_name": "京都東急ホテル", "room_type": "スタンダードツイン"}
+    )
+    assert value.card()["hotel_name"] == "京都東急ホテル"
+    assert value.card()["room_type"] == "スタンダードツイン"

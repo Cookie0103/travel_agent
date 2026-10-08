@@ -1,4 +1,5 @@
 import type { Run } from "./api";
+import { errorExplanation } from "./error-explanation.ts";
 const runtimeLabels: Record<string, string> = {
   running: "处理中",
   cancelling: "取消中",
@@ -8,7 +9,11 @@ const runtimeLabels: Record<string, string> = {
   partial: "部分完成",
   awaiting_user: "等你操作",
 };
-export const runStatus = (status: string) => runtimeLabels[status] ?? status;
+export const runStatus = (status: string): string =>
+  Object.hasOwn(runtimeLabels, status) ? runtimeLabels[status] : "状态暂不明确";
+
+export const runFailureMessage = (code: string | null | undefined): string =>
+  `执行未完成：${errorExplanation(code)}`;
 
 /** A completed reply is not proof of staging, validation or a formal commit. */
 export function runLabel(run: Run): string {
@@ -71,4 +76,11 @@ export function stageGuidance(run: Run) {
         existingPlan: false,
       };
   }
+}
+
+/** Partial answer text does not replace a trustworthy failure category. */
+export function runErrorMessage(run: Run): string | undefined {
+  return run.error_code && !stageGuidance(run)
+    ? runFailureMessage(run.error_code)
+    : undefined;
 }

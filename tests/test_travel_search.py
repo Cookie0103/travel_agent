@@ -10,6 +10,7 @@ import pytest
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext
+from backend.tools.contracts import ToolResult
 from backend.tools.search import SearchExecutor, load_fixture
 
 
@@ -113,3 +114,31 @@ async def test_article_schema_only_accepts_supported_filters() -> None:
     )
     assert invalid.code == "validation"
     assert category.code is None and not category.empty and "漫画" in str(category.data)
+
+
+@pytest.mark.asyncio
+async def test_offline_query_uses_chinese_labels_and_preserves_original_names() -> None:
+    class NamedExecutor:
+        async def execute(
+            self, context: RunContext, name: str, arguments: dict[str, object]
+        ) -> ToolResult:
+
+            key = "places" if name == "search_places" else "articles"
+            return ToolResult({key: [{"name": "京都東急ホテル", "source_ref": "fixture:jp-name"}]})
+
+    outcome = await FixtureRuntime(NamedExecutor()).execute(
+        RunContext(uuid4()), "京都景点", None, lambda e: None, asyncio.Event()
+    )
+    assert outcome.text.count("京都東急ホテル") == 2
+    assert "fixture:jp-name；人工测试集" in outcome.text
+    assert "；fixture，" not in outcome.text
+
+
+@pytest.mark.asyncio
+async def test_offline_empty_query_categories_are_chinese() -> None:
+    outcome = await FixtureRuntime(SearchExecutor(lambda: {"places": [], "articles": []})).execute(
+        RunContext(uuid4()), "京都景点", None, lambda e: None, asyncio.Event()
+    )
+    assert "没有匹配的景点数据" in outcome.text
+    assert "没有匹配的攻略文章数据" in outcome.text
+    assert "places" not in outcome.text and "articles" not in outcome.text

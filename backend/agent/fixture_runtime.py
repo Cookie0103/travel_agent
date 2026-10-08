@@ -121,7 +121,8 @@ class FixtureRuntime:
             if not isinstance(items, list):
                 return RuntimeOutcome(code="provider_error", reason="invalid_tool_result")
             if not items:
-                rows.append(f"{city}：没有匹配的{collection}数据。")
+                category = "景点" if collection == "places" else "攻略文章"
+                rows.append(f"{city}：没有匹配的{category}数据。")
             label_mode = "人工测试集" if result.data_mode == "fixture" else "历史快照，非实时事实"
             for item in items:
                 if isinstance(item, dict):
@@ -132,7 +133,7 @@ class FixtureRuntime:
                         if isinstance(source, dict)
                         else item.get("source_ref")
                     )
-                    rows.append(f"- {label}（来源：{ref}；{result.data_mode}，{label_mode}）")
+                    rows.append(f"- {label}（来源：{ref}；{label_mode}）")
         text = "\n".join(rows)
         emit(RuntimeEvent(context, "text", text=text))
         return RuntimeOutcome(text, sdk_session_id or str(uuid4()))

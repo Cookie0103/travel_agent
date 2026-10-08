@@ -13,7 +13,11 @@ import {
 import type { Mode } from "./composer";
 import { RunSteps } from "./activity-drawer";
 import { Markdown } from "./markdown";
-import { runLabel, stageGuidance } from "@/lib/business-status";
+import {
+  runLabel,
+  stageGuidance,
+  runErrorMessage,
+} from "@/lib/business-status";
 
 const presets = ["比较酒店", "生成行程", "修改第二天下午"];
 const examples = [
@@ -149,8 +153,8 @@ export function Conversation({
                     <Markdown text={row.answer} />
                   </div>
                 )}
-                {row.error_code && !row.answer && !stageGuidance(row) && (
-                  <p className="error">执行未完成：{row.error_code}</p>
+                {runErrorMessage(row) && (
+                  <p className="error">{runErrorMessage(row)}</p>
                 )}
                 <StageFailure
                   workspace={workspace}
@@ -195,15 +199,9 @@ export function Conversation({
                 <Markdown text={run.answer} />
               </div>
             )}
-            {run.error_code &&
-              !stageGuidance(run) &&
-              (run.error_code === "timeout" || !run.answer) && (
-                <p className="error">
-                  {run.error_code === "timeout"
-                    ? "模型或工具响应超时，本轮执行未完成。已完成的步骤仍保留；超时不代表密钥或额度有误。"
-                    : `执行未完成：${run.error_code}。请检查模型配置或调用额度。`}
-                </p>
-              )}
+            {runErrorMessage(run) && (
+              <p className="error">{runErrorMessage(run)}</p>
+            )}
             <StageFailure
               workspace={workspace}
               run={run}

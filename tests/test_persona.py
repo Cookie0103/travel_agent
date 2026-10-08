@@ -74,3 +74,9 @@ def test_trip_pace_is_asked_for_without_defaulting_unspoken_user_facts() -> None
     prompt = travel_prompt()
     assert "未说明节奏按标准" not in prompt
     assert "节奏未说明时留空" in prompt
+
+
+def test_chinese_explanations_preserve_original_proper_names() -> None:
+    prompt = travel_prompt()
+    assert "状态、错误与解释使用中文" in prompt
+    assert "酒店、景点的日文专有名称保留原文" in prompt

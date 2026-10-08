@@ -24,6 +24,7 @@ import {
   type Booking,
 } from "./api";
 import type { components } from "./api-types";
+import { runFailureMessage } from "./business-status";
 import { updateTripSummary } from "./trip-summary";
 import {
   isCardEvent,
@@ -214,7 +215,7 @@ export function useWorkspace({
         if (!active()) return;
         setBookings(savedBookings);
         if (final.error_code && final.business_result?.kind !== "stage_failed")
-          setError(final.answer || `执行失败：${final.error_code}`);
+          setError(runFailureMessage(final.error_code));
       } catch (failure) {
         if (active()) fail(failure);
       } finally {
