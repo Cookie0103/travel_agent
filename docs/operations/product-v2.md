@@ -327,3 +327,15 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 只读PG三个独立案例每个formal V1/版本行1/draft.confirmed_version1/confirm HTTP1，原已有V1哈希87e4…25f不变；所有请求为本地默认离线样例。故障探针已CtrlC停止、flag移除，默认DEMO_MODE API已恢复。全部截图人工查看，无token/密钥/私人对话。证据t25-confirmation-readback.json/红与两类绿截图。
 - 最终前端 `pnpm --dir apps/web run test`65 passed/280.17ms；`run typecheck`/`run lint`/`run build`5路由退出0；`uv run python scripts/dev.py check`254文件/三平台strict/3契约/10入口通过。`uv run python scripts/dev.py test`1027 passed/7 failed/1 skipped/1 live deselected/255.38s，失败逐项同P-05；既有真实PG并发确认测试通过。全程Python源码未变，完整进程期间修前端P21/P22后前端全部检查重跑；不以旧前端检查代替最终状态。独立P2已修复并复核无新发现，最终只读源码/JSON无新发现，P3指出§7/P01陈旧“未实施”已按实测同步更正；commit待完成。
 - 实现`ea419749b6ed869a4b5b168a904c409a6c3dd9a8`已提交/push，远端SHA完全一致；P20–22及T2.5证据已回写计划，§7/P01陈旧记录同步更正。P01原线上根因未知仍doing，C2整体候选；本次可复现确认/读回边界另沉淀STAR。
+
+## 2026-10-08 T3.1 条件表单的无变化保存
+
+- 开工`git status --short`空，HEAD/远端`cb4bdcc268a13b67a78a17002e6f7db80976150a`一致。按需读取Conditions/pace/api/saveConditions/domain apply_request_patch/PG no-op/ADR015边界。后端已有规范化no-op；前端全量注入隐藏默认（京都/日期/2成人/1房/5万/步行/9点/标准节奏），mergePace重新排序。采用diff/set-clear与空diff不发PATCH，保留卡片；未引入新字段/持久标志。
+- `pnpm --dir apps/web run test`首红64 passed/3 failed/279.16ms（新diff模块缺失、未知pace错误默认、同pace重排）；实现后72 passed/289.95ms。Conditions单一空值form state，无示例/默认填入，原unknown children空输入保持未知；按原始条件diff/Decimal预算/零秒time规范化，显式清除用已有clear，未变saveConditions不进入action、不清卡片。儿童显式unknown/none/infant选择留T3.2。
+- Chrome旧bundle原合成T2.5最终旅行不改可见字段保存：PG revision1→2/soft_constraints空→节奏标准，PATCH0→1；正式V1行数1/哈希d254…505d未改。明确assert revision unchanged失败，原问题本地VERIFIED。首次typecheck失败TS2739：生成TravelConditions输出类型要求序列化默认字段，不能把其全类型当set输入；改为既有Partial<TravelConditions>与已有clear类型，不为满足类型注入默认。lint/check已过，最终前端检查重跑待核对。
+- 独立P2计数等价仍PATCH/清卡片（P23）：新增2.0/01实际回归72 passed/1 failed/299.20ms，扩有限数值等价比较。P3原生约束（P24）Chrome旧表单填0.50与09:00:30，DOM budget rangeUnderflow=true/time stepMismatch=true，两者validfalse且明确失败断言；仅填不提交，改预算min0.01/time stepany，保持既有后端契约。最终检查/同输入valid与无变化保存保卡片待验收。
+
+- 最终 `pnpm --dir apps/web run test`73 passed/287.78ms；`run typecheck`/`run lint`/`run build`5路由退出0，`uv run python scripts/dev.py check`254文件/三平台strict/3契约/10入口。完整 `uv run python scripts/dev.py test`1027 passed/原7 SDK failed/1 skipped/1 live deselected/258.39s，失败清单逐项同P-05；Python源码未改，最终前端检查在P23/P24修后重跑。
+- Chrome最终UI三次no-op（直接保存、2.0/01/50000.00、酒店卡片存在时2.0/01）：PG revision2/soft标准/PATCH1始终不变，唯一V1/哈希d254…505d不变。卡片验证前显式发1“演示：比较酒店”离线消息，真实生成1比较面板/3暂留按钮；保存后仍1/3，不冒称0总写入。P24相同0.50与09:00:30均validtrue/rangeUnderflowfalse/stepMismatchfalse，仅填不保存，reload丢弃。
+- 切换已有空白T2.2旅行：form所有条件输入/未知select值为空；未改保存后只读PG revision0/child_ages null/八字段null，PATCH总数仍1（仅旧UI红那次）。未知儿童不被置[]；儿童显式三状态留T3.2，空白页旧离线门槛仍留T3.7。证据t31-condition-noop.json，两截图人工查看；初次卡片截图位于上方看不到卡，滚动后替换为三酒店可见图，实际DOM计数与PG为验收依据。
+- 最终独立只读审查源码/测试/计划/ops/JSON/两截图，无阻止提交发现；P23/P24关闭。审查未运行测试/未修改文件。`git diff --check`与`uv run python scripts/check_docs.py`退出0；实现commit待完成。

@@ -38,6 +38,7 @@ import {
 } from "./identity-storage";
 import { mergeHistory, mergeRun } from "./history";
 import type { Mode } from "./models";
+import type { ConditionPatch } from "./condition-patch";
 
 const message = (error: unknown) =>
   error instanceof Error ? error.message : "操作失败，请重试。";
@@ -499,17 +500,20 @@ export function useWorkspace({
       setTripCursor(page.next_cursor);
     });
   }
-  async function saveConditions(
-    fields: Partial<components["schemas"]["TravelConditions"]>,
-  ) {
+  async function saveConditions(patch: ConditionPatch) {
     if (!identity || !request) return;
+    if (
+      Object.keys(patch.set ?? {}).length === 0 &&
+      !(patch.clear ?? []).length
+    )
+      return true;
     return await action(async (read, active) => {
       const result = await read(
         api<components["schemas"]["RequestUpdate"]>(
           `/sessions/${identity.session_id}/request`,
           identity.token,
           "PATCH",
-          { expected_revision: request.revision, set: fields },
+          { expected_revision: request.revision, ...patch },
         ),
       );
       if (!active()) return;
