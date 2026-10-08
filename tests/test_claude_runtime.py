@@ -115,8 +115,8 @@ class CompactionClient(ScriptedClient):
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("sdk_version", "cli_version"),
-    [("0.2.163", v) for v in ("2.1.113", "2.1.115", "", "future", "test")]
-    + [(v, "2.1.114") for v in ("0.2.162", "0.2.164", "", "future")],
+    [("0.2.163", v) for v in ("2.1.113", "2.1.115", "2.1.293", "2.1.295", "", "future", "test")]
+    + [(v, cli) for cli in ("2.1.114", "2.1.294") for v in ("0.2.162", "0.2.164", "", "future")],
 )
 async def test_compaction_control_not_verified_stops_before_model_query(
     tmp_path: Path,
@@ -139,18 +139,20 @@ async def test_compaction_control_not_verified_stops_before_model_query(
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("cli_version", ["2.1.114", "2.1.294"])
 @pytest.mark.parametrize("unexpected_compaction", [False, True])
 async def test_verified_compaction_control_completes_or_stops_on_compact_event(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     unexpected_compaction: bool,
+    cli_version: str,
 ) -> None:
     messages: list[Message] = [ResultMessage("success", 1, 1, False, 1, "sdk", result="done")]
     if unexpected_compaction:
         messages.insert(0, SystemMessage("compact_boundary", {}))
     client = CompactionClient(messages)
     adapter = runtime(tmp_path, monkeypatch, client)
-    adapter.identity = replace(adapter.identity, sdk_version="0.2.163")
+    adapter.identity = replace(adapter.identity, sdk_version="0.2.163", cli_version=cli_version)
     adapter.config = replace(
         adapter.config, disable_auto_compaction=True, identity=adapter.identity
     )

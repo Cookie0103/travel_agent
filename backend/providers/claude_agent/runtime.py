@@ -85,7 +85,8 @@ class ClaudeRuntime:
         emit: EventSink,
     ) -> RuntimeOutcome:
         if self.config.disable_auto_compaction and (
-            self.identity.cli_version != "2.1.114" or self.identity.sdk_version != "0.2.163"
+            (self.identity.sdk_version, self.identity.cli_version)
+            not in {("0.2.163", "2.1.114"), ("0.2.163", "2.1.294")}
         ):
             # 带工具get_context_usage会请求计数API；不放开费用守卫来逐轮探测。
             # 仅使用已实测的锁定版本/官方开关，未知版本须先独立离线核验。

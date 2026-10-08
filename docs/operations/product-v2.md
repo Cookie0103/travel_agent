@@ -548,3 +548,46 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 最终web-check98pass/289.411958ms/type/lint/build5routes；dev check280/三平台/3契约/10入口均退出0。原型码首红1fail/3pass/109.110709ms，独立复核关闭；无后端改动未重跑全量，T4.5原7SDK门槛仍未解决。
 - 初伪造未存在草稿ID使右侧GET404，失败，不能作为展示证据；.cache/t52_seed_real.py调用现CatalogService离线快照，额外一份opening_hours=None明确fixture证据，四项同景点两未知两闭馆，用实际PlanService.stage产conflict草稿8e3536e4-5d61-4d72-b34c-e8da33ad25f1。不确认、不保存正式版本。仅替换本轮脚本自造事件假ID与验收回答；现5hotel+2place证据，条件rev2/booking0/hold0/order0/原V1一行hash不变。
 - Chrome12当前明细按8组展示，完整冲突2/未知11另显/截断提示；打开营业时间未知2及路线3。普通DOM click未见hash/focus，不称通过；实际链接Enter定位第4项，focus=_r_1_-item-3/hash一致，20:00–21:00，确认禁用。两截图已查看，JSON保存。useId多实例仅静态REASONED，工作台实际只展示一份最新草稿。
+
+# P05 SDK机制核查（2026-10-08，续基线）
+- 8baa394已push/git status干净，T5.3仍等待R4，未开始依赖任务。原七项实测复现：两SDK文件选择12例，7failed/5passed/6deselected/25.25s，失败逐名与原集合相同。
+- 独立公共SDKClient(options)机制实验不走生产版本门禁、不伪造identity，真实SDK0.2.163/CLI2.1.294；default与DISABLE_AUTO_COMPACT同synthetic system、5%+100000窗口，Guard本地响应，每组2请求/0失败/0compact。仍不能证明关闭控制有效；不能据此扩大精确版本集合。
+- 官方env/model-config说明百分比仅在提前压缩会话适用、window100k–1m；streaming文档说明最终message_delta usage累计。仅官方依据，版本具体效力需实测：[环境变量](https://code.claude.com/docs/en/env-vars)、[窗口与阈值](https://code.claude.com/docs/en/model-config#default-auto-compact-thresholds)、[SSE](https://platform.claude.com/docs/en/build-with-claude/streaming)。下一实验核实最终usage字段，生产协议与Guard收费不变。
+
+- 追加SSE最终input_tokens与原初始一致，default/disabled各2请求/0compact，SDK观测usage约31951，不是usage字段被丢弃；MAX_CONTEXT_TOKENS200000单因素也各2请求/0compact。
+- 仅独立实验调用公共get_context_usage一次/组：Guard仍拒绝count_tokens，两组各2 unsupported_endpoint已记录，不扩大端点、不访问真实上游；仍返回config：max/raw100000，默认isAutoCompactEnabled=true/threshold84952，disabled=false/thresholdnull，total8249。这是只读机制诊断，不证明默认压缩已发生；5%并未反映为5000阈值，原因尚REASONED。下一按实测84952增加同样合成上下文，在请求字节预占和provider128k输入上限内注入，绝不超预占。
+- 直接Client实验保worker_environment独立process/HOME/config/token、本地Guard，run_process90s最终期限及6请求上限；未继承真实登录/模型密钥，未改生产runtime。
+
+- 同合成system增到约77.7k请求字节，人工usage97949/97950且Guard合法结算、无失败，仍两组2请求/0compact。排除“仅usage低于诊断阈值”的解释；不能扩大门禁。下一只取隔离CLI官方debug-file中的压缩诊断，日志含本地合成输入、只保存cache且不提交全文/请求或token。
+
+- 官方CLI --help验证debug-file能力。隔离日志摘录VERIFIED：`fixed prefix ~97242 > threshold 4897 — compaction cannot help`，`routing through reactive (thresholdSource=env)`。publicget_context_usage给出的autoCompactThreshold84952不等于本次5%触发阈值，不能当作实际loop阈值；原推断已纠正。人工usage上界把几乎全部视为固定前缀，低阈值下原生优化不发摘要；版本因果尚未闭环。
+- 下一单因素将填充从system搬到user对话，按请求字节/4模拟usage、不超过原字节预占；保持两组同参数/5%/窗口，不改断言或应用摘要。诊断不作为真实token质量证明。
+
+- user填充约83k请求，usage20824/20825合法，默认与关闭仍2请求/0compact。native debug进一步VERIFIED：首请求前`Reactive compact: fewer than 2 groups, nothing to compact`，工具后`no assistant messages in summarize set, bailing`；当前reactive路径没有可总结的已完成旧助手组。不是全局关闭/缺工具。下一独立两工具完成组，唯一tool_use_id，保持同输入对照，探测原生保护当前工具组的规则。
+
+# 2026-10-09 P05 续查
+- 两工具组独立实验default/disabled各3请求、2工具成功、0compact；原生仍无可总结助手，第三次失败触发circuit breaker。已完成用户对话一轮再query的实验仍各3请求/0compact，原生保护切片里无assistant。实验requests.summary字段基于全请求字符串，普通消息包含“synthetic summary”也为true，不能作摘要请求证明；只有单消息+摘要内容与boundary才有证明力。
+- 仅读SDK本机公开transport确认优先自带CLI；明确现存_bundled/claude路径2.1.286。下一原两条测试显式该路径对照，不改用户全局CLI、不新安装或放宽生产门禁。
+
+- 显式SDK bundled2.1.286原两项仍2failed/4deselected/7.44s，不是换自带CLI就能修复；未改默认CLI。
+- response消息ID去重复独立实验无改进，不足单独解释原失败。以短用户消息+在2048输出预算内2000合成usage的已完成助手历史，default首次实际compact_boundary1，disabled0；default最后一次因原6请求限被拒，不能称完整通过。没有扩大请求限，改实验last-user识别以消除意外warmup工具往返。
+
+- 最新独立机制对照完整通过：两轮短用户/长助手历史后，默认5请求/1compact/完整结果/Guard零失败，关闭4请求/0compact/完整结果/零失败。SDK0.2.163/CLI2.1.294实际身份相同，不伪造。新reactive摘要请求仍有4条messages，最后user含REMINDER禁止工具+<summary>；旧len==1假设已被实测排除。cache过宽summary布尔不可用，不作证据。
+- P05精确pair单位红：`uv run python -m pytest tests/test_claude_runtime.py -k compaction_control -q` 2failed/11passed/16deselected/0.32s，新2.1.294受既有门禁阻止；历史pair与未知pair断言保留。ADR014先确定测试专用SDK warmup与原worker路径，不向生产引入fixture开关。独立设计复核两P2已纳入：warmup成功/无工具，摘要需业务工具之后。
+
+- 精确pair修复后单位13passed/16deselected/0.30s，关闭遇compact仍blocked/指针None。独立提出历史工具/失败吞掉风险，测试SDK子类明确拒ToolUseBlock、非成功终态/缺Result；原Runtime异常处理与生命周期保留。数据库夹具20%/100k窗口、人工22000业务usage（低于原预占）；5%系统前缀优化使旧fixture不适用，非业务历史按body/4+2000输出，不当真实token。
+
+- 实際SDK/PG首专项5passed/13deselected/17.39s：默认有boundary且完整checkpoint→原生产worker续接sdk/实际validate_itinerary partial，当前事实/过期证据排除/工具配对原断言保留；summary503已有成功tool_finished，然后provider_error且无checkpoint。全部advertises7passed/5deselected/17.49s。
+- 独立风险追加终态红3failed/0.46s（aborted_streaming/future/compact_boundary），复用outcome_from_result并明确warmup不compact→单位38passed/0.49s。warmup输入后改为三variant完全相同8000/11000、业务22000，非full恰好4请求而非范围放宽。check首行长101被ruff拒，分字面量后修；第二check282文件/mypy拒测试模块隐式导出的类属性赋值，采用测试专用setattr，不给ignore/不改生产export。
+
+- 测试专用setattr方案触发ruff B010，弃用；改标准库patch.object仅包围测试worker.main，不改SDK类或全局用户环境。两次检查失败已明确保留，不冒称已过。相关PG全部18passed/51.93s，控制输入8k/11k/22k断言通过；完整test已运行中，待结果。
+
+- 独立P3验收精度：存在tool_finished和compact并未直接证明顺序；正常用例新增成功工具事件index < compact index，5passed/18.50s。摘要请求仍保部分旧消息，不能靠假设当前工具必在摘要切片里确认顺序；在摘要发出时读取原worker已flush的本轮私有事件，要求load_skill已成功，再返回摘要/503。两个夹具反例tool_started/failed tool首红2failed/3passed/0.48s，下一验证新增守卫。
+
+- 最后阶段守卫专项 `uv run python -m pytest tests/integration/test_sdk_context.py tests/integration/test_evaluation_variants.py -k 'native_compaction_control or native_auto_compaction or summary_dependency' -q` 5passed/13deselected/18.94s。单位 `uv run python -m pytest tests/test_sdk_context_history.py tests/test_claude_runtime.py -q` 40passed/0.55s。最后check282文件/三平台strict/3契约/10入口exit0；独立P3已关闭，复核事件flush/当前run隔离，无新P2/P3。
+- 第一完整test1261passed/1skipped/1live deselected/266.50s，零失败，原七项全部绿；该运行收集在最后两个摘要前置反例加入前，因此不作为最终版。最后完整test重新运行，不删除/跳过旧七测试；最终前端 `uv run python scripts/dev.py web-check` typecheck/lint/98passed/315.281791ms/build5routes退出0。
+- 原独立公共SDK机制对照cache只导出身份/请求数/事件类型/错误码白名单为p05-sdk-compaction-control.json：default5请求/1compact，disabled4/0，零Guard失败，未保存SDK会话ID、路径、正文或token。其compact可能发生在主工具前，仅证明公开开关对照；业务工具后时序、PG与503由独立集成用例证明，不能混用。
+
+- §4补计划外T0.6承接P05基线修复，仅已有R6全量门槛内，不改变产品范围；T0.2历史采集状态不改，T6.1不提前doing。当前恢复点：代码与审查完成，最后全量仍运行，尚未提交。本轮git改动均agent产生。
+
+- 最终 `uv run python scripts/dev.py test` 1263passed/0failed/1skipped/1live deselected/269.77s（exit0）。这是最后阶段守卫/5单位反例/事件顺序断言及实际精确pair的最终版，原七项未跳过/删除、全部执行绿。自审核对改动范围，独立最终关闭P2/P3，无新发现；提交前check_docs10入口/diff check通过。无真实模型/酒店/生产操作。

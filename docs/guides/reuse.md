@@ -88,6 +88,8 @@ travel/api/main.py：MockTravel + ShoppingAgent + itinerary 展示扩展
 
 2026-10-03：锁定SDK公开SystemMessage支持compact_boundary；当前Python接口没有compact()，不套用新版CLI独有PostCompact能力。[官方环境变量](https://code.claude.com/docs/en/settings#environment-variables)中的CLAUDE_AUTOCOMPACT_PCT_OVERRIDE只用于本地机制测试。实际CLI完成自动压缩并续接规划，应用仅观察事件、读取PG快照，不实现摘要器或改写消息。真实模型摘要效果另验。
 
+2026-10-09 P05追加核验（历史记录不改写）：实际SDK0.2.163/CLI2.1.294的reactive压缩保护当前用户工具组；仅人工抬高当前组usage会遇固定前缀优化、无可总结助手。测试通过SDK公共query/receive_response生成两轮已完成助手历史，随后原生产worker/Runtime执行单业务prompt；相同20%/100k窗口、人工8k/11k/22k输入，full实际boundary、关闭模式零boundary。精确版本pair追加，不支持未知pair，若意外压缩仍中止；不添加摘要器、改写transcript或count_tokens端点。实际PG18项通过含压缩后当前快照/配对/SDK续接，以及工具后summary503无checkpoint。数据为合成机制验证，不代表真实模型摘要质量；原七基线失败与完整回归结果见[本批P05](../plans/2026-10-08-product-v2.md)。
+
 ## M0.1 当时边界（历史）
 
 - 没有调用 DeepSeek、Claude 或其他 LLM API；没有做协议实测。

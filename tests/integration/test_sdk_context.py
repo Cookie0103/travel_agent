@@ -22,7 +22,7 @@ from backend.services.common import transaction
 from backend.services.runs import MessageInput, RunService
 from backend.services.travel import TravelService
 from tests.fakes import FakeRuntime
-from tests.integration.sdk_helper import inflate_usage, run_database_worker
+from tests.integration.sdk_helper import CompactionHistory, run_database_worker
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import evidence
 from tests.integration.test_travel import travel_setup as travel_setup
@@ -59,27 +59,29 @@ def test_native_auto_compaction_keeps_current_trip_and_paired_tool_results(
     def forward(body: bytes) -> tuple[int, bytes]:
         requests.append(json.loads(body))
         status, response = scripted(body)
-        if len(requests) == 1:
-            # 人工usage与较低阈值只用于触发SDK机制，不当真实token或模型摘要质量。
-            response = inflate_usage(response, body)
         return status, response
 
+    history = CompactionHistory(forward)
     first, guard = run_database_worker(
         travel,
         context,
         tmp_path,
-        forward,
+        history,
         "读取当前条件与酒店比较步骤",
         max_attempts=6,
-        auto_compact_percent=5,
+        auto_compact_percent=20,
     )
     assert first["status"] == "success" and first["checkpoint_persisted"] is True
     assert not guard.failures
     events = TypeAdapter(list[RuntimeEvent]).validate_python(first["events"])
     assert sum(event.kind == "context_compacted" for event in events) >= 1
+    assert next(
+        i for i, e in enumerate(events) if e.kind == "tool_finished" and e.code is None
+    ) < next(i for i, e in enumerate(events) if e.kind == "context_compacted")
     assert any(event.kind == "tool_finished" and event.code is None for event in events)
-    assert len(requests) > 2
-    for request in requests:
+    assert len(history.warmups) == 2 and len(history.business) == 2
+    assert history.summaries and len(history.requests) > 4
+    for request in history.requests:
         system = request["system"]
         assert isinstance(system, list)
         text = "\n".join(block["text"] for block in system)
@@ -216,34 +218,23 @@ def test_summary_dependency_failure_does_not_save_a_complete_sdk_checkpoint(
     tmp_path: Path,
 ) -> None:
     runner, travel, context = travel_setup
-    calls = 0
-    summary: list[dict[str, object]] = []
     scripted = partial(
         scripted_response, tool_calls=((sdk_tool_name("load_skill"), {"name": "hotel-comparison"}),)
     )
-
-    def forward(body: bytes) -> tuple[int, bytes]:
-        nonlocal calls
-        calls += 1
-        request = json.loads(body)
-        if calls > 1 and len(request["messages"]) == 1:
-            summary.append(request)
-            return 503, b'{"error":{"type":"api_error","message":"fixture-summary-unavailable"}}'
-        status, response = scripted(body)
-        if calls == 1:
-            response = inflate_usage(response, body)
-        return status, response
-
+    history = CompactionHistory(scripted, summary_failure=True)
     report, guard = run_database_worker(
         travel,
         context,
         tmp_path,
-        forward,
+        history,
         "读取当前条件与酒店比较步骤",
         max_attempts=6,
-        auto_compact_percent=5,
+        auto_compact_percent=20,
     )
-    assert summary and "summary" in json.dumps(summary).casefold()
+    assert history.summaries and "summary" in json.dumps(history.summaries).casefold()
+    events = TypeAdapter(list[RuntimeEvent]).validate_python(report["events"])
+    assert any(e.kind == "tool_finished" and e.code is None for e in events)
+    assert len(history.warmups) == 2 and history.business
     assert report["status"] == "error" and report["code"] == "provider_error"
     assert "provider_error" in guard.failures and guard.attempts <= 6
     assert not (tmp_path / "worker" / "checkpoint.json").exists()

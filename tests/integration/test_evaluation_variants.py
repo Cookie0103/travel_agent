@@ -19,7 +19,7 @@ from backend.services.common import ServiceError, transaction
 from backend.services.preferences import PreferenceService
 from backend.services.travel import TravelService
 from backend.tools.travel import TravelToolExecutor
-from tests.integration.sdk_helper import inflate_usage, run_database_worker
+from tests.integration.sdk_helper import CompactionHistory, run_database_worker
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import travel_setup as travel_setup
 from tests.test_sdk_cli_offline import scripted_response
@@ -240,7 +240,7 @@ def test_native_compaction_control_with_same_usage_and_trip(
                 tool_calls=((sdk_tool_name("load_skill"), {"name": "hotel-comparison"}),),
             )
             # 两配置完全相同的人工usage/阈值；不当真实token/模型摘要质量。
-            return status, inflate_usage(content, body)
+            return status, content
         return scripted_response(
             json.dumps(
                 {
@@ -256,15 +256,16 @@ def test_native_compaction_control_with_same_usage_and_trip(
             ).encode()
         )
 
+    history = CompactionHistory(forward)
     report, guard = run_database_worker(
         travel,
         context,
         tmp_path,
-        forward,
+        history,
         "读取酒店比较步骤",
         variant=variant,
         max_attempts=6,
-        auto_compact_percent=5,
+        auto_compact_percent=20,
     )
     assert report["status"] == "success" and not guard.failures, (
         report.get("code"),
@@ -275,9 +276,16 @@ def test_native_compaction_control_with_same_usage_and_trip(
     events = TypeAdapter(list[RuntimeEvent]).validate_python(report["events"])
     compacted = sum(e.kind == "context_compacted" for e in events)
     if variant == "full":
-        assert compacted >= 1 and guard.attempts > 2
+        assert compacted >= 1 and guard.attempts > 4
+        assert history.summaries
+        assert next(
+            i for i, e in enumerate(events) if e.kind == "tool_finished" and e.code is None
+        ) < next(i for i, e in enumerate(events) if e.kind == "context_compacted")
     else:
-        assert compacted == 0 and guard.attempts == 2
+        assert compacted == 0 and guard.attempts == 4
+        assert not history.summaries
         assert report["checkpoint_persisted"] is False
     assert any(e.kind == "tool_finished" and e.code is None for e in events)
+    assert [o["input_tokens"] for o in guard.observations[:3]] == [8000, 11000, 22000]
+    assert len(history.warmups) == 2 and len(history.business) == 2
     assert runner.run(travel.get_request(context)) == before
