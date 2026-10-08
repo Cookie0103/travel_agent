@@ -176,6 +176,8 @@ quoted ──hold──▶ held ──用户点确认──▶ confirmed ──�
 
 | API | 说明 |
 | --- | --- |
+| `GET /sessions` | 当前用户旅行摘要，有界分页；新增规划契约见 [ADR-014](../adr/014-session-history.md)，实施与验收见批次 T1.1 |
+| `GET /sessions/{id}/runs` | 当前旅行轮次历史，只读恢复不重跑模型；分页/归属见 ADR-014 |
 | `POST /sessions/{id}/messages` | 发消息；`client_message_id` 去重；返回 `run_id` |
 | `GET /runs/{id}` | 读任务状态和当前快照（SSE 断开时用） |
 | `GET /runs/{id}/events` | SSE 订阅；支持 `Last-Event-ID` 补发 |

@@ -190,3 +190,11 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - PG Healthy 后完整 `uv run python scripts/dev.py test`：994 passed、7 failed、1 skipped、1 live deselected / 237.45s。`uv run python -m pytest -m integration -q -ra`：180 passed、2 failed、821 deselected / 170.96s。两套结果重叠；未标 integration 的 evaluation_variants 五项不在 marker 专项内。两套均只用本机模拟模型/HTTP 与随机隔离 PG 库，无真实上游 HTTP/金额。私有日志 ignored `.cache/t02-check.log`、`t02-web.log`、`t02-build.log`、`t02-test.log`、`t02-pg.log`。
 - 7 项失败名完整列在计划 P-05；4 项有 `blocked/auto_compaction_capability, 0 attempts`，3 项缺压缩事件/summary请求。当前 `claude --version`=2.1.294；importlib metadata SDK=0.2.163；SDK bundled `--version`=2.1.286。旧 2.1.114 本机不存在；未更新/回退用户 CLI、未放宽门禁/断言。
 - 独立只读审查：T0.2 是基线采集，可按明文退出条件记录完成，但全量并未通过；环境问题关闭为 P-04，SDK 能力缺口记 P-05，R6 必须解决。默认 offline→FixtureRuntime 不经过上述门禁，T0.4 ADR 与 T0.5 保存复核可继续。
+
+## 2026-10-08 T0.4 ADR 契约
+
+- 开工前工作区干净，分支与远端 `308c8cb` 一致。仅写 ADR-014/015 与设计入口链接，没有实现接口、字段或迁移。
+- 现有 Pydantic 模型特征实验：分别把 lodging_budget / field_sources 交给 TravelRequest.model_validate，均返回 extra_forbidden；ValidationCheck(status=unknown, code=lodging_budget_range_warning) 序列化往返通过。没有输出 token 或供应商内容。
+- 自审：历史不新增表；预算细节列是 T3.3 的增量迁移，保留旧 conditions 以兼容旧严格模型；warning 使用既有 unknown/partial，不引入第四状态。
+- 独立只读审查指出 explicit_fields 未明确参与幂等区分、来源 no-op 后缓存回执可能过时（P2）；已明确规范化 explicit_fields + 来源入口参与 operation identity，缓存命中重读来源，并列出对应 PG 测试。outbox 补身份/session 绑定和 401 失效。
+- `python3 scripts/check_docs.py`：退出 0，10 份入口；`git diff --check` 退出 0。独立复核 P2 关闭、无新增发现。纯文档提交复用 T0.2 同代码完整基线（已知 7 失败保留），仅 SKIP=project-test 避免重复；project-check 仍执行。

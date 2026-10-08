@@ -21,7 +21,7 @@
 
 | 对象 | 关键字段与规则 |
 | --- | --- |
-| TravelRequest | city、日期与时区、adults / child_ages / rooms、预算与币种、交通方式、兴趣、硬条件 / 软条件、`revision` |
+| TravelRequest | city、日期与时区、adults / child_ages / rooms、全程预算与币种、可选住宿预算区间/口径、字段来源、交通方式、兴趣、硬条件 / 软条件、`revision`；新增契约见 [ADR-015](../adr/015-lodging-budget-and-condition-source.md)，实施见批次 T3.3/T3.7 |
 | RequestPatch | `expected_revision`、来源轮次、字段操作（set / clear）。没写的字段表示不变；版本不符返回 conflict |
 | Article | article_id、标题、段落、提到的地点、标签、来源与版本、署名信息 |
 | Place | place_id、OSM id、原名 / 别名、坐标、类别、营业时间、字段级来源 |
@@ -94,7 +94,7 @@ EvidenceRecord: evidence_id, entity_id, field_path, value, provider, source_ref,
 模型负责选景点、排顺序；代码负责检查以下内容：
 1. 日期和时区、开始 / 结束时间、停留时长、路段时间够不够、有没有重复安排。
 2. 营业时间：用 OSM 的 `opening_hours` 判断。查不到营业时间时标「未知」，不能当成「营业」。
-3. 预算：分已知、估算、未知三类；住宿晚数和入住条件要对得上。
+3. 预算：分已知、估算、未知三类；住宿晚数和入住条件要对得上。住宿预算是全程分项，按用户原话保存；关系由 validator 现算，下限超全程为 conflict，仅上限超为 warning，数量/币种不可比时 unknown；冲突先追问、解决前不比较酒店，草稿不可确认。区间/来源/兼容规则唯一详述见 ADR-015。
 4. patch：`base_version` 是否最新、item_id 是否存在、是否动了用户锁定的项。
 5. 局部修改后：重新检查改动处前后的路段，以及整体的日期、预算和重复安排。
 
