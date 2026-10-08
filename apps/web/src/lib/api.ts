@@ -1,5 +1,6 @@
 /** Shared HTTP and persisted SSE reader; reconnects only read, never repeat a message. */
 import type { components } from "./api-types";
+import type { Mode } from "./models";
 export type RequestState = components["schemas"]["TravelRequest"];
 export type Run = components["schemas"]["RunView"];
 export type Plan = components["schemas"]["UiPlanView"];
@@ -44,7 +45,7 @@ export function readWhile(active: () => boolean) {
 export function messageInput(
   previous: Identity["pending_message"],
   text: string,
-  mode: "offline" | "deepseek" | "claude",
+  mode: Mode,
 ): components["schemas"]["MessageInput"] {
   if (previous && (previous.text !== text || previous.mode !== mode))
     throw new Error(

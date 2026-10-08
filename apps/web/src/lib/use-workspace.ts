@@ -19,6 +19,7 @@ import {
 } from "./api";
 import type { components } from "./api-types";
 import { isCardEvent } from "./early-cards";
+import type { Mode } from "./models";
 
 const STORAGE = "travel-demo-v2";
 const message = (error: unknown) =>
@@ -351,7 +352,7 @@ export function useWorkspace({
       }
     });
   }
-  async function send(text: string, mode: "offline" | "deepseek" | "claude") {
+  async function send(text: string, mode: Mode) {
     if (!identity || !text.trim() || busy) return;
     const started = generation.current;
     const read = readWhile(() => generation.current === started);

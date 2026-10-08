@@ -2,9 +2,9 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
 import type { components } from "./api-types";
-
-export type Mode = "offline" | "deepseek" | "claude";
 export type ModelOption = components["schemas"]["ModelOption"];
+/** 后端 MessageInput.mode 是唯一来源；本类型只是它的前端别名。 */
+export type Mode = components["schemas"]["MessageInput"]["mode"];
 export const offlineOption: ModelOption = {
   id: "offline",
   label: "离线演示",
