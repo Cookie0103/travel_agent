@@ -627,7 +627,26 @@ export function useWorkspace({
       const displayed = await read(
         api<Plan>(`/plans/${saved.plan_id}`, identity.token),
       );
-      if (active()) setPlan(displayed);
+      if (!active()) return;
+      setPlan(displayed);
+      if (planOrigin) {
+        const source = await read(
+          api<Run>(`/runs/${planOrigin.run_id}`, identity.token),
+        );
+        if (!active()) return;
+        if (!matchesRun(source, planOrigin))
+          throw new Error("确认结果不属于原旅行或轮次。");
+        setRun((old) =>
+          old?.run_id === source.run_id ? mergeRun(old, source) : old,
+        );
+        setHistory((old) =>
+          old.map((row) =>
+            row.run_id === source.run_id
+              ? { ...row, ...mergeRun(row, source) }
+              : row,
+          ),
+        );
+      }
     });
   }
   async function holdOffer(offerId: string, revision: number) {

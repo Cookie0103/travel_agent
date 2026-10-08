@@ -508,6 +508,25 @@ export interface components {
         };
         /** @enum {string} */
         BookingStatus: "quoted" | "held" | "confirmed" | "booked" | "failed" | "unknown" | "expired";
+        /** @enum {string} */
+        BusinessKind: "answer_only" | "draft_staged" | "stage_failed" | "confirmed";
+        /**
+         * BusinessResult
+         * @description Small server facts; never derive a business commit from runtime text.
+         */
+        BusinessResult: {
+            kind: components["schemas"]["BusinessKind"];
+            /** Draft Id */
+            draft_id?: string | null;
+            /** Plan Id */
+            plan_id?: string | null;
+            /** Validation Status */
+            validation_status?: ("complete" | "partial" | "conflict") | null;
+            code?: components["schemas"]["ErrorCode"] | null;
+            reason?: components["schemas"]["StageReason"] | null;
+            /** Version */
+            version?: number | null;
+        };
         /** DemoIdentity */
         DemoIdentity: {
             /**
@@ -572,6 +591,7 @@ export interface components {
             presentations: {
                 [key: string]: unknown;
             }[];
+            business_result?: components["schemas"]["BusinessResult"] | null;
             /**
              * Prompt
              * @default
@@ -1025,6 +1045,7 @@ export interface components {
             presentations: {
                 [key: string]: unknown;
             }[];
+            business_result?: components["schemas"]["BusinessResult"] | null;
         };
         /** SavedPlan */
         SavedPlan: {
@@ -1122,6 +1143,8 @@ export interface components {
              */
             data_mode: "snapshot" | "live";
         };
+        /** @enum {string} */
+        StageReason: "plan_exists" | "patch_invalid" | "repair_limit" | "other";
         /** TravelConditions */
         TravelConditions: {
             /** City */
@@ -1631,6 +1654,39 @@ export interface components {
             truncated: boolean;
         };
         /** @enum {string} */
+        UiBusinessKind: "answer_only" | "draft_staged" | "stage_failed" | "confirmed";
+        /**
+         * BusinessResult
+         * @description Small server facts; never derive a business commit from runtime text.
+         */
+        UiBusinessResult: {
+            kind: components["schemas"]["UiBusinessKind"];
+            /**
+             * Draft Id
+             * @default null
+             */
+            draft_id: string | null;
+            /**
+             * Plan Id
+             * @default null
+             */
+            plan_id: string | null;
+            /**
+             * Validation Status
+             * @default null
+             */
+            validation_status: ("complete" | "partial" | "conflict") | null;
+            /** @default null */
+            code: components["schemas"]["UiErrorCode"] | null;
+            /** @default null */
+            reason: components["schemas"]["UiStageReason"] | null;
+            /**
+             * Version
+             * @default null
+             */
+            version: number | null;
+        };
+        /** @enum {string} */
         UiErrorCode: "validation" | "blocked" | "unavailable" | "timeout" | "rate_limited" | "provider_error" | "conflict" | "cancelled";
         /** @enum {string} */
         UiEventKind: "started" | "text" | "tool_started" | "tool_finished" | "presentation" | "context_compacted" | "completed" | "failed" | "cancelled" | "partial" | "awaiting_user";
@@ -1655,6 +1711,8 @@ export interface components {
              */
             run_id?: string;
         };
+        /** @enum {string} */
+        UiStageReason: "plan_exists" | "patch_invalid" | "repair_limit" | "other";
         /**
          * RuntimeEvent
          * @description 前端/CLI 所需的最小事件；text 是用户输出，不进入公共 Trace。
@@ -1711,6 +1769,8 @@ export interface components {
              * @default []
              */
             evidence_ids: string[];
+            /** @default null */
+            business_result: components["schemas"]["UiBusinessResult"] | null;
         };
     };
     responses: never;

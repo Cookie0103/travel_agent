@@ -5,10 +5,19 @@ from dataclasses import asdict
 from datetime import UTC, datetime
 from uuid import UUID
 
+from pydantic import TypeAdapter, ValidationError
 from sqlalchemy import select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome, terminal_event
+from backend.domain.execution import (
+    BusinessResult,
+    RunContext,
+    RuntimeEvent,
+    RuntimeOutcome,
+    error_code,
+    terminal_event,
+)
+from backend.persistence import plans
 from backend.persistence.models import RunEventRow, TaskRunRow
 
 ACTIVE = ("running", "cancelling")
@@ -130,6 +139,46 @@ async def presentations(db: AsyncSession, run_id: UUID) -> tuple[dict[str, objec
         .limit(4)
     )
     return tuple(row.payload for row in reversed(list(rows)))
+
+
+async def business_result(db: AsyncSession, row: TaskRunRow) -> BusinessResult | None:
+    """Last stage result is independent from runtime completion; old success stays unknown."""
+    event = await db.scalar(
+        select(RunEventRow)
+        .where(
+            RunEventRow.run_id == row.id,
+            RunEventRow.payload["kind"].as_string().in_(("tool_started", "tool_finished")),
+            RunEventRow.payload["tool_name"].as_string() == "stage_plan_change",
+        )
+        .order_by(RunEventRow.sequence.desc())
+        .limit(1)
+    )
+    if event is None:
+        return None if row.status in ACTIVE else BusinessResult("answer_only")
+    if event.payload.get("kind") == "tool_started":
+        # The draft transaction can commit before its observed result is recorded.
+        return None
+    data = event.payload.get("business_result")
+    if not isinstance(data, dict):
+        code = event.payload.get("code")
+        return (
+            BusinessResult("stage_failed", code=error_code(code), reason="other") if code else None
+        )
+    try:
+        result = TypeAdapter(BusinessResult).validate_python(data)
+    except ValidationError:
+        return None
+    if result.kind == "stage_failed":
+        return result
+    if result.kind != "draft_staged":
+        return None
+    assert result.draft_id is not None
+    draft = await plans.draft(db, row.user_id, result.draft_id)
+    if draft is None or draft.session_id != row.session_id or draft.plan_id != result.plan_id:
+        return None
+    if draft.confirmed_version is not None:
+        return BusinessResult("confirmed", plan_id=draft.plan_id, version=draft.confirmed_version)
+    return result
 
 
 async def finish(db: AsyncSession, context: RunContext, outcome: RuntimeOutcome) -> None:

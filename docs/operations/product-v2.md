@@ -266,3 +266,16 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - Chrome新页面当前札幌未确认仍列两份京都V1；分别选择、两不同GET /plans/{id}200，刷新保持选中。这里只读，不操作export/锁定/确认。临时wrapper仅127.0.0.1/校验PG loopback/live=false：GET sessions503→错误无空；6秒列表重试→status无空→列表/V1恢复；GET plans503→两份摘要保留+详情错误；旧API404→明确不支持、重读成功清提示；注入401→身份失效，再刷新→身份未保留，均非无行程。
 - 401是注入API状态的UI边界，不冒称本轮真实expiry；T0.5曾真实本地令牌到期PG验证。关闭探针后，在仍持有有效合成身份的旧标签显式选择原京都，恢复本地测试入口，没有绕过鉴权；停wrapper，默认API恢复。PG再次只读两份V1/version_rows各1，原hash同t12；wrapper期间API0POST/PATCH/0付费调用。脱敏9截图/JSON见t15-*，截图视口不足时用真实DOM和API路径证据区分两同名合成旅行。超过20旅行未做浏览器大样本，PG分页/helper独立证据。
 - `uv run python scripts/dev.py check`：252文件、三平台strict、3契约/10入口退出0。完整 `dev test` 1014 passed/同P-05的7 failed/1 skipped/1 live deselected，256.98s；本任务Python源码未改。读取进程时长初次sandbox ps拒绝，按只读pid/etime/comm获准后确认运行3m55s，未读参数/环境/终止无关进程。
+
+## 2026-10-08 T2.1 业务结果与运行状态分离
+
+- `b9121a5`push/远端新查SHA一致，git status干净后开工；先在ADR014确定可空业务结果/事件来源/确认投影，无新表/迁移。独立契约P2：旧presentation不能证明最后stage或同run来源；放弃旧成功回填，保守返回null；保留此失败设计尝试。
+- 先红真实隔离PG `pytest tests/integration/test_run_business_result.py -q`：3 failed，runtime completed且回复“已通过，已保存”，但business_result缺失；两成功前提由真实PlanService暂存（partial/conflict），合成runtime不调用真实模型。
+
+- 工具元数据使用既有execute_observed/事件；真实PG第一组三失败→3 passed/0.91s。新增最后stage、旧成功缺元数据、其他session引用、确认后history等边界。版本类型测试发现TypeAdapter把True转1：2 passed/1 failed→strict int/正数约束→3 passed/0.28s。trace单测确认私有事件保留元数据、公共追踪不含业务ID。
+- 邻近测试原取消==GET断言实际66 passed/1 failed/20.37s，因cancel原view不含新增结果；改recorded_view复用GET/重复提交/取消，原断言未改，68 passed/19.37s。修复时停止旧全量进程退出130，未完成不算通过。随后完整1023 passed/9 failed/1 skipped/1 deselected/255.91s，其中7项原SDK、2项workbench旧快照预期；新契约要求confirm后仅business_result从draft_staged到confirmed，因此保持全对象比较且所有原runtime/presentation/event字段不变，明确新字段预期，不隐藏或忽略差异。
+- 独立审查P2：最后stage开始后结果未落库，被误判answer_only或前次结果。真实PG先提交合成草稿、模拟tool_started/进程恢复，2 failed/8 deselected/0.88s；投影读取最后开始/结束事件，最后开始则unknown/null。中断+workbench17 passed/3.03s；最终邻近77 passed/21.27s。审查复核关闭P2，无新的可行动问题，未把合成中断冒称实际SDK崩溃。
+- Chrome原合成京都正式V1再次生成：默认离线真实工具plan_exists，显示失败/草稿未生成；新第四旅行同身份保存合成条件、生成partial→尚未保存→显式确认1次→已确认V1；刷新恢复，另一轮普通查询仅回复完成。旧stage成功无元数据明确业务状态未知。0真实模型/供应商，conflict与runtime假称保存由真实隔离PG+受控runtime验证，不冒称Chrome/真实SDK。
+- 本地PG只读核对新旅行2轮，confirmed与answer_only分别归属本轮、新正式V1/version_rows1；旧旅行最新stage_failed/conflict/plan_exists、原V1/version_rows1/hash同t12。API日志仅1次confirm POST。证据`t21-business-result.json`及5张`t21-*.png`（docs/evidence/，合成数据）；初截图只显示上方旧轮次，读图后滚动至最新失败/普通查询重新保存，未冒称旧截图证明新状态。临时探针第一次未给PYTHONPATH导致ModuleNotFoundError，再用PYTHONPATH=.成功；只查loopbackPG，无生产访问。
+- web首红45 passed/1 suite failed（helper缺失）→47 passed；最终typecheck/lint/test47 passed/176.99ms，build5路由退出0。dev check254文件/三平台strict/3契约/10入口通过；修后完整回归仍在运行，最终结果随后追加。
+- 最后完整 `uv run python scripts/dev.py test`：1027 passed/7 failed/1 skipped/1 live deselected，256.32s；失败清单逐项同P-05的原SDK压缩7项，无新失败。7项不是通过、不跳过/改断言掩盖，R6不得发布。最后生成OpenAPI/TS成功、git diff --check通过；独立只读记录审查无发现，截图/JSON未见凭据或真实用户信息。

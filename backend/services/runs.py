@@ -11,11 +11,13 @@ from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.adapters.tracing import TraceMetadata, write_trace
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent, Runtime
 from backend.domain.execution import (
+    BusinessResult,
     RunContext,
     RuntimeEvent,
     RuntimeIdentity,
@@ -57,6 +59,7 @@ class RunView:
     last_sequence: int
     created_at: datetime
     presentations: tuple[dict[str, object], ...] = ()
+    business_result: BusinessResult | None = None
 
 
 def view(row: TaskRunRow | None) -> RunView:
@@ -71,6 +74,16 @@ def view(row: TaskRunRow | None) -> RunView:
         row.error_code,
         row.last_sequence,
         row.created_at,
+    )
+
+
+async def recorded_view(db: AsyncSession, row: TaskRunRow | None) -> RunView:
+    result = view(row)
+    assert row is not None
+    return replace(
+        result,
+        presentations=await runs.presentations(db, row.id),
+        business_result=await runs.business_result(db, row),
     )
 
 
@@ -135,7 +148,7 @@ class RunService:
             if previous is not None:
                 if (previous.prompt, previous.mode) != (message.text, message.mode):
                     raise ServiceError(409, "conflict", "同一消息ID不能对应不同内容或模式")
-                return view(previous)
+                return await recorded_view(db, previous)
             if await runs.active(db, session_id):
                 raise ServiceError(409, "conflict", "此会话已有执行，请先等待或取消")
             row = await runs.create(
@@ -157,8 +170,7 @@ class RunService:
     async def get(self, user_id: UUID, run_id: UUID) -> RunView:
         await self._require_recovery()
         async with transaction(self.database) as db:
-            result = view(await runs.owned(db, user_id, run_id))
-            result = replace(result, presentations=await runs.presentations(db, run_id))
+            result = await recorded_view(db, await runs.owned(db, user_id, run_id))
         if run_id in self.persistence_failures:
             raise ServiceError(503, "unavailable", "执行记录写入失败，需要恢复核对")
         now = datetime.now(result.created_at.tzinfo)
@@ -188,13 +200,13 @@ class RunService:
             row = await runs.owned(db, user_id, run_id, lock=True)
             result = view(row)
             if result.status not in runs.ACTIVE:
-                return result
+                return await recorded_view(db, row)
             if run_id not in self.cancelled:
                 raise ServiceError(409, "conflict", "原执行进程已退出，需要恢复核对")
             assert row is not None
             row.status = "cancelling"
             self.cancelled[run_id].set()
-            return view(row)
+            return await recorded_view(db, row)
 
     def _runtime(self, mode: str, executor: ToolExecutor) -> Runtime:
         if self.runtime_factory is not None:

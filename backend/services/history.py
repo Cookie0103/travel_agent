@@ -141,8 +141,9 @@ class HistoryService:
                         current.last_sequence,
                         current.created_at,
                         events,
-                        row.prompt,
-                        draft_id(events),
+                        business_result=await runs.business_result(db, row),
+                        prompt=row.prompt,
+                        draft_id=draft_id(events),
                     )
                 )
             return RunPage(tuple(items), next_before)

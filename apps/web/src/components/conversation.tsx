@@ -13,17 +13,7 @@ import {
 import type { Mode } from "./composer";
 import { RunSteps } from "./activity-drawer";
 import { Markdown } from "./markdown";
-
-const runStatusLabels: Record<string, string> = {
-  running: "处理中",
-  cancelling: "取消中",
-  completed: "完成",
-  failed: "失败",
-  cancelled: "已取消",
-  partial: "部分完成",
-  awaiting_user: "等你操作",
-};
-export const runStatus = (status: string) => runStatusLabels[status] ?? status;
+import { runLabel } from "@/lib/business-status";
 
 const presets = ["比较酒店", "生成行程", "修改第二天下午"];
 const examples = [
@@ -155,7 +145,7 @@ export function Conversation({
                 ◆
               </span>
               <div className="reply-body">
-                <p className="run-status">{runStatus(row.status)}</p>
+                <p className="run-status">{runLabel(row)}</p>
                 {row.answer && (
                   <div className="answer">
                     <Markdown text={row.answer} />
@@ -183,9 +173,7 @@ export function Conversation({
             ◆
           </span>
           <div className="reply-body">
-            <p className="run-status">
-              {running ? "处理中…" : runStatus(run.status)}
-            </p>
+            <p className="run-status">{running ? "处理中…" : runLabel(run)}</p>
             {running && !run.answer && (
               <p className="step">
                 {step ? (

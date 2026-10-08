@@ -25,3 +25,13 @@
 ## 必须验证
 
 真实 PG：两用户隔离/未知 session、空 session/空历史、两页含相同时间键、不重复不漏旧轮次、页间新增消息、limit/游标错误、数据库失败。前端：多轮刷新/导航、确认后回复仍可见、历史前插去重、不重跑模型、(session,run) 迟到事件丢弃。轮次读取不能因草稿过期而删除整条历史或正式版本。
+
+## R2 补充：轮次业务结果（2026-10-08，T2.1 前确定）
+
+- `RunView` / `HistoricalRun` 增量可空字段 `business_result`，既有 runtime `status/error_code` 不变。结果是带 kind 的对象：`answer_only`；`draft_staged` 含 draft_id、plan_id、validation_status（complete/partial/conflict）；`stage_failed` 含应用 ErrorCode 与安全 reason（plan_exists/patch_invalid/repair_limit/other）；`confirmed` 含 plan_id、version。没有模型回复文本或供应商原始结果。
+- 可信来源是共用 execute_observed 的 stage_plan_change 返回结果，写入既有 tool_finished 事件的新可空 business_result 元数据；成功必须有合法草稿/计划UUID及服务端validation状态，失败取工具应用码和白名单原因。普通 get_saved_plan/present/read工具不能把读取已有计划冒充本轮确认；回复出现“已保存”不能产生 confirmed。SDK和离线沿同一事件转换，不写新运行时。
+- Run GET/history 从本轮最后一次 stage 事件推导（失败后成功以最后一次为准）；最后是 tool_started 而没有结果时返回null，草稿事务可能已提交，不能推断answer_only或借用前次结果。无 stage 才 answer_only，运行尚未产生业务结果时可为空。新事件有结构化结果；旧 stage失败只能给应用码/other；旧 stage成功没有新结构化元数据时为空，不能拿presentation猜其草稿（展示可指向同session另一run，且不保证对应最后stage）。不回填旧成功，不能冒称回答完成或确认。
+- 确认是独立用户API动作，确认事务不依赖模型run。读取业务结果时，只有原本轮草稿的 PlanDraftRow 在同user/session且confirmed_version非空，才投影 confirmed(plan_id,confirmed_version)；不是当前旅行另一个草稿/当前计划版本。不追加确认事件、不反复确认、不回放工具。草稿报告显示的是暂存时的validator结论；草稿有效期和实时引用仍由现有读回/确认再校验约束。
+- 复用 run_events JSONB 和 PlanDraftRow，不加表/列/迁移。事件私有且与run归属一致；event_metadata保持这组小元数据，公共trace仍不导出业务ID/回复。列表分页、最多4项presentation与供应商内容保留策略不变。
+- 前端状态从该字段显示“回复完成/草稿已暂存未保存/校验冲突不能确认/草稿未生成/已确认Vx”，runtime取消/失败仍可独立显示；不会从模型文字推断保存。新前端遇缺字段旧服务显示业务状态未提供，不用客户端猜结果；旧前端忽略增量字段。conflict确认继续由服务端拒绝。
+- 验证：阶段失败但runtime成功、conflict草稿、普通查询、失败→成功/成功→失败、无presentation但stage成功、最新stage中断没有结果必须未知、旧多stage/错序展示必须未知、确认后GET/history与重启一致、其他run/其他session引用不能确认；真实PG版本不增、无副作用/付费调用。工具元数据单测与实际服务/PG/浏览器验收分别记。

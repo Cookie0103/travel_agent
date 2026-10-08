@@ -3,8 +3,10 @@
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Literal, cast, get_args
+from typing import Annotated, Literal, cast, get_args
 from uuid import UUID, uuid4
+
+from pydantic import Field
 
 type ErrorCode = Literal[
     "validation",
@@ -111,6 +113,40 @@ class SessionReference:
     id: UUID = field(default_factory=uuid4)
 
 
+type BusinessKind = Literal["answer_only", "draft_staged", "stage_failed", "confirmed"]
+type StageReason = Literal["plan_exists", "patch_invalid", "repair_limit", "other"]
+
+
+@dataclass(frozen=True)
+class BusinessResult:
+    """Small server facts; never derive a business commit from runtime text."""
+
+    kind: BusinessKind
+    draft_id: UUID | None = None
+    plan_id: UUID | None = None
+    validation_status: Literal["complete", "partial", "conflict"] | None = None
+    code: ErrorCode | None = None
+    reason: StageReason | None = None
+    version: Annotated[int, Field(strict=True, ge=1)] | None = None
+
+    def __post_init__(self) -> None:
+        required = {
+            "answer_only": set(),
+            "draft_staged": {"draft_id", "plan_id", "validation_status"},
+            "stage_failed": {"code", "reason"},
+            "confirmed": {"plan_id", "version"},
+        }
+        actual = {
+            name
+            for name in ("draft_id", "plan_id", "validation_status", "code", "reason", "version")
+            if getattr(self, name) is not None
+        }
+        if actual != required.get(self.kind) or (
+            self.version is not None and (type(self.version) is not int or self.version < 1)
+        ):
+            raise ValueError("业务结果字段不匹配")
+
+
 @dataclass(frozen=True)
 class RuntimeEvent:
     """前端/CLI 所需的最小事件；text 是用户输出，不进入公共 Trace。"""
@@ -127,6 +163,7 @@ class RuntimeEvent:
     occurred_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     request_revision: int | None = None
     evidence_ids: tuple[str, ...] = ()
+    business_result: BusinessResult | None = None
 
 
 @dataclass(frozen=True)

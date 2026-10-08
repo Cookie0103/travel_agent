@@ -4,8 +4,10 @@ import json
 import time
 from uuid import UUID, uuid4
 
+from pydantic import TypeAdapter, ValidationError
+
 from backend.agent.runtime import EventSink
-from backend.domain.execution import RunContext, RuntimeEvent
+from backend.domain.execution import BusinessResult, RunContext, RuntimeEvent
 from backend.tools.contracts import ToolDefinition, ToolExecutor, ToolResult
 from backend.trace_log import trace
 
@@ -17,6 +19,31 @@ def _chars(result: ToolResult) -> int:
         return len(json.dumps(result.payload(), ensure_ascii=False, default=str))
     except (TypeError, ValueError):
         return -1
+
+
+def stage_result(result: ToolResult) -> BusinessResult | None:
+    if result.code:
+        reason = next(
+            (v for v in result.detail if v in {"plan_exists", "patch_invalid", "repair_limit"}),
+            "other",
+        )
+        return TypeAdapter(BusinessResult).validate_python(
+            {"kind": "stage_failed", "code": result.code, "reason": reason}
+        )
+    report = result.data.get("validation")
+    if not isinstance(report, dict):
+        return None
+    try:
+        return TypeAdapter(BusinessResult).validate_python(
+            {
+                "kind": "draft_staged",
+                "draft_id": result.data.get("draft_id"),
+                "plan_id": result.data.get("plan_id"),
+                "validation_status": report.get("status"),
+            }
+        )
+    except ValidationError:
+        return None
 
 
 async def execute_observed(
@@ -79,6 +106,7 @@ async def execute_observed(
             if isinstance(revision, int) and not isinstance(revision, bool)
             else None,
             evidence_ids=result.evidence_ids,
+            business_result=stage_result(result) if safe_name == "stage_plan_change" else None,
         )
     )
     if name == "present_travel_result" and result.code is None:

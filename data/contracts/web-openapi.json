@@ -1743,6 +1743,100 @@
           "expired"
         ]
       },
+      "BusinessKind": {
+        "type": "string",
+        "enum": [
+          "answer_only",
+          "draft_staged",
+          "stage_failed",
+          "confirmed"
+        ]
+      },
+      "BusinessResult": {
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/BusinessKind"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Draft Id"
+          },
+          "plan_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan Id"
+          },
+          "validation_status": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "complete",
+                  "partial",
+                  "conflict"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Validation Status"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ErrorCode"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/StageReason"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "version": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version"
+          }
+        },
+        "type": "object",
+        "required": [
+          "kind"
+        ],
+        "title": "BusinessResult",
+        "description": "Small server facts; never derive a business commit from runtime text."
+      },
       "DemoIdentity": {
         "properties": {
           "user_id": {
@@ -1860,6 +1954,16 @@
             "type": "array",
             "title": "Presentations",
             "default": []
+          },
+          "business_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BusinessResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "prompt": {
             "type": "string",
@@ -3116,6 +3220,16 @@
             "type": "array",
             "title": "Presentations",
             "default": []
+          },
+          "business_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BusinessResult"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "type": "object",
@@ -3371,6 +3485,15 @@
           "attribution"
         ],
         "title": "Source"
+      },
+      "StageReason": {
+        "type": "string",
+        "enum": [
+          "plan_exists",
+          "patch_invalid",
+          "repair_limit",
+          "other"
+        ]
       },
       "TravelConditions": {
         "properties": {
@@ -4705,6 +4828,106 @@
         "title": "ValidationFeedback",
         "type": "object"
       },
+      "UiBusinessKind": {
+        "enum": [
+          "answer_only",
+          "draft_staged",
+          "stage_failed",
+          "confirmed"
+        ],
+        "type": "string"
+      },
+      "UiBusinessResult": {
+        "description": "Small server facts; never derive a business commit from runtime text.",
+        "properties": {
+          "kind": {
+            "$ref": "#/components/schemas/UiBusinessKind"
+          },
+          "draft_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Draft Id"
+          },
+          "plan_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Plan Id"
+          },
+          "validation_status": {
+            "anyOf": [
+              {
+                "enum": [
+                  "complete",
+                  "partial",
+                  "conflict"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Validation Status"
+          },
+          "code": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiErrorCode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiStageReason"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "version": {
+            "anyOf": [
+              {
+                "minimum": 1,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Version"
+          }
+        },
+        "required": [
+          "kind"
+        ],
+        "title": "BusinessResult",
+        "type": "object"
+      },
       "UiErrorCode": {
         "enum": [
           "validation",
@@ -4758,6 +4981,15 @@
         ],
         "title": "RunContext",
         "type": "object"
+      },
+      "UiStageReason": {
+        "enum": [
+          "plan_exists",
+          "patch_invalid",
+          "repair_limit",
+          "other"
+        ],
+        "type": "string"
       },
       "UiRuntimeEvent": {
         "description": "前端/CLI 所需的最小事件；text 是用户输出，不进入公共 Trace。",
@@ -4866,6 +5098,17 @@
             },
             "title": "Evidence Ids",
             "type": "array"
+          },
+          "business_result": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiBusinessResult"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           }
         },
         "required": [

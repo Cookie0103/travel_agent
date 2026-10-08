@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+from dataclasses import replace
 from uuid import UUID, uuid4
 
 import pytest
@@ -9,7 +10,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import URL
 
 from backend.api.app import create_app
-from backend.domain.execution import RunContext
+from backend.domain.execution import BusinessResult, RunContext
 from backend.domain.plans import StageInput
 from backend.domain.travel_request import RequestPatch
 from backend.persistence.catalog import import_catalog
@@ -97,6 +98,8 @@ def test_http_workbench_flow_and_read_only_reconnect(postgres_url: URL) -> None:
         assert [e["sequence"] for e in events] == list(range(1, len(events) + 1))
         snapshot = client.get(run_path, headers=owner).json()
         assert snapshot["status"] == "completed" and len(snapshot["presentations"]) == 1
+        assert snapshot["business_result"]["kind"] == "draft_staged"
+        assert snapshot["business_result"]["validation_status"] == "partial"
         draft_id = snapshot["presentations"][0]["presentation"]["data"]["draft_id"]
         draft_path = f"/plan-drafts/{draft_id}"
         draft = client.get(draft_path, headers=owner).json()
@@ -119,7 +122,19 @@ def test_http_workbench_flow_and_read_only_reconnect(postgres_url: URL) -> None:
         ]
         plan_path = "/plans/" + saved.json()["plan_id"]
     with TestClient(create_app(SessionService(postgres_url)), backend_options=options) as restarted:
-        assert restarted.get(run_path, headers=owner).json() == snapshot
+        # Runtime fields/events stay immutable; only the original draft's confirmation is projected.
+        assert restarted.get(run_path, headers=owner).json() == {
+            **snapshot,
+            "business_result": {
+                "kind": "confirmed",
+                "draft_id": None,
+                "plan_id": saved.json()["plan_id"],
+                "validation_status": None,
+                "code": None,
+                "reason": None,
+                "version": 1,
+            },
+        }
         assert restarted.get(plan_path, headers=owner).json()["version"] == 1
         assert restarted.get(draft_path, headers=owner).json()["status"] == "confirmed"
 
@@ -158,6 +173,7 @@ def test_offline_workbench_compares_stages_confirms_and_changes_one_item(
         assert len(hotels.cards) == 3 and hotels.comparison.comparable
         initial = await run_demo(service, context, "演示：生成行程")
         assert initial.status == "completed", initial.answer
+        assert initial.business_result and initial.business_result.kind == "draft_staged"
         payload = initial.presentations[0]["presentation"]
         assert isinstance(payload, dict) and isinstance(payload["data"], dict)
         draft_id = UUID(str(payload["data"]["draft_id"]))
@@ -230,7 +246,9 @@ def test_offline_workbench_compares_stages_confirms_and_changes_one_item(
         assert not blocked.presentations
         # 重建服务只读取落库快照，不触发模型或重复工具。
         restarted = RunService(travel.database)
-        assert await restarted.get(context.user_id, initial.run_id) == initial
+        assert await restarted.get(context.user_id, initial.run_id) == replace(
+            initial, business_result=BusinessResult("confirmed", plan_id=saved.plan_id, version=1)
+        )
         assert not restarted.tasks
         with pytest.raises(ServiceError, match="执行不存在"):
             await restarted.get(uuid4(), initial.run_id)
