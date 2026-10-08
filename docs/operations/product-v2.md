@@ -257,3 +257,12 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 移除后台hydrate/读列表的identity持久化，仅内存持有plan_id，避免旧captured identity改共享选择。首次45秒延迟超过Next proxy timeout、500/socket hang up，不算成功；改18秒，另建新鲜合成草稿确认V1，再延迟GET /plan-drafts一次；旧标签恢复中另一标签选择札幌，旧标签后来显示已确认V1，另一标签刷新仍札幌。一次Chrome locator等待超时但诊断enabled，随后新AX确认成功；没有改等待断言假通过。
 - PG只读新合成旅行4轮/普通query0presentation/current_version1；原京都version_rows1/current_version1/payload SHA256与t12一致。只有新合成旅行显式确认1次，没有重确认原旅行。截图5张与脱敏JSON见t14-*；Fixture仍京都样本，不算真实札幌数据。停止wrapper/删除flags，默认API恢复、live=false，0付费调用。
 - `uv run python scripts/dev.py check`：252文件Ruff/格式、三平台strict、3契约/10入口退出0。完整 `dev test` 1014 passed/原7 failed/1 skipped/1 live deselected，257.51s，失败名与P-05一致；本任务Python源码未改。独立只读审查酒店缓存P2修复、复核后台storage变动无发现，全部实测证据后再提交。
+
+## 2026-10-08 T1.5 全部正式行程列表
+
+- `48cb062`push、远端完整SHA一致；git status干净后开工。Chrome当前札幌未确认进入/plans显示“还没有确认的行程”、无其他旅行入口，但PG已有原京都V1及新合成京都V1。先红真实UI截图t15-red-empty.png（当时ignored）。新列表状态回归首次42 passed/1 suite failed（缺helper）；计划内复用T1.1摘要，不新增接口/字段/表。
+
+- 列表helper实现后44 passed；独立审查指出重试action清error但只有busy为true，新增回归44 passed/1 failed（empty vs loading）。修列表phase纳入busy后最终45 passed/168.13ms，typecheck/lint/build5路由退出0。savedOnly只读摘要和canonical正式计划，不因无关bookings/request失败隐藏计划；失败/404重读重新查摘要，成功清historyError。
+- Chrome新页面当前札幌未确认仍列两份京都V1；分别选择、两不同GET /plans/{id}200，刷新保持选中。这里只读，不操作export/锁定/确认。临时wrapper仅127.0.0.1/校验PG loopback/live=false：GET sessions503→错误无空；6秒列表重试→status无空→列表/V1恢复；GET plans503→两份摘要保留+详情错误；旧API404→明确不支持、重读成功清提示；注入401→身份失效，再刷新→身份未保留，均非无行程。
+- 401是注入API状态的UI边界，不冒称本轮真实expiry；T0.5曾真实本地令牌到期PG验证。关闭探针后，在仍持有有效合成身份的旧标签显式选择原京都，恢复本地测试入口，没有绕过鉴权；停wrapper，默认API恢复。PG再次只读两份V1/version_rows各1，原hash同t12；wrapper期间API0POST/PATCH/0付费调用。脱敏9截图/JSON见t15-*，截图视口不足时用真实DOM和API路径证据区分两同名合成旅行。超过20旅行未做浏览器大样本，PG分页/helper独立证据。
+- `uv run python scripts/dev.py check`：252文件、三平台strict、3契约/10入口退出0。完整 `dev test` 1014 passed/同P-05的7 failed/1 skipped/1 live deselected，256.98s；本任务Python源码未改。读取进程时长初次sandbox ps拒绝，按只读pid/etime/comm获准后确认运行3m55s，未读参数/环境/终止无关进程。

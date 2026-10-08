@@ -294,23 +294,26 @@ export function useWorkspace({
   );
   const loadTrip = useCallback(
     async (current: Identity, active: () => boolean) => {
-      const state = await api<RequestState>(
-        `/sessions/${current.session_id}/request`,
-        current.token,
-      );
-      if (!active()) return;
-      setRequest(state);
-      const savedBookings = await api<Booking[]>(
-        `/sessions/${current.session_id}/bookings`,
-        current.token,
-      );
-      if (!active()) return;
-      setBookings(savedBookings);
+      if (!savedOnly) {
+        const state = await api<RequestState>(
+          `/sessions/${current.session_id}/request`,
+          current.token,
+        );
+        if (!active()) return;
+        setRequest(state);
+        const savedBookings = await api<Booking[]>(
+          `/sessions/${current.session_id}/bookings`,
+          current.token,
+        );
+        if (!active()) return;
+        setBookings(savedBookings);
+      }
       let planId = current.plan_id;
       try {
         const selected = await readTrips(current, active);
         if (!active()) return;
         planId = selected?.plan_id ?? undefined;
+        if (savedOnly) setHistoryError("");
       } catch (failure) {
         if (!active()) return;
         if (!(failure instanceof ApiError && failure.status === 404))
@@ -525,6 +528,10 @@ export function useWorkspace({
   async function refresh() {
     if (!identity) return;
     await action(async (read, active) => {
+      if (savedOnly) {
+        await loadTrip(identity, active);
+        return;
+      }
       const state = await read(
         api<RequestState>(
           `/sessions/${identity.session_id}/request`,
@@ -542,10 +549,7 @@ export function useWorkspace({
       );
       if (!active()) return;
       setBookings(savedBookings);
-      if (savedOnly) {
-        const displayed = await read(readConfirmedPlan(identity));
-        if (active()) setPlan(displayed);
-      } else if (plan) {
+      if (plan) {
         const displayed = await read(
           api<Plan>(
             plan.draft_id
@@ -556,7 +560,7 @@ export function useWorkspace({
         );
         if (active()) setPlan(displayed);
       }
-      if (!savedOnly && active()) await restoreConversation(identity, active);
+      if (active()) await restoreConversation(identity, active);
     });
   }
   async function send(text: string, mode: Mode) {
