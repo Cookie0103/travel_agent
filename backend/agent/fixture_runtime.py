@@ -49,7 +49,7 @@ class FixtureRuntime:
                 return RuntimeOutcome(text, sdk_session_id or str(uuid4()))
             if ambiguous_expression(prompt):
                 text = (
-                    "这句包含假设或否定，离线演示未更新任何条件。"
+                    "这句包含假设、否定或尚未确定的条件，离线演示未更新任何条件。"
                     "请明确说出要保存的新值，或继续提问。"
                 )
                 emit(RuntimeEvent(context, "text", text=text))

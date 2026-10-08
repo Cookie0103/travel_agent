@@ -6,7 +6,12 @@ from decimal import Decimal
 
 from backend.domain.travel_request import TravelRequest
 
-NUMBER = r"(?:\d+|十二|十一|十|[一二两三四五六七八九])"
+NUMBER = (
+    r"(?<![\d.\-一二两三四五六七八九十零〇百千万亿])"
+    r"(?:\d+|十二|十一|十|[一二两三四五六七八九])"
+    r"(?![\d.一二两三四五六七八九十零〇百千万亿])"
+)
+CITIES = r"札幌|京都|东京|東京|大阪|名古屋|福冈|横滨"
 SMALL_NUMBERS = {
     "一": 1,
     "二": 2,
@@ -30,8 +35,17 @@ def number(text: str) -> int:
 
 def ambiguous_expression(prompt: str) -> bool:
     return bool(
-        re.search(r"如果|可能|也许|考虑|不确定|大概|不要|不想|不改|不清空|不能|暂不", prompt)
+        re.search(
+            r"如果|可能|也许|考虑|不确定|大概|不要|不想|不改|不清空|不能|暂不|不去|或|还是|二选一|不是|举例|只是提到",
+            prompt,
+        )
         or re.search(r"(?:^|[，,。；;]|请)\s*别(?:改|去|清空|更新|记录|保存)", prompt)
+        or len(set(re.findall(CITIES, prompt.replace("東京", "东京")))) > 1
+        or re.search(
+            r"[\d一二两三四五六七八九十零百千万]+(?:个|间)?(?:大人|成人|人|房间|房)?\s*"
+            r"(?:到|至|[-–—~])\s*[\d一二两三四五六七八九十零百千万]+(?:个|间)?(?:大人|成人|人(?!民|均)|房间|房)",
+            prompt,
+        )
     )
 
 
@@ -61,17 +75,23 @@ def fixture_patch(prompt: str, request: TravelRequest, today: date) -> dict[str,
 
     def put(name: str, value: object, match: re.Match[str]) -> None:
         fields[name] = value
-        expression = text[max(0, match.start() - 8) : match.end()]
-        if re.search(r"改成|改为|改到|改去", expression) and not re.search(
-            r"如果|可能|也许|考虑|不确定|大概", text
+        if (
+            re.search(r"改成|改为|改到|改去", match[0])
+            or re.search(r"(?:改成|改为|改到|改去)\s*$", text[: match.start()])
+            or text[max(0, match.start() - 1) : match.start() + 1] == "改去"
         ):
             explicit.add(name)
 
-    if city := re.search(
-        r"(?:去|目的地(?:改成|改为|是)?)(札幌|京都|东京|東京|大阪|名古屋|福冈|横滨)", text
-    ):
+    city = re.search(rf"(?:去|目的地(?:改成|改为|是)?\s*[:：]?\s*)({CITIES})", text) or re.search(
+        rf"^\s*({CITIES})(?=$|[，,。；;\s])", text
+    )
+    if city:
         put("city", city[1].replace("東京", "东京"), city)
-    if adults := re.search(rf"({NUMBER})(?:个)?(?:大人|成人)", text):
+    adults = re.search(rf"({NUMBER})(?:个)?(?:大人|成人)", text) or re.search(
+        rf"(?:大人|成人)(?:数)?(?:改成|改为|是|为|[:：])\s*({NUMBER})(?:个)?人?(?=$|[\s，,。；;])",
+        text,
+    )
+    if adults:
         put("adults", number(adults[1]), adults)
     if children := re.search(r"(?:小孩|儿童)\s*\((\d+)岁\)", text):
         put("child_ages", [int(children[1])], children)

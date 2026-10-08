@@ -123,3 +123,107 @@ def test_other_soft_preferences_do_not_make_unspoken_pace_known() -> None:
         }
     )
     assert "节奏" in missing_question(request)
+
+
+@pytest.mark.parametrize(
+    ("prompt", "fields", "explicit"),
+    [
+        (
+            "京都，2026-11-03到2026-11-05",
+            {"city": "京都", "start_date": "2026-11-03", "end_date": "2026-11-05"},
+            [],
+        ),
+        ("札幌", {"city": "札幌"}, []),
+        ("目的地：京都", {"city": "京都"}, []),
+        ("目的地: 東京", {"city": "东京"}, []),
+        ("目的地改为：大阪", {"city": "大阪"}, ["city"]),
+        ("大人改成2人", {"adults": 2}, ["adults"]),
+        ("成人数改为十二人", {"adults": 12}, ["adults"]),
+        ("成人：3人", {"adults": 3}, []),
+    ],
+)
+def test_explicit_city_and_adult_forms_keep_fact_and_override_distinct(
+    prompt: str, fields: dict[str, object], explicit: list[str]
+) -> None:
+    patch = fixture_patch(prompt, TravelRequest(), date(2026, 10, 8))
+    assert patch["set"] == fields and patch["explicit_fields"] == explicit
+    assert patch["clear"] == []
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
+        "如果目的地改为：大阪",
+        "不要把大人改成2人",
+        "大人不改成2人",
+        "京都酒店评价很好",
+        "京都不去",
+    ],
+)
+def test_new_forms_do_not_turn_hypotheses_negation_or_mentions_into_facts(prompt: str) -> None:
+    assert fixture_patch(prompt, TravelRequest(), date(2026, 10, 8))["set"] == {}
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
+        "成人改为十三人",
+        "成人：2.5人",
+        "成人：2或3人",
+        "成人：-2人",
+        "成人改为2-3人",
+        "京都，不去",
+        "京都，先不去",
+        "京都，札幌二选一",
+        "目的地：京都还是札幌",
+        "2.5个大人",
+        "-2个大人",
+        "两个或三个大人",
+    ],
+)
+def test_partial_numbers_and_undecided_destination_require_clarification(prompt: str) -> None:
+    patch = fixture_patch(prompt, TravelRequest(), date(2026, 10, 8))
+    assert patch["set"] == {} and patch["explicit_fields"] == []
+
+
+@pytest.mark.parametrize(
+    ("prompt", "explicit"),
+    [
+        ("目的地改为大阪，成人：2人", ["city"]),
+        ("大人改成2人，目的地：京都", ["adults"]),
+        ("目的地改为大阪 成人：2人", ["city"]),
+        ("大人改成2人 目的地：京都", ["adults"]),
+        ("改去京都", ["city"]),
+    ],
+)
+def test_override_words_belong_only_to_their_field(prompt: str, explicit: list[str]) -> None:
+    assert fixture_patch(prompt, TravelRequest(), date(2026, 10, 8))["explicit_fields"] == explicit
+
+
+@pytest.mark.parametrize(
+    "prompt",
+    [
+        "2到3个大人",
+        "2至3个大人",
+        "2–3个大人",
+        "2~3个大人",
+        "成人改为2到3个大人",
+        "2到3间房",
+        "京都，不是目的地",
+        "京都，只是举例",
+        "京都，只是提到这个城市",
+    ],
+)
+def test_ranges_and_explicit_nonfacts_are_not_saved(prompt: str) -> None:
+    assert fixture_patch(prompt, TravelRequest(), date(2026, 10, 8))["set"] == {}
+
+
+@pytest.mark.parametrize("amount", ["2–3万人民币", "20000–30000人民币", "2–3万 CNY"])
+def test_count_range_guard_keeps_supported_foreign_lodging_range(amount: str) -> None:
+    patch = ConversationRequestPatch.model_validate(
+        fixture_patch("去京都，住宿每晚" + amount, TravelRequest(), date(2026, 10, 8))
+    )
+    assert patch.set_fields.city == "京都"
+    lodging = patch.set_fields.lodging_budget
+    assert lodging is not None and lodging.currency == "CNY"
+    assert lodging.amount.lower == 20000 and lodging.amount.upper == 30000

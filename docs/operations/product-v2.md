@@ -476,3 +476,23 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 实際命令：领域 `uv run python -m pytest tests/test_hotel_empty_presentation.py tests/test_business_result.py tests/test_tool_failure_detail.py -q` 31 passed/0.27s；PG `uv run python -m pytest tests/integration/test_hotel_empty_presentation.py tests/integration/test_hotels.py tests/integration/test_lodging_budget.py tests/integration/test_workbench.py -q` 23 passed/2.96s；`uv run python scripts/dev.py check` exit0/273；`uv run python scripts/dev.py web-check` typecheck/lint/test89/build exit0；`uv run python scripts/dev.py test` exit1/1156/原7/265.11s。
 
 - `ee56fc8`实现提交/push；P55 closed/C22归档。恢复点P56先红后继续T4.4。T3.6原生popup与P05仍为门禁。
+
+
+## 2026-10-08 P56 对话明确表达补全
+
+- 开工`50109fb`clean/远端一致。只补既有有限离线词汇的肯定表达，不改变SDK路径、来源/幂等、币种或付费调用。先红三类与冒号/数量变体，保否定/假设/no defaults/手填保护与明确改值。
+
+- P56首红领域8 failed/22 passed/0.08s，真实PG1 failed/6 passed/1.29s；肯定表达补后领域30 passed/0.05s/PG7 passed/1.18s。独立P2纯无网实验核实十三→十/2.5→2/2或3→2/否定京都/多个城市误存，P57新开，先红边界12例中实际失败数见p57-red，不把肯定绿冒称完整修复。T3.7重新doing注明补修，原证据保留。
+
+- P57真实新增12例11 failed/31 passed/0.09s（反向负数原已拒绝，其他边界红）；独立追加P58前8字越过字段权限，补4传播/1改去边界：领域15 failed/32 passed/0.10s；真实HTTP两方向2 failed/7 passed/1.40s，确证city/adults另一手填字段被错误覆盖。不能仅逗号split，空格两例同样红；计划P58记录实际写入VERIFIED。
+
+- P57二次独立纯解析指出到/至/en dash/tilde范围与明确示例/否定，新增9例首红9 failed/47 passed/0.09s→56 passed/0.06s；只对人数/房数区间澄清，住宿预算区间原例仍可保存。P58改去/空格两方向已绿，来源工具本体未变。ADR015路径尾读又误猜exit1，已rg --files定位真实文件，失败不计依据。
+
+- P59独立发现范围guard把人民币首字人当人数单位，预算CNY区间原本支持，新增三领域/两HTTP先红，原EUR保留；具体计数见p59-red/p59-pg-red。不能将COUNT全局拒绝当作预算区间保护完成。
+
+- P59红领域2 failed/57 passed/0.08s、HTTP2 failed/18 passed/2.20s→相关领域78 passed/0.25s；人单位排除人民币/人均词内匹配，原budget解析不变。独立最终纯解析关闭全部P2：21负向、两CNY20k/30k、重复城市/不带儿童/原日期与EUR均正常；PG/Chrome/完整仍分开验证。
+
+- 最终实际命令：`uv run python -m pytest tests/test_fixture_conditions.py tests/test_travel_request.py tests/test_business_result.py -q` 78 passed/0.25s；真实PG `uv run python -m pytest tests/integration/test_conversation_conditions.py tests/integration/test_condition_sources.py tests/integration/test_workbench.py -q` 30 passed/3.74s；`uv run python scripts/dev.py check` 273文件/三平台strict/3契约/10入口exit0；`uv run python scripts/dev.py web-check` web89/280.509ms/type/lint/build5路由exit0；`uv run python scripts/dev.py test` 1212 passed/7 failed/1 skipped/1 live deselected/267.85s exit1。FAILED集合逐名与T43完全相同，不将既有缺口算绿。
+- Chrome合成session7c7cd007-033b-4a27-bd87-af365e5965da：首句6字段，句后人数标签更新，手填札幌/12后分别明确改成人和目的地只更新对应字段；十三不截十、两城市澄清，各0工具；住宿每晚2–3万人民币保20000/30000/CNY。刷新右侧成人仍user_form/目的地与预算conversation、全程unknown/noFX，截图p56-first-turn/p56-59-restored已查看。PG rev7/7轮/5update/2无工具/0报价/booking/hold/order；原V1/hash未变，脱敏JSON已存。只离线，没有模型/供应商调用。
+- 浏览器/命令失败尝试：右侧overlay覆盖发送，关面板后原输入成功提交；精确getByLabel目的地因来源标签未匹配，读DOM后按textbox角色匹配。两次functions JS语法错误未执行，修输入后运行；不算验证。独立纯解析21负向与CNY及原格式复核无剩余P2，范围明确仅有限离线词汇。
+- 失败集合首比对正则排除空格但包含换行，错误把后续行拼入ID导致assert失败；改逐行split取得精确节点，两个集合均7且相同。此为比较脚本错误，pytest结果未变化。
