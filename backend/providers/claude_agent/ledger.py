@@ -37,6 +37,22 @@ def exclusive(path: Path) -> Iterator[None]:
         path.unlink()
 
 
+def read_jsonl(path: Path) -> list[object]:
+    """两个账本共用的读取边界：文件不存在返回空；坏行抛 ValueError，由调用方拒绝自动重跑。"""
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+
+def append_line(path: Path, record: dict[str, object]) -> None:
+    """两个账本唯一的落盘方式：先 fsync 才联网；崩溃时已落盘行保留全部预占。"""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8", newline="\n") as handle:
+        handle.write(json.dumps(record) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
+
+
 class Ledger:
     """调用方须持有流程锁；日额度按 UTC，批次次数不按日重置。"""
 
@@ -44,33 +60,33 @@ class Ledger:
         self.path = path
 
     def entries(self) -> list[Entry]:
-        if not self.path.exists():
-            return []
         entries: list[Entry] = []
         try:
-            for line in self.path.read_text(encoding="utf-8").splitlines():
-                raw: object = json.loads(line)
-                if not isinstance(raw, dict) or set(raw) != {"kind", "day", "currency", "charge"}:
+            for record in read_jsonl(self.path):
+                if not isinstance(record, dict) or set(record) != {
+                    "kind",
+                    "day",
+                    "currency",
+                    "charge",
+                }:
                     raise ValueError
-                if raw["kind"] not in {"flow", "attempt", "success"}:
+                if record["kind"] not in {"flow", "attempt", "success"}:
                     raise ValueError
-                if raw["currency"] not in {"CNY", "USD"}:
+                if record["currency"] not in {"CNY", "USD"}:
                     raise ValueError
-                if not isinstance(raw["day"], str) or not isinstance(raw["charge"], str):
+                if not isinstance(record["day"], str) or not isinstance(record["charge"], str):
                     raise ValueError
-                datetime.strptime(raw["day"], "%Y-%m-%d")
-                read_budget(raw["charge"])
-                entries.append(Entry(raw["kind"], raw["day"], raw["currency"], raw["charge"]))
+                datetime.strptime(record["day"], "%Y-%m-%d")
+                read_budget(record["charge"])
+                entries.append(
+                    Entry(record["kind"], record["day"], record["currency"], record["charge"])
+                )
         except (ValueError, TypeError, ProbeError):
             raise ProbeError("blocked", "账本损坏，禁止清空后自动重跑") from None
         return entries
 
     def append(self, entry: Entry) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        with self.path.open("a", encoding="utf-8", newline="\n") as handle:
-            handle.write(json.dumps(asdict(entry)) + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
+        append_line(self.path, asdict(entry))
 
     def start_flow(self, now: datetime) -> None:
         entries = self.entries()

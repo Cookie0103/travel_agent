@@ -1,14 +1,12 @@
 """SDK 联网前持久预占，完整 usage 后结算；未知费用保留全部预占。"""
 
-import json
-import os
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
 
-from backend.providers.claude_agent.ledger import Ledger
+from backend.providers.claude_agent.ledger import Ledger, append_line, read_jsonl
 from backend.providers.claude_agent.limits import Currency, ProbeError, read_budget
 from backend.providers.claude_agent.profile import current
 from backend.trace_log import trace
@@ -75,23 +73,20 @@ class Budget:
             raise ProbeError("blocked", "即使每案例只请求一次，累计授权也不足完整评测")
 
     def entries(self) -> list[Entry]:
-        if not self.path.exists():
-            return []
         entries: list[Entry] = []
         try:
-            for line in self.path.read_text(encoding="utf-8").splitlines():
-                raw: object = json.loads(line)
-                if not isinstance(raw, dict):
+            for record in read_jsonl(self.path):
+                if not isinstance(record, dict):
                     raise ValueError
                 # 旧人民币账本只在读取边界归一化，绝不重写、重置或解释成美元。
-                if set(raw) == {"grant", "request_id", "kind", "day", "charge_cny"}:
-                    raw = {**raw, "charge": raw["charge_cny"], "currency": "CNY"}
-                    del raw["charge_cny"]
-                if set(raw) != set(Entry.__dataclass_fields__):
+                if set(record) == {"grant", "request_id", "kind", "day", "charge_cny"}:
+                    record = {**record, "charge": record["charge_cny"], "currency": "CNY"}
+                    del record["charge_cny"]
+                if set(record) != set(Entry.__dataclass_fields__):
                     raise ValueError
-                if not all(isinstance(v, str) for v in raw.values()):
+                if not all(isinstance(v, str) for v in record.values()):
                     raise ValueError
-                entry = Entry(**raw)
+                entry = Entry(**record)
                 if (
                     entry.grant != GRANT
                     or entry.kind not in {"attempt", "settled"}
@@ -108,15 +103,11 @@ class Budget:
         return entries
 
     def append(self, entry: Entry) -> None:
-        self.path.parent.mkdir(parents=True, exist_ok=True)
         raw = asdict(entry)
         if entry.currency == "CNY":
             raw["charge_cny"] = raw.pop("charge")
             del raw["currency"]
-        with self.path.open("a", encoding="utf-8", newline="\n") as handle:
-            handle.write(json.dumps(raw) + "\n")
-            handle.flush()
-            os.fsync(handle.fileno())
+        append_line(self.path, raw)
 
     def reserve(self, amount: Decimal, now: datetime, run: object = None) -> str:
         self.check_authorization()
