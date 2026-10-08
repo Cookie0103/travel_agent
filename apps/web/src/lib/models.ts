@@ -17,7 +17,6 @@ export const modeLabel = (mode: string) =>
       offline: "离线演示",
       deepseek: "DeepSeek",
       claude: "Claude",
-      live: "实时（旧）",
     }) as Record<string, string>
   )[mode] ?? mode;
 

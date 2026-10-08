@@ -3,7 +3,7 @@
 import { useState } from "react";
 import type { Workspace } from "./workbench";
 import { Conditions } from "./conditions";
-import { PlanResults } from "./results";
+import { formatYen, PlanResults } from "./results";
 import { Bookings } from "./bookings";
 import { PreferencePanel } from "./preferences";
 import { partyLabel } from "@/lib/availability";
@@ -60,8 +60,7 @@ export function TripPanel({
                       request.adults
                         ? partyLabel(request)
                         : request.rooms && `${request.rooms} 间房`,
-                      request.budget &&
-                        `¥${Number(request.budget).toLocaleString("ja-JP")}`,
+                      request.budget && `¥${formatYen(request.budget)}`,
                     ]
                       .filter(Boolean)
                       .join(" · ")}
