@@ -1,0 +1,22 @@
+{
+  "scope": "Chrome键盘+本地PG，原生弹窗未验收",
+  "start": [
+    "2026-11-03",
+    "2027-11-03",
+    "2026-11-03"
+  ],
+  "end": [
+    "2026-11-05",
+    "2027-11-05",
+    "2026-11-05"
+  ],
+  "keys": [
+    "ArrowUp",
+    "ArrowDown"
+  ],
+  "saved": false,
+  "revision": 8,
+  "formal_versions": 1,
+  "original_hash": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+  "native_picker": "pending_mac_locked"
+}

@@ -434,3 +434,7 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 最终P52严格失败原因专项 `uv run python -m pytest tests/integration/test_eval_state.py -q`：18 passed/7.16s；`uv run python scripts/dev.py check` exit0，265文件三平台strict/3分层契约/文档10入口；完整第四次核对中（第三次主动中止未计成绩）。Python-only兼容/评测准备变更没有重复无关web测试，已建web86/type/lint/build证据仍有效。
 
 - 最终 `uv run python scripts/dev.py test`：1123 passed/7 failed/1 skipped/1 live deselected/262.37s（exit1）；对T3.5逐名比较失败集合完全相同，新增问题均消除，非全绿。严格失效PG18/.7.16、兼容15/7.44、酒店PG12/4.81、领域44/.27、web86/402.82ms/type/lint/build/check265已验收。独立P52错误原因边界关闭。无生产变更/付费调用。
+
+- 实现 `8f53e88`已提交/push，P49–52 closed/C20归档；T3.6仍未满足原生弹窗验收。恢复点T4.2。
+- T3.6补验：开始2026-11-03→ArrowUp2027-11-03→ArrowDown还原；结束2026-11-05→2027-11-05→还原。未点保存；PG只读rev8、Evidence9/order0/原V1一行hash87e4…25f不变。截图t36-keyboard-restored.png已查看。cua.getState apps可列，getApp仍明确锁屏，不能把列表可读当解锁；T3.6保持doing。
+- P05独立只读研究：当前CLI仍读取DISABLE_AUTO_COMPACT/PCT_OVERRIDE，但有window/reactive/precompute分支。后续R6可仅在测试helper使用官方CLAUDE_CODE_AUTO_COMPACT_WINDOW=100000，先观察人工usage/compact_boundary/summaryHTTP与关闭对照，再把实测精确SDK/CLI pair加入guard；还没运行、原因仍REASONED。公开依据 https://code.claude.com/docs/en/env-vars 与 https://code.claude.com/docs/en/model-config#default-auto-compact-thresholds；不扩大Guard端点/费用/改全局CLI。
