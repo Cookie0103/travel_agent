@@ -509,7 +509,7 @@ export function useWorkspace({
       return true;
     return await action(async (read, active) => {
       const result = await read(
-        api<components["schemas"]["RequestUpdate"]>(
+        api<components["schemas"]["RequestUpdateView"]>(
           `/sessions/${identity.session_id}/request`,
           identity.token,
           "PATCH",

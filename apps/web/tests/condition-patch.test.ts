@@ -171,3 +171,65 @@ test("children selected without ages cannot silently become none or invent infan
     /儿童/,
   );
 });
+
+test("lodging range preserves endpoints and trip budget while numeric no-op stays empty", () => {
+  const capable = {
+    ...request,
+    lodging_budget: null,
+    budget_relation: { status: "unknown" },
+  } as unknown as RequestState;
+  const form = conditionsForm(capable);
+  assert.equal(form.lodging_basis, "");
+  assert.equal(form.lodging_lower, "");
+  assert.equal(form.lodging_upper, "");
+  const update = {
+    ...form,
+    lodging_basis: "per_room_night",
+    lodging_currency: "JPY",
+    lodging_lower: "20000",
+    lodging_upper: "30000",
+  };
+  assert.deepEqual(conditionPatch(capable, update), {
+    set: {
+      lodging_budget: {
+        amount: { lower: "20000", upper: "30000" },
+        basis: "per_room_night",
+        currency: "JPY",
+      },
+    },
+    clear: [],
+  });
+  const known = {
+    ...capable,
+    lodging_budget: {
+      amount: { lower: "20000.00", upper: "30000.00" },
+      basis: "per_room_night",
+      currency: "JPY",
+    },
+  } as RequestState;
+  assert.deepEqual(
+    conditionPatch(known, {
+      ...conditionsForm(known),
+      lodging_lower: "20000",
+      lodging_upper: "30000",
+    }),
+    { set: {}, clear: [] },
+  );
+  assert.deepEqual(
+    conditionPatch(known, { ...conditionsForm(known), lodging_basis: "" }),
+    { set: {}, clear: ["lodging_budget"] },
+  );
+});
+
+test("lodging entry cannot silently discard facts when backend capability is missing", () => {
+  assert.throws(
+    () =>
+      conditionPatch(request, {
+        ...conditionsForm(request),
+        lodging_basis: "total",
+        lodging_currency: "JPY",
+        lodging_upper: "30000",
+      }),
+    /住宿预算功能/,
+  );
+});

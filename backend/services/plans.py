@@ -316,7 +316,7 @@ async def content_view(
         **data,
         "cards": cards,
         "hotel_evidence_id": str(content.hotel_evidence_id) if content.hotel_evidence_id else None,
-        "hotel": hotel_cards((evidence[content.hotel_evidence_id],))[0]
+        "hotel": hotel_cards((evidence[content.hotel_evidence_id],), request)[0]
         if content.hotel_evidence_id in evidence
         else None,
         "needs_refresh": stale,

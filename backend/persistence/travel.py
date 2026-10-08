@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.evidence import EvidenceKind, EvidenceRecord
 from backend.domain.execution import RunContext
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import TravelRequest, legacy_request
 from backend.persistence.models import EvidenceRow, TravelRequestRow
 from backend.persistence.sessions import get_session
 
@@ -33,7 +33,15 @@ async def update_request(
     source_turn_id: UUID,
 ) -> None:
     row.revision = request.revision
-    row.conditions = request.model_dump(mode="json", exclude={"revision"})
+    row.conditions = {
+        key: value for key, value in legacy_request(request).items() if key != "revision"
+    }
+    row.request_details = {
+        **(row.request_details or {}),
+        "lodging_budget": request.lodging_budget.model_dump(mode="json")
+        if request.lodging_budget is not None
+        else None,
+    }
     row.source_turn_id = source_turn_id
     if invalidated:
         await db.execute(

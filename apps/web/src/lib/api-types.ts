@@ -508,6 +508,36 @@ export interface components {
         };
         /** @enum {string} */
         BookingStatus: "quoted" | "held" | "confirmed" | "booked" | "failed" | "unknown" | "expired";
+        /** BudgetRange */
+        "BudgetRange-Input": {
+            /** Lower */
+            lower?: number | string | null;
+            /** Upper */
+            upper?: number | string | null;
+        };
+        /** BudgetRange */
+        "BudgetRange-Output": {
+            /** Lower */
+            lower?: string | null;
+            /** Upper */
+            upper?: string | null;
+        };
+        /** BudgetRelation */
+        BudgetRelation: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "conflict" | "warning" | "unknown" | "within";
+            /** Total Lower */
+            total_lower?: string | null;
+            /** Total Upper */
+            total_upper?: string | null;
+            /** Currency */
+            currency?: string | null;
+            /** Message */
+            message: string;
+        };
         /** @enum {string} */
         BusinessKind: "answer_only" | "draft_staged" | "stage_failed" | "confirmed";
         /**
@@ -672,6 +702,8 @@ export interface components {
             total: string | null;
             /** Lodging Exceeds Trip Budget */
             lodging_exceeds_trip_budget: boolean | null;
+            /** Lodging Exceeds Lodging Budget */
+            lodging_exceeds_lodging_budget: boolean | null;
             /**
              * Evidence Id
              * Format: uuid
@@ -735,7 +767,7 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
-            request: components["schemas"]["TravelRequest"];
+            request: components["schemas"]["LegacyRequestSnapshot"];
         };
         /** ItemDiff */
         ItemDiff: {
@@ -752,12 +784,90 @@ export interface components {
             before?: components["schemas"]["PlanItem"] | null;
             after?: components["schemas"]["PlanItem"] | null;
         };
+        /**
+         * LegacyRequestSnapshot
+         * @description 明确的旧快照输出类型，保留schema类型但不序列化新增预算。
+         */
+        LegacyRequestSnapshot: {
+            /** City */
+            city?: string | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Timezone
+             * @default Asia/Tokyo
+             * @constant
+             */
+            timezone: "Asia/Tokyo";
+            /** Adults */
+            adults?: number | null;
+            /** Child Ages */
+            child_ages?: number[] | null;
+            /** Rooms */
+            rooms?: number | null;
+            /** Budget */
+            budget?: string | null;
+            /**
+             * Currency
+             * @default JPY
+             * @constant
+             */
+            currency: "JPY";
+            /** Transport */
+            transport?: ("walk" | "transit" | "taxi") | null;
+            /** Departure Time */
+            departure_time?: string | null;
+            /**
+             * Interests
+             * @default []
+             */
+            interests: string[];
+            /**
+             * Hard Constraints
+             * @default []
+             */
+            hard_constraints: string[];
+            /**
+             * Soft Constraints
+             * @default []
+             */
+            soft_constraints: string[];
+            /**
+             * Revision
+             * @default 0
+             */
+            revision: number;
+        };
         /** LockInput */
         LockInput: {
             /** Expected Version */
             expected_version: number;
             /** Locked Item Ids */
             locked_item_ids: string[];
+        };
+        /** LodgingBudget */
+        "LodgingBudget-Input": {
+            amount: components["schemas"]["BudgetRange-Input"];
+            /**
+             * Basis
+             * @enum {string}
+             */
+            basis: "per_room_night" | "total";
+            /** Currency */
+            currency: string;
+        };
+        /** LodgingBudget */
+        "LodgingBudget-Output": {
+            amount: components["schemas"]["BudgetRange-Output"];
+            /**
+             * Basis
+             * @enum {string}
+             */
+            basis: "per_room_night" | "total";
+            /** Currency */
+            currency: string;
         };
         /** MessageInput */
         MessageInput: {
@@ -998,11 +1108,66 @@ export interface components {
              */
             clear: string[];
         };
-        /** RequestUpdate */
-        RequestUpdate: {
-            request: components["schemas"]["TravelRequest"];
+        /** RequestUpdateView */
+        RequestUpdateView: {
+            request: components["schemas"]["RequestView"];
             /** Changed Fields */
             changed_fields: string[];
+        };
+        /** RequestView */
+        RequestView: {
+            /** City */
+            city?: string | null;
+            /** Start Date */
+            start_date?: string | null;
+            /** End Date */
+            end_date?: string | null;
+            /**
+             * Timezone
+             * @default Asia/Tokyo
+             * @constant
+             */
+            timezone: "Asia/Tokyo";
+            /** Adults */
+            adults?: number | null;
+            /** Child Ages */
+            child_ages?: number[] | null;
+            /** Rooms */
+            rooms?: number | null;
+            /** Budget */
+            budget?: string | null;
+            /**
+             * Currency
+             * @default JPY
+             * @constant
+             */
+            currency: "JPY";
+            lodging_budget?: components["schemas"]["LodgingBudget-Output"] | null;
+            /** Transport */
+            transport?: ("walk" | "transit" | "taxi") | null;
+            /** Departure Time */
+            departure_time?: string | null;
+            /**
+             * Interests
+             * @default []
+             */
+            interests: string[];
+            /**
+             * Hard Constraints
+             * @default []
+             */
+            hard_constraints: string[];
+            /**
+             * Soft Constraints
+             * @default []
+             */
+            soft_constraints: string[];
+            /**
+             * Revision
+             * @default 0
+             */
+            revision: number;
+            budget_relation: components["schemas"]["BudgetRelation"];
         };
         /** RunPage */
         RunPage: {
@@ -1173,6 +1338,7 @@ export interface components {
              * @constant
              */
             currency: "JPY";
+            lodging_budget?: components["schemas"]["LodgingBudget-Input"] | null;
             /** Transport */
             transport?: ("walk" | "transit" | "taxi") | null;
             /** Departure Time */
@@ -1221,6 +1387,7 @@ export interface components {
              * @constant
              */
             currency: "JPY";
+            lodging_budget?: components["schemas"]["LodgingBudget-Output"] | null;
             /** Transport */
             transport?: ("walk" | "transit" | "taxi") | null;
             /** Departure Time */
@@ -1317,8 +1484,35 @@ export interface components {
              */
             scope: string;
         };
+        /** BudgetRelation */
+        UiBudgetRelation: {
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "conflict" | "warning" | "unknown" | "within";
+            /**
+             * Total Lower
+             * @default null
+             */
+            total_lower: string | null;
+            /**
+             * Total Upper
+             * @default null
+             */
+            total_upper: string | null;
+            /**
+             * Currency
+             * @default null
+             */
+            currency: string | null;
+            /** Message */
+            message: string;
+        };
         /** Comparison */
         UiComparison: {
+            /** @default null */
+            budget_relation: components["schemas"]["UiBudgetRelation"] | null;
             /** Comparable */
             comparable: boolean;
             /** Reasons */
@@ -1405,6 +1599,11 @@ export interface components {
             total: string | null;
             /** Lodging Exceeds Trip Budget */
             lodging_exceeds_trip_budget: boolean | null;
+            /**
+             * Lodging Exceeds Lodging Budget
+             * @default null
+             */
+            lodging_exceeds_lodging_budget: boolean | null;
             /**
              * Evidence Id
              * Format: uuid
@@ -2161,7 +2360,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["TravelRequest"];
+                    "application/json": components["schemas"]["RequestView"];
                 };
             };
             /** @description Validation Error */
@@ -2198,7 +2397,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["RequestUpdate"];
+                    "application/json": components["schemas"]["RequestUpdateView"];
                 };
             };
             /** @description Validation Error */

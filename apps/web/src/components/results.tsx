@@ -137,6 +137,14 @@ function Hotel({ card }: { card: components["schemas"]["UiHotelCard"] }) {
           来源版本 {card.content_version?.slice(0, 12) || "未知"}
         </p>
       </details>
+      {card.lodging_exceeds_lodging_budget === true && (
+        <p className="warning">报价超过住宿预算上限</p>
+      )}
+      {card.lodging_exceeds_lodging_budget === null && (
+        <p className="muted small">
+          住宿预算上限、数量或币种未齐，无法判断此分项。
+        </p>
+      )}
       {card.lodging_exceeds_trip_budget && (
         <p className="error">住宿已超过全程预算</p>
       )}
@@ -165,6 +173,9 @@ export function HotelResults({
         <h2>酒店比较</h2>
       </div>
       <p className="muted">{hotels.comparison.scope}</p>
+      {hotels.comparison.budget_relation && (
+        <p className="warning">{hotels.comparison.budget_relation.message}</p>
+      )}
       {expired && (
         <p className="warning">
           报价已过期，当前最低价结论不可用；请重新比较酒店。

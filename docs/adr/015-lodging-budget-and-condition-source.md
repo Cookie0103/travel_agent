@@ -58,6 +58,12 @@ T3.3 在现有 Alembic 链增加迁移（届时取下一个编号），保留列
 - 新前端 + 旧后端：返回缺新字段意味着能力未就绪；UI 明确提示新预算/来源功能暂不可用，不能 silently 丢弃住宿金额后声称已保存，也不提交会被旧契约拒绝的新字段。既有条件/对话功能仍可用。涉及未受支持预算能力的比较/确认不冒称已校验。
 - 回退保留新列；旧条件可读，新预算细节保留待恢复新版本。证据/草稿内嵌 TravelRequest 的序列化须投影兼容字段，新预算仍以 request_details 为当前事实；旧后端不具备 D6 功能，回退期间 UI 不宣称新预算保证有效。新实现必须测试旧模型实际读回，而非只读 schema 推断。
 
+## T3.3 实施响应与旧快照细节（2026-10-08）
+
+GET request 与 PATCH 回执 request 用只读 RequestView，现算增量 `budget_relation`（status=conflict/warning/unknown/within；换算总额端点、币种、中文说明），输入set仍为TravelConditions，不接受判定字段；关系不写入数据库或operations缓存。工具更新回执/业务上下文和酒店比较沿用同一纯计算。卡片增量nullable `lodging_exceeds_lodging_budget`与比较现算budget_relation用于住宿分项上限/未知提示，保留原全程标记且不改上游顺序、不按下限过滤。旧前端可忽略增量字段；新前端发现lodging_budget/budget_relation缺失明确提示能力未就绪，普通旧字段仍可编辑。
+
+报价Evidence内嵌HotelOffer.request及operations缓存的request投影旧条件字段，住宿金额只在request_details保存。缓存回放读取当前request/details，避免旧operations回执丢住宿字段；保持原revision一致规则。酒店比较以当前request中的住宿上限/币种判断，不以旧报价快照的全程预算替代；入住Evidence条件不包含金额，单独预算更改不刷新入住报价。只读computed响应不向旧ValidationReport加字段，warning/unknown仍映射已有unknown CheckStatus。
+
 ## 必须验证
 
 领域：conflict / warning / unknown 各至少一例；相等边界、total 无数量、缺晚数/房间数、不同币种、单端区间、未知预算、Decimal no-op、不排除低价酒店。真实 PG：冲突两值都落库、回答只改指定字段/revision、默认旧行、旧 PATCH 保留新值、来源事务与旧模型读取兼容；同补丁模糊 no-op 后明确更新不复用旧结果、来源 no-op 更新后旧操作重试返回当前来源；确认再校验 conflict。对话/UI：不填表直接发消息、空字段不注入样例、来自对话标签、手填优先/明确改值回执、所有模式共享规则。ADR 确立契约不等于这些实现或实测已完成。

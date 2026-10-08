@@ -21,12 +21,14 @@ from backend.domain.travel_request import (
     TravelRequest,
     apply_request_patch,
     invalidated_kinds,
+    legacy_request,
 )
 from backend.persistence import bookings, operations, plans, runs, sessions, travel
 from backend.persistence.database import Database
 from backend.persistence.models import TravelRequestRow
 from backend.services.common import ServiceError, transaction
 from backend.services.preferences import preferences_from_row
+from backend.services.views import RequestView
 
 __all__ = ["RunContext", "RequestPatch", "TravelRequest", "RequestUpdate", "TravelService"]
 
@@ -34,7 +36,13 @@ __all__ = ["RunContext", "RequestPatch", "TravelRequest", "RequestUpdate", "Trav
 def request_from_row(row: TravelRequestRow | None) -> TravelRequest:
     if row is None:
         raise ServiceError(404, "blocked", "会话不存在")
-    return TravelRequest.model_validate({**row.conditions, "revision": row.revision})
+    return TravelRequest.model_validate(
+        {
+            **row.conditions,
+            "revision": row.revision,
+            "lodging_budget": (row.request_details or {}).get("lodging_budget"),
+        }
+    )
 
 
 def require_revision(request: TravelRequest, revision: int) -> None:
@@ -45,6 +53,12 @@ def require_revision(request: TravelRequest, revision: int) -> None:
 @dataclass(frozen=True)
 class RequestUpdate:
     request: TravelRequest
+    changed_fields: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class RequestUpdateView:
+    request: RequestView
     changed_fields: tuple[str, ...]
 
 
@@ -123,7 +137,7 @@ class TravelService:
             ]
             return {
                 "observed_at": observed_at.isoformat(),
-                "request": current.model_dump(mode="json"),
+                "request": RequestView.from_request(current).model_dump(mode="json"),
                 "preferences": preferences.model_dump(mode="json"),
                 "saved_plan": {"plan_id": str(plan.id), "version": plan.current_version}
                 if plan and plan.current_version
@@ -163,7 +177,7 @@ class TravelService:
             if cached is not None:
                 saved = TypeAdapter(RequestUpdate).validate_python(cached)
                 require_revision(current, saved.request.revision)
-                return saved
+                return RequestUpdate(current, saved.changed_fields)
             try:
                 updated, changed = apply_request_patch(current, patch)
             except RequestConflict as error:
@@ -183,7 +197,7 @@ class TravelService:
                 "update_travel_request",
                 operation_key,
                 {
-                    "request": updated.model_dump(mode="json"),
+                    "request": legacy_request(updated),
                     "changed_fields": list(result.changed_fields),
                 },
             )

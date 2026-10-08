@@ -11,6 +11,39 @@ Text = Annotated[str, Field(min_length=1, max_length=200)]
 Transport = Literal["walk", "transit", "taxi"]
 
 
+BudgetAmount = Annotated[Decimal, Field(gt=0, max_digits=12, decimal_places=2)]
+
+
+class BudgetRange(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    lower: BudgetAmount | None = None
+    upper: BudgetAmount | None = None
+
+    @model_validator(mode="after")
+    def valid_range(self) -> Self:
+        if self.lower is None and self.upper is None:
+            raise ValueError("住宿预算至少需要一个金额端点")
+        if self.lower is not None and self.upper is not None and self.lower > self.upper:
+            raise ValueError("住宿预算下限不能大于上限")
+        return self
+
+
+class LodgingBudget(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    amount: BudgetRange
+    basis: Literal["per_room_night", "total"]
+    currency: str = Field(pattern=r"^[A-Z]{3}$")
+
+
+class BudgetRelation(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    status: Literal["conflict", "warning", "unknown", "within"]
+    total_lower: Decimal | None = None
+    total_upper: Decimal | None = None
+    currency: str | None = None
+    message: str
+
+
 class TravelConditions(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
 
@@ -23,6 +56,7 @@ class TravelConditions(BaseModel):
     rooms: int | None = Field(default=None, strict=True, ge=1, le=6)
     budget: Decimal | None = Field(default=None, gt=0, max_digits=12, decimal_places=2)
     currency: Literal["JPY"] = "JPY"
+    lodging_budget: LodgingBudget | None = None
     transport: Transport | None = None
     departure_time: time | None = None
     interests: tuple[Text, ...] = Field(default=(), max_length=20)
@@ -48,6 +82,12 @@ class TravelRequest(TravelConditions):
         if self.start_date and self.end_date and self.end_date == self.start_date:
             return (*missing, "overnight_stay")
         return missing
+
+
+class LegacyRequestSnapshot(TravelRequest):
+    """明确的旧快照输出类型，保留schema类型但不序列化新增预算。"""
+
+    lodging_budget: LodgingBudget | None = Field(default=None, exclude=True)
 
 
 class RequestPatch(BaseModel):
@@ -97,3 +137,73 @@ def invalidated_kinds(changed: frozenset[str]) -> frozenset[str]:
     if changed & {"city", "start_date", "end_date", "transport", "departure_time"}:
         kinds.add("route")
     return frozenset(kinds)
+
+
+def lodging_budget_relation(request: TravelRequest) -> BudgetRelation:
+    """唯一预算关系计算：保留原值，只换算已知房晚、不换汇。"""
+    lodging = request.lodging_budget
+    if lodging is None:
+        return BudgetRelation(status="unknown", message="住宿预算未知；不会按全程预算自动分配。")
+    if lodging.basis == "per_room_night":
+        if request.rooms is None or request.start_date is None or request.end_date is None:
+            return BudgetRelation(
+                status="unknown",
+                currency=lodging.currency,
+                message="房间数或晚数未知，无法判断住宿预算总额；请补充。",
+            )
+        units = request.rooms * (request.end_date - request.start_date).days
+    else:
+        units = 1
+    lower = lodging.amount.lower * units if lodging.amount.lower is not None else None
+    upper = lodging.amount.upper * units if lodging.amount.upper is not None else None
+    if request.budget is None or lodging.currency != request.currency:
+        return BudgetRelation(
+            total_lower=lower,
+            total_upper=upper,
+            currency=lodging.currency,
+            status="unknown",
+            message="全程预算未知或两个预算币种不同，无法判断；不估算、不换汇。",
+        )
+    if lower is not None and lower > request.budget:
+        return BudgetRelation(
+            total_lower=lower,
+            total_upper=upper,
+            currency=lodging.currency,
+            status="conflict",
+            message=(
+                f"住宿预算总额下限{lower} {lodging.currency}超过全程预算"
+                f"{request.budget} {request.currency}。请确认以哪个预算为准；"
+                "解决前不能比较酒店或确认草稿。"
+            ),
+        )
+    if upper is not None and upper > request.budget:
+        return BudgetRelation(
+            total_lower=lower,
+            total_upper=upper,
+            currency=lodging.currency,
+            status="warning",
+            message=(
+                f"预算警告：住宿总额上限{upper} {lodging.currency}可能超过全程预算"
+                f"{request.budget} {request.currency}；原值均保留，请确认可接受范围。"
+            ),
+        )
+    if upper is None:
+        return BudgetRelation(
+            total_lower=lower,
+            total_upper=upper,
+            currency=lodging.currency,
+            status="unknown",
+            message="住宿预算总额上限未知，无法完整判断；不会补成零。",
+        )
+    return BudgetRelation(
+        total_lower=lower,
+        total_upper=upper,
+        currency=lodging.currency,
+        status="within",
+        message="住宿预算上限未超过全程预算；其他旅行费用仍需核实。",
+    )
+
+
+def legacy_request(request: TravelRequest) -> dict[str, object]:
+    """旧版本可读取的快照，新增预算唯一持久位置为request_details。"""
+    return request.model_dump(mode="json", exclude={"lodging_budget"})

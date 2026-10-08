@@ -8,6 +8,17 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict
 from backend.domain.hotels import QuoteFields
 from backend.domain.itinerary import ValidationReport
 from backend.domain.plans import ItemDiff, PlanItem
+from backend.domain.travel_request import BudgetRelation, TravelRequest, lodging_budget_relation
+
+
+class RequestView(TravelRequest):
+    budget_relation: BudgetRelation
+
+    @classmethod
+    def from_request(cls, request: TravelRequest) -> "RequestView":
+        return cls.model_validate(
+            {**request.model_dump(), "budget_relation": lodging_budget_relation(request)}
+        )
 
 
 class HotelCard(QuoteFields):
@@ -16,6 +27,7 @@ class HotelCard(QuoteFields):
     request_revision: int
     total: str | None
     lodging_exceeds_trip_budget: bool | None
+    lodging_exceeds_lodging_budget: bool | None = None
     data_mode: Literal["fixture", "live"]
     evidence_id: UUID
     source_ref: str | None
@@ -59,6 +71,7 @@ class PlanView(BaseModel):
 
 
 class Comparison(BaseModel):
+    budget_relation: BudgetRelation | None = None
     comparable: bool
     reasons: tuple[str, ...]
     lowest_offer_ids: tuple[UUID, ...]

@@ -1,7 +1,7 @@
 /** Shared HTTP and persisted SSE reader; reconnects only read, never repeat a message. */
 import type { components } from "./api-types";
 import type { Mode } from "./models";
-export type RequestState = components["schemas"]["TravelRequest"];
+export type RequestState = components["schemas"]["RequestView"];
 export type Run = components["schemas"]["RunView"];
 export type HistoricalRun = components["schemas"]["HistoricalRun"];
 export type RunPage = components["schemas"]["RunPage"];

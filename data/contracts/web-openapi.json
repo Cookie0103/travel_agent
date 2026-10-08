@@ -602,7 +602,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/TravelRequest"
+                  "$ref": "#/components/schemas/RequestView"
                 }
               }
             }
@@ -666,7 +666,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/RequestUpdate"
+                  "$ref": "#/components/schemas/RequestUpdateView"
                 }
               }
             }
@@ -1743,6 +1743,136 @@
           "expired"
         ]
       },
+      "BudgetRange-Input": {
+        "properties": {
+          "lower": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lower"
+          },
+          "upper": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upper"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BudgetRange"
+      },
+      "BudgetRange-Output": {
+        "properties": {
+          "lower": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lower"
+          },
+          "upper": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upper"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "BudgetRange"
+      },
+      "BudgetRelation": {
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "conflict",
+              "warning",
+              "unknown",
+              "within"
+            ],
+            "title": "Status"
+          },
+          "total_lower": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Lower"
+          },
+          "total_upper": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Total Upper"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "BudgetRelation"
+      },
       "BusinessKind": {
         "type": "string",
         "enum": [
@@ -2201,6 +2331,17 @@
             ],
             "title": "Lodging Exceeds Trip Budget"
           },
+          "lodging_exceeds_lodging_budget": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Lodging Exceeds Lodging Budget"
+          },
           "evidence_id": {
             "type": "string",
             "format": "uuid",
@@ -2255,6 +2396,7 @@
           "request_revision",
           "total",
           "lodging_exceeds_trip_budget",
+          "lodging_exceeds_lodging_budget",
           "evidence_id",
           "source_ref",
           "content_version"
@@ -2416,7 +2558,7 @@
             "title": "Expires At"
           },
           "request": {
-            "$ref": "#/components/schemas/TravelRequest"
+            "$ref": "#/components/schemas/LegacyRequestSnapshot"
           }
         },
         "additionalProperties": false,
@@ -2490,6 +2632,185 @@
         ],
         "title": "ItemDiff"
       },
+      "LegacyRequestSnapshot": {
+        "properties": {
+          "city": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "timezone": {
+            "type": "string",
+            "const": "Asia/Tokyo",
+            "title": "Timezone",
+            "default": "Asia/Tokyo"
+          },
+          "adults": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 12.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adults"
+          },
+          "child_ages": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer",
+                  "maximum": 17.0,
+                  "minimum": 0.0
+                },
+                "type": "array",
+                "maxItems": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Child Ages"
+          },
+          "rooms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 6.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rooms"
+          },
+          "budget": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget"
+          },
+          "currency": {
+            "type": "string",
+            "const": "JPY",
+            "title": "Currency",
+            "default": "JPY"
+          },
+          "transport": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "walk",
+                  "transit",
+                  "taxi"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport"
+          },
+          "departure_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departure Time"
+          },
+          "interests": {
+            "items": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Interests",
+            "default": []
+          },
+          "hard_constraints": {
+            "items": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Hard Constraints",
+            "default": []
+          },
+          "soft_constraints": {
+            "items": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Soft Constraints",
+            "default": []
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision",
+            "default": 0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "LegacyRequestSnapshot",
+        "description": "明确的旧快照输出类型，保留schema类型但不序列化新增预算。"
+      },
       "LockInput": {
         "properties": {
           "expected_version": {
@@ -2514,6 +2835,62 @@
           "locked_item_ids"
         ],
         "title": "LockInput"
+      },
+      "LodgingBudget-Input": {
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/BudgetRange-Input"
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "per_room_night",
+              "total"
+            ],
+            "title": "Basis"
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amount",
+          "basis",
+          "currency"
+        ],
+        "title": "LodgingBudget"
+      },
+      "LodgingBudget-Output": {
+        "properties": {
+          "amount": {
+            "$ref": "#/components/schemas/BudgetRange-Output"
+          },
+          "basis": {
+            "type": "string",
+            "enum": [
+              "per_room_night",
+              "total"
+            ],
+            "title": "Basis"
+          },
+          "currency": {
+            "type": "string",
+            "pattern": "^[A-Z]{3}$",
+            "title": "Currency"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "amount",
+          "basis",
+          "currency"
+        ],
+        "title": "LodgingBudget"
       },
       "MessageInput": {
         "properties": {
@@ -3120,10 +3497,10 @@
         ],
         "title": "RequestPatch"
       },
-      "RequestUpdate": {
+      "RequestUpdateView": {
         "properties": {
           "request": {
-            "$ref": "#/components/schemas/TravelRequest"
+            "$ref": "#/components/schemas/RequestView"
           },
           "changed_fields": {
             "items": {
@@ -3138,7 +3515,201 @@
           "request",
           "changed_fields"
         ],
-        "title": "RequestUpdate"
+        "title": "RequestUpdateView"
+      },
+      "RequestView": {
+        "properties": {
+          "city": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "start_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Start Date"
+          },
+          "end_date": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "End Date"
+          },
+          "timezone": {
+            "type": "string",
+            "const": "Asia/Tokyo",
+            "title": "Timezone",
+            "default": "Asia/Tokyo"
+          },
+          "adults": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 12.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Adults"
+          },
+          "child_ages": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "integer",
+                  "maximum": 17.0,
+                  "minimum": 0.0
+                },
+                "type": "array",
+                "maxItems": 8
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Child Ages"
+          },
+          "rooms": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "maximum": 6.0,
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rooms"
+          },
+          "budget": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*(?:\\d{0,10}|(?=[\\d.]{1,13}0*$)\\d{0,10}\\.\\d{0,2}0*$)"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget"
+          },
+          "currency": {
+            "type": "string",
+            "const": "JPY",
+            "title": "Currency",
+            "default": "JPY"
+          },
+          "lodging_budget": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LodgingBudget-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "transport": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "walk",
+                  "transit",
+                  "taxi"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport"
+          },
+          "departure_time": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Departure Time"
+          },
+          "interests": {
+            "items": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Interests",
+            "default": []
+          },
+          "hard_constraints": {
+            "items": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Hard Constraints",
+            "default": []
+          },
+          "soft_constraints": {
+            "items": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Soft Constraints",
+            "default": []
+          },
+          "revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Revision",
+            "default": 0
+          },
+          "budget_relation": {
+            "$ref": "#/components/schemas/BudgetRelation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "budget_relation"
+        ],
+        "title": "RequestView"
       },
       "RunPage": {
         "properties": {
@@ -3605,6 +4176,16 @@
             "title": "Currency",
             "default": "JPY"
           },
+          "lodging_budget": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LodgingBudget-Input"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "transport": {
             "anyOf": [
               {
@@ -3776,6 +4357,16 @@
             "const": "JPY",
             "title": "Currency",
             "default": "JPY"
+          },
+          "lodging_budget": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/LodgingBudget-Output"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "transport": {
             "anyOf": [
@@ -4024,8 +4615,82 @@
         ],
         "title": "ValidationReport"
       },
+      "UiBudgetRelation": {
+        "additionalProperties": false,
+        "properties": {
+          "status": {
+            "enum": [
+              "conflict",
+              "warning",
+              "unknown",
+              "within"
+            ],
+            "title": "Status",
+            "type": "string"
+          },
+          "total_lower": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total Lower"
+          },
+          "total_upper": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total Upper"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Currency"
+          },
+          "message": {
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "message"
+        ],
+        "title": "BudgetRelation",
+        "type": "object"
+      },
       "UiComparison": {
         "properties": {
+          "budget_relation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiBudgetRelation"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
           "comparable": {
             "title": "Comparable",
             "type": "boolean"
@@ -4249,6 +4914,18 @@
             ],
             "title": "Lodging Exceeds Trip Budget"
           },
+          "lodging_exceeds_lodging_budget": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Lodging Exceeds Lodging Budget"
+          },
           "evidence_id": {
             "format": "uuid",
             "title": "Evidence Id",
@@ -4301,6 +4978,7 @@
           "request_revision",
           "total",
           "lodging_exceeds_trip_budget",
+          "lodging_exceeds_lodging_budget",
           "evidence_id",
           "source_ref",
           "content_version"

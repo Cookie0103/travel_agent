@@ -5,10 +5,15 @@ from decimal import Decimal
 from typing import Annotated, Literal, Self
 from uuid import UUID, uuid4
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_serializer, model_validator
 
 from backend.domain.evidence import evidence_conditions
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import (
+    LegacyRequestSnapshot,
+    TravelRequest,
+    legacy_request,
+    lodging_budget_relation,
+)
 
 Money = Annotated[Decimal, Field(ge=0, max_digits=14, decimal_places=2)]
 
@@ -60,6 +65,10 @@ class QuoteFields(BaseModel):
 class HotelOffer(QuoteFields):
     request: TravelRequest
 
+    @field_serializer("request")
+    def legacy_snapshot(self, request: TravelRequest) -> LegacyRequestSnapshot:
+        return LegacyRequestSnapshot.model_validate(legacy_request(request))
+
     @model_validator(mode="after")
     def valid_quote(self) -> Self:
         if self.request.hotel_requirements() or self.expires_at <= self.quoted_at:
@@ -74,18 +83,23 @@ class HotelOffer(QuoteFields):
             return None
         return self.base_amount + self.tax_amount + self.fee_amount
 
-    def card(self) -> dict[str, object]:
+    def card(self, current: TravelRequest | None = None) -> dict[str, object]:
         total = self.total
+        request = current or self.request
+        relation = lodging_budget_relation(request)
         return {
             **self.model_dump(mode="json", exclude={"request"}),
             "stay": evidence_conditions(self.request, "hotel_offer"),
             "request_revision": self.request.revision,
             "total": str(total) if total is not None else None,
             "lodging_exceeds_trip_budget": (
-                total > self.request.budget
-                if total is not None and self.request.budget is not None
-                else None
+                total > request.budget if total is not None and request.budget is not None else None
             ),
+            "lodging_exceeds_lodging_budget": total > relation.total_upper
+            if total is not None
+            and relation.total_upper is not None
+            and relation.currency == self.currency
+            else None,
             "data_mode": self.data_mode,
         }
 

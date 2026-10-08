@@ -19,7 +19,7 @@ from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
 from backend.domain.plans import StageInput
-from backend.domain.travel_request import RequestPatch
+from backend.domain.travel_request import RequestPatch, lodging_budget_relation
 from backend.services.bookings import BookingService
 from backend.services.catalog import CatalogResult, CatalogService
 from backend.services.common import ServiceError
@@ -110,7 +110,9 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "update_travel_request",
-        "只记录用户明确表达的条件；set/clear，必须检查expected_revision。",
+        "只记录用户明确表达的条件；set/clear，必须检查expected_revision。"
+        "全程budget与lodging_budget原值同时保留；后者是住宿分项，注明区间/口径/币种。"
+        "返回预算冲突时先追问以哪个为准，回答后只改用户指定字段，不比较酒店。",
         RequestPatch.model_json_schema(),
         kind="state",
     ),
@@ -459,6 +461,9 @@ class TravelToolExecutor:
             return ToolResult(
                 {
                     "request_revision": update.request.revision,
+                    "budget_relation": lodging_budget_relation(update.request).model_dump(
+                        mode="json"
+                    ),
                     "hotel_requirements": update.request.hotel_requirements(),
                     "changed_fields": update.changed_fields,
                 }
@@ -531,7 +536,9 @@ class TravelToolExecutor:
             if isinstance(parsed, HotelSearchInput)
             else await self.hotels.refresh(context, parsed.expected_revision, parsed.offer_id)
         )
-        offers, trimmed = bounded_offers(cards(records), warning)
+        request = await self.travel.get_request(context)
+        require_revision(request, parsed.expected_revision)
+        offers, trimmed = bounded_offers(cards(records, request), warning)
         return ToolResult(
             {"offers": offers},
             empty=not records,

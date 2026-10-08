@@ -31,12 +31,11 @@ from backend.services.sessions import (
 )
 from backend.services.travel import (
     RequestPatch,
-    RequestUpdate,
+    RequestUpdateView,
     RunContext,
-    TravelRequest,
     TravelService,
 )
-from backend.services.views import PlanView
+from backend.services.views import PlanView, RequestView
 
 
 def create_app(
@@ -146,14 +145,15 @@ def create_app(
     @app.get("/sessions/{session_id}/request")
     async def get_travel_request(
         session_id: UUID, user_id: Annotated[UUID, Depends(identity)]
-    ) -> TravelRequest:
-        return await travel.get_request(RunContext(user_id, session_id))
+    ) -> RequestView:
+        return RequestView.from_request(await travel.get_request(RunContext(user_id, session_id)))
 
     @app.patch("/sessions/{session_id}/request")
     async def patch_travel_request(
         session_id: UUID, body: RequestPatch, user_id: Annotated[UUID, Depends(identity)]
-    ) -> RequestUpdate:
-        return await travel.patch_request(RunContext(user_id, session_id), body)
+    ) -> RequestUpdateView:
+        result = await travel.patch_request(RunContext(user_id, session_id), body)
+        return RequestUpdateView(RequestView.from_request(result.request), result.changed_fields)
 
     @app.post("/sessions/{session_id}/messages", status_code=202)
     async def message(

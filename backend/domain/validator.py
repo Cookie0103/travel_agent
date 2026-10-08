@@ -16,7 +16,7 @@ from backend.domain.itinerary import (
     ValidationReport,
 )
 from backend.domain.opening_hours import KYOTO, opening_state
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import TravelRequest, lodging_budget_relation
 
 
 def check(subject: str, status: CheckStatus, code: str, message: str) -> ValidationCheck:
@@ -253,6 +253,19 @@ def budget_checks(
             "景点门票、餐饮等未获得完整费用证据，不能认定全程预算满足",
         )
     ]
+    relation = lodging_budget_relation(request)
+    checks.append(
+        check(
+            "lodging_budget",
+            "conflict"
+            if relation.status == "conflict"
+            else "verified"
+            if relation.status == "within"
+            else "unknown",
+            "lodging_budget_" + relation.status,
+            relation.message,
+        )
+    )
     if proposal.hotel_evidence_id:
         known, hotel_checks = hotel_cost(request, evidence[proposal.hotel_evidence_id], now)
         checks.extend(hotel_checks)

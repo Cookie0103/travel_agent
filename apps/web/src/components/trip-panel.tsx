@@ -47,7 +47,9 @@ export function TripPanel({
               {request.city ||
               request.start_date ||
               request.adults ||
-              request.child_ages != null ? (
+              request.child_ages != null ||
+              request.budget ||
+              request.lodging_budget ? (
                 <>
                   <p>
                     {[
@@ -82,6 +84,29 @@ export function TripPanel({
                 <p className="muted">还没有设定条件，直接在对话里告诉我</p>
               )}
             </>
+          )}
+          {!editing && request.lodging_budget && (
+            <p>
+              住宿预算：{request.lodging_budget.amount.lower ?? "下限未填"}–
+              {request.lodging_budget.amount.upper ?? "上限未填"}{" "}
+              {request.lodging_budget.currency} ·{" "}
+              {request.lodging_budget.basis === "per_room_night"
+                ? "每房每晚"
+                : "住宿总额"}
+            </p>
+          )}
+          {request.budget_relation ? (
+            <p
+              className={
+                request.budget_relation.status === "conflict"
+                  ? "error"
+                  : "warning"
+              }
+            >
+              {request.budget_relation.message}
+            </p>
+          ) : (
+            <p className="warning">服务版本暂不支持住宿预算关系校验。</p>
           )}
           {editing && (
             <Conditions

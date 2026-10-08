@@ -14,7 +14,11 @@ export type ConditionsForm = Record<
   | "budget"
   | "transport"
   | "departure_time"
-  | "pace",
+  | "pace"
+  | "lodging_basis"
+  | "lodging_currency"
+  | "lodging_lower"
+  | "lodging_upper",
   string
 >;
 export type ConditionPatch = {
@@ -42,6 +46,10 @@ export function conditionsForm(request: RequestState): ConditionsForm {
     transport: text(request.transport),
     departure_time: text(request.departure_time),
     pace: currentPace(request.soft_constraints ?? []),
+    lodging_basis: request.lodging_budget?.basis ?? "",
+    lodging_currency: request.lodging_budget?.currency ?? "",
+    lodging_lower: text(request.lodging_budget?.amount.lower),
+    lodging_upper: text(request.lodging_budget?.amount.upper),
   };
 }
 
@@ -121,6 +129,49 @@ export function conditionPatch(
       request.soft_constraints ?? [],
       form.pace as Pace | "",
     );
+  }
+  const amountEqual = (value: string, before: string) =>
+    value.trim() === before.trim() ||
+    (value.trim() !== "" &&
+      before.trim() !== "" &&
+      Number.isFinite(Number(value)) &&
+      Number(value) === Number(before));
+  const changedLodging =
+    form.lodging_basis !== original.lodging_basis ||
+    form.lodging_currency.trim() !== original.lodging_currency ||
+    !amountEqual(form.lodging_lower, original.lodging_lower) ||
+    !amountEqual(form.lodging_upper, original.lodging_upper);
+  if (changedLodging) {
+    if (!Object.hasOwn(request, "lodging_budget") || !request.budget_relation)
+      throw new Error("住宿预算功能暂不可用，请先更新服务；当前输入未保存。");
+    if (!form.lodging_basis) {
+      if (request.lodging_budget != null) clear.push("lodging_budget");
+    } else {
+      if (
+        form.lodging_basis !== "per_room_night" &&
+        form.lodging_basis !== "total"
+      )
+        throw new Error("请选择住宿预算口径。");
+      const lower = form.lodging_lower.trim() || null;
+      const upper = form.lodging_upper.trim() || null;
+      const currency = form.lodging_currency.trim();
+      if (
+        (!lower && !upper) ||
+        [lower, upper].some(
+          (v) => v !== null && (!Number.isFinite(Number(v)) || Number(v) <= 0),
+        )
+      )
+        throw new Error("住宿预算至少填写一个正数金额端点。");
+      if (lower !== null && upper !== null && Number(lower) > Number(upper))
+        throw new Error("住宿预算下限不能大于上限。");
+      if (!/^[A-Z]{3}$/.test(currency))
+        throw new Error("住宿预算币种请填三位大写代码，如JPY。");
+      set.lodging_budget = {
+        amount: { lower, upper },
+        basis: form.lodging_basis,
+        currency,
+      };
+    }
   }
   return { set, clear };
 }

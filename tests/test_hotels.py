@@ -92,3 +92,46 @@ def test_comparison_keeps_refund_breakfast_distinct_and_handles_ties() -> None:
     assert result["comparable"] is True
     assert first.card()["breakfast"] is False and second.card()["breakfast"] is True
     assert result["lowest_offer_ids"] == [str(first.offer_id), str(second.offer_id)]
+
+
+def test_lodging_limit_uses_current_sub_budget_not_trip_total_or_lower_bound() -> None:
+    current = request().model_copy(update={"budget": Decimal("80000")})
+    current = TravelRequest.model_validate(
+        {
+            **current.model_dump(),
+            "lodging_budget": {
+                "amount": {"upper": "8000"},
+                "basis": "per_room_night",
+                "currency": "JPY",
+            },
+        }
+    )
+    quoted = offer()
+    assert quoted.card(current)["lodging_exceeds_lodging_budget"] is True
+    assert quoted.card(current)["lodging_exceeds_trip_budget"] is False
+    cheap = quoted.model_copy(
+        update={
+            "base_amount": Decimal("1000"),
+            "tax_amount": Decimal("0"),
+            "fee_amount": Decimal("0"),
+        }
+    )
+    assert cheap.card(current)["lodging_exceeds_lodging_budget"] is False
+    unknown = TravelRequest.model_validate(
+        {
+            **current.model_dump(),
+            "lodging_budget": {
+                "amount": {"lower": "8000"},
+                "basis": "per_room_night",
+                "currency": "JPY",
+            },
+        }
+    )
+    assert cheap.card(unknown)["lodging_exceeds_lodging_budget"] is None
+    foreign = TravelRequest.model_validate(
+        {
+            **current.model_dump(),
+            "lodging_budget": {"amount": {"upper": "8000"}, "basis": "total", "currency": "USD"},
+        }
+    )
+    assert cheap.card(foreign)["lodging_exceeds_lodging_budget"] is None

@@ -7,7 +7,7 @@ from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
 from backend.domain.hotels import HotelOffer, compare, quote
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import TravelRequest, lodging_budget_relation
 from backend.persistence.travel import entity_evidence, find_evidence, hotel_offer_elsewhere
 from backend.providers.hotel_fixture import load_rates
 from backend.services.common import ServiceError, transaction
@@ -21,6 +21,9 @@ class HotelService:
     async def _request(self, context: RunContext, revision: int) -> TravelRequest:
         request = await self.travel.get_request(context)
         require_revision(request, revision)
+        relation = lodging_budget_relation(request)
+        if relation.status == "conflict":
+            raise ServiceError(409, "conflict", relation.message, "lodging_budget_conflict")
         if missing := request.hotel_requirements():
             raise ServiceError(
                 422, "validation", "missing_fields: " + ", ".join(missing), "hotel_missing_fields"
@@ -162,23 +165,29 @@ class HotelService:
     async def present(
         self, context: RunContext, revision: int, ids: tuple[UUID, ...]
     ) -> dict[str, object]:
-        await self._request(context, revision)
+        request = await self._request(context, revision)
         known = await self.known_quotes(context, ids)
         records = await self.travel.resolve_evidence(
             context, tuple(record.evidence_id for record in known)
         )
+        request = await self._request(context, revision)
         offers = tuple(HotelOffer.model_validate(record.value) for record in records)
         return {
             "component": "hotel_comparison",
-            "cards": cards(records),
-            "comparison": compare(offers, datetime.now(UTC)),
+            "cards": cards(records, request),
+            "comparison": {
+                **compare(offers, datetime.now(UTC)),
+                "budget_relation": lodging_budget_relation(request).model_dump(mode="json"),
+            },
         }
 
 
-def cards(records: tuple[EvidenceRecord, ...]) -> list[dict[str, object]]:
+def cards(
+    records: tuple[EvidenceRecord, ...], request: TravelRequest | None = None
+) -> list[dict[str, object]]:
     return [
         {
-            **HotelOffer.model_validate(record.value).card(),
+            **HotelOffer.model_validate(record.value).card(request),
             "evidence_id": str(record.evidence_id),
             "source_ref": record.source_ref,
             "content_version": record.content_version,

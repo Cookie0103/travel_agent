@@ -83,6 +83,7 @@ class TravelRequestRow(Base):
     session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), primary_key=True)
     revision: Mapped[int] = mapped_column(default=0)
     conditions: Mapped[dict[str, object]] = mapped_column(JSONB)
+    request_details: Mapped[dict[str, object] | None] = mapped_column(JSONB, nullable=True)
     source_turn_id: Mapped[UUID | None]
 
 

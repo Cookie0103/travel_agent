@@ -120,6 +120,73 @@ export function Conditions({
           onChange={(e) => change("budget", e.target.value)}
         />
       </label>
+      {Object.hasOwn(request, "lodging_budget") && request.budget_relation ? (
+        <>
+          <label>
+            住宿预算口径
+            <select
+              value={form.lodging_basis}
+              onChange={(e) =>
+                setForm((old) => ({
+                  ...old,
+                  lodging_basis: e.target.value,
+                  lodging_currency:
+                    old.lodging_currency ||
+                    (e.target.value ? request.currency : ""),
+                }))
+              }
+            >
+              <option value="">未填</option>
+              <option value="per_room_night">每房每晚</option>
+              <option value="total">住宿总额</option>
+            </select>
+          </label>
+          {form.lodging_basis && (
+            <>
+              <div className="pair">
+                <label>
+                  住宿预算下限
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={form.lodging_lower}
+                    onChange={(e) => change("lodging_lower", e.target.value)}
+                  />
+                </label>
+                <label>
+                  住宿预算上限
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    value={form.lodging_upper}
+                    onChange={(e) => change("lodging_upper", e.target.value)}
+                  />
+                </label>
+              </div>
+              <label>
+                住宿预算币种
+                <input
+                  maxLength={3}
+                  pattern="[A-Z]{3}"
+                  value={form.lodging_currency}
+                  onChange={(e) =>
+                    change("lodging_currency", e.target.value.toUpperCase())
+                  }
+                />
+              </label>
+              <p className="muted small">
+                单值填相同上下限；仅限额填上限。住宿预算是全程预算的分项，两个原值都会保存。
+              </p>
+            </>
+          )}
+        </>
+      ) : (
+        <p className="warning">
+          服务版本暂不支持住宿预算；此分项无法保存或校验。
+        </p>
+      )}
       <div className="pair">
         <label>
           交通

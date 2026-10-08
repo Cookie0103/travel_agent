@@ -351,3 +351,18 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - Chrome/PG同一已有空白旅行null/rev0→无儿童[]/rev1→婴儿[0]/rev2→clear后null/rev3；每次只变儿童字段，其他八字段仍unknown。空年龄点击保存只中文错误、PGrev1/PATCH2未变；最终未知no-op仍rev3/PATCH4，4包括旧T3.1红1+本任务三次更新。刷新无儿童摘要count1；刷新婴儿表单selected ages/value0；clear后刷新unknown/age输入0，均VERIFIED，JSON t32-children-states。未创建正式版本/未真实供应商或模型调用。两截图人工查看。
 - 最终web75 passed/304.54ms、type/lint/build5路由/check254三平台strict/3契约/10入口退出0；独立只读实现/P26复核无发现。完整 `uv run python scripts/dev.py test`1027 passed/原7 SDK failed/1 skipped/1 live deselected/258.13s，失败逐项同P-05；Python源码全程未变，前端检查在P26修后重跑。
 - 实现`2f54458c19d3ccd48edb68d957bf9b938aa94147`已提交/push，远端一致且checkout干净；T3.2/P25/P26证据状态回写，STAR C15完成，恢复点T3.3。
+
+## 2026-10-08 T3.3 住宿预算与现算关系
+
+- 开工git status空，HEAD/远端b6fa30b一致；按ADR015读travel_request/repository/TravelService/validator/HotelService/HotelOffer/API schema边界。先补ADR响应预算关系及旧快照/缓存投影实现细节，再写测试；无新增依赖/paid调用/生产数据库操作。
+- 领域新测试先红ImportError 1 error/0.08s（缺现算函数）；补有效proposal fixture（原测试空items违反既有至少一项，未改业务约束）→20 passed/0.05s。纯Decimal端点/房晚/total/币种未知/0晚/单端/结构非法和validator既有CheckStatus均覆盖。
+- 真实PG三红3 failed/0.36s：新键直接写旧conditions导致冻结旧模型extra_forbidden；HotelOffer快照含新键同样不兼容；冲突search未raise。首次循环预创建两个coroutine导致失败后的unawaited warning，测试改lazy调用，仍原断言；不跳过失败。旧模型fixture冻结自b6fa30b自身源码（只测试），非上游复制。实现增量0013 nullable JSONB、旧conditions/Evidence/operations投影、cached回执读取当前事实、两入口冲突guard待绿。
+- 增量列/旧快照/cache-current与两入口guard后真实PG3 passed/0.35s；酒店当前住宿上限红11 passed/1 failed/0.07s（card不接current），补当前request与nullable住宿flag/比较预算关系，领域+酒店+真实PG35 passed（确切时长见最终汇总）。0013 downgrade保留列与事实，upgrade使用ADD COLUMN IF NOT EXISTS避免回退后重升级重复列；回退/重升级保数据实际测试待补。
+- 类型/工具链尝试：首次schema导出漏PYTHONPATH=.失败，补后再generate。dict serializer使HotelOffer.request输出schema变成unknown，bookings四项TS报错；改明确LegacyRequestSnapshot投影模型（仅住宿字段exclude），保类型与冻结旧读回。首次导入替换漏单行import导致NameError，修正后导出/generate/typecheck通过。Pydantic computed_field/property被strict mypy拒绝，改只读响应字段由from_request用唯一计算填充；测试嵌套JSON加实际isinstance断言，不使用ignore。
+- 混合unit/integration具体文件命令57 passed/19 setup errors（postgres_url fixture发现失败，非业务assert）；分开原PG文件24 passed/2.72s、领域52 passed/0.25s，完整项目命令作为最终检查。不据此宣称pytest根因已定位。预算PG增补确认/API禁止伪造关系/0013降级再升级6 passed/0.94s；降级仅随机测试库，事实完整保留。
+- 独立P2新增P28 known_quotes await交错：真实PG预算更新冲突后旧present返回，首红6 passed/1 failed/1.06s；新增resolve后_request复核。正在运行的完整test因新后端修改主动CtrlC（exit130），不计通过；将在修后重跑。P29仅全程预算摘要源码漏门槛，Chrome先红待验。
+
+- 最终绿：预算PG7 passed/1.04s（P28新增实际数据库交错）；独立只读复核两增量无新发现。P29 Chrome仅budget60000原money0/empty1断言红，PGrev4/住宿null/其他未知；纳入预算存在门槛后刷新money1/empty0绿，金额及未知事实不动。
+- Chrome/PG离线实际：rev5两预算50000/30000均存、缺晚数unknown；批量locator日期/时间fill未留到提交（PG为null），改原生AX setValue逐字段核对，补两晚/时间后rev6 conflict60000>50000。明确比较失败run1含一次search工具失败、0presentation；不是付费供应商比较。只改budget70000 rev7/住宿原样，diff仅budget；改全程50000/每晚20000–30000 rev8 warning40000–60000，成功run2/1presentation/3hotel_offer，15k/17.4k/19.8k上游序列，低于lower不被排除。刷新读回原值与警告。原V1一行/内容SHA256每次不变，证据product-v2/t33-budget-relations.json与两张已查看截图。只读probe首次误用TravelRequestRow.user_id AttributeError，改从SessionRow读取既有归属后通过，未改测试断言。
+- 最终项目命令：uv run python scripts/dev.py check exit0（258格式文件，win32/linux/darwin strict各258，3契约/0broken，文档10入口）；uv run python scripts/dev.py test exit1：1055 passed/原P05七个SDK失败/1 skipped/1 live deselected/257.68s，失败名单与原基线一致，无新增失败。pnpm --dir apps/web test exit0：77 passed/0 failed/306.24ms；typecheck、lint、build均exit0/5路由。旧完整测试因后端新修复CtrlC130不计入此结果；脚本编排一次JS语法失败未执行文件命令，后重跑证据汇总断言通过。
+- 本机开发库仅upgrade0013（先assertloopback），nullable列添加，无drop/reset；rollback/reupgrade仅随机测试数据库中实际验证。API与web已重启为最终离线bundle；无Railway/生产/付费调用。待实现commit/push与SHA闭环。
