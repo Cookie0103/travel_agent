@@ -398,3 +398,4 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - P42正确红42 passed/1 failed/0.45s：反馈12项中无pace_warning；P43四类别+P42合跑42 passed/5 failed/0.50s，Google缺types映射16 passed/1 failed/0.22s。采用有限正向景点分类集合，其他/未知不计，不靠不断扩黑名单假称覆盖；Google仅缺类别回退改unknown，其他事实与请求数不变。
 - T3.4最终相关领域/提示/fixture/预算/外部映射单测110 passed/0.62s；P42同unknown内优先全局提醒，硬conflict优先测试8闭馆在前8，12上限不变。P43正向类别集合，非景点/未知不计；Google缺types保unknown且名称坐标不变。dev check263格式/三平台strict/3契约/10入口exit0；完整离线test/web兼容检查与独立增量复核运行中。未调用真实模型/供应商，无DB迁移/生产操作。
 - 最终 `uv run python scripts/dev.py test` exit1：1111 passed/原7 SDK failed/1 skipped/1 live deselected/259.98s；失败集合逐名与T3.7/P05相同，没有新增回归。web81 passed/363.27ms/typecheck/lint/build5路由exit0；最后dev check263/三平台strict/3契约/10入口exit0。独立只读P40–43复核无新增，不跑测试/不改文件。受控纯领域5案例t34-validator-warnings.json落盘，不冒称浏览器/实际模型验收；无新持久字段/付费/生产操作。git diff --check/check_docs10入口通过。
+- 实现 `c7f71ec8f8a0bc29dacf947f3ba65c85f431b6c8`已提交/push，远端SHA一致/checkout干净；T3.4与P40–43 done，C18 STAR完成；恢复点T3.5。
