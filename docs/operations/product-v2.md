@@ -387,3 +387,4 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - P39独立P2发现guard只检查首个预算，同句“全程5万JPY，总预算8万美元”会写首金额；有限匹配范围内红15 passed/1 failed/0.06s（实际时长以日志为准），改finditer任一外币整句澄清/零工具，同句HTTP也纳入；不会假装解析通用多金额表达。未完成full因真实后端新增修复再次CtrlC130，最终版本重新回归。
 - P39最终领域36 passed/0.07s、来源/HTTP/工具PG14 passed/1.49s；check263/三平台strict/3契约/10入口exit0。独立复核guard全部匹配与原币换算断言无新阻塞。实际Chrome/开发PG全程5万美元未写入/0tool/仍rev4/JPY60000，住宿EUR20000原币保存rev5/1房1晚总额EUR20000/关系unknown，明确恢复住宿JPY2–3万rev6且其他conditions完全相等；原V1/hash不变，0酒店/模型调用。证据JSON增加三阶段总11阶段PG；外币截图已查看，既有两张也已查看。最终完整测试运行中。
 - 最终完整 `uv run python scripts/dev.py test` exit1：1080 passed/原7 SDK failed/1 skipped/1 live deselected/259.55s；失败集合逐名与前一已闭环1074结果和P05相同，无新增失败。不是全绿，R6前仍须解决P05。dev check263、web81/type/lint/build5路由已通过（P39仅后端/测试，前端未再改）；git diff --check/check_docs10入口exit0。实现待commit/push。
+- 实现 `4108fb90fc84d4b7134c5038e41c9d6613f3b9e3`已提交/push；git ls-remote相同SHA，checkout干净。P30–39全部闭环，T3.7 done、C17 STAR落盘；恢复点T3.4。
