@@ -474,3 +474,5 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 
 - 默认API恢复后Chrome刷新：两个0家（旧空/最新失败）、故障原因1，旧成功仍3家但行动disabled。只GET恢复，不重跑工具；本地PG三轮依次completed/empty/0卡，completed/ok/6卡，failed/unavailable/error/0卡；rev3/Evidence6/booking0/hold0/order0/原正式V1一行hash不变。JSON与三截图已检查，成功截图标题上沿略裁但三店/价格可见，DOM另证明3家6套餐。
 - 实際命令：领域 `uv run python -m pytest tests/test_hotel_empty_presentation.py tests/test_business_result.py tests/test_tool_failure_detail.py -q` 31 passed/0.27s；PG `uv run python -m pytest tests/integration/test_hotel_empty_presentation.py tests/integration/test_hotels.py tests/integration/test_lodging_budget.py tests/integration/test_workbench.py -q` 23 passed/2.96s；`uv run python scripts/dev.py check` exit0/273；`uv run python scripts/dev.py web-check` typecheck/lint/test89/build exit0；`uv run python scripts/dev.py test` exit1/1156/原7/265.11s。
+
+- `ee56fc8`实现提交/push；P55 closed/C22归档。恢复点P56先红后继续T4.4。T3.6原生popup与P05仍为门禁。
