@@ -222,6 +222,15 @@ export function Conversation({
                 belongsToRun(event, run),
               )}
             />
+            {!workspace.events.some((event) => belongsToRun(event, run)) &&
+              run.last_sequence > 0 && (
+                <button
+                  disabled={workspace.busy || workspace.restoring}
+                  onClick={() => void workspace.reconnect()}
+                >
+                  查看执行步骤
+                </button>
+              )}
             <TurnCards
               workspace={workspace}
               run={run}

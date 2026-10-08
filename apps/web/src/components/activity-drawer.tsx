@@ -2,6 +2,7 @@
 "use client";
 import type { AppEvent } from "@/lib/api";
 import { toolLabel } from "./tool-names";
+import { errorExplanation } from "@/lib/error-explanation";
 
 type Entry =
   | {
@@ -66,7 +67,7 @@ export function RunSteps({ events }: { events: AppEvent[] }) {
         {entries.map((entry) => (
           <li key={entry.key}>
             {entry.type === "tool"
-              ? `${entry.state === "ok" ? "✓" : entry.state === "failed" ? "✗" : "●"} ${toolLabel(entry.name)}`
+              ? `${entry.state === "ok" ? "✓" : entry.state === "failed" ? "✗" : "●"} ${toolLabel(entry.name)}${entry.state === "failed" ? ` — ${errorExplanation(entry.code)}` : ""}`
               : entry.type === "compacted"
                 ? "上下文已压缩"
                 : "已更新卡片"}

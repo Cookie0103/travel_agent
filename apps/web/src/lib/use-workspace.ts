@@ -176,10 +176,12 @@ export function useWorkspace({
           !matchesRun(final, { session_id: current.session_id, run_id: runId })
         )
           throw new Error("执行记录不属于当前旅行或轮次。");
-        setRun(final);
+        setRun((old) => mergeRun(old, final));
         setHistory((old) =>
           old.map((row) =>
-            row.run_id === final.run_id ? { ...row, ...final } : row,
+            row.run_id === final.run_id
+              ? { ...row, ...mergeRun(row, final) }
+              : row,
           ),
         );
         for (const event of final.presentations ?? [])

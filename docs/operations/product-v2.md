@@ -290,3 +290,16 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - `dev check`254文件三平台strict/3契约/10入口，webtype/lint/build5路由通过；独立只读实现审查无发现。完整test运行中，最终结果随后追加。
 - 最后完整 `uv run python scripts/dev.py test`：1027 passed/7 failed/1 skipped/1 live deselected，255.69s；逐项仍为P-05原SDK压缩7项，无新增失败，无改断言/跳过。`git diff --check`与`uv run python scripts/check_docs.py`通过。
 - 独立记录审查仅P3措辞补充：新建后查询是在返回原京都旅行后显式发送；已补明，避免与新session0run证据混淆。安全/过度结论无发现。
+
+## 2026-10-08 T2.3 步骤错误类别
+
+- 开工前checkout干净，HEAD/远端均`ebe54b669461065373672c1b0910c9a1813ee047`。读取既有activityEntries已存错误码但RunSteps只输出符号+名；新增八类/未知值测试首次50 passed/1 suite failed（missing module，190.16ms）→59 passed/180.84ms。无需接口/字段/依赖；生成AppEvent.code联合类型约束Record完整映射，Object.hasOwn排除prototype keys，unknown/null不回显参数。
+- 独立审查P3：unavailable说“保存结果仍可读取”过度承诺。先改变读取边界期望，真实58 passed/1 failed/187.39ms，改为稍后重试读取且不代表数据丢失；不是改断言掩盖失败，是明确新说明避免混同存在与可用性。最后web/type/lint/build重新运行；Python源码未改，完整离线回归已运行中。
+- Chrome仍保留T2.2旧bundle，实际在原合成京都V1显式生成：真实stage plan_exists/code conflict；展开5步，前4步成功，最后只“✗ 生成行程草稿”。旧状态实际DOM与截图`t23-red-no-category.png`，0真实供应商/模型调用。将重启新前端，再显式运行同离线失败路径验证分类，不改正式V1或重确认。
+- 本次恢复验收发现终态run刷新后events未读，步骤无入口：Chrome先红`getByRole(button,name=查看执行步骤).count()`期望1/实际0，抛出明确断言错误。只补当前最新run的显式只读入口，沿现有reconnect/SSE、generation与归属过滤；不重新发送消息。记录P-17为计划外；全部历史轮次工具详情不在本任务范围。纯前端变动最后test/type/lint/build再运行，Python完整进程继续，其源码未变。
+- 刷新后只读入口actual1（绿），同一原run GET SSE读回5步：前4步成功，stage失败行新增“状态冲突：条件存在冲突或行程版本已变化…”；运行前后请求计数完全相同（只有最初显式1消息，0确认/PATCH/登录/新session），未再生成一轮，更新原验收做法为同轮持久事件读回。
+- 独立审查新入口P2：connect最终GET直接覆盖run/history，若标签全文已恢复但服务端缓存退化，会损失已读全文。有限loopback middleware仅某个合成run认证成功的GET响应：先返回标为合成的全文，后返回固定保留说明，run_id/sequence/metadata不改；Chrome点击步骤后全文退化，实际expectedFullKept=true/actual=false抛错，截图t23-red-answer-degraded。复用T1.2 mergeRun修run/history两处最终合并；不扩保留、不重跑SDK或记录真实模型回答。
+- 该探针不是实际900秒/真实SDK验收，实际缓存有效期已有T1.2 PG证据。本任务Chrome验证的是响应退化时的读回分支。前端测试日志曾因服务日志路径复用被覆盖，已独立重跑恢复实际输出；最终测试统一保存`.cache/t23-web-final-tests.log`，不以覆盖文件冒称原始输出。
+
+- 最后Chrome全文保护绿expectedFullKept=true/actual=true；步骤面板1、summary“执行了2步”。最初将summary误用button角色导致count0，按实际DOM纠正选择器并核对，JSON保存真实结果。探针0写请求、PG原answer/sequence7未改；已CtrlC停止探针、删除标志并恢复默认DEMO_MODE API，Chrome重载读取真实离线答复。原京都正式V1仍1行/哈希不变；八类映射为单测，Chrome实际错误类别只验证conflict。所有截图已人工查看，无凭据/真实用户私聊。
+- 最终 `pnpm --dir apps/web run test` 59 passed/190.75ms；`run typecheck`/`run lint`/`run build`退出0（5路由）。`uv run python scripts/dev.py check`254文件/三平台strict/3分层契约/10文档入口退出0。`uv run python scripts/dev.py test`在最后源码修复后运行，1027 passed/7 failed/1 skipped/1 live deselected，256.87s；7项逐一同P-05基线SDK压缩，无新增失败。先前257.21s回归是在P-18前，不作为最终结果。最终独立只读源码与记录审查均无新发现；commit待完成。
