@@ -454,3 +454,5 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 探查又误猜test_validator.py不存在，已直接用已读imports中实际test_planning.py；不计为测试证据。今后路径以rg --files确认。
 
 - 最终完整命令 `uv run python scripts/dev.py test`：1132 passed / 7 failed / 1 skipped / 1 live deselected（265.33s），exit1如实保留；七项FAILED集合与T41/T35逐名相等，P05仍是发布门禁。对照日志首次误用简称路径exit2，按rg --files查到实际full-test-closed/full-test文件后比对通过。
+
+- 代码 `2da2b16`提交/push，证据全部落盘；P53–54 closed/C21归档；恢复点T4.3，T3.6仍待原生弹窗。
