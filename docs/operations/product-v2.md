@@ -708,3 +708,11 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 已请用户在普通终端用已确认的uv路径运行项目check/test（不新装依赖、默认离线），等待完整结果；独立只读审查仅validator/test diff，不重复全量、不访问私有日志。真实模型完整草稿未验收；未新增真实调用、未重启任何本地服务。
 - `a1e5429`的push37905451667/PR37905456554最终均success，python/web/docker-demo三任务全绿（VERIFIED，gh run list及view读回）；当前P72未提交代码不能借用该CI结论。独立只读代码审查无P1/P2，P3截短提示专项断言建议已记录，待后续强化；不改用户正在验证的代码。
 - 2026-10-09用户普通终端执行原`uv run python scripts/dev.py check`/`test`：check290/三平台strict/3契约/10入口全绿；测试运行目录run-pom1rv23，1349passed/1skipped/1deselected/282.33s，零failed/error（VERIFIED：用户回传）。与沙箱失败对照说明环境差异，保留失败记录。此后源码/测试未改变，只补文档；独立审查已无P1/P2；准备提交该离线反馈增量，P72模型收敛未通过。
+
+## 2026-10-09 T4.4 / P-60：真实样本元数据收尾
+
+- 前序闭馆反馈提交`fe49a8b`已push；push37906893801最终completed/success，python/web/docker-demo分别success。用户完整后端1349passed结果已记录；这不是模型收敛验收。
+- 本任务开工Git干净、原分支，只读ADR016/adapter/酒店测试与既有脱敏样本；无新的真实调用、无前端build/服务重启。新增酒店134763真实样本精确地址/坐标/评价数，字段missing和null的副本断言None，原fixture不修改。
+- 实现已存在，新测试首跑3passed/.27s，不伪造失败。受控退化将adapter四项展示投影临时设None，pytest新三例1failed/2passed/.23s；Python try/finally恢复原字节并断言相同，再跑酒店两文件38passed/.29s。最终Git adapter无diff，实际增量只有测试/记录。
+- `uv run python scripts/dev.py check`exit0：ruff290/三平台strict/3层契约/10文档入口。测试-only增量没有重复受限的全量PG命令；前序用户全量属于fe49a8b，不借用为新三例全量。后续提交CI会运行新用例。
+- 独立只读审查无P1/P2；P3两项已修：C33链接改为稳定计划文件入口；§7保留前次已提交的下一步历史，新增本次四行进展。自审adapter无diff、fixture原文未修改，diff --check/文档地图通过。

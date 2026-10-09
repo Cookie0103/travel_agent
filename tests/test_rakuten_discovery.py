@@ -108,6 +108,29 @@ def test_hotel_pattern_sample_gives_five_distinct_hotels_in_upstream_order() -> 
     assert details.more_url_scope == "destination"
 
 
+@pytest.mark.parametrize("metadata", ["present", "missing", "null"])
+def test_real_hotel_sample_metadata_is_parsed_or_unknown(metadata: str) -> None:
+    payload = copy.deepcopy(fixture(HOTEL_0))
+    if metadata != "present":
+        for part in entries(payload)[0]:
+            if "hotelBasicInfo" in part:
+                basic = part["hotelBasicInfo"]
+                for key in ("address1", "address2", "latitude", "longitude", "reviewCount"):
+                    if metadata == "missing":
+                        basic.pop(key, None)
+                    else:
+                        basic[key] = None
+    found, _ = asyncio.run(run(serve(payload)))
+    assert found[0].hotel_id == "134763"
+    details = found[0].display_details
+    assert details is not None
+    actual = (details.address, details.latitude, details.longitude, details.review_count)
+    if metadata == "present":
+        assert actual == ("沖縄県那覇市おもろまち1-1-12", 26.22326054, 127.6953298, 1732)
+    else:
+        assert actual == (None, None, None, None)
+
+
 def test_squeeze_condition_is_sent_only_when_nonsmoking_is_a_hard_constraint() -> None:
     seen: list[httpx.Request] = []
     anything = trip(constraints=("住宿：无要求", "房型：无要求", "床型：无要求"))
