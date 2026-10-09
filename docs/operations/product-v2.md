@@ -643,3 +643,12 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 补apps/web/README的build后standalone资源/重启/Chrome关卡，也更正旧“先保存条件”描述为直接对话。仅文档/证据与ignored产物，无业务代码变更，不重复1290/98测试；check_docs与git diff检查通过。后续每次build/质量命令后都需复查正在运行的页面，不能只验API健康。
 
 - P73恢复记录/Chrome证据提交 `f157a72`已push，之后只补提交证据与README保持30行；业务代码/测试结果不变。
+
+
+## 2026-10-09 P74：宽区域酒店失败与SDK停止误分类，只读诊断
+
+- 基线7afda1e、git status为空。读取本地该会话PG条件和两轮ignored事件/trace；不保存私人UUID/原文/工具参数，不调用真实模型/供应商、不改本地进程或生产。日期、无儿童、成人/房数、规范私房/禁烟/床型均在revision2；住宿分项null。
+- 实际两轮search_hotel_offers失败类别validation、内部原因hotel_external_validation；其中一轮update_conversation_state为conversation_question_unnecessary。两轮SDK subtype=success、terminal_reason=stop_hook_prevented、stop_reason=end_turn、api_error_status=null，随后worker报告provider_error/sdk_result_error。模型HTTP均200、guard_failures=[]，不将界面文案当上游故障证据。
+- `uv run python`内存合成诊断：直接调用broad_region与Rakuten.search，使用空HTTP客户端（门禁先拒绝，无网络），返回地区过大validation；通过脚本client向ClaudeRuntime._collect注入真实终止形状，并设可信stop_failure=conversation_incomplete，输出provider_error/sdk_result_error；empty_hotel_payload仍只显示固定条件不完整；conversation_view输出酒店ready、city追问null、行程缺transport/pace、nights1、住宿预算可选。脚本exit0，仅为当前问题复现，不是修复后通过证据。
+- 代码依据：backend/adapters/rakuten.py宽区域门禁；backend/domain/conversation.py只按city缺值；backend/services/travel.py拒绝非缺项追问；backend/providers/claude_agent/runtime.py先分类再仅无错误时处理stop_failure；backend/tools/execution.py泛化validation。根因分层记录P74，尚未修改业务代码、未运行全量回归/模型验收。原Stop脚本测试未注入stop_hook_prevented，不能用既有全量绿覆盖此真实协议分支。
+- 本轮文档验证：`uv run --no-sync python scripts/check_docs.py` exit0，10份入口与仓库链接通过；`git diff --check` exit0。文档差异不触发前端重建或扩大模型验收结论。
