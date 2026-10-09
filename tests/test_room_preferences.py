@@ -133,3 +133,65 @@ def test_one_no_preference_answer_covers_three_dimensions() -> None:
     assert fixture_patch("房型无要求", TravelRequest(), date(2026, 10, 8))["set"] == {
         "hard_constraints": ["住宿：无要求", "房型：无要求", "床型：无要求"]
     }
+
+
+@pytest.mark.parametrize("bed", ["床型：大床房", "床型：大床优先", "大床最好"])
+def test_explicit_bed_alias_is_recognized_without_losing_original_preference(bed: str) -> None:
+    trip = TravelRequest(hard_constraints=("住宿：独立房间", "房型：禁烟", bed, "不接受青旅"))
+    assert room_preferences_question(trip) is None
+    assert "床型：大床" in trip.hard_constraints
+    assert "不接受青旅" in trip.hard_constraints
+    if "优先" in bed or "最好" in bed:
+        assert bed in trip.hard_constraints
+
+
+def test_alias_and_canonical_bed_are_same_fact_but_two_different_choices_still_clarify() -> None:
+    trip = TravelRequest(
+        hard_constraints=("住宿：独立房间", "房型：禁烟", "床型：大床房", "床型：大床")
+    )
+    assert room_preferences_question(trip) is None
+    conflict = TravelRequest(hard_constraints=(*trip.hard_constraints, "床型：双床"))
+    assert "床型" in (room_preferences_question(conflict) or "")
+    denied = TravelRequest(hard_constraints=("住宿：独立房间", "房型：禁烟", "不要大床"))
+    assert "床型" in (room_preferences_question(denied) or "")
+
+
+def test_old_twenty_constraints_with_bed_preference_remain_readable_and_recognized() -> None:
+    from backend.domain.room_choices import missing_room_choices
+    from tests.fixtures.legacy_travel_request_v1 import TravelRequest as OldRequest
+
+    old = OldRequest(hard_constraints=tuple(f"合成其他要求{i}" for i in range(19)) + ("大床优先",))
+    current = TravelRequest.model_validate(old.model_dump())
+    assert len(current.hard_constraints) <= 20 and "大床优先" in current.hard_constraints
+    assert "bed" not in missing_room_choices(current.hard_constraints)
+    OldRequest.model_validate(current.model_dump(exclude={"lodging_budget"}))
+
+
+def test_explicit_private_room_with_exclusion_text_is_not_missing_or_conflicting() -> None:
+    trip = TravelRequest(
+        hard_constraints=("住宿：独立房间，不接受宿舍青旅", "房型：禁烟", "床型：无要求")
+    )
+    assert room_preferences_question(trip) is None
+    assert "住宿：独立房间，不接受宿舍青旅" in trip.hard_constraints
+    conflict = TravelRequest(
+        hard_constraints=("住宿：独立房间，接受宿舍", "房型：禁烟", "床型：无要求")
+    )
+    assert room_preferences_question(conflict)
+
+
+def test_typed_same_choice_at_twenty_constraint_limit_is_noop() -> None:
+    from backend.domain.travel_request import ConversationRequestPatch, apply_request_patch
+
+    current = TravelRequest(
+        hard_constraints=tuple(f"其他要求{i}" for i in range(17))
+        + ("住宿：独立房间", "房型：禁烟", "床型：无要求")
+    )
+    patch = ConversationRequestPatch.model_validate(
+        {
+            "expected_revision": 0,
+            "set": {"hard_constraints": list(current.hard_constraints)},
+            "room_preferences": {"bed": "any"},
+        }
+    )
+    updated, changed = apply_request_patch(current, patch)
+    assert updated == current and not changed

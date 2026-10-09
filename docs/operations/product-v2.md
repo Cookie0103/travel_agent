@@ -600,3 +600,34 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 只读配置核查：deepseek-flash/key已配置（未输出值），default profile/DAILY_BUDGET_CNY15.00；保留原费用/次数/数据守卫，不用human/relaxed、不改.env/账本或生产。首次脚本误从budget导入runtime_budget而ImportError；未执行配置/网络操作，删未用导入后核查通过。
 - 实際GET `127.0.0.1:8000/health` status=ok；8000/models及3000/api/models均DeepSeek available=true/reason=null，Claude仍因缺凭据不可用。没有自动发送真实模型或供应商测试消息；由用户在Chrome刷新3000并选择DeepSeek手测，发送后按既有人民币授权和数据API限额运行。
 - 恢复注意：本地API现为--live，不再是此前默认离线启动；前端仍需显式选择模型，每条消息记录mode。Railway跟踪旧分支，未部署/改生产。T3.6/T4.4验收和R6状态不因此自动完成。
+
+
+## 2026-10-09 T3.8 / B20：多轮澄清循环（P69–71）
+
+- 开工 `git status --short` 空，分支 `batch-2026-10-08-product-V2`、基线 `cf54e0b`。用户明确授权修复并归档面试案例；本机 DeepSeek/default/每日15 CNY不变，Railway未操作。实际用户对话仅在本机只读调查，不提交原文/身份/供应商响应。
+- 实际运行摘要：十轮澄清；4次酒店调用均在供应商前被 `hotel_room_preferences_missing` 拒绝，同一轮3次；最后仅更新条件。当前PG已存无儿童[]、1房、1晚、住宿预算null。`business_context`只有最近2轮用户内容与助手固定保留说明；没有结构化待办/当前问题。不能恢复旧revision床型精确原文，不把推断写成该用户历史事实。
+- ADR-014/015先确定有限待办/当前问题、原任务用户prompt引用、规范房型输入与现有单一存储，再实现。无需新表/依赖/运行时，工具和HTTP/费用/超时上限不变。来源/归属/CAS和隐私墓碑继续适用。
+- 首红：房型别名专项3failed/14passed（别名与canonical重复本就可通过）；PG状态工具6failed；实际SDK Stop闭环1failed，模型首次结束仅1HTTP，预期真实搜索/展示需4HTTP。修复后最初专项23passed，原生Stop合成SDK路径24passed。没有删断言或跳过PG。
+- 独立只读审查逐项指出并先红后绿：超长presentation提前清待办；未知当地交通被误判ready；床型短答丢非房型约束；隐私墓碑后同类新任务仍引用旧prompt；非空删除误命中旧幂等回执；合法旧20项别名扩展后不可读。新增反例后专项73→76→79passed。验证写法曾在持会话锁事务内再次调用get_request，造成测试超时；改成事务前读，不当作产品死锁证据。
+- `uv run python -m pytest tests/test_room_preferences.py tests/test_claude_runtime.py tests/integration/test_conversation_state.py tests/integration/test_room_preferences.py -q` 最新81passed/5.06s。跨会话/取消/迟到run/手填优先/no-op/明确删除/20项兼容/真实SDK Stop分别有用例；三轮中间回复后仍恢复原任务与床型追问。
+- 真实DeepSeek合成验收全部使用新测试身份、京都fixture酒店/目录/路线，禁用真实业务供应商；每轮只清该合成身份SDK指针，验证业务快照恢复而非SDK全文记忆。每次2轮、现有default档和每日预算，不扩大费用授权。
+  - 第一次失败：模型写“住宿：独立房间，不接受宿舍青旅”，旧有限别名仍不识别，第二轮又问住宿；据此改为严格room_preferences枚举投影，保留有限旧复合文本兼容，不靠添加无限别名。
+  - 第二次：床型短答“都可以”正确成为any，私房/禁烟保留，酒店查询成功；但模型连续搜索景点，16次额度耗尽，无卡片/草稿。不记成完成。宽搜说明原来错误地让模型把城市当query，且没有先展示酒店；调整为city单独填、无主题query为空、一次limit8优先，候选不足仅补搜，酒店查询成功立即展示并预留路线/校验/暂存额度。未提高调用限额。
+  - 最终两轮验证结果待收集；失败日志和合成回复仅ignored cache留存。启动最终脚本曾漏PYTHONPATH报ModuleNotFoundError，未产生网络/模型调用；补PYTHONPATH后运行。
+- 最新只读复核未发现P2；P3：已有20项再输入相同typed bed=any被重复追加成21项。新增 `test_typed_same_choice_at_twenty_constraint_limit_is_noop` 首红1failed/19deselected（too_long），投影跳过同一已识别规范值后领域20passed/0.19s。
+- 阶段完整回归1283passed/1skipped/1live deselected/274.13s；再一轮1286passed/1skipped/1live deselected/282.27s，均发生最终枚举边界/工具说明修订前，不冒称最终版。前端 `uv run --no-sync python scripts/dev.py web-check` typecheck/lint/98passed/build5routes exit0（无前端代码变更）。最终check与全量证据待落盘。
+
+- 参数反馈反例首红：typed无效值返回泛泛“检查参数”，无法提示explicit_fields；补固定修正建议与schema字段说明后最新相关82passed/4.96s。第三对真实模型虽然validate/stage成功，最后展示为第17调用被限；第四对酒店展示成功，无重复条件追问，但路线把非place引用反复传入，达到原12轮/16工具上限。均保留未完成itinerary，不写成完整模型验收通过。
+- 第三对后续单轮“继续”未成功展示：重新查询/错误证据引用触repair_limit；增加有效pending_draft优先展示说明后首先尝试present，却被当前引用/时效守卫拒绝，随后重建路线/校验到partial但达到轮数限。没有自动放松守卫、暗调额度或继续无界重试；这些属于模型工具引用/收敛质量限制，原反复询问已知字段未重现。另补PG有效草稿恢复展示并只完成其对应目标用例，正式版本保持0。
+- 新一轮全量1288passed/1skipped/1live deselected/274.25s，仍是最后反馈/恢复说明前的阶段证据。最新最终版全量运行中；独立最终只读复核无新增P2/P3，未冒称其运行PG或模型。
+
+- 最终专项 `uv run python -m pytest tests/test_room_preferences.py tests/test_claude_runtime.py tests/integration/test_conversation_state.py tests/integration/test_room_preferences.py -q` 83passed/7.15s；其中有效草稿恢复专项1passed/16deselected/0.76s，展示仅完成itinerary，hotel任务保留、正式版本0、revision不变。check286格式/三平台strict/3分层契约/10入口 exit0。
+- 实测合成十轮的结果只导出tool名称/安全code、计数、缺项/待办/晚数/预算可选布尔到 `docs/evidence/product-v2/b20-conversation-regression.json`；无prompt、回复、UUID、参数正文、SDK ID、token或报价。该证据包含失败，不宣称十轮全部成功；完整行程引用/收敛另记P72，仍阻止R6完整模型验收。
+- 最终源代码上一阶段全量1289passed/1skipped/1live deselected/278.27s；因后加有效草稿恢复用例和恢复说明，最后全量再跑，待结果，不重跑付费模型。
+- 重启前本机active task_runs queued/running/cancelling总数0；核对8000监听PID与本仓库 `backend.server --live` 后精确SIGTERM，再用原 `DEMO_MODE=true LLM_PROVIDER=deepseek uv run python -m backend.server --live` 启动当前代码。8000/health=ok，8000/models与3000/api/models DeepSeek available=true/reason=null；未修改.env/default/15CNY或生产，未代发用户旅行对话。
+
+- 自审发现新增state工具在步骤面板会退回英文工具名，补“更新对话进度”中文标签；低影响映射不另写镜像断言，重跑前端完整质量命令，后端最终测试仍使用未改动的最终Python代码。
+
+- 中文工具标签补完后的最终 `uv run --no-sync python scripts/dev.py web-check` exit0：typecheck、eslint/prettier、98tests/98pass、build5routes。尚未把前端绿计作真实模型完整规划通过。
+
+- 最终当前代码完整 `uv run --no-sync python scripts/dev.py test` exit0：1290passed/零失败/1skipped/1live deselected/290.33s。包含最后有效草稿恢复用例；未删除/跳过原SDK或PG用例。最终相关83passed、check286/三平台strict/3契约/10入口、中文标签后web98/type/lint/build5routes均实际通过。提交前独立复核无新增P2/P3与diff/docs检查通过。

@@ -9,6 +9,7 @@ common.transaction统一事务/错误脱敏；领域纯规则与仓储SQL不在�
 CatalogService复用同一目录加载器，公共articles/article仅读快照；工具查询仍核对当前请求并保存Evidence。
 RunService负责消息去重、单会话执行、取消和持久事件；执行仍委托Agent，不实现模型循环。
 TravelService.business_context只返回本人最近两轮有界回顾和有效Evidence引用。
+另含conversation的有界待办/原任务用户文本/当前追问；conversation.py共用当前运行、归属和隐私墓碑检查。
 PreferenceService以用户行锁更新显式偏好、删除墓碑与回顾边界；修改后旧SDK和旧对话不再注入。
 HotelService复用Evidence持久化不可变模拟报价；补卡拒绝过期、旧版本、他人和伪造ID。
 PlanningService解析同会话当前证据、生成自制估算路段并调用纯validator；修复往返由SDK驱动。

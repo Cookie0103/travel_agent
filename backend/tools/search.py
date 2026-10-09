@@ -16,7 +16,7 @@ __all__ = ["ContentSearchInput", "PlaceSearchInput", "search", "SearchExecutor",
 DEFINITIONS = (
     ToolDefinition(
         "search_places",
-        "查询景点属性与来源，营业时间缺失时为未知。",
+        "查询景点属性与来源，营业时间缺失时为未知。无主题时query用空字符串，城市只填city；优先一次limit=8取候选，有够用证据就规划，不逐景点重复搜索。",
         PlaceSearchInput.model_json_schema(),
     ),
     ToolDefinition(

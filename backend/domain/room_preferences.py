@@ -5,6 +5,7 @@ from collections.abc import Sequence
 
 from pydantic import BaseModel, ConfigDict
 
+from backend.domain.room_choices import missing_room_choices, recognized_room_choices
 from backend.domain.travel_request import TravelRequest
 
 
@@ -26,7 +27,9 @@ def room_assessment(name: str, request: TravelRequest | None) -> RoomAssessment:
             re.I,
         )
     )
-    private = request is not None and "住宿：独立房间" in request.hard_constraints
+    private = request is not None and "住宿：独立房间" in recognized_room_choices(
+        request.hard_constraints
+    )
     tags = tuple(
         tag for found, tag in ((dorm, "宿舍"), (capsule, "舱房"), (restricted, "资格限定")) if found
     )
@@ -48,17 +51,10 @@ def room_order(names: Sequence[str], request: TravelRequest | None) -> tuple[int
 
 
 def room_preferences_question(request: TravelRequest) -> str | None:
-    accepted = (
-        (
-            "住宿方式（独立房间、接受宿舍/舱房或无要求）",
-            {"住宿：独立房间", "住宿：接受宿舍", "住宿：接受舱房", "住宿：无要求"},
-        ),
-        ("禁烟偏好（禁烟或无要求）", {"房型：禁烟", "房型：无要求"}),
-        ("床型（双床、大床或无要求）", {"床型：双床", "床型：大床", "床型：无要求"}),
-    )
-    missing = [
-        label
-        for label, values in accepted
-        if len(values.intersection(request.hard_constraints)) != 1
-    ]
+    labels = {
+        "lodging": "住宿方式（独立房间、接受宿舍/舱房或无要求）",
+        "smoking": "禁烟偏好（禁烟或无要求）",
+        "bed": "床型（双床、大床或无要求）",
+    }
+    missing = [labels[key] for key in missing_room_choices(request.hard_constraints)]
     return "酒店查询前，请明确房型偏好：" + "、".join(missing) + "。" if missing else None

@@ -77,6 +77,24 @@ class DatabaseTools:
             preferences["revision"],
         )
 
+    async def continuation_reason(self, context: RunContext) -> str | None:
+        if self.executor.stopping_error or self.executor.calls >= self.executor.max_calls:
+            return None
+        state = await asyncio.wrap_future(
+            asyncio.run_coroutine_threadsafe(self.travel.business_context(context), self.loop)
+        )
+        dialogue = state["conversation"]
+        assert isinstance(dialogue, dict)
+        if dialogue["awaiting_field"] is not None:
+            return None
+        ready = dialogue["ready_tasks"]
+        if not ready:
+            return None
+        return (
+            "服务端确认当前条件已齐，请立即继续用户已授权的待办，而非再确认是否执行或重复询问已知条件。住宿预算未知允许查询，不当全程金额为住宿预算；完成实际查询/校验/暂存/展示，若工具报错则如实说明。当前任务："
+            + json.dumps(ready, ensure_ascii=False)
+        )
+
     async def revisions(self, context: RunContext) -> tuple[int, int]:
         _, request, preferences = await self.context_snapshot(context)
         return request, preferences

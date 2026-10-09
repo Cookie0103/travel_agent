@@ -268,3 +268,70 @@ def test_known_terminal_boundary_overrides_last_tool_stop(reason: str, code: str
     outcome = outcome_from_result(message)
     assert outcome.code == code and outcome.reason == reason
     assert outcome.sdk_session_id is None
+
+
+@pytest.mark.asyncio
+async def test_business_stop_hook_corrects_once_then_reports_incomplete_without_loop(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    from claude_agent_sdk.types import StopHookInput
+
+    client = ScriptedClient([ResultMessage("success", 1, 1, False, 1, "sdk", result="done")])
+    adapter = runtime(tmp_path, monkeypatch, client)
+    context = RunContext(uuid4())
+
+    async def pending(current: RunContext) -> str | None:
+        assert current == context
+        return "synthetic pending work"
+
+    adapter.config = replace(adapter.config, stop_check=pending)
+    data: StopHookInput = {
+        "hook_event_name": "Stop",
+        "session_id": "sdk",
+        "transcript_path": "unused",
+        "cwd": "unused",
+        "stop_hook_active": False,
+    }
+    hook = adapter.stop_hook(context)
+    assert await hook(data, None, {"signal": None}) == {
+        "decision": "block",
+        "reason": "synthetic pending work",
+    }
+    second = await hook(data, None, {"signal": None})
+    assert second.get("continue_") is False and adapter.stop_corrections == 1
+    outcome = await adapter.execute(context, "continue", None, lambda event: None, asyncio.Event())
+    assert outcome.code == "blocked" and outcome.reason == "conversation_incomplete"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("unavailable", [False, True])
+async def test_stop_hook_missing_fields_allow_stop_and_state_failure_is_not_success(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    unavailable: bool,
+) -> None:
+    from claude_agent_sdk.types import StopHookInput
+
+    adapter = runtime(tmp_path, monkeypatch, ScriptedClient([]))
+
+    async def state(current: RunContext) -> str | None:
+        if unavailable:
+            raise RuntimeError("synthetic private provider content")
+        return None
+
+    adapter.config = replace(adapter.config, stop_check=state)
+    data: StopHookInput = {
+        "hook_event_name": "Stop",
+        "session_id": "sdk",
+        "transcript_path": "unused",
+        "cwd": "unused",
+        "stop_hook_active": True,
+    }
+    result = await adapter.stop_hook(RunContext(uuid4()))(data, None, {"signal": None})
+    assert "private" not in str(result)
+    if unavailable:
+        assert result.get("continue_") is False
+        assert adapter.stop_failure == "conversation_state_unavailable"
+    else:
+        assert result == {} and adapter.stop_corrections == 0

@@ -65,6 +65,7 @@ EvidenceRecord: evidence_id, entity_id, field_path, value, provider, source_ref,
 | 工具 | 输入 → 输出 | 关键规则 | MCP |
 | --- | --- | --- | --- |
 | `update_travel_request` | 用户明确说出的条件 → 更新后的条件和差异 | set / clear；检查 expected_revision | 否 |
+| `update_conversation_state` | 已授权任务与当前追问 → 有界待办状态 | 本人当前运行、expected_revision；仅追问实际缺项，完成由工具结果确定；见 ADR-014 | 否 |
 | `load_skill` | 注册名 → 指令文本和版本 | 只接受白名单；同一段上下文只加载一次 | 否 |
 | `search_content` / `get_article` | 关键词 + 城市 / 类别过滤 / 文章 ID → 段落及引用 | 城市是硬过滤；关键词 + 别名匹配 | 是 |
 | `search_places` / `get_place_facts` | 关键词 / 类别 / 地点 ID → 属性及来源 | 保留原名；营业时间未知时返回 unknown | 是 |

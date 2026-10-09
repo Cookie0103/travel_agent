@@ -86,3 +86,16 @@
 - 新 CLI reactive 压缩保护当前用户工具组，旧单组/极低阈值加预占上界 usage 的 fixture 无法形成可总结助手历史。测试专用子进程复用生产 worker.main，只在测试模块用 SDK 公共 query/receive_response 建立两轮合成已完成助手历史；不改生产单业务 prompt/variant 校验，不写回 SDK transcript。warmup 必须完整成功、无工具；失败抛出由原 runtime 关闭。
 - 业务工具成功之后才通过受控 usage 触发压缩，历史阶段不触发。两组完全相同人工 usage/窗口/阈值，仍原6请求与2048输出/字节预占限制；非full应恰好2次warmup+2业务请求，full另有实际摘要请求和boundary。原数据库快照/配对/续接/失败不保存断点断言全部保留。摘要替身在发出时读取原worker已flush的本轮私有事件，必须已成功load_skill；正常模式另断言成功工具事件早于compact事件，不假设摘要切片保留当前工具组。
 - 摘要识别改为实际最后user中的固定禁止工具reminder与summary结构，不假设只有一个messages；先识别摘要避免旧warmup文字误分类。合成内容/usage仅测试机制，不证明真实token或摘要质量。不扩大费用许可，也不更改冻结评测集。
+
+## B20：实时澄清的有界业务状态（2026-10-09，实施前）
+
+- 复用request_details.conversation_state保存任务枚举hotel_comparison/itinerary、任务起点TaskRun引用及单个当前追问字段。任务原文只从同owner/session的用户prompt读取；不保存助手自由摘要/供应商回复/SDK transcript。上下文独立于最近2轮回顾，已知[]儿童/1房/房型和晚数以当前request派生。住宿分项预算未知是可选，不再强制追问。
+- 新state工具update_conversation_state接受expected_revision、可选非空goals、可选awaiting_field、cancel。目标从当前用户要求记录；后续澄清保留，不由模型宣称完成清除。仅当前owned running run可更新；同会话单active run及行锁防迟到，元数据不增request.revision、不使报价/草稿过期。取消清空，新旅行没有状态；明确新任务替换旧目标。
+- 服务端只允许追问当前缺失字段（或实际预算冲突），已知字段拒绝；短答解释依赖结构化当前问题，条件更新仍遵守来源/explicit_fields。actual hotel presentation/有效空查询及实际itinerary presentation才完成对应目标；上游错误不冒充完成。
+- SDK原生Stop hook仅一次纠正有条件齐全的未完成目标；继续由SDK运行，在原HTTP/工具/时限/日预算中计数。原生stop_hook_active防循环，实际错误或费用/取消可停；不用应用重试模型或另起runtime。单次纠正仍不完成则明确未完成，保留任务。
+- 旧conditions/公开RequestView/旧writer不变，无迁移；元数据仅服务端读，旧writer更新业务revision时仍重新计算缺项/时效，不将旧任务引用当当前条件或来源指令。隐私墓碑后不读取早于偏好变更的原任务文本。
+- 依据：锁定SDK0.2.163 types.py提供HookMatcher/StopHookInput/decision=block；[官方SDK hooks](https://code.claude.com/docs/en/agent-sdk/hooks)。必须实际SDK离线验证而非只凭文档宣称支持。
+
+- Stop检查尊重awaiting_field：存在合法当前追问时停止等用户；天气unknown/unavailable不应使已授权酒店/行程全部永久停止。硬工具/额度失败仍停止；未来按独立待办隔离错误。本批不做无界修复。墓碑过滤在更新和读取共用，重新授权同类任务引用新prompt；旧删除回执不允许覆盖新非空删除语义。
+
+- 工具说明要求无主题宽搜使用city与空query，已有足够证据即进入规划；酒店查询成功优先独立展示，不等全部行程步骤。实际工具额度耗尽仍保留未完成任务，禁止以提高上限掩盖过度搜索。

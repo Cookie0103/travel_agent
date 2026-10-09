@@ -11,12 +11,20 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.adapters.live_data import LiveData
 from backend.domain.booking import Booking
+from backend.domain.conversation import (
+    ConversationState,
+    ConversationStateInput,
+    Task,
+    conversation_view,
+)
 from backend.domain.evidence import EvidenceRecord
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
 from backend.domain.plans import PlanDraft
+from backend.domain.room_choices import preserve_unmentioned_room_choices
 from backend.domain.travel_request import (
     ConditionSource,
+    ConversationRequestPatch,
     RequestConflict,
     RequestPatch,
     TravelConditions,
@@ -28,6 +36,7 @@ from backend.domain.travel_request import (
 from backend.persistence import bookings, operations, plans, runs, sessions, travel
 from backend.persistence.database import Database
 from backend.persistence.models import TravelRequestRow
+from backend.services import conversation
 from backend.services.common import ServiceError, transaction
 from backend.services.preferences import preferences_from_row
 from backend.services.views import RequestView
@@ -176,6 +185,9 @@ class TravelService:
                 "pending_draft": pending_draft,
                 "bookings": [booking.card() for booking in active_bookings[:8]],
                 "bookings_truncated": len(active_bookings) > 8,
+                "conversation": await conversation.snapshot(
+                    db, request_row, current, context, after=user.preference_changed_at
+                ),
                 "recent_dialogue": [
                     {
                         "user": row.prompt[:1000],
@@ -195,6 +207,72 @@ class TravelService:
                 "时效以observed_at为本次快照时间；不能只看日期就断言报价过期，操作时仍需工具重新核对。"
                 "回顾不覆盖完整历史；无法确定指代时追问，不猜测。",
             }
+
+    async def update_conversation_state(
+        self, context: RunContext, update: ConversationStateInput
+    ) -> dict[str, object]:
+        async with transaction(self.database) as db:
+            row = await travel.owned_request(db, context)
+            current = request_from_row(row)
+            assert row is not None
+            await conversation.require_current_run(db, context)
+            require_revision(current, update.expected_revision)
+            user = await sessions.get_user(db, context.user_id)
+            assert user is not None
+            previous, _ = await conversation.valid_state(
+                db, row, context, after=user.preference_changed_at
+            )
+            state = (
+                ConversationState()
+                if update.cancel
+                else ConversationState(
+                    pending_tasks=update.goals
+                    if update.goals is not None
+                    else previous.pending_tasks,
+                    goal_run_id=(
+                        context.run_id
+                        if update.goals and update.goals != previous.pending_tasks
+                        else previous.goal_run_id
+                    ),
+                    awaiting_field=update.awaiting_field,
+                )
+            )
+            view = conversation_view(state, current)
+            missing = view["missing_fields"]
+            assert isinstance(missing, list)
+            if update.awaiting_field and update.awaiting_field not in missing:
+                raise ServiceError(
+                    422,
+                    "validation",
+                    "该条件已记录或不是必填项，请继续已授权任务，不重复追问",
+                    "conversation_question_unnecessary",
+                )
+            conversation.save_state(row, state)
+            return view
+
+    async def complete_conversation_task(
+        self, context: RunContext, task: Task, revision: int
+    ) -> None:
+        async with transaction(self.database) as db:
+            row = await travel.owned_request(db, context)
+            current = request_from_row(row)
+            assert row is not None
+            state = conversation.stored_state(row)
+            if task not in state.pending_tasks:
+                return
+            await conversation.require_current_run(db, context)
+            require_revision(current, revision)
+            conversation.save_state(
+                row,
+                state.model_copy(
+                    update={
+                        "pending_tasks": tuple(
+                            value for value in state.pending_tasks if value != task
+                        ),
+                        "awaiting_field": None,
+                    }
+                ),
+            )
 
     async def patch_request(
         self,
@@ -217,7 +295,13 @@ class TravelService:
             cached = await operations.result(
                 db, context.session_id, "update_travel_request", operation_key
             )
-            if cached is None and "field_sources" not in (row.request_details or {}):
+            if (
+                cached is None
+                and "field_sources" not in (row.request_details or {})
+                and not (
+                    isinstance(patch, ConversationRequestPatch) and patch.remove_hard_constraints
+                )
+            ):
                 # 只兼容来源机制出现前的旧回执，不从旧操作推测来源。
                 legacy_patch = RequestPatch.model_validate(
                     {
@@ -249,6 +333,33 @@ class TravelService:
                     "clear": [name for name in patch.clear if name not in skipped],
                 }
             )
+            if (
+                source == "conversation"
+                and "hard_constraints" in accepted.set_fields.model_fields_set
+            ):
+                removed = (
+                    patch.remove_hard_constraints
+                    if isinstance(patch, ConversationRequestPatch)
+                    else ()
+                )
+                if set(removed) - set(current.hard_constraints):
+                    raise ServiceError(
+                        422,
+                        "validation",
+                        "删除项不在当前硬条件中，请读取当前条件",
+                        "constraint_removal_unknown",
+                    )
+                merged = preserve_unmentioned_room_choices(
+                    tuple(value for value in current.hard_constraints if value not in removed),
+                    accepted.set_fields.hard_constraints,
+                )
+                accepted = accepted.model_copy(
+                    update={
+                        "set_fields": accepted.set_fields.model_copy(
+                            update={"hard_constraints": merged}
+                        )
+                    }
+                )
             try:
                 updated, changed = apply_request_patch(current, accepted)
             except RequestConflict as error:

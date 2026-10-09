@@ -4,7 +4,14 @@ from datetime import date, time
 from decimal import Decimal
 from typing import Annotated, Literal, Self
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+from backend.domain.room_choices import (
+    ROOM_CHOICES,
+    RoomPreferencesPatch,
+    normalize_room_choices,
+    recognized_room_choices,
+)
 
 Age = Annotated[int, Field(strict=True, ge=0, le=17)]
 Text = Annotated[str, Field(min_length=1, max_length=200)]
@@ -64,6 +71,11 @@ class TravelConditions(BaseModel):
     hard_constraints: tuple[Text, ...] = Field(default=(), max_length=20)
     soft_constraints: tuple[Text, ...] = Field(default=(), max_length=20)
 
+    @field_validator("hard_constraints")
+    @classmethod
+    def canonical_room_choices(cls, value: tuple[str, ...]) -> tuple[str, ...]:
+        return normalize_room_choices(value)
+
     @model_validator(mode="after")
     def valid_dates(self) -> Self:
         if self.start_date and self.end_date and self.end_date < self.start_date:
@@ -114,10 +126,45 @@ class RequestConflict(ValueError):
 
 
 class ConversationRequestPatch(RequestPatch):
-    explicit_fields: tuple[str, ...] = Field(default=(), max_length=15)
+    explicit_fields: tuple[str, ...] = Field(
+        default=(),
+        max_length=15,
+        description="本次明确改变的set/clear字段名；room_preferences投影为hard_constraints，填['hard_constraints']，不是bed或room_preferences",
+    )
+    remove_hard_constraints: tuple[Text, ...] = Field(default=(), max_length=20)
+    room_preferences: RoomPreferencesPatch | None = Field(
+        default=None, description="只提供本轮明确的房型组；未提组省略，不能填null；无要求用any"
+    )
+
+    @model_validator(mode="before")
+    @classmethod
+    def project_room_preferences(cls, data: object) -> object:
+        if not isinstance(data, dict) or data.get("room_preferences") is None:
+            return data
+        room = RoomPreferencesPatch.model_validate(data["room_preferences"])
+        fields = data.get("set", {})
+        if not isinstance(fields, dict):
+            raise ValueError("set必须是字段对象")
+        texts = fields.get("hard_constraints", [])
+        if not isinstance(texts, (list, tuple)) or any(
+            not isinstance(value, str) for value in texts
+        ):
+            raise ValueError("hard_constraints必须是文本列表")
+        incoming = recognized_room_choices(tuple(texts))
+        for choice in room.constraints():
+            group = next(values for values in ROOM_CHOICES.values() if choice in values)
+            if (incoming & group) - {choice}:
+                raise ValueError("room_preferences与硬条件房型组矛盾，请修正参数")
+        choices = [choice for choice in room.constraints() if choice not in incoming]
+        return {**data, "set": {**fields, "hard_constraints": [*texts, *choices]}}
 
     @model_validator(mode="after")
     def explicit_subset(self) -> Self:
+        if self.remove_hard_constraints and (
+            "hard_constraints" not in self.explicit_fields
+            or "hard_constraints" not in self.set_fields.model_fields_set
+        ):
+            raise ValueError("删除硬条件必须明确声明hard_constraints并提供set")
         if set(self.explicit_fields) - (self.set_fields.model_fields_set | set(self.clear)):
             raise ValueError("explicit_fields必须是本次set/clear字段的子集")
         return self

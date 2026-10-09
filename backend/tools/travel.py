@@ -15,11 +15,13 @@ from backend.adapters.live_data import LiveData
 from backend.adapters.open_meteo import forecast
 from backend.domain.booking import HoldHotelInput
 from backend.domain.condition_labels import update_message
+from backend.domain.conversation import ConversationStateInput
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
 from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
 from backend.domain.plans import StageInput
+from backend.domain.room_choices import room_choices_view
 from backend.domain.travel_request import (
     ConversationRequestPatch,
     RequestPatch,
@@ -126,8 +128,16 @@ DEFINITIONS = (
         "每轮提取用户说出的目的地/日期/同行者/房间/两预算/节奏，不要求先填右侧。"
         "手填值优先；明确改成新值的字段列入explicit_fields，模糊提取不要列入。"
         "回执skipped_fields未更新，必须追问；实际更新向用户告知回执message。"
+        "房型优先用room_preferences严格枚举：lodging=private/dorm/capsule/any，smoking=nonsmoking/any，bed=twin/double/any；无要求用any，未提项省略。"
+        "hard_constraints保留未提项，只替换本次房型组；明确删除用remove_hard_constraints列出当前旧文本，并声明explicit_fields=hard_constraints。"
         "返回预算冲突时先追问以哪个为准，回答后只改用户指定字段，不比较酒店。",
         ConversationRequestPatch.model_json_schema(),
+        kind="state",
+    ),
+    ToolDefinition(
+        "update_conversation_state",
+        "记录用户明确授权的酒店比较/完整行程目标(goals)，后续澄清不重设goals。追问前记录唯一awaiting_field；只能问服务端missing_fields。用户取消用cancel。不能自报完成；实际查询展示后服务端自动推进。元数据不增旅行revision。",
+        ConversationStateInput.model_json_schema(),
         kind="state",
     ),
     ToolDefinition(
@@ -193,6 +203,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "get_article": EntityInput,
     "get_place_facts": EntityInput,
     "update_travel_request": ConversationRequestPatch,
+    "update_conversation_state": ConversationStateInput,
     "load_skill": SkillInput,
     "search_hotel_offers": HotelSearchInput,
     "refresh_hotel_offer": RefreshOfferInput,
@@ -287,11 +298,21 @@ class TravelToolExecutor:
         # 第一版全部串行（读并发上限1），避免为尚不存在的并行收益实现读写锁。
         self.lock = asyncio.Lock()
         self.context: RunContext | None = None
+        self.stopping_error = False
 
     async def execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
     ) -> ToolResult:
         result = await self._execute(context, name, arguments)
+        if name != "get_weather_forecast" and result.code in {
+            "unavailable",
+            "timeout",
+            "blocked",
+            "rate_limited",
+            "cancelled",
+            "provider_error",
+        }:
+            self.stopping_error = True
         if name in {"validate_itinerary", "stage_plan_change"}:
             # 每次校验调用都记录修复轮次(含被拒绝的调用)。
             rounds = (f"repair_round:{self.validations}", f"max_validations:{self.max_validations}")
@@ -338,6 +359,21 @@ class TravelToolExecutor:
                         suggestion="结果过长，请缩小limit或查询范围",
                         detail=("result_too_long",),
                     )
+                if result.code is None:
+                    if isinstance(parsed, PresentationInput):
+                        revision = (
+                            parsed.expected_revision
+                            if parsed.component == "hotel_comparison"
+                            else result.data.get("request_revision")
+                        )
+                        assert isinstance(revision, int)
+                        await self.travel.complete_conversation_task(
+                            context, parsed.component, revision
+                        )
+                    elif isinstance(parsed, HotelSearchInput | RefreshOfferInput) and result.empty:
+                        await self.travel.complete_conversation_task(
+                            context, "hotel_comparison", parsed.expected_revision
+                        )
                 return result
             except ValidationError as error:
                 if any(
@@ -355,6 +391,11 @@ class TravelToolExecutor:
                     code="validation",
                     suggestion=(PresentationInput.__doc__ or "检查工具参数")
                     if name == "present_travel_result"
+                    else "由模型修正参数，不向用户重复追问已知条件：room_preferences仅用枚举，"
+                    "未提组省略，无要求用any，不传null；房型明确改值的explicit_fields填"
+                    "['hard_constraints']（不是bed或room_preferences）；set/clear不得重叠，"
+                    "typed房型与hard_constraints不得矛盾。"
+                    if name == "update_travel_request"
                     else "检查工具参数；不接受用户/会话身份字段",
                     detail=("schema", *validation_paths(error)),
                 )
@@ -385,6 +426,8 @@ class TravelToolExecutor:
                 )
 
     async def _dispatch(self, context: RunContext, name: str, parsed: BaseModel) -> ToolResult:
+        if isinstance(parsed, ConversationStateInput):
+            return ToolResult(await self.travel.update_conversation_state(context, parsed))
         if isinstance(parsed, WeatherInput):
             request = await self.travel.get_request(context)
             require_revision(request, parsed.expected_revision)
@@ -481,6 +524,8 @@ class TravelToolExecutor:
             return ToolResult(
                 {
                     "request_revision": update.request.revision,
+                    "room_preferences": room_choices_view(update.request.hard_constraints),
+                    "conversation": (await self.travel.business_context(context))["conversation"],
                     "budget_relation": lodging_budget_relation(update.request).model_dump(
                         mode="json"
                     ),

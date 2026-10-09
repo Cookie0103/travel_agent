@@ -2,6 +2,7 @@
 
 import asyncio
 import time
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -9,11 +10,13 @@ from claude_agent_sdk import (
     AssistantMessage,
     ClaudeAgentOptions,
     ClaudeSDKClient,
+    HookMatcher,
     ResultMessage,
     SystemMessage,
     TextBlock,
     ToolUseBlock,
 )
+from claude_agent_sdk.types import HookContext, HookInput, HookJSONOutput
 
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, RuntimeOutcome
@@ -34,6 +37,7 @@ class RuntimeConfig:
     workflow: WorkflowName | None = None
     disable_auto_compaction: bool = False
     persist_session: bool = True
+    stop_check: Callable[[RunContext], Awaitable[str | None]] | None = None
 
 
 class ClaudeRuntime:
@@ -49,6 +53,8 @@ class ClaudeRuntime:
         if config.workflow:
             self.executor = OrderedTools(executor, config.workflow)
         self.identity = config.identity
+        self.stop_corrections = 0
+        self.stop_failure: str | None = None
 
     async def execute(
         self,
@@ -165,7 +171,16 @@ class ClaudeRuntime:
                     if isinstance(block, TextBlock):
                         emit(RuntimeEvent(context, "text", text=block.text))
             if isinstance(message, ResultMessage):
-                return outcome_from_result(message)
+                outcome = outcome_from_result(message)
+                if outcome.code is None and self.stop_failure:
+                    return RuntimeOutcome(
+                        text="本轮未完成查询或草稿生成，请稍后继续。",
+                        code="unavailable"
+                        if self.stop_failure == "conversation_state_unavailable"
+                        else "blocked",
+                        reason=self.stop_failure,
+                    )
+                return outcome
         return RuntimeOutcome(code="provider_error", reason="incomplete_stream")
 
     def options(
@@ -185,6 +200,9 @@ class ClaudeRuntime:
             skills=[],
             plugins=[],
             permission_mode="dontAsk",
+            hooks={"Stop": [HookMatcher(hooks=[self.stop_hook(context)], timeout=5)]}
+            if self.config.stop_check
+            else None,
             max_turns=self.config.max_turns,
             thinking={"type": "disabled"},
             verbatim_prompts=True,
@@ -192,6 +210,30 @@ class ClaudeRuntime:
             env={"DISABLE_AUTO_COMPACT": "1"} if self.config.disable_auto_compaction else {},
             extra_args={} if self.config.persist_session else {"no-session-persistence": None},
         )
+
+    def stop_hook(
+        self, context: RunContext
+    ) -> Callable[[HookInput, str | None, HookContext], Awaitable[HookJSONOutput]]:
+        async def check(
+            data: HookInput, tool_id: str | None, hook_context: HookContext
+        ) -> HookJSONOutput:
+            if data["hook_event_name"] != "Stop" or self.config.stop_check is None:
+                return {}
+            try:
+                reason = await self.config.stop_check(context)
+            except Exception:
+                # 不把数据库/用户/供应商异常正文返回给SDK；无法读取状态时不能冒称任务完成。
+                self.stop_failure = "conversation_state_unavailable"
+                return {"continue_": False, "stopReason": "业务状态暂不可读取，请稍后重试"}
+            if reason is None:
+                return {}
+            if self.stop_corrections or data["stop_hook_active"]:
+                self.stop_failure = "conversation_incomplete"
+                return {"continue_": False, "stopReason": "本轮未完成已授权的旅行任务"}
+            self.stop_corrections += 1
+            return {"decision": "block", "reason": reason}
+
+        return check
 
 
 def outcome_from_result(message: ResultMessage) -> RuntimeOutcome:

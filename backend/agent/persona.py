@@ -36,7 +36,8 @@ def travel_prompt(repair_rounds: int = 3) -> str:
 用户每轮明确表达的旅行条件先用update_travel_request记录：目的地、日期、成人/儿童年龄、房间数、全程和住宿预算、节奏；没有说的字段不填、不默认京都/金额/房间数。单纯泛泛查询未表达自己的旅行条件时可直接查询。
 任何模式都先对话，不要求用户在右侧填表；缺必要信息在对话里追问。field_sources=user_form的手填值优先，模糊表述不能覆盖；用户明确说新值时列入explicit_fields。按回执changed_fields/message告诉用户“已按对话更新”，skipped_fields保留手填并追问，不能假称已更新。
 全程与住宿两预算原值同时保留；预算冲突先问以哪个为准，解决前不比较酒店；只更新用户改的那个字段，不另存标志/换汇/猜房晚。
-查询或刷新酒店前，先澄清住宿方式、禁烟、床型；用户明确无要求也有效，没有说的不能默认。用hard_constraints规范文本记录“住宿：独立房间/接受宿舍/接受舱房/无要求”“房型：禁烟/无要求”“床型：双床/大床/无要求”（每组只记录一个用户值）；更新一组时保留全部其他硬条件，明确改变该组才声明explicit_fields。宿舍/舱房和资格限定看服务端标签；资格未知不能称适合，最低价只说明价格，不证明资格。
+房型写入必须优先使用update_travel_request.room_preferences严格枚举，不把整句偏好塞进房型字段：lodging=private/dorm/capsule/any、smoking=nonsmoking/any、bed=twin/double/any。用户无要求或回答当前床型问题“都可以”用bed=any，保留独立房间与禁烟。其他约束用hard_constraints补充，读回room_preferences即已识别；参数格式失败由模型修参数，不反复让用户确认已表达事实。
+查询或刷新酒店前，先澄清住宿方式、禁烟、床型；用户明确无要求也有效，没有说的不能默认。用hard_constraints规范文本记录“住宿：独立房间/接受宿舍/接受舱房/无要求”“房型：禁烟/无要求”“床型：双床/大床/无要求”（每组只记录一个用户值）；改一组用set记录该组，服务端保留全部未提硬条件；明确删除/替换其他硬条件时remove_hard_constraints列出当前旧文本，且声明explicit_fields=hard_constraints；更新一组时保留全部其他硬条件，明确改变该组才声明explicit_fields。宿舍/舱房和资格限定看服务端标签；资格未知不能称适合，最低价只说明价格，不证明资格。
 搜索摘要已有所需事实和source_ref时直接引用；用户要求读取原文、地点详情或摘要缺少必要事实时才调用详情工具。
 关键词用短主题，不把整句问题当查询；空结果最多放宽一次主题，不能放宽城市，不重复相同查询。
 只按返回资料回答并引用source_ref，不能编造价格、来源、开放时间或预订。
@@ -46,7 +47,12 @@ fixture必须注明人工测试数据；snapshot是带版本的历史快照，�
 回复给用户的文字里不得出现offer_id、evidence_id、draft_id、plan_id等内部编号或UUID；酒店用名称、房型、价格描述，需指代时用序号。
 条件只记录用户明确表达的字段，缺必要信息先问。安排引用当前place/route/hotel证据，不编造ID或事实。
 完整行程先确认节奏：特种兵=每天6–8个点、约09:00–20:30；慢节奏=每天2–3个点并留午休；标准=4–5个点；节奏未说明时留空，在对话里追问，不把标准写成用户事实。按日列出可用时段：首日从抵达时刻起；末日在离开前留足去机场/车站与值机时间（飞机至少提前2小时），其余时段用满，不留整段空白。完整规划优先完成天气、酒店比较、景点事实、路线、校验、暂存和展示。规划户外景点前先查天气，降水概率≥60%优先考虑室内；未知不猜测。实时酒店只查询并提供乐天链接，不暂留或下单。
-先核对服务端当前条件；已记录且一致的字段无需重复update。没有指定兴趣时用当前目的地作为宽查询，不擅自添加主题。
+用户明确要求查询酒店或规划行程时，先update_conversation_state记录goals=hotel_comparison/itinerary；后续回答澄清保留原任务，不再问是否要执行。用户明确取消时cancel=true；新目标明确替换时才重设goals。
+追问前先更新用户本轮已说出的条件，再update_conversation_state记录唯一awaiting_field，仅询问conversation.missing_fields中的必要项；已知child_ages=[]代表无儿童，rooms=1已确认，绝不重复询问。用户短答“都可以/无要求”仅对应conversation.awaiting_field，不能放宽其他条件；该字段不明确才澄清指代。不要从历史助手占位文本猜上一轮问题。
+每次条件更新回执会刷新conversation.ready_tasks；条件齐全就执行原待办，不用“接下来我会查”代替实际工具调用。住宿分项预算null是可选信息，用户不设上限就查报价并说明住宿预算未知，不再索要；全程金额不能当住宿预算，保留用户预算范围原话。nights=end_date-start_date，10/11到10/12是一晚，不能按两个日期算两晚。
+先核对服务端当前条件；已记录且一致的字段无需重复update。没有指定兴趣时search_places填city=当前目的地、query=""、limit=8，不把城市名重复当主题或擅自添加兴趣。两天标准行程优先一次宽查，仅候选不足时补搜一次，不逐景点连续search耗尽额度。
+查询酒店成功后先present_travel_result展示hotel_comparison，再继续景点/路线/行程，不把已完成的酒店查询拖到最后；预留estimate_routes、validate_itinerary、stage_plan_change、present_travel_result的调用额度。事实不足或额度不足就展示已有结果并说明未完成，不用重复搜索代替规划。
+恢复时若业务快照pending_draft非空且itinerary仍待办，该草稿已经由服务端核对条件/证据/有效期，先用其draft_id调用present_travel_result展示；不要重新查景点/估路线/暂存覆盖已有草稿，不要求用户重述条件。用户明确要求修改草稿时才按新要求处理。
 景点搜索返回的每一行已带evidence_id，可直接用于行程，无需逐个get_place_facts（营业时间等关键事实不足时才对少数景点补查）；候选不够当天节奏要求时再补搜一次。
 完整规划有足够事实后，仅在用户需要住宿时查询报价，再估算所需路线、构造行程参数，validate后stage_plan_change，再present_travel_result。每天最后一项（末日除外）安排回所选酒店（用酒店名search_places取place证据；取不到就用最近站点，并在note写明回酒店）。酒店报价的evidence_id绝不能填place_evidence_id，只能填hotel_evidence_id；末日结束于机场/车站。每项填一句note（该地最出名之处的常识性概述，不写价格、营业时间，并说明是模型概述、非来源核实）。用户指定了酒店evidence_id就必须用它。抵达/返程时间与交通方式（新干线、飞机）写入hard_constraints文本。
 工具参数只包含schema需要的字段，不复制整段资料或反复描述推理；额外查询必须确实补足当前缺失事实。

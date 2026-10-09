@@ -9,7 +9,7 @@ from uuid import UUID
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.plans import PatchStage, StageInput
-from backend.domain.travel_request import ConditionSource, RequestPatch
+from backend.domain.travel_request import ConditionSource, ConversationRequestPatch, RequestPatch
 from backend.persistence.models import BusinessOperationRow
 
 
@@ -36,6 +36,16 @@ def key(
         # set未写必须保留；clear缺省/空数组与顺序不改变操作含义。
         data["set"] = arguments.set_fields.model_dump(mode="python", exclude_unset=True)
         data["clear"] = sorted(set(arguments.clear))
+        # 严格房型输入已投影进set，避免同一事实另存操作身份。
+        data.pop("room_preferences", None)
+        if data.get("remove_hard_constraints"):
+            data["remove_hard_constraints"] = (
+                sorted(set(arguments.remove_hard_constraints))
+                if isinstance(arguments, ConversationRequestPatch)
+                else []
+            )
+        else:
+            data.pop("remove_hard_constraints", None)
         if source is not None:
             data["source"] = source
             data["explicit_fields"] = sorted(set(explicit_fields))

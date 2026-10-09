@@ -171,7 +171,11 @@ async def run_prompts(
     )
     if isinstance(executor, DatabaseTools):
         # 完整规划实测需8次工具往返+回答；保留3轮修复空间，HTTP/工具/费用边界不变。
-        config = replace(config, max_turns=current().max_turns)
+        config = replace(
+            config,
+            max_turns=current().max_turns,
+            stop_check=executor.continuation_reason if workflow is None else None,
+        )
         if executor.travel.live:
             config = replace(
                 config, persist_session=False, timeout_seconds=current().worker_timeout

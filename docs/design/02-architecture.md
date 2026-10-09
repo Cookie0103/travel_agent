@@ -127,6 +127,7 @@ DeepSeek 官方提供 [Claude Code 接入配置](https://api-docs.deepseek.com/z
 
 - **三类状态分开**：SDK 会话记录用于模型续接；应用事件用于 UI / Trace；PostgreSQL 领域状态是 TravelRequest、Evidence、行程和预订的事实来源。
 - **旅行条件不靠 SDK 记忆**：每次开始/恢复从服务端重新读取 revision 和有效 Evidence。模型提交条件修改仍走 `update_travel_request`，不能因会话文本较新就覆盖数据库。
+- **澄清进度不靠助手全文**：同一快照读取有限待办、原任务用户文本与当前追问；缺项从当前条件派生。房型枚举输入投影到原条件，SDK 原生 Stop 仅一次纠正可执行而未完成的任务，费用/工具边界不变；契约见 [ADR-014](../adr/014-session-history.md)、[ADR-015](../adr/015-lodging-budget-and-condition-source.md)。
 - **压缩由 SDK 处理**：应用控制注入内容与工具结果长度；M3.1 验证压缩后硬条件、证据引用与工具结果仍正确，不手工重写 SDK transcript / thinking 块。
 - **Skills**：首版保留注册制 `load_skill` 旅行工具，从受控资源读取；不自动加载用户主目录、仓库开发规则或上游 Skills。若改为 SDK 原生 Skill，需单独验证所需权限与配置，不同时维护两套加载器。
 - **长期偏好（B 档）**：仅从用户表达提取，用户可查看、修改、删除；当前旅行条件优先。不能从攻略或工具结果提取偏好。
