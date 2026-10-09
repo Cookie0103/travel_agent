@@ -756,3 +756,20 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 用户酒店probe `.cache/hotel-coverage-summary.json`：19次请求、6coverage/6contrast/6second-night/1page2（京都），19份脱敏样本；六组两晚共20/30有完整总价、10/30未知。最后ExternalDataError，无安全原因码；计数19未增加第二十次，按既有预占代码推断可能日账本门禁（REASONED），没有HTTP429证据，未用额外调用确认。当前实际日累计未读PG，不用用户约6次估计替代。
 - 19份新fixture递归重清洗并扫描当前已配置的乐天凭据原始/URL编码残留，全通过；只输出数量/结果，不输出凭据/原响应。尚未入提交，后续独立覆盖验收提交。
 - 权限指导：当前effective workspace-write+restricted network/auto_review；本地config只显式设置auto_review，当前项目trusted。官方Sandbox/Auto-review文档说明自动审核不扩大边界；用户可在输入框权限菜单切Ask for approval或Full access。没有历史版本/权限对照证据，不能归因为更新新版；没有修改Codex配置、权限或用户服务。
+
+## 2026-10-09 正式审批恢复本地连接与追加真实授权
+
+- 最小零费用连接检查127.0.0.1:5434在沙箱内PermissionError/Operation not permitted；同一命令经require_escalated正式审批后reachable。随后Docker固定应用路径只读查今日external_api_usage，2026-10-09/rakuten=30（VERIFIED）。结合酒店probe.used=19且第20次未预占，停止原因是30次日门禁；没有429证据。不修改全局权限配置、不换工具绕过拒绝。
+- 1498be8 push37917872470/PR37917879149最终三job全success；push CI全量1367passed/1skipped/1deselected/197.25s，含新PG回归（VERIFIED）。正式审批后本机check294三平台/3契约/10入口通过，test到15%时收到用户停止离线测试，Ctrl+C exit130；不将其写成全量通过，不自动续跑。
+- 用户正式追加今天真实查询100次以内并要求立即真实验收。新独立ignored `.cache/p72-real-okinawa-20261009-1.py`复用SessionService/TravelService/run_live(real_data=True)，不是新增runtime；条件10/11–12、冲绳/住宿北谷、1成人无儿童1房、禁烟大床独立房、公共交通、全程50000JPY与住宿分项上限50000。费用门禁仍default/15CNY/12模型请求/16工具/4校验，子进程RAKUTEN_DAILY_CAP=min(既有值,100)，不改.env或本地服务。授权后只执行一次，独立marker，不删除旧合成probe一次标记，不下单。
+- 真实run2c9fcdf9开始；API账本基线weather3/geocode3/places9/routes21/rakuten30。实时输出仅工具名/code/reason，真实供应商响应不落原始日志；既有real_data report/event元数据规则保持。结果待回读，不预先宣称完整行程成功。
+
+## 2026-10-09 P85真实消息链路失败、最小说明、成功
+
+- 直接run_live 2c9fcdf9：12模型请求/0.528968CNY，真实酒店/地点/天气/路线，3次validate（先酒店当place被拒、后3route_departure冲突、再partial），stage/present成功。但没有TaskRun活跃记录，两次update_conversation_state为conversation_run_inactive；这是探针准备差异，不把它当API消息完成证据。
+- 正式RunService535a9d58：11模型请求/0.537962CNY；update_conversation_state成功。真实工具序列包含两次文章、三次逐点详情与错误路线引用，13步后才首次校验，5冲突→1route_unexpected，再validate在第17步tool_call_cap；状态completed/business answer_only，不是草稿成功。保留失败，没有调额度。
+- 同会话5354cdd0：12模型请求/0.385784CNY，max_turns/blocked，evidence_missing与多次非place路线端点，仍无草稿。探针以无LiveData的TravelService读取Google持久脱敏记录，正文/路线值已经按设计剔除，提供的23引用不等于完整事实；worker实际补取3次Places、3次Routes，全部计入账本。没有重跑marker或把未生成稿写成完成。
+- 最小源码增量只有itinerary.py四字段description（角色、完整evidence_id、入站挂到后景点、每日首站省略）；默认值/必填性/validator/计数不改。独立只读无P1/P2。用户已要求停止离线test，没有新增离线测试；失败/成功证据来自真实应用链路。
+- 说明后正式c6e5cadc：12模型请求/0.548160CNY，15工具步骤；一次错误端点被纠正，route_departure3冲突→partial0冲突；stage第3校验轮，present成功，终态completed/business draft_staged。Docker只读PG回读c6e5cadc|completed|partial|5|0|confirmed_version空（未确认）。没有看过此草稿的浏览器视觉，不做该项验收声明。
+- 同会话report.json被续轮覆盖，不能把5354cdd0费用误归535a9d58；最终分别读每个run固定API Trace的travel.http_attempts/run_accounted_cny数字，11/12/12和上述独立费用，usage_complete均true。忽略缓存文件不提交完整正文/报告/UUID目录；结果汇总仅短ID/计数/原因码。
+- 这次追加授权下4轮共47模型HTTP、2.000874CNY；API账本相对开工weather3/geocode3/places9/routes21/rakuten30，终weather4/geocode3/places20/routes48/rakuten35，新增旅行HTTP44（含补两页乐天），合计91。已经停止付费试跑，未触日15CNY/100乐天；未改变.env、全局权限、本地服务或Railway。

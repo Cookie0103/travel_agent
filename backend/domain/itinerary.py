@@ -9,10 +9,18 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, PrivateAttr, m
 
 class ProposedItem(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    place_evidence_id: UUID
+    place_evidence_id: UUID = Field(
+        description="仅用search_places/get_place_facts返回的kind=place的evidence_id；"
+        "不是place_id，也不能用酒店报价或route证据ID"
+    )
     start: AwareDatetime = Field(description="含时区的ISO时间；日本时间使用+09:00")
     end: AwareDatetime = Field(description="含时区的ISO时间；日本时间使用+09:00")
-    route_evidence_id: UUID | None = None
+    route_evidence_id: UUID | None = Field(
+        default=None,
+        description="本项的入站路段：仅用estimate_routes返回的kind=route的evidence_id，"
+        "起点须为同一天前一景点、终点须为本景点；每天首项必须省略。"
+        "不要把出站路段挂到前一项，不用route_id代替evidence_id",
+    )
     note: str | None = Field(
         default=None, max_length=80, description="一句话概述，模型撰写，非来源核实"
     )
@@ -37,8 +45,14 @@ class ItineraryProposal(BaseModel):
 
 class RouteLeg(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    from_evidence_id: UUID
-    to_evidence_id: UUID
+    from_evidence_id: UUID = Field(
+        description="前一个景点的kind=place的evidence_id（search_places/get_place_facts返回）；"
+        "不是place_id，不接受酒店报价、文章或route证据ID"
+    )
+    to_evidence_id: UUID = Field(
+        description="同一天后一个景点的kind=place的evidence_id（search_places/get_place_facts返回）；"
+        "不是place_id，不接受酒店报价、文章或route证据ID"
+    )
     departure: AwareDatetime = Field(
         description=(
             "含时区的ISO出发时间，日本时间用+09:00；必须落在前一项结束时间与后一项开始时间之间，"
