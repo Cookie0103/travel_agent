@@ -133,3 +133,19 @@ test("partial answers keep timeout and provider failure explanations, including 
     undefined,
   );
 });
+test("run failure shows the last failed tool reason, and legacy runs keep the generic text", () => {
+  assert.equal(
+    runFailureMessage("blocked", "repair_limit"),
+    "执行未完成：行程校验的修复次数已用完",
+  );
+  assert.equal(
+    runFailureMessage("blocked"),
+    "执行未完成：操作受限：请检查操作前提或调用限制。",
+  );
+});
+test("run failure with a timeout code ignores an earlier tool reason", () => {
+  assert.equal(
+    runFailureMessage("timeout", "repeat_blocked"),
+    runFailureMessage("timeout"),
+  );
+});

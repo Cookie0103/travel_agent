@@ -5,7 +5,7 @@ import hashlib
 import json
 from dataclasses import replace
 from pathlib import Path
-from typing import Literal
+from typing import Literal, get_args
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
@@ -16,7 +16,7 @@ from backend.adapters.open_meteo import forecast
 from backend.domain.booking import HoldHotelInput
 from backend.domain.condition_labels import update_message
 from backend.domain.conversation import ConversationStateInput
-from backend.domain.execution import RunContext
+from backend.domain.execution import RunContext, ToolReason
 from backend.domain.external_data import ExternalDataError
 from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
@@ -270,6 +270,10 @@ def report_detail(report: ValidationReport) -> tuple[str, ...]:
     )
 
 
+def call_key(name: str, arguments: dict[str, object]) -> tuple[str, str]:
+    return name, json.dumps(arguments, sort_keys=True, ensure_ascii=False, default=str)
+
+
 MAX_VALIDATIONS_CAP = 50  # 构造上限，与HUMAN档一致；更大值只能是配置错误
 
 
@@ -292,6 +296,9 @@ class TravelToolExecutor:
         self.plans = PlanService(travel)
         self.bookings = BookingService(travel)
         self.calls, self.max_calls = 0, max_calls
+        self.rejected: dict[
+            tuple[str, str], tuple[str, ...]
+        ] = {}  # 自上次成功以来被blocked的(工具, 规范参数)
         self.validations = 0
         self.max_validations = max_validations
         self.last_validation: ItineraryProposal | None = None
@@ -305,6 +312,14 @@ class TravelToolExecutor:
         self, context: RunContext, name: str, arguments: dict[str, object]
     ) -> ToolResult:
         result = await self._execute(context, name, arguments)
+        if result.code is None:
+            self.rejected.clear()
+        elif result.code == "blocked" and not {"tool_call_cap", "repeat_blocked"} & set(
+            result.detail
+        ):
+            self.rejected[call_key(name, arguments)] = tuple(
+                tag for tag in result.detail if tag in get_args(ToolReason.__value__)
+            )
         if name != "get_weather_forecast" and result.code in {
             "unavailable",
             "timeout",
@@ -344,6 +359,13 @@ class TravelToolExecutor:
             if self.calls >= self.max_calls:
                 return ToolResult(
                     {}, code="blocked", suggestion="本轮工具次数已达上限", detail=("tool_call_cap",)
+                )
+            if (original := self.rejected.get(call_key(name, arguments))) is not None:
+                return ToolResult(
+                    {},
+                    code="blocked",
+                    suggestion="相同调用刚被拒绝且其间没有成功的调用；请修改输入，或向用户说明无法完成",
+                    detail=("repeat_blocked", *original),
                 )
             self.calls += 1
             try:

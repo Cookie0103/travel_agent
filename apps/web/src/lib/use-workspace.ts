@@ -158,6 +158,7 @@ export function useWorkspace({
       cursor.current = after;
       // 早期出卡按事件顺序串行；失败静默，运行结束后的 hydrate 为准。
       let early = Promise.resolve();
+      let failedReason: string | null = null; // 最近一次失败工具步骤的封闭原因码
       try {
         await readEvents(
           runId,
@@ -173,6 +174,8 @@ export function useWorkspace({
             )
               return;
             cursor.current = event.sequence;
+            if (event.kind === "tool_finished" && event.code)
+              failedReason = event.reason ?? null;
             setEvents((old) => [...old.slice(-79), event]);
             if (isCardEvent(event))
               early = early
@@ -215,7 +218,7 @@ export function useWorkspace({
         if (!active()) return;
         setBookings(savedBookings);
         if (final.error_code && final.business_result?.kind !== "stage_failed")
-          setError(runFailureMessage(final.error_code));
+          setError(runFailureMessage(final.error_code, failedReason));
       } catch (failure) {
         if (active()) fail(failure);
       } finally {

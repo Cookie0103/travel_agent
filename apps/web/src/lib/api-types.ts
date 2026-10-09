@@ -2037,6 +2037,8 @@ export interface components {
         };
         /** @enum {string} */
         UiStageReason: "plan_exists" | "patch_invalid" | "repair_limit" | "other";
+        /** @enum {string} */
+        UiToolReason: "tool_call_cap" | "repair_limit" | "repeat_blocked" | "result_too_long" | "unregistered_tool" | "context_reuse" | "evidence_missing" | "offer_unknown_id" | "not_found" | "live_hold_disabled" | "plan_exists" | "patch_invalid" | "revision_stale" | "lodging_budget_conflict" | "hotel_search_location_required" | "schema" | "other";
         /**
          * RuntimeEvent
          * @description 前端/CLI 所需的最小事件；text 是用户输出，不进入公共 Trace。
@@ -2056,6 +2058,8 @@ export interface components {
             tool_name: string | null;
             /** @default null */
             code: components["schemas"]["UiErrorCode"] | null;
+            /** @default null */
+            reason: components["schemas"]["UiToolReason"] | null;
             /**
              * Tool Call Id
              * @default null

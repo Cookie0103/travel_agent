@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from pydantic import TypeAdapter, ValidationError
 
 from backend.agent.runtime import EventSink
-from backend.domain.execution import BusinessResult, RunContext, RuntimeEvent
+from backend.domain.execution import BusinessResult, RunContext, RuntimeEvent, tool_reason
 from backend.tools.contracts import ToolDefinition, ToolExecutor, ToolResult
 from backend.trace_log import trace
 
@@ -23,6 +23,7 @@ def _chars(result: ToolResult) -> int:
 
 def stage_result(result: ToolResult) -> BusinessResult | None:
     if result.code:
+        # 重复被拒的调用保留原始标签(repeat_blocked之后)，业务结果仍给出原因。
         reason = next(
             (v for v in result.detail if v in {"plan_exists", "patch_invalid", "repair_limit"}),
             "other",
@@ -141,6 +142,7 @@ async def execute_observed(
             tool_name=safe_name,
             tool_call_id=call_id,
             code=result.code,
+            reason=tool_reason(result.code, result.detail),
             result_empty=result.empty,
             request_revision=revision
             if isinstance(revision, int) and not isinstance(revision, bool)

@@ -18,6 +18,25 @@ type ErrorCode = Literal[
     "conflict",
     "cancelled",
 ]
+type ToolReason = Literal[
+    "tool_call_cap",
+    "repair_limit",
+    "repeat_blocked",
+    "result_too_long",
+    "unregistered_tool",
+    "context_reuse",
+    "evidence_missing",
+    "offer_unknown_id",
+    "not_found",
+    "live_hold_disabled",
+    "plan_exists",
+    "patch_invalid",
+    "revision_stale",
+    "lodging_budget_conflict",
+    "hotel_search_location_required",
+    "schema",
+    "other",
+]
 type EventKind = Literal[
     "started",
     "text",
@@ -63,6 +82,17 @@ def error_code(value: object) -> ErrorCode:
         if isinstance(value, str) and value in get_args(ErrorCode.__value__)
         else "provider_error"
     )
+
+
+def tool_reason(code: ErrorCode | None, detail: tuple[str, ...]) -> ToolReason | None:
+    """ToolResult.detail -> 封闭原因码；成功为None，未知标签统一为other，绝不透传自由文本。"""
+    if code is None:
+        return None
+    allowed = get_args(ToolReason.__value__)
+    for value in detail:
+        if value in allowed and value != "other":
+            return cast(ToolReason, value)
+    return "not_found" if "service:404" in detail else "other"
 
 
 UPSTREAM_REASON = "upstream_http_"  # RuntimeOutcome.reason前缀，后接三位HTTP状态码
@@ -156,6 +186,7 @@ class RuntimeEvent:
     text: str = ""
     tool_name: str | None = None
     code: ErrorCode | None = None
+    reason: ToolReason | None = None  # 仅tool_finished失败时设置；封闭码，不含自由文本
     tool_call_id: UUID | None = None
     argument_keys: tuple[str, ...] = ()
     result_empty: bool | None = None

@@ -12,6 +12,7 @@ type Entry =
       keys: string[];
       state: "running" | "ok" | "failed";
       code: string | null;
+      reason: string | null;
     }
   | { type: "compacted"; key: string }
   | { type: "presentation"; key: string };
@@ -28,6 +29,7 @@ export function activityEntries(events: AppEvent[]): Entry[] {
         keys: event.argument_keys,
         state: "running",
         code: null,
+        reason: null,
       };
       entries.push(entry);
       if (event.tool_call_id) open.set(event.tool_call_id, entry);
@@ -36,7 +38,12 @@ export function activityEntries(events: AppEvent[]): Entry[] {
         ? open.get(event.tool_call_id)
         : undefined;
       const state = event.code ? "failed" : "ok";
-      if (entry) Object.assign(entry, { state, code: event.code });
+      if (entry)
+        Object.assign(entry, {
+          state,
+          code: event.code,
+          reason: event.reason ?? null,
+        });
       else
         entries.push({
           type: "tool",
@@ -45,6 +52,7 @@ export function activityEntries(events: AppEvent[]): Entry[] {
           keys: event.argument_keys,
           state,
           code: event.code,
+          reason: event.reason ?? null,
         });
     } else if (event.kind === "context_compacted")
       entries.push({ type: "compacted", key: `c${event.sequence}` });
@@ -67,7 +75,7 @@ export function RunSteps({ events }: { events: AppEvent[] }) {
         {entries.map((entry) => (
           <li key={entry.key}>
             {entry.type === "tool"
-              ? `${entry.state === "ok" ? "✓" : entry.state === "failed" ? "✗" : "●"} ${toolLabel(entry.name)}${entry.state === "failed" ? ` — ${errorExplanation(entry.code)}` : ""}`
+              ? `${entry.state === "ok" ? "✓" : entry.state === "failed" ? "✗" : "●"} ${toolLabel(entry.name)}${entry.state === "failed" ? ` — ${errorExplanation(entry.code, entry.reason)}` : ""}`
               : entry.type === "compacted"
                 ? "上下文已压缩"
                 : "已更新卡片"}

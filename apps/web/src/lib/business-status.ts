@@ -12,8 +12,10 @@ const runtimeLabels: Record<string, string> = {
 export const runStatus = (status: string): string =>
   Object.hasOwn(runtimeLabels, status) ? runtimeLabels[status] : "状态暂不明确";
 
-export const runFailureMessage = (code: string | null | undefined): string =>
-  `执行未完成：${errorExplanation(code)}`;
+export const runFailureMessage = (
+  code: string | null | undefined,
+  reason?: string | null,
+): string => `执行未完成：${errorExplanation(code, reason)}`;
 
 /** A completed reply is not proof of staging, validation or a formal commit. */
 export function runLabel(run: Run): string {
