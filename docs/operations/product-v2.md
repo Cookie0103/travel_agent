@@ -743,3 +743,8 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 
 - 模型探针独立提交58369cc已push；GitHub push37911171191/PR37911176556开始执行，未宣称绿。原7例模型离线契约与调用门禁入该提交；酒店探针单独提交。
 - P83酒店脱敏字典键漏扫：独立示例未知键含凭据被保留。新增raw/quote(s,safe="")两反例2failed/.23s，最小逐键拒写修复后酒店5例与上述83专项绿；独立复核关闭原P2。现场样本尚未生成；没有以删除未知业务键或忽略类型方式处理。
+
+- 58369cc push37911171191最终python/web/docker-demo全success（gh run view三个job实读）；27449a9酒店探针也已push，最新push37911407740/PR37911413966当时web/docker-demo成功、python运行中，随后继续核对。真实执行请用户普通终端各运行一次已提交probe --live；原因是此前本机PG/端口连接沙箱权限被挡，不提升或换工具绕过。未再索取已给出的调用授权。
+
+- 最终核对：58369cc push37911171191/PR37911176556、27449a9 push37911407740/PR37911413966的python/web/docker-demo均success。最新push日志只提取汇总：1364passed/1skipped/1live deselected/214.90s；CI没有真实模型/供应商key。不将CI全量当真实供应商或浏览器验收。
+- 恢复点：保持batch-2026-10-08-product-V2；两probe已提交/推送，用户普通终端各执行一次的请求已发出，等待safe JSON汇总与自动脱敏fixtures。不要重跑已有模型marker、扩大预算、重放私人原文或切Railway。T3.6原生日历与R6仍未通过；排序等覆盖与ADR016后再写ADR017。
