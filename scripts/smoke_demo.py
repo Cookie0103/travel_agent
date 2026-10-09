@@ -13,7 +13,7 @@ from backend.domain.booking import Booking
 from backend.domain.plans import SavedPlan
 from backend.services.runs import MessageInput, RunView
 from backend.services.sessions import DemoIdentity, SessionView
-from backend.services.travel import RequestUpdate
+from backend.services.travel import RequestUpdateView
 from backend.services.views import HotelPresentation, PlanView
 from scripts.dev import ROOT, configure_environment
 
@@ -70,7 +70,7 @@ def exercise(client: httpx.Client) -> State:
         client,
         "PATCH",
         path + "/request",
-        RequestUpdate,
+        RequestUpdateView,
         {
             "expected_revision": 0,
             "set": {
@@ -84,6 +84,7 @@ def exercise(client: httpx.Client) -> State:
                 "budget": "50000",
                 "departure_time": "09:00",
                 "transport": "walk",
+                "hard_constraints": ["住宿：无要求", "房型：无要求", "床型：无要求"],
             },
         },
     )
@@ -102,7 +103,11 @@ def exercise(client: httpx.Client) -> State:
 
     comparison = run_demo(client, session.session_id, "演示：比较酒店")
     hotels = presentation(comparison, HotelPresentation)
-    assert len(hotels.cards) == 3 and hotels.comparison.comparable
+    # 3家酒店 x 每家2张卡（与 tests/integration/test_workbench.py 一致）
+    assert len(hotels.cards) == 6 and len({c.hotel_id for c in hotels.cards}) == 3, (
+        f"酒店卡数量异常：{len(hotels.cards)}张，预期3家x2张"
+    )
+    assert hotels.comparison.comparable
     initial = run_demo(client, session.session_id, "演示：生成行程")
     draft = presentation(initial, PlanView)
     assert draft.draft_id and len(draft.cards) == 6 and draft.validation.status == "partial"

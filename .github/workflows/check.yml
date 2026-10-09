@@ -31,7 +31,7 @@ jobs:
         with:
           node-version: 24
       # 匹配本地已验证的CLI，避免SDK回归因缺CLI被跳过；不配置任何模型凭据。
-      - run: npm install --global @anthropic-ai/claude-code@2.1.114
+      - run: npm install --global @anthropic-ai/claude-code@2.1.295
       - run: claude --version
       - uses: astral-sh/setup-uv@v6
         with:
