@@ -848,3 +848,6 @@ Chrome旧真实页面computed style：primary rgb(15,118,110)/白字、body17px�
 - 最终 web117/298.077ms、typecheck/lint/build五路由；dev check295/三平台/3契约/10文档入口；dev test1367passed/1skipped/4live deselected/291.22s（真实PG集成，默认无付费API）。独立全前端只读审查无P1/P2，无未定义token、动态status丢失或过度设计。
 - Chrome宽1512与窄390 scrollWidth等于innerWidth，时间线/住宿/未知原状态、tab/focus/模型禁用保持；表单来源8px，输入16px。误点不存在取消后读实际收起再关闭；T75来源详情导航只看到中间loading，最终详情依T74A已实际检查，不重复升级声明。已保存列表和来源列表最终实际看过。
 - 静态产物copy并重启session82108；公开截图仅京都固定数据，迁移前私有截图仅ignored不分享。临时viewport已恢复，辅助tab关闭。Railway及R6没有变更。
+
+- 收尾CI（VERIFIED）：bf4cbc3/37950301292、3fc830f/37950916471、4ab5532/37951675678均python/web/docker-demo三任务success；每次push后实际核验。最终本地12脚本/CSS全部HTTP200。追加固定京都两天一夜，rev5/4行程项/单晚住宿/7500已知/0冲突/7未知，未确认或预订，公开截图已看。
+- 浏览器listener异步channel关闭日志仍可见，来源未定位，不冒称控制台零错误；实际操作正常，没有据此改业务或扩展。

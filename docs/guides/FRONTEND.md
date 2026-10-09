@@ -1,6 +1,6 @@
 # 前端实施与验收约定
 
-范围：[M1.8规格](../tasks/M1.md)、[design/02 API](../design/02-architecture.md)。前端工作区apps/web，当前是否可运行看[执行计划](../execution/travel-agent.md)。
+范围：[M1.8规格](../tasks/M1.md)、[design/02 API](../design/02-architecture.md)。前端工作区apps/web，当前是否可运行看[当前批次计划](../plans/2026-10-08-product-v2.md)。
 
 - /articles列表与详情提供历史快照来源及明确规划引用；/工作台完成条件、聊天、报价、差异与确认；/plans只读已确认版本。
 - 攻略引用只填消息，不自动发送；正式页复用卡片/身份恢复，首读失败后按持久plan_id重读。导航卸载撤销迟到请求写回。
@@ -17,3 +17,9 @@
 
 新增前端依赖先写[ADR](../adr/)，必要契约只定义一次；类型检查/构建命令实现后接入开发入口及CI。
 验收证据统一放evidence，结果更新[质量记录](QUALITY_SCORE.md)，不新增逐页面人工批准。
+
+视觉实现按 [design/07](../design/07-frontend-style.md) 与 [ADR-018](../adr/018-frontend-tailwind-shadcn.md)：
+
+- `apps/web/src/app/tokens.css` 是颜色和四档字号唯一来源；Tailwind用于组件组成，globals.css保留共享布局。
+- `components/ui` 只含按需Button、Popover和Loading；Radix负责弹层定位/关闭/焦点，原生select保留模型可用性。
+- 每块跑typecheck/lint/test/build并在Chrome宽窄屏实际查看；build后复制static到standalone并重启（见当前计划§10.3）。
