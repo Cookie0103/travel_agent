@@ -740,3 +740,6 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 
 - 受控探针最终离线验证（2026-10-09）：模型旧草稿顺序测试补success/error两种终态；酒店保留键原始/URL编码凭据反例首红2failed（DID NOT RAISE），逐键扫描后修复。`uv run pytest -q tests/test_plan_feedback_probe.py tests/test_hotel_coverage_probe.py tests/test_itinerary.py tests/test_rakuten_discovery.py` 83passed/.94s；`dev check`294文件/三平台strict/3契约/10入口通过；两probe不带--live均real_calls=0。独立只读复核原P2关闭、无阻塞级发现，未读取私密配置或执行真实请求。
 - 恢复核对：当前工作区仅本轮探针/记录；85242f4 push37908055529与PR37908062158均success，之前fecc2b2 PR37907838979也success。新探针CI尚未产生，不借用历史绿灯。
+
+- 模型探针独立提交58369cc已push；GitHub push37911171191/PR37911176556开始执行，未宣称绿。原7例模型离线契约与调用门禁入该提交；酒店探针单独提交。
+- P83酒店脱敏字典键漏扫：独立示例未知键含凭据被保留。新增raw/quote(s,safe="")两反例2failed/.23s，最小逐键拒写修复后酒店5例与上述83专项绿；独立复核关闭原P2。现场样本尚未生成；没有以删除未知业务键或忽略类型方式处理。
