@@ -803,4 +803,8 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 修复只改TravelConditions.departure_time.description与travel_prompt；原字段/validator/计数保留。按export_web_schema、apps/web的pnpm generate/prettier同步4处描述/注释，不改契约数据形状。
 - `TRAVEL_TIME_PROBE=both TRAVEL_TIME_PROBE_PHASE=after uv run python -m pytest tests/live/test_time_extraction.py -m live -q -s`：f7019537/None/0.043962CNY、06e531ae/09:00/0.044626CNY、b1349d1f纠错None/0.044472CNY；各2模型请求，3passed17.62s。仅update_travel_request、旅行API0；SDK+PG条件映射验收，不等同正式RunService整轮行程验收。修前后总8模型/0.176040CNY；追加授权以来agent总99请求，停止新增付费试跑。live默认排除/每case2请求/标记拒自动重跑/预算15CNY，未改.env或运行档位。
 - 旧会话修复只读确认rev4/22:00、8约束含抵达返程；使用既有TravelService且严格rev4/22点门禁，仅clear departure_time并explicit_fields；PG读回rev5/None、changed_fields仅departure_time、其余所有字段相等。既有失效机制使旧草稿需重规划，不绕过版本或校验；没有供应商调用、订单或部署。
-- 本机dev check：295文件格式/三平台mypy/3分层契约/10文档入口通过；web typecheck/lint/111tests0fail/296.20ms。未本机build，故无需复制static或重启前端；正常提交的全量关卡、独立审查与CI待补。
+- 本机dev check：295文件格式/三平台mypy/3分层契约/10文档入口通过；web typecheck/lint/111tests0fail/296.20ms。未本机build，故无需复制static或重启前端；正常提交未出现钩子执行输出，未谎称本机全量通过；完整验收使用CI。
+
+- 收尾（VERIFIED）：独立只读审查无P1/P2，生成4处description/注释一致，无过度设计。106a826已正常push，37942674612三任务success；完整dev check295/3契约/10入口，dev test1367passed/1skipped/4live deselected/153.87s，web111/type/lint/build成功，docker-demo整个序列成功。本地模型worker每轮独立进程读取travel_prompt与工具definitions（REASONED：process.invoke_worker/worker入口），无需改权限/服务配置；旧受控server会话已不存在，未杀用户其他进程。PG再次只读rev5/None、8约束含抵达/返程且无每日22点约束。浏览器更新后的视觉未看过。
+
+- PR37942680279最终亦python/web/docker-demo全部success；非重跑或跳过检查。任务状态只在计划§4，C34沉淀时间语义案例，不扩大为完整行程通过。
