@@ -7,7 +7,7 @@ import pytest
 from sqlalchemy import select
 
 from backend.domain.execution import RunContext
-from backend.domain.hotel_details import HotelDisplayDetails
+from backend.domain.hotel_details import StoredHotelDetails
 from backend.domain.hotels import HotelOffer
 from backend.domain.plans import StageInput
 from backend.persistence.models import EvidenceRow, PlanVersionRow
@@ -39,7 +39,7 @@ def test_metadata_survives_reopen_and_formal_version_without_quote_changes(
         record = original.model_copy(
             update={
                 "evidence_id": uuid4(),
-                "display_details": HotelDisplayDetails.model_validate(METADATA),
+                "display_details": StoredHotelDetails.model_validate(METADATA),
             }
         )
         await travel.record_evidence(context, (record,))

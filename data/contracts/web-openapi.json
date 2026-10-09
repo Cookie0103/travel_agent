@@ -2231,6 +2231,17 @@
             ],
             "title": "Reservation Url"
           },
+          "price_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Basis"
+          },
           "offer_id": {
             "type": "string",
             "format": "uuid",
@@ -2496,95 +2507,6 @@
           "content_version"
         ],
         "title": "HotelCard"
-      },
-      "HotelDisplayDetails": {
-        "properties": {
-          "address": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Address"
-          },
-          "latitude": {
-            "anyOf": [
-              {
-                "type": "number",
-                "maximum": 90.0,
-                "minimum": -90.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Latitude"
-          },
-          "longitude": {
-            "anyOf": [
-              {
-                "type": "number",
-                "maximum": 180.0,
-                "minimum": -180.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Longitude"
-          },
-          "review_count": {
-            "anyOf": [
-              {
-                "type": "integer",
-                "minimum": 0.0
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Review Count"
-          },
-          "hotel_info_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Hotel Info Url"
-          },
-          "plan_list_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Plan List Url"
-          },
-          "reservation_url": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Reservation Url"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "title": "HotelDisplayDetails"
       },
       "HotelOffer": {
         "properties": {
@@ -4283,6 +4205,145 @@
           "other"
         ]
       },
+      "StoredHotelDetails": {
+        "properties": {
+          "address": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Address"
+          },
+          "latitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 90.0,
+                "minimum": -90.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latitude"
+          },
+          "longitude": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 180.0,
+                "minimum": -180.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Longitude"
+          },
+          "review_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Count"
+          },
+          "hotel_info_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hotel Info Url"
+          },
+          "plan_list_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Plan List Url"
+          },
+          "reservation_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reservation Url"
+          },
+          "price_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Basis"
+          },
+          "search_total_found": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search Total Found"
+          },
+          "more_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "More Url"
+          },
+          "more_url_scope": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "search",
+                  "destination"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "More Url Scope"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "StoredHotelDetails",
+        "description": "随证据保存的展示细节；比卡片多出本次搜索的整体信息，由present提到展示顶层，不进卡片。"
+      },
       "TravelConditions": {
         "properties": {
           "city": {
@@ -5073,6 +5134,18 @@
             "default": null,
             "title": "Reservation Url"
           },
+          "price_basis": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Price Basis"
+          },
           "offer_id": {
             "format": "uuid",
             "title": "Offer Id",
@@ -5360,6 +5433,46 @@
           },
           "comparison": {
             "$ref": "#/components/schemas/UiComparison"
+          },
+          "total_found": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total Found"
+          },
+          "more_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "More Url"
+          },
+          "more_url_scope": {
+            "anyOf": [
+              {
+                "enum": [
+                  "search",
+                  "destination"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "More Url Scope"
           }
         },
         "required": [

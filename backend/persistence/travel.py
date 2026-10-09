@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.evidence import EvidenceKind, EvidenceRecord
 from backend.domain.execution import RunContext
-from backend.domain.hotel_details import HotelDisplayDetails, HotelMetadata
+from backend.domain.hotel_details import HotelMetadata, StoredHotelDetails
 from backend.domain.travel_request import TravelRequest, legacy_request
 from backend.persistence.models import EvidenceRow, TravelRequestRow
 from backend.persistence.sessions import get_session
@@ -55,6 +55,20 @@ async def update_request(
         )
 
 
+LEGACY_DETAIL_FIELDS = {"hotel_info_url", "plan_list_url", "reservation_url"}
+
+
+def unset_new_fields(record: EvidenceRecord) -> set[str]:
+    """T4.2之后新增的展示字段为空时不写入，旧读写者看到的侧列形状不变。"""
+    details = record.display_details
+    assert details is not None
+    return {
+        name
+        for name in type(details).model_fields
+        if name not in LEGACY_DETAIL_FIELDS and getattr(details, name) is None
+    }
+
+
 async def add_evidence(
     db: AsyncSession, context: RunContext, records: Sequence[EvidenceRecord]
 ) -> None:
@@ -66,7 +80,7 @@ async def add_evidence(
             kind=record.kind,
             payload=record.model_dump(mode="json"),
             display_details=record.display_details.model_dump(
-                mode="json", exclude=set(HotelMetadata.model_fields)
+                mode="json", exclude=set(HotelMetadata.model_fields) | unset_new_fields(record)
             )
             if record.display_details is not None
             else None,
@@ -90,7 +104,7 @@ def evidence_from_row(row: EvidenceRow) -> EvidenceRecord:
     if record.kind == "hotel_offer" and (
         row.display_details is not None or row.hotel_metadata is not None
     ):
-        details = HotelDisplayDetails.model_validate(row.display_details or {})
+        details = StoredHotelDetails.model_validate(row.display_details or {})
         if row.hotel_metadata is not None:
             metadata = HotelMetadata.model_validate(row.hotel_metadata)
             details = details.model_copy(update=metadata.model_dump())

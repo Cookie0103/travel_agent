@@ -98,6 +98,10 @@ class Comparison(BaseModel):
 
 
 class HotelPresentation(BaseModel):
+    model_config = ConfigDict(json_schema_serialization_defaults_required=False)
     component: Literal["hotel_comparison"]
     cards: tuple[HotelCard, ...]
     comparison: Comparison
+    total_found: int | None = None
+    more_url: str | None = None
+    more_url_scope: Literal["search", "destination"] | None = None

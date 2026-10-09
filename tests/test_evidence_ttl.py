@@ -146,10 +146,10 @@ def test_rakuten_offer_expiry_follows_profile(
     monkeypatch.setenv("TRAVEL_PROFILE", profile)
     first = candidates(sample())
 
-    async def nightly(*_: object, **__: object) -> tuple[object, ...]:
-        return first
+    async def query(*_: object, **__: object) -> tuple[tuple[object, ...], None]:
+        return first, None
 
-    monkeypatch.setattr(Rakuten, "nightly", nightly)
+    monkeypatch.setattr(Rakuten, "query", query)
 
     async def run() -> tuple[HotelOffer, ...]:
         trip = request().model_copy(update={"end_date": date(2026, 11, 7)})

@@ -6,7 +6,7 @@ from uuid import UUID
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
-from backend.domain.hotel_details import HotelDisplayDetails
+from backend.domain.hotel_details import StoredHotelDetails
 from backend.domain.hotel_selection import hotel_rate_indices
 from backend.domain.hotels import HotelOffer, compare, quote
 from backend.domain.room_preferences import room_assessment, room_order, room_preferences_question
@@ -47,7 +47,7 @@ class HotelService:
         context: RunContext,
         revision: int,
         hotel_id: str | None = None,
-        limit: int = 4,
+        limit: int = 5,
     ) -> tuple[EvidenceRecord, ...]:
         request = await self._request(context, revision)
         return await self._quote(context, request, hotel_id=hotel_id, limit=limit)
@@ -201,6 +201,7 @@ class HotelService:
         return {
             "component": "hotel_comparison",
             "cards": cards(records, request),
+            **search_summary(records),
             "comparison": {
                 **compare(offers, datetime.now(UTC)),
                 "budget_relation": lodging_budget_relation(request).model_dump(mode="json"),
@@ -209,13 +210,33 @@ class HotelService:
         }
 
 
+SEARCH_FIELDS = {"search_total_found", "more_url", "more_url_scope"}
+
+
+def search_summary(records: tuple[EvidenceRecord, ...]) -> dict[str, object]:
+    """同一次搜索的总数与“查看更多”入口提到展示顶层；旧证据没有这些字段时省略。"""
+    details = next(
+        (r.display_details for r in records if r.display_details and r.display_details.more_url),
+        next((r.display_details for r in records if r.display_details), None),
+    )
+    if details is None:
+        return {"total_found": None, "more_url": None, "more_url_scope": None}
+    return {
+        "total_found": details.search_total_found,
+        "more_url": details.more_url,
+        "more_url_scope": details.more_url_scope,
+    }
+
+
 def cards(
     records: tuple[EvidenceRecord, ...], request: TravelRequest | None = None
 ) -> list[dict[str, object]]:
     return [
         {
             **HotelOffer.model_validate(record.value).card(request),
-            **(record.display_details or HotelDisplayDetails()).model_dump(mode="json"),
+            **(record.display_details or StoredHotelDetails()).model_dump(
+                mode="json", exclude=SEARCH_FIELDS
+            ),
             **room_assessment(
                 HotelOffer.model_validate(record.value).room_type, request
             ).model_dump(mode="json"),

@@ -8,7 +8,7 @@ from uuid import UUID, uuid4
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, field_serializer, model_validator
 
 from backend.domain.evidence import evidence_conditions
-from backend.domain.hotel_details import HotelDisplayDetails
+from backend.domain.hotel_details import StoredHotelDetails
 from backend.domain.travel_request import (
     LegacyRequestSnapshot,
     TravelRequest,
@@ -65,7 +65,7 @@ class QuoteFields(BaseModel):
 
 class HotelOffer(QuoteFields):
     request: TravelRequest
-    display_details: HotelDisplayDetails | None = Field(default=None, exclude=True)
+    display_details: StoredHotelDetails | None = Field(default=None, exclude=True)
 
     @field_serializer("request")
     def legacy_snapshot(self, request: TravelRequest) -> LegacyRequestSnapshot:

@@ -9,6 +9,7 @@ from sqlalchemy import select
 from backend.domain.booking import HoldHotelInput
 from backend.domain.evidence import EvidenceRecord
 from backend.domain.execution import RunContext
+from backend.domain.hotel_details import StoredHotelDetails
 from backend.domain.hotels import HotelOffer
 from backend.persistence.models import BookingRow, EvidenceRow, SupplierHoldRow, SupplierOrderRow
 from backend.services.bookings import BookingService
@@ -196,5 +197,46 @@ def test_formal_plan_reopen_preserves_link_sidecar_without_changing_saved_conten
             )
         assert after == before
         assert saved.content.hotel_evidence_id == record.evidence_id
+
+    runner.run(exercise())
+
+
+def test_search_summary_is_stored_with_evidence_and_lifted_to_presentation(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    runner, travel, context = travel_setup
+    summary = {
+        "search_total_found": 187,
+        "more_url": "https://travel.rakuten.co.jp/yado/okinawa/nahashi.html",
+        "more_url_scope": "destination",
+        "price_basis": "乐天返回的该酒店符合条件的套餐中最低价",
+    }
+
+    async def exercise() -> None:
+        hotels = HotelService(travel)
+        original = (await hotels.search(context, 1, limit=1))[0]
+        quote = HotelOffer.model_validate(original.value)
+        record = original.model_copy(
+            update={
+                "evidence_id": uuid4(),
+                "entity_id": str(quote.offer_id),
+                "display_details": StoredHotelDetails.model_validate(summary),
+            }
+        )
+        await travel.record_evidence(context, (record,))
+        known = (await hotels.known_quotes(context, (record.evidence_id,)))[0]
+        assert known.display_details and known.display_details.search_total_found == 187
+        presentation = await hotels.present(context, 1, (record.evidence_id,))
+        assert presentation["total_found"] == 187
+        assert presentation["more_url"] == summary["more_url"]
+        assert presentation["more_url_scope"] == "destination"
+        cards = presentation["cards"]
+        assert isinstance(cards, list) and isinstance(cards[0], dict)
+        assert cards[0]["price_basis"] == summary["price_basis"]
+        assert not {"search_total_found", "more_url", "more_url_scope"} & set(cards[0])
+        # 离线/旧报价没有搜索摘要：顶层字段为空，不编造。
+        old = (await hotels.search(context, 1, limit=1))[0]
+        plain = await hotels.present(context, 1, (old.evidence_id,))
+        assert plain.get("total_found") is None and plain.get("more_url") is None
 
     runner.run(exercise())

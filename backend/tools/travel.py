@@ -64,11 +64,11 @@ class HotelSearchInput(BaseModel):
     expected_revision: int = Field(strict=True, ge=0)
     hotel_id: str | None = Field(default=None, min_length=1, max_length=100)
     limit: int = Field(
-        default=4,
+        default=5,
         strict=True,
         ge=1,
         le=6,
-        description="不同酒店数；全结果最多6条报价，每家最多2套餐",
+        description="不同酒店数，默认5；实时模式每家只给一张最低价卡，指定hotel_id时才列同店多套餐（最多6条报价，每家最多2套餐）",
     )
 
 
@@ -148,7 +148,7 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "search_hotel_offers",
-        "按当前完整入住条件查询不同酒店（limit为酒店数）；整体最多6报价，每家最多2套餐，保持上游顺序。实时模式逐晚核算乐天含税报价，未知不猜测。每张卡的offer_id用于present/refresh，evidence_id用于行程hotel_evidence_id。",
+        "按当前完整入住条件查询不同酒店（limit为酒店数，默认5）；实时模式每家一张最低价套餐卡并带总数与乐天入口，指定hotel_id时列该店套餐（最多6报价，每家最多2套餐）；保持上游顺序。实时模式逐晚核算乐天含税报价，未知不猜测。每张卡的offer_id用于present/refresh，evidence_id用于行程hotel_evidence_id。",
         HotelSearchInput.model_json_schema(),
     ),
     ToolDefinition(

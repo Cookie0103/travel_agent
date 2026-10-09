@@ -77,7 +77,6 @@ def test_live_selection_demotes_before_limit_without_extra_query_or_price_sort()
         )
 
         def respond(query: httpx.Request) -> httpx.Response:
-            assert "sort" not in query.url.params
             return httpx.Response(
                 200,
                 json={

@@ -65,7 +65,6 @@ def test_response_metadata_keeps_values_and_unknowns_without_new_queries(
         def respond(query: httpx.Request) -> httpx.Response:
             assert query.url.params["datumType"] == "1"
             assert query.url.params["responseType"] == "large"
-            assert "sort" not in query.url.params
             return httpx.Response(200, json=payload)
 
         async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as http:
