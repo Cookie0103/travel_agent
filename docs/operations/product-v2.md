@@ -593,3 +593,10 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 最终 `uv run python scripts/dev.py test` 1263passed/0failed/1skipped/1live deselected/269.77s（exit0）。这是最后阶段守卫/5单位反例/事件顺序断言及实际精确pair的最终版，原七项未跳过/删除、全部执行绿。自审核对改动范围，独立最终关闭P2/P3，无新发现；提交前check_docs10入口/diff check通过。无真实模型/酒店/生产操作。
 
 - 实现提交 `153c041`，`git push origin batch-2026-10-08-product-V2`退出0、输出8baa394..153c041，提交后checkout干净/与origin一致。§4/§7/§8/§9关闭T0.6/P05，C27归档；T3.6/T4.4仅验收外部条件不足改blocked，不改历史失败记录。未改Railway跟踪、未部署，T5.3/R6仍按依赖等待。
+
+## 2026-10-09 用户手测 DeepSeek 本地入口
+
+- 用户明确要求测试DeepSeek版本。切换前checkout干净，本地task_runs queued/running/cancelling总数0；精确核对8000监听进程为本仓库backend.server后SIGTERM，启动`DEMO_MODE=true LLM_PROVIDER=deepseek uv run python -m backend.server --live`。日志仅ignored `.cache/user-deepseek-api.log`。
+- 只读配置核查：deepseek-flash/key已配置（未输出值），default profile/DAILY_BUDGET_CNY15.00；保留原费用/次数/数据守卫，不用human/relaxed、不改.env/账本或生产。首次脚本误从budget导入runtime_budget而ImportError；未执行配置/网络操作，删未用导入后核查通过。
+- 实際GET `127.0.0.1:8000/health` status=ok；8000/models及3000/api/models均DeepSeek available=true/reason=null，Claude仍因缺凭据不可用。没有自动发送真实模型或供应商测试消息；由用户在Chrome刷新3000并选择DeepSeek手测，发送后按既有人民币授权和数据API限额运行。
+- 恢复注意：本地API现为--live，不再是此前默认离线启动；前端仍需显式选择模型，每条消息记录mode。Railway跟踪旧分支，未部署/改生产。T3.6/T4.4验收和R6状态不因此自动完成。
