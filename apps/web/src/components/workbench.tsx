@@ -1,12 +1,13 @@
 /** Chat workspace composed from persisted business state and the selected model. */
 "use client";
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useWorkspace } from "@/lib/use-workspace";
 import { ArticleReference } from "./articles";
 import { useModels } from "@/lib/models";
 import { Banner } from "./banner";
 import { Composer, type Mode } from "./composer";
 import { Conversation, Welcome } from "./conversation";
+import { workspaceTab, type WorkspaceTab } from "@/lib/workspace-tabs";
 import { TripPanel } from "./trip-panel";
 
 export type Workspace = ReturnType<typeof useWorkspace>;
@@ -16,7 +17,11 @@ export function Workbench({ articleId }: { articleId?: string }) {
   const [text, setText] = useState("");
   const { mode, setMode, options } = useModels();
   const [collapsed, setCollapsed] = useState(false);
-  const [sheetOpen, setSheetOpen] = useState(false);
+  const [mobileTab, setMobileTab] = useState<WorkspaceTab>("chat");
+  const viewId = useId();
+  const chatTab = useRef<HTMLButtonElement>(null);
+  const tripTab = useRef<HTMLButtonElement>(null);
+  const expandPanel = useRef<HTMLButtonElement>(null);
   const active = !!(
     workspace.run && ["running", "cancelling"].includes(workspace.run.status)
   );
@@ -34,7 +39,7 @@ export function Workbench({ articleId }: { articleId?: string }) {
   const attention =
     !!workspace.plan?.draft_id ||
     workspace.bookings.some((booking) => booking.status === "held");
-  const panelClass = `trip-panel${collapsed ? " is-collapsed" : ""}${sheetOpen ? " is-sheet-open" : ""}`;
+  const panelClass = `trip-panel${collapsed ? " is-collapsed" : ""}`;
   return (
     <main className="chat-main">
       {!identity ? (
@@ -49,8 +54,43 @@ export function Workbench({ articleId }: { articleId?: string }) {
           <Welcome workspace={workspace} />
         </>
       ) : (
-        <div className="chat-layout">
-          <section className="chat-pane">
+        <div className="chat-layout" data-mobile-tab={mobileTab}>
+          <div className="mobile-tabs" role="tablist" aria-label="工作区视图">
+            {(["chat", "trip"] as const).map((tab) => (
+              <button
+                key={tab}
+                ref={tab === "chat" ? chatTab : tripTab}
+                id={`${viewId}-${tab}-tab`}
+                role="tab"
+                aria-selected={mobileTab === tab}
+                aria-controls={`${viewId}-${tab}`}
+                tabIndex={mobileTab === tab ? 0 : -1}
+                onClick={() => setMobileTab(tab)}
+                onKeyDown={(event) => {
+                  const next = workspaceTab(event.key, tab);
+                  if (!next) return;
+                  event.preventDefault();
+                  setMobileTab(next);
+                  event.currentTarget.parentElement
+                    ?.querySelector<HTMLButtonElement>(
+                      `[id="${viewId}-${next}-tab"]`,
+                    )
+                    ?.focus();
+                }}
+              >
+                {tab === "chat" ? "对话" : "本次行程"}
+                {tab === "trip" && attention && (
+                  <span className="dot" aria-label="有待处理" />
+                )}
+              </button>
+            ))}
+          </div>
+          <section
+            className="chat-pane"
+            id={`${viewId}-chat`}
+            role="tabpanel"
+            aria-labelledby={`${viewId}-chat-tab`}
+          >
             <div className="chat-toolbar">
               <label className="trip-picker">
                 旅行
@@ -93,17 +133,10 @@ export function Workbench({ articleId }: { articleId?: string }) {
               )}
 
               <button
+                ref={expandPanel}
                 className="only-wide"
                 aria-expanded={!collapsed}
                 onClick={() => setCollapsed((value) => !value)}
-              >
-                本次行程
-                {attention && <span className="dot" aria-label="有待处理" />}
-              </button>
-              <button
-                className="only-narrow"
-                aria-expanded={sheetOpen}
-                onClick={() => setSheetOpen((value) => !value)}
               >
                 本次行程
                 {attention && <span className="dot" aria-label="有待处理" />}
@@ -152,7 +185,9 @@ export function Workbench({ articleId }: { articleId?: string }) {
                 newTrip={newTrip}
                 openPanel={() => {
                   setCollapsed(false);
-                  setSheetOpen(true);
+                  setMobileTab("trip");
+                  if (tripTab.current?.getClientRects().length)
+                    tripTab.current.focus();
                 }}
               />
             </div>
@@ -170,11 +205,16 @@ export function Workbench({ articleId }: { articleId?: string }) {
             />
           </section>
           <TripPanel
+            id={`${viewId}-trip`}
+            labelledBy={`${viewId}-trip-tab`}
             workspace={workspace}
             className={panelClass}
             close={() => {
               setCollapsed(true);
-              setSheetOpen(false);
+              setMobileTab("chat");
+              if (chatTab.current?.getClientRects().length)
+                chatTab.current.focus();
+              else expandPanel.current?.focus();
             }}
           />
         </div>

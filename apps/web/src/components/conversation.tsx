@@ -89,7 +89,12 @@ export function Conversation({
   )?.prompt;
   return (
     <div className="conversation-stream" aria-live="polite">
-      {workspace.restoring && <p role="status">正在恢复对话历史…</p>}
+      {workspace.restoring && (
+        <div role="status">
+          <p className="text-sm text-text-muted">正在恢复对话历史…</p>
+          <ReplySkeleton />
+        </div>
+      )}
       {workspace.historyError && <p role="alert">{workspace.historyError}</p>}
       {workspace.historyBefore && (
         <button
@@ -141,12 +146,11 @@ export function Conversation({
         .filter((row) => row.run_id !== run?.run_id)
         .map((row) => (
           <section className="conversation-turn" key={row.run_id}>
-            <div className="bubble-user">{row.prompt}</div>
-            <div className={`reply reply-${row.status}`}>
-              <span className="avatar" aria-hidden="true">
-                ◆
-              </span>
-              <div className="reply-body">
+            <div className="ml-auto w-fit max-w-[85%] rounded-xl bg-primary px-4 py-3 text-base whitespace-pre-wrap text-primary-ink wrap-anywhere">
+              {row.prompt}
+            </div>
+            <div className="bg-bg text-text">
+              <div className="min-w-0 space-y-3">
                 <p className="run-status">{runLabel(row)}</p>
                 {row.answer && !stageGuidance(row) && (
                   <div className="answer">
@@ -177,23 +181,21 @@ export function Conversation({
             </div>
           </section>
         ))}
-      {currentPrompt && <div className="bubble-user">{currentPrompt}</div>}
+      {currentPrompt && (
+        <div className="ml-auto w-fit max-w-[85%] rounded-xl bg-primary px-4 py-3 text-base whitespace-pre-wrap text-primary-ink wrap-anywhere">
+          {currentPrompt}
+        </div>
+      )}
       {run && (
-        <div className={`reply reply-${run.status}`}>
-          <span className="avatar" aria-hidden="true">
-            ◆
-          </span>
-          <div className="reply-body">
+        <div className="bg-bg text-text">
+          <div className="min-w-0 space-y-3">
             <p className="run-status">{running ? "处理中…" : runLabel(run)}</p>
             {running && !run.answer && (
               <p className="step">
-                {step ? (
-                  `正在${step}…`
-                ) : (
-                  <span className="shimmer">思考中</span>
-                )}
+                {step ? `正在${step}…` : <span>思考中</span>}
               </p>
             )}
+            {running && !run.answer && <ReplySkeleton />}
             {run.answer && !stageGuidance(run) && (
               <div className="answer">
                 <Markdown text={run.answer} />
@@ -237,17 +239,30 @@ export function Conversation({
         </div>
       )}
       {workspace.identity?.pending_message && (
-        <div className="bubble-user">
+        <div className="ml-auto w-fit max-w-[85%] rounded-xl bg-primary px-4 py-3 text-base whitespace-pre-wrap text-primary-ink wrap-anywhere">
           {workspace.identity.pending_message.text}
         </div>
       )}
       {workspace.sendError && (
-        <div className="reply reply-failed">
+        <div className="bg-bg text-text">
           <p className="error" role="alert">
             {workspace.sendError}
           </p>
         </div>
       )}
+    </div>
+  );
+}
+
+function ReplySkeleton() {
+  return (
+    <div
+      aria-hidden="true"
+      className="space-y-3 py-3 motion-safe:animate-pulse"
+    >
+      <div className="h-4 w-3/4 rounded bg-bg-subtle" />
+      <div className="h-4 w-full rounded bg-bg-subtle" />
+      <div className="h-4 w-1/2 rounded bg-bg-subtle" />
     </div>
   );
 }

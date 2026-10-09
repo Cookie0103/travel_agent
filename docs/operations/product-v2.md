@@ -828,3 +828,9 @@ Chrome旧真实页面computed style：primary rgb(15,118,110)/白字、body17px�
 - Chrome演示准备首自然句空格日期不在有限解析范围，原生date fill也未持久化（未宣称原生日历通过）；改用已有演示支持的无空格日期与住宿偏好、免费固定hotel/plan。现有冲绳旅行恢复无草稿，另一个localhost新tab无登录，未用这些当时间线通过。全部0真实API，未更改用户已有旅行。
 
 - T7.2 Chrome实际京都3天固定稿白天/住宿、编号1–6、校验展开和focus已看；390x844 timeline screenshot已看/document.scrollWidth390，临时viewport还原。最初viewport作用在后来创建的另一个tab，读innerWidth1512发现，关闭无用tab后正确390，不用错误尺寸截图作窄屏证据。两天/17点/跨UTC由合成行为测试验证；真实冲绳全流程不纳入本批结论。
+
+## 2026-10-10 T7.3 / P92对话与标签
+
+- 117passed/297.35ms/type/lint/build五routes；新增键盘模块首先ImportError红。移除助手框/装饰菱形/渐变，保留business status/StageFailure/SSE/retry/card时效；用户primary/primary-ink。
+- 独立审查trip缺tabpanel、非tab切换焦点丢失两P2；Chrome修前切到trip后BODY获得焦点，修后打开focus=tripTab、关闭=chatTab，未发文字保留。390无横向溢出、箭头/Home与宽屏关闭展开按钮focus已核验；截图已看。首次按本次行程exact名字漏attention accessible名、宽屏collapsed后无关闭按钮，均按fresh DOM/可见展开入口修正，未伪造交互成功。
+- T7.2 f46f85c/37947865356最终python/web/docker-demo全部success。模型/供应商新增0。

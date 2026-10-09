@@ -18,10 +18,14 @@ const transportLabels: Record<string, string> = {
 
 export function TripPanel({
   workspace,
+  id,
+  labelledBy,
   className,
   close,
 }: {
   workspace: Workspace;
+  id?: string;
+  labelledBy?: string;
   className: string;
   close: () => void;
 }) {
@@ -30,7 +34,13 @@ export function TripPanel({
   const pace = currentPace(request?.soft_constraints ?? []);
   if (!identity) return null;
   return (
-    <aside className={className} aria-label="本次行程">
+    <aside
+      id={id}
+      className={className}
+      role="tabpanel"
+      aria-labelledby={labelledBy}
+      aria-label="本次行程"
+    >
       <div className="panel-head">
         <h2>本次行程</h2>
         <button aria-label="收起本次行程" onClick={close}>
