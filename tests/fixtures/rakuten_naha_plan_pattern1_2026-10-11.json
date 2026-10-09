@@ -1,0 +1,721 @@
+{
+ "pagingInfo": {
+  "recordCount": 2707,
+  "pageCount": 100,
+  "page": 1,
+  "first": 1,
+  "last": 10
+ },
+ "hotels": [
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 54224,
+     "hotelName": "ロハスヴィラ",
+     "hotelKanaName": "ろはすびら",
+     "hotelSpecial": "那覇の中心、国際通りまで徒歩30秒☆癒しのアジアンリゾート。全室wi-fi完備。",
+     "hotelMinCharge": 1,
+     "latitude": 26.21687222,
+     "longitude": 127.687925,
+     "postalCode": "900-0013",
+     "address1": "沖縄県",
+     "address2": "那覇市牧志2-1-6ブレスビル３Ｆ",
+     "telephoneNo": "098-867-7757",
+     "faxNo": "098-867-7757",
+     "access": "モノレール　美栄橋駅より沖映通りを国際通り方向へ徒歩5分",
+     "parkingInformation": "近隣に1200円/12hのコインパーキング有り（詳しくはお問い合わせ下さい）",
+     "nearestStation": null,
+     "reviewCount": 647,
+     "reviewAverage": 3.11,
+     "userReview": "スタッフも丁寧です！　2026-08-27 13:29:27投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=54224\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "RYOKAN",
+     "checkinTime": "15:00",
+     "checkoutTime": "10:00",
+     "lastCheckinTime": "21:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 5,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "2314467894",
+       "roomName": "男性専用ドミトリー【お誕生日プラン】1人様一泊のみの利用",
+       "planId": 6478607,
+       "planName": "【お誕生日プラン】●誕生日の特別価格！●",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 0,
+       "planContents": "〓♪〓♪〓♪〓♪〓♪〓♪〓♪〓♪〓♪〓♪〓♪〓♪\r\n\r\nお誕生日のお客様へ，お届けするプランです。　\r\n\r\n〓♪〓♪〓♪〓♪〓♪〓♪〓♪〓♪〓♪〓♪〓♪〓♪\r\n\r\n＊各ベッドにコンセント・荷物置き・読書灯を設置しております。\r\n＊お手洗い・シャワーは共同となります。\r\n＊ベットは最上段ご使用になります。\r\n＊ご予約日は誕生日限りとさせていただきます。\r\n＊連泊の際は通常価格頂きます。\r\n＊チェックイン時に誕生日を確認できる公的証明書などをご掲示下さい。\r\n＊ドミトリーの利用は男性のみになります。\r\n\r\n\r\n「天然温泉りっかりっか湯」割引券　発売中！\r\n徒歩2分の場所に「天然温泉りっかりっか湯」がございます。\r\n入浴チケットをフロントにて950円にて販売しております。\r\nタオル付のプランではございません。\r\nタオルはご持参いただくかフロントでお買い求めください。\r\nりっかりっか湯に、ボディーソープ・リンスインシャンプー・ヘアドライヤーはあります。\r\n\r\nりっかりっか湯営業時間：\r\nAM6：00-PM24：00（最終受付／PM23：30）\r\n\r\n『ご利用のご注意』\r\n※刺青・タトゥー・泥酔状態の方の入場はお断り致しております。\r\n※ドライサウナ・塩サウナは平日朝10：00からご利用いただけます。\r\n　（日曜・祝日は、朝6：00からご利用可）\r\n※ミストサウナは、平日・日曜・祝日とも朝6：00よりご利用いただけます。\r\n"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 1,
+       "total": 1,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 54224,
+     "hotelName": "ロハスヴィラ",
+     "hotelKanaName": "ろはすびら",
+     "hotelSpecial": "那覇の中心、国際通りまで徒歩30秒☆癒しのアジアンリゾート。全室wi-fi完備。",
+     "hotelMinCharge": 1,
+     "latitude": 26.21687222,
+     "longitude": 127.687925,
+     "postalCode": "900-0013",
+     "address1": "沖縄県",
+     "address2": "那覇市牧志2-1-6ブレスビル３Ｆ",
+     "telephoneNo": "098-867-7757",
+     "faxNo": "098-867-7757",
+     "access": "モノレール　美栄橋駅より沖映通りを国際通り方向へ徒歩5分",
+     "parkingInformation": "近隣に1200円/12hのコインパーキング有り（詳しくはお問い合わせ下さい）",
+     "nearestStation": null,
+     "reviewCount": 647,
+     "reviewAverage": 3.11,
+     "userReview": "スタッフも丁寧です！　2026-08-27 13:29:27投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=54224\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "RYOKAN",
+     "checkinTime": "15:00",
+     "checkoutTime": "10:00",
+     "lastCheckinTime": "21:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 5,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "2314467894",
+       "roomName": "男性専用ドミトリー【お誕生日プラン】1人様一泊のみの利用",
+       "planId": null,
+       "planName": null,
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 1,
+       "planContents": null
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 1,
+       "total": 1,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 44353,
+     "hotelName": "ステラリゾート",
+     "hotelKanaName": "すてらりぞーと",
+     "hotelSpecial": "国際通りまで徒歩3分！喧騒から離れた静かで広い館内。",
+     "hotelMinCharge": 1,
+     "latitude": 26.21408643,
+     "longitude": 127.6895499,
+     "postalCode": "900-0013",
+     "address1": "沖縄県",
+     "address2": "那覇市牧志3-6-41 3F",
+     "telephoneNo": "098-863-1330",
+     "faxNo": "098-863-1330",
+     "access": "牧志バス停より徒歩で5分",
+     "parkingInformation": "コインパーキングをご利用下さい。　最大料金￥800【※シーズンによって変動することがあります】",
+     "nearestStation": "那覇空港",
+     "reviewCount": 526,
+     "reviewAverage": 3.09,
+     "userReview": "立地が良いので、どこへ行くにも便利です。　2026-08-28 22:47:23投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=44353\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "PENSION",
+     "checkinTime": "15:00",
+     "checkoutTime": "10:00",
+     "lastCheckinTime": "21:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 4,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "23457e3467",
+       "roomName": "女性専用ドミトリー【お誕生日プラン】●誕生日の特別価格！●",
+       "planId": null,
+       "planName": null,
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 1,
+       "planContents": null
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 1,
+       "total": 1,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 142912,
+     "hotelName": "沖縄ホテルコンチネンタル",
+     "hotelKanaName": "おきなわほてるこんちねんたる",
+     "hotelSpecial": "空港から車で10分!観光､ビジネスに好立地!全室インターネット接続､各フロアにWi-Fiアクセスポイントを常設",
+     "hotelMinCharge": 500,
+     "latitude": 26.21762674372007,
+     "longitude": 127.6695671226845,
+     "postalCode": "900-0037",
+     "address1": "沖縄県",
+     "address2": "那覇市辻2-19-2",
+     "telephoneNo": "0988681143",
+     "faxNo": "0988619259",
+     "access": "空港から車で約１０分◆遊泳できる「波の上ビーチ」まで徒歩5分◆旭橋駅より徒歩にて１６分",
+     "parkingInformation": "無し(近隣コインパーキング利用　徒歩１分〜５分圏内）目安２４H　６００円〜１０００円（税込み／１回）",
+     "nearestStation": "旭橋",
+     "reviewCount": 278,
+     "reviewAverage": 3.05,
+     "userReview": "建物自体は古さを感じますが、部屋は清潔で綺麗でしたし広かったので、ろこの値段なら十分だと思います。　2026-03-12 11:00:34投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=142912\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "HOTEL",
+     "checkinTime": "15:00",
+     "checkoutTime": "10:00",
+     "lastCheckinTime": "23:30"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 6,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "sng",
+       "roomName": "シングルルーム",
+       "planId": 3101988,
+       "planName": "【70歳以上+今年の干支+当日誕生日】＝全て該当すれば格安　★他お得なプランもあります★　　",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "2",
+       "salesformFlag": 0,
+       "planContents": "■■■■■　当館最安値プラン♪　■■■■■\r\n\r\nHappyBirthDay\r\n\r\nシニア応援第１弾！！\r\n下記条件すべてが該当すれば　シニアのお客様必見！！\r\n当館最安値　な・なんと！！格安〜でご宿泊頂けます。\r\n１日１室限定プラン！！\r\n\r\n①７０歳以上である事！！\r\n\r\n②今年の年【生まれ年】である事！！\r\n　\r\n③宿泊当日が誕生日である事！！\r\n\r\n上記条件3点がすべてそろえば♪♪　最安値で宿泊できちゃいます。\r\n\r\nチェックＩＮ時　身分証の提示を賜りますので宜しくお願いいたします。（※身分証をお持ちでない場合　ご宿泊をお断りさせて頂きます。）\r\n\r\nご本人様のみの1泊のみのプランでございます。\r\nツイン・トリプル・セミダブル（2名以上）でのお申込みのお客様は別途　同伴者　1名分追加　特別料金２，５００円込込をご請求させていただきます。\r\n\r\n※ご予約時、会員登録のご年齢が《シニアプラン（７０歳以上）》と\r\n該当されない場合、確認のご連絡をさせて頂いております。\r\nご連絡が取れない場合は、強制キャンセルの場合もございます。\r\n予めご了承くださいますようお願い申し上げます。\r\n  \r\n"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 500,
+       "total": 500,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 44183,
+     "hotelName": "Ｈｏｓｔｅｌ　沖縄　リトルアジア　Ｇｕｅｓｔ　Ｈｏｕｓｅ",
+     "hotelKanaName": "ほすてる　おきなわ　りとるあじあ　げすとはうす",
+     "hotelSpecial": "国際通りから徒歩３分!! 牧志公設市場と同じアーケード内に有り、雨の日でも便利♪ ロフト付個室有り!! 女性の一人旅も◎",
+     "hotelMinCharge": 1200,
+     "latitude": 26.21352259,
+     "longitude": 127.6894471,
+     "postalCode": "902-0065",
+     "address1": "沖縄県",
+     "address2": "那覇市壺屋1-7-1丸国マーケット２階リトルアジア",
+     "telephoneNo": "098-862-3446",
+     "faxNo": "098-862-3446",
+     "access": "那覇空港よりモノレールで牧志駅下車徒歩８分",
+     "parkingInformation": "真隣、近隣に コインパーキング多数有☆300〜800円前後（夜間最大12ｈ）",
+     "nearestStation": "那覇空港",
+     "reviewCount": 102,
+     "reviewAverage": 3.73,
+     "userReview": "長期間滞在には重宝する宿。　2026-09-29 08:40:23投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=44183\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "RYOKAN",
+     "checkinTime": "15:00",
+     "checkoutTime": "10:00",
+     "lastCheckinTime": "21:30"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 1,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "4a",
+       "roomName": "☆女性専用ドミトリー☆【1名様につき1部屋でご予約ください】",
+       "planId": null,
+       "planName": null,
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 1,
+       "planContents": null
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 1200,
+       "total": 1200,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 54224,
+     "hotelName": "ロハスヴィラ",
+     "hotelKanaName": "ろはすびら",
+     "hotelSpecial": "那覇の中心、国際通りまで徒歩30秒☆癒しのアジアンリゾート。全室wi-fi完備。",
+     "hotelMinCharge": 1,
+     "latitude": 26.21687222,
+     "longitude": 127.687925,
+     "postalCode": "900-0013",
+     "address1": "沖縄県",
+     "address2": "那覇市牧志2-1-6ブレスビル３Ｆ",
+     "telephoneNo": "098-867-7757",
+     "faxNo": "098-867-7757",
+     "access": "モノレール　美栄橋駅より沖映通りを国際通り方向へ徒歩5分",
+     "parkingInformation": "近隣に1200円/12hのコインパーキング有り（詳しくはお問い合わせ下さい）",
+     "nearestStation": null,
+     "reviewCount": 647,
+     "reviewAverage": 3.11,
+     "userReview": "スタッフも丁寧です！　2026-08-27 13:29:27投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=54224\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "RYOKAN",
+     "checkinTime": "15:00",
+     "checkoutTime": "10:00",
+     "lastCheckinTime": "21:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 5,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "dm",
+       "roomName": "男性専用大部屋(ドミトリー) 禁煙/無線LAN完備",
+       "planId": null,
+       "planName": null,
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 1,
+       "planContents": null
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 1280,
+       "total": 1280,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 142912,
+     "hotelName": "沖縄ホテルコンチネンタル",
+     "hotelKanaName": "おきなわほてるこんちねんたる",
+     "hotelSpecial": "空港から車で10分!観光､ビジネスに好立地!全室インターネット接続､各フロアにWi-Fiアクセスポイントを常設",
+     "hotelMinCharge": 500,
+     "latitude": 26.21762674372007,
+     "longitude": 127.6695671226845,
+     "postalCode": "900-0037",
+     "address1": "沖縄県",
+     "address2": "那覇市辻2-19-2",
+     "telephoneNo": "0988681143",
+     "faxNo": "0988619259",
+     "access": "空港から車で約１０分◆遊泳できる「波の上ビーチ」まで徒歩5分◆旭橋駅より徒歩にて１６分",
+     "parkingInformation": "無し(近隣コインパーキング利用　徒歩１分〜５分圏内）目安２４H　６００円〜１０００円（税込み／１回）",
+     "nearestStation": "旭橋",
+     "reviewCount": 278,
+     "reviewAverage": 3.05,
+     "userReview": "建物自体は古さを感じますが、部屋は清潔で綺麗でしたし広かったので、ろこの値段なら十分だと思います。　2026-03-12 11:00:34投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=142912\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "HOTEL",
+     "checkinTime": "15:00",
+     "checkoutTime": "10:00",
+     "lastCheckinTime": "23:30"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 6,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "twn",
+       "roomName": "ツインルーム 禁煙",
+       "planId": 3101988,
+       "planName": "【70歳以上+今年の干支+当日誕生日】＝全て該当すれば格安　★他お得なプランもあります★　　",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "2",
+       "salesformFlag": 0,
+       "planContents": "■■■■■　当館最安値プラン♪　■■■■■\r\n\r\nHappyBirthDay\r\n\r\nシニア応援第１弾！！\r\n下記条件すべてが該当すれば　シニアのお客様必見！！\r\n当館最安値　な・なんと！！格安〜でご宿泊頂けます。\r\n１日１室限定プラン！！\r\n\r\n①７０歳以上である事！！\r\n\r\n②今年の年【生まれ年】である事！！\r\n　\r\n③宿泊当日が誕生日である事！！\r\n\r\n上記条件3点がすべてそろえば♪♪　最安値で宿泊できちゃいます。\r\n\r\nチェックＩＮ時　身分証の提示を賜りますので宜しくお願いいたします。（※身分証をお持ちでない場合　ご宿泊をお断りさせて頂きます。）\r\n\r\nご本人様のみの1泊のみのプランでございます。\r\nツイン・トリプル・セミダブル（2名以上）でのお申込みのお客様は別途　同伴者　1名分追加　特別料金２，５００円込込をご請求させていただきます。\r\n\r\n※ご予約時、会員登録のご年齢が《シニアプラン（７０歳以上）》と\r\n該当されない場合、確認のご連絡をさせて頂いております。\r\nご連絡が取れない場合は、強制キャンセルの場合もございます。\r\n予めご了承くださいますようお願い申し上げます。\r\n  \r\n"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 1500,
+       "total": 1500,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 44353,
+     "hotelName": "ステラリゾート",
+     "hotelKanaName": "すてらりぞーと",
+     "hotelSpecial": "国際通りまで徒歩3分！喧騒から離れた静かで広い館内。",
+     "hotelMinCharge": 1,
+     "latitude": 26.21408643,
+     "longitude": 127.6895499,
+     "postalCode": "900-0013",
+     "address1": "沖縄県",
+     "address2": "那覇市牧志3-6-41 3F",
+     "telephoneNo": "098-863-1330",
+     "faxNo": "098-863-1330",
+     "access": "牧志バス停より徒歩で5分",
+     "parkingInformation": "コインパーキングをご利用下さい。　最大料金￥800【※シーズンによって変動することがあります】",
+     "nearestStation": "那覇空港",
+     "reviewCount": 526,
+     "reviewAverage": 3.09,
+     "userReview": "立地が良いので、どこへ行くにも便利です。　2026-08-28 22:47:23投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=44353\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "PENSION",
+     "checkinTime": "15:00",
+     "checkoutTime": "10:00",
+     "lastCheckinTime": "21:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 4,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "stella1",
+       "roomName": "昊（コウ）コルーム　★ジャングルの中の星空★　第三の個室",
+       "planId": null,
+       "planName": null,
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 1,
+       "planContents": null
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 1780,
+       "total": 1780,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 69365,
+     "hotelName": "ゲストハウス　ＢＡＳＥ　ＯＫＩＮＡＷＡ",
+     "hotelKanaName": "げすとはうす　べーす　おきなわ",
+     "hotelSpecial": "波之上ビーチ、スーパーが激近!!　全てのお部屋にトイレ、シャワーが付いています。",
+     "hotelMinCharge": 1800,
+     "latitude": 26.22062996,
+     "longitude": 127.6731123,
+     "postalCode": "900-0031",
+     "address1": "沖縄県",
+     "address2": "那覇市若狭1-17-5",
+     "telephoneNo": "098-868-2968",
+     "faxNo": null,
+     "access": "県庁前駅より徒歩１５分。空港からタクシーで１０分、１１００円前後。最寄りバス停は徒歩４分の西武門、久米孔子廊前",
+     "parkingInformation": "無し。　近隣にコインパーキング有り。1時間100円　24時間500円",
+     "nearestStation": null,
+     "reviewCount": 43,
+     "reviewAverage": 3.5,
+     "userReview": "評価が分かれるだろうと思われた。到着が遅くなりスタッフさんに会えなかったが、鍵と一緒にわかりやすくメモを残してくれて嬉しかった。泊まらせていただき懐かしさと安心感を感じた。　2026-08-04 06:15:50投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=69365\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "PENSION",
+     "checkinTime": "16:00",
+     "checkoutTime": "11:00",
+     "lastCheckinTime": "21:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 1,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "ll",
+       "roomName": "《格安》男性ドミトリー お部屋にトイレ、シャワー、wifi付",
+       "planId": null,
+       "planName": null,
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 1,
+       "planContents": null
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 1800,
+       "total": 1800,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 158885,
+     "hotelName": "ゲストハウス　海風",
+     "hotelKanaName": "うみかじ",
+     "hotelSpecial": "駅、国際通りスグ☆全120床の大型宿。一人旅もグループ旅も歓迎！女性専用フロア有◎リビングには電源完備のカウンター席も。",
+     "hotelMinCharge": 2000,
+     "latitude": 26.21462236332476,
+     "longitude": 127.6780369447747,
+     "postalCode": "900-0015",
+     "address1": "沖縄県",
+     "address2": "那覇市久茂地1-8-1",
+     "telephoneNo": "098-917-1298",
+     "faxNo": "098-917-1295",
+     "access": "県庁前駅より徒歩約３分",
+     "parkingInformation": "専用駐車場はありません。近隣のコインパーキングをご利用ください。",
+     "nearestStation": null,
+     "reviewCount": 154,
+     "reviewAverage": 3.85,
+     "userReview": "大きな荷物を持って、上階に上がる際、エレベーターがないので、不便さを感じましたが…清潔感はあり、一泊の素泊まりは妥当なお値段でした。　2026-09-10 17:49:06投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=158885\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "PENSION",
+     "checkinTime": "15:00",
+     "checkoutTime": "10:00",
+     "lastCheckinTime": "23:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 9,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "wakedoor",
+       "roomName": "〔**男性専用ドミトリー**〕※ドアの前",
+       "planId": 6225449,
+       "planName": "【ドアの前】男性限定！人の出入りが気にならない人向けの超〜お得なプラン！",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 0,
+       "planContents": "＼　とにかく安く泊まりたい！という方におすすめのプラン！　／\r\n\r\n通常価格より少しだけお得◎♪\r\n訳アリの理由は・・・\r\n＜＜入口ドアの目の前だから、人の出入りがとにかく激しい＞＞\r\n\r\n\r\n「どんなに周りがうるさくても全然爆睡できちゃう」\r\n「アラームが鳴り響いていても気付かない・・・」\r\n「なんなら自分が夜遅くに行動するタイプだから、入口近くの方が便利」\r\n\r\n↑↑このような方にぴったりのプランです＾＾\r\n\r\n\r\n＊ゆいレール県庁前駅から徒歩３分\r\n＊那覇バスターミナルから徒歩５分\r\n＊国際通りまで徒歩５分\r\n\r\nの好立地！那覇を拠点にして沖縄観光を楽しめちゃいます★\r\n\r\n⇒共用リビング２４時間開放♪電源付のカウンター席あり♪\r\n⇒インターネット（無線）使い放題♪\r\n⇒シャワー室にリンスインシャンプー・ボディソープ常備♪\r\n⇒各フロアにコインランドリー設置（洗濯機１回２００円／乾燥機３０分１００円／洗剤５０円）\r\n⇒自転車レンタル（１時間１００円／１日１０００円）\r\n⇒荷物預かり（１つ２００円）\r\n\r\n\r\n共用リビングには・・・\r\n【ウォーターサーバー（温・冷）／電子レンジ／トースター／大型冷蔵庫×２／自販機／食器類／電源付カウンター席／テレビ／大量の漫画／本／ごろごろくつろげる畳スペース】\r\nがあります。ゆっくりとマイペースにお過ごしいただけます\r\n\r\n↓↓販売アメニティ↓↓\r\n貸出バスタオル２００円／歯ブラシ１５０円／カミソリ１００円\r\n\r\n\r\n●●注意点●●\r\n※チェックイン時間は１５時から２３時までです。\r\n※トイレ・シャワーは他のお客様との共用です\r\n※エレベーターはございません。荷物用のリフトがございますのでお荷物の持ち運びの際にはスタッフにお申し付けください\r\n※シーツ交換は有料にて承ります（７泊以上の方は１回無料）\r\n※当館専用の駐車場はございません。近隣のコインパーキングをご利用ください\r\n→三井のリパーク 那覇市久茂地１丁目第４駐車場　徒歩１分\r\n→三井のリパーク 那覇市久茂地１丁目第７駐車場　徒歩１分"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 2300,
+       "total": 2300,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ]
+ ]
+}
