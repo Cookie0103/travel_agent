@@ -808,3 +808,15 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 收尾（VERIFIED）：独立只读审查无P1/P2，生成4处description/注释一致，无过度设计。106a826已正常push，37942674612三任务success；完整dev check295/3契约/10入口，dev test1367passed/1skipped/4live deselected/153.87s，web111/type/lint/build成功，docker-demo整个序列成功。本地模型worker每轮独立进程读取travel_prompt与工具definitions（REASONED：process.invoke_worker/worker入口），无需改权限/服务配置；旧受控server会话已不存在，未杀用户其他进程。PG再次只读rev5/None、8约束含抵达/返程且无每日22点约束。浏览器更新后的视觉未看过。
 
 - PR37942680279最终亦python/web/docker-demo全部success；非重跑或跳过检查。任务状态只在计划§4，C34沉淀时间语义案例，不扩大为完整行程通过。
+
+## 2026-10-09 T7.1 / P90：前端视觉基础迁移
+
+用户确认旧分支完整名称；76b33fb已commit/push、远端一致、clean，旧CI37943411309/37943423323三任务绿。新分支batch/2026-10-10-frontend-restyle从该SHA创建；用户明确同意ADR018依赖，提前T7不关闭R6、不部署Railway。
+
+Chrome旧真实页面computed style：primary rgb(15,118,110)/白字、body17px、Inter/Noto下载字体；已查看基线截图，含用户内容仅留ignored `.cache/restyle/before-private.jpg`，不提交。新token采用design/07 CDB3FF/1E1033与系统字体、16px；旧CSS放components层兼容，后续逐块清理。Button/Popover按需shadcn模式/Radix，未复制私有vendor。
+
+类型/111测试通过；首lint仅PostCSS匿名default warning，改const后lint零警告；build五routes成功，静态文件copytree后停止已核对cwd属于本仓库的旧前端28189，重启受控3000/session40324。10个页面CSS/脚本均HTTP200。Chrome新页面已实际查看：primary rgb(205,179,255)/文字rgb(30,16,51)、body16px、系统字体，无外部字体。
+
+首次独立127预览恢复500，前端log为ECONNREFUSED8000且无监听；不是UI业务变更。启动免费default后端/session64635（没有.env或预算修改），原合成会话恢复正常；创建新旅行用于UI验收，用户localhost原会话未改。0真实模型/旅行API。本机dev check295/三平台strict/3契约/10入口通过；独立只读审查与提交CI待补。
+
+- T7.1独立只读审查指出白字lavender按钮与浅色focus两P2；修primary-ink/accent，普通输入抑制focus移除，composer用外层focus-within。复核无新P1/P2。首次编辑用系统python不存在未改文件，改项目uv执行成功；复跑web111/282.03ms、type/lint/build五routes通过。再次复制static并重启受控预览；无真实API。

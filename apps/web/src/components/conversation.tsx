@@ -13,6 +13,7 @@ import {
 import type { Mode } from "./composer";
 import { RunSteps } from "./activity-drawer";
 import { Markdown } from "./markdown";
+import { Button } from "./ui/button";
 import {
   runLabel,
   stageGuidance,
@@ -52,13 +53,12 @@ export function Welcome({ workspace }: { workspace: Workspace }) {
       <p>
         用一句话说出目的地、天数、人数、预算和偏好，我会比较酒店、检查行程，并在你确认后才保存。
       </p>
-      <button
-        className="primary"
+      <Button
         disabled={workspace.busy || workspace.restoring}
         onClick={() => void workspace.login()}
       >
         {workspace.restoring ? "正在恢复上次会话…" : "开始"}
-      </button>
+      </Button>
       <p className="muted small">
         实时规划支持日本国内；离线演示使用京都样本。
       </p>
