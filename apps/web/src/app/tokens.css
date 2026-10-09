@@ -1,4 +1,4 @@
-/* The sole palette/type scale from design/07; legacy aliases disappear after migration. */
+/* The sole palette and type scale from design/07. */
 :root {
   --primary: #cdb3ff;
   --primary-ink: #1e1033;
@@ -12,20 +12,6 @@
   --warning: #b45309;
   --error: #dc2626;
   --info: #2563eb;
-  --surface: var(--bg);
-  --surface-2: var(--bg-subtle);
-  --ink: var(--text);
-  --muted: var(--text-muted);
-  --line: var(--border);
-  --brand: var(--primary);
-  --brand-strong: var(--accent);
-  --brand-weak: var(--bg-subtle);
-  --live: var(--warning);
-  --live-weak: var(--bg-subtle);
-  --ok: var(--success);
-  --warn: var(--warning);
-  --danger: var(--error);
-  --danger-weak: var(--bg-subtle);
   --radius: 12px;
   --radius-sm: 8px;
   --space-1: 4px;
@@ -35,11 +21,8 @@
   --space-5: 24px;
   --fs-body: 16px;
   --fs-sm: 14px;
-  --fs-xs: 14px;
   --fs-h1: 28px;
   --fs-h2: 20px;
-  --fs-h3: 20px;
-  --shadow: none;
 }
 
 @theme inline {

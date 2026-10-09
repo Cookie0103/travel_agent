@@ -38,7 +38,10 @@ export function Conditions({
     setForm((old) => ({ ...old, [key]: value }));
   const [formError, setFormError] = useState("");
   const source = (field: string) => (
-    <span className="small muted" aria-hidden="true">
+    <span
+      className="ml-2 text-sm font-normal text-text-muted"
+      aria-hidden="true"
+    >
       {sourceLabel(request.field_sources, field)}
     </span>
   );
