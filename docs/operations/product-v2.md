@@ -716,3 +716,9 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 实现已存在，新测试首跑3passed/.27s，不伪造失败。受控退化将adapter四项展示投影临时设None，pytest新三例1failed/2passed/.23s；Python try/finally恢复原字节并断言相同，再跑酒店两文件38passed/.29s。最终Git adapter无diff，实际增量只有测试/记录。
 - `uv run python scripts/dev.py check`exit0：ruff290/三平台strict/3层契约/10文档入口。测试-only增量没有重复受限的全量PG命令；前序用户全量属于fe49a8b，不借用为新三例全量。后续提交CI会运行新用例。
 - 独立只读审查无P1/P2；P3两项已修：C33链接改为稳定计划文件入口；§7保留前次已提交的下一步历史，新增本次四行进展。自审adapter无diff、fixture原文未修改，diff --check/文档地图通过。
+
+## 2026-10-09 T3.6 / P47–48：Chrome原生日期复验仍未完成
+
+- Google Chrome新验收tab，本地现有人工合成旅行；编辑开始日期标题点击后Tab/native AX出现月标题与42日期格，Mac原生app可控制。Tab截图与native app截图未含弹层，原生4日格点击后值仍3日、焦点转成人，不能从树存在或截图缺失宣称整体通过/失败。精确getByLabel因来源后缀超时，回AX核对真实状态。
+- 两字段分别Up改年2026→2027/Down复原；收起未保存编辑，摘要原11/03–11/04。未保存、未提交消息、无模型或旅行API调用；恢复截图ignored `.cache/t36-restored-chrome.jpg`已查看，只说明字段还原，不是弹窗通过截图。本次不能沿用历史锁屏原因；保留真实选择/视觉待验。
+- T4.4提交`fecc2b2`普通push成功，新push37907834440/PR37907838979已启动，当时in_progress，未提前标绿。本次仅追加SHA与日期失败尝试记录，未改实现/依赖/服务。
