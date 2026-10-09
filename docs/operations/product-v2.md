@@ -688,3 +688,13 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 
 教训：之前一次推断出错——我据“修复计数为0”排除了repair_limit，但代码里被拒绝的校验调用也消耗修复轮次。用数据库证据反推时，要先读计数在哪里自增，不能凭直觉假设。
 
+
+## 2026-10-09 Codex接手 / T4.6 T4.7 T3.10 / P-72只读诊断
+
+- 起步`git status --short --branch`干净；`git log --oneline -5`首项`61efab8`；只读`git ls-remote`确认远端相同。普通`gh run list`网络连接失败；只读网络查询通过自动审批后成功（没有拒绝后绕过）。最近三次`37903811494`/`37903804434`/`37902758177`均success，python/web/docker-demo全绿；最新push先等待python结束，不将in_progress标绿。
+- 用户人工确认本地酒店卡片显示正常；本次不新增API调用，不复制私人对话/工具参数或供应商原始响应。未操作Chrome/未重新构建/未改本地服务或Railway。
+- 失败尝试：`docker ps`返回Docker socket permission denied，未提权重试；项目`.venv`直接连接PG、默认事务read-only+5秒超时，失败为OperationalError，不打印含连接参数的异常；用户按手册执行SQL，首次把heredoc粘成一行卡在heredoc>，Ctrl+C后改`psql -c`单行；用户终端PATH缺docker（command not found），只读确认完整路径`/Applications/Docker.app/Contents/Resources/bin/docker`存在，用完整路径执行成功。
+- 用户只读PG输出摘要：`e88669bc/seq32/stage_plan_change/blocked/repair_limit`；`60d19817/seq15`与`dc6e711b/seq11`为present/result_too_long；`60d19817/seq23`路线validation/other，seq30/35校验validation/other，seq39/42酒店unavailable/other；`dc6e711b/seq5`天气conflict/revision_stale。无reason的旧轮次保持旧数据含义。
+- agent首次只读解析`.cache/user-deepseek-api.log`未找到新轮次（该日志已旧）；只读文件mtime定位`.cache/user-api.log`，仅解析已知短run的TRACE tool_end，投影ts/run/name/call_index/code/detail，不打印正文/参数/密钥。`e88669bc`校验6/8/9/10均code=null、conflict counts 2/1/1/2；opening_hours四次冲突、route_scope@d1i5第1/4次；stage第11次repair_limit、round4/max4。`60d19817`路线route_endpoint_not_place，两次校验HOTEL_CONDITIONS_REASON，后续两次hotel_external_unavailable/service503。原用户描述429未当作供应商HTTP已核实。
+- 政策：用户确认保持现有校验计数；相同最终候选暂存的例外已有代码/测试，暂存实际参数差异未保存不能推断具体字段。恢复点：酒店显示与原因码验收已具备证据，P-72完整草稿仍失败；下一步有界合成复现营业时间反馈，真实模型复核另请授权。
+- 独立只读文档审查无P1/P2；两项P3已修：T3.10补实现`37f683c`/既有测试数字；追加历史待办更正，新轮已验而旧08135d95原因无法事后证明。文档地图与diff --check通过，文档-only未重复全量/前端构建。
