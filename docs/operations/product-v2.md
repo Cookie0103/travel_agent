@@ -633,3 +633,11 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 最终当前代码完整 `uv run --no-sync python scripts/dev.py test` exit0：1290passed/零失败/1skipped/1live deselected/290.33s。包含最后有效草稿恢复用例；未删除/跳过原SDK或PG用例。最终相关83passed、check286/三平台strict/3契约/10入口、中文标签后web98/type/lint/build5routes均实际通过。提交前独立复核无新增P2/P3与diff/docs检查通过。
 
 - 实现提交 `87c200d`，`git push origin batch-2026-10-08-product-V2` exit0，远端输出cf54e0b..87c200d。P69–71/T3.8关闭、C28完成；P72实测完整行程质量限制未解决，仍todo/T6.1，不改R6验收或生产状态。记录提交只补SHA/最终数字和恢复点，无代码改动。
+
+
+## 2026-10-09 P73：本地页面卡在恢复提示
+
+- 基线7148a72，`git status --short`为空。API健康/首页SSR/models均200，但HTML实际引用9个script均500；Chrome只有禁用的恢复提示。检查3000监听进程的cwd为本仓库 `.next/standalone`，运行12小时；根`.next/static/chunks`有当前脚本，standalone对应路径缺文件。
+- 上轮web-check/build更新产物却未重启并补静态文件，原交付只验证API，遗漏网页实际启动。最小恢复：`shutil.copytree(Path('apps/web/.next/static'), Path('apps/web/.next/standalone/.next/static'), dirs_exist_ok=True)`，只写ignored构建物；精确SIGTERM已核实的3000进程，再从仓库根目录运行 `HOSTNAME=127.0.0.1 PORT=3000 node apps/web/.next/standalone/server.js`。新进程日志ignored `.cache/user-deepseek-web.log`，未重启API/数据库、不清身份、不操作生产。
+- 先红后绿资源链路：同一HTML解析/脚本逐个HTTP检查9个500→9个200；3000/api/models保持200。Chrome刷新后从SSR中间恢复态变为可用“开始”；按正常入口进入空测试会话并选DeepSeek，输入框/条件栏/模型切换均实际可見，未发送消息、不产生模型费用。截图 `docs/evidence/product-v2/p73-local-preview-restored.png` 无私人对话或身份。
+- 补apps/web/README的build后standalone资源/重启/Chrome关卡，也更正旧“先保存条件”描述为直接对话。仅文档/证据与ignored产物，无业务代码变更，不重复1290/98测试；check_docs与git diff检查通过。后续每次build/质量命令后都需复查正在运行的页面，不能只验API健康。
