@@ -111,6 +111,9 @@ test("owned empty/error panel replaces prior success and never inherits another 
   const empty: Hotels = {
     component: "hotel_comparison",
     cards: [],
+    total_found: null,
+    more_url: null,
+    more_url_scope: null,
     comparison: {
       room_preferences_question: null,
       budget_relation: null,

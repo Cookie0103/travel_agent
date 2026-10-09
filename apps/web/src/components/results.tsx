@@ -1,6 +1,6 @@
 /** Render canonical business cards; money, provenance and conflicts come from the server. */
 "use client";
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   planUnavailable,
   planRefreshNotice,
@@ -12,6 +12,7 @@ import { sourceHref, type Hotels, type Plan } from "@/lib/api";
 import type { components } from "@/lib/api-types";
 import { hotelGroups, selectedHotelOffer } from "@/lib/hotel-groups";
 import { hotelLinks } from "@/lib/hotel-links";
+import { moreTile, scrollButtons } from "@/lib/hotel-more";
 import { validationGroups, checkTargets } from "@/lib/validation-groups";
 import { CalendarButton } from "./calendar-button";
 export const formatYen = (value: string) =>
@@ -74,12 +75,29 @@ export function SourceRef({ value }: { value: string | null }) {
   );
 }
 
-function Hotel({ card }: { card: components["schemas"]["UiHotelCard"] }) {
+function Hotel({
+  card,
+  picker,
+  children,
+}: {
+  card: components["schemas"]["UiHotelCard"];
+  picker?: ReactNode;
+  children?: ReactNode;
+}) {
   const links = hotelLinks(card);
+  const review =
+    card.review_average != null || card.review_count != null
+      ? [
+          card.review_average != null ? `★ ${card.review_average}` : null,
+          card.review_count != null ? `${card.review_count}条评价` : null,
+        ]
+          .filter(Boolean)
+          .join(" · ")
+      : null;
   return (
     <article className="hotel-card">
       {/* 楽天图片按供应商原URL展示；避免图片代理和公共缓存。 */}
-      {card.image_url && (
+      {card.image_url ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           className="hotel-image"
@@ -88,137 +106,232 @@ function Hotel({ card }: { card: components["schemas"]["UiHotelCard"] }) {
           loading="lazy"
           referrerPolicy="no-referrer"
         />
+      ) : (
+        <div className="hotel-image hotel-image-empty" aria-hidden="true" />
       )}
-      <span className="tag">
-        {card.data_mode === "live" ? "乐天实时" : "模拟报价"}
-      </span>
-      <h3>{card.hotel_name}</h3>
-      <p>{card.room_type}</p>
-      {!!card.room_tags?.length && (
-        <p className="muted small">{card.room_tags.join(" · ")}</p>
-      )}
-      {card.qualification_unknown && (
-        <p className="warning">
-          房型资格未知，请先核实限制；不能据此判断适合。
-        </p>
-      )}
-      {card.room_preference_mismatch && (
-        <p className="warning">此房型为宿舍或舱房，不符合独立房间偏好。</p>
-      )}
-      <p className="small">{card.address ?? "地址未知"}</p>
-      <p className="small">
-        {card.review_average != null ? `★ ${card.review_average}` : "评分未知"}
-        {" · "}
-        {card.review_count != null
-          ? `${card.review_count}条评价`
-          : "评价数未知"}
-      </p>
-      <p className="small">
-        {String(card.stay.start_date)} — {String(card.stay.end_date)} ·{" "}
-        {partyLabel(card.stay)}
-      </p>
-      <strong className="price">
-        {card.total === null ? "总价未知" : `¥ ${formatYen(card.total)}`}
-      </strong>
-      <p className="small">
-        {card.data_mode === "live" ? (
-          "含税和服务费，明细未知"
-        ) : (
-          <>
-            基础 {formatYen(card.base_amount)} · 税 {card.tax_amount ?? "未知"}{" "}
-            · 费 {card.fee_amount ?? "未知"}
-          </>
+      <div className="hotel-top">
+        <span className="tag">
+          {card.data_mode === "live" ? "乐天实时" : "模拟报价"}
+        </span>
+        <h3 title={card.hotel_name}>{card.hotel_name}</h3>
+        {review && <p className="small">{review}</p>}
+        {card.address && <p className="small">{card.address}</p>}
+        {picker}
+        <p>{card.room_type}</p>
+        {!!card.room_tags?.length && (
+          <p className="muted small">{card.room_tags.join(" · ")}</p>
         )}
-      </p>
-      {card.total_reason && (
-        <p className="warning small">{card.total_reason}</p>
-      )}
-      <p>
-        {card.breakfast === null
-          ? "早餐未知"
-          : card.breakfast
-            ? "含早餐"
-            : "不含早餐"}{" "}
-        ·{" "}
-        {card.refundable === null
-          ? "退款规则请以乐天为准"
-          : card.refundable
-            ? "可退"
-            : "不可退"}
-      </p>
-      <details>
-        <summary>来源与版本</summary>
-        <p className="muted small">
-          有效至 {date(card.expires_at)}
-          <br />
-          来源：
-          <SourceRef value={card.source_ref} />
-          <br />
-          报价条件版本 {card.request_revision}
-          <br />
-          来源版本 {card.content_version?.slice(0, 12) || "未知"}
+        {card.qualification_unknown && (
+          <p className="warning">
+            房型资格未知，请先核实限制；不能据此判断适合。
+          </p>
+        )}
+        {card.room_preference_mismatch && (
+          <p className="warning">此房型为宿舍或舱房，不符合独立房间偏好。</p>
+        )}
+        <p className="small">
+          {String(card.stay.start_date)} — {String(card.stay.end_date)} ·{" "}
+          {partyLabel(card.stay)}
         </p>
-      </details>
-      {card.lodging_exceeds_lodging_budget === true && (
-        <p className="warning">报价超过住宿预算上限</p>
-      )}
-      {card.lodging_exceeds_lodging_budget === null && (
-        <p className="muted small">
-          住宿预算上限、数量或币种未齐，无法判断此分项。
+        <p>
+          {card.breakfast === null
+            ? "早餐未知"
+            : card.breakfast
+              ? "含早餐"
+              : "不含早餐"}{" "}
+          ·{" "}
+          {card.refundable === null
+            ? "退款规则请以乐天为准"
+            : card.refundable
+              ? "可退"
+              : "不可退"}
         </p>
-      )}
-      {card.lodging_exceeds_trip_budget && (
-        <p className="error">住宿已超过全程预算</p>
-      )}
-      {card.data_mode === "live" && (
-        <>
-          {links.info ? (
-            <a
-              className="button-link primary"
-              href={links.info}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              查看酒店 ↗
-            </a>
+        <details>
+          <summary>来源与版本</summary>
+          <p className="muted small">
+            有效至 {date(card.expires_at)}
+            <br />
+            来源：
+            <SourceRef value={card.source_ref} />
+            <br />
+            报价条件版本 {card.request_revision}
+            <br />
+            来源版本 {card.content_version?.slice(0, 12) || "未知"}
+          </p>
+        </details>
+      </div>
+      <div className="hotel-bottom">
+        <strong className="price">
+          {card.total === null ? "总价未知" : `¥ ${formatYen(card.total)}`}
+        </strong>
+        {card.price_basis && (
+          <p className="muted small hotel-basis">{card.price_basis}</p>
+        )}
+        <p className="small">
+          {card.data_mode === "live" ? (
+            "含税和服务费，明细未知"
           ) : (
-            <p className="small">酒店介绍链接未知</p>
+            <>
+              基础 {formatYen(card.base_amount)} · 税{" "}
+              {card.tax_amount ?? "未知"} · 费 {card.fee_amount ?? "未知"}
+            </>
           )}
-          {links.plans && (
-            <a
-              className="button-link"
-              href={links.plans}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              套餐列表 ↗
-            </a>
-          )}
-          {links.reservation && (
-            <a
-              className="button-link"
-              href={links.reservation}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              预订页面 ↗
-            </a>
-          )}
-          {links.legacy && (
-            <a
-              className="button-link"
-              href={links.legacy}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              旧报价链接 ↗
-            </a>
-          )}
-        </>
-      )}
+        </p>
+        {card.total_reason && (
+          <p className="warning small">{card.total_reason}</p>
+        )}
+        {card.lodging_exceeds_lodging_budget === true && (
+          <p className="warning">报价超过住宿预算上限</p>
+        )}
+        {card.lodging_exceeds_lodging_budget === null && (
+          <p className="muted small">
+            住宿预算上限、数量或币种未齐，无法判断此分项。
+          </p>
+        )}
+        {card.lodging_exceeds_trip_budget && (
+          <p className="error">住宿已超过全程预算</p>
+        )}
+        {card.data_mode === "live" && (
+          <div className="hotel-links">
+            {links.info ? (
+              <a
+                className="button-link primary"
+                href={links.info}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                查看酒店 ↗
+              </a>
+            ) : (
+              <p className="small">酒店介绍链接未知</p>
+            )}
+            {links.plans && (
+              <a
+                className="button-link"
+                href={links.plans}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                套餐列表 ↗
+              </a>
+            )}
+            {links.reservation && (
+              <a
+                className="button-link"
+                href={links.reservation}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                预订页面 ↗
+              </a>
+            )}
+            {links.legacy && (
+              <a
+                className="button-link"
+                href={links.legacy}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                旧报价链接 ↗
+              </a>
+            )}
+          </div>
+        )}
+        {children}
+      </div>
     </article>
   );
 }
+
+/** Horizontal strip of equal-height cards; native scrolling plus prev/next buttons. */
+function HotelStrip({
+  label,
+  watch,
+  children,
+}: {
+  label: string;
+  watch: string;
+  children: ReactNode;
+}) {
+  const regionId = useId();
+  const ref = useRef<HTMLDivElement>(null);
+  const [state, setState] = useState({
+    overflow: false,
+    canPrev: false,
+    canNext: false,
+  });
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () =>
+      setState((prev) => {
+        const next = scrollButtons(
+          el.scrollLeft,
+          el.clientWidth,
+          el.scrollWidth,
+        );
+        return next.overflow === prev.overflow &&
+          next.canPrev === prev.canPrev &&
+          next.canNext === prev.canNext
+          ? prev
+          : next;
+      });
+    update();
+    el.addEventListener("scroll", update, { passive: true });
+    const observer =
+      typeof ResizeObserver === "undefined"
+        ? undefined
+        : new ResizeObserver(update);
+    observer?.observe(el);
+    for (const child of Array.from(el.children)) observer?.observe(child);
+    return () => {
+      el.removeEventListener("scroll", update);
+      observer?.disconnect();
+    };
+  }, [watch]);
+  const page = (direction: -1 | 1) =>
+    ref.current?.scrollBy({
+      left: direction * Math.max(ref.current.clientWidth * 0.8, 200),
+      behavior: "auto",
+    });
+  return (
+    <div className="hotel-strip-wrap">
+      {state.overflow && (
+        <div className="hotel-strip-nav">
+          <button
+            type="button"
+            aria-label="上一批酒店"
+            aria-controls={regionId}
+            disabled={!state.canPrev}
+            onClick={() => page(-1)}
+          >
+            ←
+          </button>
+          <button
+            type="button"
+            aria-label="下一批酒店"
+            aria-controls={regionId}
+            disabled={!state.canNext}
+            onClick={() => page(1)}
+          >
+            →
+          </button>
+        </div>
+      )}
+      <div
+        id={regionId}
+        ref={ref}
+        className="hotel-strip"
+        tabIndex={0}
+        role="region"
+        aria-label={label}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
+
 export function HotelResults({
   hotels,
   disabled,
@@ -237,6 +350,7 @@ export function HotelResults({
   const now = useClock();
   const expired = expiredHotels(hotels, now);
   const groups = hotelGroups(hotels.cards);
+  const more = moreTile(hotels);
   return (
     <section className={`results-section${compact ? " is-compact" : ""}`}>
       <div className="section-heading">
@@ -261,7 +375,10 @@ export function HotelResults({
           {hotels.comparison.reasons.join("；")}
         </p>
       )}
-      <div className="hotel-grid">
+      <HotelStrip
+        label={`酒店列表，共${groups.length}家，可左右滚动`}
+        watch={`${hotels.cards.length}:${groups.length}:${more ? 1 : 0}`}
+      >
         {groups.map((group) => (
           <HotelPackage
             key={group.hotel_id}
@@ -274,7 +391,18 @@ export function HotelResults({
             lowest={hotels.comparison.lowest_offer_ids}
           />
         ))}
-      </div>
+        {more && (
+          <a
+            className="hotel-card hotel-more"
+            href={more.href}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <strong>{more.title} ↗</strong>
+            <span className="muted small">{more.note}</span>
+          </a>
+        )}
+      </HotelStrip>
       {hotels.cards.some((card) => card.data_mode === "live") && (
         <div
           className="small muted"
@@ -307,27 +435,30 @@ function HotelPackage({
   if (!card) return null;
   const expired = now > 0 && Date.parse(card.expires_at) <= now;
   return (
-    <div>
-      {offers.length > 1 && (
-        <label>
-          房型/套餐
-          <select
-            aria-label={`${card.hotel_name}的房型/套餐`}
-            value={card.offer_id}
-            onChange={(event) => setSelected(event.target.value)}
-          >
-            {offers.map((offer, index) => (
-              <option key={offer.offer_id} value={offer.offer_id}>
-                {index + 1}. {offer.room_type} ·{" "}
-                {offer.total === null
-                  ? "总价未知"
-                  : `¥ ${formatYen(offer.total)}`}
-              </option>
-            ))}
-          </select>
-        </label>
-      )}
-      <Hotel card={card} />
+    <Hotel
+      card={card}
+      picker={
+        offers.length > 1 ? (
+          <label>
+            房型/套餐
+            <select
+              aria-label={`${card.hotel_name}的房型/套餐`}
+              value={card.offer_id}
+              onChange={(event) => setSelected(event.target.value)}
+            >
+              {offers.map((offer, index) => (
+                <option key={offer.offer_id} value={offer.offer_id}>
+                  {index + 1}. {offer.room_type} ·{" "}
+                  {offer.total === null
+                    ? "总价未知"
+                    : `¥ ${formatYen(offer.total)}`}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : undefined
+      }
+    >
       {expired && (
         <p className="warning">所选套餐报价已过期，请重新比较酒店。</p>
       )}
@@ -360,7 +491,7 @@ function HotelPackage({
       {!expiredComparison && lowest.includes(card.offer_id) && (
         <p className="lowest">所列同口径报价中的最低价</p>
       )}
-    </div>
+    </Hotel>
   );
 }
 

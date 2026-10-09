@@ -656,6 +656,8 @@ export interface components {
             plan_list_url?: string | null;
             /** Reservation Url */
             reservation_url?: string | null;
+            /** Price Basis */
+            price_basis?: string | null;
             /**
              * Offer Id
              * Format: uuid
@@ -742,23 +744,6 @@ export interface components {
             source_ref: string | null;
             /** Content Version */
             content_version: string | null;
-        };
-        /** HotelDisplayDetails */
-        HotelDisplayDetails: {
-            /** Address */
-            address?: string | null;
-            /** Latitude */
-            latitude?: number | null;
-            /** Longitude */
-            longitude?: number | null;
-            /** Review Count */
-            review_count?: number | null;
-            /** Hotel Info Url */
-            hotel_info_url?: string | null;
-            /** Plan List Url */
-            plan_list_url?: string | null;
-            /** Reservation Url */
-            reservation_url?: string | null;
         };
         /** HotelOffer */
         HotelOffer: {
@@ -1370,6 +1355,34 @@ export interface components {
         };
         /** @enum {string} */
         StageReason: "plan_exists" | "patch_invalid" | "repair_limit" | "other";
+        /**
+         * StoredHotelDetails
+         * @description 随证据保存的展示细节；比卡片多出本次搜索的整体信息，由present提到展示顶层，不进卡片。
+         */
+        StoredHotelDetails: {
+            /** Address */
+            address?: string | null;
+            /** Latitude */
+            latitude?: number | null;
+            /** Longitude */
+            longitude?: number | null;
+            /** Review Count */
+            review_count?: number | null;
+            /** Hotel Info Url */
+            hotel_info_url?: string | null;
+            /** Plan List Url */
+            plan_list_url?: string | null;
+            /** Reservation Url */
+            reservation_url?: string | null;
+            /** Price Basis */
+            price_basis?: string | null;
+            /** Search Total Found */
+            search_total_found?: number | null;
+            /** More Url */
+            more_url?: string | null;
+            /** More Url Scope */
+            more_url_scope?: ("search" | "destination") | null;
+        };
         /** TravelConditions */
         TravelConditions: {
             /** City */
@@ -1635,6 +1648,11 @@ export interface components {
              */
             reservation_url: string | null;
             /**
+             * Price Basis
+             * @default null
+             */
+            price_basis: string | null;
+            /**
              * Offer Id
              * Format: uuid
              */
@@ -1749,6 +1767,21 @@ export interface components {
             /** Cards */
             cards: components["schemas"]["UiHotelCard"][];
             comparison: components["schemas"]["UiComparison"];
+            /**
+             * Total Found
+             * @default null
+             */
+            total_found: number | null;
+            /**
+             * More Url
+             * @default null
+             */
+            more_url: string | null;
+            /**
+             * More Url Scope
+             * @default null
+             */
+            more_url_scope: ("search" | "destination") | null;
         };
         /** ItemDiff */
         UiItemDiff: {

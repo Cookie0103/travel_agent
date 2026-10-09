@@ -554,13 +554,45 @@ summary {
   padding: 14px;
   margin-top: 12px;
 }
-.hotel-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr));
-  gap: 12px;
+.hotel-strip-wrap {
   margin-top: 12px;
 }
+.hotel-strip-nav {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.hotel-strip-nav button {
+  padding: 2px 12px;
+  min-width: 44px;
+  min-height: 36px;
+}
+.hotel-strip {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  padding-bottom: 8px;
+}
+.hotel-strip:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .hotel-strip {
+    scroll-behavior: smooth;
+  }
+}
 .hotel-card {
+  display: flex;
+  flex-direction: column;
+  flex: 0 0 auto;
+  width: 270px;
+  max-width: 85vw;
+  box-sizing: border-box;
+  scroll-snap-align: start;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   padding: 14px;
@@ -746,10 +778,11 @@ summary {
   background: var(--live-weak);
   color: var(--warn);
 }
-.is-compact .hotel-grid {
+.is-compact .hotel-strip {
   gap: 8px;
 }
 .is-compact .hotel-card {
+  flex-basis: 240px;
   padding: 10px;
 }
 .is-compact .price {
@@ -879,6 +912,42 @@ summary {
   aspect-ratio: 16 / 10;
   object-fit: cover;
   border-radius: var(--radius-sm);
+  flex: 0 0 auto;
+}
+.hotel-image-empty {
+  background: var(--bg-subtle);
+  border: 1px solid var(--line);
+  box-sizing: border-box;
+}
+.hotel-top {
+  flex: 1 0 auto;
+}
+.hotel-bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 8px;
+}
+.hotel-bottom p {
+  margin: 0;
+}
+.hotel-basis {
+  margin: 0;
+}
+.hotel-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hotel-more {
+  justify-content: center;
+  gap: 8px;
+  text-decoration: none;
+  color: var(--ink);
+}
+.hotel-more:hover,
+.hotel-more:focus-visible {
+  border-color: var(--brand);
 }
 
 .examples,
@@ -956,6 +1025,11 @@ summary {
 }
 .hotel-card h3 {
   font-size: 16px;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
 }
 .trip-panel .conditions label {
   font-size: 14px;
