@@ -126,11 +126,12 @@
   select,
   textarea {
     font: inherit;
+    font-size: var(--fs-body);
     color: inherit;
-    border: 1px solid #64748b;
+    border: 1px solid var(--border);
     background: var(--surface);
     border-radius: var(--radius-sm);
-    padding: 10px 12px;
+    padding: 12px;
     width: 100%;
   }
   select {
@@ -145,9 +146,9 @@
     font: inherit;
     font-size: 16px;
     font-weight: 500;
-    color: var(--brand-strong);
+    color: var(--text);
     background: var(--surface);
-    border: 1px solid var(--brand);
+    border: 1px solid var(--border);
     padding: 8px 16px;
     border-radius: var(--radius-sm);
   }
@@ -233,17 +234,17 @@
   .banner-error {
     color: var(--danger);
     background: var(--danger-weak);
-    border-color: #fca5a5;
+    border-color: var(--border);
   }
   .banner-warning {
     color: var(--warn);
     background: var(--live-weak);
-    border-color: #fcd34d;
+    border-color: var(--border);
   }
   .banner-info {
     color: var(--brand-strong);
     background: var(--brand-weak);
-    border-color: #99d5cd;
+    border-color: var(--border);
   }
   .warning {
     background: var(--live-weak);
@@ -341,8 +342,8 @@
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
-    padding: 10px 12px;
-    border-color: #64748b;
+    padding: 12px;
+    border-color: var(--border);
     box-shadow: var(--shadow);
   }
   .composer textarea {
@@ -403,7 +404,7 @@
   /* Trip panel */
   .trip-panel {
     overflow-y: auto;
-    background: var(--surface);
+    background: var(--bg-subtle);
     border-left: 1px solid var(--line);
     padding: 0 20px 20px;
   }
@@ -463,7 +464,7 @@
     border: 1px solid var(--line);
     border-radius: var(--radius);
     background: var(--surface);
-    padding: 14px;
+    padding: 16px;
     margin-top: 12px;
   }
   .hotel-strip-wrap {
@@ -481,12 +482,29 @@
     min-height: 36px;
   }
   .hotel-strip {
-    display: flex;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: min(288px, 85vw);
+    grid-template-rows: auto auto auto auto;
     gap: 12px;
     overflow-x: auto;
     overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
     padding-bottom: 8px;
+  }
+  .hotel-strip > .hotel-card {
+    display: grid;
+    grid-row: span 4;
+    grid-template-rows: subgrid;
+    width: auto;
+  }
+  .hotel-strip > .hotel-more {
+    display: flex;
+  }
+  .hotel-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
   }
   .hotel-strip:focus-visible {
     outline: 2px solid var(--accent);
@@ -501,19 +519,19 @@
     display: flex;
     flex-direction: column;
     flex: 0 0 auto;
-    width: 270px;
+    width: 288px;
     max-width: 85vw;
     box-sizing: border-box;
     scroll-snap-align: start;
     border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    padding: 14px;
+    border-radius: var(--radius);
+    padding: 16px;
     font-size: var(--fs-sm);
     overflow-wrap: anywhere;
     background: var(--surface);
   }
   .price {
-    font-size: 22px;
+    font-size: var(--fs-h2);
     font-weight: 700;
   }
   .lowest {
@@ -528,7 +546,7 @@
   .visit {
     display: flex;
     gap: 12px;
-    padding: 10px 0;
+    padding: 12px 0;
     border-bottom: 1px solid var(--line);
     align-items: center;
   }
@@ -555,7 +573,7 @@
     position: sticky;
     bottom: 0;
     margin-top: 12px;
-    padding: 10px 0;
+    padding: 12px 0;
     background: var(--bg-subtle);
     border-top: 1px solid var(--line);
     font-size: 16px;
@@ -707,6 +725,7 @@
     color: var(--warn);
   }
   .is-compact .hotel-strip {
+    grid-auto-columns: min(240px, 85vw);
     gap: 8px;
   }
   .is-compact .hotel-card {
@@ -714,7 +733,7 @@
     padding: 10px;
   }
   .is-compact .price {
-    font-size: 19px;
+    font-size: var(--fs-h2);
   }
   @media (prefers-reduced-motion: reduce) {
     .pulse {
@@ -740,7 +759,7 @@
   }
   .day-heading {
     margin: 16px 0 0;
-    font-size: 16px;
+    font-size: 20px;
     font-weight: 600;
     color: var(--brand-strong);
   }
@@ -830,7 +849,7 @@
     border-left: 1px solid var(--line);
   }
   .hotel-card {
-    box-shadow: var(--shadow-sm);
+    box-shadow: none;
   }
   .hotel-image {
     width: 100%;
@@ -940,7 +959,7 @@
     font-size: var(--fs-sm);
   }
   .trip-panel h3 {
-    font-size: 17px;
+    font-size: var(--fs-h2);
   }
   .visit h3 {
     font-size: 16px;

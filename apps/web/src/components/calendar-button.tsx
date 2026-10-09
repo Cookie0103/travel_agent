@@ -1,4 +1,5 @@
 "use client";
+import { Button } from "./ui/button";
 import { useState } from "react";
 
 export function CalendarButton({
@@ -37,9 +38,13 @@ export function CalendarButton({
   }
   return (
     <div>
-      <button disabled={disabled || loading} onClick={() => void download()}>
+      <Button
+        variant="outline"
+        disabled={disabled || loading}
+        onClick={() => void download()}
+      >
         导出到日历 (.ics)
-      </button>
+      </Button>
       <p className="small muted">下载后在 Google Calendar →设置→导入</p>
       {error && (
         <p role="alert" className="error">

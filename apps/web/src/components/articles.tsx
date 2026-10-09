@@ -1,5 +1,7 @@
 /** Read attributed guide snapshots as plain text, then explicitly enter the chat. */
 "use client";
+import { Loading } from "./ui/loading";
+import { Button } from "./ui/button";
 import Link from "next/link";
 import { sourceHref } from "@/lib/api";
 import { Banner } from "./banner";
@@ -15,10 +17,13 @@ export function Articles({ articleId }: { articleId?: string }) {
         历史快照。文章是参考资料，营业时间、价格与当前条件仍需工具核验。
       </p>
       {articleId && <Link href="/articles">返回全部来源资料</Link>}
-      {guide.loading && <p role="status">正在读取攻略…</p>}
+      {guide.loading && <Loading>正在读取攻略…</Loading>}
       {guide.error && (
         <Banner kind="error">
-          {guide.error} <button onClick={guide.retry}>重新读取攻略</button>
+          {guide.error}{" "}
+          <Button variant="outline" onClick={guide.retry}>
+            重新读取攻略
+          </Button>
         </Banner>
       )}
       {!guide.loading && !guide.error && !guide.articles.length && (
@@ -93,18 +98,21 @@ export function ArticleReference({
   const article = guide.articles[0];
   return (
     <section className="guide-reference">
-      {guide.loading && <p role="status">正在读取参考攻略…</p>}
+      {guide.loading && <Loading>正在读取参考攻略…</Loading>}
       {guide.error && (
         <p role="alert">
-          {guide.error} <button onClick={guide.retry}>重新读取攻略</button>
+          {guide.error}{" "}
+          <Button variant="outline" onClick={guide.retry}>
+            重新读取攻略
+          </Button>
         </p>
       )}
       {article && (
         <>
           <p>参考攻略：{article.title} · 历史快照</p>
-          <button onClick={() => select(article.article_id)}>
+          <Button variant="outline" onClick={() => select(article.article_id)}>
             把攻略引用填入消息
-          </button>
+          </Button>
           <p className="muted small">
             只填入引用，不自动发送或保存；请补充你的条件后再发送。
           </p>

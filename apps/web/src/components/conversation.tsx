@@ -13,6 +13,7 @@ import {
 import type { Mode } from "./composer";
 import { RunSteps } from "./activity-drawer";
 import { Markdown } from "./markdown";
+import { Loading, Skeleton } from "./ui/loading";
 import { Button } from "./ui/button";
 import {
   runLabel,
@@ -89,12 +90,7 @@ export function Conversation({
   )?.prompt;
   return (
     <div className="conversation-stream" aria-live="polite">
-      {workspace.restoring && (
-        <div role="status">
-          <p className="text-sm text-text-muted">正在恢复对话历史…</p>
-          <ReplySkeleton />
-        </div>
-      )}
+      {workspace.restoring && <Loading>正在恢复对话历史…</Loading>}
       {workspace.historyError && <p role="alert">{workspace.historyError}</p>}
       {workspace.historyBefore && (
         <button
@@ -195,7 +191,7 @@ export function Conversation({
                 {step ? `正在${step}…` : <span>思考中</span>}
               </p>
             )}
-            {running && !run.answer && <ReplySkeleton />}
+            {running && !run.answer && <Skeleton />}
             {run.answer && !stageGuidance(run) && (
               <div className="answer">
                 <Markdown text={run.answer} />
@@ -250,19 +246,6 @@ export function Conversation({
           </p>
         </div>
       )}
-    </div>
-  );
-}
-
-function ReplySkeleton() {
-  return (
-    <div
-      aria-hidden="true"
-      className="space-y-3 py-3 motion-safe:animate-pulse"
-    >
-      <div className="h-4 w-3/4 rounded bg-bg-subtle" />
-      <div className="h-4 w-full rounded bg-bg-subtle" />
-      <div className="h-4 w-1/2 rounded bg-bg-subtle" />
     </div>
   );
 }

@@ -1,5 +1,6 @@
 /** Render canonical business cards; money, provenance and conflicts come from the server. */
 "use client";
+import { Button } from "./ui/button";
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   planUnavailable,
@@ -162,6 +163,8 @@ function Hotel({
         {card.lodging_exceeds_trip_budget && (
           <p className="error">住宿已超过全程预算</p>
         )}
+      </div>
+      <div className="hotel-actions">
         {card.data_mode === "live" && (
           <div className="hotel-links">
             {links.info ? (
@@ -269,7 +272,8 @@ function HotelStrip({
     <div className="hotel-strip-wrap">
       {state.overflow && (
         <div className="hotel-strip-nav">
-          <button
+          <Button
+            variant="outline"
             type="button"
             aria-label="上一批酒店"
             aria-controls={regionId}
@@ -277,8 +281,9 @@ function HotelStrip({
             onClick={() => page(-1)}
           >
             ←
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="outline"
             type="button"
             aria-label="下一批酒店"
             aria-controls={regionId}
@@ -286,7 +291,7 @@ function HotelStrip({
             onClick={() => page(1)}
           >
             →
-          </button>
+          </Button>
         </div>
       )}
       <div
@@ -436,18 +441,20 @@ function HotelPackage({
       {card.data_mode === "live" ? (
         <>
           {choose && (
-            <button
+            <Button
+              variant="outline"
               disabled={
                 disabled || expired || revision !== card.request_revision
               }
               onClick={() => choose(card)}
             >
               选用此酒店
-            </button>
+            </Button>
           )}
         </>
       ) : (
-        <button
+        <Button
+          variant="outline"
           disabled={
             disabled ||
             expired ||
@@ -457,7 +464,7 @@ function HotelPackage({
           onClick={() => void hold(card.offer_id, card.request_revision)}
         >
           暂留模拟房间
-        </button>
+        </Button>
       )}
       {!expiredComparison && lowest.includes(card.offer_id) && (
         <p className="lowest">所列同口径报价中的最低价</p>
@@ -637,13 +644,14 @@ export function PlanResults({
                           )}
                         </div>
                         {!plan.draft_id && lock && (
-                          <button
+                          <Button
+                            variant="outline"
                             disabled={disabled}
                             onClick={() => void lock(item.item_id)}
                             aria-label={`${item.locked ? "解锁" : "锁定"}第${index + 1}项`}
                           >
                             {item.locked ? "已锁定" : "锁定"}
-                          </button>
+                          </Button>
                         )}
                       </article>
                     ))}
@@ -681,13 +689,13 @@ export function PlanResults({
       )}
       {plan.draft_id && confirm && (
         <div className="confirm-bar">
-          <button
+          <Button
             className="primary"
             disabled={disabled || blocked || plan.status === "confirmed"}
             onClick={() => void confirm()}
           >
             确认保存此版本
-          </button>
+          </Button>
         </div>
       )}
     </section>

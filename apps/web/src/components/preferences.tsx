@@ -1,5 +1,6 @@
 /** Explicit preference editor; saved values are references, current trip conditions take priority. */
 "use client";
+import { Button } from "./ui/button";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type Identity } from "@/lib/api";
 import type { components } from "@/lib/api-types";
@@ -141,17 +142,19 @@ export function PreferencePanel({
             <option value="taxi">出租车</option>
           </select>
         </label>
-        <button type="submit" disabled={!saved || busy}>
+        <Button variant="outline" type="submit" disabled={!saved || busy}>
           保存偏好
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="outline"
           type="button"
           disabled={!saved || busy}
           onClick={() => void change(true)}
         >
           清除偏好
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="outline"
           type="button"
           disabled={busy}
           onClick={() => {
@@ -161,7 +164,7 @@ export function PreferencePanel({
           }}
         >
           读取最新偏好
-        </button>
+        </Button>
         {status && (
           <p role="status" className="muted small">
             {status}

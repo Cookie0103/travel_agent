@@ -1,5 +1,6 @@
 /** Explicit conditions form; the server owns revisions and validation. */
 "use client";
+import { Button } from "./ui/button";
 import { useState, type MouseEvent } from "react";
 import type { RequestState } from "@/lib/api";
 import { PACES } from "@/lib/pace";
@@ -259,9 +260,9 @@ export function Conditions({
           {formError}
         </p>
       )}
-      <button disabled={disabled} className="primary">
+      <Button disabled={disabled} className="primary">
         保存条件
-      </button>
+      </Button>
       <p className="muted small">
         修改条件会使旧报价和草稿不再适用；未知信息会显示警告。
       </p>

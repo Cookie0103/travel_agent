@@ -1,5 +1,7 @@
 /** List this identity's confirmed trips, then read a selected canonical formal version. */
 "use client";
+import { Loading } from "./ui/loading";
+import { Button } from "./ui/button";
 import Link from "next/link";
 import { useWorkspace } from "@/lib/use-workspace";
 import { savedTripList } from "@/lib/saved-trips";
@@ -21,17 +23,18 @@ export function SavedTrip() {
       <p className="notice">
         只读取当前演示身份已经确认的正式版本。刷新不会重新生成、修改行程或创建订单。
       </p>
-      {list.phase === "loading" && <p role="status">正在读取已保存行程…</p>}
+      {list.phase === "loading" && <Loading>正在读取已保存行程…</Loading>}
       {(workspace.error || workspace.historyError) && (
         <Banner kind="error">
           {workspace.error || workspace.historyError}
           {workspace.identity && (
-            <button
+            <Button
+              variant="outline"
               disabled={workspace.busy || workspace.restoring}
               onClick={() => void workspace.refresh()}
             >
               重新读取
-            </button>
+            </Button>
           )}
         </Banner>
       )}
@@ -56,23 +59,25 @@ export function SavedTrip() {
                   <span className="small muted">当前旅行</span>
                 )}
               </div>
-              <button
+              <Button
+                variant="outline"
                 disabled={workspace.busy || workspace.restoring}
                 onClick={() => void workspace.switchTrip(trip.session_id)}
               >
                 查看行程
-              </button>
+              </Button>
             </section>
           ))}
         </section>
       )}
       {workspace.tripCursor && (
-        <button
+        <Button
+          variant="outline"
           disabled={workspace.busy || workspace.restoring}
           onClick={() => void workspace.loadMoreTrips()}
         >
           读取更早旅行
-        </button>
+        </Button>
       )}
       {list.phase === "more" && (
         <p>当前页没有已确认行程，可以继续读取更早旅行。</p>

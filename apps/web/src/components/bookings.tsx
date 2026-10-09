@@ -1,5 +1,6 @@
 /** User confirmation and canonical booking recovery; unknown states only reconcile. */
 "use client";
+import { Button } from "./ui/button";
 import type { Booking } from "@/lib/api";
 import { SourceRef, useClock } from "./results";
 import { errorExplanation } from "@/lib/error-explanation";
@@ -82,7 +83,7 @@ export function Bookings({
             {booking.status === "held" && (
               <>
                 <p>确认后将创建上述金额和入住条件的模拟订单，请先核对。</p>
-                <button
+                <Button
                   className="primary"
                   disabled={
                     disabled || !bookingCanConfirm(booking, revision, now)
@@ -90,11 +91,12 @@ export function Bookings({
                   onClick={() => void act(booking.booking_id, "confirm")}
                 >
                   确认模拟预订
-                </button>
+                </Button>
               </>
             )}
             {booking.status === "quoted" && (
-              <button
+              <Button
+                variant="outline"
                 disabled={disabled || stale}
                 onClick={() =>
                   void hold(
@@ -104,19 +106,20 @@ export function Bookings({
                 }
               >
                 核对并重试同一暂留
-              </button>
+              </Button>
             )}
             {["confirmed", "unknown"].includes(booking.status) && (
               <>
                 <p className="warning">
                   供应商可能已创建订单。先核对状态，再决定下一步。
                 </p>
-                <button
+                <Button
+                  variant="outline"
                   disabled={disabled}
                   onClick={() => void act(booking.booking_id, "reconcile")}
                 >
                   核对供应商状态
-                </button>
+                </Button>
               </>
             )}
             {booking.order_id && <p>模拟订单号 {booking.order_id}</p>}

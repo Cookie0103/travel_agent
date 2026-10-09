@@ -834,3 +834,7 @@ Chrome旧真实页面computed style：primary rgb(15,118,110)/白字、body17px�
 - 117passed/297.35ms/type/lint/build五routes；新增键盘模块首先ImportError红。移除助手框/装饰菱形/渐变，保留business status/StageFailure/SSE/retry/card时效；用户primary/primary-ink。
 - 独立审查trip缺tabpanel、非tab切换焦点丢失两P2；Chrome修前切到trip后BODY获得焦点，修后打开focus=tripTab、关闭=chatTab，未发文字保留。390无横向溢出、箭头/Home与宽屏关闭展开按钮focus已核验；截图已看。首次按本次行程exact名字漏attention accessible名、宽屏collapsed后无关闭按钮，均按fresh DOM/可见展开入口修正，未伪造交互成功。
 - T7.2 f46f85c/37947865356最终python/web/docker-demo全部success。模型/供应商新增0。
+
+### 2026-10-10 T7.4A / P-93 酒店和表单验收
+- VERIFIED：web typecheck/lint/test（117 passed）/build五路由；酒店实测footer差26.4px→0，价格与选项行为保持。Chrome390px页面无横向溢出、条带横滚；条件/资料归属/保存行程页面已看过。
+- REASONED：独立审查两轮无P1/P2；native表单submit/disabled和来源守卫保持。新增请求为固定演示，无真实供应商调用。
