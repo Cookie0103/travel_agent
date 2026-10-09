@@ -96,3 +96,14 @@ T4.5补充：房型偏好复用hard_constraints，有限离线肯定表达映射
 - 旧复合文本只兼容“明确独立房间 + 明确不接受宿舍/青旅”的有限格式，不泛化到任意矛盾句；原词保留，canonical仅派生。合法旧20项不因附加规范词超出原上限而变不可读，在边界保原文本，通过同一词表派生识别，旧schema仍可读。
 
 - typed投影跳过已有同一规范值，合法20项同值no-op不因重复追加成为21项；同组冲突仍拒绝，上限不扩大。
+
+
+## P74：住宿查询地点与旅行目的地分离（2026-10-09，实施前）
+
+- 增量可空条件 `hotel_search_location`（1–40字符），表示用户明确指定的酒店搜索城市/地点，不是整趟旅行目的地。工具沿现有set/clear/explicit_fields、HTTP PATCH来源、CAS和幂等语义保存，未提不默认；不得将机场起终点自动变为住宿区域，也不得默认把冲绳改成那霸。回执标“住宿查询地点”。前端旧表单忽略该增量字段即可，未带即保留。
+- 仅在现有request_details保存该事实；legacy_request/LegacyRequestSnapshot投影排除它，旧conditions/报价请求/草稿/operations形状保持。details用hotel_search_city绑定当时旅行目的地（归属元数据），读时若与当前city不一致则不恢复过时地点；修改/清除city时，未同时明确提供新住宿地点则清除旧地点和来源。复用已有列，无表/迁移/依赖。
+- 宽区域判定从Google适配器移到纯domain函数，Google、会话和酒店查询共用同一有限词表。在live酒店模式，宽区域city且无具体hotel_search_location时，conversation.missing_fields含hotel_search_location，hotel不ready，awaiting_field允许该值；如果该值也仍是宽区域，仍需细化。fixture酒店维持原支持范围；行程是否ready按原条件独立判断，不强迫具体城市覆盖全旅行目的地。
+- 查询/刷新在任何外部请求前按同一判定给固定 `hotel_search_location_required`/validation；成功查询geocode使用住宿地点或原具体city，报价/行程city不被临时改写。酒店证据条件仅在该字段非空时包含它，以保持原无地点证据形状；更改地点失效酒店证据，不失效无关路线/景点。不能放宽原Rakuten宽区域门禁。
+- 必须验证真实PG恢复、短答来源保护/no-op/清除与city改变、旧conditions/报价shape兼容；零HTTP拒绝、geocode使用指定地点、空/成功搜索和相应待办；预算未知仍可查、儿童/房型不重复追问。
+- 右侧摘要只读展示已知住宿查询地点及来源；未知不显示示例值。现有表单未提供该字段仍保持事实，住宿地点可在对话明确更新；生成OpenAPI/前端类型同步新字段，不手改生成文件。
+- 独立P75更正：仅绑定city不能识别旧writer改走再改回。增加hotel_search_revision归属元数据，地点仅在该值等于当前业务revision且city一致时有效；新writer每次业务更新同步，旧writer任何业务更新无法维持此证明，保留侧列原文但当前地点视未知重新澄清。不能借来源-only的source_revision更新重新认证旧地点，故不复用来源版本作地点证明。不丢住宿预算，不改变旧报价/条件形状。

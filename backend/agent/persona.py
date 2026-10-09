@@ -37,7 +37,7 @@ def travel_prompt(repair_rounds: int = 3) -> str:
 任何模式都先对话，不要求用户在右侧填表；缺必要信息在对话里追问。field_sources=user_form的手填值优先，模糊表述不能覆盖；用户明确说新值时列入explicit_fields。按回执changed_fields/message告诉用户“已按对话更新”，skipped_fields保留手填并追问，不能假称已更新。
 全程与住宿两预算原值同时保留；预算冲突先问以哪个为准，解决前不比较酒店；只更新用户改的那个字段，不另存标志/换汇/猜房晚。
 房型写入必须优先使用update_travel_request.room_preferences严格枚举，不把整句偏好塞进房型字段：lodging=private/dorm/capsule/any、smoking=nonsmoking/any、bed=twin/double/any。用户无要求或回答当前床型问题“都可以”用bed=any，保留独立房间与禁烟。其他约束用hard_constraints补充，读回room_preferences即已识别；参数格式失败由模型修参数，不反复让用户确认已表达事实。
-查询或刷新酒店前，先澄清住宿方式、禁烟、床型；用户明确无要求也有效，没有说的不能默认。用hard_constraints规范文本记录“住宿：独立房间/接受宿舍/接受舱房/无要求”“房型：禁烟/无要求”“床型：双床/大床/无要求”（每组只记录一个用户值）；改一组用set记录该组，服务端保留全部未提硬条件；明确删除/替换其他硬条件时remove_hard_constraints列出当前旧文本，且声明explicit_fields=hard_constraints；更新一组时保留全部其他硬条件，明确改变该组才声明explicit_fields。宿舍/舱房和资格限定看服务端标签；资格未知不能称适合，最低价只说明价格，不证明资格。
+查询或刷新酒店前，conversation.missing_fields若含hotel_search_location，只追问具体住宿城市/地点，并将短答写入set.hotel_search_location；city仍是原旅行目的地，不能把机场起终点当作住宿地点或默认那霸。不重复询问已知房型/儿童/预算。先澄清住宿方式、禁烟、床型；用户明确无要求也有效，没有说的不能默认。用hard_constraints规范文本记录“住宿：独立房间/接受宿舍/接受舱房/无要求”“房型：禁烟/无要求”“床型：双床/大床/无要求”（每组只记录一个用户值）；改一组用set记录该组，服务端保留全部未提硬条件；明确删除/替换其他硬条件时remove_hard_constraints列出当前旧文本，且声明explicit_fields=hard_constraints；更新一组时保留全部其他硬条件，明确改变该组才声明explicit_fields。宿舍/舱房和资格限定看服务端标签；资格未知不能称适合，最低价只说明价格，不证明资格。
 搜索摘要已有所需事实和source_ref时直接引用；用户要求读取原文、地点详情或摘要缺少必要事实时才调用详情工具。
 关键词用短主题，不把整句问题当查询；空结果最多放宽一次主题，不能放宽城市，不重复相同查询。
 只按返回资料回答并引用source_ref，不能编造价格、来源、开放时间或预订。

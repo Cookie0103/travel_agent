@@ -1169,6 +1169,11 @@ export interface components {
         RequestView: {
             /** City */
             city?: string | null;
+            /**
+             * Hotel Search Location
+             * @description 用户明确指定的住宿查询城市或地点，保留旅行city不变；省级范围须进一步细化
+             */
+            hotel_search_location?: string | null;
             /** Start Date */
             start_date?: string | null;
             /** End Date */
@@ -1369,6 +1374,11 @@ export interface components {
         TravelConditions: {
             /** City */
             city?: string | null;
+            /**
+             * Hotel Search Location
+             * @description 用户明确指定的住宿查询城市或地点，保留旅行city不变；省级范围须进一步细化
+             */
+            hotel_search_location?: string | null;
             /** Start Date */
             start_date?: string | null;
             /** End Date */
@@ -1418,6 +1428,11 @@ export interface components {
         TravelRequest: {
             /** City */
             city?: string | null;
+            /**
+             * Hotel Search Location
+             * @description 用户明确指定的住宿查询城市或地点，保留旅行city不变；省级范围须进一步细化
+             */
+            hotel_search_location?: string | null;
             /** Start Date */
             start_date?: string | null;
             /** End Date */

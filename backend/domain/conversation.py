@@ -6,11 +6,16 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.domain.room_choices import missing_room_choices
-from backend.domain.travel_request import TravelRequest, lodging_budget_relation
+from backend.domain.travel_request import (
+    TravelRequest,
+    hotel_search_location_required,
+    lodging_budget_relation,
+)
 
 Task = Literal["hotel_comparison", "itinerary"]
 Question = Literal[
     "city",
+    "hotel_search_location",
     "start_date",
     "end_date",
     "adults",
@@ -48,10 +53,14 @@ class ConversationStateInput(BaseModel):
         return self
 
 
-def task_missing(request: TravelRequest, task: Task) -> tuple[str, ...]:
+def task_missing(
+    request: TravelRequest, task: Task, *, live_hotels: bool = False
+) -> tuple[str, ...]:
     required = ("city", "start_date", "end_date", "adults", "child_ages")
     fields = [key for key in required if getattr(request, key) is None]
     if task == "hotel_comparison":
+        if live_hotels and hotel_search_location_required(request):
+            fields.append("hotel_search_location")
         if request.start_date and request.end_date == request.start_date:
             fields.append("overnight_stay")
         if request.rooms is None:
@@ -69,15 +78,25 @@ def task_missing(request: TravelRequest, task: Task) -> tuple[str, ...]:
     return tuple(fields)
 
 
-def conversation_view(state: ConversationState, request: TravelRequest) -> dict[str, object]:
+def conversation_view(
+    state: ConversationState, request: TravelRequest, *, live_hotels: bool = False
+) -> dict[str, object]:
     missing = list(
-        dict.fromkeys(key for task in state.pending_tasks for key in task_missing(request, task))
+        dict.fromkeys(
+            key
+            for task in state.pending_tasks
+            for key in task_missing(request, task, live_hotels=live_hotels)
+        )
     )
     return {
         "pending_tasks": list(state.pending_tasks),
         "awaiting_field": state.awaiting_field if state.awaiting_field in missing else None,
         "missing_fields": missing,
-        "ready_tasks": [task for task in state.pending_tasks if not task_missing(request, task)],
+        "ready_tasks": [
+            task
+            for task in state.pending_tasks
+            if not task_missing(request, task, live_hotels=live_hotels)
+        ],
         "nights": (request.end_date - request.start_date).days
         if request.start_date and request.end_date
         else None,

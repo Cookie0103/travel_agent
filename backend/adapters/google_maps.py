@@ -11,6 +11,7 @@ from sqlalchemy import text
 from backend.adapters.external_api import ApiUsage, parse_response, request_json
 from backend.domain.catalog import Place, Source
 from backend.domain.external_data import Coordinates, ExternalDataError, GeoPoint
+from backend.domain.external_data import broad_region as broad_region
 from backend.domain.itinerary import RouteEstimate
 from backend.domain.travel_request import Transport
 
@@ -72,21 +73,6 @@ class _GooglePlace(BaseModel):
 
 class _Places(BaseModel):
     places: list[_GooglePlace] = Field(default_factory=list)
-
-
-def broad_region(city: str) -> bool:
-    # 以用户明确的省级表达判断；札幌等面积较大的城市仍可搜索住宿。
-    value = city.strip().casefold()
-    return value in {
-        "北海道",
-        "hokkaido",
-        "沖縄",
-        "冲绳",
-        "沖縄県",
-        "okinawa",
-        "东京都",
-        "東京都",
-    } or value.endswith(("県", "县", "府"))
 
 
 def opening_hours(hours: _Hours | None) -> str | None:

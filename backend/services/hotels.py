@@ -10,7 +10,11 @@ from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.hotel_selection import hotel_rate_indices
 from backend.domain.hotels import HotelOffer, compare, quote
 from backend.domain.room_preferences import room_assessment, room_order, room_preferences_question
-from backend.domain.travel_request import TravelRequest, lodging_budget_relation
+from backend.domain.travel_request import (
+    TravelRequest,
+    hotel_search_location_required,
+    lodging_budget_relation,
+)
 from backend.persistence.travel import (
     entity_evidence,
     evidence_from_row,
@@ -69,6 +73,13 @@ class HotelService:
         if question := room_preferences_question(request):
             raise ServiceError(422, "validation", question, "hotel_room_preferences_missing")
         if live := self.travel.live:
+            if hotel_search_location_required(request):
+                raise ServiceError(
+                    422,
+                    "validation",
+                    "目的地范围较大，请在对话中指定具体住宿城市或地点；原目的地和住宿条件已保留。",
+                    "hotel_search_location_required",
+                )
             if not live.google or not live.rakuten:
                 raise ServiceError(
                     503,
@@ -78,7 +89,7 @@ class HotelService:
                 )
             assert request.city
             try:
-                point = await live.google.geocode(request.city)
+                point = await live.google.geocode(request.hotel_search_location or request.city)
                 offers = await live.rakuten.search(
                     request, point, hotel_id=hotel_id, rate_id=rate_id, limit=limit
                 )

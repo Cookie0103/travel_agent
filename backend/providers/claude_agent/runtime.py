@@ -92,7 +92,7 @@ class ClaudeRuntime:
     ) -> RuntimeOutcome:
         if self.config.disable_auto_compaction and (
             (self.identity.sdk_version, self.identity.cli_version)
-            not in {("0.2.163", "2.1.114"), ("0.2.163", "2.1.294")}
+            not in {("0.2.163", "2.1.114"), ("0.2.163", "2.1.294"), ("0.2.163", "2.1.295")}
         ):
             # 带工具get_context_usage会请求计数API；不放开费用守卫来逐轮探测。
             # 仅使用已实测的锁定版本/官方开关，未知版本须先独立离线核验。
@@ -172,7 +172,16 @@ class ClaudeRuntime:
                         emit(RuntimeEvent(context, "text", text=block.text))
             if isinstance(message, ResultMessage):
                 outcome = outcome_from_result(message)
-                if outcome.code is None and self.stop_failure:
+                business_stop = (
+                    message.terminal_reason == "stop_hook_prevented"
+                    and message.subtype == "success"
+                    and not message.is_error
+                    and message.api_error_status is None
+                    and message.stop_reason in {None, "end_turn", "stop_sequence"}
+                    and self.stop_failure
+                    in {"conversation_incomplete", "conversation_state_unavailable"}
+                )
+                if self.stop_failure and (outcome.code is None or business_stop):
                     return RuntimeOutcome(
                         text="本轮未完成查询或草稿生成，请稍后继续。",
                         code="unavailable"
@@ -247,6 +256,8 @@ def outcome_from_result(message: ResultMessage) -> RuntimeOutcome:
         return RuntimeOutcome(code="provider_error", reason="incomplete_output")
     if message.api_error_status == 429:
         return RuntimeOutcome(code="rate_limited", reason="provider_rate_limit")
+    if message.api_error_status is not None:
+        return RuntimeOutcome(code="provider_error", reason="provider_api_error")
     if message.is_error or message.subtype != "success" or reason not in {None, "completed"}:
         return RuntimeOutcome(code="provider_error", reason="sdk_result_error")
     if not message.session_id or message.result is None:

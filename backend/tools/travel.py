@@ -130,6 +130,7 @@ DEFINITIONS = (
         "回执skipped_fields未更新，必须追问；实际更新向用户告知回执message。"
         "房型优先用room_preferences严格枚举：lodging=private/dorm/capsule/any，smoking=nonsmoking/any，bed=twin/double/any；无要求用any，未提项省略。"
         "hard_constraints保留未提项，只替换本次房型组；明确删除用remove_hard_constraints列出当前旧文本，并声明explicit_fields=hard_constraints。"
+        "省级目的地需要住宿地点时，set.hotel_search_location记录用户明确地点，保留city；机场起终点不等于住宿地点，不默认选择那霸。"
         "返回预算冲突时先追问以哪个为准，回答后只改用户指定字段，不比较酒店。",
         ConversationRequestPatch.model_json_schema(),
         kind="state",

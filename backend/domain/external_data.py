@@ -18,3 +18,18 @@ class ExternalDataError(ValueError):
     def __init__(self, message: str, *, validation: bool = False) -> None:
         super().__init__(message)
         self.validation = validation
+
+
+def broad_region(city: str) -> bool:
+    """用户省级表达需细化住宿地点；不以城市面积推断范围。"""
+    value = city.strip().casefold()
+    return value in {
+        "北海道",
+        "hokkaido",
+        "沖縄",
+        "冲绳",
+        "沖縄県",
+        "okinawa",
+        "东京都",
+        "東京都",
+    } or value.endswith(("県", "县", "府"))

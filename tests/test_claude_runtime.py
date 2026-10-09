@@ -115,8 +115,12 @@ class CompactionClient(ScriptedClient):
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
     ("sdk_version", "cli_version"),
-    [("0.2.163", v) for v in ("2.1.113", "2.1.115", "2.1.293", "2.1.295", "", "future", "test")]
-    + [(v, cli) for cli in ("2.1.114", "2.1.294") for v in ("0.2.162", "0.2.164", "", "future")],
+    [("0.2.163", v) for v in ("2.1.113", "2.1.115", "2.1.293", "2.1.296", "", "future", "test")]
+    + [
+        (v, cli)
+        for cli in ("2.1.114", "2.1.294", "2.1.295")
+        for v in ("0.2.162", "0.2.164", "", "future")
+    ],
 )
 async def test_compaction_control_not_verified_stops_before_model_query(
     tmp_path: Path,
@@ -139,7 +143,7 @@ async def test_compaction_control_not_verified_stops_before_model_query(
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize("cli_version", ["2.1.114", "2.1.294"])
+@pytest.mark.parametrize("cli_version", ["2.1.114", "2.1.294", "2.1.295"])
 @pytest.mark.parametrize("unexpected_compaction", [False, True])
 async def test_verified_compaction_control_completes_or_stops_on_compact_event(
     tmp_path: Path,
@@ -335,3 +339,81 @@ async def test_stop_hook_missing_fields_allow_stop_and_state_failure_is_not_succ
         assert adapter.stop_failure == "conversation_state_unavailable"
     else:
         assert result == {} and adapter.stop_corrections == 0
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "failure,expected",
+    [("conversation_incomplete", "blocked"), ("conversation_state_unavailable", "unavailable")],
+)
+async def test_real_sdk_stop_terminal_uses_trusted_business_failure(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, failure: str, expected: str
+) -> None:
+    message = ResultMessage(
+        "success",
+        1,
+        1,
+        False,
+        2,
+        "sdk",
+        result="unfinished",
+        terminal_reason="stop_hook_prevented",
+        stop_reason="end_turn",
+    )
+    adapter = runtime(tmp_path, monkeypatch, ScriptedClient([message]))
+    adapter.stop_failure = failure
+    outcome = await adapter.execute(
+        RunContext(uuid4()), "synthetic", None, lambda event: None, asyncio.Event()
+    )
+    assert outcome.code == expected and outcome.reason == failure
+    assert outcome.sdk_session_id is None
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "api_status,is_error,stop_reason",
+    [(429, False, "end_turn"), (503, True, "end_turn"), (None, False, "max_tokens")],
+)
+async def test_stop_hook_cannot_mask_real_provider_failure(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    api_status: int | None,
+    is_error: bool,
+    stop_reason: str,
+) -> None:
+    message = ResultMessage(
+        "success",
+        1,
+        1,
+        is_error,
+        2,
+        "sdk",
+        result="unfinished",
+        terminal_reason="stop_hook_prevented",
+        stop_reason=stop_reason,
+        api_error_status=api_status,
+    )
+    adapter = runtime(tmp_path, monkeypatch, ScriptedClient([message]))
+    adapter.stop_failure = "conversation_incomplete"
+    outcome = await adapter.execute(
+        RunContext(uuid4()), "synthetic", None, lambda event: None, asyncio.Event()
+    )
+    assert outcome.code in {"provider_error", "rate_limited"}
+    assert outcome.reason != "conversation_incomplete" and outcome.sdk_session_id is None
+
+
+def test_sdk_stop_without_business_failure_is_not_success() -> None:
+    result = outcome_from_result(
+        ResultMessage(
+            "success",
+            1,
+            1,
+            False,
+            1,
+            "sdk",
+            result="unfinished",
+            terminal_reason="stop_hook_prevented",
+            stop_reason="end_turn",
+        )
+    )
+    assert result.code == "provider_error" and result.sdk_session_id is None

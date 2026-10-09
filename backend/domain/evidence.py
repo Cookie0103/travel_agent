@@ -71,4 +71,6 @@ def evidence_conditions(request: TravelRequest, kind: EvidenceKind) -> dict[str,
         "place": {"city"},
         "article": {"city"},
     }[kind]
+    if kind == "hotel_offer" and request.hotel_search_location is not None:
+        fields.add("hotel_search_location")
     return request.model_dump(mode="json", include=fields)

@@ -652,3 +652,20 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - `uv run python`内存合成诊断：直接调用broad_region与Rakuten.search，使用空HTTP客户端（门禁先拒绝，无网络），返回地区过大validation；通过脚本client向ClaudeRuntime._collect注入真实终止形状，并设可信stop_failure=conversation_incomplete，输出provider_error/sdk_result_error；empty_hotel_payload仍只显示固定条件不完整；conversation_view输出酒店ready、city追问null、行程缺transport/pace、nights1、住宿预算可选。脚本exit0，仅为当前问题复现，不是修复后通过证据。
 - 代码依据：backend/adapters/rakuten.py宽区域门禁；backend/domain/conversation.py只按city缺值；backend/services/travel.py拒绝非缺项追问；backend/providers/claude_agent/runtime.py先分类再仅无错误时处理stop_failure；backend/tools/execution.py泛化validation。根因分层记录P74，尚未修改业务代码、未运行全量回归/模型验收。原Stop脚本测试未注入stop_hook_prevented，不能用既有全量绿覆盖此真实协议分支。
 - 本轮文档验证：`uv run --no-sync python scripts/check_docs.py` exit0，10份入口与仓库链接通过；`git diff --check` exit0。文档差异不触发前端重建或扩大模型验收结论。
+
+
+## 2026-10-09 T3.9 / P74–75：修复启动与红绿过程
+
+- 开工27bdeb2、Git干净；用户明确授权修复。ADR-014/015先定增量住宿地点、Stop分类与安全展示契约，无新迁移/依赖/运行时、生产未变。
+- 首红纯测试5failed/46passed：缺地点条件/追问枚举、错误安全提示、两类真实SDK终止形状误归provider_error；PG新增两例先红。真实SDK测试首次worker状态名误写failed，核对现有worker协议改为error后仍红在provider_error!=blocked，未降低业务断言。首绿纯51passed/0.36s，PG邻近54passed/13.07s；新来源用例一度将直接ToolResult tuple当JSON list，修正类型断言而非修改来源守卫。
+- 阶段check287/三平台strict/3契约/10文档入口、web-check98/typecheck/lint/build5routes通过；新增来源用例当时tuple断言未通过，未标整体完成。格式检查发现两个长行与一处测试内部导入顺序，修复后阶段check通过。
+- 独立审查P75：旧writer city往返将过时地点复活，PG2failed/20deselected证实；添加独立hotel_search_revision完整性边界，不能用来源-only会刷新的source_revision重新认证。侧列旧原文保留，当前有效地点未知；新增来源-only检查，待专项/全量结果。
+
+- P75/P76后最新相关专项122passed/8.08s；最终阶段check287/三平台strict/3契约/10入口、web-check98/type/lint/build5routes exit0。P76一行门槛修复后的Chrome实际只地点条件摘要可读/来自对话，无“条件为空”；截图p76-location-only.png无私人内容。
+- 首次完整 `uv run --no-sync python scripts/dev.py test` exit1：5failed/1303passed/1skipped/1live deselected/277.49s。四个native compaction/advertises变体实际CLI2.1.295被精确门禁先阻止、0模型请求；旧20项房型兼容测试仍手写只exclude lodging_budget，漏新增地点字段。修正为生产legacy_request投影后冻结旧模型extra=forbid仍执行，不删断言。P77完整记录，不把这些失败归因于用户模型接口。
+- P77旧独立probe未用inflate_usage导入失效，首ImportError后移除；当前公共SDK/真实CLI/本地模型HTTP替身默认5requests/1compact、disabled4/0，均success/Guard0，脱敏JSON不含UUID/正文。精确pair阳性首红2failed/23passed/25deselected/0.35s，只追加实测pair后runtime+房型70passed/0.51s。未知CLI2.1.296/未知SDK与意外compact仍有拒绝反例；后续最终全量运行中。
+- 真实DeepSeek合成两轮：新合成身份、已有北海道/日期/人数/私房禁烟/床型any/一晚/住宿预算null，测试进程空Google/Rakuten key（不修改.env/用户服务），只沿原default/15CNY运行。初脚本误把budget写Money对象，本地schema拒绝，未请求模型；改原Decimal+currency形状后执行。第一轮completed/0error，仅update_conversation_state，missing=[hotel_search_location]，回复只问城市/地点，无默认那霸或重问房型儿童预算；awaiting_field未登记仍null，不能称该模型状态完全理想。第二轮短答札幌，update_travel_request成功、city保持北海道、地点札幌；一次state旧revision conflict后自行修正，酒店unavailable为刻意禁用配置的预期失败，随后state成功/待办保留。回复说明无报价而非伪造比较，仍completed/0error，不再绕回已知条件。原始合成回复/trace仅ignored cache；此证据不证明真实酒店供应商/完整行程成功。
+
+- 最终完整 `uv run --no-sync python scripts/dev.py test` exit0：1314passed/0failed/1skipped/1live deselected/280.12s；四个CLI能力项和旧shape项均实际执行通过。最后Python改动后 `dev check` exit0：287格式/三平台strict/3层契约/10文档入口；最后前端代码后 `dev web-check` exit0：typecheck/lint/98tests/build5routes。独立最终只读复核无新增P2/P3，未声称审查者运行过测试。
+- Chrome最终安全提示验收：只在正常入口新建的合成旅行经TravelService写条件、实际TravelToolExecutor.search_hotel_offers产生validation/location_required，再经共用execute_observed产生presentation并持久化。不是手写假卡/假draft；无上游请求。刷新后提示具体住宿城市/地点，明确日期/人数/房型无需重复填写；刻意强制的blocked终态显示操作受限，无“外部服务异常”。截图p74-location-question.png无私人内容，DeepSeek菜单可选。普通真实模型第一轮是合法追问completed，不能把这个强制终态合成反例冒充正常交互。
+- 最终本地运行：重启前真实库active task_runs=0，核对PID30813/cwd与backend.server --live后精确SIGTERM；以原DEMO_MODE=true/LLM_PROVIDER=deepseek/--live启动最终代码。首页200/全部9脚本200/API health ok/3000代理DeepSeek available=true。最后build后ignored static已同步并重启web，之后无新build；没有修改.env/default/15CNY或Railway、没有部署。本机ps第一次受sandbox限制，走已授权提权只读核实后再停指定PID，没有盲杀。

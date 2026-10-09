@@ -99,3 +99,14 @@
 - Stop检查尊重awaiting_field：存在合法当前追问时停止等用户；天气unknown/unavailable不应使已授权酒店/行程全部永久停止。硬工具/额度失败仍停止；未来按独立待办隔离错误。本批不做无界修复。墓碑过滤在更新和读取共用，重新授权同类任务引用新prompt；旧删除回执不允许覆盖新非空删除语义。
 
 - 工具说明要求无主题宽搜使用city与空query，已有足够证据即进入规划；酒店查询成功优先独立展示，不等全部行程步骤。实际工具额度耗尽仍保留未完成任务，禁止以提高上限掩盖过度搜索。
+
+
+## P74：业务Stop终止与酒店失败展示（2026-10-09，实施前）
+
+- 沿用SDK原生Stop，不另建循环；真实终止 `stop_hook_prevented` 仅在本地已产生可信stop_failure且SDK无错误/subtype=success、无API错误、输出停止原因为正常结束时，映射现有blocked/conversation_incomplete或unavailable/conversation_state_unavailable。不当成功、不保存SDK成功指针；其他未知/异常终止、429、max_turns、取消优先按原分类，不能由hook掩盖供应商故障。
+- empty_hotel_payload只新增对固定可信 `hotel_search_location_required` + validation 的中文展示分支，要求在对话提供具体住宿城市/地点；不透传任意suggestion/外部异常/用户文本。保留原错误code与空卡片/无最低价语义，GET/history/SSE同一投影。
+- 测试必须覆盖真实SDK/CLI连续两次正常回答触发Stop终止（而非替身completed），未知停止无可信hook标志、hook状态不可读、真实API错误不被覆盖，及安全展示/PG恢复/预算与来源守卫。
+
+## P77：本机CLI更新后的精确能力核验（2026-10-09）
+
+本轮实际CLI为2.1.295，旧压缩关闭门禁只核验过2.1.114/2.1.294。先复用公共SDK独立离线机制实验：SDK0.2.163/CLI2.1.295，同一历史与窗口下默认5请求/1compact、关闭4请求/0compact，两组success且Guard无失败。只追加该精确pair，未知CLI/SDK及关闭时意外compact仍拒绝；不改变SDK路线、生产流程或调用上限。官方[DISABLE_AUTO_COMPACT环境变量](https://code.claude.com/docs/en/env-vars)是能力入口；是否真实有效以当前版本实测为准。机制对照不是业务工具后时序、摘要质量证明，原SDK/PG集成断言完整保留。

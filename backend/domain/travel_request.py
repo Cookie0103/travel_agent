@@ -6,6 +6,7 @@ from typing import Annotated, Literal, Self
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
+from backend.domain.external_data import broad_region
 from backend.domain.room_choices import (
     ROOM_CHOICES,
     RoomPreferencesPatch,
@@ -56,6 +57,12 @@ class TravelConditions(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
 
     city: str | None = Field(default=None, min_length=1, max_length=40)
+    hotel_search_location: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=40,
+        description="用户明确指定的住宿查询城市或地点，保留旅行city不变；省级范围须进一步细化",
+    )
     start_date: date | None = None
     end_date: date | None = None
     timezone: Literal["Asia/Tokyo"] = "Asia/Tokyo"
@@ -101,6 +108,7 @@ class LegacyRequestSnapshot(TravelRequest):
     """明确的旧快照输出类型，保留schema类型但不序列化新增预算。"""
 
     lodging_budget: LodgingBudget | None = Field(default=None, exclude=True)
+    hotel_search_location: str | None = Field(default=None, exclude=True)
 
 
 class RequestPatch(BaseModel):
@@ -179,6 +187,11 @@ def apply_request_patch(
     data.update(patch.set_fields.model_dump(exclude_unset=True))
     defaults = TravelConditions().model_dump()
     data.update({name: defaults[name] for name in patch.clear})
+    if (
+        data["city"] != current.city
+        and "hotel_search_location" not in patch.set_fields.model_fields_set
+    ):
+        data["hotel_search_location"] = None
     updated = TravelRequest.model_validate(data)
     changed = frozenset(
         name
@@ -190,7 +203,16 @@ def apply_request_patch(
 
 def invalidated_kinds(changed: frozenset[str]) -> frozenset[str]:
     kinds: set[str] = set()
-    if changed & {"city", "start_date", "end_date", "adults", "child_ages", "rooms", "currency"}:
+    if changed & {
+        "city",
+        "hotel_search_location",
+        "start_date",
+        "end_date",
+        "adults",
+        "child_ages",
+        "rooms",
+        "currency",
+    }:
         kinds.add("hotel_offer")
     if changed & {"city", "start_date", "end_date", "transport", "departure_time"}:
         kinds.add("route")
@@ -264,4 +286,9 @@ def lodging_budget_relation(request: TravelRequest) -> BudgetRelation:
 
 def legacy_request(request: TravelRequest) -> dict[str, object]:
     """旧版本可读取的快照，新增预算唯一持久位置为request_details。"""
-    return request.model_dump(mode="json", exclude={"lodging_budget"})
+    return request.model_dump(mode="json", exclude={"lodging_budget", "hotel_search_location"})
+
+
+def hotel_search_location_required(request: TravelRequest) -> bool:
+    location = request.hotel_search_location or request.city
+    return bool(location and broad_region(location))

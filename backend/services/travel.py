@@ -51,6 +51,10 @@ def request_from_row(row: TravelRequestRow | None) -> TravelRequest:
         {
             **row.conditions,
             "revision": row.revision,
+            "hotel_search_location": (row.request_details or {}).get("hotel_search_location")
+            if (row.request_details or {}).get("hotel_search_city") == row.conditions.get("city")
+            and (row.request_details or {}).get("hotel_search_revision") == row.revision
+            else None,
             "lodging_budget": (row.request_details or {}).get("lodging_budget"),
         }
     )
@@ -186,7 +190,12 @@ class TravelService:
                 "bookings": [booking.card() for booking in active_bookings[:8]],
                 "bookings_truncated": len(active_bookings) > 8,
                 "conversation": await conversation.snapshot(
-                    db, request_row, current, context, after=user.preference_changed_at
+                    db,
+                    request_row,
+                    current,
+                    context,
+                    after=user.preference_changed_at,
+                    live_hotels=self.live is not None,
                 ),
                 "recent_dialogue": [
                     {
@@ -237,7 +246,7 @@ class TravelService:
                     awaiting_field=update.awaiting_field,
                 )
             )
-            view = conversation_view(state, current)
+            view = conversation_view(state, current, live_hotels=self.live is not None)
             missing = view["missing_fields"]
             assert isinstance(missing, list)
             if update.awaiting_field and update.awaiting_field not in missing:
@@ -373,6 +382,8 @@ class TravelService:
                     db, row, updated, invalidated_kinds(changed), context.run_id
                 )
             new_sources = dict(sources)
+            if "hotel_search_location" in changed and updated.hotel_search_location is None:
+                new_sources["hotel_search_location"] = "none"
             for name in accepted.set_fields.model_fields_set:
                 new_sources[name] = source
             for name in accepted.clear:

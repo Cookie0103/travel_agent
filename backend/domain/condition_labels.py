@@ -4,6 +4,7 @@ from backend.domain.travel_request import TravelRequest
 
 LABELS = {
     "city": "目的地",
+    "hotel_search_location": "住宿查询地点",
     "start_date": "开始日期",
     "end_date": "结束日期",
     "adults": "成人",

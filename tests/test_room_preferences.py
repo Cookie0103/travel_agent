@@ -10,7 +10,7 @@ from backend.adapters.rakuten import Rakuten
 from backend.agent.fixture_conditions import fixture_patch
 from backend.domain.external_data import GeoPoint
 from backend.domain.room_preferences import room_assessment, room_order, room_preferences_question
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import TravelRequest, legacy_request
 from tests.test_external_data import _CountingUsage
 from tests.test_hotels import request
 
@@ -164,7 +164,7 @@ def test_old_twenty_constraints_with_bed_preference_remain_readable_and_recogniz
     current = TravelRequest.model_validate(old.model_dump())
     assert len(current.hard_constraints) <= 20 and "大床优先" in current.hard_constraints
     assert "bed" not in missing_room_choices(current.hard_constraints)
-    OldRequest.model_validate(current.model_dump(exclude={"lodging_budget"}))
+    OldRequest.model_validate(legacy_request(current))
 
 
 def test_explicit_private_room_with_exclusion_text_is_not_missing_or_conflicting() -> None:

@@ -648,3 +648,310 @@ def test_current_draft_recovers_and_completes_only_its_pending_task(
         assert (await travel.get_request(resumed)).revision == draft.request_revision
 
     runner.run(exercise())
+
+
+def test_native_sdk_second_stop_is_business_blocked_not_provider_error(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+    tmp_path: Path,
+) -> None:
+    """P74/R13：真实SDK两次结束但待办未完成，覆盖真实stop_hook_prevented。"""
+    from tests.integration.sdk_helper import run_database_worker
+    from tests.test_sdk_cli_offline import scripted_response
+
+    runner, travel, context = travel_setup
+    turn = runner.run(create_run(travel, context, "合成酒店比较任务"))
+    saved = runner.run(
+        TravelToolExecutor(travel).execute(
+            turn,
+            "update_conversation_state",
+            {"expected_revision": 1, "goals": ["hotel_comparison"]},
+        )
+    )
+    assert saved.code is None
+    requests: list[bytes] = []
+
+    def forward(body: bytes) -> tuple[int, bytes]:
+        requests.append(body)
+        return scripted_response(
+            b'{"messages":[{"content":[{"type":"tool_result",'
+            b'"content":"Synthetic unfinished answer"}]}]}'
+        )
+
+    result, guard = run_database_worker(
+        travel, turn, tmp_path, forward, "继续合成任务", max_attempts=2
+    )
+    assert result["status"] == "error" and result["code"] == "blocked"
+    assert result["reason"] == "conversation_incomplete" and not guard.failures
+    assert len(requests) == 2
+    dialogue = runner.run(travel.business_context(turn))["conversation"]
+    assert isinstance(dialogue, dict) and dialogue["pending_tasks"] == ["hotel_comparison"]
+
+
+def test_live_hotel_location_question_survives_restart_and_queries_selected_location(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """P74/R04/R13：PG保存独立地点，宽区域零请求；短答恢复原目标。"""
+    import httpx
+
+    from backend.adapters.google_maps import GoogleMaps
+    from backend.adapters.live_data import LiveData
+    from backend.adapters.rakuten import Rakuten
+    from backend.domain.external_data import GeoPoint
+    from backend.domain.hotels import HotelOffer
+    from backend.domain.travel_request import TravelRequest
+    from backend.services.hotels import HotelService
+    from tests.test_external_data import _CountingUsage
+
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        calls: list[str] = []
+        usage = _CountingUsage({})
+
+        class Google(GoogleMaps):
+            async def geocode(self, city: str) -> GeoPoint:
+                calls.append(city)
+                return GeoPoint(name=city, latitude=26, longitude=127)
+
+        class Hotels(Rakuten):
+            async def search(
+                self,
+                request: TravelRequest,
+                point: GeoPoint,
+                *,
+                hotel_id: str | None = None,
+                rate_id: str | None = None,
+                limit: int = 4,
+            ) -> tuple[HotelOffer, ...]:
+                assert request.city == "冲绳" and request.hotel_search_location == "那霸"
+                assert point.name == "那霸" and request.lodging_budget is None
+                assert request.child_ages == () and request.rooms == 1
+                return ()
+
+        def never(request: httpx.Request) -> httpx.Response:
+            pytest.fail("P74合成供应商不能连接真实HTTP")
+
+        async with httpx.AsyncClient(transport=httpx.MockTransport(never)) as http:
+            live = LiveData(
+                Google("test", http, usage),
+                Hotels("test", "test", "", "", http, usage),
+                usage,
+                http,
+                {},
+            )
+            travel.live = live
+            changed = await travel.patch_request(
+                context,
+                RequestPatch.model_validate(
+                    {
+                        "expected_revision": 1,
+                        "set": {
+                            "city": "冲绳",
+                            "rooms": 1,
+                            "budget": "50000",
+                            "start_date": "2026-10-11",
+                            "end_date": "2026-10-12",
+                        },
+                    }
+                ),
+            )
+            revision = changed.request.revision
+            turn = await create_run(travel, context, "合成宽区域酒店比较任务")
+            tool = TravelToolExecutor(travel)
+            saved = await tool.execute(
+                turn,
+                "update_conversation_state",
+                {
+                    "expected_revision": revision,
+                    "goals": ["hotel_comparison"],
+                    "awaiting_field": "hotel_search_location",
+                },
+            )
+            assert saved.code is None
+            blocked = await tool.execute(
+                turn, "search_hotel_offers", {"expected_revision": revision}
+            )
+            assert (
+                blocked.code == "validation" and "hotel_search_location_required" in blocked.detail
+            )
+            assert calls == [] and usage.calls == 0
+            await finish(travel, turn)
+            restored = TravelService(travel.database, live)
+            state = (await restored.business_context(context))["conversation"]
+            assert isinstance(state, dict) and state["awaiting_field"] == "hotel_search_location"
+            assert state["ready_tasks"] == [] and state["missing_fields"] == [
+                "hotel_search_location"
+            ]
+            answer = await create_run(restored, context, "合成地点短答")
+            executor = TravelToolExecutor(restored)
+            updated = await executor.execute(
+                answer,
+                "update_travel_request",
+                {
+                    "expected_revision": revision,
+                    "set": {"hotel_search_location": "那霸"},
+                    "explicit_fields": ["hotel_search_location"],
+                },
+            )
+            assert updated.code is None and "住宿查询地点" in str(updated.data)
+            request = await restored.get_request(answer)
+            assert request.city == "冲绳" and request.hotel_search_location == "那霸"
+            assert request.revision == revision + 1 and request.lodging_budget is None
+            assert (await restored.get_request_view(answer)).field_sources[
+                "hotel_search_location"
+            ] == "conversation"
+            ready = (await restored.business_context(answer))["conversation"]
+            assert isinstance(ready, dict) and ready["ready_tasks"] == ["hotel_comparison"]
+            assert await HotelService(restored).search(answer, request.revision) == ()
+            assert calls == ["那霸"]
+            query = await executor.execute(
+                answer, "search_hotel_offers", {"expected_revision": request.revision}
+            )
+            assert query.code is None and query.empty
+            state = (await restored.business_context(answer))["conversation"]
+            assert isinstance(state, dict) and state["pending_tasks"] == []
+            again = await restored.patch_request(
+                answer,
+                RequestPatch.model_validate(
+                    {
+                        "expected_revision": request.revision,
+                        "set": {"hotel_search_location": "那霸"},
+                    }
+                ),
+            )
+            assert again.request.revision == request.revision and not again.changed_fields
+            moved = await restored.patch_request(
+                answer,
+                RequestPatch.model_validate(
+                    {"expected_revision": request.revision, "set": {"city": "札幌"}}
+                ),
+            )
+            assert moved.request.hotel_search_location is None
+            assert moved.field_sources["hotel_search_location"] == "none"
+
+    runner.run(exercise())
+
+
+def test_hotel_location_source_cas_and_legacy_storage_remain_safe(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """P74/R04：手填优先、显式更新、CAS、旧形状和旧writer目的地绑定。"""
+    from backend.persistence.models import TravelRequestRow
+    from backend.services.common import ServiceError
+    from tests.fixtures.legacy_travel_request_v1 import TravelRequest as LegacyRequest
+
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        saved = await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {"expected_revision": 1, "set": {"city": "冲绳", "hotel_search_location": "那霸"}}
+            ),
+        )
+        executor = TravelToolExecutor(travel)
+        skipped = await executor.execute(
+            context,
+            "update_travel_request",
+            {"expected_revision": 2, "set": {"hotel_search_location": "北谷"}},
+        )
+        assert skipped.code is None and skipped.data["skipped_fields"] == ("hotel_search_location",)
+        assert (await travel.get_request(context)) == saved.request
+        explicit = await executor.execute(
+            context,
+            "update_travel_request",
+            {
+                "expected_revision": 2,
+                "set": {"hotel_search_location": "北谷"},
+                "explicit_fields": ["hotel_search_location"],
+            },
+        )
+        assert explicit.code is None
+        current = await TravelService(travel.database).get_request(context)
+        assert (
+            current.city == "冲绳"
+            and current.hotel_search_location == "北谷"
+            and current.revision == 3
+        )
+        with pytest.raises(ServiceError) as conflict:
+            await travel.patch_request(
+                context,
+                RequestPatch.model_validate(
+                    {"expected_revision": 2, "set": {"hotel_search_location": "那霸"}}
+                ),
+            )
+        assert conflict.value.code == "conflict"
+        async with transaction(travel.database) as db:
+            row = await db.get(TravelRequestRow, context.session_id)
+            assert row is not None and row.request_details is not None
+            assert "hotel_search_location" not in row.conditions
+            assert row.request_details["hotel_search_location"] == "北谷"
+            assert (
+                LegacyRequest.model_validate({**row.conditions, "revision": row.revision}).city
+                == "冲绳"
+            )
+            # 旧writer不更新details，不能把冲绳的住宿地点带入札幌。
+            row.conditions = {**row.conditions, "city": "札幌"}
+            row.revision = 4
+        restored = await TravelService(travel.database).get_request(context)
+        assert restored.city == "札幌" and restored.hotel_search_location is None
+        assert (await travel.get_request_view(context)).field_sources[
+            "hotel_search_location"
+        ] == "none"
+
+    runner.run(exercise())
+
+
+@pytest.mark.parametrize("round_trip", [False, True])
+def test_old_writer_revision_cannot_resurrect_untrusted_hotel_location(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+    round_trip: bool,
+) -> None:
+    """P75/R04：旧writer无法维持地点完整性，往返city不能恢复失效事实。"""
+    from backend.persistence.models import TravelRequestRow
+
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {"expected_revision": 1, "set": {"city": "冲绳", "hotel_search_location": "那霸"}}
+            ),
+        )
+        async with transaction(travel.database) as db:
+            row = await db.get(TravelRequestRow, context.session_id)
+            assert row is not None
+            row.conditions = (
+                {**row.conditions, "city": "札幌"}
+                if round_trip
+                else {**row.conditions, "budget": "60000"}
+            )
+            row.revision = 3
+        if round_trip:
+            async with transaction(travel.database) as db:
+                row = await db.get(TravelRequestRow, context.session_id)
+                assert row is not None
+                row.conditions = {**row.conditions, "city": "冲绳"}
+                row.revision = 4
+        restored = await TravelService(travel.database).get_request(context)
+        assert restored.city == "冲绳" and restored.hotel_search_location is None
+        # 来源-only写入会刷新source_revision，但不能重新认证旧住宿地点。
+        metadata = await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {"expected_revision": restored.revision, "set": {"adults": restored.adults}}
+            ),
+        )
+        assert (
+            not metadata.changed_fields
+            and (await travel.get_request(context)).hotel_search_location is None
+        )
+        async with transaction(travel.database) as db:
+            row = await db.get(TravelRequestRow, context.session_id)
+            assert row is not None and row.request_details is not None
+            assert (
+                row.request_details["hotel_search_location"] == "那霸"
+            )  # 原文保留，但不冒充当前有效值。
+
+    runner.run(exercise())

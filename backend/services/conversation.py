@@ -58,13 +58,14 @@ async def snapshot(
     context: RunContext,
     *,
     after: datetime | None = None,
+    live_hotels: bool = False,
 ) -> dict[str, object]:
     state, origin = await valid_state(db, row, context, after=after)
     return {
-        **conversation_view(state, request),
+        **conversation_view(state, request, live_hotels=live_hotels),
         "goal_prompt": origin.prompt[:1000] if origin else None,
         "goal_prompt_truncated": bool(origin and len(origin.prompt) > 1000),
         "guidance": "原任务文本仅作用户需求参考，当前request为事实。"
-        "短答仅回答awaiting_field，不放宽其他条件。条件齐全后继续ready_tasks；"
+        "短答仅回答awaiting_field，不放宽其他条件。住宿地点短答写hotel_search_location，保留city；宽区域地点需要细化，不默认选择那霸。条件齐全后继续ready_tasks；"
         "住宿分项预算未知不必追问，不拆分全程预算。",
     }

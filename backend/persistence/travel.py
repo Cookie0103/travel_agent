@@ -39,6 +39,9 @@ async def update_request(
     }
     row.request_details = {
         **(row.request_details or {}),
+        "hotel_search_location": request.hotel_search_location,
+        "hotel_search_city": request.city if request.hotel_search_location else None,
+        "hotel_search_revision": request.revision if request.hotel_search_location else None,
         "lodging_budget": request.lodging_budget.model_dump(mode="json")
         if request.lodging_budget is not None
         else None,

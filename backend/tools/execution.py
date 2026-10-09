@@ -62,6 +62,11 @@ def empty_hotel_payload(result: ToolResult) -> dict[str, object]:
     reason = reasons[result.code]
     if result.code == "conflict" and "lodging_budget_conflict" in result.detail:
         reason = "住宿预算下限超过全程预算，暂不能比较酒店。请在对话中确认以哪个为准。"
+    if result.code == "validation" and "hotel_search_location_required" in result.detail:
+        reason = (
+            "目的地范围较大，请在对话中提供具体住宿城市或地点；"
+            "已记录的日期、人数和房型无需重复填写。"
+        )
     return {
         **result.payload(),
         "data": {

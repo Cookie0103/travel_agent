@@ -1,0 +1,20 @@
+[
+  {
+    "mode": "default",
+    "sdk": "0.2.163",
+    "cli": "2.1.295",
+    "code": null,
+    "compacted": 1,
+    "requests": 5,
+    "guard_failures": []
+  },
+  {
+    "mode": "disabled",
+    "sdk": "0.2.163",
+    "cli": "2.1.295",
+    "code": null,
+    "compacted": 0,
+    "requests": 4,
+    "guard_failures": []
+  }
+]

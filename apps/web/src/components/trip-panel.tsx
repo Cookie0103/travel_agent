@@ -48,6 +48,7 @@ export function TripPanel({
           {!editing && (
             <>
               {request.city ||
+              request.hotel_search_location ||
               request.start_date ||
               request.end_date ||
               request.adults ||
@@ -93,6 +94,9 @@ export function TripPanel({
                 <p className="muted">还没有设定条件，直接在对话里告诉我</p>
               )}
             </>
+          )}
+          {!editing && request.hotel_search_location && (
+            <p>住宿查询地点：{request.hotel_search_location}</p>
           )}
           {!editing && request.lodging_budget && (
             <p>
