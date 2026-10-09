@@ -788,3 +788,10 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 服务恢复是此前“不重启”记录之后的操作：只读PG确认0活跃TaskRun，正常TERM旧API子进程27526；正式审批启动`RAKUTEN_DAILY_CAP=100 /Users/ke.chen/.local/bin/uv run --env-file .env python -m backend.server --live --relaxed`，新PID61460/执行会话22058，保持原有relaxed模式。100只在子进程环境，不改.env；15CNY日预算与4校验保持。零费用检查8000/health=200、3000/api/models=200（VERIFIED）。前端未build，Railway不变；当前草稿视觉未看过。
 - 请求收尾：追加授权后47模型HTTP/2.000874CNY与44旅行HTTP，共91，乐天UTC日账本35。停止继续付费试跑；此次成功不代表标准节奏、机场接驳、公交未知和营业时间均已满足。
 - `6915f8c`生成同步已push；push37921815440/PR37921820674三job全success。push日志汇总：CI1367passed/1skipped/1deselected/218.18s，check294三平台strict/3契约/10入口；web typecheck/lint/test/build与docker两次启动/验证整序列均通过。独立只读生成文件审查无P1/P2；未跑新的本机离线测试、未新增付费请求。P85原说明及P86样本提交此前CI红灯保留，不用后续绿灯抹掉。
+
+## 2026-10-09 P88同SHA字体构建失败的有界复核
+
+- `5c5f344`仅三文档；push37922560960三job成功。PR37922566489首轮python/docker-demo成功，web typecheck/lint/111pass/0fail之后build报Turbopack202errors/next/font/google queries have exactly one entry。没有HTTP/font-fetch失败证据，不冒称网络根因。
+- 运行未结束时`gh run view --log-failed`及`--job 113793760334 --log`提示日志要等run完成；通过GitHub只读jobs/113793760334/logs读取已完成任务，随后run结束再次执行log-failed核实相同错误。不涉及权限拒绝绕过或付费供应商。
+- 同SHA的push已成功，故只用`gh run rerun 37922566489 --failed`一次复核失败web任务；没有改字体/依赖/构建器/断言/CI重试策略。结果回读后追加；若仍失败停止重试并定位。
+- PR37922566489 attempt2的web全序列成功，合并既有python/docker-demo三success（VERIFIED）。未改代码即未复现，但根因仍未知；保留首轮失败，不宣称永久修复。push37922560960也三success；本记录独立提交后再次核对CI，不增加真实请求。
