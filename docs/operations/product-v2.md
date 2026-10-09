@@ -669,3 +669,5 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 最终完整 `uv run --no-sync python scripts/dev.py test` exit0：1314passed/0failed/1skipped/1live deselected/280.12s；四个CLI能力项和旧shape项均实际执行通过。最后Python改动后 `dev check` exit0：287格式/三平台strict/3层契约/10文档入口；最后前端代码后 `dev web-check` exit0：typecheck/lint/98tests/build5routes。独立最终只读复核无新增P2/P3，未声称审查者运行过测试。
 - Chrome最终安全提示验收：只在正常入口新建的合成旅行经TravelService写条件、实际TravelToolExecutor.search_hotel_offers产生validation/location_required，再经共用execute_observed产生presentation并持久化。不是手写假卡/假draft；无上游请求。刷新后提示具体住宿城市/地点，明确日期/人数/房型无需重复填写；刻意强制的blocked终态显示操作受限，无“外部服务异常”。截图p74-location-question.png无私人内容，DeepSeek菜单可选。普通真实模型第一轮是合法追问completed，不能把这个强制终态合成反例冒充正常交互。
 - 最终本地运行：重启前真实库active task_runs=0，核对PID30813/cwd与backend.server --live后精确SIGTERM；以原DEMO_MODE=true/LLM_PROVIDER=deepseek/--live启动最终代码。首页200/全部9脚本200/API health ok/3000代理DeepSeek available=true。最后build后ignored static已同步并重启web，之后无新build；没有修改.env/default/15CNY或Railway、没有部署。本机ps第一次受sandbox限制，走已授权提权只读核实后再停指定PID，没有盲杀。
+
+- 实现提交`c4ede46`，`git push origin batch-2026-10-08-product-V2` exit0：27bdeb2..c4ede46；之后Git干净。仅追加最终SHA/关闭T3.9与P74–77、C29 STAR，不改源码/构建或扩大验证结论。记录提交另行push；生产跟踪旧分支不变。
