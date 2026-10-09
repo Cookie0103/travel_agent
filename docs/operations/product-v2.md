@@ -631,3 +631,5 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 中文工具标签补完后的最终 `uv run --no-sync python scripts/dev.py web-check` exit0：typecheck、eslint/prettier、98tests/98pass、build5routes。尚未把前端绿计作真实模型完整规划通过。
 
 - 最终当前代码完整 `uv run --no-sync python scripts/dev.py test` exit0：1290passed/零失败/1skipped/1live deselected/290.33s。包含最后有效草稿恢复用例；未删除/跳过原SDK或PG用例。最终相关83passed、check286/三平台strict/3契约/10入口、中文标签后web98/type/lint/build5routes均实际通过。提交前独立复核无新增P2/P3与diff/docs检查通过。
+
+- 实现提交 `87c200d`，`git push origin batch-2026-10-08-product-V2` exit0，远端输出cf54e0b..87c200d。P69–71/T3.8关闭、C28完成；P72实测完整行程质量限制未解决，仍todo/T6.1，不改R6验收或生产状态。记录提交只补SHA/最终数字和恢复点，无代码改动。
