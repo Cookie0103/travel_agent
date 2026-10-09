@@ -212,17 +212,27 @@ def visit_checks(
     opening_status: CheckStatus = (
         "verified" if state == "open" else "conflict" if state == "closed" else "unknown"
     )
-    checks.append(
-        check(
-            subject,
-            opening_status,
-            "opening_hours",
-            {
-                "open": "快照营业时间覆盖整段停留",
-                "closed": "快照营业时间不覆盖停留，请修改日期/时段或地点",
-                "unknown": "营业时间缺失或语法未支持，不能认定营业",
-            }[state],
+    message = {
+        "open": "快照营业时间覆盖整段停留",
+        "closed": "快照营业时间不覆盖停留，请修改日期/时段或地点",
+        "unknown": "营业时间缺失或语法未支持，不能认定营业",
+    }[state]
+    if state == "closed":
+        assert place is not None and place.opening_hours is not None
+        # 反馈使用同一来源快照，给出冲突时段；不计算或猜测新的营业时间。
+        hours = place.opening_hours[:200] + (
+            "…（已截短）" if len(place.opening_hours) > 200 else ""
         )
+        message = (
+            f"日本时间停留{start:%Y-%m-%d %H:%M}—{end:%Y-%m-%d %H:%M}"
+            f"不在来源快照营业时间内（{hours}）；请修改日期/时段或地点，"
+            "调整后重新估算受影响的相邻路段"
+        )
+    opening = check(subject, opening_status, "opening_hours", message)
+    checks.append(
+        traced(opening, proposal, index, f" start={hhmm(item.start)} end={hhmm(item.end)}")
+        if state == "closed"
+        else opening
     )
     if (
         request.departure_time

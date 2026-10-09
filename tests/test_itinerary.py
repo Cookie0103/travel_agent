@@ -108,6 +108,33 @@ def test_closed_visit_conflicts_and_repair_keeps_unknown_budget() -> None:
 
 
 @pytest.mark.parametrize(
+    "hours",
+    ["Mo-Su 09:00-17:00", "; ".join(["Mo-Su 09:00-17:00"] * 50)],
+    ids=["normal-hours", "long-hours"],
+)
+def test_closed_visit_feedback_identifies_local_times_and_source_hours(hours: str) -> None:
+    """R06/R17：闭馆冲突提供具体日本时段，模型不用盲改；TRACE不含地点原文。"""
+    source = place().model_copy(update={"opening_hours": hours})
+    evidence = record(source)
+    proposal = ItineraryProposal(
+        expected_revision=1,
+        items=(item(evidence, "2026-11-03T09:00+00:00", "2026-11-03T10:00+00:00"),),
+    )
+    report = validate_itinerary(request(), proposal, (evidence,), NOW)
+    checks = report.feedback()["checks"]
+    assert isinstance(checks, list)
+    conflict = next(entry for entry in checks if entry["code"] == "opening_hours")
+    assert conflict["status"] == "conflict" and conflict["subject"] == "item:0"
+    assert "2026-11-03" in conflict["message"]
+    assert "18:00" in conflict["message"] and "19:00" in conflict["message"]
+    assert "Mo-Su 09:00-17:00" in conflict["message"]
+    assert len(conflict["message"]) < 500
+    label = next(entry.trace_label for entry in report.checks if entry.code == "opening_hours")
+    assert "@d1i1" in label and "18:00" in label and "19:00" in label
+    assert source.name not in label
+
+
+@pytest.mark.parametrize(
     ("start", "end", "hours", "expected"),
     [
         ("2026-11-03T23:30+09:00", "2026-11-04T00:30+09:00", "Mo-Su 22:00-02:00", "verified"),
