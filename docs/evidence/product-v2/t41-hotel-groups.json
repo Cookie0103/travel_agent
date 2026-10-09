@@ -1,0 +1,48 @@
+{
+  "scope": "本地离线/模拟，不是供应商实际房型覆盖",
+  "adapter_controlled": {
+    "hotels": 4,
+    "offers": 6,
+    "nightly_calls": 3,
+    "hotel_ids": [
+      "1",
+      "1",
+      "2",
+      "2",
+      "3",
+      "4"
+    ],
+    "extra_calls": 0
+  },
+  "chrome": {
+    "hotel_count": 3,
+    "package_selects": 3,
+    "packages_each": 2,
+    "selected_offer": "9e9f4f2e-6039-4751-98c3-283dab51d47f",
+    "selected_room": "家庭房",
+    "selected_total": "20000",
+    "original_total": "15000",
+    "selected_lowest_label": null
+  },
+  "pg": {
+    "revision_before": 8,
+    "revision_after": 8,
+    "quotes_before_hold": 9,
+    "quotes_after_hold": 9,
+    "bookings_before": 0,
+    "booking_after": [
+      {
+        "status": "held",
+        "offer_id": "9e9f4f2e-6039-4751-98c3-283dab51d47f",
+        "hotel_name": "鸭川小筑（模拟）",
+        "room_type": "家庭房",
+        "included_total": null
+      }
+    ],
+    "supplier_holds": 1,
+    "supplier_orders": 0,
+    "original_formal_versions": 1,
+    "original_sha_before": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+    "original_sha_after": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f"
+  }
+}

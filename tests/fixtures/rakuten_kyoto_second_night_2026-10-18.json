@@ -1,0 +1,366 @@
+{
+  "pagingInfo": {
+    "recordCount": 5,
+    "pageCount": 1,
+    "page": 1,
+    "first": 1,
+    "last": 5
+  },
+  "hotels": [
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 75325,
+          "hotelName": "天然温泉　御所の湯　スーパーホテル京都・四条河原町",
+          "hotelKanaName": "てんねんおんせん　ごしょのゆ　すーぱーほてるきょうと　しじょうかわらまち",
+          "hotelSpecial": "★河原町エリア唯一の天然温泉＆無料の朝食ビュッフェ付♪【ウェルカムバー開催中！！】　",
+          "hotelMinCharge": 9140,
+          "latitude": 35.00502328,
+          "longitude": 135.7680724,
+          "postalCode": "604-8042",
+          "address1": "京都府",
+          "address2": "京都市中京区裏寺町通四条上る中之町538-1",
+          "telephoneNo": "075-255-9000",
+          "faxNo": "075-255-9001",
+          "access": "阪急京都河原町駅より徒歩約3分★京阪祇園四条駅より徒歩約5分★京都駅より市バスにて四条河原町バス停下車徒歩約1分★",
+          "parkingInformation": "申し訳ございません、提携の駐車場はございません。近隣コインパーキングをご利用下さいませ。",
+          "nearestStation": "河原町（京都）",
+          "reviewCount": 3858,
+          "reviewAverage": 4.35,
+          "userReview": "大浴場は使用していま…　2026-09-29 19:30:23投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=75325\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "kyoto",
+          "smallClassCode": "shi",
+          "areaName": "京都",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 104,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "hm",
+              "roomName": "【禁煙】お部屋タイプお任せ",
+              "planId": 5974461,
+              "planName": "【泊数限定】18時レイトチェックインプラン☆天然温泉＆焼きたてパン♪朝食バイキング付",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 1,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【泊数限定】ビジネスやご観光に！到着のご予定がゆっくりの方におすすめ！\r\n通常チェックイン開始が15時のところ、18時以降のチェックインにされるとお得にご宿泊いただけるプランです。\r\n※万が一、通常18時までのチェックインをご希望の場合は、追加料金が発生いたしますので予めご了承のほど宜しくお願い致します。\r\n※こちらのプランを別々で1泊ずつ取られて、部屋を引き続き荷物等を置いて連泊される場合は差額分を頂戴致します。\r\n\r\n【営業時間】\r\n◆チェックイン：18：00〜24：00（最終）\r\n◆チェックアウト：11：00\r\n\r\n■共通サービス■\r\n◆天然温泉　御所の湯\r\n入浴時間(男女入替制)　\r\n【男性】17:00〜19:50、23:00〜翌朝6:50\r\n【女性】15:00〜16:50、20:00〜22:50、翌朝7:00〜9:30\r\n\r\n◆全館健康イオン水を完備♪\r\n\r\n◆ウェルカムバー\r\nロハスラウンジでウェルカムドリンクを無料でご用意いたします。\r\n京都の日本酒やカクテルなど、アルコールやソフトドリンクも飲み放題。\r\n※ドリンクの種類は変更の可能性がございます。予めご了承下さい。\r\n営業時間\r\n15:00〜20:00\r\n\r\n◆LOHASな健康朝食を無料でご用意\r\n毎朝出来たてサクサクの香り高い焼きたてパンや、オーガニック野菜のサラダ、日替わりのおかずやご当地メニューなどをビュッフェ形式でご用意しております。\r\n朝食時間\r\n7:00〜9:00\r\n\r\n◆スーパーホテルオリジナルアメニティをもれなくプレゼント♪\r\n\r\n◆８種類から選べる快眠枕\r\nチェックイン時にフロントで枕をお選びいただけます！（先着順）\r\n\r\n◆当ホテルには駐車場はございません。またホテル周辺は車両通行禁止区域となっております。事前に近隣有料駐車場をお客様ご自身でお探し頂いております。\r\n\r\n■アクセス所要目安時間■ \r\n阪急河原町駅から徒歩３分\r\n京阪祇園四条から徒歩５分\r\n祇園まで徒歩５分\r\n\r\n最終チェックインは24時となっております。24時を過ぎますとキャンセル扱いとなり、キャンセル料が100％発生いたしますのでご注意ください。\r\nまた、フロントも24時で営業終了致します。\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-18",
+              "rakutenCharge": 20800,
+              "total": 20800,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 32075,
+          "hotelName": "アパホテル〈京都駅堀川通〉",
+          "hotelKanaName": "あぱほてる＜きょうとえきほりかわどおり＞",
+          "hotelSpecial": "最上階大浴殿にはサウナと露天風呂を完備！古都の風を感じて心ゆくまで「ととのう」ひとときを。観光や出張の疲れを癒すホテル",
+          "hotelMinCharge": 7830,
+          "latitude": 34.9866168508702,
+          "longitude": 135.75342767486882,
+          "postalCode": "600-8236",
+          "address1": "京都府",
+          "address2": "京都市下京区油小路通塩小路西油小路町１番地",
+          "telephoneNo": "0570-076-111",
+          "faxNo": "075-341-6112",
+          "access": "■ＪＲ・新幹線【京都駅】中央口から徒歩約7分　　■名神高速道路【京都南IC】から車で20分　　",
+          "parkingInformation": "立体駐車場 先着順2,000円 最大24時間",
+          "nearestStation": "京都",
+          "reviewCount": 11826,
+          "reviewAverage": 4.19,
+          "userReview": "同じ日の宿泊を別々のタイミングで一部屋づつ予約していたため、事前に連絡したら、隣同士の部屋にしていただきました。また、チェックインの前に荷物を預かってもらえました。駅からもすぐで、コンビニも隣にあり、…　2026-10-08 22:54:57投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=32075\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "kyoto",
+          "smallClassCode": "shi",
+          "areaName": "京都",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "29:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 52,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "ska-1",
+              "roomName": "□ 禁煙室 □ シングルルームA",
+              "planId": 5201176,
+              "planName": "【素泊まり・事前決済限定】1秒チェックインにおすすめ！",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "【プラン内容】\r\nこのプランは素泊まりプランです。\r\n予約時に事前クレジットカード決済が必要です。\r\n\r\n並ばず待たずに1秒チェックイン！\r\n1秒チェックインとは・・・\r\nホテルに到着する前にアパホテル公式アプリ上でチェックインを行い、\r\nホテル到着後に1秒チェックイン機を使って並ばず待たずにチェックイン（ルームキーの発行等）をすることです。\r\n\r\n※各自治体の施行条例に基づき、1秒チェックインに加えスタッフによる予約確認が必要です。\r\n\r\n▼予約取り込みの方法\r\nアパホテル公式アプリにログインしトップ画面下部の「予約確認」→「アパ直以外の予約検索　取り込み」から進み、必要事項の選択と入力をしてください。\r\nご宿泊者ご本人様以外のご利用はできません。\r\n\r\n▼アプリ上でのチェックイン方法\r\nご宿泊当日、チェックイン開始時刻の1時間前からアパホテル公式アプリトップ画面に表示される「1秒チェックイン」よりお進みください。\r\nお部屋への入室可能時刻はプランに設定されているチェックイン時間をご確認ください。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-18",
+              "rakutenCharge": 16830,
+              "total": 16830,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 166513,
+          "hotelName": "ＡＢホテル京都四条堀川",
+          "hotelKanaName": "えーびーほてるきょうとしじょうほりかわ",
+          "hotelSpecial": "阪急大宮駅より徒歩５分、バス停「四条堀川」より徒歩2分！男女別大浴場完備♪ウェルカムコーヒーも♪上質なひとときを♪",
+          "hotelMinCharge": 5000,
+          "latitude": 35.00407793072686,
+          "longitude": 135.75245513053574,
+          "postalCode": "600-8498",
+          "address1": "京都府",
+          "address2": "京都市下京区柏屋町5番地",
+          "telephoneNo": "075-252-0413",
+          "faxNo": "075-252-0411",
+          "access": "地下鉄四条駅２番出口・阪急烏丸駅２４番出口より徒歩７分/阪急大宮駅より徒歩５分",
+          "parkingInformation": "ホテル敷地内にはございません。近隣の有料駐車場をご案内いたします。",
+          "nearestStation": "四条（京都市営）",
+          "reviewCount": 2869,
+          "reviewAverage": 4.17,
+          "userReview": "綺麗な施設で清掃も行き届き、リーズナブルなお値段の割には朝食も満足、今…　2026-09-23 23:43:49投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=166513\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "kyoto",
+          "smallClassCode": "shi",
+          "areaName": "京都",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 26,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "san1",
+              "roomName": "禁煙シングルＡ【120ｃｍセミダブルベッド】朝食付き",
+              "planId": 4571491,
+              "planName": "7日以上前までの予約限定プラン！【健康朝食付き・大浴場無料】",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 1,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "………‥‥‥━オープン情報━‥‥‥………\r\nABホテル犬山（愛知県）　2026年2月\r\nABホテル茅野（長野県）　2026年10月\r\n………‥‥‥━━━━━━━‥‥‥………\r\n\r\n早期予約で大変オトクです♪\r\nご宿泊日より7日前の早期ご予約の方限定プランです。\r\n\r\n\r\n■□■□■□■━━━━━━━━━━・・・・・‥‥‥……… \r\n　和洋バイキング健康朝食　利用時間  6:30〜9:30(最終食材補充 9:00)\r\n　癒しとくつろぎの男女別大浴場\r\n　利用時間　16:00〜25:00、朝5:00〜朝9:00\r\n　※設備不良により、ご利用できない場合がございます。\r\n　………‥‥‥・・・・・━━━━━━━━━━■□■□■□■\r\n\r\n【チェックイン】\r\nチェックインの受付は24時までとなります。\r\n24時以降のチェックインは出来かねますので、お気をつけください。\r\n\r\n【アクセス】\r\n地下鉄烏丸線「四条駅」・阪急電鉄「烏丸駅」より徒歩7分\r\n阪急電鉄「大宮駅」より徒歩5分\r\n\r\n【駐車場】\r\n駐車場はございませんので、近隣のコインパーキングへお停めくださいませ。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-18",
+              "rakutenCharge": 11200,
+              "total": 11200,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 176597,
+          "hotelName": "アパホテル〈京都駅東〉",
+          "hotelKanaName": "あぱほてるきょうとえきひがし",
+          "hotelSpecial": "駅近だから実現できる、移動の少なさと時間のゆとり。たっぷり京都を楽しんだあとは大浴殿の湯船でゆっくりリラックス。",
+          "hotelMinCharge": 9810,
+          "latitude": 34.9879165,
+          "longitude": 135.76122759999998,
+          "postalCode": "600-8216",
+          "address1": "京都府",
+          "address2": "京都市下京区東塩小路町552-1",
+          "telephoneNo": "0570-075-411",
+          "faxNo": "075-354-4112",
+          "access": "京都市営地下鉄烏丸線「京都駅」（A5出口）徒歩1分、JR「京都駅」（中央口）徒歩3分、近鉄「京都駅」徒歩10分",
+          "parkingInformation": "当館に駐車場はございません。 お車でお越しの際は近隣のコインパーキングをご利用くださいませ。",
+          "nearestStation": "京都",
+          "reviewCount": 1126,
+          "reviewAverage": 4.24,
+          "userReview": "仕事で１泊の滞在数であったが、従業員の不足は感じず、チェックインもスムースに完了。さらに朝食の時のスタッフもてきぱきと対応し、廊下ですれ違う掃除のスタッフも挨拶をしてくれた。オートチェックアウト時も、…　2026-09-28 09:14:24投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=176597\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "kyoto",
+          "smallClassCode": "shi",
+          "areaName": "京都",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "29:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 23,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "k1",
+              "roomName": "キングベッドルーム（1名利用） 禁煙室",
+              "planId": 5187044,
+              "planName": "【素泊まり・事前決済限定】1秒チェックインにおすすめ！●大浴殿・露天風呂完備●",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "このプランは素泊まりプランです。\r\n予約時に事前クレジットカード決済が必要です。\r\n\r\n並ばず待たずに1秒チェックイン！\r\n1秒チェックインとは・・・\r\nホテルに到着する前にアパホテル公式アプリ上でチェックインを行い、\r\nホテル到着後に1秒チェックイン機を使って並ばず待たずにチェックイン（ルームキーの発行等）をすることです。\r\n\r\n▼予約取り込みの方法\r\nアパホテル公式アプリにログインしトップ画面下部の「予約確認」→「アパ直以外の予約検索　取り込み」から進み、必要事項の選択と入力をしてください。\r\nご宿泊者ご本人様以外のご利用はできません。\r\n\r\n▼アプリ上でのチェックイン方法\r\nご宿泊当日、チェックイン開始時刻の1時間前からアパホテル公式アプリトップ画面に表示される「1秒チェックイン」よりお進みください。\r\nお部屋への入室可能時刻はプランに設定されているチェックイン時間をご確認ください。\r\n\r\n\r\n※お部屋の空調は全館一括管理でございます。お部屋毎の冷房・暖房の切り替えは致しかねますので予めご了承ください。\r\n※当初の到着予定時刻より到着が遅れる場合は直接ホテルまでご連絡をお願いいたします。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-18",
+              "rakutenCharge": 17910,
+              "total": 17910,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 172146,
+          "hotelName": "静鉄ホテルプレジオ京都烏丸御池",
+          "hotelKanaName": "しずてつ　ほてるぷれじお　きょうとからすまおいけ",
+          "hotelSpecial": "【楽天トラベルアワード連続受賞】烏丸御池駅より徒歩１分！便利な駅近・観光・ビジネスの拠点に最適な大人の上質宿",
+          "hotelMinCharge": 8310,
+          "latitude": 35.0116049492142,
+          "longitude": 135.76036572883606,
+          "postalCode": "604-0843",
+          "address1": "京都府",
+          "address2": "京都市中京区車屋町通御池上る塗師屋町339",
+          "telephoneNo": "075-741-6071",
+          "faxNo": "075-741-6072",
+          "access": "京都市営地下鉄　烏丸御池駅より徒歩にて約１分",
+          "parkingInformation": "障がい者専用駐車スペース1台※一般ご宿泊者様の利用不可、一般の方はコインパーキングをご利用ください",
+          "nearestStation": "烏丸御池",
+          "reviewCount": 939,
+          "reviewAverage": 4.43,
+          "userReview": "無料アメニティと一緒に入浴剤も置かれていたのも良かったです。（但し、8時過ぎにホテルに戻ると入浴剤は無くなってました。）…　2026-10-06 19:05:55投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=172146\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "kyoto",
+          "smallClassCode": "shi",
+          "areaName": "京都",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "25:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 18,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "san1",
+              "roomName": "【全室禁煙】シングルルーム(バス・トイレ別　分離式タイプ）",
+              "planId": 4371860,
+              "planName": "【素泊り】スタンダードプラン♪ 観光やビジネスの拠点に便利な駅近徒歩1分！",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "お部屋代金のみのスタンダードプラン！\r\n地下鉄烏丸御池駅より徒歩1分の好立地！\r\n観光やビジネス出張にも便利で心地よくお客様の寛ぎを叶えます。\r\n心からのおもてなしを追求しセキュリティ対策も万全で安心・安全・快適にお過ごしいただけます！\r\n\r\n【宿泊税について】\r\n2026年3月1日より、京都市条例に基づき1人1泊当りの宿泊税を以下の通り改定し、\r\nご予約料金とは別に現地にて宿泊税を申し受けます。\r\n\r\n宿泊税はご宿泊料金（食事代や消費税を除いた素泊り料金）お一人様一泊に対し\r\n以下の金額が課税されます。\r\n\r\n6，000円未満：200円\r\n6，000円以上2万円未満：400円\r\n2万円以上5万円未満：1，000円\r\n5万円以上10万円未満：4，000円\r\n\r\n※今後、宿泊税が変更になった場合、その分の宿泊税を別途申し受けます\r\n\r\n---------------------------------------------------------------\r\n【連泊清掃の運用変更について】\r\n2025年10月1日より、［静鉄ホテル京都烏丸御池］では\r\nSDGsの取り組みの一環として、連泊清掃は3日に1度の清掃のみへ変更させていただきます。\r\n新しいリネン類（タオル等）をご希望の方は客室カードにてリクエストを承ります。\r\nご理解とご協力のほど、よろしくお願い申し上げます。\r\n---------------------------------------------------------------\r\n\r\n【アクセス】\r\n・京都市営地下鉄烏丸線・東西線「烏丸御池」駅1番出口より徒歩1分\r\n・JR京都駅烏丸口よりタクシーで10分\r\n\r\n【駐車場】\r\n近隣の有料コインパーキングをご利用ください\r\n\r\n【周辺スポット】\r\n・京都国際マンガミュージアム 徒歩３分\r\n・二条城（世界遺産） 　　 徒歩１５分\r\n・京都御所 　　　　　　　 徒歩１０分\r\n・錦市場 　　　　　　　　 徒歩１０分\r\n・国立京都国際会館"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-18",
+              "rakutenCharge": 16500,
+              "total": 16500,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ]
+  ]
+}

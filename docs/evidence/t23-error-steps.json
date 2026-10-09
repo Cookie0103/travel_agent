@@ -1,0 +1,53 @@
+{
+  "local_synthetic_only": true,
+  "actual_stage_failure_run_id": "ee993714-2a54-44b3-9a8a-b01b8664e339",
+  "stage_application_error_code": "conflict",
+  "stage_business_reason": "plan_exists",
+  "red_step_text": [
+    "✓ 读取景点信息",
+    "✓ 读取景点信息",
+    "✓ 比较酒店",
+    "✓ 估算路线",
+    "✗ 生成行程草稿"
+  ],
+  "green_step_text": [
+    "✓ 读取景点信息",
+    "✓ 读取景点信息",
+    "✓ 比较酒店",
+    "✓ 估算路线",
+    "✗ 生成行程草稿 — 状态冲突：条件存在冲突或行程版本已变化，请核对条件并读取最新状态。"
+  ],
+  "before_read_counts": {
+    "message_calls": 1,
+    "confirm_calls": 0,
+    "patch_calls": 0,
+    "login_calls": 0,
+    "session_create_calls": 0
+  },
+  "after_read_counts": {
+    "message_calls": 1,
+    "confirm_calls": 0,
+    "patch_calls": 0,
+    "login_calls": 0,
+    "session_create_calls": 0
+  },
+  "response_retention_browser": {
+    "controlled_response_only": true,
+    "full_before_read": true,
+    "red_full_kept": false,
+    "green_full_kept": true,
+    "step_panels": 1,
+    "step_summaries": [
+      "执行了 2 步 ▸"
+    ]
+  },
+  "response_probe_write_calls": 0,
+  "response_probe_pg_answer_untouched": true,
+  "response_probe_sequence": 7,
+  "original_version": 1,
+  "original_version_rows": 1,
+  "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+  "live_calls": 0,
+  "probe_stopped_default_api_restored": true,
+  "limits": "Chrome actual offline tool conflict and read-only event recovery. Reply retention is a bounded authenticated synthetic GET response probe, not an actual 900-second expiry or live SDK call. All error-code categories are unit tested; historical turns tool detail loading is outside this change."
+}

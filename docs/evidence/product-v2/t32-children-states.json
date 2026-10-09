@@ -1,0 +1,58 @@
+{
+  "none": {
+    "revision": 1,
+    "child_ages": [],
+    "patch_calls": 2,
+    "other_fields_unknown": true
+  },
+  "infant": {
+    "revision": 2,
+    "child_ages": [
+      0
+    ],
+    "patch_calls": 3,
+    "other_fields_unknown": true
+  },
+  "unknown": {
+    "revision": 3,
+    "child_ages": null,
+    "patch_calls": 4,
+    "other_fields_unknown": true
+  },
+  "scope": "VERIFIED Chrome/default offline API/real local PostgreSQL, synthetic existing empty trip",
+  "unknown_before": {
+    "revision": 0,
+    "child_ages": null,
+    "patch_calls": 1
+  },
+  "empty_age_submit": {
+    "rejected": true,
+    "revision": 1,
+    "patch_calls": 2
+  },
+  "unknown_noop_after": {
+    "revision": 3,
+    "child_ages": null,
+    "patch_calls": 4
+  },
+  "readback": {
+    "none_summary": "成人数未知 · 无儿童 · 间房数未知",
+    "infant_selection": "ages",
+    "infant_input": "0",
+    "unknown_selection": "unknown",
+    "unknown_age_inputs": 0
+  },
+  "summary_red": {
+    "saved_children": [],
+    "none_summary_count": 0,
+    "message": "还没有设定条件"
+  },
+  "summary_green": {
+    "none_summary_count": 1
+  },
+  "limits": [
+    "PATCH count includes 1 old T3.1 red; this task performed exactly 3 semantic child updates.",
+    "No live suppliers/models or production database accessed.",
+    "Existing offline onboarding gate depends on revision; removal/clarification belongs to T3.7."
+  ]
+}

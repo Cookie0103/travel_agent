@@ -1,0 +1,471 @@
+{
+  "scope": "VERIFIED controlled pure-domain synthetic fixtures, not Chrome/production/live model/provider acceptance",
+  "cases": {
+    "standard8": {
+      "status": "partial",
+      "warnings": [
+        {
+          "subject": "day:2026-11-03",
+          "status": "unknown",
+          "code": "pace_warning",
+          "message": "节奏提醒：2026-11-03安排8个已知景点，超过标准每日5个的建议上限，请确认或减少景点。"
+        }
+      ],
+      "feedback": {
+        "status": "partial",
+        "known_cost": "0",
+        "estimated_cost": "0",
+        "scope": "按当前来源与报价校验；路线时长为估算，临时闭馆与未核实费用仍需出行前确认",
+        "checks": [
+          {
+            "subject": "day:2026-11-03",
+            "status": "unknown",
+            "code": "pace_warning",
+            "message": "节奏提醒：2026-11-03安排8个已知景点，超过标准每日5个的建议上限，请确认或减少景点。"
+          },
+          {
+            "subject": "route:0->1",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:1->2",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:2->3",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:3->4",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:4->5",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:5->6",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:6->7",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "budget",
+            "status": "unknown",
+            "code": "other_costs",
+            "message": "景点门票、餐饮等未获得完整费用证据，不能认定全程预算满足"
+          },
+          {
+            "subject": "lodging_budget",
+            "status": "unknown",
+            "code": "lodging_budget_unknown",
+            "message": "住宿预算未知；不会按全程预算自动分配。"
+          },
+          {
+            "subject": "hotel",
+            "status": "unknown",
+            "code": "hotel_missing",
+            "message": "未选择住宿报价，不猜测住宿费用"
+          },
+          {
+            "subject": "item:0",
+            "status": "verified",
+            "code": "trip_dates",
+            "message": "停留日期符合旅行范围"
+          }
+        ],
+        "check_counts": {
+          "verified": 16,
+          "unknown": 11,
+          "conflict": 0
+        },
+        "truncated": true
+      }
+    },
+    "slow9hotels": {
+      "status": "partial",
+      "warnings": [],
+      "feedback": {
+        "status": "partial",
+        "known_cost": "0",
+        "estimated_cost": "0",
+        "scope": "按当前来源与报价校验；路线时长为估算，临时闭馆与未核实费用仍需出行前确认",
+        "checks": [
+          {
+            "subject": "route:0->1",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:1->2",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:2->3",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:3->4",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:4->5",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:5->6",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:6->7",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:7->8",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "budget",
+            "status": "unknown",
+            "code": "other_costs",
+            "message": "景点门票、餐饮等未获得完整费用证据，不能认定全程预算满足"
+          },
+          {
+            "subject": "lodging_budget",
+            "status": "unknown",
+            "code": "lodging_budget_unknown",
+            "message": "住宿预算未知；不会按全程预算自动分配。"
+          },
+          {
+            "subject": "hotel",
+            "status": "unknown",
+            "code": "hotel_missing",
+            "message": "未选择住宿报价，不猜测住宿费用"
+          },
+          {
+            "subject": "item:0",
+            "status": "verified",
+            "code": "trip_dates",
+            "message": "停留日期符合旅行范围"
+          }
+        ],
+        "check_counts": {
+          "verified": 18,
+          "unknown": 11,
+          "conflict": 0
+        },
+        "truncated": true
+      }
+    },
+    "unknown_hours_standard8": {
+      "status": "partial",
+      "warnings": [
+        {
+          "subject": "day:2026-11-03",
+          "status": "unknown",
+          "code": "pace_warning",
+          "message": "节奏提醒：2026-11-03安排8个已知景点，超过标准每日5个的建议上限，请确认或减少景点。"
+        }
+      ],
+      "feedback": {
+        "status": "partial",
+        "known_cost": "0",
+        "estimated_cost": "0",
+        "scope": "按当前来源与报价校验；路线时长为估算，临时闭馆与未核实费用仍需出行前确认",
+        "checks": [
+          {
+            "subject": "day:2026-11-03",
+            "status": "unknown",
+            "code": "pace_warning",
+            "message": "节奏提醒：2026-11-03安排8个已知景点，超过标准每日5个的建议上限，请确认或减少景点。"
+          },
+          {
+            "subject": "item:0",
+            "status": "unknown",
+            "code": "opening_hours",
+            "message": "营业时间缺失或语法未支持，不能认定营业"
+          },
+          {
+            "subject": "item:1",
+            "status": "unknown",
+            "code": "opening_hours",
+            "message": "营业时间缺失或语法未支持，不能认定营业"
+          },
+          {
+            "subject": "route:0->1",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "item:2",
+            "status": "unknown",
+            "code": "opening_hours",
+            "message": "营业时间缺失或语法未支持，不能认定营业"
+          },
+          {
+            "subject": "route:1->2",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "item:3",
+            "status": "unknown",
+            "code": "opening_hours",
+            "message": "营业时间缺失或语法未支持，不能认定营业"
+          },
+          {
+            "subject": "route:2->3",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "item:4",
+            "status": "unknown",
+            "code": "opening_hours",
+            "message": "营业时间缺失或语法未支持，不能认定营业"
+          },
+          {
+            "subject": "route:3->4",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "item:5",
+            "status": "unknown",
+            "code": "opening_hours",
+            "message": "营业时间缺失或语法未支持，不能认定营业"
+          },
+          {
+            "subject": "route:4->5",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          }
+        ],
+        "check_counts": {
+          "verified": 8,
+          "unknown": 19,
+          "conflict": 0
+        },
+        "truncated": true
+      }
+    },
+    "hard_conflicts_first": {
+      "status": "conflict",
+      "warnings": [
+        {
+          "subject": "day:2026-11-03",
+          "status": "unknown",
+          "code": "pace_warning",
+          "message": "节奏提醒：2026-11-03安排8个已知景点，超过标准每日5个的建议上限，请确认或减少景点。"
+        }
+      ],
+      "feedback": {
+        "status": "conflict",
+        "known_cost": "0",
+        "estimated_cost": "0",
+        "scope": "按当前来源与报价校验；路线时长为估算，临时闭馆与未核实费用仍需出行前确认",
+        "checks": [
+          {
+            "subject": "item:0",
+            "status": "conflict",
+            "code": "opening_hours",
+            "message": "快照营业时间不覆盖停留，请修改日期/时段或地点"
+          },
+          {
+            "subject": "item:1",
+            "status": "conflict",
+            "code": "opening_hours",
+            "message": "快照营业时间不覆盖停留，请修改日期/时段或地点"
+          },
+          {
+            "subject": "item:2",
+            "status": "conflict",
+            "code": "opening_hours",
+            "message": "快照营业时间不覆盖停留，请修改日期/时段或地点"
+          },
+          {
+            "subject": "item:3",
+            "status": "conflict",
+            "code": "opening_hours",
+            "message": "快照营业时间不覆盖停留，请修改日期/时段或地点"
+          },
+          {
+            "subject": "item:4",
+            "status": "conflict",
+            "code": "opening_hours",
+            "message": "快照营业时间不覆盖停留，请修改日期/时段或地点"
+          },
+          {
+            "subject": "item:5",
+            "status": "conflict",
+            "code": "opening_hours",
+            "message": "快照营业时间不覆盖停留，请修改日期/时段或地点"
+          },
+          {
+            "subject": "item:6",
+            "status": "conflict",
+            "code": "opening_hours",
+            "message": "快照营业时间不覆盖停留，请修改日期/时段或地点"
+          },
+          {
+            "subject": "item:7",
+            "status": "conflict",
+            "code": "opening_hours",
+            "message": "快照营业时间不覆盖停留，请修改日期/时段或地点"
+          },
+          {
+            "subject": "day:2026-11-03",
+            "status": "unknown",
+            "code": "pace_warning",
+            "message": "节奏提醒：2026-11-03安排8个已知景点，超过标准每日5个的建议上限，请确认或减少景点。"
+          },
+          {
+            "subject": "route:0->1",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:1->2",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          },
+          {
+            "subject": "route:2->3",
+            "status": "unknown",
+            "code": "route_missing",
+            "message": "缺少前后地点路段，不猜测可以及时到达"
+          }
+        ],
+        "check_counts": {
+          "verified": 8,
+          "unknown": 11,
+          "conflict": 8
+        },
+        "truncated": true
+      }
+    },
+    "same_entity_3_evidence_3_days": {
+      "status": "partial",
+      "warnings": [
+        {
+          "subject": "place:osm:way/57111281",
+          "status": "unknown",
+          "code": "repeated_place_warning",
+          "message": "重复景点提醒：二条城安排3次（2026-11-03、2026-11-04、2026-11-05），请确认是否有意重访。"
+        }
+      ],
+      "feedback": {
+        "status": "partial",
+        "known_cost": "0",
+        "estimated_cost": "0",
+        "scope": "按当前来源与报价校验；路线时长为估算，临时闭馆与未核实费用仍需出行前确认",
+        "checks": [
+          {
+            "subject": "place:osm:way/57111281",
+            "status": "unknown",
+            "code": "repeated_place_warning",
+            "message": "重复景点提醒：二条城安排3次（2026-11-03、2026-11-04、2026-11-05），请确认是否有意重访。"
+          },
+          {
+            "subject": "budget",
+            "status": "unknown",
+            "code": "other_costs",
+            "message": "景点门票、餐饮等未获得完整费用证据，不能认定全程预算满足"
+          },
+          {
+            "subject": "lodging_budget",
+            "status": "unknown",
+            "code": "lodging_budget_unknown",
+            "message": "住宿预算未知；不会按全程预算自动分配。"
+          },
+          {
+            "subject": "hotel",
+            "status": "unknown",
+            "code": "hotel_missing",
+            "message": "未选择住宿报价，不猜测住宿费用"
+          },
+          {
+            "subject": "item:0",
+            "status": "verified",
+            "code": "trip_dates",
+            "message": "停留日期符合旅行范围"
+          },
+          {
+            "subject": "item:0",
+            "status": "verified",
+            "code": "opening_hours",
+            "message": "快照营业时间覆盖整段停留"
+          },
+          {
+            "subject": "item:1",
+            "status": "verified",
+            "code": "trip_dates",
+            "message": "停留日期符合旅行范围"
+          },
+          {
+            "subject": "item:1",
+            "status": "verified",
+            "code": "opening_hours",
+            "message": "快照营业时间覆盖整段停留"
+          },
+          {
+            "subject": "item:2",
+            "status": "verified",
+            "code": "trip_dates",
+            "message": "停留日期符合旅行范围"
+          },
+          {
+            "subject": "item:2",
+            "status": "verified",
+            "code": "opening_hours",
+            "message": "快照营业时间覆盖整段停留"
+          }
+        ],
+        "check_counts": {
+          "verified": 6,
+          "unknown": 4,
+          "conflict": 0
+        },
+        "truncated": false
+      }
+    }
+  }
+}

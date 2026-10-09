@@ -1,0 +1,102 @@
+# 06 来源与待验证事项
+
+核查日期：原资料为 2026-10-02；Agent SDK 路线和相关官方文档于 2026-10-03 补充核对。下表区分三种状态：
+- **已核实**：看过源码或官方文档；
+- **推断**：读过资料，但没有实际运行；
+- **待实测**：必须在开发中验证。
+
+本项目新增的设计和效果，全部待实现后验证。
+
+## 1. 官方阅读材料
+
+| 材料 | 用途 |
+| --- | --- |
+| [Building commerce agents with Claude](https://claude.com/blog/claude-for-commerce-agents) | 官方发布说明（2026-09-02） |
+| [The anatomy of effective commerce agents](https://claude.com/blog/the-anatomy-of-effective-commerce-agents) | 核心设计动机：单主 Agent + Skills、工具与 UI、成本、记忆、评测。**最先读这篇** |
+| [Commerce agents 使用场景文档](https://platform.claude.com/docs/en/about-claude/use-case-guides/commerce-agents) | 四个示例（retail / travel / telecom / entertainment）和三种运行方式 |
+| 官方活动录像（48 分钟，「Building Claude Commerce Agents」） | 页面只有章节标题、没有字幕；内容未读，不引用其观点 |
+
+## 2. 固定源码版本
+
+| 仓库 | commit |
+| --- | --- |
+| [Commerce Agents](https://github.com/anthropics/commerce-agents) | `fd4d59224ab96b43c6dc6888207c67b3bd5a24cf` |
+| [DataMind](https://github.com/plaidev/datamind-ai-agent)（组织内部仓库） | `d57bb79e3cb16377fa2f6587f110f79ccd5141e1` |
+
+下文的相对路径指向 `vendor/`（由 `scripts/fetch_upstream.py` 获取，见 `docs/tasks/M0.md`）。未运行上游完整测试。
+
+## 3. 上游源码事实（已核实）
+
+### Commerce Agents
+
+| 主题 | 位置 | 结论 |
+| --- | --- | --- |
+| 依赖 | `requirements.txt` | `anthropic==0.122.0`、`claude-agent-sdk==0.2.139`、`mcp==1.29.0`、`fastapi`、`pydantic`；没有 LangChain 等 Agent 框架 |
+| 三种运行方式 | [README](../../vendor/commerce-agents/README.md)、[common README](../../vendor/commerce-agents/commerce-common/README.md) | 手写 Messages API 循环、Claude Agent SDK、Managed Agents，三者共用同一个工具执行层 |
+| SDK 接入（2026-10-03） | `shopping-agent/runtime-agent-sdk/shopping_agent_sdk/agent.py`、`commerce-common/commerce_common/agent_sdk.py` | make_options / run_turn 接 SDK；工具经进程内 MCP 转交业务执行器；收集 SDK 消息和 UI 结果。仅源码阅读，未运行 |
+| 主循环 | [orchestrator.py](../../vendor/commerce-agents/shopping-agent/runtime-messages-api/shopping_agent_runtime/orchestrator.py) | 有界循环、最后一轮强制不调工具；第 0 轮可能强制指定工具（:171） |
+| 工具配对 | [turn.py](../../vendor/commerce-agents/commerce-common/commerce_common/turn.py) | 用 `asyncio.gather` 并发收集工具（:211）；工具结果带 `is_error`（:535）；中断时补齐未配对的工具结果 |
+| 单 Agent | 同上 | 一个模型持有对话。shopping 和 merchant 两侧代码互不调用；唯一的子任务是 merchant 的数据分析委派。**不是多 Agent 参考实现** |
+| 守门 | [gates.py](../../vendor/commerce-agents/shopping-agent/core/shopping_agent/gates.py)、[safety.md](../../vendor/commerce-agents/docs/safety.md) | 只接受本会话查到过的 ID；数量上限；`apply_change` 需要页面设置的审批标记，模型在对话里说「已确认」无效 |
+| 购物车锁 | gates.py | 进程内锁，多 worker 时无效 |
+| Skills / 缓存 | [skills.py](../../vendor/commerce-agents/commerce-common/commerce_common/skills.py)、[prompt_assembly.py](../../vendor/commerce-agents/commerce-common/commerce_common/prompt_assembly.py) | 固定索引、按需加载；静态 prompt 与工具列表保持字节不变，动态内容另放一段 |
+| travel 示例 | [travel README](../../vendor/commerce-agents/examples/travel/README.md)、[itinerary.py](../../vendor/commerce-agents/examples/travel/api/itinerary.py) | 按 ID 补全行程卡片；补全时会调用 `note_trip_plan` 写后端（:171-173），并过滤未知 ID；全部是 mock 数据 |
+| 宿主冲突策略 | [host.py](../../vendor/commerce-agents/examples/demo_common/host.py) | 版本冲突时旧 turn 用新版本号覆盖写入（:209-210），本项目不沿用 |
+| 记忆与委派 | [memory.py](../../vendor/commerce-agents/commerce-common/commerce_common/memory.py)、[delegation.py](../../vendor/commerce-agents/commerce-common/commerce_common/delegation.py) | 有 `MemoryStore` 协议、内存 / JSON 文件实现和 `purge_generation`；委派是工具背后的一次受限模型调用 |
+| 评测 | [commerce-evals SKILL.md](../../vendor/commerce-agents/plugins/commerce-builder/skills/commerce-evals/SKILL.md)（:8） | 原文：「The repo ships no eval harness」。只提供方法论：用例 schema、规则评分、固定模型的 LLM 评审 |
+| 缺什么 | 全仓 | 没有评测框架、Trace、任务队列、模型调用重试、RAG（搜索只是关键词加同义词表）。这些正是本项目要补的部分 |
+
+许可：Apache-2.0。
+
+### DataMind
+
+| 主题 | 位置 | 结论 |
+| --- | --- | --- |
+| 业务 | `docs/rurubu_andmore_feature_plan.md` | 旅游媒体的 LINE 机器人：从对话生成行程，把用户导流到攻略文章。**没有预订和库存** |
+| 运行时 | `agent-configs/`、`mcp-apps/` | Anthropic Managed Agents + MCP 工具，不是 Claude Agent SDK |
+| 行程数据模型 | `specs/011-media-travel-plan/data-model.md` | 行程含天数类型、≥3 个景点，每个景点有 day、time_slot、category；校验规则：同类别不能连续 3 个、每天至少一个观光 / 活动；模型只输出 ID，服务端补全。**和本项目的 Itinerary / validator 高度对应，必读** |
+| 网页对话 | [web-hearing README](../../vendor/datamind-ai-agent/agent-loop/web-hearing/README.md)、[loop.ts](../../vendor/datamind-ai-agent/agent-loop/web-hearing/src/loop.ts)、[turn-state-machine.ts](../../vendor/datamind-ai-agent/agent-loop/web-hearing/src/turn-state-machine.ts) | 用代码状态机控制对话流程，模型只输出简短的结构化结果。对照：本项目由模型提交条件 patch，可以和代码抽取做比较 |
+| 推荐与供给 | [article-recommender.ts](../../vendor/datamind-ai-agent/agent-loop/web-hearing/src/recommendation/article-recommender.ts)、[jtb-offer-provider.ts](../../vendor/datamind-ai-agent/agent-loop/web-hearing/src/offer/jtb-offer-provider.ts) | 条件合并、何时推荐、查询放宽；供给是启动时读取的静态数据，没有日期 / 人数的实时房价 |
+| 评测 | `agent-loop/claude-managed/eval/tasks.json`（21 条用例，8 类）、`eval/src/graders/` | 20 个规则评分器（`graders/code/`）+ 8 个 LLM 评审（`graders/judge/`），汇总成 scorecard 并与 baseline 对比。用例为日语、日本旅游题材，**改编后作为本项目的初始评测集**（05 §1.1）；语气评测参考 `has-buru`、`first-person-boku`、`character-voice` 的写法 |
+
+DataMind 根目录没有 LICENSE。本项目只参考业务场景和设计思路，不复制代码。
+
+## 4. 外部接口与工具
+
+| 来源 | 结论 | 状态 |
+| --- | --- | --- |
+| [DeepSeek Anthropic 兼容接口](https://api-docs.deepseek.com/guides/anthropic_api/) | base_url `https://api.deepseek.com/anthropic`；支持 tool use、tool_choice、流式、system。忽略：`is_error`、`cache_control`、`disable_parallel_tool_use`、`budget_tokens`、`mcp_servers`、`anthropic-beta` 头；不支持 `document` 等块；`claude-*` 模型名被静默映射到 DeepSeek 模型 | 已核实（文档）；行为待实测 |
+| [DeepSeek 思考模式](https://api-docs.deepseek.com/guides/thinking_mode/)、[Chat Completions](https://api-docs.deepseek.com/api/create-chat-completion/) | Chat Completions 下：思考模式 + 工具必须回传完整 `reasoning_content`；思考模式下强制指定工具报 400 | 已核实（文档）；Anthropic 接口上是否相同**待实测** |
+| [DeepSeek 前缀缓存](https://api-docs.deepseek.com/guides/kv_cache) | 自动、尽力而为；命中量见 `prompt_cache_hit_tokens` | 已核实（文档） |
+| Claude Agent SDK | [概览](https://code.claude.com/docs/en/agent-sdk/overview)、[Python 参考](https://code.claude.com/docs/en/agent-sdk/python)、[会话](https://code.claude.com/docs/en/agent-sdk/sessions) | 2026-10-03 核对；SDK 封装 CLI，提供循环/会话；不代表业务事务保证，待本地接入 |
+| DeepSeek 接 SDK | [DeepSeek Claude Code 配置](https://api-docs.deepseek.com/zh-cn/quick_start/agent_integrations/claude_code/)；[Anthropic 网关边界](https://code.claude.com/docs/en/llm-gateway) | 前者给兼容配置，后者不支持非 Claude 模型路由；用户选择以兼容实验验证，不声称官方支持或已跑通 SDK |
+| SDK 工具与费用 | [自定义工具](https://code.claude.com/docs/en/agent-sdk/custom-tools)、[权限](https://code.claude.com/docs/en/agent-sdk/permissions)、[成本](https://code.claude.com/docs/en/agent-sdk/cost-tracking) | 内部 MCP 桥接和业务执行分离；allowed_tools 不等于隔离；美元估算不作为人民币账本 |
+| [MCP 规范](https://modelcontextprotocol.io/specification/latest) | 原设计关注新规范与上游 `mcp==1.29.0` 的差异；SDK 路线改为按兼容组合选版本，不预设 2.x | 本轮未重新核查规范版本；M0.2 安装前核实 SDK 依赖，M3.3 再验证对外协议 |
+| [Langfuse](https://github.com/langfuse/langfuse) | MIT 许可，可自托管（Docker） | 已核实 |
+| [OTel GenAI 语义约定](https://opentelemetry.io/docs/specs/semconv/gen-ai/)（[仓库](https://github.com/open-telemetry/semantic-conventions-genai)） | LLM 调用的标准 span 属性 | 已核实存在；稳定级别未确认 |
+| [τ²-bench](https://github.com/sierra-research/tau2-bench) | 用模型扮演用户的 Agent 评测方法；本项目借鉴思路，不直接使用 | 已核实存在 |
+| [Wikivoyage 京都](https://en.wikivoyage.org/wiki/Kyoto) | 开放许可（CC BY-SA），需署名、相同协议共享 | **许可细节待导入前核实** |
+| [OpenStreetMap](https://www.openstreetmap.org/copyright) | ODbL，需署名；营业时间字段为 `opening_hours` | **许可细节待导入前核实**；京都景点营业时间的覆盖率待实测 |
+| [Booking Demand](https://developers.booking.com/demand/docs/getting-started/prerequisites)、[Agoda Demand](https://developer.agoda.com/demand/docs/getting-started) | 需要合作方合同、凭证和审核，个人无法接入 | 已核实 → **不采用**，酒店保持虚构 |
+| [Google Routes 公交](https://developers.google.com/maps/documentation/routes/transit-route) | 时间必须在 [当前 −7 天, 当前 +100 天] 内；不支持中途点；文档未确认日本公交覆盖 | 已核实（文档）→ **第一版不采用**，用自制路段 |
+
+## 5. 当前待实测清单
+
+新版 M0.2 / M0.3 按 [规格](../tasks/M0.md) 验收；旧探针结果见 [记录](../protocols/protocol-deepseek.md)，不能替代 SDK 证据。
+
+- [ ] 锁定 Python SDK / 实际 CLI / MCP 组合，在 Windows 启停并隔离凭据与配置
+- [ ] SDK 通过 DeepSeek 完成进程内工具往返、核实实际模型与流式事件
+- [ ] SDK 内部重试/压缩请求的可计数性、人民币预算和真实请求上限
+- [ ] 内置工具关闭、未授权工具拒绝、失败/取消/限次的应用事件
+- [ ] 同用户会话续接、跨用户拒绝；M2.4 验证 DB/SDK 保存窗口与重启恢复
+
+以下保留原协议研究项，仅在所用 SDK 路径确实需要时追加，不逐项消耗真实调用：
+
+- [ ] DeepSeek Anthropic 接口：思考模式下强制 `tool_choice` 是否报错
+- [ ] DeepSeek Anthropic 接口：思考块是否必须回传，回传格式是什么
+- [ ] DeepSeek：一次返回多个工具调用时的配对顺序
+- [ ] DeepSeek：流式输出中工具参数 JSON 的完整性
+- [ ] DeepSeek：响应里返回的实际模型名
+- [ ] Wikivoyage / OSM 许可条款与署名格式
+- [ ] OSM 京都主要景点 `opening_hours` 的覆盖率（覆盖低则补自制营业时间并标注）
+- [ ] 安装时确认 SDK 对 MCP 的依赖约束；旧 2.x 预设由 ADR-003 取代

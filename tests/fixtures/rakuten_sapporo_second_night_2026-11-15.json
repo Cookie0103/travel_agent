@@ -1,0 +1,366 @@
+{
+  "pagingInfo": {
+    "recordCount": 5,
+    "pageCount": 1,
+    "page": 1,
+    "first": 1,
+    "last": 5
+  },
+  "hotels": [
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 179085,
+          "hotelName": "ＪＲイン札幌北２条",
+          "hotelKanaName": "じぇいあーるいんさっぽろきたにじょう",
+          "hotelSpecial": "★男女別大浴場完備 ■JR札幌駅徒歩7分■hitaru目の前■22種類から選べる枕コーナー■バス・トイレ別■全館禁煙",
+          "hotelMinCharge": 3500,
+          "latitude": 43.06431042879141,
+          "longitude": 141.35409186260654,
+          "postalCode": "060-0002",
+          "address1": "北海道",
+          "address2": "札幌市中央区北2条西2丁目8番地1",
+          "telephoneNo": "011-212-1256",
+          "faxNo": "011-212-1254",
+          "access": "地下鉄東豊線さっぽろ駅２２番出口徒歩２分。ＪＲ札幌駅徒歩７分。札幌ドーム乗り換えなし＆札幌文化芸術劇場hitaru目の前",
+          "parkingInformation": "30台/1500円/泊/先着順/高さ2mまで/満車時は提携駐車場",
+          "nearestStation": "札幌",
+          "reviewCount": 1428,
+          "reviewAverage": 4.45,
+          "userReview": "ドライヤーは髪の毛がツルツルになった気がしました。　2026-10-01 17:18:36投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=179085\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": null
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 23,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "sn",
+              "roomName": "シングル禁煙◇シャワーブース◇140cm幅シモンズベッド",
+              "planId": 6636677,
+              "planName": "期間限定タイムセール☆素泊り☆＜RM＞",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "-----------------------------------------------------------------\r\n当館は【完全キャッシュレス】でございます。\r\n現地での追加のご精算につきましても、クレジットカードもしくは\r\n二次元コードをご利用ください。\r\n---------------------------------------------------------------\r\n\r\n\r\n特別価格でご案内するお得なプランです。\r\n\r\nご宿泊の予定が決まっている方におすすめ♪\r\n\r\nビジネスにも観光にも、快適にご滞在いただけるシンプルなプランです。\r\n\r\nこの機会にぜひ、便利で安心なホテルステイをご利用下さい。\r\n\r\n【アクセス】\r\nＪＲ札幌駅南口から徒歩7分\r\n地下鉄さっぽろ駅22番出口から徒歩2分\r\n大通・すすきのも徒歩圏内\r\n\r\n【枕コーナー】\r\n素材や高さ・固さが異なる22種類の枕から、あなたに最適な枕を選べる枕コーナーをご用意\r\n\r\n【ＪＲインラウンジ】\r\n＜時間＞朝6：00〜深夜1：00\r\n300冊以上の書籍に無料で飲めるコーヒーをご提供\r\n\r\n【大浴場】\r\n＜時間＞6：00〜9：00/15:00〜深夜1:00\r\n足を伸ばして仕事や旅の疲れを癒せる宿泊者専用の大浴場\r\n（シングル・セミダブル・ダブルのお部屋はシャワーブースのみとなっております）\r\n\r\n【駐車場】\r\n先着順　30台　1泊1，500円\r\n1泊あたりチェックイン15：00〜チェックアウト10：00まで利用可\r\n高さ2ｍ・幅1.85ｍ・長さ5ｍのお車まで\r\n\r\n満車の場合は提携駐車場へご案内させて頂きます。\r\n提携駐車場の場合も1泊1，500円にて駐車いただけます。\r\n\r\n\r\n※ご注意※\r\nＪＲインは札幌市内に他２店舗ございます。\r\n当ホテルはＪＲイン札幌北２条でございます。お間違いの無いようお気をつけくださいませ。\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-11-15",
+              "rakutenCharge": 8320,
+              "total": 8320,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 70730,
+          "hotelName": "天然温泉　空沼の湯　スーパーホテル札幌・すすきの",
+          "hotelKanaName": "てんねんおんせん　そらぬまのゆ　すーぱーほてるさっぽろ・すすきの",
+          "hotelSpecial": "J.D.パワー宿泊客満足度10年連続＆JCSI顧客満足度No.1★豊水すすきの駅徒歩１分！男女別天然温泉空沼の湯",
+          "hotelMinCharge": 4070,
+          "latitude": 43.0539493,
+          "longitude": 141.3558728,
+          "postalCode": "064-0806",
+          "address1": "北海道",
+          "address2": "札幌市中央区南6条西2丁目8-1",
+          "telephoneNo": "011-521-9000",
+          "faxNo": "011-521-9100",
+          "access": "地下鉄東豊線豊水すすきの駅７番出口から徒歩30秒！／地下鉄南北線すすきの駅３番出口から徒歩３分、南６西２。",
+          "parkingInformation": "１８００円／泊 完全電話の予約制 （注）立体駐車場のため車高制限有　",
+          "nearestStation": "豊水すすきの",
+          "reviewCount": 3321,
+          "reviewAverage": 4.15,
+          "userReview": "１日目と２日目…　2026-10-08 13:21:03投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=70730\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 100,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "oma01",
+              "roomName": "【禁煙】お部屋タイプお任せ",
+              "planId": 6295708,
+              "planName": "【札幌トク旅】男女別天然温泉でリフレッシュ＆朝食ビュッフェ付",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 1,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "当館自慢の天然温泉は男女別15:00〜翌朝9:00営業しております！！\r\n\r\n【営業時間】\r\n◆チェックイン：15：00〜24：00（最終）\r\n◆チェックアウト：10：00（プランに準ずる）\r\n\r\n◆共通サービス◆\r\n◆天然温泉　空沼の湯\r\n入浴時間(男女別)　\r\n15:00〜翌朝9:00\r\n◆全館健康イオン水を完備！\r\n\r\n◆LOHASな健康朝食を無料でご用意\r\nオーガニック野菜のサラダ、日替わりのおかずやご当地メニューなどをビュッフェ形式でご用意しております。\r\n平日：6:45〜9:00\r\n土・日・祝6:45〜9:30\r\n\r\n◆女性のお客様にはオリジナルアメニティをプレゼント♪\r\n\r\n◆８種類から選べる快眠枕\r\nチェックイン時にフロントで枕をお選びいただけます！（先着順）\r\n\r\n◆駐車場30台完備（電話予約制）\r\n1泊1，800円\r\n15時〜翌朝10時\r\n車高制限：2m\r\n満車時の対応：近隣コインパーキングご案内\r\n\r\n最終チェックインは24時となっております。24時を過ぎますとキャンセル扱いとなり、キャンセル料が100％発生いたしますのでご注意ください。\r\nまた、フロントも24時で営業終了致します。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-11-15",
+              "rakutenCharge": 9400,
+              "total": 9400,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 50125,
+          "hotelName": "リッチモンドホテル札幌駅前",
+          "hotelKanaName": "りっちもんど　さっぽろえきまえ",
+          "hotelSpecial": "JR札幌駅より徒歩7分、地下鉄さっぽろ駅まで徒歩1分の好立地♪【ビジネス・観光にオススメ！】",
+          "hotelMinCharge": 4650,
+          "latitude": 43.06506396,
+          "longitude": 141.3544604,
+          "postalCode": "060-0003",
+          "address1": "北海道",
+          "address2": "札幌市中央区北3西1丁目1-7",
+          "telephoneNo": "011-218-8555",
+          "faxNo": "011-218-8556",
+          "access": "◆ＪＲ札幌駅南口より徒歩7分（地下鉄東豊線22番出口徒歩0分！荷物の多い方は23番出口がおすすめ）",
+          "parkingInformation": "有り　30台　1,400円（税込／泊）",
+          "nearestStation": "札幌",
+          "reviewCount": 4901,
+          "reviewAverage": 4.34,
+          "userReview": "フロントのスタッフさん達も丁寧に対応してくださり、滞…　2026-10-07 15:55:56投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=50125\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "14:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "29:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 39,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "sn",
+              "roomName": "◇禁煙プレミアシングル◇ワイドダブルベッド(152cm幅)☆",
+              "planId": 5099009,
+              "planName": "22時〜チェックイン対象【素泊まり】お得なショートステイ",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "「ホテル滞在は夜だけ」というお客さまに、\r\n特別価格でご宿泊いただけるプランをご用意いたしました！\r\n\r\n遅くまで残業、家が遠い、始発まで休みたい、\r\nこれから宿をお探しのお客さまにもオススメ♪\r\n\r\n※22時以降チェックインの限定プランでございます。\r\nお早い時間にご到着された際、プラン適用外になりますため、\r\n現地で追加料金のお支払いをお願いいたします。\r\nお荷物のお預かりは何時からでも承りますのでお気軽にお申しつけくださいませ。\r\n※1泊限定のプランでございますので、連泊のご予約はできかねます。\r\n連泊をご希望の際、2泊目以降は別プランのご予約をお願いいたします。\r\n\r\n■ご朝食\r\nご朝食は1名様+1，600円でお付けできます。\r\nチェックインの際にフロントまでお申し付けくださいませ。\r\n\r\n■駐車場\r\n30台　1、400円（税込／泊）　要電話予約\r\n\r\n■お子様、赤ちゃんにアメニティのプレゼント！\r\n\r\n■小学生以下のお子様は、添い寝無料ですが、ベッド1台につき添寝1名様まででお願いします。\r\n  2名様以上の添い寝のご利用は大人料金がかかる場合がございます。\r\n　シングルユースのご利用では、添い寝のお子様はご遠慮頂いております。ご了承下さいませ。\r\n\r\n■宿泊税\r\n2026年4月1日より、宿泊税をチェックインの際に別途頂戴いたします。\r\n2万円未満は300円、2万円以上5万円未満は400円、5万円以上は1000円\r\n※お一人様1泊につき\r\n※デイユースプランは対象外\r\nご理解とご協力の程、よろしくお願い申し上げます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-11-15",
+              "rakutenCharge": 8500,
+              "total": 8500,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 72781,
+          "hotelName": "ＪＲイン札幌",
+          "hotelKanaName": "じぇいあーるいんさっぽろ",
+          "hotelSpecial": "JR「札幌駅」西改札口から徒歩4分　駅西側出口から徒歩2分◇宿泊者全員に軽朝食無料サービス　■トレインビュールーム有り",
+          "hotelMinCharge": 4832,
+          "latitude": 43.06713846,
+          "longitude": 141.346836,
+          "postalCode": "060-0005",
+          "address1": "北海道",
+          "address2": "札幌市中央区北5条西6丁目1",
+          "telephoneNo": "011-233-3008",
+          "faxNo": "011-233-3566",
+          "access": "■ＪＲ札幌駅西側出口から徒歩2分　地下鉄出口徒歩6分　■新千歳空港⇔札幌間バス停まで徒歩3分　■札幌北ICまで車で15分",
+          "parkingInformation": "なし。 ホテル周辺のコインパーキングをご利用ください（提携先はありません）",
+          "nearestStation": "札幌",
+          "reviewCount": 4968,
+          "reviewAverage": 4.09,
+          "userReview": "札幌レインボーブライトと藻岩山へ行…　2026-09-30 11:57:58投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=72781\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "29:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 48,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "sn",
+              "roomName": "シングル◇禁煙◇15平米☆140cm幅シモンズベッド",
+              "planId": 6136513,
+              "planName": "【事前決済予約限定】自動チェックイン機＆QRコードで楽々チェックインプラン軽朝食付RC",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 1,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "当ホテルではチェックイン・チェックアウトの混雑改善・お客様の待ち時間短縮のため、自動チェックイン・チェックアウト機を導入しています。\r\n\r\nホテル到着後は、自動チェックイン機の画面の案内に従ってQRコードをかざすだけで、お名前やご住所などのご記帳なくチェックインが可能です。\r\n\r\nチェックアウト時は、自動チェックアウト機、もしくはフロント前のキードロップBOXへルームキーをご返却いただくだけでチェックアウト完了です。\r\n\r\nスムーズなチェックイン＆チェックアウトを是非ご体感くださいませ。\r\n\r\n■STEP \r\n・楽天トラベル会員情報へご住所お電話番号を事前登録しご予約をお願いします。\r\n・楽天トラベルで支払い方法を事前決済でご予約。\r\n・楽天トラベル個人ページに掲載しているQRコードを印刷して持参するか、スマートフォンで表示しチェックイン機にかざしてください。（QRコードがない場合は予約名を入力するだけでチェックインが可能です）\r\n・自動チェックイン機にご予約内容が表示されます。内容をご確認頂き内容に間違いがなければ画面を進めてください。カードキーが発行されチェックイン完了です。\r\n\r\n【領収書】\r\n事前決済予約の領収書はホテルでは発行できません。\r\n領収書は楽天トラベル個人ページからご自身で発行してくだださい。\r\n※領収書発行の際お客様ご自身で宛名変更可能です。\r\n\r\n【注意事項】\r\n以下の場合は自動チェックイン機をご利用いただけない場合があります。\r\n（フロントでチェックイン対応させていただきますのでスタッフへお声がけくださいませ）\r\n・1予約で複数室をご予約の場合\r\n・フロントスタッフからご伝言や確認事項などがある場合\r\n\r\n【軽朝食】\r\n・パンとお飲み物やサラダ、ヨーグルトの軽朝食を無料でご提供しております。\r\n　コーヒーはお部屋へお持ち帰りいただけるようカップもご用意しております。\r\n＜食事場所＞　　1階ラウンジ\r\n＜ご利用時間＞　6：30〜9：30 \r\n\r\n\r\n■新幹線延伸工事に伴い、ホテル正面で高架橋建設工事が実施されます。\r\n作業中は時間を問わず（深夜・早朝を含む）工事音が発生する場合があります。\r\n予めご了承ください。\r\n期間：当面の間（2030年頃まで）\r\n\r\n■駐車場\r\n駐車場はありません。お客様ご自身で駐車場のお手配をお願い致します。\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-11-15",
+              "rakutenCharge": 8550,
+              "total": 8550,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 182561,
+          "hotelName": "京急ＥＸホテル札幌",
+          "hotelKanaName": "けいきゅういーえっくすほてるさっぽろ",
+          "hotelSpecial": "札幌駅北口より徒歩1分　新千歳空港から直通40分　駅近ビジネス、観光に最適です！",
+          "hotelMinCharge": 5850,
+          "latitude": 43.06868998201441,
+          "longitude": 141.34880749232605,
+          "postalCode": "0600806",
+          "address1": "北海道",
+          "address2": "札幌市北区北6条西4丁目2-6",
+          "telephoneNo": "011-737-3910",
+          "faxNo": "011-737-3912",
+          "access": "札幌駅北口（西改札）より徒歩1分",
+          "parkingInformation": "無",
+          "nearestStation": "札幌",
+          "reviewCount": 1414,
+          "reviewAverage": 4.48,
+          "userReview": "駅から徒歩２分位で、とても便利。チェックインは今よくある自動チェックイン機です。部屋は水周りも広く、ゆったりできます。部屋から線路が見える部屋だったので、鉄道好きな人は楽しめるかもしれません。ビジネス…　2026-10-08 18:40:13投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=182561\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": null
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 72,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "free",
+              "roomName": "★お部屋タイプおまかせ★【禁煙】",
+              "planId": 6268888,
+              "planName": "◆新千歳空港から乗換不要40分！◆【さき楽30】素泊まり",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "※2026年4月1日より、北海道および札幌市にて宿泊税が導入されます。\r\nご宿泊料金とは別に、1人1泊あたり「北海道宿泊税」と「札幌市宿泊税」を現地にてお支払いいただきます。\r\n税額はご宿泊料金に応じて異なりますので、あらかじめご了承ください。\r\n\r\n札幌駅北口(西改札）から徒歩1分\r\n京急イーエックスグループ初の北海道出店！\r\n「くつろぎ」・「やすらぎ」をテーマに、旅をしながら仕事も行える空間、多様なお部屋タイプをお客様の目的に合わせてお選びください\r\n\r\n★☆おすすめポイント☆★\r\nロビーのオープンスペースをフレキシブルに活用。\r\n①インフォメーションカウンター\r\n②空いたお時間で、ラウンジ利用\r\n③ちょっとしたお仕事に活用できるワーケーションスペース\r\n④季節によって変化を遂げる展示コーナー\r\n⑤ウェルカムコーヒーサービス、お好きな物をお選びいただける無料アメニティバイキングコーナー　等々\r\n\r\n□京急イーエックスホテル札幌イチオシサービス・設備■\r\n・全室禁煙(館内喫煙所有)\r\n・無料Wi-Fi\r\n・マイナスイオンドライヤー\r\n・無料コーヒー、アメニティバイキング\r\n・加湿機能付き空気清浄機\r\n・コインランドリー完備\r\n・到着前や出発後の荷物預かりもOK！\r\n\r\n《プラン説明》\r\nご宿泊日の30日前までの限定プラン！\r\n通常より少しお安くなっております♪\r\n\r\n□■アクセス■□\r\n・JR「札幌駅」 西改札 北口より徒歩１分\r\n・地下鉄「さっぽろ駅」　徒歩5分  「大通駅」　徒歩15分\r\n\r\n【お願い】\r\n■チェックインが2時間以上遅れる場合は、ご連絡をお願いいたします。\r\n■ご宿泊されていないお客様のお部屋への入室はお断りしております。ご面会はロビーにてお願い致します。\r\n■複数にわたりご予約で8名様以上（団体）の場合は別途キャンセル規定がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-11-15",
+              "rakutenCharge": 13100,
+              "total": 13100,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ]
+  ]
+}

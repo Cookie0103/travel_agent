@@ -1,0 +1,98 @@
+{
+  "purpose": "actual local SDK/CLI termination and full planning feasibility; synthetic response is not model quality",
+  "source_commit": "e86ad6e",
+  "worktree_dirty": true,
+  "baseline_terminal_probe": [
+    {
+      "flavor": "tool_loop",
+      "exit_code": 0,
+      "http_attempts": 2,
+      "guard_failures": [],
+      "stop_reasons": [
+        "tool_use",
+        "tool_use"
+      ],
+      "result": {
+        "subtype": "error_max_turns",
+        "stop_reason": "tool_use",
+        "terminal_reason": "max_turns",
+        "num_turns": 3,
+        "is_error": true,
+        "outcome_code": "provider_error",
+        "outcome_reason": "incomplete_output"
+      }
+    },
+    {
+      "flavor": "truncated_text",
+      "exit_code": 0,
+      "http_attempts": 4,
+      "guard_failures": [],
+      "stop_reasons": [
+        "max_tokens",
+        "max_tokens",
+        "max_tokens",
+        "max_tokens"
+      ],
+      "result": {
+        "subtype": "success",
+        "stop_reason": "stop_sequence",
+        "terminal_reason": "completed",
+        "num_turns": 1,
+        "is_error": true,
+        "outcome_code": "provider_error",
+        "outcome_reason": "sdk_result_error"
+      }
+    }
+  ],
+  "fix": "known aborted/max_turns terminal boundary before last stop_reason; incomplete output still failure without checkpoint",
+  "planning_baseline": {
+    "sdk_max_turns": 6,
+    "actual_http_attempts": 6,
+    "actual_code": "blocked",
+    "actual_reason": "max_turns",
+    "completed_stages": [
+      "update_travel_request",
+      "get_place_facts",
+      "get_place_facts",
+      "search_hotel_offers",
+      "estimate_routes",
+      "validate_itinerary"
+    ],
+    "stage_and_presentation_completed": false
+  },
+  "planning_regression": {
+    "runtime": "same Claude Agent SDK",
+    "database_sdk_max_turns": 12,
+    "actual_http_attempts": 9,
+    "tool_count": 8,
+    "items": 6,
+    "formal_version": 0,
+    "draft_validation": "complete or partial accepted by test; no conflict",
+    "code_reference": "tests/integration/test_sdk_planning.py::test_sdk_complete_three_day_chain_has_enough_turns_without_saving_formal_plan"
+  },
+  "verification": {
+    "original_new_terminal_tests": {
+      "passed": 1,
+      "failed": 1
+    },
+    "corrected_targeted": {
+      "passed": 21,
+      "deselected": 492,
+      "seconds": 10.65
+    },
+    "static_files": 202
+  },
+  "unchanged_limits": {
+    "maximum_http_per_business_run": 12,
+    "maximum_tools": 16,
+    "maximum_business_repair_rounds": 3,
+    "grant_cny": "5",
+    "grant_http_requests": 100
+  },
+  "actual_paid_requests": 0,
+  "limitations": [
+    "local scripted responses, not DeepSeek success evidence",
+    "CLI output continuation consumed four HTTP despite ordinary retry=0; all bounded/accounted",
+    "original live terminal metadata not retained, cannot retrospectively assert its exact terminal cause"
+  ]
+}
