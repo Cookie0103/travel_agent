@@ -671,3 +671,20 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 最终本地运行：重启前真实库active task_runs=0，核对PID30813/cwd与backend.server --live后精确SIGTERM；以原DEMO_MODE=true/LLM_PROVIDER=deepseek/--live启动最终代码。首页200/全部9脚本200/API health ok/3000代理DeepSeek available=true。最后build后ignored static已同步并重启web，之后无新build；没有修改.env/default/15CNY或Railway、没有部署。本机ps第一次受sandbox限制，走已授权提权只读核实后再停指定PID，没有盲杀。
 
 - 实现提交`c4ede46`，`git push origin batch-2026-10-08-product-V2` exit0：27bdeb2..c4ede46；之后Git干净。仅追加最终SHA/关闭T3.9与P74–77、C29 STAR，不改源码/构建或扩大验证结论。记录提交另行push；生产跟踪旧分支不变。
+
+## 2026-10-09 T0.7 / T3.10：CI红灯与被拦原因（P-78–80）
+
+| 步骤 | 命令/操作 | 实际结果 |
+| --- | --- | --- |
+| 找红灯起点 | `gh run list` + 逐运行读 python/docker-demo 结论 | docker-demo自 `0febb2e` 起红；python自 `153c041` 起红；之前都绿 |
+| 读docker-demo日志 | `gh run view <id> --log-failed` | `locator: ValidationError | request:39` |
+| 本机复现 | `stack-up` 后用带校验细节的包装运行smoke | `PATCH /request` 返回的 `request.budget_relation`、`request.field_sources` 被旧模型 `extra_forbidden` 拒绝 |
+| 旧CLI对照 | `npm install --prefix /tmp/cc114 …@2.1.114` | **被权限拦下**，未绕过；该假设只能标REASONED |
+| 本机读被拦事件 | `docker exec … psql`（只读）查 `run_events` | run 08135d95：17次调用、validate_itinerary连续4次blocked、事件无原因字段 |
+| 实现 | 两个builder并行，互不重叠文件 | 见 P-78/P-80 |
+| 独立审查 | qa-reviewer只读 | 无P1；P2×2已修（运行级错误串用原因码；重复拦截掩盖repair_limit） |
+| 类型漂移核对 | `pnpm run generate` 后与原文件 `diff` | 完全一致 |
+| 最终验证 | check / web / 全量pytest / docker整序列 | 全部通过，数字见计划§9 |
+
+教训：之前一次推断出错——我据“修复计数为0”排除了repair_limit，但代码里被拒绝的校验调用也消耗修复轮次。用数据库证据反推时，要先读计数在哪里自增，不能凭直觉假设。
+
