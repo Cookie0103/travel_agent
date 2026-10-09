@@ -73,7 +73,14 @@ class TravelConditions(BaseModel):
     currency: Literal["JPY"] = "JPY"
     lodging_budget: LodgingBudget | None = None
     transport: Transport | None = None
-    departure_time: time | None = None
+    departure_time: time | None = Field(
+        default=None,
+        description=(
+            "每天开始游玩的当地时间，仅在用户明确每日出发时设置。不是首日抵达时间、"
+            "末日返程或航班/车次时间；这些带日期和角色写入hard_constraints。"
+            "未说明每日出发时不要填；用户明确纠正旧误填时清除此字段。"
+        ),
+    )
     interests: tuple[Text, ...] = Field(default=(), max_length=20)
     hard_constraints: tuple[Text, ...] = Field(default=(), max_length=20)
     soft_constraints: tuple[Text, ...] = Field(default=(), max_length=20)

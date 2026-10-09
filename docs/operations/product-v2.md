@@ -795,3 +795,12 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 运行未结束时`gh run view --log-failed`及`--job 113793760334 --log`提示日志要等run完成；通过GitHub只读jobs/113793760334/logs读取已完成任务，随后run结束再次执行log-failed核实相同错误。不涉及权限拒绝绕过或付费供应商。
 - 同SHA的push已成功，故只用`gh run rerun 37922566489 --failed`一次复核失败web任务；没有改字体/依赖/构建器/断言/CI重试策略。结果回读后追加；若仍失败停止重试并定位。
 - PR37922566489 attempt2的web全序列成功，合并既有python/docker-demo三success（VERIFIED）。未改代码即未复现，但根因仍未知；保留首轮失败，不宣称永久修复。push37922560960也三success；本记录独立提交后再次核对CI，不增加真实请求。
+
+## 2026-10-09 T3.11 / P89：每日出发与航班时刻分离
+
+- 本地b5c2131起步clean，最近37923215687/37923209254/37922566489均三任务成功。Chrome与只读PG确认历史1b8605f8/rev3每日22点、95ab5035/rev4保留，5560dfac两天09点首项冲突。仅记录脱敏ID/字段，不存用户私人对话或工具原始参数。
+- 先新增显式live回归；首次因默认not live得到2deselected/0调用；显式 `TRAVEL_TIME_PROBE=arrival-return TRAVEL_TIME_PROBE_PHASE=before uv run python -m pytest tests/live/test_time_extraction.py -m live -q -s`：ddfa71eb/2模型/0.042980CNY/正确None/1passed1skipped6.12s。此新基线不是首红，原错误为已观测真实失败，不能夸大复现率。
+- 修复只改TravelConditions.departure_time.description与travel_prompt；原字段/validator/计数保留。按export_web_schema、apps/web的pnpm generate/prettier同步4处描述/注释，不改契约数据形状。
+- `TRAVEL_TIME_PROBE=both TRAVEL_TIME_PROBE_PHASE=after uv run python -m pytest tests/live/test_time_extraction.py -m live -q -s`：f7019537/None/0.043962CNY、06e531ae/09:00/0.044626CNY、b1349d1f纠错None/0.044472CNY；各2模型请求，3passed17.62s。仅update_travel_request、旅行API0；SDK+PG条件映射验收，不等同正式RunService整轮行程验收。修前后总8模型/0.176040CNY；追加授权以来agent总99请求，停止新增付费试跑。live默认排除/每case2请求/标记拒自动重跑/预算15CNY，未改.env或运行档位。
+- 旧会话修复只读确认rev4/22:00、8约束含抵达返程；使用既有TravelService且严格rev4/22点门禁，仅clear departure_time并explicit_fields；PG读回rev5/None、changed_fields仅departure_time、其余所有字段相等。既有失效机制使旧草稿需重规划，不绕过版本或校验；没有供应商调用、订单或部署。
+- 本机dev check：295文件格式/三平台mypy/3分层契约/10文档入口通过；web typecheck/lint/111tests0fail/296.20ms。未本机build，故无需复制static或重启前端；正常提交的全量关卡、独立审查与CI待补。

@@ -34,6 +34,7 @@ def travel_prompt(repair_rounds: int = 3) -> str:
 缺地点/偏好时先问必要条件；泛泛想看看旅行推荐用用户所说的城市给少量方向；没有城市先问目的地。
 景点需求使用search_places；只看文章使用search_content；确实需要两类资料才都用，已有够用资料就回答。
 用户每轮明确表达的旅行条件先用update_travel_request记录：目的地、日期、成人/儿童年龄、房间数、全程和住宿预算、节奏；没有说的字段不填、不默认京都/金额/房间数。单纯泛泛查询未表达自己的旅行条件时可直接查询。
+departure_time只表示每天开始游玩的当地时刻，必须有明确每日出发语义。首日抵达、末日返程、航班/车次时间按日期和角色写入hard_constraints，不能写进departure_time。例如“11号早上9点抵达，12号晚上10点返程”只记录两条带日期的约束，不设每日出发；只有另说“每天9点出发”才设09:00。后续仅改航班时间时保留已明确的每日出发值；用户明确指出旧值是抵达/返程误填时，用clear清除departure_time并声明explicit_fields，不猜新的每日时刻。
 任何模式都先对话，不要求用户在右侧填表；缺必要信息在对话里追问。field_sources=user_form的手填值优先，模糊表述不能覆盖；用户明确说新值时列入explicit_fields。按回执changed_fields/message告诉用户“已按对话更新”，skipped_fields保留手填并追问，不能假称已更新。
 全程与住宿两预算原值同时保留；预算冲突先问以哪个为准，解决前不比较酒店；只更新用户改的那个字段，不另存标志/换汇/猜房晚。
 房型写入必须优先使用update_travel_request.room_preferences严格枚举，不把整句偏好塞进房型字段：lodging=private/dorm/capsule/any、smoking=nonsmoking/any、bed=twin/double/any。用户无要求或回答当前床型问题“都可以”用bed=any，保留独立房间与禁烟。其他约束用hard_constraints补充，读回room_preferences即已识别；参数格式失败由模型修参数，不反复让用户确认已表达事实。

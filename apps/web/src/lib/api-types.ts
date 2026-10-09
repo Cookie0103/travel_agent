@@ -848,7 +848,10 @@ export interface components {
             currency: "JPY";
             /** Transport */
             transport?: ("walk" | "transit" | "taxi") | null;
-            /** Departure Time */
+            /**
+             * Departure Time
+             * @description 每天开始游玩的当地时间，仅在用户明确每日出发时设置。不是首日抵达时间、末日返程或航班/车次时间；这些带日期和角色写入hard_constraints。未说明每日出发时不要填；用户明确纠正旧误填时清除此字段。
+             */
             departure_time?: string | null;
             /**
              * Interests
@@ -1194,7 +1197,10 @@ export interface components {
             lodging_budget?: components["schemas"]["LodgingBudget-Output"] | null;
             /** Transport */
             transport?: ("walk" | "transit" | "taxi") | null;
-            /** Departure Time */
+            /**
+             * Departure Time
+             * @description 每天开始游玩的当地时间，仅在用户明确每日出发时设置。不是首日抵达时间、末日返程或航班/车次时间；这些带日期和角色写入hard_constraints。未说明每日出发时不要填；用户明确纠正旧误填时清除此字段。
+             */
             departure_time?: string | null;
             /**
              * Interests
@@ -1427,7 +1433,10 @@ export interface components {
             lodging_budget?: components["schemas"]["LodgingBudget-Input"] | null;
             /** Transport */
             transport?: ("walk" | "transit" | "taxi") | null;
-            /** Departure Time */
+            /**
+             * Departure Time
+             * @description 每天开始游玩的当地时间，仅在用户明确每日出发时设置。不是首日抵达时间、末日返程或航班/车次时间；这些带日期和角色写入hard_constraints。未说明每日出发时不要填；用户明确纠正旧误填时清除此字段。
+             */
             departure_time?: string | null;
             /**
              * Interests
@@ -1481,7 +1490,10 @@ export interface components {
             lodging_budget?: components["schemas"]["LodgingBudget-Output"] | null;
             /** Transport */
             transport?: ("walk" | "transit" | "taxi") | null;
-            /** Departure Time */
+            /**
+             * Departure Time
+             * @description 每天开始游玩的当地时间，仅在用户明确每日出发时设置。不是首日抵达时间、末日返程或航班/车次时间；这些带日期和角色写入hard_constraints。未说明每日出发时不要填；用户明确纠正旧误填时清除此字段。
+             */
             departure_time?: string | null;
             /**
              * Interests
