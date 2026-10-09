@@ -71,3 +71,8 @@ test("unknown codes that match Object prototype keys still use the safe label", 
       "其他校验",
     );
 });
+
+test("day anchors ignore malformed historical cards while retaining valid indices", () => {
+  const mixed = [{ start: "bad" }, { start: "2026-11-04T09:00:00" }, ...cards];
+  assert.deepEqual(checkTargets("day:2026-11-04", mixed), [2, 3]);
+});

@@ -820,3 +820,11 @@ Chrome旧真实页面computed style：primary rgb(15,118,110)/白字、body17px�
 首次独立127预览恢复500，前端log为ECONNREFUSED8000且无监听；不是UI业务变更。启动免费default后端/session64635（没有.env或预算修改），原合成会话恢复正常；创建新旅行用于UI验收，用户localhost原会话未改。0真实模型/旅行API。本机dev check295/三平台strict/3契约/10入口通过；独立只读审查与提交CI待补。
 
 - T7.1独立只读审查指出白字lavender按钮与浅色focus两P2；修primary-ink/accent，普通输入抑制focus移除，composer用外层focus-within。复核无新P1/P2。首次编辑用系统python不存在未改文件，改项目uv执行成功；复跑web111/282.03ms、type/lint/build五routes通过。再次复制static并重启受控预览；无真实API。
+
+## 2026-10-09 T7.2 / P91时间线
+
+- T7.1 92b898c已普通push新分支；37946952254实际读三个job全部success，未建PR/改Railway。
+- 时间线按Japan日期与17点连续分组，不排序、不改变对象/全局索引；旧日期formatter移到itinerary。首新增模块ImportError红，初114测试绿；独立两P2用日期only/zone-less和混合day锚点复现2failed/7passed，显式zone/日历日期校验与共用安全itineraryDay修复后116passed/283.79ms/type/lint/build绿，复核关闭。
+- Chrome演示准备首自然句空格日期不在有限解析范围，原生date fill也未持久化（未宣称原生日历通过）；改用已有演示支持的无空格日期与住宿偏好、免费固定hotel/plan。现有冲绳旅行恢复无草稿，另一个localhost新tab无登录，未用这些当时间线通过。全部0真实API，未更改用户已有旅行。
+
+- T7.2 Chrome实际京都3天固定稿白天/住宿、编号1–6、校验展开和focus已看；390x844 timeline screenshot已看/document.scrollWidth390，临时viewport还原。最初viewport作用在后来创建的另一个tab，读innerWidth1512发现，关闭无用tab后正确390，不用错误尺寸截图作窄屏证据。两天/17点/跨UTC由合成行为测试验证；真实冲绳全流程不纳入本批结论。

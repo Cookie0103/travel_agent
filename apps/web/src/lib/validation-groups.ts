@@ -1,4 +1,5 @@
 /** Group current bounded feedback; never infer a validator state from a message. */
+import { itineraryDay } from "./itinerary.ts";
 import type { components } from "./api-types";
 type Check = components["schemas"]["UiValidationCheck"];
 const labels: Record<string, string> = {
@@ -56,12 +57,6 @@ export function validationGroups(checks: Check[]) {
     (a, b) => Number(b.status === "conflict") - Number(a.status === "conflict"),
   );
 }
-const dayFormat = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Asia/Tokyo",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
 export function checkTargets(
   subject: string,
   cards: { start: string }[],
@@ -80,7 +75,7 @@ export function checkTargets(
   const day = /^day:(\d{4}-\d{2}-\d{2})$/.exec(subject);
   if (day)
     return cards.flatMap((card, index) =>
-      dayFormat.format(new Date(card.start)) === day[1] ? [index] : [],
+      itineraryDay(card.start) === day[1] ? [index] : [],
     );
   return [];
 }

@@ -20,37 +20,8 @@ export const formatYen = (value: string) =>
 const rakutenCredit = `<!-- Rakuten Web Services Attribution Snippet FROM HERE -->
 <a href="https://developers.rakuten.com/" target="_blank">Supported by Rakuten Developers</a>
 <!-- Rakuten Web Services Attribution Snippet TO HERE -->`;
-const date = (value: string) =>
-  new Date(value).toLocaleString("zh-CN", {
-    timeZone: "Asia/Tokyo",
-    month: "2-digit",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: false,
-  });
-
-const dayFormat = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Asia/Tokyo",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
-/** Group plan cards by Asia/Tokyo calendar day; `index` stays the global 0-based position. */
-export function planDays(plan: Plan) {
-  const days: {
-    day: string;
-    items: { item: Plan["cards"][number]; index: number }[];
-  }[] = [];
-  plan.cards.forEach((item, index) => {
-    const day = dayFormat.format(new Date(item.start));
-    const last = days.at(-1);
-    if (last?.day === day) last.items.push({ item, index });
-    else days.push({ day, items: [{ item, index }] });
-  });
-  return days;
-}
+export { planDays } from "@/lib/itinerary";
+import { planDays, daySections, itineraryTime as date } from "@/lib/itinerary";
 
 export function useClock() {
   const [now, setNow] = useState(0);
@@ -514,6 +485,7 @@ export function PlanResults({
   const blocked = stale || plan.validation.status === "conflict";
   const checkPrefix = useId();
   const groups = validationGroups(plan.validation.checks);
+  const days = planDays(plan);
   return (
     <section className="results-section">
       <div className="section-heading">
@@ -595,66 +567,103 @@ export function PlanResults({
           ))}
         </details>
       )}
-      <div className="itinerary">
-        {planDays(plan).map(({ day, items }, dayIndex) => (
-          <div key={day} className="day">
-            <h3 className="day-heading">
-              Day {dayIndex + 1}{" "}
-              <span className="muted small">{day.slice(5)}</span>
+      <div className="mt-6 space-y-6">
+        {days.map(({ day, items }, dayIndex) => (
+          <section
+            key={`${day}-${dayIndex}`}
+            aria-label={`第${dayIndex + 1}天`}
+          >
+            <h3 className="mb-4 text-xl font-semibold">
+              第 {dayIndex + 1} 天{" "}
+              <span className="ml-2 text-sm text-text-muted">
+                {day === "时间待定" ? day : day.slice(5)}
+              </span>
             </h3>
-            {items.map(({ item, index }) => (
-              <article
-                key={item.item_id}
-                className="visit"
-                id={`${checkPrefix}-item-${index}`}
-                tabIndex={-1}
-              >
-                <span className="visit-number">{index + 1}</span>
-                <div>
-                  <h3>
-                    {sourceHref(item.source_ref ?? "") ? (
-                      <a
-                        href={sourceHref(item.source_ref ?? "")}
-                        target="_blank"
-                        rel="noopener noreferrer"
+            <div className="ml-2 border-l border-border pl-5">
+              {daySections(items).map((section, sectionIndex) => (
+                <section key={sectionIndex} className="relative mb-4">
+                  <span
+                    className="absolute -left-[26px] top-2 size-3 rounded-full bg-primary"
+                    aria-hidden="true"
+                  />
+                  <h4 className="mb-2 text-base font-semibold">
+                    {section.label}
+                  </h4>
+                  <div className="rounded-xl border border-border bg-bg">
+                    {section.items.map(({ item, index }) => (
+                      <article
+                        key={item.item_id}
+                        className="flex scroll-mt-4 items-start gap-3 border-b border-border p-4 last:border-0"
+                        id={`${checkPrefix}-item-${index}`}
+                        tabIndex={-1}
                       >
-                        {item.name}
-                      </a>
-                    ) : (
-                      item.name
-                    )}
-                  </h3>
-                  <p className="tabular">
-                    {date(item.start)} — {date(item.end)}
+                        <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-bg-subtle text-sm text-text-muted">
+                          {index + 1}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <h3 className="text-base font-semibold">
+                            {sourceHref(item.source_ref ?? "") ? (
+                              <a
+                                href={sourceHref(item.source_ref ?? "")}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {item.name}
+                              </a>
+                            ) : (
+                              item.name
+                            )}
+                          </h3>
+                          <p className="tabular">
+                            {date(item.start)} — {date(item.end)}
+                          </p>
+                          {plan.needs_refresh.includes(
+                            item.place_evidence_id,
+                          ) && (
+                            <p className="warning small">
+                              此景点参考信息需更新，使用前请重新查询。
+                            </p>
+                          )}
+                          {item.route_evidence_id &&
+                            plan.needs_refresh.includes(
+                              item.route_evidence_id,
+                            ) && (
+                              <p className="warning small">
+                                到此景点的路线信息需更新，使用前请重新查询。
+                              </p>
+                            )}
+                          {item.note && (
+                            <p className="muted small">{item.note}</p>
+                          )}
+                        </div>
+                        {!plan.draft_id && lock && (
+                          <button
+                            disabled={disabled}
+                            onClick={() => void lock(item.item_id)}
+                            aria-label={`${item.locked ? "解锁" : "锁定"}第${index + 1}项`}
+                          >
+                            {item.locked ? "已锁定" : "锁定"}
+                          </button>
+                        )}
+                      </article>
+                    ))}
+                  </div>
+                </section>
+              ))}
+              {plan.hotel && dayIndex < days.length - 1 && (
+                <section className="relative">
+                  <span
+                    className="absolute -left-[26px] top-2 size-3 rounded-full bg-primary"
+                    aria-hidden="true"
+                  />
+                  <h4 className="mb-2 text-base font-semibold">住宿</h4>
+                  <p className="rounded-xl border border-border bg-bg p-4 text-sm">
+                    {plan.hotel.hotel_name}
                   </p>
-                  {plan.needs_refresh.includes(item.place_evidence_id) && (
-                    <p className="warning small">
-                      此景点参考信息需更新，使用前请重新查询。
-                    </p>
-                  )}
-                  {item.route_evidence_id &&
-                    plan.needs_refresh.includes(item.route_evidence_id) && (
-                      <p className="warning small">
-                        到此景点的路线信息需更新，使用前请重新查询。
-                      </p>
-                    )}
-                  {item.note && <p className="muted small">{item.note}</p>}
-                </div>
-                {!plan.draft_id && lock && (
-                  <button
-                    disabled={disabled}
-                    onClick={() => void lock(item.item_id)}
-                    aria-label={`${item.locked ? "解锁" : "锁定"}第${index + 1}项`}
-                  >
-                    {item.locked ? "已锁定" : "锁定"}
-                  </button>
-                )}
-              </article>
-            ))}
-            {plan.hotel && dayIndex < planDays(plan).length - 1 && (
-              <p className="muted small">住宿：{plan.hotel.hotel_name}</p>
-            )}
-          </div>
+                </section>
+              )}
+            </div>
+          </section>
         ))}
       </div>
       {plan.hotel && (
