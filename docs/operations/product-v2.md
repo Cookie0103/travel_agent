@@ -838,3 +838,7 @@ Chrome旧真实页面computed style：primary rgb(15,118,110)/白字、body17px�
 ### 2026-10-10 T7.4A / P-93 酒店和表单验收
 - VERIFIED：web typecheck/lint/test（117 passed）/build五路由；酒店实测footer差26.4px→0，价格与选项行为保持。Chrome390px页面无横向溢出、条带横滚；条件/资料归属/保存行程页面已看过。
 - REASONED：独立审查两轮无P1/P2；native表单submit/disabled和来源守卫保持。新增请求为固定演示，无真实供应商调用。
+
+### 2026-10-10 T7.4B / P-94 弹层迁移
+- type/lint/test117 passed。首次build沙箱绑定端口Operation not permitted；正式审批重试仍失败，只清理.next/cache/turbopack后同build五路由成功，未改权限/Next参数。copy static并重启受控session56734。
+- ChromeVERIFIED：示例点击焦点进入内容/仅填消息；Escape回trigger，数据说明ArrowDown进入Google链接、点击消息框关闭；禁用模型原因保持，未发付费消息。390px弹层边界12–332，实际截图看过，viewport恢复。依据Radix官方Popover公共接口，不新增document监听。

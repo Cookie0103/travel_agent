@@ -1,12 +1,11 @@
 /** Message input and keyboard-accessible model choice. */
 "use client";
-import { useId, useRef, useState } from "react";
 import type { ModelOption, Mode } from "@/lib/models";
-import { modeLabel } from "@/lib/models";
 import { shouldSubmitOnEnter } from "@/lib/composer-keys";
 import { ArticleReference } from "./articles";
 import { DataNotes } from "./data-notes";
-import { usePopover } from "./use-popover";
+import { HoverPopover } from "./ui/hover-popover";
+import { Button } from "./ui/button";
 export type { Mode } from "@/lib/models";
 
 function ModelSelector({
@@ -20,93 +19,29 @@ function ModelSelector({
   options: ModelOption[];
   disabled: boolean;
 }) {
-  const [open, setOpen] = useState(false);
-  const [focused, setFocused] = useState(0);
-  const id = useId();
-  const trigger = useRef<HTMLButtonElement>(null);
-  const choose = (index: number) => {
-    const option = options[index];
-    if (!option?.available) return;
-    setMode(option.id);
-    setOpen(false);
-    trigger.current?.focus();
-  };
   return (
-    <div
-      className="model-picker"
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
+    <select
+      aria-label="选择模型"
+      value={mode}
+      disabled={disabled}
+      onChange={(event) => {
+        const option = options.find(
+          (item) => item.id === event.target.value && item.available,
+        );
+        if (option) setMode(option.id);
       }}
     >
-      <button
-        ref={trigger}
-        type="button"
-        role="combobox"
-        aria-label="选择模型"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={id}
-        disabled={disabled}
-        onClick={() => {
-          setFocused(
-            Math.max(
-              0,
-              options.findIndex((item) => item.id === mode),
-            ),
-          );
-          setOpen(!open);
-        }}
-        onKeyDown={(event) => {
-          if (["ArrowDown", "ArrowUp"].includes(event.key)) {
-            event.preventDefault();
-            setOpen(true);
-            setFocused(
-              (index) =>
-                (index +
-                  (event.key === "ArrowDown" ? 1 : -1) +
-                  options.length) %
-                options.length,
-            );
-          } else if (open && ["Enter", " "].includes(event.key)) {
-            event.preventDefault();
-            choose(focused);
-          } else if (event.key === "Escape") setOpen(false);
-        }}
-        aria-activedescendant={open ? `${id}-${focused}` : undefined}
-      >
-        {modeLabel(mode)} ▾
-      </button>
-      {open && (
-        <div
-          id={id}
-          role="listbox"
-          aria-label="执行模型"
-          className="model-options"
-        >
-          {options.map((option, index) => (
-            <div
-              key={option.id}
-              id={`${id}-${index}`}
-              role="option"
-              aria-selected={option.id === mode}
-              aria-disabled={!option.available}
-              className={`model-option${focused === index ? " is-focused" : ""}${!option.available ? " is-disabled" : ""}`}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => choose(index)}
-            >
-              <strong>{option.label}</strong>
-              <span className="small muted">
-                {!option.available && option.reason
-                  ? option.reason.replace(/^[a-z_]+:\s*/i, "")
-                  : option.id === "offline"
-                    ? "免费 · 模拟数据"
-                    : "实时数据 (API 计费)"}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+      {options.map((option) => (
+        <option key={option.id} value={option.id} disabled={!option.available}>
+          {option.label} ·{" "}
+          {!option.available && option.reason
+            ? option.reason.replace(/^[a-z_]+:\s*/i, "")
+            : option.id === "offline"
+              ? "免费模拟"
+              : "API计费"}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -117,33 +52,22 @@ const EXAMPLES = [
 ];
 
 function Examples({ pick }: { pick: (text: string) => void }) {
-  const { open, toggle, rootProps } = usePopover();
   return (
-    <div className="examples" {...rootProps}>
-      <button
-        type="button"
-        className="examples-trigger"
-        aria-expanded={open}
-        aria-haspopup="true"
-        onClick={toggle}
-      >
-        示例
-      </button>
-      {open && (
-        <div role="group" aria-label="示例" className="examples-pop">
-          {EXAMPLES.map((example) => (
-            <button
-              type="button"
-              className="examples-item"
-              key={example}
-              onClick={() => pick(example)}
-            >
-              {example}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
+    <HoverPopover label="示例">
+      <div className="grid gap-2">
+        {EXAMPLES.map((example) => (
+          <Button
+            type="button"
+            variant="ghost"
+            className="h-auto justify-start whitespace-normal text-left"
+            key={example}
+            onClick={() => pick(example)}
+          >
+            {example}
+          </Button>
+        ))}
+      </div>
+    </HoverPopover>
   );
 }
 
@@ -231,13 +155,13 @@ export function Composer({
             {mode === "offline" && "固定演示 · 不调用模型"}
           </span>
           {active ? (
-            <button type="button" onClick={cancel}>
+            <Button type="button" variant="outline" onClick={cancel}>
               ■ 停止
-            </button>
+            </Button>
           ) : (
-            <button className="primary" disabled={busy || !text.trim()}>
+            <Button type="submit" disabled={busy || !text.trim()}>
               发送
-            </button>
+            </Button>
           )}
         </div>
       </form>
