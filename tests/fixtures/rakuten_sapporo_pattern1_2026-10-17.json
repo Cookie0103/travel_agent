@@ -1,0 +1,2141 @@
+{
+  "pagingInfo": {
+    "recordCount": 4440,
+    "pageCount": 100,
+    "page": 1,
+    "first": 1,
+    "last": 30
+  },
+  "hotels": [
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 143344,
+          "hotelName": "ゲストハウス樹舎",
+          "hotelKanaName": "げすとはうすいつきや",
+          "hotelSpecial": "ゲストハウス樹舎は男女別のドミトリー形式の宿です。街中の普通の家にほんの少し手を加えた、定員１２名の小さな宿です。",
+          "hotelMinCharge": 2500,
+          "latitude": 43.04572440582586,
+          "longitude": 141.34534623925205,
+          "postalCode": "064-0811",
+          "address1": "北海道",
+          "address2": "札幌市中央区南11条西9-1-13",
+          "telephoneNo": "011-211-1724",
+          "faxNo": "011-211-1726",
+          "access": "中島公園駅より徒歩１３分／市電中島公園通より徒歩６分",
+          "parkingInformation": "無し",
+          "nearestStation": "中島公園",
+          "reviewCount": 12,
+          "reviewAverage": 3.75,
+          "userReview": null
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 4,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "wdomi",
+              "roomName": "女性専用ドミトリー　現金特価",
+              "planId": 3647202,
+              "planName": "「U22割」　22歳以下の女性限定！ドミトリー素泊まりプラン 現金特価",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "0",
+              "salesformFlag": 0,
+              "planContents": "必ず最後までお読みください。\r\n22歳以下の女性の方限定のプランです。\r\n受付時に免許証等、生年月日を確認できるものの提示をお願いします。\r\n\r\n2026年4月1日より、北海道並びに札幌市でご宿泊の際には宿泊税が課税されます。\r\n宿泊税はご予約の料金には含まれていません。\r\n1名1泊につき300円をチェックインの際に別途現金にてお支払い下さい。\r\n\r\n\r\n本来は3名収容の相部屋ですが、予告なく6名収容の相部屋に変更する場合があります。\r\n\r\nトイレ・洗面所・シャワールームは共同でのご使用となります。\r\nタオルや歯ブラシ、寝巻きはお客さまでご用意下さい。\r\n館内は禁煙です。喫煙は玄関ポーチでお願い致します。\r\n貴重品はフロントでお預かりすることも可能です。\r\n自炊設備はございません。\r\n電子レンジ・お湯・トースターはご利用頂けます。\r\n駐車場はございません。近隣のコインパーキングをご案内致します。\r\n小学生以下の方のご利用はご遠慮頂いております。\r\nお支払いは現金でお願いします。\r\n\r\n清掃やスタッフのリフレッシュのため10〜15時は閉館させて頂いております。当該時間は連泊の方も館内に滞在できませんのでご注意ください。\r\n限られたスタッフで運営しております。また、ドミトリーの性格上、全ての宿泊者の皆様に気持ち良くご利用頂くためにチェックインは22時まで、門限・消灯並びにシャワーのご利用は24時までとさせて頂いております。例外は一切認められません。時間を守れそうにない場合は、他の宿泊施設のご利用をお勧めします。\r\n\r\n当宿は免税事業者です。インボイスに対応した領収書の発行はできません。また、消費税分に相当する値引き要請は一切お受けしません。\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 2500,
+              "total": 2500,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 143344,
+          "hotelName": "ゲストハウス樹舎",
+          "hotelKanaName": "げすとはうすいつきや",
+          "hotelSpecial": "ゲストハウス樹舎は男女別のドミトリー形式の宿です。街中の普通の家にほんの少し手を加えた、定員１２名の小さな宿です。",
+          "hotelMinCharge": 2500,
+          "latitude": 43.04572440582586,
+          "longitude": 141.34534623925205,
+          "postalCode": "064-0811",
+          "address1": "北海道",
+          "address2": "札幌市中央区南11条西9-1-13",
+          "telephoneNo": "011-211-1724",
+          "faxNo": "011-211-1726",
+          "access": "中島公園駅より徒歩１３分／市電中島公園通より徒歩６分",
+          "parkingInformation": "無し",
+          "nearestStation": "中島公園",
+          "reviewCount": 12,
+          "reviewAverage": 3.75,
+          "userReview": null
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 4,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "mdomi",
+              "roomName": "男性専用ドミトリー　現金特価",
+              "planId": 3647261,
+              "planName": "「U22割」　22歳以下の男性限定！ドミトリー素泊まりプラン 現金特価",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "0",
+              "salesformFlag": 0,
+              "planContents": "必ず最後までお読みください。\r\n22歳以下の男性の方限定のプランです。\r\n受付時に免許証等、生年月日を確認できるものの提示をお願いします。\r\n\r\n＊本来は6名収容の相部屋ですが、予告なく3名収容の相部屋に変更する場合があります。\r\n\r\n2026年4月1日より、北海道並びに札幌市でご宿泊の際には宿泊税が課税されます。\r\n宿泊税はご予約の料金には含まれていません。\r\n1名1泊につき300円をチェックインの際に別途現金にてお支払い下さい。\r\n\r\n\r\nトイレ・洗面所・シャワールームは共同でのご使用となります。\r\nタオルや歯ブラシ、寝巻きはお客さまでご用意下さい。\r\n館内は禁煙です。喫煙は玄関ポーチでお願い致します。\r\n貴重品はフロントでお預かりすることも可能です。\r\n自炊設備はございません。\r\n電子レンジ・お湯・トースターはご利用頂けます。\r\n駐車場はございません。近隣のコインパーキングをご案内致します。\r\n小学生以下の方のご利用はご遠慮頂いております。\r\nお支払いは現金でお願いします。\r\n\r\n清掃やスタッフのリフレッシュのため10〜15時は閉館させて頂いております。当該時間は連泊の方も館内に滞在できませんのでご注意ください。\r\n限られたスタッフで運営しております。また、ドミトリーの性格上、全ての宿泊者の皆様に気持ち良くご利用頂くためにチェックインは22時まで、門限・消灯並びにシャワーのご利用は24時までとさせて頂いております。例外は一切認められません。時間を守れそうにない場合は、他の宿泊施設のご利用をお勧めします。\r\n\r\n当宿は免税事業者です。インボイスに対応した領収書の発行はできません。また、消費税分に相当する値引き要請は一切お受けしません。\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 2500,
+              "total": 2500,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 143344,
+          "hotelName": "ゲストハウス樹舎",
+          "hotelKanaName": "げすとはうすいつきや",
+          "hotelSpecial": "ゲストハウス樹舎は男女別のドミトリー形式の宿です。街中の普通の家にほんの少し手を加えた、定員１２名の小さな宿です。",
+          "hotelMinCharge": 2500,
+          "latitude": 43.04572440582586,
+          "longitude": 141.34534623925205,
+          "postalCode": "064-0811",
+          "address1": "北海道",
+          "address2": "札幌市中央区南11条西9-1-13",
+          "telephoneNo": "011-211-1724",
+          "faxNo": "011-211-1726",
+          "access": "中島公園駅より徒歩１３分／市電中島公園通より徒歩６分",
+          "parkingInformation": "無し",
+          "nearestStation": "中島公園",
+          "reviewCount": 12,
+          "reviewAverage": 3.75,
+          "userReview": null
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 4,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "wdomi",
+              "roomName": "女性専用ドミトリー　現金特価",
+              "planId": 3645753,
+              "planName": "女性専用ドミトリー素泊まりスタンダードプラン　現金特価",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "0",
+              "salesformFlag": 0,
+              "planContents": "必ず最後までお読みください。\r\n女性限定、1〜2泊でご利用頂くスタンダードプランです。\r\n\r\n本来は3名収容の相部屋ですが、予告なく6名収容の相部屋に変更する場合があります。\r\n\r\n2026年4月1日より、北海道並びに札幌市でご宿泊の際には宿泊税が課税されます。\r\n宿泊税はご予約の料金には含まれていません。\r\n1名1泊につき300円をチェックインの際に別途現金にてお支払い下さい。\r\n\r\n\r\nトイレ・洗面所・シャワールームは共同でのご使用となります。\r\nタオルや歯ブラシ、寝巻きはお客さまでご用意下さい。\r\n館内は禁煙です。喫煙は玄関ポーチでお願い致します。\r\n貴重品はフロントでお預かりすることも可能です。\r\n自炊設備はございません。\r\n電子レンジ・お湯・トースターはご利用頂けます。\r\n駐車場はございません。近隣のコインパーキングをご案内致します。\r\n小学生以下の方のご利用はご遠慮頂いております。\r\nお支払いは現金でお願いします。\r\n\r\n清掃やスタッフのリフレッシュのため10〜15時は閉館させて頂いております。当該時間は連泊の方も館内に滞在できませんのでご注意ください。\r\n限られたスタッフで運営しております。また、ドミトリーの性格上、全ての宿泊者の皆様に気持ち良くご利用頂くためにチェックインは22時まで、門限・消灯並びにシャワーのご利用は24時までとさせて頂いております。例外は一切認められません。時間を守れそうにない場合は、他の宿泊施設のご利用をお勧めします。\r\n\r\n当宿は免税事業者です。インボイスに対応した領収書の発行はできません。また、消費税分に相当する値引き要請は一切お受けしません。\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 3500,
+              "total": 3500,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 143344,
+          "hotelName": "ゲストハウス樹舎",
+          "hotelKanaName": "げすとはうすいつきや",
+          "hotelSpecial": "ゲストハウス樹舎は男女別のドミトリー形式の宿です。街中の普通の家にほんの少し手を加えた、定員１２名の小さな宿です。",
+          "hotelMinCharge": 2500,
+          "latitude": 43.04572440582586,
+          "longitude": 141.34534623925205,
+          "postalCode": "064-0811",
+          "address1": "北海道",
+          "address2": "札幌市中央区南11条西9-1-13",
+          "telephoneNo": "011-211-1724",
+          "faxNo": "011-211-1726",
+          "access": "中島公園駅より徒歩１３分／市電中島公園通より徒歩６分",
+          "parkingInformation": "無し",
+          "nearestStation": "中島公園",
+          "reviewCount": 12,
+          "reviewAverage": 3.75,
+          "userReview": null
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 4,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "mdomi",
+              "roomName": "男性専用ドミトリー　現金特価",
+              "planId": 3647268,
+              "planName": "男性専用ドミトリー素泊まりスタンダードプラン　現金特価",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "0",
+              "salesformFlag": 0,
+              "planContents": "必ず最後までお読みください。\r\n男性限定、1〜2泊でご利用頂くスタンダードプランです。\r\n\r\n＊本来は6名収容の相部屋ですが、予告なく3名収容の相部屋に変更する場合があります。\r\n\r\n2026年4月1日より、北海道並びに札幌市でご宿泊の際には宿泊税が課税されます。\r\n宿泊税はご予約の料金には含まれていません。\r\n1名1泊につき300円をチェックインの際に別途現金にてお支払い下さい。\r\n\r\n\r\nトイレ・洗面所・シャワールームは共同でのご使用となります。\r\nタオルや歯ブラシ、寝巻きはお客さまでご用意下さい。\r\n館内は禁煙です。喫煙は玄関ポーチでお願い致します。\r\n貴重品はフロントでお預かりすることも可能です。\r\n自炊設備はございません。\r\n電子レンジ・お湯・トースターはご利用頂けます。\r\n駐車場はございません。近隣のコインパーキングをご案内致します。\r\n小学生以下の方のご利用はご遠慮頂いております。\r\nお支払いは現金でお願いします。\r\n\r\n清掃やスタッフのリフレッシュのため10〜15時は閉館させて頂いております。当該時間は連泊の方も館内に滞在できませんのでご注意ください。\r\n限られたスタッフで運営しております。また、ドミトリーの性格上、全ての宿泊者の皆様に気持ち良くご利用頂くためにチェックインは22時まで、門限・消灯並びにシャワーのご利用は24時までとさせて頂いております。例外は一切認められません。時間を守れそうにない場合は、他の宿泊施設のご利用をお勧めします。\r\n\r\n当宿は免税事業者です。インボイスに対応した領収書の発行はできません。また、消費税分に相当する値引き要請は一切お受けしません。\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 3500,
+              "total": 3500,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 147972,
+          "hotelName": "ゲストハウス　ＳａｐｐｏＬｏｄｇｅ",
+          "hotelKanaName": "さっぽろっじ",
+          "hotelSpecial": "すすきの徒歩エリアの観光にもビジネスにも立地抜群の新感覚ゲストハウスです。木の温もり溢れるリラックス空間をご提供します。",
+          "hotelMinCharge": 3800,
+          "latitude": 43.05537769626584,
+          "longitude": 141.3594321693115,
+          "postalCode": "060-0055",
+          "address1": "北海道",
+          "address2": "札幌市中央区南5条東1-1-4",
+          "telephoneNo": "011-211-4314",
+          "faxNo": "011-211-4314",
+          "access": "豊水すすきの駅より徒歩にて約3分",
+          "parkingInformation": "近隣に有料コインパーキング有。（1日1500円程度）",
+          "nearestStation": "豊水すすきの",
+          "reviewCount": 73,
+          "reviewAverage": 3.96,
+          "userReview": "干渉なく、利便高　2026-09-29 09:52:42投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=147972\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 4,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "jyo001",
+              "roomName": "【ドミトリー】女性専用ワイドタイプ☆1ベッド予約☆",
+              "planId": 5675066,
+              "planName": "【素泊まりプラン】男性専用・女性専用・男女混合ドミトリータイプ",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【ゲストハウスって？】\r\n格安で宿泊可能で、旅人同士の交流が盛んな宿泊施設です。相場が¥3000〜¥5000と、ビジネスホテルよりも安く泊まれる場合が多く、世界中のバックパッカーご用達の宿。ドミトリースタイル（二段ベッド等）の部屋、トイレ・シャワーなどは共同の場合がほとんどです。\r\n\r\n【SappoLodgeを選ぶ理由】\r\n2014年12月にOPENした都会の山小屋がコンセプトのゲストハウス。\r\n1FにはBarも併設されている旅に役立つ情報満載の宿です。\r\nまた、地下鉄豊水すすきの駅徒歩2分とこれ以上ない立地。コンビニは徒歩1分と至近。\r\n一般的なゲストハウスより大きめのベッドスペースを用意していますのでスキー旅行や海外からお越しの大きな荷物のお客様にも好評を頂いています。\r\n\r\nSappoLodgeではプロ山岳ガイドによる様々なアウトドアアクティビティを提案しています。\r\nご希望のお客様はHPか直接お問合せください。\r\n\r\n-アウトドア一例-\r\nサマーシーズン\r\n・ハイキングツアー(半日/全日)\r\n・カヌーツアー(全日)\r\n・シーカヤックツアー(全日)\r\n・トレッキング/登山(全日/縦走)\r\n\r\nウインターシーズン\r\n・バックカントリーツアー(全日)\r\n・スノーシュートレッキング(半日/全日)\r\n・スキーレッスン(半日/全日)\r\n\r\n\r\n◆トイレ・シャワー共用。\r\n　個室ではございませんのでご注意下さい\r\n　全館wifi無料。\r\n\r\n【近隣観光施設（徒歩圏内）】\r\n・すすきの\r\n・大通り公園\r\n・テレビ塔\r\n・時計台\r\n・赤レンガ\r\n・中島公園\r\n・サッポロファクトリー\r\n・二条市場\r\n\r\n\r\n◆貴重品ロッカー／無料のレンタルPC／無料Wi-Fi\r\n◆北海道一の歓楽街ススキノエリアは徒歩ですぐ\r\n◆長期滞在も可能。ご宿泊のお客様専用ゲストキッチン完備。自炊も可能。\r\n◆レンタルスキー有(要予約)\r\n◆ペット不可\r\n◆木造建築の古い建物のため、騒音が建物全体に容易に伝わります\r\n　1階のBarから騒音が発生することがありますので予めご了承ください\r\n\r\n\r\n◆◆複数名でご予約されたい方◆◆\r\n利用希望のベッド数記載の部屋タイプをお選び頂くか、【部屋数】を【2】以上に設定していただき、ご希望の人数を設定して下さい。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 4800,
+              "total": 4800,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 147972,
+          "hotelName": "ゲストハウス　ＳａｐｐｏＬｏｄｇｅ",
+          "hotelKanaName": "さっぽろっじ",
+          "hotelSpecial": "すすきの徒歩エリアの観光にもビジネスにも立地抜群の新感覚ゲストハウスです。木の温もり溢れるリラックス空間をご提供します。",
+          "hotelMinCharge": 3800,
+          "latitude": 43.05537769626584,
+          "longitude": 141.3594321693115,
+          "postalCode": "060-0055",
+          "address1": "北海道",
+          "address2": "札幌市中央区南5条東1-1-4",
+          "telephoneNo": "011-211-4314",
+          "faxNo": "011-211-4314",
+          "access": "豊水すすきの駅より徒歩にて約3分",
+          "parkingInformation": "近隣に有料コインパーキング有。（1日1500円程度）",
+          "nearestStation": "豊水すすきの",
+          "reviewCount": 73,
+          "reviewAverage": 3.96,
+          "userReview": "干渉なく、利便高　2026-09-29 09:52:42投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=147972\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 4,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "jyo001",
+              "roomName": "【ドミトリー】女性専用ワイドタイプ☆1ベッド予約☆",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 4800,
+              "total": 4800,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 147972,
+          "hotelName": "ゲストハウス　ＳａｐｐｏＬｏｄｇｅ",
+          "hotelKanaName": "さっぽろっじ",
+          "hotelSpecial": "すすきの徒歩エリアの観光にもビジネスにも立地抜群の新感覚ゲストハウスです。木の温もり溢れるリラックス空間をご提供します。",
+          "hotelMinCharge": 3800,
+          "latitude": 43.05537769626584,
+          "longitude": 141.3594321693115,
+          "postalCode": "060-0055",
+          "address1": "北海道",
+          "address2": "札幌市中央区南5条東1-1-4",
+          "telephoneNo": "011-211-4314",
+          "faxNo": "011-211-4314",
+          "access": "豊水すすきの駅より徒歩にて約3分",
+          "parkingInformation": "近隣に有料コインパーキング有。（1日1500円程度）",
+          "nearestStation": "豊水すすきの",
+          "reviewCount": 73,
+          "reviewAverage": 3.96,
+          "userReview": "干渉なく、利便高　2026-09-29 09:52:42投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=147972\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 4,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "mix001",
+              "roomName": "【ドミトリー】男女混合ドミトリー☆1ベッド予約☆",
+              "planId": 5675066,
+              "planName": "【素泊まりプラン】男性専用・女性専用・男女混合ドミトリータイプ",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【ゲストハウスって？】\r\n格安で宿泊可能で、旅人同士の交流が盛んな宿泊施設です。相場が¥3000〜¥5000と、ビジネスホテルよりも安く泊まれる場合が多く、世界中のバックパッカーご用達の宿。ドミトリースタイル（二段ベッド等）の部屋、トイレ・シャワーなどは共同の場合がほとんどです。\r\n\r\n【SappoLodgeを選ぶ理由】\r\n2014年12月にOPENした都会の山小屋がコンセプトのゲストハウス。\r\n1FにはBarも併設されている旅に役立つ情報満載の宿です。\r\nまた、地下鉄豊水すすきの駅徒歩2分とこれ以上ない立地。コンビニは徒歩1分と至近。\r\n一般的なゲストハウスより大きめのベッドスペースを用意していますのでスキー旅行や海外からお越しの大きな荷物のお客様にも好評を頂いています。\r\n\r\nSappoLodgeではプロ山岳ガイドによる様々なアウトドアアクティビティを提案しています。\r\nご希望のお客様はHPか直接お問合せください。\r\n\r\n-アウトドア一例-\r\nサマーシーズン\r\n・ハイキングツアー(半日/全日)\r\n・カヌーツアー(全日)\r\n・シーカヤックツアー(全日)\r\n・トレッキング/登山(全日/縦走)\r\n\r\nウインターシーズン\r\n・バックカントリーツアー(全日)\r\n・スノーシュートレッキング(半日/全日)\r\n・スキーレッスン(半日/全日)\r\n\r\n\r\n◆トイレ・シャワー共用。\r\n　個室ではございませんのでご注意下さい\r\n　全館wifi無料。\r\n\r\n【近隣観光施設（徒歩圏内）】\r\n・すすきの\r\n・大通り公園\r\n・テレビ塔\r\n・時計台\r\n・赤レンガ\r\n・中島公園\r\n・サッポロファクトリー\r\n・二条市場\r\n\r\n\r\n◆貴重品ロッカー／無料のレンタルPC／無料Wi-Fi\r\n◆北海道一の歓楽街ススキノエリアは徒歩ですぐ\r\n◆長期滞在も可能。ご宿泊のお客様専用ゲストキッチン完備。自炊も可能。\r\n◆レンタルスキー有(要予約)\r\n◆ペット不可\r\n◆木造建築の古い建物のため、騒音が建物全体に容易に伝わります\r\n　1階のBarから騒音が発生することがありますので予めご了承ください\r\n\r\n\r\n◆◆複数名でご予約されたい方◆◆\r\n利用希望のベッド数記載の部屋タイプをお選び頂くか、【部屋数】を【2】以上に設定していただき、ご希望の人数を設定して下さい。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 4800,
+              "total": 4800,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 147972,
+          "hotelName": "ゲストハウス　ＳａｐｐｏＬｏｄｇｅ",
+          "hotelKanaName": "さっぽろっじ",
+          "hotelSpecial": "すすきの徒歩エリアの観光にもビジネスにも立地抜群の新感覚ゲストハウスです。木の温もり溢れるリラックス空間をご提供します。",
+          "hotelMinCharge": 3800,
+          "latitude": 43.05537769626584,
+          "longitude": 141.3594321693115,
+          "postalCode": "060-0055",
+          "address1": "北海道",
+          "address2": "札幌市中央区南5条東1-1-4",
+          "telephoneNo": "011-211-4314",
+          "faxNo": "011-211-4314",
+          "access": "豊水すすきの駅より徒歩にて約3分",
+          "parkingInformation": "近隣に有料コインパーキング有。（1日1500円程度）",
+          "nearestStation": "豊水すすきの",
+          "reviewCount": 73,
+          "reviewAverage": 3.96,
+          "userReview": "干渉なく、利便高　2026-09-29 09:52:42投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=147972\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 4,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "mix001",
+              "roomName": "【ドミトリー】男女混合ドミトリー☆1ベッド予約☆",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 4800,
+              "total": 4800,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 181798,
+          "hotelName": "ｐｌａｔ　ｈｏｓｔｅｌ　ｋｅｉｋｙｕ　ｓａｐｐｏｒｏ　ｓｋｙ",
+          "hotelKanaName": "ぷらっとほすてるけいきゅうさっぽろすかい",
+          "hotelSpecial": "Zepp sapporoから徒歩7分！ライブの前後泊や札幌観光におすすめ！",
+          "hotelMinCharge": 2650,
+          "latitude": 43.05244745831732,
+          "longitude": 141.35723596137694,
+          "postalCode": "064-0807",
+          "address1": "北海道",
+          "address2": "札幌市中央区南7条西2丁目2-14",
+          "telephoneNo": "011-596-9792",
+          "faxNo": "000-000-0000",
+          "access": "市営地下鉄東豊線「豊水すすきの駅」より徒歩5分",
+          "parkingInformation": "無し",
+          "nearestStation": "豊水すすきの",
+          "reviewCount": 66,
+          "reviewAverage": 3.63,
+          "userReview": "洗面台…　2026-10-05 01:29:44投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=181798\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "16:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:30"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 6,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "006",
+              "roomName": "男女共用ドミトリー（相部屋）",
+              "planId": 4943858,
+              "planName": "キャンセル不可でお得！札幌を楽しむシンプルプラン",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "【返金不可プラン】\r\n通常料金よりお得にお泊りいただけるプランです！ ※ご予約後、100％のキャンセル料金が発生いたしますのでご注意の上ご予約ください。\r\n\r\n■宿泊税\r\n２０２６年４月１日ご宿泊分より、北海道および札幌市の宿泊税が適用されております。サイト上に掲載されているプランの宿泊料金は、「宿泊税」を含まない金額となっております。チェックイン時にフロントでのお支払いをお願いいたします。\r\n\r\n【宿泊税率（１人１泊あたり）】\r\n宿泊料金２万円未満：３００円 \r\n宿泊料金２万円以上５万円未満：４００円\r\n宿泊料金２万円以上：１０００円\r\n\r\n\r\n【当ホステルのオペレーションについて】\r\n１、チェックイン時間に関して\r\nチェックインは16:00よりご利用いただけます。\r\nご到着が22:30以降になるご予定の方は必ず予めご連絡くださいませ。\r\n22:30以降のご到着はレイトチェックイン代として1000円が生じます\r\n\r\n２、チェックアウトに関して\r\nチェックアウトは10:00までにお願いいたしております。\r\n\r\n３、お荷物預かりに関して\r\nお荷物はチェックイン前・チェックアウト後当日のみ朝8時以降夜22時までお預かりが可能です。\r\n※但し、チェックアウト後につきましてはお荷物のお預かりは有料（1個200円）とさせていただいております。営業時間外の荷物のお預かりや、お引渡しは致しかねますので予め了承くださいませ。\r\n\r\n４、アメニティ—に関して\r\n１泊目のみ人数分のバスタオル、歯ブラシをご用意いたします。\r\nその他アメニティーまた追加分はフロントにて有料にてご用意しております。\r\n\r\n５、連泊時のお部屋の対応に関して\r\nご連泊いただきます場合、3泊以下のお部屋・ベッドに清掃は入りません。4泊以上のご宿泊の場合、４泊毎に簡易清掃またはバスタオルの交換をさせて頂きます。\r\n\r\n６、当館には駐車場や駐輪場のご用意が提携先含めございません。近隣のコインパーキングをご利用願います。\r\n\r\n７、添い寝\r\n添い寝のお子様は個室1部屋につき、未就学のお子様1名様のみご宿泊可能です。\r\n\r\n８、ドミトリーは18歳未満のお客様はご利用できません。宿泊者が16歳以上で保護者様の同意書をご持参の場合はドミトリー以外の個室のみご宿泊可能です。15歳以下は保護者が必要です。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 5175,
+              "total": 5175,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 79393,
+          "hotelName": "バックパッカーズホステル　イノーズプレイス",
+          "hotelKanaName": "ばっくぱっかーずほすてる　いのーずぷれいす",
+          "hotelSpecial": "札幌の都心「大通り」から地下鉄で４駅。世界中からのバックパッカー達と自然に生れる会話が楽しいニュージーランド風民宿。",
+          "hotelMinCharge": 3900,
+          "latitude": 43.04886434,
+          "longitude": 141.3909497,
+          "postalCode": "003-0003",
+          "address1": "北海道",
+          "address2": "札幌市白石区東札幌三条4-6-5",
+          "telephoneNo": "011-832-1828",
+          "faxNo": "011-814-9277",
+          "access": "地下鉄東西線　白石駅１番出口より徒歩にて約７分",
+          "parkingInformation": "無し　：近隣のコインパーキングをご利用下さい。",
+          "nearestStation": "白石（札幌市営）",
+          "reviewCount": 29,
+          "reviewAverage": 4.0,
+          "userReview": "宿泊しただけで、特別何もなかったのですが、シーツの扱い方に疑問を感じました。シーツを渡された時に、シーツを身にまとって布団をかけるように、と言われましたが、掛け布団の下に広げてきちんとベッドメイキング…　2025-03-31 09:05:59投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=79393\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 2,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "1",
+              "roomName": "男性用 ドミトリールーム",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 5400,
+              "total": 5400,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 79393,
+          "hotelName": "バックパッカーズホステル　イノーズプレイス",
+          "hotelKanaName": "ばっくぱっかーずほすてる　いのーずぷれいす",
+          "hotelSpecial": "札幌の都心「大通り」から地下鉄で４駅。世界中からのバックパッカー達と自然に生れる会話が楽しいニュージーランド風民宿。",
+          "hotelMinCharge": 3900,
+          "latitude": 43.04886434,
+          "longitude": 141.3909497,
+          "postalCode": "003-0003",
+          "address1": "北海道",
+          "address2": "札幌市白石区東札幌三条4-6-5",
+          "telephoneNo": "011-832-1828",
+          "faxNo": "011-814-9277",
+          "access": "地下鉄東西線　白石駅１番出口より徒歩にて約７分",
+          "parkingInformation": "無し　：近隣のコインパーキングをご利用下さい。",
+          "nearestStation": "白石（札幌市営）",
+          "reviewCount": 29,
+          "reviewAverage": 4.0,
+          "userReview": "宿泊しただけで、特別何もなかったのですが、シーツの扱い方に疑問を感じました。シーツを渡された時に、シーツを身にまとって布団をかけるように、と言われましたが、掛け布団の下に広げてきちんとベッドメイキング…　2025-03-31 09:05:59投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=79393\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 2,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "2",
+              "roomName": "女性専用ドミトリールーム",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 5400,
+              "total": 5400,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 181798,
+          "hotelName": "ｐｌａｔ　ｈｏｓｔｅｌ　ｋｅｉｋｙｕ　ｓａｐｐｏｒｏ　ｓｋｙ",
+          "hotelKanaName": "ぷらっとほすてるけいきゅうさっぽろすかい",
+          "hotelSpecial": "Zepp sapporoから徒歩7分！ライブの前後泊や札幌観光におすすめ！",
+          "hotelMinCharge": 2650,
+          "latitude": 43.05244745831732,
+          "longitude": 141.35723596137694,
+          "postalCode": "064-0807",
+          "address1": "北海道",
+          "address2": "札幌市中央区南7条西2丁目2-14",
+          "telephoneNo": "011-596-9792",
+          "faxNo": "000-000-0000",
+          "access": "市営地下鉄東豊線「豊水すすきの駅」より徒歩5分",
+          "parkingInformation": "無し",
+          "nearestStation": "豊水すすきの",
+          "reviewCount": 66,
+          "reviewAverage": 3.63,
+          "userReview": "洗面台…　2026-10-05 01:29:44投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=181798\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "16:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:30"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 6,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "006",
+              "roomName": "男女共用ドミトリー（相部屋）",
+              "planId": 4943839,
+              "planName": "お気軽☆お手頃　札幌を楽しむ素泊まりプラン",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "※当プランは素泊まりです。\r\n札幌の都心の隠れ家的な宿で、ゆったりと滞在をお楽しみいただけます。\r\n\r\n■宿泊税\r\n２０２６年４月１日ご宿泊分より、北海道および札幌市の宿泊税が適用されております。サイト上に掲載されているプランの宿泊料金は、「宿泊税」を含まない金額となっております。チェックイン時にフロントでのお支払いをお願いいたします。\r\n\r\n【宿泊税率（１人１泊あたり）】\r\n宿泊料金２万円未満：３００円 \r\n宿泊料金２万円以上５万円未満：４００円\r\n宿泊料金２万円以上：１０００円\r\n\r\n【当ホステルのオペレーションについて】\r\n１、チェックイン時間に関して\r\nチェックインは16:00よりご利用いただけます。\r\nご到着が22:30以降になるご予定の方は必ず予めご連絡くださいませ。\r\n22:30以降のご到着はレイトチェックイン代として1000円が生じます\r\n\r\n２、チェックアウトに関して\r\nチェックアウトは10:00までにお願いいたしております。\r\n\r\n３、お荷物預かりに関して\r\nお荷物はチェックイン前・チェックアウト後当日のみ朝8時以降夜22時までお預かりが可能です。\r\n※但し、チェックアウト後につきましてはお荷物のお預かりは有料（1個200円）とさせていただいております。営業時間外の荷物のお預かりや、お引渡しは致しかねますので予め了承くださいませ。\r\n\r\n４、アメニティ—に関して\r\n１泊目のみ人数分のバスタオル、歯ブラシをご用意いたします。\r\nその他アメニティーまた追加分はフロントにて有料にてご用意しております。\r\n\r\n５、連泊時のお部屋の対応に関して\r\nご連泊いただきます場合、3泊以下のお部屋・ベッドに清掃は入りません。4泊以上のご宿泊の場合、４泊毎に簡易清掃またはバスタオルの交換をさせて頂きます。\r\n\r\n６、当館には駐車場や駐輪場のご用意が提携先含めございません。近隣のコインパーキングをご利用願います。\r\n\r\n７、添い寝\r\n添い寝のお子様は個室1部屋につき、未就学のお子様1名様のみご宿泊可能です。\r\n\r\n８、ドミトリーは18歳未満のお客様はご利用できません。宿泊者が16歳以上で保護者様の同意書をご持参の場合はドミトリー以外の個室のみご宿泊可能です。15歳以下は保護者が必要です。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 5750,
+              "total": 5750,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 181798,
+          "hotelName": "ｐｌａｔ　ｈｏｓｔｅｌ　ｋｅｉｋｙｕ　ｓａｐｐｏｒｏ　ｓｋｙ",
+          "hotelKanaName": "ぷらっとほすてるけいきゅうさっぽろすかい",
+          "hotelSpecial": "Zepp sapporoから徒歩7分！ライブの前後泊や札幌観光におすすめ！",
+          "hotelMinCharge": 2650,
+          "latitude": 43.05244745831732,
+          "longitude": 141.35723596137694,
+          "postalCode": "064-0807",
+          "address1": "北海道",
+          "address2": "札幌市中央区南7条西2丁目2-14",
+          "telephoneNo": "011-596-9792",
+          "faxNo": "000-000-0000",
+          "access": "市営地下鉄東豊線「豊水すすきの駅」より徒歩5分",
+          "parkingInformation": "無し",
+          "nearestStation": "豊水すすきの",
+          "reviewCount": 66,
+          "reviewAverage": 3.63,
+          "userReview": "洗面台…　2026-10-05 01:29:44投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=181798\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "16:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:30"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 6,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "006",
+              "roomName": "男女共用ドミトリー（相部屋）",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 5750,
+              "total": 5750,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 192202,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　大通公園",
+          "hotelKanaName": "ぐらんどほすてるえるでぃーけーおおどおりこうえん",
+          "hotelSpecial": "BARで飲んで繋がり、そのまま泊まって寛げる。広々ラウンジにキッチンやコインランドリーも完備。駅から徒歩8分。",
+          "hotelMinCharge": 2400,
+          "latitude": 43.0553269,
+          "longitude": 141.3463969,
+          "postalCode": "060-0063",
+          "address1": "北海道",
+          "address2": "札幌市中央区南3条西8-2-17",
+          "telephoneNo": "011-222-0753",
+          "faxNo": "011-272-0753",
+          "access": "すすきの駅より徒歩約７分",
+          "parkingInformation": "無し",
+          "nearestStation": "すすきの",
+          "reviewCount": 149,
+          "reviewAverage": 3.84,
+          "userReview": "朝方にドライヤーの音がしたので音が敏感な方は厳しい…　2026-10-02 09:00:20投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=192202\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 16,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "06131",
+              "roomName": "【禁煙：男女共用】ドミトリールーム（シャワー・トイレ共用）",
+              "planId": 6061749,
+              "planName": "【楽天限定★】楽天ポイント10倍！コツコツポイ活応援プラン♪【素泊まり】",
+              "pointRate": 10,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【ポイ活応援プラン】【素泊まり】\r\n楽天ポイントが通常の10倍になるプランです！\r\nポイントを集めたいあなたにピッタリ！\r\n楽天ポイント10倍だからもちろん楽天限定のプランです！\r\n\r\n\r\n札幌の中心部・観光の起点として\r\n“LDK ”は、“旅人”であるあなたのHOME…\r\n\r\n◆チェックインについて◆\r\nチェックイン時間：15時〜22時\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性あり\r\nチェックアウト時間は朝10時まで\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅出口2番より徒歩7分\r\n空港連絡バス「南３条すすきの」下車より徒歩7分\r\n札幌市電「資生館小学校前」徒歩1分\r\n大通・すすきの徒歩圏内\r\n\r\n◆館内設備◆\r\n無料Wi-fi、BAR tunakkay（トナカイ）\r\nラウンジ、キッチン、冷蔵庫、調理器具等\r\n\r\n◆客室◆\r\nドミトリー、個室（2名〜4名）\r\n一部シャワールーム、洗面台、お手洗いは共有\r\n無料シャンプー類のご用意あり\r\nドミトリーは添寝、小学生以下のお子様のご宿泊不可\r\n\r\n◆サービス◆\r\n・バスタオル1枚のみ無料（2枚目以降有料）\r\n・カミソリ、歯ブラシ、耳栓無料（セルフ）\r\n・バスマット（ドミトリー、トリプルルームにはありません）\r\n・洗濯機 200円/1回　乾燥機100円/30分\r\n\r\n◆駐車場◆\r\n駐車場なし\r\nバイク、自転車の駐輪場なし\r\nお近くのコインパーキングをご利用ください。\r\n\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日からのご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、宿泊税を「含んでいない」金額となっておりますので、チェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 5900,
+              "total": 5900,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 192202,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　大通公園",
+          "hotelKanaName": "ぐらんどほすてるえるでぃーけーおおどおりこうえん",
+          "hotelSpecial": "BARで飲んで繋がり、そのまま泊まって寛げる。広々ラウンジにキッチンやコインランドリーも完備。駅から徒歩8分。",
+          "hotelMinCharge": 2400,
+          "latitude": 43.0553269,
+          "longitude": 141.3463969,
+          "postalCode": "060-0063",
+          "address1": "北海道",
+          "address2": "札幌市中央区南3条西8-2-17",
+          "telephoneNo": "011-222-0753",
+          "faxNo": "011-272-0753",
+          "access": "すすきの駅より徒歩約７分",
+          "parkingInformation": "無し",
+          "nearestStation": "すすきの",
+          "reviewCount": 149,
+          "reviewAverage": 3.84,
+          "userReview": "朝方にドライヤーの音がしたので音が敏感な方は厳しい…　2026-10-02 09:00:20投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=192202\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 16,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "06131",
+              "roomName": "【禁煙：男女共用】ドミトリールーム（シャワー・トイレ共用）",
+              "planId": 6362407,
+              "planName": "【返金不可】スタンダードプラン【素泊まり】",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "【素泊まりプラン】\r\n返金不可のプランです。予約成立後のキャンセルは出来ませんのでご了承ください。\r\n基本となる通常のスタンダードプランです！\r\n\r\n\r\n札幌の中心部・観光の起点として\r\n“LDK ”は、“旅人”であるあなたのHOME…\r\n\r\n◆チェックインについて◆\r\nチェックイン時間：15時〜22時\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性あり\r\nチェックアウト時間は朝10時まで\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅出口2番より徒歩7分\r\n空港連絡バス「南３条すすきの」下車より徒歩7分\r\n札幌市電「資生館小学校前」徒歩1分\r\n大通・すすきの徒歩圏内\r\n\r\n◆館内設備◆\r\n無料Wi-fi、BAR tunakkay（トナカイ）\r\nラウンジ、キッチン、冷蔵庫、調理器具等\r\n\r\n◆客室◆\r\nドミトリー、個室（2名〜4名）\r\n一部シャワールーム、洗面台、お手洗いは共有\r\n無料シャンプー類のご用意あり\r\nドミトリーは添寝、小学生以下のお子様のご宿泊不可\r\n\r\n◆サービス◆\r\n・バスタオル1枚のみ無料（2枚目以降有料）\r\n・カミソリ、歯ブラシ、耳栓無料（セルフ）\r\n・バスマット（ドミトリー、トリプルルームにはありません）\r\n・洗濯機 200円/1回　乾燥機100円/30分\r\n\r\n◆駐車場◆\r\n駐車場なし\r\nバイク、自転車の駐輪場なし\r\nお近くのコインパーキングをご利用ください。\r\n\r\n\r\n【北海道および札幌市の宿泊税導入について】\r\n2026年4月1日からのご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、宿泊税を「含んでいない」金額となっておりますので、チェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6000,
+              "total": 6000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 192202,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　大通公園",
+          "hotelKanaName": "ぐらんどほすてるえるでぃーけーおおどおりこうえん",
+          "hotelSpecial": "BARで飲んで繋がり、そのまま泊まって寛げる。広々ラウンジにキッチンやコインランドリーも完備。駅から徒歩8分。",
+          "hotelMinCharge": 2400,
+          "latitude": 43.0553269,
+          "longitude": 141.3463969,
+          "postalCode": "060-0063",
+          "address1": "北海道",
+          "address2": "札幌市中央区南3条西8-2-17",
+          "telephoneNo": "011-222-0753",
+          "faxNo": "011-272-0753",
+          "access": "すすきの駅より徒歩約７分",
+          "parkingInformation": "無し",
+          "nearestStation": "すすきの",
+          "reviewCount": 149,
+          "reviewAverage": 3.84,
+          "userReview": "朝方にドライヤーの音がしたので音が敏感な方は厳しい…　2026-10-02 09:00:20投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=192202\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 16,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "06131",
+              "roomName": "【禁煙：男女共用】ドミトリールーム（シャワー・トイレ共用）",
+              "planId": 5996332,
+              "planName": "【素泊まり】スタンダードプラン",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【素泊まりプラン】\r\n\r\n\r\n札幌の中心部・観光の起点として\r\n“LDK ”は、“旅人”であるあなたのHOME…\r\n\r\n◆チェックインについて◆\r\nチェックイン時間：15時〜22時\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性あり\r\nチェックアウト時間は朝10時まで\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅出口2番より徒歩7分\r\n空港連絡バス「南３条すすきの」下車より徒歩7分\r\n札幌市電「資生館小学校前」徒歩1分\r\n大通・すすきの徒歩圏内\r\n\r\n◆館内設備◆\r\n無料Wi-fi、BAR tunakkay（トナカイ）\r\nラウンジ、キッチン、冷蔵庫、調理器具等\r\n\r\n◆客室◆\r\nドミトリー、個室（2名〜4名）\r\n一部シャワールーム、洗面台、お手洗いは共有\r\n無料シャンプー類のご用意あり\r\nドミトリーは添寝、小学生以下のお子様のご宿泊不可\r\n\r\n◆サービス◆\r\n・バスタオル1枚のみ無料（2枚目以降有料）\r\n・カミソリ、歯ブラシ、耳栓無料（セルフ）\r\n・バスマット（ドミトリー、トリプルルームにはありません）\r\n・洗濯機 200円/1回　乾燥機100円/30分\r\n\r\n◆駐車場◆\r\n駐車場なし\r\nバイク、自転車の駐輪場なし\r\nお近くのコインパーキングをご利用ください。\r\n\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日からのご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、宿泊税を「含んでいない」金額となっておりますので、チェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6000,
+              "total": 6000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 192202,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　大通公園",
+          "hotelKanaName": "ぐらんどほすてるえるでぃーけーおおどおりこうえん",
+          "hotelSpecial": "BARで飲んで繋がり、そのまま泊まって寛げる。広々ラウンジにキッチンやコインランドリーも完備。駅から徒歩8分。",
+          "hotelMinCharge": 2400,
+          "latitude": 43.0553269,
+          "longitude": 141.3463969,
+          "postalCode": "060-0063",
+          "address1": "北海道",
+          "address2": "札幌市中央区南3条西8-2-17",
+          "telephoneNo": "011-222-0753",
+          "faxNo": "011-272-0753",
+          "access": "すすきの駅より徒歩約７分",
+          "parkingInformation": "無し",
+          "nearestStation": "すすきの",
+          "reviewCount": 149,
+          "reviewAverage": 3.84,
+          "userReview": "朝方にドライヤーの音がしたので音が敏感な方は厳しい…　2026-10-02 09:00:20投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=192202\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 16,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "06137",
+              "roomName": "【禁煙：女性専用】ドミトリールーム（シャワー・トイレ共用）",
+              "planId": 6061749,
+              "planName": "【楽天限定★】楽天ポイント10倍！コツコツポイ活応援プラン♪【素泊まり】",
+              "pointRate": 10,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【ポイ活応援プラン】【素泊まり】\r\n楽天ポイントが通常の10倍になるプランです！\r\nポイントを集めたいあなたにピッタリ！\r\n楽天ポイント10倍だからもちろん楽天限定のプランです！\r\n\r\n\r\n札幌の中心部・観光の起点として\r\n“LDK ”は、“旅人”であるあなたのHOME…\r\n\r\n◆チェックインについて◆\r\nチェックイン時間：15時〜22時\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性あり\r\nチェックアウト時間は朝10時まで\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅出口2番より徒歩7分\r\n空港連絡バス「南３条すすきの」下車より徒歩7分\r\n札幌市電「資生館小学校前」徒歩1分\r\n大通・すすきの徒歩圏内\r\n\r\n◆館内設備◆\r\n無料Wi-fi、BAR tunakkay（トナカイ）\r\nラウンジ、キッチン、冷蔵庫、調理器具等\r\n\r\n◆客室◆\r\nドミトリー、個室（2名〜4名）\r\n一部シャワールーム、洗面台、お手洗いは共有\r\n無料シャンプー類のご用意あり\r\nドミトリーは添寝、小学生以下のお子様のご宿泊不可\r\n\r\n◆サービス◆\r\n・バスタオル1枚のみ無料（2枚目以降有料）\r\n・カミソリ、歯ブラシ、耳栓無料（セルフ）\r\n・バスマット（ドミトリー、トリプルルームにはありません）\r\n・洗濯機 200円/1回　乾燥機100円/30分\r\n\r\n◆駐車場◆\r\n駐車場なし\r\nバイク、自転車の駐輪場なし\r\nお近くのコインパーキングをご利用ください。\r\n\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日からのご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、宿泊税を「含んでいない」金額となっておりますので、チェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6200,
+              "total": 6200,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 192202,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　大通公園",
+          "hotelKanaName": "ぐらんどほすてるえるでぃーけーおおどおりこうえん",
+          "hotelSpecial": "BARで飲んで繋がり、そのまま泊まって寛げる。広々ラウンジにキッチンやコインランドリーも完備。駅から徒歩8分。",
+          "hotelMinCharge": 2400,
+          "latitude": 43.0553269,
+          "longitude": 141.3463969,
+          "postalCode": "060-0063",
+          "address1": "北海道",
+          "address2": "札幌市中央区南3条西8-2-17",
+          "telephoneNo": "011-222-0753",
+          "faxNo": "011-272-0753",
+          "access": "すすきの駅より徒歩約７分",
+          "parkingInformation": "無し",
+          "nearestStation": "すすきの",
+          "reviewCount": 149,
+          "reviewAverage": 3.84,
+          "userReview": "朝方にドライヤーの音がしたので音が敏感な方は厳しい…　2026-10-02 09:00:20投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=192202\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 16,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "06131",
+              "roomName": "【禁煙：男女共用】ドミトリールーム（シャワー・トイレ共用）",
+              "planId": 6284081,
+              "planName": "【北海道民限定！！】身軽ステイプラン",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【道民限定・荷物いらずの快適プラン】\r\n観光でも出張でも気軽に泊まれる、お得な道民限定プランです。\r\n※北海道在住が確認できる身分証明書のご提示をお願いいたします。\r\n\r\n◆特典◆\r\n・バスタオル1枚\r\n・フェイスタオル1枚\r\n・スリッパ\r\n\r\n◆こんな方にオススメ】\r\n・気軽に札幌で1泊したい道民の方\r\n・急な札幌滞在・出張でも手ぶらでOK\r\n・荷物を少なくしたい旅行者にぴったり！\r\n\r\n\r\n◆チェックインについて◆\r\nチェックイン時間：15時〜22時\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性あり\r\nチェックアウト時間は朝10時まで\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅出口2番より徒歩7分\r\n空港連絡バス「南３条すすきの」下車より徒歩7分\r\n札幌市電「資生館小学校前」徒歩1分\r\n大通・すすきの徒歩圏内\r\n\r\n◆館内設備◆\r\n無料Wi-fi、BAR tunakkay（トナカイ）\r\nラウンジ、キッチン、冷蔵庫、調理器具等\r\n\r\n◆客室◆\r\nドミトリー、個室（2名〜4名）\r\n一部シャワールーム、洗面台、お手洗いは共有\r\n無料シャンプー類のご用意あり\r\nドミトリーは添寝、小学生以下のお子様のご宿泊不可\r\n\r\n◆サービス◆\r\n・バスタオル1枚のみ無料（2枚目以降有料）\r\n・カミソリ、歯ブラシ、耳栓無料（セルフ）\r\n・バスマット（ドミトリー、トリプルルームにはありません）\r\n・洗濯機 200円/1回　乾燥機100円/30分\r\n\r\n◆駐車場◆\r\n駐車場なし\r\nバイク、自転車の駐輪場なし\r\nお近くのコインパーキングをご利用ください。\r\n\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日からのご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、宿泊税を「含んでいない」金額となっておりますので、チェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6300,
+              "total": 6300,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 192202,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　大通公園",
+          "hotelKanaName": "ぐらんどほすてるえるでぃーけーおおどおりこうえん",
+          "hotelSpecial": "BARで飲んで繋がり、そのまま泊まって寛げる。広々ラウンジにキッチンやコインランドリーも完備。駅から徒歩8分。",
+          "hotelMinCharge": 2400,
+          "latitude": 43.0553269,
+          "longitude": 141.3463969,
+          "postalCode": "060-0063",
+          "address1": "北海道",
+          "address2": "札幌市中央区南3条西8-2-17",
+          "telephoneNo": "011-222-0753",
+          "faxNo": "011-272-0753",
+          "access": "すすきの駅より徒歩約７分",
+          "parkingInformation": "無し",
+          "nearestStation": "すすきの",
+          "reviewCount": 149,
+          "reviewAverage": 3.84,
+          "userReview": "朝方にドライヤーの音がしたので音が敏感な方は厳しい…　2026-10-02 09:00:20投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=192202\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 16,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "06137",
+              "roomName": "【禁煙：女性専用】ドミトリールーム（シャワー・トイレ共用）",
+              "planId": 6362407,
+              "planName": "【返金不可】スタンダードプラン【素泊まり】",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "【素泊まりプラン】\r\n返金不可のプランです。予約成立後のキャンセルは出来ませんのでご了承ください。\r\n基本となる通常のスタンダードプランです！\r\n\r\n\r\n札幌の中心部・観光の起点として\r\n“LDK ”は、“旅人”であるあなたのHOME…\r\n\r\n◆チェックインについて◆\r\nチェックイン時間：15時〜22時\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性あり\r\nチェックアウト時間は朝10時まで\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅出口2番より徒歩7分\r\n空港連絡バス「南３条すすきの」下車より徒歩7分\r\n札幌市電「資生館小学校前」徒歩1分\r\n大通・すすきの徒歩圏内\r\n\r\n◆館内設備◆\r\n無料Wi-fi、BAR tunakkay（トナカイ）\r\nラウンジ、キッチン、冷蔵庫、調理器具等\r\n\r\n◆客室◆\r\nドミトリー、個室（2名〜4名）\r\n一部シャワールーム、洗面台、お手洗いは共有\r\n無料シャンプー類のご用意あり\r\nドミトリーは添寝、小学生以下のお子様のご宿泊不可\r\n\r\n◆サービス◆\r\n・バスタオル1枚のみ無料（2枚目以降有料）\r\n・カミソリ、歯ブラシ、耳栓無料（セルフ）\r\n・バスマット（ドミトリー、トリプルルームにはありません）\r\n・洗濯機 200円/1回　乾燥機100円/30分\r\n\r\n◆駐車場◆\r\n駐車場なし\r\nバイク、自転車の駐輪場なし\r\nお近くのコインパーキングをご利用ください。\r\n\r\n\r\n【北海道および札幌市の宿泊税導入について】\r\n2026年4月1日からのご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、宿泊税を「含んでいない」金額となっておりますので、チェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6300,
+              "total": 6300,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 192202,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　大通公園",
+          "hotelKanaName": "ぐらんどほすてるえるでぃーけーおおどおりこうえん",
+          "hotelSpecial": "BARで飲んで繋がり、そのまま泊まって寛げる。広々ラウンジにキッチンやコインランドリーも完備。駅から徒歩8分。",
+          "hotelMinCharge": 2400,
+          "latitude": 43.0553269,
+          "longitude": 141.3463969,
+          "postalCode": "060-0063",
+          "address1": "北海道",
+          "address2": "札幌市中央区南3条西8-2-17",
+          "telephoneNo": "011-222-0753",
+          "faxNo": "011-272-0753",
+          "access": "すすきの駅より徒歩約７分",
+          "parkingInformation": "無し",
+          "nearestStation": "すすきの",
+          "reviewCount": 149,
+          "reviewAverage": 3.84,
+          "userReview": "朝方にドライヤーの音がしたので音が敏感な方は厳しい…　2026-10-02 09:00:20投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=192202\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 16,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "06137",
+              "roomName": "【禁煙：女性専用】ドミトリールーム（シャワー・トイレ共用）",
+              "planId": 5996332,
+              "planName": "【素泊まり】スタンダードプラン",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【素泊まりプラン】\r\n\r\n\r\n札幌の中心部・観光の起点として\r\n“LDK ”は、“旅人”であるあなたのHOME…\r\n\r\n◆チェックインについて◆\r\nチェックイン時間：15時〜22時\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性あり\r\nチェックアウト時間は朝10時まで\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅出口2番より徒歩7分\r\n空港連絡バス「南３条すすきの」下車より徒歩7分\r\n札幌市電「資生館小学校前」徒歩1分\r\n大通・すすきの徒歩圏内\r\n\r\n◆館内設備◆\r\n無料Wi-fi、BAR tunakkay（トナカイ）\r\nラウンジ、キッチン、冷蔵庫、調理器具等\r\n\r\n◆客室◆\r\nドミトリー、個室（2名〜4名）\r\n一部シャワールーム、洗面台、お手洗いは共有\r\n無料シャンプー類のご用意あり\r\nドミトリーは添寝、小学生以下のお子様のご宿泊不可\r\n\r\n◆サービス◆\r\n・バスタオル1枚のみ無料（2枚目以降有料）\r\n・カミソリ、歯ブラシ、耳栓無料（セルフ）\r\n・バスマット（ドミトリー、トリプルルームにはありません）\r\n・洗濯機 200円/1回　乾燥機100円/30分\r\n\r\n◆駐車場◆\r\n駐車場なし\r\nバイク、自転車の駐輪場なし\r\nお近くのコインパーキングをご利用ください。\r\n\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日からのご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、宿泊税を「含んでいない」金額となっておりますので、チェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6300,
+              "total": 6300,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 188752,
+          "hotelName": "ザ・センチュリオンサウナ　レスト＆ステイ札幌",
+          "hotelKanaName": "ざ・せんちゅりおんさうな　れすと＆すていさっぽろ",
+          "hotelSpecial": "２０２５年７月７日コンセプトカプセル＆ジムエリア新設！男性専用キャビン＋１００℃サウナ水風呂完備の大浴場！！",
+          "hotelMinCharge": 2250,
+          "latitude": 43.0548083,
+          "longitude": 141.3493647,
+          "postalCode": "064-0804",
+          "address1": "北海道",
+          "address2": "札幌市中央区南四条西6-4 旭観光New Gateビル",
+          "telephoneNo": "011-206-9932",
+          "faxNo": "011-206-9932",
+          "access": "地下鉄南北線すすきの駅より徒歩約４分、札幌駅から車で約８分",
+          "parkingInformation": "無し",
+          "nearestStation": "すすきの",
+          "reviewCount": 928,
+          "reviewAverage": 4.26,
+          "userReview": "唯一残念だったのが、わたしの部屋が常に低周波音が聞こえてくる感じで寝るのに苦労した。気にならないひとはよいですが。　2026-10-04 20:55:37投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=188752\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 8,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "3f",
+              "roomName": "◆男性専用◆サウナコンセプトキャビン（上段）",
+              "planId": 6252325,
+              "planName": "◆男性専用◆素泊まり　ととのう！サウナコンセプトキャビン　大浴場・サウナ＆水風呂 何度でも利用可",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "当施設は男性専用となりますのでご注意ください\r\n\r\n３階にサウナコンセプトフロア誕生！\r\n新規１０３キャビン増床！\r\n\r\n\r\n鍛えて！休んで！汗を流す！\r\n同フロアに\r\nトレーニングスペースも登場！\r\nその名は「S.W.E.A.T」！\r\n宿泊者の方は無料でご利用いただけます♪\r\n\r\nそして、疲れたらその奥に\r\nまるでサウナの中にいるかのような\r\n休憩スペースをご用意いたしました。\r\n映えスポットとしてもご活用ください！\r\n\r\nさらに極めつけは\r\nサウナコンセプトキャビン！\r\nセンチュリオンの真髄に触れる\r\n究極のサウナ没入体験型空間！\r\n寝ても覚めても、心ゆくまで\r\nセンチュリオンサウナをご体感ください♪\r\n\r\n※部屋タイプの種類はお選びいただけません。\r\n\r\n\r\n◆魅力◆\r\n・大浴場＆サウナはご利用無料！滞在中何度でも御利用頂けます♪\r\n※チェックインからチェックアウトのお時間までとなります\r\n・全室Wi-Fi接続無料・コンセント完備\r\n・コンビニまで徒歩1分\r\n・宿泊者様専用コインランドリー完備（有料）\r\n・各階お手洗い完備（共有）\r\n・フロントは24時間対応\r\n\r\n◆アクセス◆\r\n・地下鉄南北線すすきの駅4番出口より徒歩約４分、札幌駅から車で約８分\r\n\r\n\r\n━━━━━━━━━━★必ずお読みください★━━━━━━━━━━\r\n\r\n■2026年4月1日より、北海道条例・札幌市条例に基づき宿泊税を別途申し受けます\r\n　宿泊税は1人1泊あたり以下の金額となります\r\n　・宿泊料金が2万円未満：300円\r\n　・宿泊料金が2万円以上5万円未満：400円\r\n　・宿泊料金が5万円以上：1，000円\r\n　※上記宿泊税は宿泊料金に含まれておりません\r\n　　別途現地にてお支払いをお願いいたします\r\n\r\n\r\n■連泊時の清掃はございません\r\n※５泊毎に１回無料にて清掃を行います\r\n※別々の予約で連泊となる場合も同様となります\r\n\r\n▼下記のお客様のご入店お断りいたしております\r\n※入れ墨（タトゥー）の有るお客様\r\n※泥酔されているお客様\r\n※その他店舗ルールに従ってくださらない方\r\n例：私服でのカプセルエリアへの立ち入り\r\n　　他のお客様とのトラブルになると判断した場合\r\n　　威圧的言動・行動など"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6600,
+              "total": 6600,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 188752,
+          "hotelName": "ザ・センチュリオンサウナ　レスト＆ステイ札幌",
+          "hotelKanaName": "ざ・せんちゅりおんさうな　れすと＆すていさっぽろ",
+          "hotelSpecial": "２０２５年７月７日コンセプトカプセル＆ジムエリア新設！男性専用キャビン＋１００℃サウナ水風呂完備の大浴場！！",
+          "hotelMinCharge": 2250,
+          "latitude": 43.0548083,
+          "longitude": 141.3493647,
+          "postalCode": "064-0804",
+          "address1": "北海道",
+          "address2": "札幌市中央区南四条西6-4 旭観光New Gateビル",
+          "telephoneNo": "011-206-9932",
+          "faxNo": "011-206-9932",
+          "access": "地下鉄南北線すすきの駅より徒歩約４分、札幌駅から車で約８分",
+          "parkingInformation": "無し",
+          "nearestStation": "すすきの",
+          "reviewCount": 928,
+          "reviewAverage": 4.26,
+          "userReview": "唯一残念だったのが、わたしの部屋が常に低周波音が聞こえてくる感じで寝るのに苦労した。気にならないひとはよいですが。　2026-10-04 20:55:37投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=188752\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 8,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "3f",
+              "roomName": "◆男性専用◆サウナコンセプトキャビン（上段）",
+              "planId": 5857485,
+              "planName": "◆男性専用◆素泊まり　大浴場・サウナ＆水風呂 何度でも利用可",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "当施設は男性専用となりますのでご注意ください\r\n\r\n◆魅力◆\r\n・大浴場＆サウナはご利用無料！滞在中何度でも御利用頂けます♪\r\n※チェックインからチェックアウトのお時間までとなります\r\n・全室Wi-Fi接続無料・コンセント完備\r\n・コンビニまで徒歩1分\r\n・宿泊者様専用コインランドリー完備（有料）\r\n・各階お手洗い完備（共有）\r\n・フロントは24時間対応\r\n\r\n◆アクセス◆\r\n・地下鉄南北線すすきの駅4番出口より徒歩約４分、札幌駅から車で約８分\r\n\r\n\r\n━━━━━━━━━━★必ずお読みください★━━━━━━━━━━\r\n\r\n■連泊時の清掃はございません。\r\n※５泊毎に１回無料にて清掃を行います\r\n※別々の予約で連泊となる場合も同様となります\r\n\r\n▼下記のお客様のご入店お断り致して居ます。\r\n※入れ墨（タトゥー）の有るお客様\r\n※泥酔されているお客様\r\n※その他店舗ルールに従ってくださらない方\r\n例：私服でのカプセルエリアへの立ち入り\r\n　　他のお客様とのトラブルになると判断した場合\r\n　　威圧的言動・行動など"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6600,
+              "total": 6600,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 148889,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　札幌",
+          "hotelKanaName": "ぐらんど　ほすてる　えるでぃーけー　さっぽろ",
+          "hotelSpecial": "北海道で最大級ゲストハウス★初めての方でもどんな年代の方でもスタッフが親切に対応します♪ ",
+          "hotelMinCharge": 1900,
+          "latitude": 43.0539768,
+          "longitude": 141.34532749999994,
+          "postalCode": "064-0805",
+          "address1": "北海道",
+          "address2": "札幌市中央区南5条西9-1008-10",
+          "telephoneNo": "011-252-7401",
+          "faxNo": "011-252-7402",
+          "access": "地下鉄南北線　すすきの駅より徒歩にて約8分。コンビニまで徒歩1分。お車でお越しの方→MAP CODE 【9491176】",
+          "parkingInformation": "車の駐車場はございません。バイク駐輪場は先着順1泊500円(屋外）、1泊700円(屋根付）",
+          "nearestStation": "すすきの",
+          "reviewCount": 222,
+          "reviewAverage": 3.69,
+          "userReview": "…　2026-10-07 07:08:50投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=148889\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 14,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "006",
+              "roomName": "【女性専用】ドミトリールーム(8名定員・女性専用)",
+              "planId": 6226313,
+              "planName": "【期間限定】秋旅特別プラン★",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【期間限定】秋旅特別プラン★\r\n\r\n秋の北海道をお得に旅行しよう♪\r\n期間限定特別割引プランです。\r\n\r\n◆チェックインについて◆\r\nチェックイン時間は15時~22時です。\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性がございます。\r\nチェックアウト時間は朝10時までです。\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅より徒歩8分\r\n空港連絡バス「南３条すすきの」下車より徒歩8分\r\n大通り・すすきのが徒歩圏内\r\n\r\n◆館内設備◆\r\n無料WIFI\r\nラウンジ、キッチン、冷蔵庫、調理器具\r\n\r\n◆エレベーター◆\r\n当館はエレベーターが1基のみとなります。混み合う場合がございますのでお時間に余裕を持ってご利用下さいませ。\r\n\r\n◆客室◆\r\nドミトリーと個室（2名~6名）\r\n全室シャワールーム、洗面台、お手洗いは共有です。\r\nシャンプー＆ボディーソープはご用意がございます。\r\n＊ドミトリー部屋は添寝、小学生以下のお子様のご宿泊はできません。\r\n\r\n◆サービス◆\r\n アメニティは一部有料です。\r\n カミソリと歯ブラシは無料でご利用いただけます。\r\n 必要なアメニティはご自宅からお持ちいただくことをお勧めします。\r\n ※シャワールームにはシャンプーとボディーソープ、洗面台にはドライヤをご用意しております。\r\n\r\n◆駐車場◆\r\nお車の駐車場はございません。\r\nバイク(自動2輪)の駐輪場はございますが、先着順（事前予約不可）1泊屋内700円、屋外500円です。\r\n\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日のご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、「宿泊税」を含んでいない金額となっておりますので、\r\nチェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6600,
+              "total": 6600,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 148889,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　札幌",
+          "hotelKanaName": "ぐらんど　ほすてる　えるでぃーけー　さっぽろ",
+          "hotelSpecial": "北海道で最大級ゲストハウス★初めての方でもどんな年代の方でもスタッフが親切に対応します♪ ",
+          "hotelMinCharge": 1900,
+          "latitude": 43.0539768,
+          "longitude": 141.34532749999994,
+          "postalCode": "064-0805",
+          "address1": "北海道",
+          "address2": "札幌市中央区南5条西9-1008-10",
+          "telephoneNo": "011-252-7401",
+          "faxNo": "011-252-7402",
+          "access": "地下鉄南北線　すすきの駅より徒歩にて約8分。コンビニまで徒歩1分。お車でお越しの方→MAP CODE 【9491176】",
+          "parkingInformation": "車の駐車場はございません。バイク駐輪場は先着順1泊500円(屋外）、1泊700円(屋根付）",
+          "nearestStation": "すすきの",
+          "reviewCount": 222,
+          "reviewAverage": 3.69,
+          "userReview": "…　2026-10-07 07:08:50投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=148889\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 14,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "mfd",
+              "roomName": "男女共用ドミトリー",
+              "planId": 6226313,
+              "planName": "【期間限定】秋旅特別プラン★",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【期間限定】秋旅特別プラン★\r\n\r\n秋の北海道をお得に旅行しよう♪\r\n期間限定特別割引プランです。\r\n\r\n◆チェックインについて◆\r\nチェックイン時間は15時~22時です。\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性がございます。\r\nチェックアウト時間は朝10時までです。\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅より徒歩8分\r\n空港連絡バス「南３条すすきの」下車より徒歩8分\r\n大通り・すすきのが徒歩圏内\r\n\r\n◆館内設備◆\r\n無料WIFI\r\nラウンジ、キッチン、冷蔵庫、調理器具\r\n\r\n◆エレベーター◆\r\n当館はエレベーターが1基のみとなります。混み合う場合がございますのでお時間に余裕を持ってご利用下さいませ。\r\n\r\n◆客室◆\r\nドミトリーと個室（2名~6名）\r\n全室シャワールーム、洗面台、お手洗いは共有です。\r\nシャンプー＆ボディーソープはご用意がございます。\r\n＊ドミトリー部屋は添寝、小学生以下のお子様のご宿泊はできません。\r\n\r\n◆サービス◆\r\n アメニティは一部有料です。\r\n カミソリと歯ブラシは無料でご利用いただけます。\r\n 必要なアメニティはご自宅からお持ちいただくことをお勧めします。\r\n ※シャワールームにはシャンプーとボディーソープ、洗面台にはドライヤをご用意しております。\r\n\r\n◆駐車場◆\r\nお車の駐車場はございません。\r\nバイク(自動2輪)の駐輪場はございますが、先着順（事前予約不可）1泊屋内700円、屋外500円です。\r\n\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日のご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、「宿泊税」を含んでいない金額となっておりますので、\r\nチェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6600,
+              "total": 6600,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 192202,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　大通公園",
+          "hotelKanaName": "ぐらんどほすてるえるでぃーけーおおどおりこうえん",
+          "hotelSpecial": "BARで飲んで繋がり、そのまま泊まって寛げる。広々ラウンジにキッチンやコインランドリーも完備。駅から徒歩8分。",
+          "hotelMinCharge": 2400,
+          "latitude": 43.0553269,
+          "longitude": 141.3463969,
+          "postalCode": "060-0063",
+          "address1": "北海道",
+          "address2": "札幌市中央区南3条西8-2-17",
+          "telephoneNo": "011-222-0753",
+          "faxNo": "011-272-0753",
+          "access": "すすきの駅より徒歩約７分",
+          "parkingInformation": "無し",
+          "nearestStation": "すすきの",
+          "reviewCount": 149,
+          "reviewAverage": 3.84,
+          "userReview": "朝方にドライヤーの音がしたので音が敏感な方は厳しい…　2026-10-02 09:00:20投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=192202\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 16,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "06137",
+              "roomName": "【禁煙：女性専用】ドミトリールーム（シャワー・トイレ共用）",
+              "planId": 6284081,
+              "planName": "【北海道民限定！！】身軽ステイプラン",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【道民限定・荷物いらずの快適プラン】\r\n観光でも出張でも気軽に泊まれる、お得な道民限定プランです。\r\n※北海道在住が確認できる身分証明書のご提示をお願いいたします。\r\n\r\n◆特典◆\r\n・バスタオル1枚\r\n・フェイスタオル1枚\r\n・スリッパ\r\n\r\n◆こんな方にオススメ】\r\n・気軽に札幌で1泊したい道民の方\r\n・急な札幌滞在・出張でも手ぶらでOK\r\n・荷物を少なくしたい旅行者にぴったり！\r\n\r\n\r\n◆チェックインについて◆\r\nチェックイン時間：15時〜22時\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性あり\r\nチェックアウト時間は朝10時まで\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅出口2番より徒歩7分\r\n空港連絡バス「南３条すすきの」下車より徒歩7分\r\n札幌市電「資生館小学校前」徒歩1分\r\n大通・すすきの徒歩圏内\r\n\r\n◆館内設備◆\r\n無料Wi-fi、BAR tunakkay（トナカイ）\r\nラウンジ、キッチン、冷蔵庫、調理器具等\r\n\r\n◆客室◆\r\nドミトリー、個室（2名〜4名）\r\n一部シャワールーム、洗面台、お手洗いは共有\r\n無料シャンプー類のご用意あり\r\nドミトリーは添寝、小学生以下のお子様のご宿泊不可\r\n\r\n◆サービス◆\r\n・バスタオル1枚のみ無料（2枚目以降有料）\r\n・カミソリ、歯ブラシ、耳栓無料（セルフ）\r\n・バスマット（ドミトリー、トリプルルームにはありません）\r\n・洗濯機 200円/1回　乾燥機100円/30分\r\n\r\n◆駐車場◆\r\n駐車場なし\r\nバイク、自転車の駐輪場なし\r\nお近くのコインパーキングをご利用ください。\r\n\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日からのご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、宿泊税を「含んでいない」金額となっておりますので、チェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6600,
+              "total": 6600,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 192202,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　大通公園",
+          "hotelKanaName": "ぐらんどほすてるえるでぃーけーおおどおりこうえん",
+          "hotelSpecial": "BARで飲んで繋がり、そのまま泊まって寛げる。広々ラウンジにキッチンやコインランドリーも完備。駅から徒歩8分。",
+          "hotelMinCharge": 2400,
+          "latitude": 43.0553269,
+          "longitude": 141.3463969,
+          "postalCode": "060-0063",
+          "address1": "北海道",
+          "address2": "札幌市中央区南3条西8-2-17",
+          "telephoneNo": "011-222-0753",
+          "faxNo": "011-272-0753",
+          "access": "すすきの駅より徒歩約７分",
+          "parkingInformation": "無し",
+          "nearestStation": "すすきの",
+          "reviewCount": 149,
+          "reviewAverage": 3.84,
+          "userReview": "朝方にドライヤーの音がしたので音が敏感な方は厳しい…　2026-10-02 09:00:20投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=192202\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 16,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "06131",
+              "roomName": "【禁煙：男女共用】ドミトリールーム（シャワー・トイレ共用）",
+              "planId": 6020141,
+              "planName": "【朝食付】スタンダードプラン",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【朝食付プラン】\r\n朝食がついてるプランです！活力をつけて楽しい一日のスタートです！\r\n朝食時間7時-9時\r\n\r\n札幌の中心部・観光の起点として\r\n“LDK ”は、“旅人”であるあなたのHOME…\r\n\r\n◆チェックインについて◆\r\nチェックイン時間：15時〜22時\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性あり\r\nチェックアウト時間は朝10時まで\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅出口2番より徒歩7分\r\n空港連絡バス「南３条すすきの」下車より徒歩7分\r\n札幌市電「資生館小学校前」徒歩1分\r\n大通・すすきの徒歩圏内\r\n\r\n◆館内設備◆\r\n無料Wi-fi、BAR tunakkay（トナカイ）\r\nラウンジ、キッチン、冷蔵庫、調理器具等\r\n\r\n◆客室◆\r\nドミトリー、個室（2名〜4名）\r\n一部シャワールーム、洗面台、お手洗いは共有\r\n無料シャンプー類のご用意あり\r\nドミトリーは添寝、小学生以下のお子様のご宿泊不可\r\n\r\n◆サービス◆\r\n・バスタオル1枚のみ無料（2枚目以降有料）\r\n・カミソリ、歯ブラシ、耳栓無料（セルフ）\r\n・バスマット（ドミトリー、トリプルルームにはありません）\r\n・洗濯機 200円/1回　乾燥機100円/30分\r\n\r\n◆駐車場◆\r\n駐車場なし\r\nバイク、自転車の駐輪場なし\r\nお近くのコインパーキングをご利用ください。\r\n\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日からのご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、宿泊税を「含んでいない」金額となっておりますので、チェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6700,
+              "total": 6700,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 148889,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　札幌",
+          "hotelKanaName": "ぐらんど　ほすてる　えるでぃーけー　さっぽろ",
+          "hotelSpecial": "北海道で最大級ゲストハウス★初めての方でもどんな年代の方でもスタッフが親切に対応します♪ ",
+          "hotelMinCharge": 1900,
+          "latitude": 43.0539768,
+          "longitude": 141.34532749999994,
+          "postalCode": "064-0805",
+          "address1": "北海道",
+          "address2": "札幌市中央区南5条西9-1008-10",
+          "telephoneNo": "011-252-7401",
+          "faxNo": "011-252-7402",
+          "access": "地下鉄南北線　すすきの駅より徒歩にて約8分。コンビニまで徒歩1分。お車でお越しの方→MAP CODE 【9491176】",
+          "parkingInformation": "車の駐車場はございません。バイク駐輪場は先着順1泊500円(屋外）、1泊700円(屋根付）",
+          "nearestStation": "すすきの",
+          "reviewCount": 222,
+          "reviewAverage": 3.69,
+          "userReview": "…　2026-10-07 07:08:50投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=148889\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 14,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "006",
+              "roomName": "【女性専用】ドミトリールーム(8名定員・女性専用)",
+              "planId": 5622935,
+              "planName": "【素泊まり】スタンダードプラン★",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "◆チェックインについて◆\r\nチェックイン時間は15時~22時です。\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性がございます。\r\nチェックアウト時間は朝10時までです。\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅より徒歩8分\r\n空港連絡バス「南３条すすきの」下車より徒歩8分\r\n札幌市電「資生館小学校前」徒歩5分\r\n大通り・すすきのが徒歩圏内\r\n\r\n◆館内設備◆\r\n無料WIFI\r\nラウンジ、キッチン、冷蔵庫、調理器具\r\n\r\n◆エレベーター◆\r\n当館はエレベーターが1基のみとなります。混み合う場合がございますのでお時間に余裕を持ってご利用下さいませ。\r\n\r\n◆客室◆\r\nドミトリーと個室（2名~6名）\r\n全室シャワールーム、洗面台、お手洗いは共有です。\r\nシャンプー＆ボディーソープはご用意がございます。\r\n＊ドミトリー部屋は添寝、小学生以下のお子様のご宿泊はできません。\r\n\r\n◆サービス◆\r\n アメニティは一部有料です。\r\n カミソリと歯ブラシは無料でご利用いただけます。\r\n 必要なアメニティはご自宅からお持ちいただくことをお勧めします。\r\n ※シャワールームにはシャンプーとボディーソープ、洗面台にはドライヤをご用意しております。\r\n\r\n◆駐車場◆\r\nお車の駐車場はございません。\r\nバイク(自動2輪)の駐輪場はございますが、先着順（事前予約不可）1泊屋内700円、屋外500円です。\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日のご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、「宿泊税」を含んでいない金額となっておりますので、\r\nチェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 7000,
+              "total": 7000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 148889,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　札幌",
+          "hotelKanaName": "ぐらんど　ほすてる　えるでぃーけー　さっぽろ",
+          "hotelSpecial": "北海道で最大級ゲストハウス★初めての方でもどんな年代の方でもスタッフが親切に対応します♪ ",
+          "hotelMinCharge": 1900,
+          "latitude": 43.0539768,
+          "longitude": 141.34532749999994,
+          "postalCode": "064-0805",
+          "address1": "北海道",
+          "address2": "札幌市中央区南5条西9-1008-10",
+          "telephoneNo": "011-252-7401",
+          "faxNo": "011-252-7402",
+          "access": "地下鉄南北線　すすきの駅より徒歩にて約8分。コンビニまで徒歩1分。お車でお越しの方→MAP CODE 【9491176】",
+          "parkingInformation": "車の駐車場はございません。バイク駐輪場は先着順1泊500円(屋外）、1泊700円(屋根付）",
+          "nearestStation": "すすきの",
+          "reviewCount": 222,
+          "reviewAverage": 3.69,
+          "userReview": "…　2026-10-07 07:08:50投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=148889\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 14,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "006",
+              "roomName": "【女性専用】ドミトリールーム(8名定員・女性専用)",
+              "planId": 6494367,
+              "planName": "【返金不可】スタンダードプラン★",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "【返金不可】スタンダードプラン★\r\n\r\nこちらのプランは、通常とは異なるキャンセルポリシーとなり、\r\n予約時からキャンセル料が発生するプランになります。\r\n\r\n\r\n◆チェックインについて◆\r\nチェックイン時間は15時~22時です。\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性がございます。\r\nチェックアウト時間は朝10時までです。\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅より徒歩8分\r\n空港連絡バス「南３条すすきの」下車より徒歩8分\r\n札幌市電「資生館小学校前」徒歩5分\r\n大通り・すすきのが徒歩圏内\r\n\r\n◆館内設備◆\r\n無料WIFI\r\nラウンジ、キッチン、冷蔵庫、調理器具\r\n\r\n◆エレベーター◆\r\n当館はエレベーターが1基のみとなります。混み合う場合がございますのでお時間に余裕を持ってご利用下さいませ。\r\n\r\n◆客室◆\r\nドミトリーと個室（2名~6名）\r\n全室シャワールーム、洗面台、お手洗いは共有です。\r\nシャンプー＆ボディーソープはご用意がございます。\r\n＊ドミトリー部屋は添寝、小学生以下のお子様のご宿泊はできません。\r\n\r\n◆サービス◆\r\n アメニティは一部有料です。\r\n カミソリと歯ブラシは無料でご利用いただけます。\r\n 必要なアメニティはご自宅からお持ちいただくことをお勧めします。\r\n ※シャワールームにはシャンプーとボディーソープ、洗面台にはドライヤをご用意しております。\r\n\r\n◆駐車場◆\r\nお車の駐車場はございません。\r\nバイク(自動2輪)の駐輪場はございますが、先着順（事前予約不可）1泊屋内700円、屋外500円です。\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日のご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、「宿泊税」を含んでいない金額となっておりますので、\r\nチェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 7000,
+              "total": 7000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 148889,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　札幌",
+          "hotelKanaName": "ぐらんど　ほすてる　えるでぃーけー　さっぽろ",
+          "hotelSpecial": "北海道で最大級ゲストハウス★初めての方でもどんな年代の方でもスタッフが親切に対応します♪ ",
+          "hotelMinCharge": 1900,
+          "latitude": 43.0539768,
+          "longitude": 141.34532749999994,
+          "postalCode": "064-0805",
+          "address1": "北海道",
+          "address2": "札幌市中央区南5条西9-1008-10",
+          "telephoneNo": "011-252-7401",
+          "faxNo": "011-252-7402",
+          "access": "地下鉄南北線　すすきの駅より徒歩にて約8分。コンビニまで徒歩1分。お車でお越しの方→MAP CODE 【9491176】",
+          "parkingInformation": "車の駐車場はございません。バイク駐輪場は先着順1泊500円(屋外）、1泊700円(屋根付）",
+          "nearestStation": "すすきの",
+          "reviewCount": 222,
+          "reviewAverage": 3.69,
+          "userReview": "…　2026-10-07 07:08:50投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=148889\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 14,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "006",
+              "roomName": "【女性専用】ドミトリールーム(8名定員・女性専用)",
+              "planId": 6460682,
+              "planName": "【バイク専用】★ 館内着と洗車道具付★",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【バイクで旅する方向け】\r\n\r\n◆プラン特典◆\r\n・洗車道具を無料で使えます！ （洗剤・スポンジ・ふきあげタオル）\r\n・通常は有料の館内着が無料でご利用いただけます。洗濯物が増えなくて便利！\r\n\r\n※バイク(自動2輪)の駐輪場は利用料は別途でございますが、先着順（事前予約不可）1泊屋内700円、屋外500円です。満車の場合は駐車ができない可能性がございます。\r\n\r\n◆こんな方におすすめ◆\r\n・旅している最中も愛車はピカピカにしていたい\r\n・館内着でゆっくり過ごしたい\r\n\r\n◆チェックインについて◆\r\nチェックイン時間は15時~22時です。\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性がございます。\r\nチェックアウト時間は朝10時までです。\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅より徒歩8分\r\n大通り・すすきのが徒歩圏内。\r\n\r\n◆館内設備◆\r\n無料WIFI\r\nラウンジ、キッチン、冷蔵庫、調理器具\r\n\r\n◆客室◆\r\nドミトリーと個室（2名~6名）\r\n全室シャワールーム、洗面台、お手洗いは共有です。\r\nシャンプー＆ボディーソープはご用意がございます。\r\n＊ドミトリー部屋は添寝、小学生以下のお子様のご宿泊はできません。\r\n\r\n◆サービス◆\r\n- アメニティは一部有料です。\r\n- カミソリと歯ブラシは無料でご利用いただけます。\r\n- ※シャワールームにはシャンプーとボディーソープ、洗面台にはドライヤーをご用意しております。\r\n\r\n◆駐車場◆\r\nお車の駐車場はございません。\r\nバイク(自動2輪)の駐輪場はございますが、先着順（事前予約不可）1泊屋内700円、屋外500円です。\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日のご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、「宿泊税」を含んでいない金額となっておりますので、\r\nチェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 7000,
+              "total": 7000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 148889,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　札幌",
+          "hotelKanaName": "ぐらんど　ほすてる　えるでぃーけー　さっぽろ",
+          "hotelSpecial": "北海道で最大級ゲストハウス★初めての方でもどんな年代の方でもスタッフが親切に対応します♪ ",
+          "hotelMinCharge": 1900,
+          "latitude": 43.0539768,
+          "longitude": 141.34532749999994,
+          "postalCode": "064-0805",
+          "address1": "北海道",
+          "address2": "札幌市中央区南5条西9-1008-10",
+          "telephoneNo": "011-252-7401",
+          "faxNo": "011-252-7402",
+          "access": "地下鉄南北線　すすきの駅より徒歩にて約8分。コンビニまで徒歩1分。お車でお越しの方→MAP CODE 【9491176】",
+          "parkingInformation": "車の駐車場はございません。バイク駐輪場は先着順1泊500円(屋外）、1泊700円(屋根付）",
+          "nearestStation": "すすきの",
+          "reviewCount": 222,
+          "reviewAverage": 3.69,
+          "userReview": "…　2026-10-07 07:08:50投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=148889\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "hokkaido",
+          "smallClassCode": "sapporo",
+          "areaName": "札幌",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 14,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "mfd",
+              "roomName": "男女共用ドミトリー",
+              "planId": 5622935,
+              "planName": "【素泊まり】スタンダードプラン★",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "◆チェックインについて◆\r\nチェックイン時間は15時~22時です。\r\n事前にご連絡がない22時以降のチェックインはキャンセルになる可能性がございます。\r\nチェックアウト時間は朝10時までです。\r\n\r\n◆アクセス◆\r\n札幌市営地下鉄南北線すすきの駅より徒歩8分\r\n空港連絡バス「南３条すすきの」下車より徒歩8分\r\n札幌市電「資生館小学校前」徒歩5分\r\n大通り・すすきのが徒歩圏内\r\n\r\n◆館内設備◆\r\n無料WIFI\r\nラウンジ、キッチン、冷蔵庫、調理器具\r\n\r\n◆エレベーター◆\r\n当館はエレベーターが1基のみとなります。混み合う場合がございますのでお時間に余裕を持ってご利用下さいませ。\r\n\r\n◆客室◆\r\nドミトリーと個室（2名~6名）\r\n全室シャワールーム、洗面台、お手洗いは共有です。\r\nシャンプー＆ボディーソープはご用意がございます。\r\n＊ドミトリー部屋は添寝、小学生以下のお子様のご宿泊はできません。\r\n\r\n◆サービス◆\r\n アメニティは一部有料です。\r\n カミソリと歯ブラシは無料でご利用いただけます。\r\n 必要なアメニティはご自宅からお持ちいただくことをお勧めします。\r\n ※シャワールームにはシャンプーとボディーソープ、洗面台にはドライヤをご用意しております。\r\n\r\n◆駐車場◆\r\nお車の駐車場はございません。\r\nバイク(自動2輪)の駐輪場はございますが、先着順（事前予約不可）1泊屋内700円、屋外500円です。\r\n\r\n◆北海道および札幌市の宿泊税導入について◆\r\n2026年4月1日のご宿泊分より、北海道および札幌市において宿泊税が導入される予定です。\r\nサイト上に掲載されている宿泊料金は、「宿泊税」を含んでいない金額となっておりますので、\r\nチェックイン時にお支払いをお願いいたします。\r\n\r\n宿泊税率（お1人様1泊あたり）\r\n宿泊料金2万円未満：300円\r\n宿泊料金2万円以上5万円未満：400円\r\n宿泊料金5万円以上：1，000円\r\n\r\n※2026年4月1日以前にご予約いただいた場合でも、4月1日以降のご宿泊には宿泊税が適用されます。\r\n※予定のため、内容が変更になる場合がございます。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 7000,
+              "total": 7000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ]
+  ]
+}

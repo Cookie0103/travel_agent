@@ -773,3 +773,10 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 说明后正式c6e5cadc：12模型请求/0.548160CNY，15工具步骤；一次错误端点被纠正，route_departure3冲突→partial0冲突；stage第3校验轮，present成功，终态completed/business draft_staged。Docker只读PG回读c6e5cadc|completed|partial|5|0|confirmed_version空（未确认）。没有看过此草稿的浏览器视觉，不做该项验收声明。
 - 同会话report.json被续轮覆盖，不能把5354cdd0费用误归535a9d58；最终分别读每个run固定API Trace的travel.http_attempts/run_accounted_cny数字，11/12/12和上述独立费用，usage_complete均true。忽略缓存文件不提交完整正文/报告/UUID目录；结果汇总仅短ID/计数/原因码。
 - 这次追加授权下4轮共47模型HTTP、2.000874CNY；API账本相对开工weather3/geocode3/places9/routes21/rakuten30，终weather4/geocode3/places20/routes48/rakuten35，新增旅行HTTP44（含补两页乐天），合计91。已经停止付费试跑，未触日15CNY/100乐天；未改变.env、全局权限、本地服务或Railway。
+
+## 2026-10-09 T4.8 / P86真实覆盖交付
+
+- 追加授权后恰好补2次乐天：札幌page2 recordCount281/30酒店，大阪234/30；各与原第一页交集0/并集60。原第一页recordCount280/233，不能声称两批是同一库存快照；京都既有page2 recordCount330/同样额外30。两次只用既有Rakuten.query+ApiUsage，每次先原子计数、失败即停，不调用模型/Google/天气，不循环；脱敏response hook后才用open(x)写fixture，不覆盖旧样本。
+- 全21份真实fixture经TypeAdapter解析，sanitize_payload重清洗与原值相等；扫描当前已配置乐天凭据原始/URL编码残留通过，只输出数量与通过结果。公开酒店资料脱敏样本入提交，原始响应、完整真实报告和脚本marker均ignored。
+- 6覆盖/6模式禁烟对照/6第二晚/3第二页共21请求，第一批19由用户终端、后2由agent；多晚汇总来自授权现场回复与已有探针逐晚匹配20/30，不新增离线测试或重复首晚付费。没有发现新的适配器解析缺陷，ADR016仅记录实查/边界与维持一页决定；不以假红绿包装覆盖验收。
+- P85说明修复c97cd82已push，单独提交；酒店样本/ADR016另一个行为提交。全程不切分支、不合并main、不force push；CI每次push后分别检查。R6未验收、未部署或改Railway。
