@@ -433,8 +433,14 @@ def hotel_cost(
     if str(offer.offer_id) != record.entity_id:
         raise ValueError("住宿报价与证据不一致")
     # 不绑定请求revision：预算/交通/兴趣等无关更新不应使报价失效；影响报价的条件逐字段比较。
-    if evidence_conditions(offer.request, "hotel_offer") != evidence_conditions(
-        request, "hotel_offer"
+    # 报价request按ADR015投影旧字段；增量住宿地点的完整适用条件在Evidence中。
+    # 同时核验旧报价内容，不能只信外层conditions而接纳内部房数/日期不一致。
+    legacy_conditions = {
+        key: value for key, value in record.conditions.items() if key != "hotel_search_location"
+    }
+    if (
+        record.conditions != evidence_conditions(request, "hotel_offer")
+        or evidence_conditions(offer.request, "hotel_offer") != legacy_conditions
     ):
         raise ValueError(HOTEL_CONDITIONS_REASON)
     if not offer.quoted_at <= now < offer.expires_at:

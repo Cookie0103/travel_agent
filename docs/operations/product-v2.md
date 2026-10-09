@@ -748,3 +748,11 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 
 - 最终核对：58369cc push37911171191/PR37911176556、27449a9 push37911407740/PR37911413966的python/web/docker-demo均success。最新push日志只提取汇总：1364passed/1skipped/1live deselected/214.90s；CI没有真实模型/供应商key。不将CI全量当真实供应商或浏览器验收。
 - 恢复点：保持batch-2026-10-08-product-V2；两probe已提交/推送，用户普通终端各执行一次的请求已发出，等待safe JSON汇总与自动脱敏fixtures。不要重跑已有模型marker、扩大预算、重放私人原文或切Railway。T3.6原生日历与R6仍未通过；排序等覆盖与ADR016后再写ADR017。
+
+## 2026-10-09 真实探针结果与P84
+
+- 用户普通终端的真实模型c9a9bdbd：4次HTTP200，费用账本0.114088CNY，SDK success；validate1/3均validation/HOTEL_CONDITIONS_REASON，search2成功；闭馆冲突未触发、无stage/presentation。原文/参数/报告仅ignored cache；记录只留短ID/封闭结果。一次授权已用，不重跑marker。
+- 本地纯quote往返：offer.request有hotel_search_location=京都，HotelOffer.model_dump旧投影后恢复为None；Evidence完整条件仍有京都，仅此条件不同。新增fixture/live-shape两例先红2failed/50deselected/.21s，错误同现场。最小hotel_cost修复完整条件/内嵌旧字段两层检查后邻近110passed/.89s，dev check294三平台/3契约/10入口通过；独立只读无阻塞级发现。PG新增例尚待CI；单独uv run pytest --collect-only ImportError backend，改uv run python -m pytest收集4项通过，自审失效类型为conflict，不是blocked。
+- 用户酒店probe `.cache/hotel-coverage-summary.json`：19次请求、6coverage/6contrast/6second-night/1page2（京都），19份脱敏样本；六组两晚共20/30有完整总价、10/30未知。最后ExternalDataError，无安全原因码；计数19未增加第二十次，按既有预占代码推断可能日账本门禁（REASONED），没有HTTP429证据，未用额外调用确认。当前实际日累计未读PG，不用用户约6次估计替代。
+- 19份新fixture递归重清洗并扫描当前已配置的乐天凭据原始/URL编码残留，全通过；只输出数量/结果，不输出凭据/原响应。尚未入提交，后续独立覆盖验收提交。
+- 权限指导：当前effective workspace-write+restricted network/auto_review；本地config只显式设置auto_review，当前项目trusted。官方Sandbox/Auto-review文档说明自动审核不扩大边界；用户可在输入框权限菜单切Ask for approval或Full access。没有历史版本/权限对照证据，不能归因为更新新版；没有修改Codex配置、权限或用户服务。

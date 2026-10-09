@@ -288,6 +288,29 @@ def test_stale_wrong_kind_or_internal_hotel_scope_fails_whole_validation() -> No
         validate_itinerary(request(), forged, (destination,), NOW)
 
 
+@pytest.mark.parametrize("live", [False, True], ids=["fixture", "live-shape"])
+def test_current_hotel_quote_survives_legacy_location_projection(live: bool) -> None:
+    """P84：旧报价JSON不含住宿地点，当前完整条件仍由Evidence保存并核验。"""
+    current = request().model_copy(update={"hotel_search_location": "京都"})
+    offer = quote(load_rates()[0][0], current, NOW)
+    assert offer is not None and offer.total is not None
+    if live:
+        offer = offer.model_copy(update={"data_mode": "live", "included_total": offer.total})
+    destination, hotel = record(place(), current), record(offer, current)
+    restored = HotelOffer.model_validate(hotel.value)
+    assert restored.request.hotel_search_location is None
+    assert hotel.conditions["hotel_search_location"] == "京都"
+    proposal = ItineraryProposal(
+        expected_revision=1, items=(item(destination),), hotel_evidence_id=hotel.evidence_id
+    )
+    report = validate_itinerary(current, proposal, (destination, hotel), NOW)
+    assert report.known_cost == offer.total
+    assert not any(c.code == "hotel_total" and c.status == "conflict" for c in report.checks)
+    changed = current.model_copy(update={"hotel_search_location": "京都駅"})
+    with pytest.raises(ValueError, match="失效"):
+        validate_itinerary(changed, proposal, (destination, hotel), NOW)
+
+
 def test_missing_source_never_proves_open_or_known_cost() -> None:
     destination = record(place()).model_copy(update={"provider": None})
     report = validate_itinerary(

@@ -13,6 +13,7 @@ from backend.domain.travel_request import RequestPatch
 from backend.persistence.catalog import import_catalog
 from backend.services.catalog import CatalogService
 from backend.services.common import transaction
+from backend.services.hotels import HotelService
 from backend.services.travel import TravelService
 from backend.tools.travel import TravelToolExecutor
 from data.import_catalog import load_snapshot
@@ -146,6 +147,47 @@ def test_validator_feedback_limit_and_schema_cannot_be_overridden(
                 context, "validate_itinerary", proposal(first).model_dump(mode="json")
             )
         ).data["status"] == "partial"
+
+    runner.run(exercise())
+
+
+def test_queried_hotel_with_location_can_be_validated_and_location_change_rejects_it(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """P84：真实PG往返后仍用完整Evidence条件，不依赖报价旧投影中的地点。"""
+    runner, travel, context = travel_setup
+    executor = TravelToolExecutor(travel)
+
+    async def exercise() -> None:
+        await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": {"transport": "walk", "hotel_search_location": "京都"},
+                }
+            ),
+        )
+        first, _ = await destinations(travel, context)
+        hotel = (await HotelService(travel).search(context, 2, limit=1))[0]
+        candidate = proposal(first).model_copy(update={"hotel_evidence_id": hotel.evidence_id})
+        validated = await executor.execute(
+            context, "validate_itinerary", candidate.model_dump(mode="json")
+        )
+        assert validated.code is None and validated.data["status"] == "partial"
+        assert hotel.conditions["hotel_search_location"] == "京都"
+        await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {"expected_revision": 2, "set": {"hotel_search_location": "京都駅"}}
+            ),
+        )
+        stale = await executor.execute(
+            context,
+            "validate_itinerary",
+            candidate.model_copy(update={"expected_revision": 3}).model_dump(mode="json"),
+        )
+        assert stale.code == "conflict" and "失效" in stale.suggestion
 
     runner.run(exercise())
 
