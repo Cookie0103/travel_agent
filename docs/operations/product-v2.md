@@ -722,3 +722,21 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - Google Chrome新验收tab，本地现有人工合成旅行；编辑开始日期标题点击后Tab/native AX出现月标题与42日期格，Mac原生app可控制。Tab截图与native app截图未含弹层，原生4日格点击后值仍3日、焦点转成人，不能从树存在或截图缺失宣称整体通过/失败。精确getByLabel因来源后缀超时，回AX核对真实状态。
 - 两字段分别Up改年2026→2027/Down复原；收起未保存编辑，摘要原11/03–11/04。未保存、未提交消息、无模型或旅行API调用；恢复截图ignored `.cache/t36-restored-chrome.jpg`已查看，只说明字段还原，不是弹窗通过截图。本次不能沿用历史锁屏原因；保留真实选择/视觉待验。
 - T4.4提交`fecc2b2`普通push成功，新push37907834440/PR37907838979已启动，当时in_progress，未提前标绿。本次仅追加SHA与日期失败尝试记录，未改实现/依赖/服务。
+
+## 2026-10-09 T4.8 / B08：真实覆盖探针审批准备
+
+- 只读现有ADR016/real_api探针和Runtime能力；单接口现有test_real_apis不记录响应、不能直接满足多目的地脱敏样本方案，未运行它；smoke_live还会调用其他供应商，未将其当成零额外查询方案。
+- §10.2 D具体方案：三城两日期pattern0/kinen覆盖6次，三城近日期pattern1对照3次与不发kinen对照3次，共最多12次；无自动翻页/重试，429或账本不足停止。模式对照只能证明样本，单晚不证明多晚；暂不改排序/产品契约。
+- P72模型单轮方案复用GuardedRuntime real_data=False已存在开关，离线旅行业务资料+真实DeepSeek，默认12请求/16工具/4校验/15CNY日账本，不影响用户服务；准备实施前请求授权，尚无实际模型调用。
+- 搜索两次出现zsh未匹配glob/一次不存在路径，改为rg --files与已观察路径，没有执行探针。方案只写当前批次，不新建Bug报告/新增依赖。
+
+## 2026-10-09 P72 / P82：受控真实模型探针准备，尚未付费执行
+
+- 用户授权乐天测试当天30次以内、真实模型一次请求不超过30；保守实施模型default12请求/16工具/4校验/15CNY不变；酒店原12覆盖对照补6多晚与最多3第二页，共≤21且原子日账本≤30。
+- 新模型probe复用run_live real_data=False、默认离线；先合成明确源09–17/18–19闭馆候选，再修复暂存/同稿展示。新模块首ImportError后3passed；独立审查两个P2：pace不是条件字段，先NameError导入修后真实extra_forbidden，改现有soft_constraints，测试set误写修为set_fields；旧稿→展示→闭馆→partial反例1failed/4passed，顺序name/code对齐后5passed。进一步一次标记负例1failed（走到预算而非先拒绝）→6passed；无真实API。
+- 酒店probe默认也离线，脱敏/凭据残留拒写/缺同套餐unknown三例首缺模块红→3passed。初check strict发现猴补consume赋值类型不符与fixture测试dict未标JsonValue；改仅离线重放的计数子类（不连PG）和显式JsonValue，没有忽略类型错误。实际adapter/API账本不变。
+- 最新9专项passed/.52s；包含邻近行程/酒店发现79passed/.97s早于新增一次门禁；default两个probe命令real_calls=0；check294三平台strict/3契约/10入口通过。初ruff长行与2未用import由项目formatter修，不把失败隐去。
+- fecc2b2 push37907834440/PR37907838979三CI均success；85242f4 push37908055529三CI success。当前新探针未提交/未运行，不借用上述CI。
+
+- 受控探针最终离线验证（2026-10-09）：模型旧草稿顺序测试补success/error两种终态；酒店保留键原始/URL编码凭据反例首红2failed（DID NOT RAISE），逐键扫描后修复。`uv run pytest -q tests/test_plan_feedback_probe.py tests/test_hotel_coverage_probe.py tests/test_itinerary.py tests/test_rakuten_discovery.py` 83passed/.94s；`dev check`294文件/三平台strict/3契约/10入口通过；两probe不带--live均real_calls=0。独立只读复核原P2关闭、无阻塞级发现，未读取私密配置或执行真实请求。
+- 恢复核对：当前工作区仅本轮探针/记录；85242f4 push37908055529与PR37908062158均success，之前fecc2b2 PR37907838979也success。新探针CI尚未产生，不借用历史绿灯。
