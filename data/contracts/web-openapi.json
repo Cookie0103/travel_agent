@@ -3073,7 +3073,8 @@
           "place_evidence_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Place Evidence Id"
+            "title": "Place Evidence Id",
+            "description": "仅用search_places/get_place_facts返回的kind=place的evidence_id；不是place_id，也不能用酒店报价或route证据ID"
           },
           "start": {
             "type": "string",
@@ -3097,7 +3098,8 @@
                 "type": "null"
               }
             ],
-            "title": "Route Evidence Id"
+            "title": "Route Evidence Id",
+            "description": "本项的入站路段：仅用estimate_routes返回的kind=route的evidence_id，起点须为同一天前一景点、终点须为本景点；每天首项必须省略。不要把出站路段挂到前一项，不用route_id代替evidence_id"
           },
           "note": {
             "anyOf": [
@@ -3199,7 +3201,8 @@
           "place_evidence_id": {
             "type": "string",
             "format": "uuid",
-            "title": "Place Evidence Id"
+            "title": "Place Evidence Id",
+            "description": "仅用search_places/get_place_facts返回的kind=place的evidence_id；不是place_id，也不能用酒店报价或route证据ID"
           },
           "start": {
             "type": "string",
@@ -3223,7 +3226,8 @@
                 "type": "null"
               }
             ],
-            "title": "Route Evidence Id"
+            "title": "Route Evidence Id",
+            "description": "本项的入站路段：仅用estimate_routes返回的kind=route的evidence_id，起点须为同一天前一景点、终点须为本景点；每天首项必须省略。不要把出站路段挂到前一项，不用route_id代替evidence_id"
           },
           "note": {
             "anyOf": [
@@ -5534,6 +5538,7 @@
         "additionalProperties": false,
         "properties": {
           "place_evidence_id": {
+            "description": "仅用search_places/get_place_facts返回的kind=place的evidence_id；不是place_id，也不能用酒店报价或route证据ID",
             "format": "uuid",
             "title": "Place Evidence Id",
             "type": "string"
@@ -5561,6 +5566,7 @@
               }
             ],
             "default": null,
+            "description": "本项的入站路段：仅用estimate_routes返回的kind=route的evidence_id，起点须为同一天前一景点、终点须为本景点；每天首项必须省略。不要把出站路段挂到前一项，不用route_id代替evidence_id",
             "title": "Route Evidence Id"
           },
           "note": {
@@ -5631,6 +5637,7 @@
         "additionalProperties": false,
         "properties": {
           "place_evidence_id": {
+            "description": "仅用search_places/get_place_facts返回的kind=place的evidence_id；不是place_id，也不能用酒店报价或route证据ID",
             "format": "uuid",
             "title": "Place Evidence Id",
             "type": "string"
@@ -5658,6 +5665,7 @@
               }
             ],
             "default": null,
+            "description": "本项的入站路段：仅用estimate_routes返回的kind=route的evidence_id，起点须为同一天前一景点、终点须为本景点；每天首项必须省略。不要把出站路段挂到前一项，不用route_id代替evidence_id",
             "title": "Route Evidence Id"
           },
           "note": {

@@ -935,6 +935,7 @@ export interface components {
             /**
              * Place Evidence Id
              * Format: uuid
+             * @description 仅用search_places/get_place_facts返回的kind=place的evidence_id；不是place_id，也不能用酒店报价或route证据ID
              */
             place_evidence_id: string;
             /**
@@ -949,7 +950,10 @@ export interface components {
              * @description 含时区的ISO时间；日本时间使用+09:00
              */
             end: string;
-            /** Route Evidence Id */
+            /**
+             * Route Evidence Id
+             * @description 本项的入站路段：仅用estimate_routes返回的kind=route的evidence_id，起点须为同一天前一景点、终点须为本景点；每天首项必须省略。不要把出站路段挂到前一项，不用route_id代替evidence_id
+             */
             route_evidence_id: string | null;
             /**
              * Note
@@ -988,6 +992,7 @@ export interface components {
             /**
              * Place Evidence Id
              * Format: uuid
+             * @description 仅用search_places/get_place_facts返回的kind=place的evidence_id；不是place_id，也不能用酒店报价或route证据ID
              */
             place_evidence_id: string;
             /**
@@ -1002,7 +1007,10 @@ export interface components {
              * @description 含时区的ISO时间；日本时间使用+09:00
              */
             end: string;
-            /** Route Evidence Id */
+            /**
+             * Route Evidence Id
+             * @description 本项的入站路段：仅用estimate_routes返回的kind=route的evidence_id，起点须为同一天前一景点、终点须为本景点；每天首项必须省略。不要把出站路段挂到前一项，不用route_id代替evidence_id
+             */
             route_evidence_id?: string | null;
             /**
              * Note
@@ -1805,6 +1813,7 @@ export interface components {
             /**
              * Place Evidence Id
              * Format: uuid
+             * @description 仅用search_places/get_place_facts返回的kind=place的evidence_id；不是place_id，也不能用酒店报价或route证据ID
              */
             place_evidence_id: string;
             /**
@@ -1821,6 +1830,7 @@ export interface components {
             end: string;
             /**
              * Route Evidence Id
+             * @description 本项的入站路段：仅用estimate_routes返回的kind=route的evidence_id，起点须为同一天前一景点、终点须为本景点；每天首项必须省略。不要把出站路段挂到前一项，不用route_id代替evidence_id
              * @default null
              */
             route_evidence_id: string | null;
@@ -1855,6 +1865,7 @@ export interface components {
             /**
              * Place Evidence Id
              * Format: uuid
+             * @description 仅用search_places/get_place_facts返回的kind=place的evidence_id；不是place_id，也不能用酒店报价或route证据ID
              */
             place_evidence_id: string;
             /**
@@ -1871,6 +1882,7 @@ export interface components {
             end: string;
             /**
              * Route Evidence Id
+             * @description 本项的入站路段：仅用estimate_routes返回的kind=route的evidence_id，起点须为同一天前一景点、终点须为本景点；每天首项必须省略。不要把出站路段挂到前一项，不用route_id代替evidence_id
              * @default null
              */
             route_evidence_id: string | null;

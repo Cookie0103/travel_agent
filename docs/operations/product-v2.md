@@ -780,3 +780,10 @@ TRACE 的校验 `detail` 对 route 冲突附位置标签 `route_departure:confli
 - 全21份真实fixture经TypeAdapter解析，sanitize_payload重清洗与原值相等；扫描当前已配置乐天凭据原始/URL编码残留通过，只输出数量与通过结果。公开酒店资料脱敏样本入提交，原始响应、完整真实报告和脚本marker均ignored。
 - 6覆盖/6模式禁烟对照/6第二晚/3第二页共21请求，第一批19由用户终端、后2由agent；多晚汇总来自授权现场回复与已有探针逐晚匹配20/30，不新增离线测试或重复首晚付费。没有发现新的适配器解析缺陷，ADR016仅记录实查/边界与维持一页决定；不以假红绿包装覆盖验收。
 - P85说明修复c97cd82已push，单独提交；酒店样本/ADR016另一个行为提交。全程不切分支、不合并main、不force push；CI每次push后分别检查。R6未验收、未部署或改Railway。
+
+## 2026-10-09 P87生成契约遗漏与本地API重启
+
+- `c97cd82` push37920630018/PR37920635702及`87dc5e7` push37920862908/PR37920870020全部检查：web/docker-demo success，python唯一test_committed_web_contract_matches_application_and_output_models失败。后两轮1failed/1366passed/1skipped/1deselected，164.80s/161.25s；已读log-failed，不把红灯留到下批。
+- 修复命令：`uv run python -m scripts.export_web_schema`；在apps/web运行`corepack pnpm run generate`及`corepack pnpm exec prettier --write src/lib/api-types.ts`，均exit0。diff只增加8处既有字段description和对应TS注释，不改类型/必填/default/测试断言。没有新增本机离线测试、真实调用或前端build。
+- 服务恢复是此前“不重启”记录之后的操作：只读PG确认0活跃TaskRun，正常TERM旧API子进程27526；正式审批启动`RAKUTEN_DAILY_CAP=100 /Users/ke.chen/.local/bin/uv run --env-file .env python -m backend.server --live --relaxed`，新PID61460/执行会话22058，保持原有relaxed模式。100只在子进程环境，不改.env；15CNY日预算与4校验保持。零费用检查8000/health=200、3000/api/models=200（VERIFIED）。前端未build，Railway不变；当前草稿视觉未看过。
+- 请求收尾：追加授权后47模型HTTP/2.000874CNY与44旅行HTTP，共91，乐天UTC日账本35。停止继续付费试跑；此次成功不代表标准节奏、机场接驳、公交未知和营业时间均已满足。
