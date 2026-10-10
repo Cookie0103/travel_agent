@@ -249,6 +249,17 @@
     gap: 8px;
     padding: 12px 24px 0;
     flex-wrap: wrap;
+    align-items: center;
+  }
+  /* 顶部工具栏：下拉框与按钮统一成紧凑的同一高度 */
+  .chat-toolbar button,
+  .chat-toolbar select {
+    font-size: var(--fs-sm);
+    line-height: 1.5;
+    padding: 4px 10px;
+  }
+  .chat-toolbar .trip-picker {
+    margin: 0;
   }
   .chat-scroll {
     flex: 1;
