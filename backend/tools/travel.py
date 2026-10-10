@@ -132,7 +132,7 @@ DEFINITIONS = (
     ToolDefinition(
         "update_travel_request",
         "只记录用户明确表达的条件；set/clear，必须检查expected_revision。"
-        "全程budget与lodging_budget原值同时保留；后者是住宿分项，注明区间/口径/币种。"
+        "全程budget与lodging_budget原值同时保留；行程住宿仅问每间房每晚日元上限，明确不限写lodging_budget_unlimited并清除金额，有金额则清除不限。单独酒店比较预算可选，不主动追问全程预算/酒店总预算/币种。"
         "每轮提取用户说出的目的地/日期/同行者/房间/两预算/节奏，不要求先填右侧。"
         "手填值优先；明确改成新值的字段列入explicit_fields，模糊提取不要列入。"
         "回执skipped_fields未更新，必须追问；实际更新向用户告知回执message。"

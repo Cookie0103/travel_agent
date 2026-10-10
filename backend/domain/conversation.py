@@ -10,6 +10,7 @@ from backend.domain.travel_request import (
     TravelRequest,
     hotel_search_location_required,
     lodging_budget_relation,
+    trip_segments,
 )
 
 Task = Literal["hotel_comparison", "itinerary"]
@@ -27,6 +28,7 @@ Question = Literal[
     "pace",
     "transport",
     "budget_conflict",
+    "lodging_budget",
 ]
 
 
@@ -68,6 +70,13 @@ def task_missing(
         fields.extend(missing_room_choices(request.hard_constraints))
     elif request.transport is None:
         fields.append("transport")
+    if (
+        task == "itinerary"
+        and request.lodging_budget is None
+        and not request.lodging_budget_unlimited
+        and any(segment.depart > segment.arrive for segment in trip_segments(request))
+    ):
+        fields.append("lodging_budget")
     if lodging_budget_relation(request).status == "conflict":
         fields.append("budget_conflict")
     if task == "itinerary" and not any(
@@ -100,5 +109,7 @@ def conversation_view(
         "nights": (request.end_date - request.start_date).days
         if request.start_date and request.end_date
         else None,
-        "lodging_budget_optional": request.lodging_budget is None,
+        "lodging_budget_optional": (
+            request.lodging_budget is None and "lodging_budget" not in missing
+        ),
     }

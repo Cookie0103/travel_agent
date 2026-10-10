@@ -8,7 +8,8 @@ from uuid import UUID, uuid4
 
 import pytest
 
-from backend.domain.execution import RunContext, RuntimeOutcome
+from backend.agent.fixture_runtime import FixtureRuntime
+from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.travel_request import RequestPatch
 from backend.persistence import runs
 from backend.services.common import transaction
@@ -35,6 +36,58 @@ async def finish(travel: TravelService, context: RunContext) -> None:
             context,
             RuntimeOutcome(text="实时回复仅供本轮查看；详情按需更新。", sdk_session_id="synthetic"),
         )
+
+
+@pytest.mark.parametrize("manual_unknown", [False, True])
+def test_nightly_budget_question_and_unlimited_short_answer_survive_pg_restore(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+    manual_unknown: bool,
+) -> None:
+    """R13：真实PG当前预算问题的裸不限由原fixture写入，继续不重复追问。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": {
+                        "soft_constraints": ["节奏：标准"],
+                        "transport": "walk",
+                        **({"lodging_budget_unlimited": False} if manual_unknown else {}),
+                    },
+                }
+            ),
+        )
+        turn = await create_run(travel, context, "合成行程任务：住宿预算不限")
+        state = await TravelToolExecutor(travel).execute(
+            turn,
+            "update_conversation_state",
+            {"expected_revision": 2, "goals": ["itinerary"], "awaiting_field": "lodging_budget"},
+        )
+        assert state.code is None and state.data["missing_fields"] == ["lodging_budget"]
+        events: list[RuntimeEvent] = []
+        outcome = await FixtureRuntime(TravelToolExecutor(travel)).execute(
+            turn, "不限", None, events.append, asyncio.Event()
+        )
+        assert outcome.code is None and "不限" in outcome.text
+        restored = await TravelService(travel.database).get_request(turn)
+        assert restored.lodging_budget_unlimited and restored.lodging_budget is None
+        await finish(travel, turn)
+        next_turn = await create_run(travel, context, "继续")
+        business = await TravelService(travel.database).business_context(next_turn)
+        dialogue = business["conversation"]
+        assert isinstance(dialogue, dict)
+        assert dialogue["awaiting_field"] is None and dialogue["missing_fields"] == []
+        assert dialogue["ready_tasks"] == ["itinerary"]
+        continued = await FixtureRuntime(TravelToolExecutor(travel)).execute(
+            next_turn, "继续", outcome.sdk_session_id, events.append, asyncio.Event()
+        )
+        assert continued.code is None and "每间房每晚" not in continued.text
+        assert "全程预算" not in continued.text and "币种" not in continued.text
+
+    runner.run(exercise())
 
 
 def test_original_goal_and_bed_question_survive_three_rounds_without_supplier_text(
@@ -72,6 +125,13 @@ def test_original_goal_and_bed_question_survive_three_rounds_without_supplier_te
         await finish(travel, origin)
         for prompt in ("没有小孩", "一间房", "住宿没有单独上限"):
             turn = await create_run(travel, context, prompt)
+            if prompt == "住宿没有单独上限":
+                budget_answer = await TravelToolExecutor(travel).execute(
+                    turn,
+                    "update_travel_request",
+                    {"expected_revision": 2, "set": {"lodging_budget_unlimited": True}},
+                )
+                assert budget_answer.code is None
             await finish(travel, turn)
         state = await TravelService(travel.database).business_context(
             replace(context, run_id=uuid4())
@@ -90,7 +150,7 @@ def test_original_goal_and_bed_question_survive_three_rounds_without_supplier_te
             answer,
             "update_travel_request",
             {
-                "expected_revision": 2,
+                "expected_revision": (await travel.get_request(answer)).revision,
                 "set": {"hard_constraints": ["住宿：独立房间", "房型：禁烟", "床型：无要求"]},
                 "explicit_fields": ["hard_constraints"],
             },
@@ -430,7 +490,10 @@ def test_itinerary_missing_local_transport_can_clarify_without_forced_execution(
         await travel.patch_request(
             context,
             RequestPatch.model_validate(
-                {"expected_revision": 1, "set": {"soft_constraints": ["节奏：标准"]}}
+                {
+                    "expected_revision": 1,
+                    "set": {"soft_constraints": ["节奏：标准"], "lodging_budget_unlimited": True},
+                }
             ),
         )
         turn = await create_run(travel, context, "合成行程任务")

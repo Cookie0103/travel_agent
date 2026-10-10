@@ -4,6 +4,7 @@ import re
 from datetime import date, timedelta
 from decimal import Decimal
 
+from backend.domain.conversation import Task, task_missing
 from backend.domain.room_preferences import room_preferences_question
 from backend.domain.travel_request import TravelRequest
 
@@ -86,7 +87,12 @@ def unsupported_trip_currency(prompt: str) -> bool:
 
 
 def fixture_patch(
-    prompt: str, request: TravelRequest, today: date, *, protect_hard_constraints: bool = False
+    prompt: str,
+    request: TravelRequest,
+    today: date,
+    *,
+    protect_hard_constraints: bool = False,
+    awaiting_field: str | None = None,
 ) -> dict[str, object]:
     """有限词汇/金额/日期样例输入转工具参数；不扫描历史或第三方资料。"""
     text = prompt.replace("（", "(").replace("）", ")")
@@ -136,11 +142,18 @@ def fixture_patch(
     ):
         factor = {"万": 10000, "千": 1000, None: 1}[budget[2]]
         put("budget", str(Decimal(budget[1]) * factor), budget)
+    lodging_text = text
+    if awaiting_field == "lodging_budget" and re.fullmatch(
+        r"\s*\d+(?:\.\d+)?(?:[–—\-到至]\d+(?:\.\d+)?)?(?:万|千)?"
+        r"(?:\s*(?:[A-Z]{3}|日元|美元|欧元|人民币))?\s*",
+        text,
+    ):
+        lodging_text = "住宿每晚" + text.strip()
     if lodging := re.search(
-        r"(?:酒店|住宿)(?:预算)?(每房每晚|每晚|总额|总共)(?:改成|改为|是|为)?\s*"
+        r"(?:酒店|住宿)(?:预算)?(每间房每晚|每房每晚|每晚|总额|总共)(?:改成|改为|是|为)?\s*"
         r"(\d+(?:\.\d+)?)(?:[–—\-到至](\d+(?:\.\d+)?))?(万|千)?"
         r"(?:\s*([A-Z]{3}|日元|美元|欧元|人民币))?",
-        text,
+        lodging_text,
     ):
         factor = {"万": 10000, "千": 1000, None: 1}[lodging[4]]
         put(
@@ -157,6 +170,32 @@ def fixture_patch(
             },
             lodging,
         )
+        if awaiting_field == "lodging_budget":
+            explicit.add("lodging_budget")
+        if request.lodging_budget_unlimited:
+            clear.append("lodging_budget_unlimited")
+            if is_explicit(lodging) or awaiting_field == "lodging_budget":
+                explicit.add("lodging_budget_unlimited")
+    unlimited = re.search(
+        r"(?:住宿|酒店)(?:预算)?(?:改成|改为|是|为)?\s*(不限|无上限|没有(?:单独)?上限)", text
+    )
+    if awaiting_field == "lodging_budget" and unlimited is None:
+        unlimited = re.search(r"^\s*(不限|无上限|没有上限)\s*[。！]?$", text)
+    if unlimited:
+        if "lodging_budget" in fields:
+            return {
+                "expected_revision": request.revision,
+                "set": {},
+                "clear": [],
+                "explicit_fields": [],
+            }
+        put("lodging_budget_unlimited", True, unlimited)
+        if awaiting_field == "lodging_budget":
+            explicit.add("lodging_budget_unlimited")
+        if request.lodging_budget is not None:
+            clear.append("lodging_budget")
+            if is_explicit(unlimited) or awaiting_field == "lodging_budget":
+                explicit.add("lodging_budget")
     if weekend := re.search(r"下周末", text):
         saturday = today + timedelta(days=7 - today.weekday() + 5)
         put("start_date", saturday.isoformat(), weekend)
@@ -187,9 +226,22 @@ def fixture_patch(
         put("hard_constraints", constraints.copy(), match)
     for name, label in (("budget", "全程预算"), ("lodging_budget", "住宿预算")):
         if re.search(rf"清空{label}|{label}(?:清空|改为未知)", text):
+            if name == "lodging_budget" and (
+                "lodging_budget" in fields or "lodging_budget_unlimited" in fields
+            ):
+                return {
+                    "expected_revision": request.revision,
+                    "set": {},
+                    "clear": [],
+                    "explicit_fields": [],
+                }
             fields.pop(name, None)
             clear.append(name)
             explicit.add(name)
+            if name == "lodging_budget" and request.lodging_budget_unlimited:
+                fields.pop("lodging_budget_unlimited", None)
+                clear.append("lodging_budget_unlimited")
+                explicit.add("lodging_budget_unlimited")
     return {
         "expected_revision": request.revision,
         "set": fields,
@@ -198,7 +250,9 @@ def fixture_patch(
     }
 
 
-def missing_question(request: TravelRequest) -> str:
+def missing_question(request: TravelRequest, *, task: Task | None = None) -> str:
+    if task == "itinerary" and "lodging_budget" in task_missing(request, task):
+        return "每间房每晚的住宿预算上限是多少日元？也可以明确回答不限。"
     labels = {
         "city": "目的地",
         "start_date": "开始日期",

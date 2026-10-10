@@ -14,6 +14,7 @@ from backend.agent.fixture_conditions import (
     unsupported_trip_currency,
 )
 from backend.agent.runtime import EventSink
+from backend.domain.conversation import Task
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, RuntimeOutcome
 from backend.domain.travel_request import TravelRequest
 from backend.tools.contracts import ToolExecutor
@@ -43,6 +44,13 @@ class FixtureRuntime:
             view = await self.executor.travel.get_request_view(context)
             request: TravelRequest = view
             protect_hard = view.field_sources.get("hard_constraints") == "user_form"
+            business = await self.executor.travel.business_context(context)
+            conversation = business["conversation"]
+            assert isinstance(conversation, dict)
+            pending = conversation["pending_tasks"]
+            assert isinstance(pending, list)
+            task: Task | None = "itinerary" if "itinerary" in pending else None
+            awaiting = conversation.get("awaiting_field")
             if unsupported_trip_currency(prompt):
                 text = (
                     "全程预算目前只支持日元，离线演示未更新任何条件。"
@@ -62,6 +70,7 @@ class FixtureRuntime:
                 request,
                 datetime.now(ZoneInfo("Asia/Tokyo")).date(),
                 protect_hard_constraints=protect_hard,
+                awaiting_field=awaiting if isinstance(awaiting, str) else None,
             )
             if patch["set"] or patch["clear"]:
                 if cancelled.is_set():
@@ -98,18 +107,18 @@ class FixtureRuntime:
                     if isinstance(relation, dict) and relation.get("status") == "conflict":
                         text += "\n" + str(relation["message"])
                     else:
-                        text += "\n" + missing_question(request)
+                        text += "\n" + missing_question(request, task=task)
                 emit(RuntimeEvent(context, "text", text=text))
                 return RuntimeOutcome(text, sdk_session_id or str(uuid4()))
             # 查询样例可用明确城市；其他未识别表达追问，不注入京都默认值。
             if not re.search(r"室内|雨|景点|攻略|文章|查询|推荐", prompt):
-                text = "离线演示未识别本次新条件。" + missing_question(request)
+                text = "离线演示未识别本次新条件。" + missing_question(request, task=task)
                 emit(RuntimeEvent(context, "text", text=text))
                 return RuntimeOutcome(text, sdk_session_id or str(uuid4()))
             city_match = re.search(r"札幌|京都|东京|東京|大阪|名古屋|福冈|横滨", prompt)
             city = city_match[0].replace("東京", "东京") if city_match else request.city
             if not city:
-                text = "离线演示仅识别有限旅行表达。" + missing_question(request)
+                text = "离线演示仅识别有限旅行表达。" + missing_question(request, task=task)
                 emit(RuntimeEvent(context, "text", text=text))
                 return RuntimeOutcome(text, sdk_session_id or str(uuid4()))
         else:

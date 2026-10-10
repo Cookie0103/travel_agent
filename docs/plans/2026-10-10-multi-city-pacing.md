@@ -145,8 +145,8 @@ PlanPatch:
 | T1.1 | 条件模型：`TripSegment`、`segments`、`lodging_budget_unlimited`、派生函数、`same_city`、`pace_of`；`request_details` 读写；`invalidated_kinds` | T0.1 | domain/travel_request.py、services/travel.py(`request_from_row` 及写入处)、ADR-015 追加一节 | ① 段重叠/缺口/首末不符/非末段0晚 → 拒绝（失败路径）② `apply_request_patch` 设置/清除 segments、revision 正确递增 ③ 单城市 `evidence_conditions` 输出与基线字节相同 ④ `pace_of` 覆盖 soft/hard 与同义词 ⑤ PG：写入 segments 后重新读取一致 | done | `03701b1` 已push；先红PG1 failed/294 passed→最终1455 passed/1 skipped/4 deselected（310.24s）；check/生成/web119/构建通过，独立P2先红后修及复核通过（P-05/P-06） |
 | T1.2 | 行程模型：`HotelStay`、`hotel_stays`、互斥校验、`stays_of`；移除 4 处 24 上限（改为一个宽松的防护上限，建议 200，并与 512 KiB 请求边界一起保留诊断日志） | T1.1 | domain/plans.py、domain/itinerary.py、services/plans.py(LockInput) | ① 同时给 `hotel_evidence_id` 与 `hotel_stays` → 拒绝 ② 旧 `hotel_evidence_id` 内容可读、`stays_of` 转为单段 ③ 30 项 PlanContent/patch/locks 通过模型校验 | done | `22b4ff9` 已push；先红1 failed→定向20 passed→全量1461 passed/1 skipped/4 deselected（310.85s）；check299/生成/web119/构建退出0；自审/独立复核无P1/P2（P-07） |
 | T2.1 | 按段查询酒店：`HotelSearchInput` 增 `segment_arrive: date \| None`（多城市时必填，单城市省略）；服务端用 `segment_request` 调现有 `_quote`；`refresh` 沿用原报价的段 | T1.1 | tools/travel.py、services/hotels.py、domain/evidence.py(`applicable`) | ① 三段行程分别查两段酒店，证据条件各自匹配 ② 多城市不给 segment → 422 明确提示 ③ 查询后全局 request 未被修改（revision 不变） ④ 单城市调用参数与结果不变 | done | `66214cf` 已push；先红领域/PG各1 failed→定向62 passed→全量1465 passed/1 skipped/4 deselected（308.04s）；check299/生成/web119/构建退出0；自审/独立审查无P1/P2（P-08/P-09） |
-| T2.2 | 校验与暂存/确认：validator 改按 stays、按天城市归属；`content_view` 返回 stays 与各自酒店卡；给模型读完整 `item_id`：`bounded_plan` 在 cards 截断时附带完整 `item_ids`（仅 UUID+日期+名称，受 RESULT_LIMIT 约束），或复用已有读取工具，二选一并在 §8 记录 | T1.2、T2.1 | domain/validator.py、services/plans.py、tools/travel.py | ① 三城市+两段住宿 草稿→confirm→get（PG）全程通过 ② 漏一段住宿、stay 日期与段不符、报价属于别的段 → 各自 conflict 且 confirm 被拒 ③ 30 项行程：stage→confirm→get→对第 27 项 patch→confirm（PG）④ 跨城市重复景点仍被 `require_unique_sightseeing` 拒绝；同城再次入住不报重复 ⑤ 旧单城市已保存数据（直接写入旧 payload）可 get、patch、confirm | doing | 最终全量1488 passed/1 skipped/4 deselected（308.34s）、check300/生成/web119/构建退出0，PG38相关通过；自审及独立复核无P1/P2，准备commit/push（P-10—P-13） |
-| T3.1 | 住宿预算确认：`task_missing` 按 D4 增 `lodging_budget`；条件提取写入 per_room_night/JPY 或 unlimited；改 persona.py:54；`update_travel_request` 描述只问每间每晚 | T1.1 | domain/conversation.py、tools/travel.py(描述)、agent/persona.py、agent/fixture_conditions.py | ① 有住宿且两者皆空 → itinerary 缺 `lodging_budget`；② 说“不限” → `unlimited=True`，不再缺；③ 已给金额 → 不重复问；④ 当日往返（0晚）不要求；⑤ 不新增全程预算/币种追问（fixture 对话测试断言回复不含这些问题） | todo | |
+| T2.2 | 校验与暂存/确认：validator 改按 stays、按天城市归属；`content_view` 返回 stays 与各自酒店卡；给模型读完整 `item_id`：`bounded_plan` 在 cards 截断时附带完整 `item_ids`（仅 UUID+日期+名称，受 RESULT_LIMIT 约束），或复用已有读取工具，二选一并在 §8 记录 | T1.2、T2.1 | domain/validator.py、services/plans.py、tools/travel.py | ① 三城市+两段住宿 草稿→confirm→get（PG）全程通过 ② 漏一段住宿、stay 日期与段不符、报价属于别的段 → 各自 conflict 且 confirm 被拒 ③ 30 项行程：stage→confirm→get→对第 27 项 patch→confirm（PG）④ 跨城市重复景点仍被 `require_unique_sightseeing` 拒绝；同城再次入住不报重复 ⑤ 旧单城市已保存数据（直接写入旧 payload）可 get、patch、confirm | done | 最终全量1488 passed/1 skipped/4 deselected（308.34s）、check300/生成/web119/构建退出0，PG38相关通过；自审及独立复核无P1/P2，已commit/push6262d2e（P-10—P-13） |
+| T3.1 | 住宿预算确认：`task_missing` 按 D4 增 `lodging_budget`；条件提取写入 per_room_night/JPY 或 unlimited；改 persona.py:54；`update_travel_request` 描述只问每间每晚 | T1.1 | domain/conversation.py、tools/travel.py(描述)、agent/persona.py、agent/fixture_conditions.py | ① 有住宿且两者皆空 → itinerary 缺 `lodging_budget`；② 说“不限” → `unlimited=True`，不再缺；③ 已给金额 → 不重复问；④ 当日往返（0晚）不要求；⑤ 不新增全程预算/币种追问（fixture 对话测试断言回复不含这些问题） | doing | 先红3 failed及审查4 failed→全量1507 passed/1 skipped/4 deselected（309.91s）；check301/PG Healthy/生成/web119/构建通过，自审/独立复核无P1/P2；待commit/push |
 | T3.2 | 节奏与密度：validator 用 `pace_of`；完整日/非完整日判定；`pace_too_sparse`、`day_gap`；conversation、fixture 统一用 `pace_of` | T1.1、T2.2 | domain/validator.py、domain/conversation.py、agent/fixture_conditions.py | ① 标准节奏完整日 2 个景点 → `pace_too_sparse` ② 转场日 2 个 → 不报 ③ 完整日 13:00–17:00 空白 → `day_gap` ④ 慢节奏 4 个 → `pace_warning` ⑤ 已说“轻松” → 不再追问节奏 | todo | |
 | T3.3 | 停留时长：类别区间表 + `visit_duration_range` | T2.2 | domain/catalog.py、domain/validator.py | ① 博物馆 15 分钟 → conflict ② 神社 6 小时 → conflict ③ 博物馆 40 分钟 → unknown ④ 酒店/餐厅 10 小时不报 ⑤ 正常行程无此类检查失败 | todo | |
 | T4.1 | 提示词：删 persona.py:59“说明是模型概述、非来源核实”；`ProposedItem.note` description 改为“一句话简介”；多城市指引（按段 search_places 用段城市原文、按段查酒店、转场日留时间、跨城交通写成“建议”且不写未查询的车次/耗时/票价）；节奏/时长规则说明 | T2.2、T3.* | agent/persona.py、domain/itinerary.py、tools/travel.py | 提示词快照/现有提示词测试更新并通过；persona 不再含“非来源核实”；512 KiB 请求边界测试仍通过 | todo | |
@@ -177,11 +177,11 @@ PlanPatch:
 
 ### 2026-10-10
 - 计划：依次执行 T0.1–T5.1，D1–D6 按推荐；T0.2 先部署再进入 T1.1。
-- 完成：T0.1/T0.2（33df5fe已push）、T1.1（03701b1已push）、T1.2（22b4ff9已push）；Railway兼容读部署/旧V1 GET200已验，§3.2源码核对无出入；全量结果见§9.1，P-01–P-06完成。
-- 未完成及原因：T2.2开始；T2.1（66214cf已push）全量1465 passed、check299/生成/web119/构建与独立审查通过。
-- 下一步：T2.2最终完整test及提交/push；定向35 passed、check300/生成/web119/PG Healthy、独立审查复核通过，再按顺序T3.1。
+- 完成：T0.1/T0.2（33df5fe）、T1.1（03701b1）、T1.2（22b4ff9）、T2.1（66214cf）、T2.2（6262d2e）均已push；Railway兼容读部署/旧V1 GET200已验，§3.2源码核对无出入；全量结果见§9.1，P-01–P-13完成。
+- 未完成及原因：T3.1实现与PG定向验证通过，独立审查发现同句住宿预算赋值/清空冲突，已先红4 failed后修复；完整验证与提交尚未完成。T3.2以后尚未开始。
+- 下一步：T3.1住宿预算确认（doing），然后T3.2/T3.3；T2.2已6262d2e提交推送，最终1488 passed和全部检查/审查通过。
 
-恢复点（2026-10-10 22:50 JST）：HEAD `66214cf` 已push，T0.1–T2.1完成；未提交均T2.2（含生成契约，web-generate更新）。所有T2.2定向最终38 passed/4.18s（t22-receipt-green-3.log），P-12/P-13先红后修及只读复核无P1/P2；check300/三平台/3契约/10入口退出0，web119/构建/生成退出0，db-up Healthy。过程全量1482/1485 passed分别303.60/305.24s；随后新回执复核修复，为避免旧代码验证耗时，停止旧全量pytest。最终代码全量现在运行session84693（t22-test-ready.log），结果尚未读。当前无待修代码问题；必须等此轮完整退出0再commit/push，更新§4/§8/§9。T3.1尚未开始。没有真实模型/浏览器T5验收。测试CLI固定2.1.295，Git inline作者Cookie0103/chenke.cookie@gmail.com、共作者行，当前分支normal push。
+恢复点（2026-10-10 23:03 JST）：HEAD `6262d2e` 已push，T0.1–T2.2全部完成。未提交均是本agent的T3.1：conversation、fixture_conditions/runtime、persona、tools/travel描述、PG会话测试、新test_lodging_confirmation.py和本计划。预算先红3 failed后实现；相关125 passed，check301/三平台/3契约/10入口与生成已过。独立审查的同句赋值/清空问题4 failed→修复后相关109 passed（8.43s，含真实PG恢复与手填来源）。下一步复核、完整test与web-check、自审、T3.1单独commit/push；T3.2以后尚未开始，浏览器/真实API T5未做。CLI固定2.1.295，仅项目dev.py命令，Git同作者与共作者。
 
 ## 8. 问题解决记录
 
@@ -252,38 +252,46 @@ PlanPatch:
 - 方案：沿用原min(8,晚数+1)保护，以当前全程住宿晚数给多城市查询共享预算（采用）；单城不传新增可选内部参数，原调用/配额精确不变。只为adapter.search增加可选budget_nights，服务从已知全程日期传入；不提高8次硬上限、不改.env每日预算或档位，不新增循环/依赖。改变的是计算输入的段范围，不改变D1–D6。
 - 验证：失败路径不改断言，同一PG成功路径修复后通过；补2/1000晚共享budget输入仍为3/8，以及第4次调用拒绝。原单城三档动态配额测试保留。check定位旧测试adapter子类签名需接受新增可选kw，仅同步签名，不改断言。完整check/test退出0，1465 passed/1 skipped/4 deselected（308.04s），独立审查无P1/P2，66214cf已commit/push。
 
-### P-10 [T2.2/端到端] 住宿段校验、恢复与长行程ID可见性   状态：doing   关联：T2.2
+### P-10 [T2.2/端到端] 住宿段校验、恢复与长行程ID可见性   状态：done   关联：T2.2
 - 范围：按天城市+stays校验、各段住宿成本与预算unknown、stage/confirm/get/locks保留住宿、PG30项修改第27项、旧单城结果与payload保留。
 - 读取方案（REASONED）：采用复用既有get_saved_plan工具，增加items_only/item_offset紧凑分页（每页最多40个UUID+日期+名称），不新建工具。200项UUID加日期名称超过RESULT_LIMIT8000，不能假称一个完整item_ids数组总能放下；分页提供next_item_offset且名称有界，保留原结果上限。默认详细读取和页面API保持旧行为，模型按offset取得每个稳定ID。
 - 先红：领域三城市实际conflict而非partial（1 failed，t22-domain-red.log）；PG新测试先修正set不带null的输入，实际stage被T0.2只读保护拒绝（1 failed，t22-pg-red-2.log）。单城市完整报告字节基线在实现前1 passed（t22-single-baseline.log）。
 - 初轮：三城市5/30项、漏住宿/范围/错段/重复及领域共13 passed；剩余失败为T0.2本批临时视图/只读阶段契约。按批准T2.2启用转为新视图（引用不丢、未知hotel=null）、locks no-op保持旧JSONB及无报价/重复依旧拒绝，原基线业务断言不变。
 - 附加先红：酒店卡用全程四晚金额判两晚价，7500/晚相对6000误报False（1 failed，t22-card-budget-red.log）；按匹配住宿段内存副本复用预算关系修复，旧单城卡片计算不变。最终定向35 passed/4.35s，含直接旧payload修改确认、同城再次入住、正常/转义名称200项连续ID分页（P-12）；check300三平台/生成/web119/构建退出0，完整test待最终重跑。
 
-- 提交前验证：最终dev test1488 passed/1 skipped/4 deselected（308.34s），check300/三平台/3契约/10入口、生成、web119/构建退出0；相关38 passed，独立只读复核通过。提交SHA随后写入。
+- 提交前验证：最终dev test1488 passed/1 skipped/4 deselected（308.34s），check300/三平台/3契约/10入口、生成、web119/构建退出0；相关38 passed，独立只读复核通过。已commit/push6262d2e。
 
-### P-11 [计划外/T2.2隐性上限] 30项含路线超过单次50条证据   状态：doing   关联：T2.2
+### P-11 [计划外/T2.2隐性上限] 30项含路线超过单次50条证据   状态：done   关联：T2.2
 - 根因依据：resolve_records保持单次50条，旧24项+相邻路线最多48；新30项+25个同日路线+两住宿需要57条。仅无路线30项测试会漏掉实际保存失败。
 - 先红：PG30项先按现有PlanningService.routes（每次≤6）查询全部同日路线，再暂存；完整引用>50的断言保留，实际evidence_over_50拒绝（t22-route-limit-red.log）。
 - 方案：validate_proposal在同一已有事务与会话锁内按50条分批调用resolve_records，全部收齐再hydrate/validate，不放宽公共单次50边界；行程模型200和请求512KiB边界继续生效。不增加模型循环/工具/依赖。
 
-- 提交前验证：最终dev test1488 passed/1 skipped/4 deselected（308.34s），check300/三平台/3契约/10入口、生成、web119/构建退出0；相关38 passed，独立只读复核通过。提交SHA随后写入。
+- 提交前验证：最终dev test1488 passed/1 skipped/4 deselected（308.34s），check300/三平台/3契约/10入口、生成、web119/构建退出0；相关38 passed，独立只读复核通过。已commit/push6262d2e。
 
-### P-12 [T2.2/独立审查] 未知报价绑定、转义分页与日期时区   状态：doing   关联：T2.2
+### P-12 [T2.2/独立审查] 未知报价绑定、转义分页与日期时区   状态：done   关联：T2.2
 - 依据：只读审查定位hotel_cost未知来源提前返回，导致任意段适用报价可挂错stay；40条名称80字符未经JSON转义尺寸计算；紧凑日期截字符串忽略日本时区。
 - 先红：未知报价跨段领域1 failed（partial而非conflict）；真实PG转义名称1 failed（result_too_long）；UTC跨日1 failed（日期11-02而非日本11-03）。原始日志t22-review-source-red/t22-review-page-red-2/t22-review-day-red.log。
 - 排除：首次使用零字符被PG JSONB拒绝22P05，属于合成输入问题，换合法换行后实际复现尺寸根因；不改数据库/校验。
 - 方案：stay先复用record.applicable(scoped,now)，旧单城hotel_cost不动；紧凑视图复用RESULT_LIMIT按真实payload尺寸缩页、next_item_offset跟随实际条数；日期复用KYOTO时区。补PG错误来源confirm拒绝与200项分页连续完整ID验证；默认正常名称仍每页40，转义名称按上限可少于40。
 
-- 提交前验证：最终dev test1488 passed/1 skipped/4 deselected（308.34s），check300/三平台/3契约/10入口、生成、web119/构建退出0；相关38 passed，独立只读复核通过。提交SHA随后写入。
+- 提交前验证：最终dev test1488 passed/1 skipped/4 deselected（308.34s），check300/三平台/3契约/10入口、生成、web119/构建退出0；相关38 passed，独立只读复核通过。已commit/push6262d2e。
 
-### P-13 [计划外/工具回执] 新条件缺少中文标签   状态：doing   关联：T1.1 T2.2 T3.1
+### P-13 [计划外/工具回执] 新条件缺少中文标签   状态：done   关联：T1.1 T2.2 T3.1
 - 根因（VERIFIED）：TravelToolExecutor更新成功后调用update_message；LABELS没有segments/unlimited，直接条件PG入口不走这一步，未暴露KeyError。纯领域回执失败1 failed（t22-receipt-red.log），并补真实PG工具入口写入/恢复，不替代服务层测试。
 - 方案：在原condition_labels补两项中文标签与值格式；城市段按城市/日期显示，不限显示不限；旧字段文案和读写行为不变。不新增解释层或框架。
 - 独立复核再发现不限→金额的bool=False回执显示未知，与金额矛盾；补先红1 failed后False复用原金额格式，未知只用于金额确实为空。工具PG合成入参明确声明explicit_fields=segments，手填守卫保持；没有修改断言或来源校验。刚启动的旧代码全量主动终止，待相关绿与复核后跑一次最终全量。先前完整1482/1485 passed为过程证据。
 
+### P-14 [T3.1/预算确认] 行程必需确认与酒店比较可选分离   状态：doing   关联：T3.1
+- 先红：task_missing漏预算、fixture预算追问入口缺失、金额未清除互斥不限，真实失败3 failed/5 passed（t31-red-2.log）；初次合成输入修正为ConversationRequestPatch并解包apply_request_patch返回，不修改断言。
+- 方案：只在itinerary且有住宿/预算未答时增加lodging_budget；Question加入预算，纯派生trip_segments判断晚数；金额/不限/0晚不重复问，hotel_comparison仍可选。persona与更新工具仅问每间房每晚JPY，不主动全程/酒店总额/币种。
+- 有限离线：fixture_patch仅在当前预算问题允许裸不限，明确住宿不限也可写；金额/不限互斥旧值按明确变更清除；同句矛盾不任选。missing_question可接已有task，FixtureRuntime复用已有business_context的pending/awaiting，短答不靠助手历史猜测，不新增模型循环。
+- 原会话回归fixture调整：原“住宿没有单独上限”只存prompt没有执行事实更新，新增预算必需后导致missing_fields多一项。保留全部原断言，模拟这一明确答案真正调用update工具，后续patch用实际revision；transport-only样例明确设置不限，从而继续只检验transport追问，不放宽服务规则。
+- 过程：领域/fixture/persona76 passed；既有真实PG会话42 passed（13.24s）；新增PG问预算→不限→恢复→继续，含手填False来源守卫，相关125 passed（13.51s）；check301与生成通过。
+- 独立审查根因（VERIFIED）：赋值不限后清空只看旧unlimited，旧False/True导致不同结果；补金额/不限×旧False/True四例，同句冲突均须澄清，4 failed（t31-review-red.log）→不产生任何patch，相关109 passed（8.43s，t31-review-green.log）。不改既有断言。最终全量1507 passed/1 skipped/4 deselected（309.91s），check301三平台/3契约/10入口、PG Healthy、生成、web119/构建退出0，自审/独立复核无P1/P2；待独立commit/push。
+
 ## 9. 验证与交付
 
-- 提交前验证：最终dev test1488 passed/1 skipped/4 deselected（308.34s），check300/三平台/3契约/10入口、生成、web119/构建退出0；相关38 passed，独立只读复核通过。提交SHA随后写入。
+- 提交前验证：最终dev test1488 passed/1 skipped/4 deselected（308.34s），check300/三平台/3契约/10入口、生成、web119/构建退出0；相关38 passed，独立只读复核通过。已commit/push6262d2e。
 
 ### 9.1 必需命令（项目自有，不得自造）
 
@@ -309,9 +317,11 @@ uv run python scripts/dev.py web-check    # typecheck / lint / test / build
 
 | T2.1 按段酒店 `66214cf` | 299文件、三平台strict、3契约、10入口，退出0 | 1465 passed / 1 skipped / 4 deselected，308.04s，退出0 | 同一真实PG，两段查询/刷新/拒绝及旧单城回归实际运行 | 退出0，无净生成差异 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
 
-| T2.2 住宿与长行程（待记录SHA） | 300文件、三平台strict、3契约、10入口，退出0 | 1488 passed / 1 skipped / 4 deselected，308.34s，退出0 | PostgreSQL17 Healthy，真实PG保存/恢复/失败与200项分页实际运行 | 退出0，契约由命令生成 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
+| T2.2 住宿与长行程 `6262d2e` | 300文件、三平台strict、3契约、10入口，退出0 | 1488 passed / 1 skipped / 4 deselected，308.34s，退出0 | PostgreSQL17 Healthy，真实PG保存/恢复/失败与200项分页实际运行 | 退出0，契约由命令生成 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
 
 Python全量使用进程级 `TRAVEL_CLAUDE_CLI` 选定已安装/CI锁定的2.1.295；未改全局CLI/.env/白名单。1 skipped为既有平台专属测试，4 deselected为既有live标记，未新增跳过。
+
+| T3.1 预算确认（待commit） | 301文件、三平台strict、3契约、10入口，退出0 | 1507 passed / 1 skipped / 4 deselected，309.91s，退出0 | PostgreSQL17 Healthy，预算追问/不限/手填来源/恢复实际运行 | 退出0，契约由命令生成 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
 
 ### 9.2 必要测试清单（精简，核心成功+失败路径）
 
