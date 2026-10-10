@@ -2720,6 +2720,43 @@
         "title": "HotelStay",
         "description": "住宿段日期与报价引用；段范围及报价条件由行程validator核验。"
       },
+      "HotelStayView": {
+        "properties": {
+          "check_in": {
+            "type": "string",
+            "format": "date",
+            "title": "Check In"
+          },
+          "check_out": {
+            "type": "string",
+            "format": "date",
+            "title": "Check Out"
+          },
+          "hotel_evidence_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hotel Evidence Id"
+          },
+          "hotel": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HotelCard"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "check_in",
+          "check_out",
+          "hotel_evidence_id"
+        ],
+        "title": "HotelStayView"
+      },
       "ItemDiff": {
         "properties": {
           "item_id": {
@@ -3176,6 +3213,17 @@
               "live"
             ],
             "title": "Data Mode"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
           }
         },
         "additionalProperties": false,
@@ -3342,7 +3390,7 @@
           },
           "hotel_stays": {
             "items": {
-              "$ref": "#/components/schemas/HotelStay"
+              "$ref": "#/components/schemas/HotelStayView"
             },
             "type": "array",
             "title": "Hotel Stays",
@@ -5641,9 +5689,8 @@
         "title": "HotelPresentation",
         "type": "object"
       },
-      "UiHotelStay": {
+      "UiHotelStayView": {
         "additionalProperties": false,
-        "description": "住宿段日期与报价引用；段范围及报价条件由行程validator核验。",
         "properties": {
           "check_in": {
             "format": "date",
@@ -5659,6 +5706,17 @@
             "format": "uuid",
             "title": "Hotel Evidence Id",
             "type": "string"
+          },
+          "hotel": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiHotelCard"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           }
         },
         "required": [
@@ -5666,7 +5724,7 @@
           "check_out",
           "hotel_evidence_id"
         ],
-        "title": "HotelStay",
+        "title": "HotelStayView",
         "type": "object"
       },
       "UiItemDiff": {
@@ -5798,6 +5856,18 @@
             ],
             "title": "Data Mode",
             "type": "string"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "City"
           }
         },
         "required": [
@@ -5926,7 +5996,7 @@
           "hotel_stays": {
             "default": [],
             "items": {
-              "$ref": "#/components/schemas/UiHotelStay"
+              "$ref": "#/components/schemas/UiHotelStayView"
             },
             "title": "Hotel Stays",
             "type": "array"

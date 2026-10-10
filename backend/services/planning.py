@@ -135,9 +135,13 @@ async def validate_proposal(
     live: LiveData | None = None,
 ) -> ValidationReport:
     require_revision(request, proposal.expected_revision)
-    records = await resolve_records(
-        db, context, request, proposal.evidence_ids(), datetime.now(UTC)
-    )
+    ids = proposal.evidence_ids()
+    resolved: list[EvidenceRecord] = []
+    now = datetime.now(UTC)
+    # 行程可含200项与相邻路线；复用单次50条读取保护，在同一确认事务内全部校验。
+    for offset in range(0, len(ids), 50):
+        resolved.extend(await resolve_records(db, context, request, ids[offset : offset + 50], now))
+    records = tuple(resolved)
     records = await hydrate_records(records, live)
     try:
         return validate_itinerary(request, proposal, records, datetime.now(UTC))

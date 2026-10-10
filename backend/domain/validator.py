@@ -16,7 +16,15 @@ from backend.domain.itinerary import (
     ValidationReport,
 )
 from backend.domain.opening_hours import KYOTO, opening_state
-from backend.domain.travel_request import TravelRequest, lodging_budget_relation
+from backend.domain.plans import stays_of
+from backend.domain.travel_request import (
+    TravelRequest,
+    cities_on,
+    lodging_budget_relation,
+    same_city,
+    segment_request,
+    trip_segments,
+)
 
 
 def check(subject: str, status: CheckStatus, code: str, message: str) -> ValidationCheck:
@@ -156,6 +164,17 @@ def visit_checks(
         checks.append(check(subject, "verified", "trip_dates", "停留日期符合旅行范围"))
     if place is None:
         checks.append(check(subject, "unknown", "place_source", "地点证据缺来源，不能认定事实"))
+    elif request.segments:
+        allowed = cities_on(request, start.date())
+        if not any(same_city(city, place.city) for city in allowed):
+            checks.append(
+                check(
+                    subject,
+                    "conflict",
+                    "city",
+                    "地点不属于当天允许的城市：" + "、".join(sorted(allowed)),
+                )
+            )
     elif request.city != place.city:
         checks.append(
             check(
@@ -333,7 +352,10 @@ def budget_checks(
             relation.message,
         )
     )
-    if proposal.hotel_evidence_id:
+    if request.segments or proposal.hotel_stays:
+        known, hotel_checks = stay_costs(request, proposal, evidence, now)
+        checks.extend(hotel_checks)
+    elif proposal.hotel_evidence_id:
         known, hotel_checks = hotel_cost(request, evidence[proposal.hotel_evidence_id], now)
         checks.extend(hotel_checks)
     else:
@@ -381,6 +403,92 @@ HOTEL_CONDITIONS_REASON = (
     "住宿报价与当前住宿条件不一致（日期/人数/房间/币种/城市变了），请重新search_hotel_offers"
 )
 HOTEL_EXPIRED_REASON = "住宿报价已过期，请重新search_hotel_offers"
+
+
+def stay_costs(
+    request: TravelRequest,
+    proposal: ItineraryProposal,
+    evidence: dict[UUID, EvidenceRecord],
+    now: datetime,
+) -> tuple[Decimal, list[ValidationCheck]]:
+    """住宿只匹配完整有住宿城市段；范围冲突给修复反馈，不计错段成本。"""
+    segments = tuple(s for s in trip_segments(request) if s.depart > s.arrive)
+    stays = stays_of(proposal, request)
+    checks: list[ValidationCheck] = []
+    known = Decimal(0)
+    for expected in segments:
+        if not any((s.check_in, s.check_out) == (expected.arrive, expected.depart) for s in stays):
+            checks.append(
+                check(
+                    "hotel:" + expected.arrive.isoformat(),
+                    "conflict",
+                    "hotel_stay_missing",
+                    f"缺少{expected.city} {expected.arrive}—{expected.depart}的住宿报价。",
+                )
+            )
+    for index, stay in enumerate(stays):
+        subject = "hotel:" + stay.check_in.isoformat()
+        segment = next(
+            (s for s in segments if (s.arrive, s.depart) == (stay.check_in, stay.check_out)), None
+        )
+        overlaps = any(
+            stay.check_in < other.check_out and other.check_in < stay.check_out
+            for other in stays[:index]
+        )
+        if segment is None or overlaps:
+            checks.append(
+                check(
+                    subject,
+                    "conflict",
+                    "hotel_stay_scope",
+                    "住宿段日期不匹配或相互重叠，请按城市段完整入住日期重新选择。",
+                )
+            )
+            continue
+        scoped = segment_request(request, segment)
+        record = evidence[stay.hotel_evidence_id]
+        if not record.applicable(scoped, now):
+            checks.append(check(subject, "conflict", "hotel_stay_scope", HOTEL_CONDITIONS_REASON))
+            continue
+        try:
+            cost, hotel_checks = hotel_cost(scoped, record, now)
+        except ValueError as error:
+            if str(error) != HOTEL_CONDITIONS_REASON:
+                raise
+            checks.append(check(subject, "conflict", "hotel_stay_scope", HOTEL_CONDITIONS_REASON))
+            continue
+        known += cost
+        hotel_checks.extend(nightly_budget_checks(scoped, record))
+        checks.extend(entry.model_copy(update={"subject": subject}) for entry in hotel_checks)
+    return known, checks
+
+
+def nightly_budget_checks(request: TravelRequest, record: EvidenceRecord) -> list[ValidationCheck]:
+    """仅已知完整总价与每晚同币种上限可比较；不把total预算改成每晚金额。"""
+    lodging = request.lodging_budget
+    if (
+        lodging is None
+        or request.lodging_budget_unlimited
+        or lodging.basis != "per_room_night"
+        or record.status != "verified"
+    ):
+        return []
+    offer = HotelOffer.model_validate(record.value)
+    upper = lodging_budget_relation(request).total_upper
+    if (
+        upper is not None
+        and offer.currency == lodging.currency
+        and (offer.total is not None and offer.total > upper)
+    ):
+        return [
+            check(
+                "hotel",
+                "unknown",
+                "hotel_over_nightly_budget",
+                "住宿报价超过每间房每晚预算上限，建议在此住宿段选择更低价报价。",
+            )
+        ]
+    return []
 
 
 def hotel_cost(

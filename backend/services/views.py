@@ -61,6 +61,11 @@ class PlanCard(PlanItem):
     name: str
     source_ref: str | None
     data_mode: Literal["fixture", "snapshot", "live"]
+    city: str | None = Field(default=None, exclude_if=lambda value: value is None)
+
+
+class HotelStayView(HotelStay):
+    hotel: HotelCard | None = None
 
 
 class PlanView(BaseModel):
@@ -70,7 +75,7 @@ class PlanView(BaseModel):
     cards: tuple[PlanCard, ...]
     hotel: HotelCard | None
     hotel_evidence_id: UUID | None
-    hotel_stays: tuple[HotelStay, ...] = Field(default=(), exclude_if=lambda value: not value)
+    hotel_stays: tuple[HotelStayView, ...] = Field(default=(), exclude_if=lambda value: not value)
     needs_refresh: tuple[UUID, ...]
     validation: ValidationFeedback
     guidance: str

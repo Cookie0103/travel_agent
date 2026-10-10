@@ -19,6 +19,7 @@ from backend.domain.plans import (
     apply_plan_patch,
     differences,
     initial_content,
+    stays_of,
 )
 from backend.domain.plans import (
     SavedPlan as SavedPlan,
@@ -43,6 +44,8 @@ from backend.services.views import PlanView
 class PlanInput(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     plan_id: UUID
+    items_only: bool = Field(default=False, strict=True)
+    item_offset: int = Field(default=0, strict=True, ge=0, lt=PLAN_ITEM_LIMIT)
 
 
 class LockInput(BaseModel):
@@ -59,21 +62,6 @@ def require_unique_sightseeing(report: ValidationReport) -> None:
             "conflict",
             "行程含重复景点，不能暂存；请先validate_itinerary定位，保留一次并用未使用的"
             "有来源景点替换其余项，重新estimate_routes检查相邻路段，再校验和暂存。",
-        )
-
-
-def require_legacy_write(request: TravelRequest, content: PlanContent | None = None) -> None:
-    """回退版本只读新格式，防止旧写入逻辑丢字段或放宽旧边界。"""
-    if (
-        request.segments
-        or request.lodging_budget_unlimited
-        or (content is not None and (content.hotel_stays or len(content.items) > 24))
-    ):
-        raise ServiceError(
-            409,
-            "conflict",
-            "当前兼容版本只读取新格式行程，暂不修改或确认。",
-            "new_format_read_only",
         )
 
 
@@ -95,12 +83,10 @@ class PlanService:
     ) -> PlanDraft:
         async with transaction(self.travel.database) as db:
             request = request_from_row(await requests.owned_request(db, context))
-            require_legacy_write(request)
             operation_key = operations.key(arguments)
             cached = await operations.result(db, context.session_id, "stage_plan", operation_key)
             if cached is not None:
                 saved = PlanDraft.model_validate(cached)
-                require_legacy_write(request, saved.content)
                 require_revision(request, saved.request_revision)
                 current_plan = await plans.for_session(db, context)
                 if current_plan is None or current_plan.current_version != saved.base_version:
@@ -117,8 +103,6 @@ class PlanService:
             row = await plans.for_session(db, context)
             change = arguments.change
             previous = await plans.version(db, row) if row else None
-            if previous is not None:
-                require_legacy_write(request, previous.content)
             if isinstance(change, InitialStage):
                 require_revision(request, change.proposal.expected_revision)
                 if previous is not None:
@@ -144,8 +128,6 @@ class PlanService:
                     raise ServiceError(
                         422, "validation", "patch引用不存在、锁定或无效的行程项", "patch_invalid"
                     ) from None
-            # 新模型先上线；按段校验在T2.2接通前，禁止旧服务写坏新内容。
-            require_legacy_write(request, content)
             proposal = content.proposal(request.revision)
             if before_validate is not None:
                 before_validate(proposal)
@@ -157,8 +139,15 @@ class PlanService:
                 request_revision=request.revision,
                 content=content,
                 changes=differences(previous.content if previous else None, content),
-                hotel_changed=(previous.content.hotel_evidence_id if previous else None)
-                != content.hotel_evidence_id,
+                hotel_changed=(
+                    previous is None
+                    and bool(content.hotel_evidence_id or content.hotel_stays)
+                    or previous is not None
+                    and (
+                        previous.content.hotel_evidence_id != content.hotel_evidence_id
+                        or previous.content.hotel_stays != content.hotel_stays
+                    )
+                ),
                 validation=report,
                 expires_at=datetime.now(UTC) + timedelta(minutes=10),
             )
@@ -186,7 +175,6 @@ class PlanService:
                     raise ServiceError(503, "unavailable", "已确认行程记录缺失")
                 return saved
             draft = PlanDraft.model_validate(draft_row.payload)
-            require_legacy_write(request, draft.content)
             if datetime.now(UTC) >= draft.expires_at:
                 raise ServiceError(409, "conflict", "草稿已过期，请重新生成")
             require_revision(request, draft.request_revision)
@@ -260,19 +248,13 @@ class PlanService:
                 require_revision(request, draft.request_revision)
                 if version_changed:
                     raise ServiceError(409, "conflict", "草稿基于旧正式版本，请重新生成patch")
-                if not (
-                    request.segments
-                    or request.lodging_budget_unlimited
-                    or draft.content.hotel_stays
-                    or len(draft.content.items) > 24
-                ):
-                    report = await validate_proposal(
-                        db,
-                        context,
-                        request,
-                        draft.content.proposal(request.revision),
-                        self.travel.live,
-                    )
+                report = await validate_proposal(
+                    db,
+                    context,
+                    request,
+                    draft.content.proposal(request.revision),
+                    self.travel.live,
+                )
             data = {
                 **draft.model_dump(mode="json", exclude={"content", "validation"}),
                 "validation": report.feedback(),
@@ -288,14 +270,11 @@ class PlanService:
             row = await plans.owned(db, user_id, plan_id)
             if row is None:
                 raise ServiceError(404, "blocked", "行程不存在")
-            request = request_from_row(
-                await requests.owned_request(db, RunContext(user_id, row.session_id))
-            )
+            await requests.owned_request(db, RunContext(user_id, row.session_id))
             await db.refresh(row)
             current = await plans.version(db, row)
             if current is None or current.version != arguments.expected_version:
                 raise ServiceError(409, "conflict", "正式行程版本已变化")
-            require_legacy_write(request, current.content)
             ids = set(arguments.locked_item_ids)
             if len(ids) != len(arguments.locked_item_ids) or ids - {
                 item.item_id for item in current.content.items
@@ -309,6 +288,7 @@ class PlanService:
                     for item in current.content.items
                 ),
                 hotel_evidence_id=current.content.hotel_evidence_id,
+                hotel_stays=current.content.hotel_stays,
             )
             if content == current.content:
                 return current
@@ -355,12 +335,23 @@ async def content_view(
                 "name": place.name if place else "历史地点证据缺失",
                 "source_ref": record.source_ref if record else None,
                 "data_mode": record.data_mode if record else "snapshot",
+                **({"city": place.city if place else None} if request.segments else {}),
             }
         )
     return {
         **data,
         **(
-            {"hotel_stays": [stay.model_dump(mode="json") for stay in content.hotel_stays]}
+            {
+                "hotel_stays": [
+                    {
+                        **stay.model_dump(mode="json"),
+                        "hotel": hotel_cards((evidence[stay.hotel_evidence_id],), request)[0]
+                        if stay.hotel_evidence_id in evidence
+                        else None,
+                    }
+                    for stay in stays_of(content, request)
+                ]
+            }
             if content.hotel_stays
             else {}
         ),

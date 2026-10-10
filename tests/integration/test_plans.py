@@ -34,12 +34,224 @@ from backend.services.travel import TravelService
 from backend.tools.travel import DEFINITIONS, TravelToolExecutor
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.test_multi_city_itinerary import multi_city_example
 
 pytestmark = pytest.mark.integration
 
 
+def test_conversation_tool_updates_segments_and_unlimited_with_a_safe_receipt(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """R04/R13：真实PG的模型工具入口写城市段与不限，返回中文成功回执。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        example, _, _ = multi_city_example()
+        result = await TravelToolExecutor(travel).execute(
+            context,
+            "update_travel_request",
+            {
+                "expected_revision": 1,
+                "set": {
+                    "segments": example.model_dump(mode="json")["segments"],
+                    "lodging_budget_unlimited": True,
+                },
+                "explicit_fields": ["segments"],
+            },
+        )
+        assert result.code is None
+        message = result.data["message"]
+        assert isinstance(message, str) and "大阪" in message and "不限" in message
+        restored = await TravelService(travel.database).get_request(context)
+        assert restored.segments == example.segments and restored.lodging_budget_unlimited
+
+    runner.run(exercise())
+
+
+@pytest.mark.parametrize("count", [5, 30])
+def test_three_city_stays_survive_confirm_restore_locks_and_item_27_patch(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext], count: int
+) -> None:
+    """R06/R07/R08：真实PG三城市两住宿段，长行程修改不丢项目/住宿引用。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        example, candidate, records = multi_city_example(count)
+        changed = await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": example.model_dump(exclude={"revision"}, exclude_none=True),
+                }
+            ),
+        )
+        revision = changed.request.revision
+        candidate = candidate.model_copy(update={"expected_revision": revision})
+        records = tuple(r.model_copy(update={"request_revision": revision}) for r in records)
+        await travel.record_evidence(context, records)
+        if count == 30:
+            items = list(candidate.items)
+            adjacent = [
+                index
+                for index in range(1, len(items))
+                if items[index - 1].start.date() == items[index].start.date()
+            ]
+            for offset in range(0, len(adjacent), 6):
+                indices = adjacent[offset : offset + 6]
+                routes = await PlanningService(travel).routes(
+                    context,
+                    RouteInput.model_validate(
+                        {
+                            "expected_revision": revision,
+                            "legs": [
+                                {
+                                    "from_evidence_id": items[index - 1].place_evidence_id,
+                                    "to_evidence_id": items[index].place_evidence_id,
+                                    "departure": items[index - 1].end,
+                                }
+                                for index in indices
+                            ],
+                        }
+                    ),
+                )
+                for index, route in zip(indices, routes, strict=True):
+                    items[index] = items[index].model_copy(
+                        update={"route_evidence_id": route.evidence_id}
+                    )
+            candidate = candidate.model_copy(update={"items": tuple(items)})
+            assert len(candidate.evidence_ids()) > 50
+        service = PlanService(travel)
+        draft = await service.stage(
+            context,
+            StageInput.model_validate(
+                {"change": {"kind": "initial", "proposal": candidate.model_dump(mode="json")}}
+            ),
+        )
+        assert draft.validation.status == "partial"
+        assert draft.content.hotel_stays == candidate.hotel_stays
+        saved = await service.confirm(context.user_id, draft.draft_id)
+        reopened = PlanService(TravelService(travel.database))
+        view = await reopened.get(context.user_id, saved.plan_id)
+        cards, validation, stays = view["cards"], view["validation"], view["hotel_stays"]
+        assert isinstance(cards, list) and len(cards) == count
+        assert isinstance(stays, list) and len(stays) == 2
+        assert all(isinstance(stay, dict) and isinstance(stay["hotel"], dict) for stay in stays)
+        assert view["hotel"] is None and view["hotel_evidence_id"] is None
+        assert isinstance(validation, dict) and validation["known_cost"] == "30000"
+        locked = await service.locks(
+            context.user_id,
+            saved.plan_id,
+            LockInput(expected_version=1, locked_item_ids=(saved.content.items[0].item_id,)),
+        )
+        assert locked.content.hotel_stays == saved.content.hotel_stays and locked.version == 2
+        read = await TravelToolExecutor(travel).execute(
+            context, "get_saved_plan", {"plan_id": str(saved.plan_id), "items_only": True}
+        )
+        assert read.code is None and read.data["item_count"] == count
+        ids = read.data["item_ids"]
+        assert isinstance(ids, list) and len(ids) == count
+        target = locked.content.items[26 if count == 30 else 3]
+        assert any(entry["item_id"] == str(target.item_id) for entry in ids)
+        replacement = target.proposed().model_dump(mode="json") | {"note": "局部修改后的合成简介"}
+        staged = await service.stage(
+            context,
+            StageInput.model_validate(
+                {
+                    "change": {
+                        "kind": "patch",
+                        "plan_id": str(saved.plan_id),
+                        "patch": {
+                            "base_version": 2,
+                            "expected_revision": revision,
+                            "operations": [
+                                {
+                                    "op": "update",
+                                    "item_id": str(target.item_id),
+                                    "item": replacement,
+                                }
+                            ],
+                        },
+                    }
+                }
+            ),
+        )
+        final = await service.confirm(context.user_id, staged.draft_id)
+        assert final.version == 3 and final.content.hotel_stays == saved.content.hotel_stays
+        assert len(final.content.items) == count
+        assert final.content.items[0] == locked.content.items[0]
+        final_target = next(i for i in final.content.items if i.item_id == target.item_id)
+        assert final_target.note == replacement["note"]
+        restored = await reopened.get(context.user_id, final.plan_id)
+        assert restored["hotel_stays"] == stays and restored["version"] == 3
+
+    runner.run(exercise())
+
+
+@pytest.mark.parametrize("fault", ["missing", "scope", "quote", "unknown_quote", "duplicate"])
+def test_segment_scope_conflicts_cannot_confirm_and_duplicate_places_cannot_stage(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext], fault: str
+) -> None:
+    """R06/R07/R08：真实PG拒绝漏住宿/重叠/错段报价，重复景点连暂存也拒绝。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        example, candidate, records = multi_city_example()
+        changed = await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": example.model_dump(exclude={"revision"}, exclude_none=True),
+                }
+            ),
+        )
+        candidate = candidate.model_copy(update={"expected_revision": changed.request.revision})
+        if fault == "unknown_quote":
+            records = tuple(
+                r.model_copy(update={"source_ref": None}) if r.kind == "hotel_offer" else r
+                for r in records
+            )
+        await travel.record_evidence(context, records)
+        first, second = candidate.hotel_stays
+        if fault == "missing":
+            candidate = candidate.model_copy(update={"hotel_stays": (first,)})
+        elif fault in ("scope", "quote", "unknown_quote"):
+            replacement = first.model_copy(
+                update={"check_out": second.check_out}
+                if fault == "scope"
+                else {"hotel_evidence_id": second.hotel_evidence_id}
+            )
+            candidate = candidate.model_copy(update={"hotel_stays": (replacement, second)})
+        else:
+            repeated = candidate.items[2].model_copy(
+                update={"place_evidence_id": candidate.items[0].place_evidence_id}
+            )
+            candidate = candidate.model_copy(
+                update={"items": (*candidate.items[:2], repeated, *candidate.items[3:])}
+            )
+        service = PlanService(travel)
+        arguments = StageInput.model_validate(
+            {"change": {"kind": "initial", "proposal": candidate.model_dump(mode="json")}}
+        )
+        if fault == "duplicate":
+            with pytest.raises(ServiceError, match="重复景点"):
+                await service.stage(context, arguments)
+            return
+        draft = await service.stage(context, arguments)
+        assert draft.validation.status == "conflict"
+        with pytest.raises(ServiceError, match="硬冲突"):
+            await service.confirm(context.user_id, draft.draft_id)
+        assert await version_count(travel, draft.plan_id) == 0
+        async with transaction(travel.database) as db:
+            row = await db.get(PlanDraftRow, draft.draft_id)
+            assert row is not None and row.confirmed_version is None
+
+    runner.run(exercise())
+
+
 @pytest.mark.parametrize("with_segments", [False, True])
-def test_compatibility_reads_new_plan_and_request_payload_without_writing_them(
+def test_reads_new_plan_and_request_payload_without_writing_missing_quote_facts(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     with_segments: bool,
 ) -> None:
@@ -78,8 +290,12 @@ def test_compatibility_reads_new_plan_and_request_payload_without_writing_them(
             old_conditions = dict(request_row.conditions)
         view = await service.get(context.user_id, original.plan_id)
         request = (await travel.get_request_view(context)).model_dump(mode="json")
-        assert view["hotel_stays"] == stays
-        assert view["cards"] == old_view["cards"]
+        assert view["hotel_stays"] == [{**stay, "hotel": None} for stay in stays]
+        old_cards = old_view["cards"]
+        assert isinstance(old_cards, list)
+        assert view["cards"] == [
+            {**card, "city": "京都"} if with_segments else card for card in old_cards
+        ]
         assert view["hotel_evidence_id"] == old_view["hotel_evidence_id"]
         assert view["validation"] == old_view["validation"]
         if with_segments:
@@ -95,16 +311,13 @@ def test_compatibility_reads_new_plan_and_request_payload_without_writing_them(
                     RequestPatch.model_validate({"expected_revision": 1, "set": {"city": "大阪"}}),
                 )
             assert updating.value.reason == "request_merge_invalid"
-        with pytest.raises(ServiceError) as locking:
-            await service.locks(
-                context.user_id,
-                original.plan_id,
-                LockInput(expected_version=1, locked_item_ids=()),
-            )
-        assert locking.value.reason == "new_format_read_only"
+        locked = await service.locks(
+            context.user_id, original.plan_id, LockInput(expected_version=1, locked_item_ids=())
+        )
+        assert locked.version == 1 and locked.content.model_dump(mode="json") == payload["content"]
         with pytest.raises(ServiceError) as staging:
             await service.stage(context, patch_stage(original))
-        assert staging.value.reason == "new_format_read_only"
+        assert staging.value.reason == "evidence_missing"
         async with transaction(travel.database) as db:
             version = await db.get(PlanVersionRow, (original.plan_id, original.version))
             request_row = await db.get(TravelRequestRow, context.session_id)
@@ -115,10 +328,10 @@ def test_compatibility_reads_new_plan_and_request_payload_without_writing_them(
     runner.run(exercise())
 
 
-def test_compatibility_reads_long_plans_and_drafts_but_refuses_legacy_writes(
+def test_reads_long_plans_and_drafts_but_rejects_duplicate_sightseeing(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
-    """R07/R08：真实PG中的未来30项内容可恢复，回退不能确认或改写。"""
+    """R07/R08：30项旧格式可读，锁定no-op保持payload；重复景点仍不能确认。"""
     runner, travel, context = travel_setup
 
     async def exercise() -> None:
@@ -136,7 +349,7 @@ def test_compatibility_reads_long_plans_and_drafts_but_refuses_legacy_writes(
         assert isinstance(draft_cards, list) and len(draft_cards) == 30
         with pytest.raises(ServiceError) as confirming:
             await service.confirm(context.user_id, draft.draft_id)
-        assert confirming.value.reason == "new_format_read_only"
+        assert confirming.value.code == "conflict" and "硬冲突" in str(confirming.value)
         future = SavedPlan(
             plan_id=draft.plan_id,
             version=1,
@@ -151,16 +364,13 @@ def test_compatibility_reads_long_plans_and_drafts_but_refuses_legacy_writes(
             await plans.save(db, plan_row, future)
         saved_cards = (await service.get(context.user_id, future.plan_id))["cards"]
         assert isinstance(saved_cards, list) and len(saved_cards) == 30
-        with pytest.raises(ServiceError) as locking:
-            await service.locks(
-                context.user_id,
-                future.plan_id,
-                LockInput(expected_version=1, locked_item_ids=(future.content.items[0].item_id,)),
-            )
-        assert locking.value.reason == "new_format_read_only"
+        locked = await service.locks(
+            context.user_id, future.plan_id, LockInput(expected_version=1, locked_item_ids=())
+        )
+        assert locked == future
         with pytest.raises(ServiceError) as staging:
             await service.stage(context, patch_stage(future))
-        assert staging.value.reason == "new_format_read_only"
+        assert staging.value.code == "conflict" and "重复景点" in str(staging.value)
         async with transaction(travel.database) as db:
             plan_row = await db.get(PlanRow, future.plan_id)
             draft_row = await db.get(PlanDraftRow, draft.draft_id)
@@ -168,6 +378,113 @@ def test_compatibility_reads_long_plans_and_drafts_but_refuses_legacy_writes(
             assert plan_row is not None and plan_row.current_version == 1
             assert draft_row is not None and draft_row.confirmed_version is None
             assert version is not None and version.payload == future.model_dump(mode="json")
+
+    runner.run(exercise())
+
+
+@pytest.mark.parametrize("escaped_name", [False, True])
+def test_compact_saved_plan_pages_expose_all_200_item_ids_with_bounded_results(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+    escaped_name: bool,
+) -> None:
+    """R07/R08：真实PG历史200项分页，每页受8000字符限制且最后项可寻址。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        service = PlanService(travel)
+        saved = await service.confirm(
+            context.user_id, (await initial_draft(travel, context)).draft_id
+        )
+        payload = saved.model_dump(mode="json")
+        expected = [str(uuid4()) for _ in range(200)]
+        payload["content"]["items"] = [
+            payload["content"]["items"][0]
+            | {
+                "item_id": identifier,
+                "start": "2026-11-02T23:00:00Z",
+                "end": "2026-11-03T00:00:00Z",
+            }
+            for identifier in expected
+        ]
+        async with transaction(travel.database) as db:
+            row = await db.get(PlanVersionRow, (saved.plan_id, 1))
+            assert row is not None
+            row.payload = payload
+            if escaped_name:
+                evidence = await db.get(EvidenceRow, saved.content.items[0].place_evidence_id)
+                assert evidence is not None
+                value = evidence.payload["value"]
+                assert isinstance(value, dict)
+                evidence.payload = {**evidence.payload, "value": {**value, "name": "\n" * 80}}
+        executor = TravelToolExecutor(travel)
+        actual: list[str] = []
+        offset = 0
+        while offset < 200:
+            read = await executor.execute(
+                context,
+                "get_saved_plan",
+                {"plan_id": str(saved.plan_id), "items_only": True, "item_offset": offset},
+            )
+            assert read.code is None and read.data["item_count"] == 200
+            entries = read.data["item_ids"]
+            assert isinstance(entries, list) and 1 <= len(entries) <= 40
+            if not escaped_name:
+                assert len(entries) == 40
+            assert all(len(entry["name"]) <= 80 for entry in entries)
+            assert all(entry["day"] == "2026-11-03" for entry in entries)
+            actual.extend(entry["item_id"] for entry in entries)
+            offset += len(entries)
+            assert read.data["next_item_offset"] == (offset if offset < 200 else None)
+            assert len(json.dumps(read.payload(), ensure_ascii=False)) <= 8000
+        assert actual == expected
+        for offset in (-1, 200):
+            invalid = await executor.execute(
+                context,
+                "get_saved_plan",
+                {"plan_id": str(saved.plan_id), "items_only": True, "item_offset": offset},
+            )
+            assert invalid.code == "validation"
+
+    runner.run(exercise())
+
+
+def test_direct_legacy_payload_can_get_patch_confirm_without_new_fields(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """R04/R07/R08：直接写旧JSONB后GET/patch/confirm保持单城内容与旧字段。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        service = PlanService(travel)
+        saved = await service.confirm(
+            context.user_id, (await initial_draft(travel, context)).draft_id
+        )
+        payload = saved.model_dump(mode="json")
+        assert "hotel_stays" not in payload["content"]
+        async with transaction(travel.database) as db:
+            row = await db.get(PlanVersionRow, (saved.plan_id, 1))
+            request_row = await db.get(TravelRequestRow, context.session_id)
+            assert row is not None and request_row is not None
+            row.payload = payload
+            assert not (request_row.request_details or {}).get("segments")
+            conditions = dict(request_row.conditions)
+        reopened = PlanService(TravelService(travel.database))
+        before = await reopened.get(context.user_id, saved.plan_id)
+        assert "hotel_stays" not in before
+        draft = await reopened.stage(context, patch_stage(saved))
+        updated = await reopened.confirm(context.user_id, draft.draft_id)
+        after = await reopened.get(context.user_id, saved.plan_id)
+        assert updated.version == 2 and "hotel_stays" not in after
+        assert after["hotel"] == before["hotel"]
+        assert updated.content.items[0] == saved.content.items[0]
+        assert updated.content.hotel_evidence_id == saved.content.hotel_evidence_id
+        async with transaction(travel.database) as db:
+            row = await db.get(PlanVersionRow, (saved.plan_id, 2))
+            request_row = await db.get(TravelRequestRow, context.session_id)
+            assert row is not None
+            content = row.payload["content"]
+            assert isinstance(content, dict) and "hotel_stays" not in content
+            assert request_row is not None and request_row.conditions == conditions
 
     runner.run(exercise())
 

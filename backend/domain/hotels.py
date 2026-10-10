@@ -14,6 +14,9 @@ from backend.domain.travel_request import (
     TravelRequest,
     legacy_request,
     lodging_budget_relation,
+    same_city,
+    segment_request,
+    trip_segments,
 )
 
 Money = Annotated[Decimal, Field(ge=0, max_digits=14, decimal_places=2)]
@@ -88,7 +91,24 @@ class HotelOffer(QuoteFields):
     def card(self, current: TravelRequest | None = None) -> dict[str, object]:
         total = self.total
         request = current or self.request
-        relation = lodging_budget_relation(request)
+        scoped = request
+        if request.segments:
+            segment = next(
+                (
+                    segment
+                    for segment in trip_segments(request)
+                    if (segment.arrive, segment.depart)
+                    == (self.request.start_date, self.request.end_date)
+                    and same_city(segment.city, self.request.city or "")
+                ),
+                None,
+            )
+            scoped = (
+                segment_request(request, segment)
+                if segment
+                else request.model_copy(update={"lodging_budget": None})
+            )
+        relation = lodging_budget_relation(scoped)
         return {
             **self.model_dump(mode="json", exclude={"request"}),
             "stay": evidence_conditions(self.request, "hotel_offer"),

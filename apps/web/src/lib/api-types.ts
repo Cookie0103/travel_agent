@@ -821,6 +821,25 @@ export interface components {
              */
             hotel_evidence_id: string;
         };
+        /** HotelStayView */
+        HotelStayView: {
+            /**
+             * Check In
+             * Format: date
+             */
+            check_in: string;
+            /**
+             * Check Out
+             * Format: date
+             */
+            check_out: string;
+            /**
+             * Hotel Evidence Id
+             * Format: uuid
+             */
+            hotel_evidence_id: string;
+            hotel?: components["schemas"]["HotelCard"] | null;
+        };
         /** ItemDiff */
         ItemDiff: {
             /**
@@ -1003,6 +1022,8 @@ export interface components {
              * @enum {string}
              */
             data_mode: "fixture" | "snapshot" | "live";
+            /** City */
+            city?: string | null;
         };
         /** PlanContent */
         PlanContent: {
@@ -1075,7 +1096,7 @@ export interface components {
              * Hotel Stays
              * @default []
              */
-            hotel_stays: components["schemas"]["HotelStay"][];
+            hotel_stays: components["schemas"]["HotelStayView"][];
             /** Needs Refresh */
             needs_refresh: string[];
             validation: components["schemas"]["ValidationFeedback"];
@@ -1875,11 +1896,8 @@ export interface components {
              */
             more_url_scope: ("search" | "destination") | null;
         };
-        /**
-         * HotelStay
-         * @description 住宿段日期与报价引用；段范围及报价条件由行程validator核验。
-         */
-        UiHotelStay: {
+        /** HotelStayView */
+        UiHotelStayView: {
             /**
              * Check In
              * Format: date
@@ -1895,6 +1913,8 @@ export interface components {
              * Format: uuid
              */
             hotel_evidence_id: string;
+            /** @default null */
+            hotel: components["schemas"]["UiHotelCard"] | null;
         };
         /** ItemDiff */
         UiItemDiff: {
@@ -1964,6 +1984,11 @@ export interface components {
              * @enum {string}
              */
             data_mode: "fixture" | "snapshot" | "live";
+            /**
+             * City
+             * @default null
+             */
+            city: string | null;
         };
         /** PlanItem */
         UiPlanItem: {
@@ -2026,7 +2051,7 @@ export interface components {
              * Hotel Stays
              * @default []
              */
-            hotel_stays: components["schemas"]["UiHotelStay"][];
+            hotel_stays: components["schemas"]["UiHotelStayView"][];
             /** Needs Refresh */
             needs_refresh: string[];
             validation: components["schemas"]["UiValidationFeedback"];

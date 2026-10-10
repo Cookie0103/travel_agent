@@ -12,6 +12,8 @@ LABELS = {
     "rooms": "房间数",
     "budget": "全程预算",
     "lodging_budget": "住宿预算",
+    "lodging_budget_unlimited": "每晚住宿预算",
+    "segments": "城市段",
     "transport": "交通",
     "departure_time": "每日出发",
     "soft_constraints": "节奏/偏好",
@@ -26,6 +28,12 @@ def value_label(request: TravelRequest, name: str) -> str:
     value = getattr(request, name)
     if value is None:
         return "未知"
+    if name == "lodging_budget_unlimited":
+        return (
+            "不限" if request.lodging_budget_unlimited else value_label(request, "lodging_budget")
+        )
+    if name == "segments" and request.segments:
+        return "；".join(f"{s.city} {s.arrive}—{s.depart}" for s in request.segments)
     if name == "lodging_budget" and request.lodging_budget:
         lodging = request.lodging_budget
         basis = "每房每晚" if lodging.basis == "per_room_night" else "住宿总额"

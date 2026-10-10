@@ -4,7 +4,7 @@ import asyncio
 import hashlib
 import json
 from dataclasses import replace
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Literal, get_args
 from uuid import UUID
@@ -21,6 +21,7 @@ from backend.domain.execution import RunContext, ToolReason
 from backend.domain.external_data import ExternalDataError
 from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
+from backend.domain.opening_hours import KYOTO
 from backend.domain.plans import StageInput
 from backend.domain.room_choices import room_choices_view
 from backend.domain.travel_request import (
@@ -186,7 +187,7 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "get_saved_plan",
-        "读取本会话正式行程、稳定item_id与锁定标记；历史证据需要刷新，不能当当前事实。",
+        "读取本会话正式行程；默认详细卡片截短，修改后面的项目用items_only=true读取紧凑item_id/日期/名称（每页40项），按next_item_offset继续。历史证据需刷新，不能当当前事实。",
         PlanInput.model_json_schema(),
     ),
     ToolDefinition(
@@ -503,6 +504,8 @@ class TravelToolExecutor:
             data = await self.plans.get(
                 context.user_id, parsed.plan_id, session_id=context.session_id
             )
+            if parsed.items_only:
+                return compact_plan_items(data, parsed.item_offset)
             return bounded_plan(ToolResult(data))
         if isinstance(parsed, PresentationInput) and parsed.component == "itinerary":
             assert parsed.draft_id is not None
@@ -735,6 +738,35 @@ def bounded_offers(
     while kept > 1 and size(kept) > RESULT_LIMIT:
         kept -= 1
     return rows[:kept], kept < len(rows)
+
+
+def compact_plan_items(data: dict[str, object], offset: int) -> ToolResult:
+    """提供每个稳定ID；实际序列化大小决定页尾，日期沿用日本旅行时区。"""
+    cards = data["cards"]
+    assert isinstance(cards, list)
+    entries = [
+        {
+            "item_id": card["item_id"],
+            "day": datetime.fromisoformat(str(card["start"])).astimezone(KYOTO).date().isoformat(),
+            "name": str(card["name"])[:80],
+        }
+        for card in cards[offset : offset + 40]
+    ]
+    end = offset + len(entries)
+    result = ToolResult(
+        {
+            "plan_id": data["plan_id"],
+            "version": data["version"],
+            "request_revision": data["request_revision"],
+            "item_count": len(cards),
+            "item_ids": entries,
+            "next_item_offset": end if end < len(cards) else None,
+        }
+    )
+    while len(entries) > 1 and len(json.dumps(result.payload(), ensure_ascii=False)) > RESULT_LIMIT:
+        entries.pop()
+        result.data["next_item_offset"] = offset + len(entries)
+    return result
 
 
 def bounded_plan(result: ToolResult) -> ToolResult:

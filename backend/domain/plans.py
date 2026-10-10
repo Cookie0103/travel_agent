@@ -206,7 +206,9 @@ def apply_plan_patch(current: SavedPlan, patch: PlanPatch) -> PlanContent:
     return PlanContent(items=tuple(items), hotel_evidence_id=hotel, hotel_stays=stays)
 
 
-def stays_of(content: PlanContent, request: TravelRequest) -> tuple[HotelStay, ...]:
+def stays_of(
+    content: PlanContent | ItineraryProposal, request: TravelRequest
+) -> tuple[HotelStay, ...]:
     """统一读取住宿引用；旧单城按已知旅行日期投影，不填补未知日期。"""
     if content.hotel_stays:
         return content.hotel_stays
