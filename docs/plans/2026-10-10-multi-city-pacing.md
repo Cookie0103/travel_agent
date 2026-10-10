@@ -147,11 +147,11 @@ PlanPatch:
 | T2.1 | 按段查询酒店：`HotelSearchInput` 增 `segment_arrive: date \| None`（多城市时必填，单城市省略）；服务端用 `segment_request` 调现有 `_quote`；`refresh` 沿用原报价的段 | T1.1 | tools/travel.py、services/hotels.py、domain/evidence.py(`applicable`) | ① 三段行程分别查两段酒店，证据条件各自匹配 ② 多城市不给 segment → 422 明确提示 ③ 查询后全局 request 未被修改（revision 不变） ④ 单城市调用参数与结果不变 | done | `66214cf` 已push；先红领域/PG各1 failed→定向62 passed→全量1465 passed/1 skipped/4 deselected（308.04s）；check299/生成/web119/构建退出0；自审/独立审查无P1/P2（P-08/P-09） |
 | T2.2 | 校验与暂存/确认：validator 改按 stays、按天城市归属；`content_view` 返回 stays 与各自酒店卡；给模型读完整 `item_id`：`bounded_plan` 在 cards 截断时附带完整 `item_ids`（仅 UUID+日期+名称，受 RESULT_LIMIT 约束），或复用已有读取工具，二选一并在 §8 记录 | T1.2、T2.1 | domain/validator.py、services/plans.py、tools/travel.py | ① 三城市+两段住宿 草稿→confirm→get（PG）全程通过 ② 漏一段住宿、stay 日期与段不符、报价属于别的段 → 各自 conflict 且 confirm 被拒 ③ 30 项行程：stage→confirm→get→对第 27 项 patch→confirm（PG）④ 跨城市重复景点仍被 `require_unique_sightseeing` 拒绝；同城再次入住不报重复 ⑤ 旧单城市已保存数据（直接写入旧 payload）可 get、patch、confirm | done | 最终全量1488 passed/1 skipped/4 deselected（308.34s）、check300/生成/web119/构建退出0，PG38相关通过；自审及独立复核无P1/P2，已commit/push6262d2e（P-10—P-13） |
 | T3.1 | 住宿预算确认：`task_missing` 按 D4 增 `lodging_budget`；条件提取写入 per_room_night/JPY 或 unlimited；改 persona.py:54；`update_travel_request` 描述只问每间每晚 | T1.1 | domain/conversation.py、tools/travel.py(描述)、agent/persona.py、agent/fixture_conditions.py | ① 有住宿且两者皆空 → itinerary 缺 `lodging_budget`；② 说“不限” → `unlimited=True`，不再缺；③ 已给金额 → 不重复问；④ 当日往返（0晚）不要求；⑤ 不新增全程预算/币种追问（fixture 对话测试断言回复不含这些问题） | done | `6f10d05` 已push；先红3 failed及审查4 failed→全量1507 passed/1 skipped/4 deselected（309.91s）；check301/PG Healthy/生成/web119/构建通过，自审/独立复核无P1/P2 |
-| T3.2 | 节奏与密度：validator 用 `pace_of`；完整日/非完整日判定；`pace_too_sparse`、`day_gap`；conversation、fixture 统一用 `pace_of` | T1.1、T2.2 | domain/validator.py、domain/conversation.py、agent/fixture_conditions.py | ① 标准节奏完整日 2 个景点 → `pace_too_sparse` ② 转场日 2 个 → 不报 ③ 完整日 13:00–17:00 空白 → `day_gap` ④ 慢节奏 4 个 → `pace_warning` ⑤ 已说“轻松” → 不再追问节奏 | doing | 先红8 failed/别名2 failed/审查2 failed→最终全量1554 passed（309.50s）；check303/PG/生成/web119/构建、自审/独立复核通过，待commit/push | |
-| T3.3 | 停留时长：类别区间表 + `visit_duration_range` | T2.2 | domain/catalog.py、domain/validator.py | ① 博物馆 15 分钟 → conflict ② 神社 6 小时 → conflict ③ 博物馆 40 分钟 → unknown ④ 酒店/餐厅 10 小时不报 ⑤ 正常行程无此类检查失败 | doing | 先红10 failed→最终全量1554 passed；真实PG极端时长拒confirm且零正式版本；check303/生成/web119/构建、自审/独立复核通过，待commit/push | |
-| T4.1 | 提示词：删 persona.py:59“说明是模型概述、非来源核实”；`ProposedItem.note` description 改为“一句话简介”；多城市指引（按段 search_places 用段城市原文、按段查酒店、转场日留时间、跨城交通写成“建议”且不写未查询的车次/耗时/票价）；节奏/时长规则说明 | T2.2、T3.* | agent/persona.py、domain/itinerary.py、tools/travel.py | 提示词快照/现有提示词测试更新并通过；persona 不再含“非来源核实”；512 KiB 请求边界测试仍通过 | todo | |
-| T4.2 | 前端：按天显示城市与当晚住宿；转场日显示“转场建议（未查询车次与票价）”；顶部统一说明“行程简介由 AI 整理，游玩时间为建议安排”；历史 note 去掉末尾重复标记（只剥离固定后缀模式，不动正文）；条件面板展示城市段与“每晚预算/不限”；用现有命令重新生成 api-types | T2.2、T3.1、T4.1 | apps/web/src/lib/itinerary.ts、components/results.tsx、saved-trip.tsx、conditions.tsx、lib/pace.ts、api-types.ts（生成） | ① `web test`：3 城数据按天分组含城市与住宿；30 项可渲染；含“（模型概述，非来源核实）”等后缀的 note 被剥离、正常含“核实”字样的简介不被误删 ② `dev.py web-generate` 后 `web-check` 全过 ③ 浏览器手动走一遍三城市草稿与旧行程（截图进 docs/evidence） | todo | |
-| T5.1 | 集中验证与交付：§9 全量；更新 §7/§8/§9；面试案例候选 | 全部 | — | ① §9 命令全部通过并贴输出摘要 ② 本地浏览器按 §9.2 #1/#3/#8 走通（截图入 docs/evidence）③ 真实模型 API 跑 1 次三城市对话到确认保存（预算按 .env 限制），记录轮次与结果；失败则开 P-条目修复后重跑，不以“离线通过”代替 ④ 独立只读审查复核回归、重复实现与过度设计 | todo | |
+| T3.2 | 节奏与密度：validator 用 `pace_of`；完整日/非完整日判定；`pace_too_sparse`、`day_gap`；conversation、fixture 统一用 `pace_of` | T1.1、T2.2 | domain/validator.py、domain/conversation.py、agent/fixture_conditions.py | ① 标准节奏完整日 2 个景点 → `pace_too_sparse` ② 转场日 2 个 → 不报 ③ 完整日 13:00–17:00 空白 → `day_gap` ④ 慢节奏 4 个 → `pace_warning` ⑤ 已说“轻松” → 不再追问节奏 | done | `0117374` 已push；先红8 failed/别名2 failed/审查2 failed→最终全量1554 passed（309.50s）；check303/PG/生成/web119/构建、自审/独立复核通过 |
+| T3.3 | 停留时长：类别区间表 + `visit_duration_range` | T2.2 | domain/catalog.py、domain/validator.py | ① 博物馆 15 分钟 → conflict ② 神社 6 小时 → conflict ③ 博物馆 40 分钟 → unknown ④ 酒店/餐厅 10 小时不报 ⑤ 正常行程无此类检查失败 | done | `0117374` 已push；先红10 failed→最终全量1554 passed；真实PG极端时长拒confirm且零正式版本；check303/生成/web119/构建、自审/独立复核通过 |
+| T4.1 | 提示词：删 persona.py:59“说明是模型概述、非来源核实”；`ProposedItem.note` description 改为“一句话简介”；多城市指引（按段 search_places 用段城市原文、按段查酒店、转场日留时间、跨城交通写成“建议”且不写未查询的车次/耗时/票价）；节奏/时长规则说明 | T2.2、T3.* | agent/persona.py、domain/itinerary.py、tools/travel.py | 提示词快照/现有提示词测试更新并通过；persona 不再含“非来源核实”；512 KiB 请求边界测试仍通过 | doing | 开始提示词/字段description先红 |
+| T4.2 | 前端：按天显示城市与当晚住宿；转场日显示“转场建议（未查询车次与票价）”；顶部统一说明“行程简介由 AI 整理，游玩时间为建议安排”；历史 note 去掉末尾重复标记（只剥离固定后缀模式，不动正文）；条件面板展示城市段与“每晚预算/不限”；用现有命令重新生成 api-types | T2.2、T3.1、T4.1 | apps/web/src/lib/itinerary.ts、components/results.tsx、saved-trip.tsx、conditions.tsx、lib/pace.ts、api-types.ts（生成） | ① `web test`：3 城数据按天分组含城市与住宿；30 项可渲染；含“（模型概述，非来源核实）”等后缀的 note 被剥离、正常含“核实”字样的简介不被误删 ② `dev.py web-generate` 后 `web-check` 全过 ③ 浏览器手动走一遍三城市草稿与旧行程（截图进 docs/evidence） | doing | T4.1先红2 failed→66 passed；开始前端先红，截图并入T5集中验收 |
+| T5.1 | 集中验证与交付：§9 全量；更新 §7/§8/§9；面试案例候选 | 全部 | — | ① §9 命令全部通过并贴输出摘要 ② 本地浏览器按 §9.2 #1/#3/#8 走通（截图入 docs/evidence）③ 真实模型 API 跑 1 次三城市对话到确认保存（预算按 .env 限制），记录轮次与结果；失败则开 P-条目修复后重跑，不以“离线通过”代替 ④ 独立只读审查复核回归、重复实现与过度设计 | todo |
 
 ## 5. 边界与不变量
 
@@ -177,13 +177,15 @@ PlanPatch:
 
 ### 2026-10-10
 - 计划：依次执行 T0.1–T5.1，D1–D6 按推荐；T0.2 先部署再进入 T1.1。
-- 完成：T0.1/T0.2（33df5fe）、T1.1（03701b1）、T1.2（22b4ff9）、T2.1（66214cf）、T2.2（6262d2e）均已push；Railway兼容读部署/旧V1 GET200已验，§3.2源码核对无出入；全量结果见§9.1，P-01–P-13完成。
-- 未完成及原因：T3.2/T3.3全部定向、PG与静态/生成/web检查已通过，独立审查两P2已先红后修并复核；完整后端测试进行中，尚未提交。T4/T5未开始。
-- 下一步：T3.2/T3.3完整检查后按§9.3合一提交/push，再做T4.1/T4.2；T3.1已6f10d05提交推送，1507 passed与全部检查/审查通过。
+- 完成：T0.1/T0.2（33df5fe）、T1.1（03701b1）、T1.2（22b4ff9）、T2.1（66214cf）、T2.2（6262d2e）、T3.1（6f10d05）、T3.2/T3.3（0117374）均已push；Railway兼容读部署/旧V1 GET200已验，§3.2源码核对无出入；全量结果见§9.1，P-01–P-15完成。
+- 未完成及原因：T4代码和整批审查修复已通过全部检查（后端1558 passed、前端129 passed），提交恢复点中。Chrome预算问一次/不限后继续、单城市旧引用格式V1→刷新→修改V2→刷新已通过；真实三城市仅部分草稿确认恢复，Google places今日25次配额耗尽，完整三城#1验收未完成（P-18）。
+- 下一步：费用本轮新增0.647704CNY、12HTTP，今日合计8.924630/15CNY；09:00JST日切后补齐三城景点再验收保存恢复。提出09:05单次自动续接授权请求（自动审批拒绝每日重复续接，尚未创建），不清账或扩大.env限制。最终完成才标T4.2/T5.1 done。
 
 上一恢复点（2026-10-10 23:03 JST）：HEAD `6262d2e` 已push，T0.1–T2.2全部完成。未提交均是本agent的T3.1：conversation、fixture_conditions/runtime、persona、tools/travel描述、PG会话测试、新test_lodging_confirmation.py和本计划。预算先红3 failed后实现；相关125 passed，check301/三平台/3契约/10入口与生成已过。独立审查的同句赋值/清空问题4 failed→修复后相关109 passed（8.43s，含真实PG恢复与手填来源）。下一步复核、完整test与web-check、自审、T3.1单独commit/push；T3.2以后尚未开始，浏览器/真实API T5未做。CLI固定2.1.295，仅项目dev.py命令，Git同作者与共作者。
 
 恢复点（2026-10-10 23:17 JST）：HEAD `6f10d05` 已push，T3.1完成（1507 passed/309.91s与全部检查）。当前未提交是T3.2（validator、conversation、fixture_conditions、新test_pacing_rules）及本计划；先红8 failed与提及边界2 failed→相关163 passed、真实PG50 passed；check302通过。T3.3先红10 failed→相关109 passed，check303/PG50通过；两P2先红修复后独立复核通过，真实PG极端时长confirm6passed/硬节奏17passed；生成退出0；完整test（session66802，t33-test-final.log）及web-check（session30772）运行中，两任务按§9.3合一可运行提交，需完整test/生成/web-check/审查后push。T4/T5仍未开始。
+
+恢复点（2026-10-10 23:23 JST）：HEAD `0117374`已push，T0–T3全部完成；最新全量1554 passed/1 skipped/4 deselected（309.50s），check303/生成/web119/构建、PG及独立复核通过。刚提交工作区干净；后续未提交为T4.1/T4.2及本计划状态更新。下一步T4.1先红提示词/description，接着T4.2先红前端；按§9.3合一提交，最后T5本地Chrome三场景与真实模型直至用户确认保存。
 
 ## 8. 问题解决记录
 
@@ -291,14 +293,38 @@ PlanPatch:
 - 过程：领域/fixture/persona76 passed；既有真实PG会话42 passed（13.24s）；新增PG问预算→不限→恢复→继续，含手填False来源守卫，相关125 passed（13.51s）；check301与生成通过。
 - 独立审查根因（VERIFIED）：赋值不限后清空只看旧unlimited，旧False/True导致不同结果；补金额/不限×旧False/True四例，同句冲突均须澄清，4 failed（t31-review-red.log）→不产生任何patch，相关109 passed（8.43s，t31-review-green.log）。不改既有断言。最终全量1507 passed/1 skipped/4 deselected（309.91s），check301三平台/3契约/10入口、PG Healthy、生成、web119/构建退出0，自审/独立复核无P1/P2；已独立commit/push `6f10d05`。
 
-### P-15 [T3.2/兼容边界] 新密度规则与旧单城校验不变   状态：doing   关联：T3.2 T3.3
+### P-15 [T3.2/兼容边界] 新密度规则与旧单城校验不变   状态：done   关联：T3.2 T3.3
 - 核实（REASONED）：sightseeing_checks只查过多且soft前缀；visit_checks只查正时长；conversation与fixture各自认节奏。行号漂移以函数名核实，范围与§3.2一致。
 - 执行边界：§5强制旧单城市validator报告完全一致，因此新增稀疏/空白/时长规则及validator新节奏识别仅在segments非空启用；旧分支保留原比较和提示。会话及fixture按D6统一pace_of。首末/转场日按§3.5“只查上限”不报稀疏；跨城相邻段不报空白。没有改变D1–D6。
-- T3.2先红8 failed/10 passed（t32-red-2.log）→相关161 passed；自审补别名只是提及不设事实，两例2 failed→修复后163 passed（t32-green-2.log）。fixture仍有限词汇，不推断正常营业/咖啡馆名字为节奏。PG会话/行程50 passed（11.78s）；静态check302/三平台/3契约/10入口通过，保留原单城黄金报告及全部断言。T3.3时长先红10 failed/12 passed（t33-red.log）→相关109 passed（0.74s），check303三平台/3契约/10入口与PG50 passed（11.98s）通过。补真实PG极端时长拒绝确认，检查零正式版本/草稿未确认；全部原断言保持。独立审查发现两P2：日期无跨度上限，逐日分配会放大；硬节奏优先后显式改软节奏无效。先红2 failed（t32-review-red.log，1年生成367检查、硬轻松仍慢节奏）→按有界项目/段边界汇总空白完整日区间，复用remove_hard_constraints+explicit_fields仅移除已识别硬节奏，保留其他硬事实/来源守卫。相关166 passed（12.04s）；新增到9999年及手填硬节奏PG17 passed（0.43s，t32-hard-pg.log）。最终check303/独立复核通过；最终全量1554 passed/1 skipped/4 deselected（309.50s）；check303/三平台/3契约/10入口、生成、web119/构建均退出0，自审/独立复核无P1/P2。待按§9.3合一commit/push。
+- T3.2先红8 failed/10 passed（t32-red-2.log）→相关161 passed；自审补别名只是提及不设事实，两例2 failed→修复后163 passed（t32-green-2.log）。fixture仍有限词汇，不推断正常营业/咖啡馆名字为节奏。PG会话/行程50 passed（11.78s）；静态check302/三平台/3契约/10入口通过，保留原单城黄金报告及全部断言。T3.3时长先红10 failed/12 passed（t33-red.log）→相关109 passed（0.74s），check303三平台/3契约/10入口与PG50 passed（11.98s）通过。补真实PG极端时长拒绝确认，检查零正式版本/草稿未确认；全部原断言保持。独立审查发现两P2：日期无跨度上限，逐日分配会放大；硬节奏优先后显式改软节奏无效。先红2 failed（t32-review-red.log，1年生成367检查、硬轻松仍慢节奏）→按有界项目/段边界汇总空白完整日区间，复用remove_hard_constraints+explicit_fields仅移除已识别硬节奏，保留其他硬事实/来源守卫。相关166 passed（12.04s）；新增到9999年及手填硬节奏PG17 passed（0.43s，t32-hard-pg.log）。最终check303/独立复核通过；最终全量1554 passed/1 skipped/4 deselected（309.50s）；check303/三平台/3契约/10入口、生成、web119/构建均退出0，自审/独立复核无P1/P2。已按§9.3合一commit/push `0117374`。
+
+### P-16 [T4.1/T4.2展示] 分段指引与统一说明   状态：doing   关联：T4.1 T4.2
+- T4.1先红：prompt缺segment_arrive/hotel_stays且每项要求重复标记，2 failed/9 passed（t41-red.log）→按段原文查询、派生日期、转场建议/未知交通、规则修复说明与一句话简介，相关66 passed。512KiB原有守卫测试沙箱bind失败，按同一项目命令正常权限重跑，不修改断言或请求边界。
+- T4.2先红：格式检查先拦住新增测试，修正位置/格式未改断言；实际4 failed/119 passed（t42-red-3.log）→127用例验证中，覆盖三城30项/住宿/只剥固定后缀/节奏硬优先/不限改金额。共享PlanResults使草稿与saved-trip同视图；旧单城只按报价日期读当晚住宿。条件摘要同步segments/不限，手填金额清互斥不限，显式手填节奏保留其他硬事实。生成命令更新8处description，无手改生成文件。
+- 自审边界先红：住宿数组反序且缺place.city时转场提示漏报，1 failed/126 passed（t42-order-red.log）→取最早入住日期而非数组首项；保留原项目/报价顺序。check303通过；最终前端与独立复核进行中，浏览器仍待执行。
+- 独立审查：普通对象aliases继承constructor/toString/__proto__，合法自由条件被识别为节奏并在手填编辑中误删。新增currentPace/mergePace/conditionPatch回归实际2 failed/127 passed（t42-review-red.log）→仅Object.hasOwn后取别名；独立只读复核无剩余P1/P2，最终全量检查仍运行。
+- 环境问题：最终web-check两次均129 passed/0 failed、type/lint通过，但Next构建CSS worker绑定端口EPERM（含正常权限重跑）；不记作整套通过。记录后先转独立check/完整PG测试。假设残留沙箱失败产物被Turbopack增量缓存复用，保留旧.next到ignored缓存后重建核实；不改构建参数/代码/断言。
+- 环境根因验证：保留.next到ignored缓存后同一命令重建退出0，129 passed/0 failed、type/lint/5路由构建全过（t42-review-green-fresh.log，VERIFIED）；证明失败缓存残留，未改构建配置。真实PG17 Healthy；本地API relaxed日费守卫开启，前端启动后Chrome验收。
+- 更正上一条根因表述：VERIFIED的是保留缓存后重建成功；缓存残留只是REASONED，单次重建不能排除间歇权限影响。最终生成后再次web-check也退出0，129 passed/type/lint/5路由构建通过（t4-web-final.log），未更改命令/配置。
+
+### P-17 [T5/整批审查] 历史城市与多住宿模型读取边界   状态：doing   关联：T2.2 T4.2 T5.1
+- 现象与根因：新格式保存后clear segments会让历史卡片city消失；bounded_plan只缩cards/changes，6张住宿卡仍10822字符。新增真实PG与工具结果回归2 failed/47 deselected（t4-review-batch-red.log），VERIFIED。
+- 方案：新格式hotel_stays且无旧hotel_evidence_id保留历史city；旧混合只读兼容载荷继续原输出。模型结果超8000时紧凑住宿卡，保留全部段日期/证据ID与名称/offer_id/总价/币种/来源模式/有效期，页面API完整卡不变，不提高上限、不改源对象。首轮48 passed/1 failed定位旧混合兼容输出，按旧ID识别修复，既有断言原样保留；最终检查中。
+- 兼容识别尝试两次仍有同一旧读取断言失败：样例旧ID也为None，不能据ID区分；停止该假设，先完成独立Chrome不限保存/刷新并创建单城验收。返回后以已存地点实际城市与当前城市是否一致识别多城历史，保持单城兼容输出原样，待先前失败断言复核。
+- 最终方案与证据：show_cities依据当前segments或新stays且已存Place城市与当前城市不一致（same_city）；旧单城/混合兼容载荷保持完整cards断言不变。完整领域/真实PG计划49 passed（4.29s），check303/三平台strict/3契约/10文档退出0；独立只读复核无剩余P1/P2，最终全量测试中。
+- 最终全量：1558 passed / 1 skipped / 4 deselected（307.89s），项目test实际退出0（t4-test-reviewed.log）。前端129 passed、类型/lint/5路由构建退出0，生成命令退出0；整批独立只读复核两项修复，无剩余P1/P2。仍不将这些检查替代完整三城市浏览器/真实API验收。
+
+### P-18 [T5/外部配额] 三城市真实对话的地点配额不足   状态：doing   关联：T4.2 T5.1
+- 环境：本地真实PG，DeepSeek真实API、Google/Rakuten，relaxed档保留15CNY每日守卫；自建验收session `1fb65c90-05d1-494d-bb0e-b0e61300c991`，未修改历史用户旅行。
+- 实测：首轮2a61bca3提取3段/人数/房型，漏记慢节奏，浏览器既有表单补正后回答单独“不限”；95988858不再追问预算，2次段酒店查询、1次validate、1次stage，0模型修复轮。真实乐天大阪2晚22680JPY，神户完整总价未知；Google places今日25次额度已耗尽，两城无景点，京都回退历史快照3项，草稿明确披露部分可用。
+- 证据与结果：Chrome预算问一次/不限后继续已验证；部分草稿确认V1成功（3段条件、2段真实住宿、仅京都3景点），正在刷新恢复。截图budget-question-local/unlimited-partial-draft-local；不能将这一部分草稿升级为完整三城市#1验收。UTC日切09:00JST后才可在不扩大.env配额下重跑地点补全；不清计数、不改预算/供应商限制。继续独立审查修复与旧单城浏览器验收。
+- 后续VERIFIED：部分V1刷新恢复成功，见partial-restored-local截图；单城市旧hotel_evidence_id引用格式（自建session fe27928d-fa31-417e-b969-3ea4bff5ce19）6景点/2晚住宿V1保存刷新→第二天下午14:00改15:00→V2保存刷新，其余5项目/酒店保持。真实PG只读核对V1/V2均无hotel_stays、保留旧酒店ID；截图legacy-v1-restored-local/legacy-v2-restored-local。真实费用/调用/未完成条件见2026-10-10-multi-city-live-partial.json；初次validate1次，模型修复0轮，人工补正节奏1次，不能称无需补正。
+- 续接：每日重复自动化创建被auto-review拒绝（缺该具体持久重复任务的授权），没有绕过或创建替代定时；已通过异步问题请求明早09:05JST单次续接授权，待用户回复。若没有回复，仅保留恢复点与未完成项，不能声称已安排自动续接。
+- 恢复操作：本任务启动的本地API与web开发服务已停止，PG保留。先核对本分支/HEAD/工作区，运行项目db-up；以进程级TRAVEL_CLAUDE_CLI选定2.1.295启动既有本地live relaxed API及dev.py web，保留每日守卫。Chrome仅恢复本条自建三城session，09:00JST日切后请求补齐大阪/神户景点、刷新过期酒店报价、重新validate并确认；避免重复景点，跨城交通保持未知。完成全部城市的草稿→保存→刷新后再将T4.2/T5.1标done；预算/旧引用格式截图与检查不用无故重跑。
 
 ## 9. 验证与交付
 
-- 提交前验证：最终dev test1488 passed/1 skipped/4 deselected（308.34s），check300/三平台/3契约/10入口、生成、web119/构建退出0；相关38 passed，独立只读复核通过。已commit/push6262d2e。
+- T2.2提交前验证：dev test1488 passed/1 skipped/4 deselected（308.34s），check300/三平台/3契约/10入口、生成、web119/构建退出0；相关38 passed，独立只读复核通过。已commit/push6262d2e。
 
 ### 9.1 必需命令（项目自有，不得自造）
 
@@ -323,10 +349,17 @@ uv run python scripts/dev.py web-check    # typecheck / lint / test / build
 | T2.1 按段酒店 `66214cf` | 299文件、三平台strict、3契约、10入口，退出0 | 1465 passed / 1 skipped / 4 deselected，308.04s，退出0 | 同一真实PG，两段查询/刷新/拒绝及旧单城回归实际运行 | 退出0，无净生成差异 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
 | T2.2 住宿与长行程 `6262d2e` | 300文件、三平台strict、3契约、10入口，退出0 | 1488 passed / 1 skipped / 4 deselected，308.34s，退出0 | PostgreSQL17 Healthy，真实PG保存/恢复/失败与200项分页实际运行 | 退出0，契约由命令生成 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
 | T3.1 预算确认 `6f10d05` | 301文件、三平台strict、3契约、10入口，退出0 | 1507 passed / 1 skipped / 4 deselected，309.91s，退出0 | PostgreSQL17 Healthy，预算追问/不限/手填来源/恢复实际运行 | 退出0，契约由命令生成 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
-
-| T3.2/T3.3 规则（待commit） | 303文件、三平台strict、3契约、10入口，退出0 | 1554 passed / 1 skipped / 4 deselected，309.50s，退出0 | 同一健康PG，极端时长拒保存/硬节奏显式来源/旧单城恢复通过 | 退出0，无净生成差异 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
+| T3.2/T3.3 规则 `0117374` | 303文件、三平台strict、3契约、10入口，退出0 | 1554 passed / 1 skipped / 4 deselected，309.50s，退出0 | 同一健康PG，极端时长拒保存/硬节奏显式来源/旧单城恢复通过 | 退出0，无净生成差异 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
+| T4.1/T4.2代码及P-17修复（提交恢复点中） | 303文件、三平台strict、3契约、10入口，退出0 | 1558 passed / 1 skipped / 4 deselected，307.89s，退出0 | PostgreSQL17 Healthy，历史城市恢复/旧单城回归、真实保存/恢复测试实际运行 | 退出0，8处description由命令生成 | 129 passed / 0 failed，类型/lint/5路由构建退出0 |
 
 Python全量使用进程级 `TRAVEL_CLAUDE_CLI` 选定已安装/CI锁定的2.1.295；未改全局CLI/.env/白名单。1 skipped为既有平台专属测试，4 deselected为既有live标记，未新增跳过。
+
+当前四项交付判定（2026-10-10，尚未完成T5.1）：
+
+1. §9.1全部项目命令：通过，数字见最后一行；原始完整测试t4-test-reviewed.log、检查t4-review-batch-check-final.log、生成t4-generate-final.log、前端t4-web-final.log。
+2. 本地Chrome：#3预算只问一次、回答不限继续通过；#8自建旧引用格式V1保存恢复/修改V2恢复通过，实际旧payload另由PG黄金回归覆盖；#1只有三段条件/两住宿/京都3项目的部分草稿保存恢复，完整三城未通过。截图见P-18，不把部分结果升级。
+3. 真实模型：DeepSeek两轮12 HTTP、0模型修复轮、手动补正节奏1次；部分V1确认恢复成功，本轮0.647704CNY，完整三城市真实验收仍未完成（Google每日配额日切后续接）。
+4. 整批自审/独立审查：回归、重复实现、过度设计检查和P-17修复复核通过。对照§1：PG三城市两住宿/旧payload/长行程链路通过，代码范围与不做项保持；§4的T4.2浏览器验收和T5.1完整真实验收尚缺，done means尚不满足。
 
 ### 9.2 必要测试清单（精简，核心成功+失败路径）
 

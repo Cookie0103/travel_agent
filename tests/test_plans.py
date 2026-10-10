@@ -1,6 +1,7 @@
 """R07：稳定item_id的局部增改删、锁定和未修改字段保留，不靠地点ID批量改写。"""
 
-from datetime import UTC, datetime
+import json
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from typing import Any, cast
 from uuid import uuid4
@@ -9,6 +10,7 @@ import pytest
 from pydantic import ValidationError
 
 from backend.domain import plans as plan_models
+from backend.domain.hotels import quote
 from backend.domain.itinerary import HotelStay, ItineraryProposal, ValidationReport
 from backend.domain.plans import (
     PlanContent,
@@ -19,8 +21,10 @@ from backend.domain.plans import (
     initial_content,
 )
 from backend.domain.travel_request import RequestPatch, TravelRequest
+from backend.providers.hotel_fixture import load_rates
 from backend.services.plans import LockInput
-from backend.tools.travel import DEFINITIONS
+from backend.tools.contracts import ToolResult
+from backend.tools.travel import DEFINITIONS, bounded_plan
 from tests.test_itinerary import item, place, record
 
 
@@ -45,6 +49,53 @@ def test_stay_collection_and_legacy_hotel_cannot_both_hold_references(kind: str)
     )
     with pytest.raises(ValidationError):
         models[kind].model_validate({**data, "hotel_evidence_id": uuid4(), "hotel_stays": (stay,)})
+
+
+def test_default_plan_result_compacts_many_quotes_without_losing_stay_references() -> None:
+    """模型读取合法多住宿结果仍受8000字符限制，页面原始报价不被修改。"""
+    rates, _ = load_rates()
+    start = datetime.fromisoformat("2026-11-03")
+    stays = []
+    for index in range(6):
+        arrival = (start + timedelta(days=index)).date()
+        departure = arrival + timedelta(days=1)
+        request = TravelRequest(
+            revision=1,
+            city="京都",
+            start_date=arrival,
+            end_date=departure,
+            adults=2,
+            child_ages=(),
+            rooms=1,
+        )
+        offer = quote(rates[0], request, datetime.now(UTC))
+        assert offer is not None
+        card = offer.card(request)
+        card.update(
+            hotel_name="合成酒店" * 20,
+            address="合成地址" * 100,
+            room_type="合成套餐" * 100,
+        )
+        stays.append(
+            {
+                "check_in": arrival.isoformat(),
+                "check_out": departure.isoformat(),
+                "hotel_evidence_id": str(uuid4()),
+                "hotel": card,
+            }
+        )
+    data = {"cards": [{"item_id": str(uuid4())}], "hotel_stays": stays}
+    original = json.dumps(data, ensure_ascii=False)
+    assert len(original) > 8000
+    bounded = bounded_plan(ToolResult(data))
+    assert len(json.dumps(bounded.payload(), ensure_ascii=False)) <= 8000
+    compact = bounded.data["hotel_stays"]
+    assert isinstance(compact, list) and len(compact) == 6
+    for expected, actual in zip(stays, compact, strict=True):
+        assert isinstance(actual, dict)
+        for key in ("check_in", "check_out", "hotel_evidence_id"):
+            assert actual[key] == expected[key]
+    assert json.dumps(data, ensure_ascii=False) == original
 
 
 def test_stays_of_preserves_legacy_hotel_and_initial_content_keeps_segmented_stays() -> None:

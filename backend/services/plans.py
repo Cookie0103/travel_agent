@@ -24,7 +24,7 @@ from backend.domain.plans import (
 from backend.domain.plans import (
     SavedPlan as SavedPlan,
 )
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import TravelRequest, same_city
 from backend.persistence import operations, plans
 from backend.persistence import travel as requests
 from backend.persistence.models import PlanRow
@@ -325,6 +325,17 @@ async def content_view(
     stale.extend(
         str(id) for id in content.proposal(request.revision).evidence_ids() if id not in evidence
     )
+    historic_cities = {
+        str(record.value["city"])
+        for record in records
+        if record.kind == "place"
+        and isinstance(record.value, dict)
+        and isinstance(record.value.get("city"), str)
+    }
+    show_cities = request.segments or (
+        content.hotel_stays
+        and any(not same_city(city, request.city or "") for city in historic_cities)
+    )
     cards = []
     for item in content.items:
         record = evidence.get(item.place_evidence_id)
@@ -335,7 +346,7 @@ async def content_view(
                 "name": place.name if place else "历史地点证据缺失",
                 "source_ref": record.source_ref if record else None,
                 "data_mode": record.data_mode if record else "snapshot",
-                **({"city": place.city if place else None} if request.segments else {}),
+                **({"city": place.city if place else None} if show_cities else {}),
             }
         )
     return {

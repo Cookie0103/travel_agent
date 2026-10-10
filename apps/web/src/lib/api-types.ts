@@ -1000,7 +1000,7 @@ export interface components {
             route_evidence_id: string | null;
             /**
              * Note
-             * @description 一句话概述，模型撰写，非来源核实
+             * @description 一句话简介
              */
             note: string | null;
             /**
@@ -1064,7 +1064,7 @@ export interface components {
             route_evidence_id?: string | null;
             /**
              * Note
-             * @description 一句话概述，模型撰写，非来源核实
+             * @description 一句话简介
              */
             note?: string | null;
             /**
@@ -1961,7 +1961,7 @@ export interface components {
             route_evidence_id: string | null;
             /**
              * Note
-             * @description 一句话概述，模型撰写，非来源核实
+             * @description 一句话简介
              * @default null
              */
             note: string | null;
@@ -2018,7 +2018,7 @@ export interface components {
             route_evidence_id: string | null;
             /**
              * Note
-             * @description 一句话概述，模型撰写，非来源核实
+             * @description 一句话简介
              * @default null
              */
             note: string | null;

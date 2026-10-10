@@ -3178,7 +3178,7 @@
               }
             ],
             "title": "Note",
-            "description": "一句话概述，模型撰写，非来源核实"
+            "description": "一句话简介"
           },
           "item_id": {
             "type": "string",
@@ -3326,7 +3326,7 @@
               }
             ],
             "title": "Note",
-            "description": "一句话概述，模型撰写，非来源核实"
+            "description": "一句话简介"
           },
           "item_id": {
             "type": "string",
@@ -5820,7 +5820,7 @@
               }
             ],
             "default": null,
-            "description": "一句话概述，模型撰写，非来源核实",
+            "description": "一句话简介",
             "title": "Note"
           },
           "item_id": {
@@ -5931,7 +5931,7 @@
               }
             ],
             "default": null,
-            "description": "一句话概述，模型撰写，非来源核实",
+            "description": "一句话简介",
             "title": "Note"
           },
           "item_id": {

@@ -29,10 +29,16 @@ export function planUnavailable(plan: Plan, now: number): boolean {
 /** A saved version remains readable; only its references/quotes need a fresh query. */
 export function hotelQuoteNeedsRefresh(plan: Plan, now: number): boolean {
   return !!(
-    plan.hotel &&
-    ((plan.hotel_evidence_id &&
-      plan.needs_refresh.includes(plan.hotel_evidence_id)) ||
-      now >= Date.parse(plan.hotel.expires_at))
+    (plan.hotel &&
+      ((plan.hotel_evidence_id &&
+        plan.needs_refresh.includes(plan.hotel_evidence_id)) ||
+        now >= Date.parse(plan.hotel.expires_at))) ||
+    plan.hotel_stays?.some(
+      (stay) =>
+        !stay.hotel ||
+        plan.needs_refresh.includes(stay.hotel_evidence_id) ||
+        now >= Date.parse(stay.hotel.expires_at),
+    )
   );
 }
 

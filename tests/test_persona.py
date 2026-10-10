@@ -7,6 +7,8 @@ import pytest
 from pydantic import ValidationError
 
 from backend.agent.persona import load_persona, travel_prompt
+from backend.domain.itinerary import ProposedItem
+from backend.tools.travel import DEFINITIONS
 from eval.persona import JudgeScore, Sample, calibration, rules
 
 
@@ -80,3 +82,18 @@ def test_chinese_explanations_preserve_original_proper_names() -> None:
     prompt = travel_prompt()
     assert "状态、错误与解释使用中文" in prompt
     assert "酒店、景点的日文专有名称保留原文" in prompt
+
+
+def test_multi_city_prompt_uses_segments_and_labels_unqueried_transfer_suggestions() -> None:
+    prompt = travel_prompt()
+    assert "segment_arrive" in prompt and "hotel_stays" in prompt
+    assert "城市原文" in prompt and "转场建议" in prompt
+    assert "未查询的车次、耗时、票价" in prompt
+    assert "pace_too_sparse" in prompt and "visit_duration_range" in prompt
+    hotel = next(tool for tool in DEFINITIONS if tool.name == "search_hotel_offers")
+    assert "segment_arrive" in hotel.description and "hotel_stays" in hotel.description
+
+
+def test_item_intro_uses_one_shared_ai_notice_instead_of_repeated_note_markers() -> None:
+    assert "非来源核实" not in travel_prompt()
+    assert ProposedItem.model_fields["note"].description == "一句话简介"

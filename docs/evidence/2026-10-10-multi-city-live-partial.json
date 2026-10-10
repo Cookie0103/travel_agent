@@ -1,0 +1,42 @@
+{
+  "status": "partial; complete three-city browser acceptance still pending Google daily cap reset",
+  "session_id": "1fb65c90-05d1-494d-bb0e-b0e61300c991",
+  "saved_version": 1,
+  "cities": 3,
+  "hotel_stays": 2,
+  "sightseeing_items": 3,
+  "sightseeing_cities": [
+    "京都"
+  ],
+  "model_repair_rounds": 0,
+  "manual_condition_corrections": {"pace": 1},
+  "daily_CNY_limit": "15.00",
+  "daily_spent_before_CNY": "8.276926",
+  "daily_spent_after_CNY": "8.924630",
+  "this_conversation_CNY": "0.647704",
+  "runs": [
+    {
+      "run_prefix": "2a61bca3",
+      "model_HTTP_responses": 3,
+      "tool_calls": {
+        "update_travel_request": 1,
+        "update_conversation_state": 2
+      },
+      "terminal_state": "completed"
+    },
+    {
+      "run_prefix": "95988858",
+      "model_HTTP_responses": 9,
+      "tool_calls": {
+        "update_travel_request": 1,
+        "search_places": 3,
+        "search_hotel_offers": 2,
+        "present_travel_result": 2,
+        "estimate_routes": 1,
+        "validate_itinerary": 1,
+        "stage_plan_change": 1
+      },
+      "terminal_state": "completed"
+    }
+  ]
+}

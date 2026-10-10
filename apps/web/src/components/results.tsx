@@ -22,7 +22,12 @@ const rakutenCredit = `<!-- Rakuten Web Services Attribution Snippet FROM HERE -
 <a href="https://developers.rakuten.com/" target="_blank">Supported by Rakuten Developers</a>
 <!-- Rakuten Web Services Attribution Snippet TO HERE -->`;
 export { planDays } from "@/lib/itinerary";
-import { planDays, daySections, itineraryTime as date } from "@/lib/itinerary";
+import {
+  planDays,
+  daySections,
+  cleanNote,
+  itineraryTime as date,
+} from "@/lib/itinerary";
 
 export function useClock() {
   const [now, setNow] = useState(0);
@@ -499,6 +504,7 @@ export function PlanResults({
         <h2>{plan.draft_id ? "待确认行程" : `正式行程 · V${plan.version}`}</h2>
         <span className="tag">条件版本 {plan.request_revision}</span>
       </div>
+      <p className="muted small">行程简介由 AI 整理，游玩时间为建议安排。</p>
       {!plan.draft_id && token && (
         <CalendarButton
           planId={plan.plan_id}
@@ -575,7 +581,7 @@ export function PlanResults({
         </details>
       )}
       <div className="mt-6 space-y-6">
-        {days.map(({ day, items }, dayIndex) => (
+        {days.map(({ day, items, cities, stays, transfer }, dayIndex) => (
           <section
             key={`${day}-${dayIndex}`}
             aria-label={`第${dayIndex + 1}天`}
@@ -586,6 +592,14 @@ export function PlanResults({
                 {day === "时间待定" ? day : day.slice(5)}
               </span>
             </h3>
+            {!!cities.length && (
+              <p className="mb-2 font-semibold">{cities.join(" → ")}</p>
+            )}
+            {transfer && (
+              <p className="mb-3 text-sm text-text-muted">
+                转场建议（未查询车次与票价）：当天预留转场时间，具体路线与耗时需另行确认。
+              </p>
+            )}
             <div className="ml-2 border-l border-border pl-5">
               {daySections(items).map((section, sectionIndex) => (
                 <section key={sectionIndex} className="relative mb-4">
@@ -639,8 +653,10 @@ export function PlanResults({
                                 到此景点的路线信息需更新，使用前请重新查询。
                               </p>
                             )}
-                          {item.note && (
-                            <p className="muted small">{item.note}</p>
+                          {item.note && cleanNote(item.note) && (
+                            <p className="muted small">
+                              {cleanNote(item.note)}
+                            </p>
                           )}
                         </div>
                         {!plan.draft_id && lock && (
@@ -658,18 +674,18 @@ export function PlanResults({
                   </div>
                 </section>
               ))}
-              {plan.hotel && dayIndex < days.length - 1 && (
-                <section className="relative">
+              {stays.map((stay) => (
+                <section className="relative" key={stay.hotel_evidence_id}>
                   <span
                     className="absolute -left-[26px] top-2 size-3 rounded-full bg-primary"
                     aria-hidden="true"
                   />
                   <h4 className="mb-2 text-base font-semibold">住宿</h4>
                   <p className="rounded-xl border border-border bg-bg p-4 text-sm">
-                    {plan.hotel.hotel_name}
+                    {stay.hotel?.hotel_name ?? "住宿报价资料待更新"}
                   </p>
                 </section>
-              )}
+              ))}
             </div>
           </section>
         ))}
@@ -687,6 +703,21 @@ export function PlanResults({
           <Hotel card={plan.hotel} />
         </details>
       )}
+      {plan.hotel_stays?.map((stay) => (
+        <details key={stay.hotel_evidence_id}>
+          <summary>
+            住宿报价 · {stay.check_in}—{stay.check_out}
+          </summary>
+          {!stay.hotel ||
+          plan.needs_refresh.includes(stay.hotel_evidence_id) ||
+          now >= Date.parse(stay.hotel.expires_at) ? (
+            <p className="warning small">
+              此住宿报价需更新，价格与可订状态请重新查询。
+            </p>
+          ) : null}
+          {stay.hotel && <Hotel card={stay.hotel} />}
+        </details>
+      ))}
       {plan.draft_id && confirm && (
         <div className="confirm-bar">
           <Button

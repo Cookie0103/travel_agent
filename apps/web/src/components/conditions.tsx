@@ -64,11 +64,25 @@ export function Conditions({
         <h2>编辑条件</h2>
         <span className="tag">版本 {request.revision}</span>
       </div>
+      {!!request.segments?.length && (
+        <p className="small muted">
+          城市段：
+          {request.segments
+            .map(
+              (segment) =>
+                `${segment.city} ${segment.arrive}—${segment.depart}`,
+            )
+            .join(" → ")}
+          。目的地与首末日期随城市段确定，可在对话中修改城市段。
+        </p>
+      )}
+      {request.lodging_budget_unlimited && <p>每晚预算：不限</p>}
       <label>
         目的地
         {source("city")}
         <input
           maxLength={40}
+          disabled={!!request.segments?.length}
           value={form.city}
           placeholder="目的地待补充"
           onChange={(event) => change("city", event.target.value)}
@@ -79,6 +93,7 @@ export function Conditions({
         {source("start_date")}
         <input
           type="date"
+          disabled={!!request.segments?.length}
           value={form.start_date}
           onChange={(e) => change("start_date", e.target.value)}
         />
@@ -88,6 +103,7 @@ export function Conditions({
         {source("end_date")}
         <input
           type="date"
+          disabled={!!request.segments?.length}
           min={form.start_date}
           value={form.end_date}
           onChange={(e) => change("end_date", e.target.value)}

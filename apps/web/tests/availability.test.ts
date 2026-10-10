@@ -165,3 +165,21 @@ test("hotel refresh is tied to its reference or quote expiry, not an unrelated p
     "正式行程仍已保存；部分报价或参考信息需更新，使用前请重新查询。",
   );
 });
+
+test("each segmented hotel remains subject to quote expiry and missing references", () => {
+  const expires = Date.parse("2026-11-01T00:00:00Z");
+  const plan = {
+    hotel: null,
+    needs_refresh: [],
+    hotel_stays: [
+      { hotel_evidence_id: "a", hotel: { expires_at: "2026-11-01T00:00:00Z" } },
+      { hotel_evidence_id: "b", hotel: { expires_at: "2026-11-02T00:00:00Z" } },
+    ],
+  } as unknown as Plan;
+  assert.equal(hotelQuoteNeedsRefresh(plan, expires - 1), false);
+  assert.equal(hotelQuoteNeedsRefresh(plan, expires), true);
+  assert.equal(
+    hotelQuoteNeedsRefresh({ ...plan, needs_refresh: ["b"] }, expires - 1),
+    true,
+  );
+});

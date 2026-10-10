@@ -207,6 +207,7 @@ test("lodging range preserves endpoints and trip budget while numeric no-op stay
       currency: "JPY",
     },
   } as RequestState;
+
   assert.deepEqual(
     conditionPatch(known, {
       ...conditionsForm(known),
@@ -232,4 +233,46 @@ test("lodging entry cannot silently discard facts when backend capability is mis
       }),
     /住宿预算功能/,
   );
+});
+
+test("setting an amount clears explicit unlimited and preserves unrelated conditions", () => {
+  const current = {
+    ...request,
+    lodging_budget_unlimited: true,
+    lodging_budget: null,
+    budget_relation: { status: "unknown" },
+  } as RequestState;
+  const form = {
+    ...conditionsForm(current),
+    lodging_basis: "per_room_night",
+    lodging_currency: "JPY",
+    lodging_upper: "8000",
+  };
+  const patch = conditionPatch(current, form);
+  assert.ok(patch.clear.includes("lodging_budget_unlimited"));
+  assert.equal(patch.set.lodging_budget?.amount.upper, "8000");
+  assert.deepEqual(conditionPatch(current, conditionsForm(current)), {
+    set: {},
+    clear: [],
+  });
+});
+
+test("an explicit form pace edit removes only a recognized hard pace", () => {
+  const current = { ...request, hard_constraints: ["佛系", "不能登山"] };
+  const form = conditionsForm(current);
+  assert.equal(form.pace, "慢节奏");
+  const patch = conditionPatch(current, { ...form, pace: "特种兵" });
+  assert.deepEqual(patch.set.hard_constraints, ["不能登山"]);
+  assert.deepEqual(patch.set.soft_constraints, ["少走路", "节奏：特种兵"]);
+});
+
+test("pace editing preserves prototype names in free hard conditions", () => {
+  const hard_constraints = ["constructor", "toString", "__proto__", "不能登山"];
+  const current = { ...request, hard_constraints };
+  const form = conditionsForm(current);
+  assert.equal(form.pace, "");
+  const patch = conditionPatch(current, { ...form, pace: "标准" });
+  assert.equal(patch.set.hard_constraints, undefined);
+  assert.deepEqual(patch.set.soft_constraints, ["少走路", "节奏：标准"]);
+  assert.deepEqual(current.hard_constraints, hard_constraints);
 });

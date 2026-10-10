@@ -45,7 +45,10 @@ export function conditionsForm(request: RequestState): ConditionsForm {
     budget: text(request.budget),
     transport: text(request.transport),
     departure_time: text(request.departure_time),
-    pace: currentPace(request.soft_constraints ?? []),
+    pace: currentPace(
+      request.soft_constraints ?? [],
+      request.hard_constraints ?? [],
+    ),
     lodging_basis: request.lodging_budget?.basis ?? "",
     lodging_currency: request.lodging_budget?.currency ?? "",
     lodging_lower: text(request.lodging_budget?.amount.lower),
@@ -129,6 +132,10 @@ export function conditionPatch(
       request.soft_constraints ?? [],
       form.pace as Pace | "",
     );
+    if (request.hard_constraints?.some((item) => currentPace([], [item])))
+      set.hard_constraints = request.hard_constraints.filter(
+        (item) => !currentPace([], [item]),
+      );
   }
   const amountEqual = (value: string, before: string) =>
     value.trim() === before.trim() ||
@@ -171,6 +178,8 @@ export function conditionPatch(
         basis: form.lodging_basis,
         currency,
       };
+      if (request.lodging_budget_unlimited)
+        clear.push("lodging_budget_unlimited");
     }
   }
   return { set, clear };

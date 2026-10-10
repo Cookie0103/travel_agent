@@ -156,7 +156,7 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "search_hotel_offers",
-        "按当前完整入住条件查询不同酒店（limit为酒店数，默认5）；实时模式每家一张最低价套餐卡并带总数与乐天入口，指定hotel_id时列该店套餐（最多6报价，每家最多2套餐）；保持上游顺序。实时模式逐晚核算乐天含税报价，未知不猜测。每张卡的offer_id用于present/refresh，evidence_id用于行程hotel_evidence_id。",
+        "按当前完整入住条件查询不同酒店（limit为酒店数，默认5）；实时模式每家一张最低价套餐卡并带总数与乐天入口，指定hotel_id时列该店套餐（最多6报价，每家最多2套餐）；保持上游顺序。实时模式逐晚核算乐天含税报价，未知不猜测。每张卡的offer_id用于present/refresh，evidence_id用于行程hotel_evidence_id。多城市必须带segment_arrive=段到达日期，各段报价用于hotel_stays；不修改全局city/日期，单城市可省略。",
         HotelSearchInput.model_json_schema(),
     ),
     ToolDefinition(
@@ -778,6 +778,40 @@ def bounded_plan(result: ToolResult) -> ToolResult:
             data[key + "_count"] = len(values)
             data[key + "_truncated"] = len(values) > limit
     bounded = replace(result, data=data)
+    stays = data.get("hotel_stays")
+    if (
+        isinstance(stays, list)
+        and len(json.dumps(bounded.payload(), ensure_ascii=False)) > RESULT_LIMIT
+    ):
+        compact: list[dict[str, object]] = []
+        for stay in stays:
+            if not isinstance(stay, dict):
+                continue
+            hotel = stay.get("hotel")
+            compact.append(
+                {
+                    **{key: stay[key] for key in ("check_in", "check_out", "hotel_evidence_id")},
+                    "hotel": (
+                        {
+                            "hotel_name": str(hotel.get("hotel_name", ""))[:80],
+                            **{
+                                key: hotel.get(key)
+                                for key in (
+                                    "offer_id",
+                                    "total",
+                                    "currency",
+                                    "data_mode",
+                                    "expires_at",
+                                )
+                            },
+                        }
+                        if isinstance(hotel, dict)
+                        else None
+                    ),
+                }
+            )
+        data["hotel_stays"] = compact
+        data["hotel_stays_compact"] = True
     # 先缩详细差异，再缩卡片；ID/总数/校验警告保留，页面API仍可读取完整内容。
     while len(json.dumps(bounded.payload(), ensure_ascii=False)) > RESULT_LIMIT:
         changes = data.get("changes")

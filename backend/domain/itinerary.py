@@ -40,9 +40,7 @@ class ProposedItem(BaseModel):
         "起点须为同一天前一景点、终点须为本景点；每天首项必须省略。"
         "不要把出站路段挂到前一项，不用route_id代替evidence_id",
     )
-    note: str | None = Field(
-        default=None, max_length=80, description="一句话概述，模型撰写，非来源核实"
-    )
+    note: str | None = Field(default=None, max_length=80, description="一句话简介")
 
 
 class ItineraryProposal(BaseModel):

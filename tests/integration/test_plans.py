@@ -68,6 +68,49 @@ def test_conversation_tool_updates_segments_and_unlimited_with_a_safe_receipt(
     runner.run(exercise())
 
 
+def test_saved_segmented_cities_remain_visible_after_current_segments_are_cleared(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """历史多城显示依据已保存内容，当前条件改回单城只标引用需刷新。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        example, candidate, records = multi_city_example()
+        changed = await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": example.model_dump(exclude={"revision"}, exclude_none=True),
+                }
+            ),
+        )
+        revision = changed.request.revision
+        candidate = candidate.model_copy(update={"expected_revision": revision})
+        records = tuple(r.model_copy(update={"request_revision": revision}) for r in records)
+        await travel.record_evidence(context, records)
+        service = PlanService(travel)
+        draft = await service.stage(
+            context,
+            StageInput.model_validate(
+                {"change": {"kind": "initial", "proposal": candidate.model_dump(mode="json")}}
+            ),
+        )
+        saved = await service.confirm(context.user_id, draft.draft_id)
+        before = await service.get(context.user_id, saved.plan_id)
+        await travel.patch_request(
+            context, RequestPatch(expected_revision=revision, clear=("segments",))
+        )
+        after = await service.get(context.user_id, saved.plan_id)
+        assert after["cards"] == before["cards"]
+        assert after["hotel_stays"] == before["hotel_stays"]
+        assert after["version"] == 1
+        assert after["needs_refresh"]
+        assert (await travel.get_request(context)).segments is None
+
+    runner.run(exercise())
+
+
 @pytest.mark.parametrize("count", [5, 30])
 def test_three_city_stays_survive_confirm_restore_locks_and_item_27_patch(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], count: int

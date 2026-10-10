@@ -31,7 +31,10 @@ export function TripPanel({
 }) {
   const { request, identity, plan } = workspace;
   const [editing, setEditing] = useState(false);
-  const pace = currentPace(request?.soft_constraints ?? []);
+  const pace = currentPace(
+    request?.soft_constraints ?? [],
+    request?.hard_constraints ?? [],
+  );
   if (!identity) return null;
   return (
     <aside
@@ -66,6 +69,7 @@ export function TripPanel({
               request.child_ages != null ||
               request.budget ||
               request.lodging_budget ||
+              request.lodging_budget_unlimited ||
               request.transport ||
               request.departure_time ||
               pace ? (
@@ -108,6 +112,20 @@ export function TripPanel({
           {!editing && request.hotel_search_location && (
             <p>住宿查询地点：{request.hotel_search_location}</p>
           )}
+          {!editing && request.segments?.length && (
+            <ul aria-label="城市段">
+              {request.segments.map((segment) => (
+                <li key={segment.arrive}>
+                  {segment.city} · {segment.arrive}—{segment.depart}
+                  {segment.hotel_search_location &&
+                    ` · 住宿地点：${segment.hotel_search_location}`}
+                </li>
+              ))}
+            </ul>
+          )}
+          {!editing && request.lodging_budget_unlimited && (
+            <p>每晚预算：不限</p>
+          )}
           {!editing && request.lodging_budget && (
             <p>
               住宿预算：{request.lodging_budget.amount.lower ?? "下限未填"}–
@@ -123,7 +141,7 @@ export function TripPanel({
               {sourceRows(request.field_sources).join("；")}
             </p>
           )}
-          {request.budget_relation ? (
+          {request.lodging_budget_unlimited ? null : request.budget_relation ? (
             <p
               className={
                 request.budget_relation.status === "conflict"

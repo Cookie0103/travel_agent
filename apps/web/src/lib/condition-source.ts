@@ -2,6 +2,7 @@
 const labels: Record<string, string> = {
   city: "目的地",
   hotel_search_location: "住宿查询地点",
+  segments: "城市段",
   start_date: "开始日期",
   end_date: "结束日期",
   adults: "成人",
@@ -9,6 +10,7 @@ const labels: Record<string, string> = {
   rooms: "房间数",
   budget: "全程预算",
   lodging_budget: "住宿预算",
+  lodging_budget_unlimited: "每晚预算不限",
   transport: "交通",
   departure_time: "每日出发",
   soft_constraints: "节奏/偏好",
