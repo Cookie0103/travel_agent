@@ -2718,7 +2718,7 @@
           "hotel_evidence_id"
         ],
         "title": "HotelStay",
-        "description": "兼容读取分段住宿；写入与业务约束在后续任务启用。"
+        "description": "住宿段日期与报价引用；段范围及报价条件由行程validator核验。"
       },
       "ItemDiff": {
         "properties": {
@@ -2958,7 +2958,7 @@
               "format": "uuid"
             },
             "type": "array",
-            "maxItems": 24,
+            "maxItems": 200,
             "title": "Locked Item Ids"
           }
         },
@@ -5643,7 +5643,7 @@
       },
       "UiHotelStay": {
         "additionalProperties": false,
-        "description": "兼容读取分段住宿；写入与业务约束在后续任务启用。",
+        "description": "住宿段日期与报价引用；段范围及报价条件由行程validator核验。",
         "properties": {
           "check_in": {
             "format": "date",

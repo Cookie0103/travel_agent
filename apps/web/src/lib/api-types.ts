@@ -802,7 +802,7 @@ export interface components {
         };
         /**
          * HotelStay
-         * @description 兼容读取分段住宿；写入与业务约束在后续任务启用。
+         * @description 住宿段日期与报价引用；段范围及报价条件由行程validator核验。
          */
         HotelStay: {
             /**
@@ -1877,7 +1877,7 @@ export interface components {
         };
         /**
          * HotelStay
-         * @description 兼容读取分段住宿；写入与业务约束在后续任务启用。
+         * @description 住宿段日期与报价引用；段范围及报价条件由行程validator核验。
          */
         UiHotelStay: {
             /**

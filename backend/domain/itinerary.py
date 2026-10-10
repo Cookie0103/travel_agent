@@ -11,14 +11,14 @@ from pydantic import (
     ConfigDict,
     Field,
     PrivateAttr,
-    ValidationInfo,
     model_validator,
 )
-from pydantic.json_schema import SkipJsonSchema
+
+PLAN_ITEM_LIMIT = 200
 
 
 class HotelStay(BaseModel):
-    """兼容读取分段住宿；写入与业务约束在后续任务启用。"""
+    """住宿段日期与报价引用；段范围及报价条件由行程validator核验。"""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
     check_in: date
@@ -48,26 +48,21 @@ class ProposedItem(BaseModel):
 class ItineraryProposal(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     expected_revision: int = Field(strict=True, ge=0)
-    items: tuple[ProposedItem, ...] = Field(
-        min_length=1, max_length=200, json_schema_extra={"maxItems": 24}
-    )
+    items: tuple[ProposedItem, ...] = Field(min_length=1, max_length=PLAN_ITEM_LIMIT)
     hotel_evidence_id: UUID | None = Field(
         default=None,
         description="酒店卡片(search_hotel_offers)的evidence_id，不是offer_id；无卡片则省略",
     )
-    hotel_stays: SkipJsonSchema[tuple[HotelStay, ...]] = Field(
+    hotel_stays: tuple[HotelStay, ...] = Field(
         default=(),
         max_length=6,
         exclude_if=lambda value: not value,
     )
 
     @model_validator(mode="after")
-    def legacy_write(self, info: ValidationInfo) -> Self:
-        # 不变量：回退兼容读不能提前放开模型工具的写入契约。
-        if not (info.context and info.context.get("persisted")) and (
-            "hotel_stays" in self.model_fields_set or len(self.items) > 24
-        ):
-            raise ValueError("兼容读取阶段只接受旧住宿字段与最多24项写入")
+    def exclusive_hotels(self) -> Self:
+        if self.hotel_evidence_id is not None and self.hotel_stays:
+            raise ValueError("旧酒店引用与分段住宿不能同时设置")
         return self
 
     def evidence_ids(self) -> tuple[UUID, ...]:

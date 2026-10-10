@@ -142,8 +142,8 @@ PlanPatch:
 | --- | --- | --- | --- | --- | --- | --- |
 | T0.1 | 切换当前批次入口；记录基线检查结果 | — | AGENTS.md、docs/README.md | 链接指向本文件；§9 全量命令在基线上跑一遍，结果写进 §7（失败项记为“基线既有”） | done | `33df5fe` 已push；基线check299/三平台、test1408 passed、web119/构建、db Healthy、generate全部通过（§9.1/P-01） |
 | T0.2 | 兼容读（回退保护）：读取 `PlanContent/ItineraryProposal/PlanPatch` 与 `request_details` 时能接受新字段（`hotel_stays`、`segments`、`lodging_budget_unlimited`），仅读取不写入；API 写入入口仍按旧契约 | T0.1 | domain/plans.py、domain/itinerary.py、services/travel.py、services/plans.py | ① PG：直接写入含新字段的行程/条件 payload，`get` 正常返回且旧字段不变 ② 现有全量测试通过 ③ 单独提交并 push，Railway 部署成功后再开始 T1.1 | done | `33df5fe` 已push；test1419 passed/1 skipped/4 deselected（305.62s）、check/生成/web119/构建退出0；独立审查通过；Railway API/Web同SHA SUCCESS、旧京都V1 GET200（P-03） |
-| T1.1 | 条件模型：`TripSegment`、`segments`、`lodging_budget_unlimited`、派生函数、`same_city`、`pace_of`；`request_details` 读写；`invalidated_kinds` | T0.1 | domain/travel_request.py、services/travel.py(`request_from_row` 及写入处)、ADR-015 追加一节 | ① 段重叠/缺口/首末不符/非末段0晚 → 拒绝（失败路径）② `apply_request_patch` 设置/清除 segments、revision 正确递增 ③ 单城市 `evidence_conditions` 输出与基线字节相同 ④ `pace_of` 覆盖 soft/hard 与同义词 ⑤ PG：写入 segments 后重新读取一致 | doing | T0.2发布关卡已通过；新增领域与真实PG回归，红阶段会话44780（t11-red.log） |
-| T1.2 | 行程模型：`HotelStay`、`hotel_stays`、互斥校验、`stays_of`；移除 4 处 24 上限（改为一个宽松的防护上限，建议 200，并与 512 KiB 请求边界一起保留诊断日志） | T1.1 | domain/plans.py、domain/itinerary.py、services/plans.py(LockInput) | ① 同时给 `hotel_evidence_id` 与 `hotel_stays` → 拒绝 ② 旧 `hotel_evidence_id` 内容可读、`stays_of` 转为单段 ③ 30 项 PlanContent/patch/locks 通过模型校验 | todo | |
+| T1.1 | 条件模型：`TripSegment`、`segments`、`lodging_budget_unlimited`、派生函数、`same_city`、`pace_of`；`request_details` 读写；`invalidated_kinds` | T0.1 | domain/travel_request.py、services/travel.py(`request_from_row` 及写入处)、ADR-015 追加一节 | ① 段重叠/缺口/首末不符/非末段0晚 → 拒绝（失败路径）② `apply_request_patch` 设置/清除 segments、revision 正确递增 ③ 单城市 `evidence_conditions` 输出与基线字节相同 ④ `pace_of` 覆盖 soft/hard 与同义词 ⑤ PG：写入 segments 后重新读取一致 | done | `03701b1` 已push；先红PG1 failed/294 passed→最终1455 passed/1 skipped/4 deselected（310.24s）；check/生成/web119/构建通过，独立P2先红后修及复核通过（P-05/P-06） |
+| T1.2 | 行程模型：`HotelStay`、`hotel_stays`、互斥校验、`stays_of`；移除 4 处 24 上限（改为一个宽松的防护上限，建议 200，并与 512 KiB 请求边界一起保留诊断日志） | T1.1 | domain/plans.py、domain/itinerary.py、services/plans.py(LockInput) | ① 同时给 `hotel_evidence_id` 与 `hotel_stays` → 拒绝 ② 旧 `hotel_evidence_id` 内容可读、`stays_of` 转为单段 ③ 30 项 PlanContent/patch/locks 通过模型校验 | doing | 先红1 failed→定向20 passed→全量1461 passed/1 skipped/4 deselected（310.85s）；check299/生成/web119/构建退出0；自审/独立复核无P1/P2，待commit/push |
 | T2.1 | 按段查询酒店：`HotelSearchInput` 增 `segment_arrive: date \| None`（多城市时必填，单城市省略）；服务端用 `segment_request` 调现有 `_quote`；`refresh` 沿用原报价的段 | T1.1 | tools/travel.py、services/hotels.py、domain/evidence.py(`applicable`) | ① 三段行程分别查两段酒店，证据条件各自匹配 ② 多城市不给 segment → 422 明确提示 ③ 查询后全局 request 未被修改（revision 不变） ④ 单城市调用参数与结果不变 | todo | |
 | T2.2 | 校验与暂存/确认：validator 改按 stays、按天城市归属；`content_view` 返回 stays 与各自酒店卡；给模型读完整 `item_id`：`bounded_plan` 在 cards 截断时附带完整 `item_ids`（仅 UUID+日期+名称，受 RESULT_LIMIT 约束），或复用已有读取工具，二选一并在 §8 记录 | T1.2、T2.1 | domain/validator.py、services/plans.py、tools/travel.py | ① 三城市+两段住宿 草稿→confirm→get（PG）全程通过 ② 漏一段住宿、stay 日期与段不符、报价属于别的段 → 各自 conflict 且 confirm 被拒 ③ 30 项行程：stage→confirm→get→对第 27 项 patch→confirm（PG）④ 跨城市重复景点仍被 `require_unique_sightseeing` 拒绝；同城再次入住不报重复 ⑤ 旧单城市已保存数据（直接写入旧 payload）可 get、patch、confirm | todo | |
 | T3.1 | 住宿预算确认：`task_missing` 按 D4 增 `lodging_budget`；条件提取写入 per_room_night/JPY 或 unlimited；改 persona.py:54；`update_travel_request` 描述只问每间每晚 | T1.1 | domain/conversation.py、tools/travel.py(描述)、agent/persona.py、agent/fixture_conditions.py | ① 有住宿且两者皆空 → itinerary 缺 `lodging_budget`；② 说“不限” → `unlimited=True`，不再缺；③ 已给金额 → 不重复问；④ 当日往返（0晚）不要求；⑤ 不新增全程预算/币种追问（fixture 对话测试断言回复不含这些问题） | todo | |
@@ -177,11 +177,11 @@ PlanPatch:
 
 ### 2026-10-10
 - 计划：依次执行 T0.1–T5.1，D1–D6 按推荐；T0.2 先部署再进入 T1.1。
-- 完成：T0.1/T0.2（33df5fe已push）；§3.2 14项源码核对仍REASONED、无出入；基线全量及兼容读全量通过（§9.1）。Railway API/Web同SHA SUCCESS，部署后旧京都V1 GET200、Chrome恢复截图已保存；回退保护关卡已通过（P-01–P-04）。
-- 未完成及原因：T1.1已先红1 failed/294 passed并实现；独立审查P-06显式clear冲突先红1 failed/7 passed→领域50 passed，已修复并复核无新增P1/P2；check/生成/web119/构建通过，完整PG全量仍运行，新增审查回归需再完整验证。T1.2以后尚未开始。
-- 下一步：完成T1.1含新增审查回归的完整check/test与自审、commit/push，再按顺序进入T1.2；不越过依赖关卡。
+- 完成：T0.1/T0.2（33df5fe已push）、T1.1（03701b1已push）；Railway兼容读部署/旧V1 GET200已验，§3.2源码核对无出入；全量结果见§9.1，P-01–P-06完成。
+- 未完成及原因：额度中断后已恢复到T1.2；新互斥测试先红1 failed，模型/stays_of/200边界实现后定向20 passed。T0.2新增临时阶段契约随T1.2批准启用转为新结构/200边界测试；基线业务断言保留。完整PG全量1461 passed/1 skipped/4 deselected（310.85s），check299/生成/web119/构建退出0，自审/独立审查无P1/P2；待提交推送。
+- 下一步：完成T1.2检查/生成/前端/完整PG、自审与独立复核，commit/push后进入T2.1。
 
-恢复点（2026-10-10 JST）：HEAD `33df5fe` 已push；T0.1/T0.2完成、Railway双服务SUCCESS与旧V1 GET200已验。未提交改动为T1.1（domain/travel_request、persistence/travel、services/travel、领域/PG测试、ADR015、生成契约）、计划及部署后截图。首轮完整test6825退出0（1448 passed/1 skipped/4 deselected，307.42s），P-06修复和全部新回归的最终完整test会话49983运行中（t11-final-test.log）。check/生成/web119/构建exit0；定向领域50 passed，独立复核无剩余P1/P2。下一步读取最终完整退出码、commit/push，再开始T1.2。Chrome1/Ke标签1646779643已markHandoff，旧京都V1未修改；日志均在ignored `.cache/multi-city-pacing/`。恢复先核对Git/进程/真实退出码，不能从启动推断通过。
+恢复点（2026-10-10 JST）：HEAD `03701b1` 已push；T0.2发布保护已通过、T1.1已完成。未提交仅T1.2：domain/itinerary、domain/plans、services/plans、tests/test_plans、生成契约、计划。完整test会话43700已退出0（t12-final-test.log：1461 passed/1 skipped/4 deselected，310.85s），check299/三平台、生成、web119/构建均退出0，独立审查无P1/P2；待commit/push。T2.2前service保留新格式只读防护，post-merge guard防止丢段引用；本任务只启用模型边界。下一步读取真实退出码/审查，勿把启动记为通过。Chrome使用Google Chrome；原旧京都V1未修改，截图与历史部署证据已提交；日志在ignored `.cache/multi-city-pacing/`。
 
 ## 8. 问题解决记录
 
@@ -221,18 +221,25 @@ PlanPatch:
 - 先红：`test_full_offline_suite_keeps_failure_exit_after_long_but_bounded_run` 实际失败（入口返回1而非原失败码7），项目test为1 failed/451 passed/4 deselected，261.03s；没有筛选测试。实现仅给run_tests外层600秒，回归mock保留失败码与有界等待要求；新测试一处101字符格式错误已拆行，不改断言。
 - 结果与遗留：完整绿阶段会话45522退出0，1419 passed/1 skipped/4 deselected，305.62s（VERIFIED，原300秒确实不足）；日志t02-budget-green.log。独立只读审查复核三处业务问题修复及实际预算diff，均无剩余P1/P2；调整后check、generate/web-check退出0。实现与测试在 `33df5fe`，已push；预算仍有界，挂起时最多额外等5分钟。
 
-### P-05 [T1.1/条件派生] 启用城市段与三态预算   状态：doing   关联：T1.1
+### P-05 [T1.1/条件派生] 启用城市段与三态预算   状态：done   关联：T1.1
 - 现象：T0.2刻意只读；RequestPatch不接受新字段，城市段连续性、共用城市/节奏派生及侧列写入尚未启用。
 - 假设与依据：源码确认D1/D3可沿用JSONB和现有CAS/来源事务，不需迁移；必须保留旧conditions和四种证据条件字典。按计划将字段移到TravelConditions，派生只在apply_request_patch合并入口，酒店查询副本不写回。
 - 验证：已补非法单段/重叠/缺口/首末不符/非末段0晚、不限与金额互斥、软硬节奏别名、小城市别名、旧条件字典以及真实PG侧列/失效回归，先红运行中。T0.2阶段的临时拒写断言在后续契约启用时需按本计划改为新契约测试，历史红绿证据保留，不放宽结构/来源/CAS校验。
 - 先红已验证：新增PG回归在RequestPatch.set拒绝segments/unlimited，1 failed/294 passed/4 deselected，255.94s；会话44780退出1。实现城市段共用派生、侧列写入与失效，尚在全量绿阶段会话6825（t11-green.log）。T0.2本轮新增的阶段性拒写测试随T1.1启用更新为非法单段/字符串bool拒绝、持久化全局冲突拒绝；不是修改原有业务断言来掩盖失败，原CAS/金额/证据断言保留。ADR-015追加D1/D3契约；现有单城侧列/来源不新增空键，明确False不被省略。
-- 最终验证：首轮1448 passed/1 skipped/4 deselected（307.42s）；含P-06及全部新增PG回归的完整test会话49983退出0，1455 passed/1 skipped/4 deselected（310.24s）。check299文件/三平台/3契约/10入口、生成、web119/type/lint/build退出0；自审及独立复核无剩余P1/P2。待本次T1.1提交。
+- 最终验证：首轮1448 passed/1 skipped/4 deselected（307.42s）；含P-06及全部新增PG回归的完整test会话49983退出0，1455 passed/1 skipped/4 deselected（310.24s）。check299文件/三平台/3契约/10入口、生成、web119/type/lint/build退出0；自审及独立复核无剩余P1/P2。实现与回归在03701b1，已commit/push。
 
-### P-06 [T1.1/独立审查] 城市段派生不能吞掉显式clear   状态：doing   关联：T1.1
+### P-06 [T1.1/独立审查] 城市段派生不能吞掉显式clear   状态：done   关联：T1.1
 - 现象与根因：独立只读审查指出set.segments同时clear city/start/end会先清除再被派生覆盖，来源却可能标none（REASONED）；新增参数化回归实际1 failed/7 passed，city分支DID NOT RAISE（VERIFIED）。
 - 方案：在既有RequestPatch.valid_operations拒绝这类结构冲突（采用，最小改动）；不重排事务或增加派生状态。旧单独clear segments仍保留全局单城值。
 - 验证：仍用项目dev.py test，通过PYTEST_ADDOPTS仅选择领域模块观测审查红绿（不是全量结论）：1 failed/7 passed→50 passed，含三种clear、单段逆序、>6段、硬软节奏优先、False/幂等键。PG补读取条件/来源/revision不变；最终提交前完整check/test仍必须全过，不能用定向结果代替。完整绿阶段6825仍运行，其开始后新增回归必须再完整运行。
-- 最终结果：全部新增回归随最终完整test实际运行，1455 passed/1 skipped/4 deselected，310.24s，退出0；独立只读复核确认P2修复完整、无新P1/P2。待本次T1.1提交。
+- 最终结果：全部新增回归随最终完整test实际运行，1455 passed/1 skipped/4 deselected，310.24s，退出0；独立只读复核确认P2修复完整、无新P1/P2。实现与回归在03701b1，已commit/push。
+
+### P-07 [T1.2/模型契约] 住宿互斥与有界长行程   状态：doing   关联：T1.2
+- 现象：兼容读阶段仅保存新引用，缺互斥、统一旧段投影与整体patch，四处写入上限仍24。新增测试同给旧ID/stays实际DID NOT RAISE，1 failed（0.26s，t12-red.log），证明需模型约束。
+- 根因与方案：沿用现有模型，单个PLAN_ITEM_LIMIT=200供content/proposal/patch/locks；stays_of投影旧已知日期；新住宿出现即整体替换，空列表清除，未提供保留。T2.2前旧服务仍拒写未接通validator的新内容，post-merge guard防止patch silently丢stays。不新增模型/存储/依赖。
+- 阶段测试取舍：T0.2本批新增的“只读新字段/24项”测试是发布保护阶段契约；批准T1.2明确替换为读写段引用、互斥和200→201拒绝，旧契约历史证据保留P-02。不是放宽业务校验掩盖回归；基线既有patch/锁/确认/CAS/请求边界断言不变，非法201/210项、重复ID、双引用仍拒绝。
+- 验证：定向20 passed（0.25s）；首次check发现新测试模型字典推断为metaclass/异构dict取值object，改为明确联合类型和typed局部列表，无ignore/Any扩散。完整dev test43700运行中，生成契约由命令更新；独立只读审查在运行。
+- 最终验证：完整dev test1461 passed/1 skipped/4 deselected（310.85s）退出0；check299/三平台/3契约/10入口、生成、web119/构建退出0，自审/独立审查无P1/P2。待commit/push；按段业务校验/30项持久化成功属于T2.2，不提前声称完成。
 
 ## 9. 验证与交付
 
@@ -254,7 +261,9 @@ uv run python scripts/dev.py web-check    # typecheck / lint / test / build
 | --- | --- | --- | --- | --- | --- |
 | T0.1 基线 `0e0bc71` | 299文件、三平台strict、3契约、10文档入口，退出0 | 1408 passed / 1 skipped / 4 deselected，297.16s，退出0 | PostgreSQL17 Healthy，退出0 | 退出0，无净差异 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
 | T0.2 兼容读 `33df5fe` | 同上，预算修复后check退出0 | 1419 passed / 1 skipped / 4 deselected，305.62s，退出0 | 同一真实PG，事务与恢复回归实际运行 | 退出0，契约由命令生成 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
-| T1.1 条件写入待提交 | 299文件、三平台strict、3契约、10入口，退出0 | 1455 passed / 1 skipped / 4 deselected，310.24s，退出0 | 同一真实PG，侧列/CAS/来源/恢复实际运行 | 退出0，契约由命令生成 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
+| T1.1 条件写入 `03701b1` | 299文件、三平台strict、3契约、10入口，退出0 | 1455 passed / 1 skipped / 4 deselected，310.24s，退出0 | 同一真实PG，侧列/CAS/来源/恢复实际运行 | 退出0，契约由命令生成 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
+
+| T1.2 行程模型（待commit） | 299文件、三平台strict、3契约、10入口，退出0 | 1461 passed / 1 skipped / 4 deselected，310.85s，退出0 | 同一真实PG，原事务/恢复回归实际运行 | 退出0，契约由命令生成 | 119 passed / 0 failed，类型/lint/5路由构建退出0 |
 
 Python全量使用进程级 `TRAVEL_CLAUDE_CLI` 选定已安装/CI锁定的2.1.295；未改全局CLI/.env/白名单。1 skipped为既有平台专属测试，4 deselected为既有live标记，未新增跳过。
 

@@ -3,10 +3,16 @@
 from typing import Annotated, Literal, Self
 from uuid import UUID, uuid4
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationInfo, model_validator
-from pydantic.json_schema import SkipJsonSchema
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
-from backend.domain.itinerary import HotelStay, ItineraryProposal, ProposedItem, ValidationReport
+from backend.domain.itinerary import (
+    PLAN_ITEM_LIMIT,
+    HotelStay,
+    ItineraryProposal,
+    ProposedItem,
+    ValidationReport,
+)
+from backend.domain.travel_request import TravelRequest
 
 
 class PlanItem(ProposedItem):
@@ -19,7 +25,7 @@ class PlanItem(ProposedItem):
 
 class PlanContent(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    items: tuple[PlanItem, ...] = Field(min_length=1, max_length=200)
+    items: tuple[PlanItem, ...] = Field(min_length=1, max_length=PLAN_ITEM_LIMIT)
     hotel_evidence_id: UUID | None = None
     hotel_stays: tuple[HotelStay, ...] = Field(
         default=(), max_length=6, exclude_if=lambda value: not value
@@ -29,6 +35,8 @@ class PlanContent(BaseModel):
     def unique_items(self) -> Self:
         if len({item.item_id for item in self.items}) != len(self.items):
             raise ValueError("行程item_id不能重复")
+        if self.hotel_evidence_id is not None and self.hotel_stays:
+            raise ValueError("旧酒店引用与分段住宿不能同时设置")
         return self
 
     def proposal(self, revision: int) -> ItineraryProposal:
@@ -39,7 +47,6 @@ class PlanContent(BaseModel):
                 "hotel_evidence_id": self.hotel_evidence_id,
                 **({"hotel_stays": self.hotel_stays} if self.hotel_stays else {}),
             },
-            context={"persisted": True},
         )
 
 
@@ -70,22 +77,20 @@ class PlanPatch(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     base_version: int = Field(strict=True, ge=1)
     expected_revision: int = Field(strict=True, ge=0)
-    operations: tuple[Operation, ...] = Field(
-        default=(), max_length=200, json_schema_extra={"maxItems": 24}
-    )
+    operations: tuple[Operation, ...] = Field(default=(), max_length=PLAN_ITEM_LIMIT)
     hotel_evidence_id: UUID | None = None
-    hotel_stays: SkipJsonSchema[tuple[HotelStay, ...] | None] = Field(
+    hotel_stays: tuple[HotelStay, ...] | None = Field(
         default=None,
         max_length=6,
         exclude_if=lambda value: value is None,
     )
 
     @model_validator(mode="after")
-    def valid_operations(self, info: ValidationInfo) -> Self:
-        if not (info.context and info.context.get("persisted")) and (
-            "hotel_stays" in self.model_fields_set or len(self.operations) > 24
-        ):
-            raise ValueError("兼容读取阶段只接受旧住宿字段与最多24项操作")
+    def valid_operations(self) -> Self:
+        if self.hotel_evidence_id is not None and self.hotel_stays is not None:
+            raise ValueError("旧酒店引用与分段住宿不能同时设置")
+        if "hotel_stays" in self.model_fields_set and self.hotel_stays is None:
+            raise ValueError("清除住宿请提供空列表，不以null代替")
         ids = [op.item_id for op in self.operations if isinstance(op, UpdateItem | RemoveItem)]
         if len(ids) != len(set(ids)):
             raise ValueError("同一行程项一次patch只能修改一次")
@@ -159,6 +164,7 @@ def initial_content(proposal: ItineraryProposal) -> PlanContent:
     return PlanContent(
         items=tuple(PlanItem(**item.model_dump()) for item in proposal.items),
         hotel_evidence_id=proposal.hotel_evidence_id,
+        hotel_stays=proposal.hotel_stays,
     )
 
 
@@ -192,14 +198,27 @@ def apply_plan_patch(current: SavedPlan, patch: PlanPatch) -> PlanContent:
             items.pop(index)
         else:
             items[index] = PlanItem(item_id=operation.item_id, **operation.item.model_dump())
-    hotel = (
-        patch.hotel_evidence_id
-        if "hotel_evidence_id" in patch.model_fields_set
-        else current.content.hotel_evidence_id
+    hotel, stays = current.content.hotel_evidence_id, current.content.hotel_stays
+    if "hotel_stays" in patch.model_fields_set:
+        hotel, stays = None, patch.hotel_stays or ()
+    elif "hotel_evidence_id" in patch.model_fields_set:
+        hotel, stays = patch.hotel_evidence_id, ()
+    return PlanContent(items=tuple(items), hotel_evidence_id=hotel, hotel_stays=stays)
+
+
+def stays_of(content: PlanContent, request: TravelRequest) -> tuple[HotelStay, ...]:
+    """统一读取住宿引用；旧单城按已知旅行日期投影，不填补未知日期。"""
+    if content.hotel_stays:
+        return content.hotel_stays
+    if content.hotel_evidence_id is None or request.start_date is None or request.end_date is None:
+        return ()
+    return (
+        HotelStay(
+            check_in=request.start_date,
+            check_out=request.end_date,
+            hotel_evidence_id=content.hotel_evidence_id,
+        ),
     )
-    if len(items) > 24:
-        raise ValueError("旧行程patch合并后不能超过24项")
-    return PlanContent(items=tuple(items), hotel_evidence_id=hotel)
 
 
 def differences(before: PlanContent | None, after: PlanContent) -> tuple[ItemDiff, ...]:

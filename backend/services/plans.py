@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.adapters.live_data import LiveData
 from backend.domain.catalog import Place
 from backend.domain.execution import RunContext
-from backend.domain.itinerary import ItineraryProposal, ValidationReport
+from backend.domain.itinerary import PLAN_ITEM_LIMIT, ItineraryProposal, ValidationReport
 from backend.domain.plans import (
     InitialStage,
     PlanContent,
@@ -48,7 +48,7 @@ class PlanInput(BaseModel):
 class LockInput(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     expected_version: int = Field(strict=True, ge=1)
-    locked_item_ids: tuple[UUID, ...] = Field(max_length=24)
+    locked_item_ids: tuple[UUID, ...] = Field(max_length=PLAN_ITEM_LIMIT)
 
 
 def require_unique_sightseeing(report: ValidationReport) -> None:
@@ -126,7 +126,6 @@ class PlanService:
                         409, "conflict", "已有正式行程，请读取后使用局部patch", "plan_exists"
                     )
                 content = initial_content(change.proposal)
-                require_legacy_write(request, content)
                 if row is None:
                     row = PlanRow(
                         user_id=context.user_id, session_id=context.session_id, current_version=0
@@ -145,6 +144,8 @@ class PlanService:
                     raise ServiceError(
                         422, "validation", "patch引用不存在、锁定或无效的行程项", "patch_invalid"
                     ) from None
+            # 新模型先上线；按段校验在T2.2接通前，禁止旧服务写坏新内容。
+            require_legacy_write(request, content)
             proposal = content.proposal(request.revision)
             if before_validate is not None:
                 before_validate(proposal)

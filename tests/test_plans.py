@@ -8,7 +8,8 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from backend.domain.itinerary import ItineraryProposal, ValidationReport
+from backend.domain import plans as plan_models
+from backend.domain.itinerary import HotelStay, ItineraryProposal, ValidationReport
 from backend.domain.plans import (
     PlanContent,
     PlanPatch,
@@ -17,14 +18,117 @@ from backend.domain.plans import (
     differences,
     initial_content,
 )
-from backend.domain.travel_request import RequestPatch
+from backend.domain.travel_request import RequestPatch, TravelRequest
+from backend.services.plans import LockInput
 from backend.tools.travel import DEFINITIONS
 from tests.test_itinerary import item, place, record
 
 
+@pytest.mark.parametrize("kind", ["content", "proposal", "patch"])
+def test_stay_collection_and_legacy_hotel_cannot_both_hold_references(kind: str) -> None:
+    """R07：旧酒店字段与分段酒店引用互斥，结构错误在模型入界拒绝。"""
+    current = saved()
+    stay = HotelStay.model_validate(
+        {"check_in": "2026-11-03", "check_out": "2026-11-05", "hotel_evidence_id": str(uuid4())}
+    )
+    models: dict[str, type[PlanContent] | type[ItineraryProposal] | type[PlanPatch]] = {
+        "content": PlanContent,
+        "proposal": ItineraryProposal,
+        "patch": PlanPatch,
+    }
+    data = (
+        current.content.model_dump()
+        if kind == "content"
+        else current.content.proposal(1).model_dump()
+        if kind == "proposal"
+        else {"base_version": 1, "expected_revision": 1}
+    )
+    with pytest.raises(ValidationError):
+        models[kind].model_validate({**data, "hotel_evidence_id": uuid4(), "hotel_stays": (stay,)})
+
+
+def test_stays_of_preserves_legacy_hotel_and_initial_content_keeps_segmented_stays() -> None:
+    """R07：旧引用按旅行日期投影；新段引用经过proposal→content不丢失。"""
+    current = saved()
+    request = TravelRequest.model_validate(
+        {"city": "京都", "start_date": "2026-11-03", "end_date": "2026-11-05"}
+    )
+    legacy_id = uuid4()
+    legacy = current.content.model_copy(update={"hotel_evidence_id": legacy_id})
+    stays = plan_models.stays_of(legacy, request)
+    assert len(stays) == 1 and stays[0].hotel_evidence_id == legacy_id
+    assert stays[0].check_in == request.start_date and stays[0].check_out == request.end_date
+    proposal = ItineraryProposal(
+        expected_revision=1,
+        items=tuple(i.proposed() for i in current.content.items),
+        hotel_stays=stays,
+    )
+    content = initial_content(proposal)
+    assert content.hotel_stays == stays and content.hotel_evidence_id is None
+    assert content.proposal(1).hotel_stays == stays
+    assert plan_models.stays_of(content, request) == stays
+    assert stays[0].hotel_evidence_id in content.proposal(1).evidence_ids()
+
+
+def test_stay_patch_replaces_and_clears_the_entire_collection_without_losing_items() -> None:
+    """R07：未提供住宿字段保留，显式空列表清除，旧字段可切回单城引用。"""
+    current = saved()
+    stay = HotelStay.model_validate(
+        {"check_in": "2026-11-03", "check_out": "2026-11-05", "hotel_evidence_id": str(uuid4())}
+    )
+    changed = apply_plan_patch(
+        current, PlanPatch(base_version=1, expected_revision=1, hotel_stays=(stay,))
+    )
+    assert changed.items == current.content.items and changed.hotel_stays == (stay,)
+    assert changed.hotel_evidence_id is None
+    current = current.model_copy(update={"content": changed})
+    unchanged = apply_plan_patch(
+        current,
+        patch(current, [{"op": "remove", "item_id": str(current.content.items[0].item_id)}]),
+    )
+    assert unchanged.hotel_stays == (stay,) and unchanged.hotel_evidence_id is None
+    replacement = stay.model_copy(update={"hotel_evidence_id": uuid4()})
+    replaced = apply_plan_patch(
+        current, PlanPatch(base_version=1, expected_revision=1, hotel_stays=(replacement,))
+    )
+    assert replaced.hotel_stays == (replacement,)
+    cleared = apply_plan_patch(
+        current, PlanPatch(base_version=1, expected_revision=1, hotel_stays=())
+    )
+    assert not cleared.hotel_stays and cleared.hotel_evidence_id is None
+    old_id = uuid4()
+    old = apply_plan_patch(
+        current, PlanPatch(base_version=1, expected_revision=1, hotel_evidence_id=old_id)
+    )
+    assert old.hotel_evidence_id == old_id and not old.hotel_stays
+
+
+def test_thirty_proposal_items_patch_operations_and_locks_use_the_new_guard() -> None:
+    """R07：30项模型入界通过，201项仍拒绝，保留有界防护。"""
+    current = saved()
+    proposed = current.content.items[0].proposed()
+    proposal = ItineraryProposal(expected_revision=1, items=(proposed,) * 30)
+    assert len(initial_content(proposal).items) == 30
+    operations = [{"op": "add", "item": proposed.model_dump()} for _ in range(30)]
+    patch = PlanPatch.model_validate(
+        {"base_version": 1, "expected_revision": 1, "operations": operations}
+    )
+    assert len(apply_plan_patch(current, patch).items) == len(current.content.items) + 30
+    locks = LockInput(expected_version=1, locked_item_ids=tuple(uuid4() for _ in range(30)))
+    assert len(locks.locked_item_ids) == 30
+    with pytest.raises(ValidationError):
+        ItineraryProposal(expected_revision=1, items=(proposed,) * 201)
+    with pytest.raises(ValidationError):
+        PlanPatch.model_validate(
+            {"base_version": 1, "expected_revision": 1, "operations": operations * 7}
+        )
+    with pytest.raises(ValidationError):
+        LockInput(expected_version=1, locked_item_ids=tuple(uuid4() for _ in range(201)))
+
+
 @pytest.mark.parametrize("kind", ["proposal", "patch"])
-def test_new_hotel_stays_are_readable_but_not_writable_during_compatibility(kind: str) -> None:
-    """R07：新住宿payload只允许持久化读取上下文，旧写入契约仍拒绝。"""
+def test_hotel_stays_round_trip_and_reject_combined_legacy_reference(kind: str) -> None:
+    """R07：T1.2启用段引用读写，双引用仍拒绝，不以忽略旧值解决冲突。"""
     current = saved()
     stay = {
         "check_in": "2026-11-03",
@@ -46,23 +150,25 @@ def test_new_hotel_stays_are_readable_but_not_writable_during_compatibility(kind
     data["hotel_evidence_id"] = None
     parsed = model.model_validate(data, context={"persisted": True})
     assert parsed.model_dump(mode="json")["hotel_stays"] == [stay]
+    assert model.model_validate(data).model_dump(mode="json")["hotel_stays"] == [stay]
+    data["hotel_evidence_id"] = str(uuid4())
     with pytest.raises(ValueError):
         model.model_validate(data)
 
 
-def test_compatibility_reads_long_content_without_expanding_the_write_limit() -> None:
-    """R07：未来30项payload回退可读，旧proposal写入仍不超过24项。"""
+def test_long_content_round_trip_keeps_the_new_write_limit_bounded() -> None:
+    """R07：T1.2允许30项读写，超过200项的proposal仍拒绝。"""
     template = saved().content.items[0]
     items = [
         template.model_copy(update={"item_id": uuid4()}).model_dump(mode="json") for _ in range(30)
     ]
     content = PlanContent.model_validate({"items": items}, context={"persisted": True})
     assert len(content.items) == 30
-    proposal = {
-        "expected_revision": 1,
-        "items": [entry.model_dump(mode="json") for entry in (i.proposed() for i in content.items)],
-    }
+    proposed_items = [entry.proposed().model_dump(mode="json") for entry in content.items]
+    proposal = {"expected_revision": 1, "items": proposed_items}
     assert len(ItineraryProposal.model_validate(proposal, context={"persisted": True}).items) == 30
+    assert len(ItineraryProposal.model_validate(proposal).items) == 30
+    proposal["items"] = proposed_items * 7
     with pytest.raises(ValueError):
         ItineraryProposal.model_validate(proposal)
 
@@ -81,33 +187,41 @@ def test_request_input_rejects_single_city_segments_and_non_boolean_unlimited(
         RequestPatch.model_validate({"expected_revision": 0, "set": {new_field: value}})
 
 
-def test_compatibility_tool_schemas_keep_the_previous_write_fields() -> None:
-    """R07：兼容读字段不应向模型工具声明为可写参数。"""
+def test_tool_schemas_declare_stays_and_the_shared_item_limit() -> None:
+    """R07：工具schema与T1.2模型相同，200项上限不保留隐性24项声明。"""
     schemas = {
         definition.name: cast(dict[str, Any], definition.schema) for definition in DEFINITIONS
     }
-    proposal_fields = {"expected_revision", "items", "hotel_evidence_id"}
-    patch_fields = {"base_version", "expected_revision", "operations", "hotel_evidence_id"}
+    proposal_fields = {"expected_revision", "items", "hotel_evidence_id", "hotel_stays"}
+    patch_fields = {
+        "base_version",
+        "expected_revision",
+        "operations",
+        "hotel_evidence_id",
+        "hotel_stays",
+    }
     assert set(schemas["validate_itinerary"]["properties"]) == proposal_fields
     definitions = schemas["stage_plan_change"]["$defs"]
     assert set(definitions["ItineraryProposal"]["properties"]) == proposal_fields
     assert set(definitions["PlanPatch"]["properties"]) == patch_fields
-    assert definitions["ItineraryProposal"]["properties"]["items"]["maxItems"] == 24
-    assert definitions["PlanPatch"]["properties"]["operations"]["maxItems"] == 24
+    assert definitions["ItineraryProposal"]["properties"]["items"]["maxItems"] == 200
+    assert definitions["PlanPatch"]["properties"]["operations"]["maxItems"] == 200
 
 
-def test_compatibility_patch_cannot_expand_legacy_plan_past_24_items() -> None:
-    """R07：放宽读取不能改变旧patch合并结果的24项写入边界。"""
+def test_patch_cannot_expand_plan_past_200_items() -> None:
+    """R07：patch合并也受200项保护，拒绝201项而不是只查operations数量。"""
     current = saved()
     template = current.content.items[0]
     content = current.content.model_copy(
-        update={"items": tuple(template.model_copy(update={"item_id": uuid4()}) for _ in range(24))}
+        update={
+            "items": tuple(template.model_copy(update={"item_id": uuid4()}) for _ in range(200))
+        }
     )
     current = current.model_copy(update={"content": content})
     change = patch(current, [{"op": "add", "item": template.proposed().model_dump(mode="json")}])
     with pytest.raises(ValueError):
         apply_plan_patch(current, change)
-    assert len(current.content.items) == 24
+    assert len(current.content.items) == 200
 
 
 def saved() -> SavedPlan:
