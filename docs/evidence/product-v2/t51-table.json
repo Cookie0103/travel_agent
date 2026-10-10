@@ -1,0 +1,33 @@
+{
+  "bodyRows": 4,
+  "containerScrollWidth": 795,
+  "containerWidth": 795,
+  "dangerousElements": 0,
+  "headers": [
+    {
+      "align": "left",
+      "scope": "col",
+      "text": "城市"
+    },
+    {
+      "align": "right",
+      "scope": "col",
+      "text": "预算"
+    },
+    {
+      "align": "center",
+      "scope": "col",
+      "text": "来源"
+    }
+  ],
+  "links": [
+    {
+      "href": "https://example.com/",
+      "rel": "noopener noreferrer"
+    }
+  ],
+  "pageScrollWidth": 1056,
+  "pageWidth": 1056,
+  "tables": 1,
+  "text": "城市预算来源京都50000来源大阪未知[坏链接](javascript:alert(1))<img src=x onerror=alert(1)>未知HTML 原样展示<script>alert(1)</script>未知HTML 原样展示"
+}

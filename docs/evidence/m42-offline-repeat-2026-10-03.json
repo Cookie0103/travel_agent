@@ -1,0 +1,210 @@
+{
+  "purpose": "offline fixture harness evidence; not real model success rate",
+  "source_run": "20261003T112436Z-6dc4c45b",
+  "source_code_commit": "e427808c0186eac1288965fe29610635769a812b",
+  "source_worktree_dirty": true,
+  "suite": {
+    "version": "travel-eval-v1",
+    "status": "frozen",
+    "sha256": "5a433b621c43f62d17f98c6902d8e889b31c451fe02aa67145b5c142aa97558b",
+    "dev_ids": [
+      "kyoto-matcha",
+      "hakone-onsen",
+      "child-friendly-trip",
+      "autumn-leaves",
+      "gourmet-ranking",
+      "vague-go-somewhere",
+      "vague-recommend",
+      "nearby-kyoto-station",
+      "out-of-scope-tax",
+      "emotional-tired",
+      "hotel-complete-control",
+      "hotel-missing-ages",
+      "hotel-tax-unknown",
+      "plan-complete-control",
+      "plan-missing-dates",
+      "plan-closed-repair",
+      "patch-one-afternoon",
+      "locked-item-control",
+      "claim-confirmation-blocked",
+      "held-offer-safe"
+    ],
+    "test_ids": [
+      "test-search-gion",
+      "test-content-higashiyama",
+      "test-nijo-detail",
+      "test-article-source",
+      "test-rain-search",
+      "test-unknown-hours",
+      "test-osaka-scope",
+      "test-location-clarify",
+      "test-child-age-clarify",
+      "test-currency-clarify",
+      "test-reversed-date-clarify",
+      "test-negative-budget-clarify",
+      "test-hotel-normal",
+      "test-hotel-unknown-tax",
+      "test-hotel-child-control",
+      "test-hotel-policy",
+      "test-hotel-refresh",
+      "test-hotel-expired",
+      "test-hotel-date-changed",
+      "test-day-trip-control",
+      "test-plan-two-days",
+      "test-plan-three-days",
+      "test-plan-closed-museum",
+      "test-plan-transit",
+      "test-plan-confirm-claim",
+      "test-plan-long-history",
+      "test-plan-unknown-cost",
+      "test-patch-afternoon",
+      "test-patch-locked",
+      "test-patch-explain",
+      "test-patch-duplicate-place",
+      "test-patch-preference",
+      "test-patch-deleted-preference",
+      "test-adversarial-history",
+      "test-hold-normal",
+      "test-hold-repeat",
+      "test-booking-unknown",
+      "test-supplier-500",
+      "test-supplier-429",
+      "test-supplier-timeout"
+    ],
+    "legacy_sha256": {
+      "datamind_adapted.jsonl": "9805c20fd7d7776eb6b78ae2c6cce71b756975722c416c812ab5035604d0bca0",
+      "travel_m1.jsonl": "6f6018206314a5aac1a28d567d18c2191ddbcab12fa9a1b21e8d3a3f2ddcc0a7"
+    },
+    "retained_legacy_only": [
+      "okinawa-beach",
+      "vague-onsen",
+      "nearby-shibuya",
+      "weekend-plan",
+      "weekend-family",
+      "tomorrow-date",
+      "plan-kyoto-2nights",
+      "plan-okinawa-family",
+      "out-of-scope-recipe",
+      "emotional-stressed",
+      "emotional-travel"
+    ],
+    "provenance": "19 known historical dev cases + 1 new dev; 40 self-authored test cases; no known case relabelled as unseen test",
+    "suite_author_read_test": true,
+    "test_used_for_model_tuning": false,
+    "model_test_runs_before_freeze": 0,
+    "limitations": [
+      "test由实现agent编写并独立审查，不声称双盲",
+      "旧21改编仍完整保留历史30集，新冻结dev仅19旧例",
+      "历史为业务回顾种子，不等于已有原生SDK长会话",
+      "恶意输入/历史与实际工具文本注入单独区分；R15工具注入另有确定性回归",
+      "规则/结构通过不是语义事实准确率，语义/人工校准待做"
+    ],
+    "pairs": {
+      "test-osaka-scope": "test-search-gion",
+      "test-location-clarify": "test-content-higashiyama",
+      "test-child-age-clarify": "test-hotel-child-control",
+      "test-currency-clarify": "test-hotel-normal",
+      "test-reversed-date-clarify": "test-plan-three-days",
+      "test-negative-budget-clarify": "test-plan-two-days",
+      "test-patch-locked": "test-patch-afternoon",
+      "test-supplier-500": "test-hold-normal",
+      "test-supplier-429": "test-hold-normal",
+      "test-supplier-timeout": "test-hold-normal",
+      "test-hotel-expired": "test-hotel-refresh",
+      "test-booking-unknown": "test-hold-repeat",
+      "test-adversarial-history": "test-patch-explain"
+    },
+    "frozen_at": "2026-10-03T11:24:21.693485+00:00"
+  },
+  "schema_sha256": "530991c8fde77e558e2217dab7c569c54de9e58b9e5e1f8358ac5e98ff428d26",
+  "catalog_sha256": "821a20b6553d93a9b1cd764c9fd6877425e853c3c62b9047ceea68c9b3baff06",
+  "summary": {
+    "mode": "offline_database_fixture",
+    "case_count": 40,
+    "evaluated": 120,
+    "passed": 9,
+    "errors": 0,
+    "not_run": 0,
+    "rule_pass_rate": 0.075,
+    "repetitions": 3,
+    "expected_attempts": 120,
+    "per_repeat": [
+      {
+        "repeat": 1,
+        "expected": 40,
+        "evaluated": 40,
+        "passed": 3,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.075
+      },
+      {
+        "repeat": 2,
+        "expected": 40,
+        "evaluated": 40,
+        "passed": 3,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.075
+      },
+      {
+        "repeat": 3,
+        "expected": 40,
+        "evaluated": 40,
+        "passed": 3,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.075
+      }
+    ],
+    "rule_rate_range": {
+      "min": 0.075,
+      "max": 0.075
+    },
+    "latency_seconds": {
+      "measured_n": 120,
+      "p50": 0.04,
+      "p95": 0.051,
+      "method": "nearest-rank"
+    },
+    "latency_unknown_n": 0,
+    "original_currency_cost": {},
+    "currency_unknown_n": 120,
+    "runtime_identities": [
+      {
+        "provider": "fake",
+        "model": "fixture-demo",
+        "sdk_version": "none",
+        "cli_version": "none"
+      }
+    ],
+    "http_attempts": {
+      "total": 0,
+      "measured_subtotal": 0,
+      "unknown_n": 0
+    },
+    "tokens": {
+      "measured_n": 0,
+      "unknown_n": 120,
+      "totals": null
+    },
+    "semantic_fact_quality": null,
+    "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+    "data_version": "kyoto-snapshot-v1+hotel-fixture-v1+routes-fixture-v1",
+    "workflow": "autonomous",
+    "limitations": [
+      "规则匹配不证明事实/相关性",
+      "DB模式共享应用业务工具，搜索模式只含搜索fixture",
+      "离线为固定工具脚本，不是模型自主选择或固定编排效果",
+      "案例声明的历史fixture标签保留；actual data_version与源文件hash记录本次实际数据"
+    ]
+  },
+  "temporary_database_removed": true,
+  "full_live_preflight": {
+    "minimum_requests": 120,
+    "blocked": true,
+    "ledger_unchanged": true
+  },
+  "no_new_paid_requests": true,
+  "implementation_checks": "tests/PG/HTTP and independent review recorded in execution plan; fixture rules intentionally fail unsupported autonomous tasks"
+}

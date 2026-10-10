@@ -1,0 +1,61 @@
+{
+  "status": "success",
+  "tool_calls": [
+    "echo"
+  ],
+  "sdk_events": [
+    "SystemMessage",
+    "AssistantMessage",
+    "AssistantMessage",
+    "AssistantMessage",
+    "UserMessage",
+    "AssistantMessage",
+    "AssistantMessage",
+    "ResultMessage"
+  ],
+  "terminal_reason": "completed",
+  "cli_version": "2.1.114 (Claude Code)",
+  "sdk": "0.2.163",
+  "mcp": "2.3.0",
+  "http_attempts": 2,
+  "requests": [
+    {
+      "model": "deepseek-flash",
+      "events": [
+        "content_block_delta",
+        "content_block_start",
+        "content_block_stop",
+        "message_delta",
+        "message_start",
+        "message_stop"
+      ],
+      "input_tokens": 439,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 56,
+      "usage_cost_upper_cny": "0.001326",
+      "reserved_cny": "2.113536"
+    },
+    {
+      "model": "deepseek-flash",
+      "events": [
+        "content_block_delta",
+        "content_block_start",
+        "content_block_stop",
+        "message_delta",
+        "message_start",
+        "message_stop"
+      ],
+      "input_tokens": 150,
+      "cache_read_input_tokens": 384,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 70,
+      "usage_cost_upper_cny": "0.001628",
+      "reserved_cny": "2.113536"
+    }
+  ],
+  "guard_failures": [],
+  "failure_details": [],
+  "grant_attempts": 2,
+  "grant_accounted_cny": "0.002954"
+}

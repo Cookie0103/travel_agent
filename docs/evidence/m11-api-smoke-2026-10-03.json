@@ -1,0 +1,10 @@
+{
+  "health": 200,
+  "login": 201,
+  "create_session": 201,
+  "own_read": 200,
+  "foreign_read": 404,
+  "transport": "real HTTP to backend.server on Windows",
+  "postgres": "project PostgreSQL17 at localhost:5434",
+  "model_calls": 0
+}

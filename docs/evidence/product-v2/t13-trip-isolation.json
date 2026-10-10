@@ -1,0 +1,37 @@
+{
+  "same_user": true,
+  "trips": [
+    {
+      "name": "kyoto",
+      "city": "京都",
+      "revision": 1,
+      "run_rows": 3,
+      "current_version": 1,
+      "version_rows": 1,
+      "payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f"
+    },
+    {
+      "name": "sapporo",
+      "city": "札幌",
+      "revision": 1,
+      "run_rows": 1,
+      "current_version": null,
+      "version_rows": 0,
+      "payload_sha256": null
+    }
+  ],
+  "post_demo_login_since_runner_start": 0,
+  "post_sessions_since_runner_start": 1,
+  "live_calls": 0,
+  "limits": "Local synthetic demo trips; offline fixture answers still use Kyoto samples; no real Sapporo provider verification",
+  "verification": "VERIFIED: local synthetic Chrome+read-only PG",
+  "browser": [
+    "Create second trip without demo login",
+    "Sapporo has its own single prompt/answer",
+    "Switch back to Kyoto retains three turns and V1",
+    "6 second request delay: target selected, restore status, no empty welcome",
+    "Legacy list404: plans shows unsupported-history notice, no empty state",
+    "Restore standard server and final build: both trips recover"
+  ],
+  "storage_tests": "Helper tests, not browser storage reads: only token/session local; bound tab outbox; no auto retry; old-owner 401 keeps newer identity"
+}

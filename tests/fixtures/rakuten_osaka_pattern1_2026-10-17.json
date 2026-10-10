@@ -1,0 +1,2141 @@
+{
+  "pagingInfo": {
+    "recordCount": 4234,
+    "pageCount": 100,
+    "page": 1,
+    "first": 1,
+    "last": 30
+  },
+  "hotels": [
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 164522,
+          "hotelName": "ｂｎｂ＋　ＯｓａｋａＴｓｕｒｕｈａｓｈｉ　鶴橋店",
+          "hotelKanaName": "びーえぬびーぷらす　おおさか　つるはし　つるはしてん",
+          "hotelSpecial": "鶴橋駅徒歩2分/大阪城ホール電車5分/コリアタウン徒歩圏/1Fコンビニ/寝室男女別/漫画二千冊読み放題",
+          "hotelMinCharge": 2200,
+          "latitude": 34.6675464,
+          "longitude": 135.5310799,
+          "postalCode": "537-0024",
+          "address1": "大阪府",
+          "address2": "大阪市東成区東小橋３丁目１－１９サンエイ東小橋ビル",
+          "telephoneNo": "06-6972-5100",
+          "faxNo": "06-6972-5101",
+          "access": "ＪＲ環状線　鶴橋駅より徒歩２分",
+          "parkingInformation": "１Fに有料コインパーキング有り",
+          "nearestStation": "鶴橋",
+          "reviewCount": 115,
+          "reviewAverage": 3.64,
+          "userReview": "女性1人でドミトリーも初利用。少し不安もあったが、寝室は女性専用エリアでカードキー管理となっていたので安心して寝ることができた。清潔さも必要最低限の綺麗さは保たれていた。冷蔵庫も利用可。価格で決めたの…　2026-10-01 15:14:11投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=164522\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "16:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 2,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "123",
+              "roomName": "共用ドミトリー　ベッド",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 3600,
+              "total": 3600,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 164522,
+          "hotelName": "ｂｎｂ＋　ＯｓａｋａＴｓｕｒｕｈａｓｈｉ　鶴橋店",
+          "hotelKanaName": "びーえぬびーぷらす　おおさか　つるはし　つるはしてん",
+          "hotelSpecial": "鶴橋駅徒歩2分/大阪城ホール電車5分/コリアタウン徒歩圏/1Fコンビニ/寝室男女別/漫画二千冊読み放題",
+          "hotelMinCharge": 2200,
+          "latitude": 34.6675464,
+          "longitude": 135.5310799,
+          "postalCode": "537-0024",
+          "address1": "大阪府",
+          "address2": "大阪市東成区東小橋３丁目１－１９サンエイ東小橋ビル",
+          "telephoneNo": "06-6972-5100",
+          "faxNo": "06-6972-5101",
+          "access": "ＪＲ環状線　鶴橋駅より徒歩２分",
+          "parkingInformation": "１Fに有料コインパーキング有り",
+          "nearestStation": "鶴橋",
+          "reviewCount": 115,
+          "reviewAverage": 3.64,
+          "userReview": "女性1人でドミトリーも初利用。少し不安もあったが、寝室は女性専用エリアでカードキー管理となっていたので安心して寝ることができた。清潔さも必要最低限の綺麗さは保たれていた。冷蔵庫も利用可。価格で決めたの…　2026-10-01 15:14:11投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=164522\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "16:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 2,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "124",
+              "roomName": "女性専用ドミトリー　ベッド",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 3600,
+              "total": 3600,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 197197,
+          "hotelName": "カプセルホテル朝日プラザ心斎橋",
+          "hotelKanaName": "あさひぷらざしんさいばし",
+          "hotelSpecial": "男性専用と女性専用両方備えたカプセルホテルです。　大阪ミナミ心斎橋アメリカ村ど真ん中の立地。",
+          "hotelMinCharge": 3000,
+          "latitude": 34.670544,
+          "longitude": 135.4978234,
+          "postalCode": "542-0086",
+          "address1": "大阪府",
+          "address2": "大阪市中央区西心斎橋2-12-22",
+          "telephoneNo": "06-4708-5888",
+          "faxNo": "--",
+          "access": "なんば駅から徒歩６分・心斎橋駅から徒歩６分・地下鉄 四ツ橋駅から徒歩約１０分",
+          "parkingInformation": "無し",
+          "nearestStation": "四ツ橋",
+          "reviewCount": 39,
+          "reviewAverage": 3.41,
+          "userReview": "フロントが機能してない。。　2026-09-21 22:19:57投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=197197\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 2,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "kapuseru",
+              "roomName": "カプセル（１名用）",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 5500,
+              "total": 5500,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 153280,
+          "hotelName": "Ｒｏｏｔｓ　Ｈｏｓｔｅｌ（ルーツホステル）",
+          "hotelKanaName": "ルーツ　ホステル（ルーツホステル）",
+          "hotelSpecial": "本町駅、四ツ橋駅、西大橋駅から徒歩５分。世界中の旅人が交流できるアットホームな宿泊施設です。",
+          "hotelMinCharge": 1800,
+          "latitude": 34.6791948,
+          "longitude": 135.4952578,
+          "postalCode": "550-0012",
+          "address1": "大阪府",
+          "address2": "大阪市西区立売堀1-9-11",
+          "telephoneNo": "06-6556-7774",
+          "faxNo": "06-6556-7774",
+          "access": "四つ橋線　本町駅より徒歩約５分",
+          "parkingInformation": "無し",
+          "nearestStation": "本町",
+          "reviewCount": 70,
+          "reviewAverage": 3.8,
+          "userReview": "安くて良かったです　2026-09-20 17:59:28投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=153280\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 3,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "dormitory1",
+              "roomName": "男女混合ドミトリー（バス・トイレ共用）",
+              "planId": 5339895,
+              "planName": "★ドミトリー素泊まりプラン★リーズナブルな宿泊で大阪の定宿に！",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "■■■このプランは■■■\r\nリーズナブルな料金のドミトリーの素泊まりプランです！\r\n1階のサカバで使えるドリンクチケットプレゼント中！\r\n※22時までのチェックインの方のみ。\r\n\r\n■■■フロント営業時間■■■\r\n8時から23時\r\n※チェックインは15時からです\r\nチェックインが遅くなる場合は入室方法をメールにてお送りしますのでご連絡お願い致します。\r\n送信アドレスのドメインは＠roots-intl.comからお送りしますので、受信設定お願いいたします。\r\n\r\n■■■施設の設備・サービス■■■\r\n・共用シャワールーム・トイレ（２４時間利用OK）\r\n・1Fラウンジ カフェバー(フリースペースとしてもお使いください)\r\n・館内全域 高速無料wifi\r\n・シャンプー、コンディショナー、ボディソープ、ヘアドライヤー完備\r\n・玄関オートロック\r\n・プライベートカーテンが各ベッドに配備(ドミトリータイプのお部屋)\r\n・読書灯と電源コンセントが各ベッドにあります(ドミトリータイプのお部屋)\r\n・コインランドリー完備（洗剤無料）\r\n・チェックイン前、チェックイン後の荷物預かりは当日に限り可能です。ご連絡ください\r\n\r\n■■■アクセス■■■\r\n＜電車＞\r\n大阪メトロ四つ橋線 本町駅 23番出口から徒歩5分\r\n(四つ橋線はなんば駅で各線なんば駅、西梅田駅で各線大阪/梅田駅と接続しています)\r\n\r\n＜バス＞\r\n・大阪シティバス 「立売堀1丁目」から徒歩3分\r\n・梅田駅またはなんばOCATからは各地へ高速バスまたは空港リムジンバスが出ております\r\n\r\n＜お車＞\r\n・近隣徒歩圏内にコインパーキングあり\r\n・阪神高速 環状線 「阿波座」または「西長堀」の出口が最寄りです\r\n\r\n■■■オーナーより■■■\r\n家に帰って来たようにリラックスができ、ゲストの皆さまと仲良くなれる居心地のよい場所作りを目指しています！本町は大阪の中心エリア、電車やバスなどで市内各地へのアクセスにも非常に便利なロケーションです！大阪に出張や観光、イベント参加などでお越しの際は、是非遊びに来てくださいね！"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 5500,
+              "total": 5500,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 16655,
+          "hotelName": "カプセル＆スパ　グランドサウナ心斎橋",
+          "hotelKanaName": "かぷせるあんどすぱ　ぐらんどさうなしんさいばし",
+          "hotelSpecial": "　カプセルホテル　大阪なんばのど真ん中、最大級のカプセルホテル。大浴場にサウナも充実しております。",
+          "hotelMinCharge": 3700,
+          "latitude": 34.66986064,
+          "longitude": 135.4986242,
+          "postalCode": "542-0086",
+          "address1": "大阪府",
+          "address2": "大阪市中央区西心斎橋2-8-12",
+          "telephoneNo": "06-6213-3870",
+          "faxNo": "06-6213-3890",
+          "access": "地下鉄 心斎橋駅7・8番出口より徒歩7分／なんば駅25番出口より徒歩5分",
+          "parkingInformation": "コインパーキング　徒歩3分圏内近隣多数あり",
+          "nearestStation": "なんば",
+          "reviewCount": 2779,
+          "reviewAverage": 4.34,
+          "userReview": "カプセルホテルのた…　2026-10-03 00:58:55投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=16655\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "27:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 3,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "lc",
+              "roomName": "男性専用　カプセル下段ベッド（サウナ入浴付） ",
+              "planId": 6470451,
+              "planName": "【男性専用】カプセル｜スタンダードプラン◇サウナ、大浴場、露天風呂◇入り放題！",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "※本プランは、2025年9月より適用となる大阪府の宿泊税制度に基づき、一泊一名様あたり税抜5，000円以上のご宿泊には別途【宿泊税200円】が発生いたします。料金表示に宿泊税は含まれておりません。チェックイン時に別途現地にてお支払いをお願い申し上げます。\r\n※ポイント利用やクーポン割引によりお支払い額が5，000円を下回った場合でも、ご宿泊料金(税抜）の基準に基づき課税対象となります。あらかじめご了承ください。\r\n※宿泊税の詳細は大阪府公式サイトにてご確認いただけます。\r\n\r\n\r\n★機能性が高く清潔なカプセルルームです★\r\n\r\n・全米シェア№１サータ製の高級マットレスを全部屋に設置。\r\n・全館内無料Wi-Fi。\r\n・全部屋コンセント完備。\r\n・ＴＶ、ラジオ、アラーム、付き。\r\n・レストランあり。\r\n・自慢の大浴場には3種のサウナに露天風呂やジェットバスもございます。\r\n・ボディケアルームには全身ボディケア・足つぼ・アカスリ等多彩なメニューを取り揃えております。\r\n\r\n※刺青・タトゥーのある方、泥酔の方のご入館はお断りしております。\r\n※カプセルルーム内での喫煙・ご飲食は禁止させていただいております。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6000,
+              "total": 6000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 16655,
+          "hotelName": "カプセル＆スパ　グランドサウナ心斎橋",
+          "hotelKanaName": "かぷせるあんどすぱ　ぐらんどさうなしんさいばし",
+          "hotelSpecial": "　カプセルホテル　大阪なんばのど真ん中、最大級のカプセルホテル。大浴場にサウナも充実しております。",
+          "hotelMinCharge": 3700,
+          "latitude": 34.66986064,
+          "longitude": 135.4986242,
+          "postalCode": "542-0086",
+          "address1": "大阪府",
+          "address2": "大阪市中央区西心斎橋2-8-12",
+          "telephoneNo": "06-6213-3870",
+          "faxNo": "06-6213-3890",
+          "access": "地下鉄 心斎橋駅7・8番出口より徒歩7分／なんば駅25番出口より徒歩5分",
+          "parkingInformation": "コインパーキング　徒歩3分圏内近隣多数あり",
+          "nearestStation": "なんば",
+          "reviewCount": 2779,
+          "reviewAverage": 4.34,
+          "userReview": "カプセルホテルのた…　2026-10-03 00:58:55投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=16655\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "27:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 3,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "uc",
+              "roomName": "男性専用　カプセル上段ベッド（サウナ入浴付）",
+              "planId": 6470451,
+              "planName": "【男性専用】カプセル｜スタンダードプラン◇サウナ、大浴場、露天風呂◇入り放題！",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "※本プランは、2025年9月より適用となる大阪府の宿泊税制度に基づき、一泊一名様あたり税抜5，000円以上のご宿泊には別途【宿泊税200円】が発生いたします。料金表示に宿泊税は含まれておりません。チェックイン時に別途現地にてお支払いをお願い申し上げます。\r\n※ポイント利用やクーポン割引によりお支払い額が5，000円を下回った場合でも、ご宿泊料金(税抜）の基準に基づき課税対象となります。あらかじめご了承ください。\r\n※宿泊税の詳細は大阪府公式サイトにてご確認いただけます。\r\n\r\n\r\n★機能性が高く清潔なカプセルルームです★\r\n\r\n・全米シェア№１サータ製の高級マットレスを全部屋に設置。\r\n・全館内無料Wi-Fi。\r\n・全部屋コンセント完備。\r\n・ＴＶ、ラジオ、アラーム、付き。\r\n・レストランあり。\r\n・自慢の大浴場には3種のサウナに露天風呂やジェットバスもございます。\r\n・ボディケアルームには全身ボディケア・足つぼ・アカスリ等多彩なメニューを取り揃えております。\r\n\r\n※刺青・タトゥーのある方、泥酔の方のご入館はお断りしております。\r\n※カプセルルーム内での喫煙・ご飲食は禁止させていただいております。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6000,
+              "total": 6000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 184188,
+          "hotelName": "Ｈｏｓｔｅｌ　ＯＧＫ",
+          "hotelKanaName": "ほすてる　おーじーけー",
+          "hotelSpecial": null,
+          "hotelMinCharge": 2800,
+          "latitude": 34.70018170000001,
+          "longitude": 135.48861,
+          "postalCode": "553-0003",
+          "address1": "大阪府",
+          "address2": "大阪市福島区福島6-12-13　西梅田ファーストビル",
+          "telephoneNo": "06-6453-0177",
+          "faxNo": "06-6453-0177",
+          "access": "大阪駅西口から徒歩7分",
+          "parkingInformation": "無し",
+          "nearestStation": "福島（大阪）",
+          "reviewCount": 198,
+          "reviewAverage": 4.34,
+          "userReview": "スタッフさんの対応も温かく、立地も良くて最高でした　2026-10-04 19:51:01投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=184188\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "14:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "21:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 4,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "22222",
+              "roomName": "男女共用ドミトリー",
+              "planId": 5469302,
+              "planName": "素泊まり☆ドミトリータイプ☆大阪駅西口から徒歩7分 福島駅から徒歩6分 広々ラウンジ有",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "素泊まりプランになります。\r\n\r\n有料レンタルアメニティ\r\nバスタオル　　   ¥100\r\nフェイスタオル   ¥50\r\n\r\nトイレとシャワールームは共用(男女別)です。 \r\n\r\n忘れ物は7日間施設にて保管致しますが、7日以上経過すると処分致しますのでご了承ください。 なお、食品に関しては衛生上、清掃時に廃棄させて頂きます。\r\n\r\n\r\nチェックイン可能時間帯\r\n14:00〜22:00 \r\n\r\nチェックアウト時刻\r\n10:00\r\n\r\nフロント営業時間は9:00-22:00になります。\r\nチェックインが21時を越える可能性のある方は、必ず事前カード決済をお選びの上、ご連絡ください。\r\nご宿泊が出来なくなる可能性があります。\r\n\r\n※16歳未満のお子様のご利用はご遠慮頂いております。\r\n※16歳から18歳未満の方は親権者の同意書が必要です。\r\n※9PMより9AMまで、無人となり、基本メール対応のみとなります。\r\n※他のお客様の睡眠を著しく妨げる行為（大きないびき等）がある場合、宿泊をお断り、または別途料金をお支払いいただき、別タイプのお部屋への変更をお願いすることがあります。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6300,
+              "total": 6300,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 153280,
+          "hotelName": "Ｒｏｏｔｓ　Ｈｏｓｔｅｌ（ルーツホステル）",
+          "hotelKanaName": "ルーツ　ホステル（ルーツホステル）",
+          "hotelSpecial": "本町駅、四ツ橋駅、西大橋駅から徒歩５分。世界中の旅人が交流できるアットホームな宿泊施設です。",
+          "hotelMinCharge": 1800,
+          "latitude": 34.6791948,
+          "longitude": 135.4952578,
+          "postalCode": "550-0012",
+          "address1": "大阪府",
+          "address2": "大阪市西区立売堀1-9-11",
+          "telephoneNo": "06-6556-7774",
+          "faxNo": "06-6556-7774",
+          "access": "四つ橋線　本町駅より徒歩約５分",
+          "parkingInformation": "無し",
+          "nearestStation": "本町",
+          "reviewCount": 70,
+          "reviewAverage": 3.8,
+          "userReview": "安くて良かったです　2026-09-20 17:59:28投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=153280\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 3,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "dormitory1",
+              "roomName": "男女混合ドミトリー（バス・トイレ共用）",
+              "planId": 5383988,
+              "planName": "★夕食付きドミトリー宿泊プラン★１F「ルーツサカバ」で優雅な夕食を！出張や観光にピッタリ！",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "■■■このプランは■■■\r\n夕食付き宿泊プランです！\r\n\r\n＜晩酌セット＞\r\n・お料理＋１ドリンク\r\n\r\n＜夜ごはんセット＞\r\n・唐揚げ定食(ご飯・味噌汁付き)\r\n・豚しそチーズ定食(ご飯・味噌汁付き)\r\n・ルーツカレー\r\n・ミックスフライ定食(ご飯・味噌汁付き)\r\n\r\nからお選び頂き、1Fの「ルーツサカバ」でお召し上がり頂けます！\r\nドリンク他サイドメニュー等は追加でご注文いただけます^ ^\r\n\r\nお得な料金で夕食が付いて、出張や観光にピッタリ！\r\n\r\n夕食のオーダー受付時間はチェックインから22時30分でございます。\r\n\r\n※時間外のオーダー受付や返金は致しかねますので、ご注意ください。\r\n※プラン画像は料理イメージです。\r\n\r\n■■■フロント営業時間■■■\r\n8時から23時\r\nチェックインが遅くなる場合は入室方法をメールにてお送りしますのでご連絡お願い致します。\r\n送信アドレスのドメインは＠roots-intl.comからお送りしますので、受信設定お願いいたします。\r\n\r\n■■■施設の設備・サービス■■■\r\n・共用シャワールーム・トイレ（２４時間利用OK）\r\n・1Fラウンジ カフェバー(フリースペースとしてもお使いください)\r\n・館内全域 高速無料wifi\r\n・シャンプー、コンディショナー、ボディソープ、ヘアドライヤー完備\r\n・玄関オートロック\r\n・プライベートカーテンが各ベッドに配備(ドミトリータイプのお部屋)\r\n・読書灯と電源コンセントが各ベッドにあります(ドミトリータイプのお部屋)\r\n・コインランドリー完備（洗剤無料）\r\n\r\nホステルならではの交流が楽しめる、素敵な夜をお過ごしください！\r\n\r\n■■■アクセス■■■\r\n＜電車＞\r\n大阪メトロ四つ橋線 本町駅 23番出口から徒歩5分\r\n(四つ橋線はなんば駅で各線なんば駅、西梅田駅で各線大阪/梅田駅と接続しています)\r\n\r\n＜バス＞\r\n・大阪シティバス 「立売堀1丁目」から徒歩3分\r\n・梅田駅またはなんばOCATからは各地へ高速バスまたは空港リムジンバスが出ております\r\n\r\n＜お車＞\r\n・近隣徒歩圏内にコインパーキングあり\r\n・阪神高速 環状線 「阿波座」または「西長堀」の出口が最寄りです\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6400,
+              "total": 6400,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 153250,
+          "hotelName": "大阪ゲストハウス桜",
+          "hotelKanaName": "おおさか　げすとはうす　さくら",
+          "hotelSpecial": "大阪駅まで徒歩15分。南森町駅まで徒歩8分。繁華街（梅田）で美味しいお店たくさん！日本一長い天神橋筋商店街まで徒歩8分！",
+          "hotelMinCharge": 2750,
+          "latitude": 34.6989734,
+          "longitude": 135.50554239999997,
+          "postalCode": "530-0047",
+          "address1": "大阪府",
+          "address2": "大阪市北区西天満6-3-5",
+          "telephoneNo": "0663136700",
+          "faxNo": " ",
+          "access": "大阪駅、梅田駅徒歩15分. 最寄り駅南森町駅徒歩8分. 北新地駅12分. 京セラドーム31分. 道頓堀25分",
+          "parkingInformation": "専用駐車場なし。近隣のコインパーキングをご利用ください。",
+          "nearestStation": "大阪",
+          "reviewCount": 86,
+          "reviewAverage": 3.67,
+          "userReview": "寝るだけならとてもコスパがいいです。またシャワールームも地下にあり24時間利用でき複数あるのですんなり利用できたのはよかったです(女性専用は一つのみなので神経質な方はこちら…　2026-05-15 01:57:42投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=153250\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 5,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "female16",
+              "roomName": "女性専用2段ベッド ドミトリー",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6600,
+              "total": 6600,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 172403,
+          "hotelName": "ＧＲＡＮＤ　ＨＯＳＴＥＬ　ＬＤＫ　大阪心斎橋（旧：ＴＨＥ　ＳＴＡＹ　ＯＳＡＫＡ　心斎橋）",
+          "hotelKanaName": "ぐらんど　ほすてる　えるでぃーけー　おおさかしんさいばし",
+          "hotelSpecial": "THE STAY OSAKA心斎橋は2月28日よりGRAND HOSTEL LDK 大阪心斎橋として営業します！",
+          "hotelMinCharge": 2425,
+          "latitude": 34.6733705,
+          "longitude": 135.50772069999994,
+          "postalCode": "542-0082",
+          "address1": "大阪府",
+          "address2": "大阪市中央区島之内1-14-29",
+          "telephoneNo": "06-6251-3900",
+          "faxNo": "06-6251-3922",
+          "access": "長堀橋駅6番出口より徒歩 約2分 。心斎橋駅から徒歩10分",
+          "parkingInformation": "無し",
+          "nearestStation": "長堀橋",
+          "reviewCount": 38,
+          "reviewAverage": 3.75,
+          "userReview": "2度目でしたが快適なカプセルホテルで良かったです。　2026-09-10 11:59:32投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=172403\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 2,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "002d",
+              "roomName": "ドミトリールーム 女性専用 二段ベッド1名分2.8平米",
+              "planId": 5818306,
+              "planName": "【素泊まり】スタンダードプラン【R1】",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "★大切なお知らせ★\r\n「THE STAY OSAKA 心斎橋」は「GRAND HOSTEL LDK 大阪心斎橋」として2025年2月28日にリブランドオープンすることとなりました。\r\n新しくなった「GRAND HOSTEL LDK 大阪心斎橋」で皆さまをお迎えできる日を楽しみにしております。\r\n\r\n2019年６月国内最大級のホステルがオープン\r\n難波・心斎橋へも徒歩圏内！カードキーでセキュリティも安心☆\r\n観光やビジネスなど様々なシーンにおすすめの素泊まりプランです♪\r\n\r\nチェックイン 15:00〜22:00 \r\nチェックアウト 〜10:00\r\n\r\n＊チェックイン日当日10時からラウンジ利用が可能。快適なラウンジでおくつろぎください♪(Wi-Fi・電源完備！)\r\n＊チェックアウト後もラウンジは当日20時までご利用可能♪\r\n\r\n《館内設備》\r\nFree Wi-Fi、共用キッチン、BAR、コインランドリー(4台・有料)\r\nシャワー(シャンプー、コンディショナー、ボディソープ)、ドライヤー、温水洗浄便座付トイレ\r\n\r\n\r\n《アクセス》\r\n・長堀橋駅(地下鉄堺筋線)　徒歩２分\r\n・心斎橋駅(地下鉄御堂筋線)　徒歩10分\r\n・関西国際空港まで約1時間\r\n\r\n\r\n◇全館禁煙 (館外に喫煙スペースあり)\r\n◇チェックイン前やチェックアウト後のお荷物をお預かりいたします。\r\n◇提携駐車場のご用意はございません（近隣に多数あり）\r\n◇チェックインが22時以降になる場合は予めご連絡ください。ご連絡がない場合はキャンセル扱いとなり、チェックインができない場合がございます。\r\n\r\n【年齢制限に関する重要事項】\r\n◇個室に限り、5歳以下のお子様はベッド1台につき1名様まで添い寝が可能です。6歳以上のお子様はベッド1台ご利用いただきます。エキストラベッドのご用意はございません。\r\n◇17歳以下のお子様はドミトリーに宿泊できません。\r\n◇個室に17歳以下の方のみで宿泊する場合は、事前に保護者の同意書が必要です。\r\n◇12歳以下の方は保護者の同伴なしに宿泊することができません。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 6800,
+              "total": 6800,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 16655,
+          "hotelName": "カプセル＆スパ　グランドサウナ心斎橋",
+          "hotelKanaName": "かぷせるあんどすぱ　ぐらんどさうなしんさいばし",
+          "hotelSpecial": "　カプセルホテル　大阪なんばのど真ん中、最大級のカプセルホテル。大浴場にサウナも充実しております。",
+          "hotelMinCharge": 3700,
+          "latitude": 34.66986064,
+          "longitude": 135.4986242,
+          "postalCode": "542-0086",
+          "address1": "大阪府",
+          "address2": "大阪市中央区西心斎橋2-8-12",
+          "telephoneNo": "06-6213-3870",
+          "faxNo": "06-6213-3890",
+          "access": "地下鉄 心斎橋駅7・8番出口より徒歩7分／なんば駅25番出口より徒歩5分",
+          "parkingInformation": "コインパーキング　徒歩3分圏内近隣多数あり",
+          "nearestStation": "なんば",
+          "reviewCount": 2779,
+          "reviewAverage": 4.34,
+          "userReview": "カプセルホテルのた…　2026-10-03 00:58:55投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=16655\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "27:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 3,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "uk",
+              "roomName": "男性専用　個室カプセル上段ベッド（サウナ入浴付）",
+              "planId": 6470462,
+              "planName": "【男性専用】個室カプセル｜スタンダードプラン◇サウナ、大浴場、露天風呂◇入り放題！",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "※本プランは、2025年9月より適用となる大阪府の宿泊税制度に基づき、一泊一名様あたり税抜5，000円以上のご宿泊には別途【宿泊税200円】が発生いたします。料金表示に宿泊税は含まれておりません。チェックイン時に別途現地にてお支払いをお願い申し上げます。\r\n※ポイント利用やクーポン割引によりお支払い額が5，000円を下回った場合でも、ご宿泊料金(税抜）の基準に基づき課税対象となります。あらかじめご了承ください。\r\n※宿泊税の詳細は大阪府公式サイトにてご確認いただけます。\r\n\r\n\r\n★通常のカプセルとは違いベッド横にスペースがございます★\r\n\r\n・全部屋BREATHAIR（ブレスエアー）マットレス設置。\r\n高反発三次元クッション材でムレにくく、寝返りがうちやすく、いつまでも寝ていられるような快適な寝心地です。\r\n・ＴＶ、ラジオ、コンセント、アラーム、ロッカー、机、椅子、姿見付きでゆったりとお過ごし頂けます。\r\n・部屋の入口は厚手のアコーディオンカーテン（鍵なし）\r\n・全館内無料Wi-Fi。\r\n・レストランあり。\r\n・自慢の大浴場には３種のサウナに露天風呂やジェットバスもあります！\r\n・ボディケアルームには全身ボディケア・足つぼ・アカスリ等多彩なメニューを取り揃えております。\r\n\r\n※刺青・タトゥーのある方、泥酔の方のご入館はお断りしております。\r\n※カプセルルーム内での喫煙・ご飲食は禁止させていただいております。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 7000,
+              "total": 7000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 188080,
+          "hotelName": "＆ＡＮＤ　ＨＯＳＴＥＬ　ＳＨＩＮＳＡＩＢＡＳＨＩ　ＥＡＳＴ",
+          "hotelKanaName": "あんどほすてるしんさいばしいーすと",
+          "hotelSpecial": "シンプルでありながらモダンなデザインを取り入れた空間はお客様に快適なご宿泊を提供します。",
+          "hotelMinCharge": 2835,
+          "latitude": 34.6788244,
+          "longitude": 135.5124283,
+          "postalCode": "540-0013",
+          "address1": "大阪府",
+          "address2": "大阪市中央区内久宝寺町4-3-6",
+          "telephoneNo": "06-6767-2660",
+          "faxNo": "06-6767-2663",
+          "access": "長堀鶴見緑地線　松屋町駅より徒歩にて約５分",
+          "parkingInformation": "無し",
+          "nearestStation": "松屋町",
+          "reviewCount": 45,
+          "reviewAverage": 4.06,
+          "userReview": "はじめ泊まりました。松屋町より、堺筋本町駅の方が近い感覚で、近くにスーパーありましたし、宿泊先の下にファミリーマートありました。部屋に冷蔵庫は付いてなく貸出して頂ける。シャワー水圧もよかったです。ホス…　2026-03-03 10:34:53投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=188080\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "16:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 4,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "00001",
+              "roomName": "男性専用ドミトリー",
+              "planId": 5770961,
+              "planName": "【コスパ重視プラン】予定が決まっている方におすすめ！",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "”━━━━━━━━━━━━━━━━━━━\r\n◆  ＆AND HOSTEL SHINSABASHI EAST 3つのおすすめポイント ◆\r\n1.梅田、なんばエリアまで20分の好立地！\r\n2.近隣には飲食店、コンビニが充実！\r\n3.大阪城ホール、京セラドームへのアクセス良好！\r\n━━━━━━━━━━━━━━━━━━━━\r\n\r\n− ご案内 −\r\n\r\n■ 館内情報 ■\r\n【チェックイン】　16:00 〜 23:00\r\n【チェックアウト】　〜 10:00\r\n※ 23時以降チェックインは別途料金１000円が発生します。\r\n※ 24時以降のチェックインは受け付けておりませんのでご了承ください。\r\n\r\n■ 主な設備 ■\r\n・無料Wi-Fi\r\n・キッチン（調理器具、食器、基本的な調味料完備）\r\n・電子レンジ・電気ケトル\r\n・洗濯機・乾燥機\r\n・共用ラウンジ\r\n\r\n■ アメニティ・レンタルサービス ■\r\n【有料サービス】\r\n・バスタオル　200円\r\n・フェイスタオル　100円\r\n　※ドミトリールーム以外は1セット無料でついております\r\n・パジャマ　300円\r\n・スリッパ　100円\r\n・洗剤　100円\r\n・洗濯機　300円 / 乾燥機　200円 \r\n・レイトチェックアウト(朝12時まで)　1000円/1時間\r\n\r\n【無料サービス】\r\n・歯ブラシ、カミソリ、コットン、綿棒\r\n・耳栓\r\n・充電器\r\n\r\n■ 全館キャッシュレス・現金不可 ■\r\n全館キャッシュレス決済導入のため、現金がご利用いただけません。\r\n現地払いをお選びいただいた方も、窓口ではキャッシュレス決済のみが可能で、現金はご利用いただけません。予めご了承ください。\r\n\r\n■ 未成年の宿泊について ■\r\n未成年(18歳未満)のお客様は親権者同意書が必須です。チェックイン日までにご提出ください。\r\n※同意書の提出がない場合は、宿泊をお受けできない上、ご予約のキャンセルポリシーに基づいてキャンセル料をご請求いたします。\r\n※16歳未満の方は、18歳以上の方の同伴が必須となります。\r\n※15歳以下の方のみでのご宿泊は受け入れ不可となります。\r\n※3歳以下のお子様のご宿泊は受け入れ不可となります。\r\n\r\n■ アクセス ■\r\n・大阪メトロ中央線・谷町線 谷町四丁目駅 出口8から徒歩11分\r\n・なんば駅・・・約20分\r\n・梅田駅・・・約20分"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 7130,
+              "total": 7130,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 188080,
+          "hotelName": "＆ＡＮＤ　ＨＯＳＴＥＬ　ＳＨＩＮＳＡＩＢＡＳＨＩ　ＥＡＳＴ",
+          "hotelKanaName": "あんどほすてるしんさいばしいーすと",
+          "hotelSpecial": "シンプルでありながらモダンなデザインを取り入れた空間はお客様に快適なご宿泊を提供します。",
+          "hotelMinCharge": 2835,
+          "latitude": 34.6788244,
+          "longitude": 135.5124283,
+          "postalCode": "540-0013",
+          "address1": "大阪府",
+          "address2": "大阪市中央区内久宝寺町4-3-6",
+          "telephoneNo": "06-6767-2660",
+          "faxNo": "06-6767-2663",
+          "access": "長堀鶴見緑地線　松屋町駅より徒歩にて約５分",
+          "parkingInformation": "無し",
+          "nearestStation": "松屋町",
+          "reviewCount": 45,
+          "reviewAverage": 4.06,
+          "userReview": "はじめ泊まりました。松屋町より、堺筋本町駅の方が近い感覚で、近くにスーパーありましたし、宿泊先の下にファミリーマートありました。部屋に冷蔵庫は付いてなく貸出して頂ける。シャワー水圧もよかったです。ホス…　2026-03-03 10:34:53投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=188080\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "16:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 4,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "00001",
+              "roomName": "男性専用ドミトリー",
+              "planId": 5770959,
+              "planName": "【スタンダードプラン】全個室シャワー・トイレ付きで快適！｜3日前までキャンセル無料で安心！",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "━━━━━━━━━━━━━━━━━━━━\r\n◆  ＆AND HOSTEL SHINSABASHI EAST 3つのおすすめポイント ◆\r\n1.梅田、なんばエリアまで20分の好立地！\r\n2.近隣には飲食店、コンビニが充実！\r\n3.大阪城ホール、京セラドームへのアクセス良好！\r\n━━━━━━━━━━━━━━━━━━━━\r\n\r\n− ご案内 −\r\n\r\n■ 館内情報 ■\r\n【チェックイン】　16:00 〜 23:00\r\n【チェックアウト】　〜 10:00\r\n※ 23時以降チェックインは別途料金１000円が発生します。\r\n※ 24時以降のチェックインは受け付けておりませんのでご了承ください。\r\n\r\n■ 主な設備 ■\r\n・無料Wi-Fi\r\n・キッチン（調理器具、食器、基本的な調味料完備）\r\n・電子レンジ・電気ケトル\r\n・洗濯機・乾燥機\r\n・共用ラウンジ\r\n\r\n■ アメニティ・レンタルサービス ■\r\n【有料サービス】\r\n・バスタオル　200円\r\n・フェイスタオル　100円\r\n　※ドミトリールーム以外は1セット無料でついております\r\n・パジャマ　300円\r\n・スリッパ　100円\r\n・洗剤　100円\r\n・洗濯機　300円 / 乾燥機　200円 \r\n・レイトチェックアウト(朝12時まで)　1000円/1時間\r\n\r\n【無料サービス】\r\n・歯ブラシ、カミソリ、コットン、綿棒\r\n・耳栓\r\n・充電器\r\n\r\n■ 全館キャッシュレス・現金不可 ■\r\n全館キャッシュレス決済導入のため、現金がご利用いただけません。\r\n現地払いをお選びいただいた方も、窓口ではキャッシュレス決済のみが可能で、現金はご利用いただけません。予めご了承ください。\r\n\r\n■ 未成年の宿泊について ■\r\n未成年(18歳未満)のお客様は親権者同意書が必須です。チェックイン日までにご提出ください。\r\n※同意書の提出がない場合は、宿泊をお受けできない上、ご予約のキャンセルポリシーに基づいてキャンセル料をご請求いたします。\r\n※16歳未満の方は、18歳以上の方の同伴が必須となります。\r\n※15歳以下の方のみでのご宿泊は受け入れ不可となります。\r\n※3歳以下のお子様のご宿泊は受け入れ不可となります。\r\n\r\n■ アクセス ■\r\n・大阪メトロ中央線・谷町線 谷町四丁目駅 出口8から徒歩11分\r\n・なんば駅・・・約20分\r\n・梅田駅・・・約20分"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 7350,
+              "total": 7350,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 153280,
+          "hotelName": "Ｒｏｏｔｓ　Ｈｏｓｔｅｌ（ルーツホステル）",
+          "hotelKanaName": "ルーツ　ホステル（ルーツホステル）",
+          "hotelSpecial": "本町駅、四ツ橋駅、西大橋駅から徒歩５分。世界中の旅人が交流できるアットホームな宿泊施設です。",
+          "hotelMinCharge": 1800,
+          "latitude": 34.6791948,
+          "longitude": 135.4952578,
+          "postalCode": "550-0012",
+          "address1": "大阪府",
+          "address2": "大阪市西区立売堀1-9-11",
+          "telephoneNo": "06-6556-7774",
+          "faxNo": "06-6556-7774",
+          "access": "四つ橋線　本町駅より徒歩約５分",
+          "parkingInformation": "無し",
+          "nearestStation": "本町",
+          "reviewCount": 70,
+          "reviewAverage": 3.8,
+          "userReview": "安くて良かったです　2026-09-20 17:59:28投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=153280\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 3,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "dormitory1",
+              "roomName": "男女混合ドミトリー（バス・トイレ共用）",
+              "planId": 6037111,
+              "planName": "たこ焼き２時間焼き放題タコパプラン！",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "ホステル１階の居酒屋スペースで、たこ焼きをつくっていただけるプランです。\r\n17時から23時の間で２時間たこ焼き食べ放題、焼き放題です！！\r\n別途、飲み放題や単品料理やお飲み物もご注文いただけます。\r\n\r\n※事前に11時半から13時、17時から21時の間でスタートお時間をお聞かせください。\r\nお時間を伝えていただけない場合は開催できない可能性があります。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 7500,
+              "total": 7500,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 180270,
+          "hotelName": "ｂｎｂ＋　Ｏｓａｋａ　Ｓｈｉｎｓａｉｂａｓｈｉ",
+          "hotelKanaName": "びーえぬびーぷらす　おおさか　しんさいばし",
+          "hotelSpecial": "本町駅より徒３分！心斎橋筋商店街の中にあり、近くにお店多数有り！すごく便利です。",
+          "hotelMinCharge": 2200,
+          "latitude": 34.6795002,
+          "longitude": 135.5016802,
+          "postalCode": "541-0058",
+          "address1": "大阪府",
+          "address2": "大阪市中央区南久宝寺町3-4-15 加藤ビル北館4Ｆ",
+          "telephoneNo": "050-5527-9344",
+          "faxNo": "050-5527-9344",
+          "access": "大阪メトロ　本町駅より徒歩にて約３分",
+          "parkingInformation": "無し",
+          "nearestStation": "本町",
+          "reviewCount": 14,
+          "reviewAverage": 3.71,
+          "userReview": null
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "16:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "21:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 1,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "1",
+              "roomName": "男女共用ドミトリー",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 7500,
+              "total": 7500,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 165738,
+          "hotelName": "ホワイトホステル心斎橋",
+          "hotelKanaName": "ほわいとほすてるしんさいばし",
+          "hotelSpecial": "大阪の中心部「心斎橋」の便利な立地に、２０１７年１２月に誕生したデザイナー監修の洗練されたホステル。",
+          "hotelMinCharge": 3000,
+          "latitude": 34.6722984,
+          "longitude": 135.5046072,
+          "postalCode": "542-0083",
+          "address1": "大阪府",
+          "address2": "大阪市中央区東心斎橋1-6-20",
+          "telephoneNo": "06-6244-8000",
+          "faxNo": "06-6244-8001",
+          "access": "大阪メトロ御堂筋線心斎橋駅⑥番出口より徒歩約５分　　大阪メトロ堺筋線長堀橋駅⑦番出口より徒歩約3分",
+          "parkingInformation": "無し",
+          "nearestStation": "心斎橋",
+          "reviewCount": 71,
+          "reviewAverage": 3.37,
+          "userReview": "アクセスしやすくお値段も手ごろで助かりました。また利用したいと思います。　2026-10-06 16:36:54投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=165738\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 3,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "md",
+              "roomName": "男女混合ドミトリー",
+              "planId": 4133829,
+              "planName": "【基本料金】男女混合ドミトリー",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "---★★White Hostel Shinsaibashi★★---------------------------\r\nカップルやお友達同士でワイワイご利用いただける男女混合ドミトリー\r\nシャワールーム・お手洗いは共用！\r\n宿泊料金を抑えたい方におすすめ！\r\n---------------------------★★White Hostel Shinsaibashi★★---\r\n\r\n急なお泊りや、行きたいところやりたいことがたくさんのご旅行の際に是非ご利用ください！\r\n大阪メトロ御堂筋線「心斎橋駅」から徒歩5分、\r\n大阪メトロ長堀鶴見緑地線「心斎橋」から徒歩３分の好立地！\r\n\r\n[共用スペースについて]\r\n☆無線インターネット（WI-FI）接続可\r\n☆シャワーブースにはリンスインシャンプー・ボディソープ有\r\n☆自炊ができるキッチン\r\n☆洗濯できるランドリー（有料）\r\n\r\n\r\n↓↓フロントにてお申し付けください↓↓\r\n\r\n☆有料アメニティ\r\nバスタオル（レンタル）・フェイスタオル（レンタル）・歯ブラシ・洗濯用洗剤\r\n☆貸出品\r\n変換アダプター・アンドロイド充電器・アイフォン充電器\r\n\r\n\r\n[注意事項]\r\n※高校生未満の方のご利用はお断りしております。\r\n※手洗いや洗面台、シャワールームはお部屋に付いておらず他のお客様との共同利用です。\r\n※客室エリアは禁煙でございます。\r\n※ベッドの指定にはお応えできかねます。ご了承ください。\r\n※チェックインが22:00以降となる場合は、必ず事前にご連絡ください。ご連絡がない場合キャンセルとさせていただきますのでご了承ください。\r\n\r\n【宿からのお知らせ】※必ずご一読下さい。\r\n当館は22：00以降のチェックインはお断りしております。\r\nもし22：00以降のご到着がご希望の場合は、チェックインは近隣施設での受付けとなりますので予めご了承下さい。\r\n\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 9000,
+              "total": 9000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 165738,
+          "hotelName": "ホワイトホステル心斎橋",
+          "hotelKanaName": "ほわいとほすてるしんさいばし",
+          "hotelSpecial": "大阪の中心部「心斎橋」の便利な立地に、２０１７年１２月に誕生したデザイナー監修の洗練されたホステル。",
+          "hotelMinCharge": 3000,
+          "latitude": 34.6722984,
+          "longitude": 135.5046072,
+          "postalCode": "542-0083",
+          "address1": "大阪府",
+          "address2": "大阪市中央区東心斎橋1-6-20",
+          "telephoneNo": "06-6244-8000",
+          "faxNo": "06-6244-8001",
+          "access": "大阪メトロ御堂筋線心斎橋駅⑥番出口より徒歩約５分　　大阪メトロ堺筋線長堀橋駅⑦番出口より徒歩約3分",
+          "parkingInformation": "無し",
+          "nearestStation": "心斎橋",
+          "reviewCount": 71,
+          "reviewAverage": 3.37,
+          "userReview": "アクセスしやすくお値段も手ごろで助かりました。また利用したいと思います。　2026-10-06 16:36:54投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=165738\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 3,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "fd",
+              "roomName": "女性専用ドミトリー",
+              "planId": 4133851,
+              "planName": "【基本料金】女性専用ドミトリー",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "★★安心の女性専用フロア★★\r\n\r\n急なお泊りや、行きたいところやりたいことがたくさんのご旅行の際に是非ご利用ください！\r\n地下鉄「心斎橋駅」から徒歩5分の好立地！\r\n\r\n\r\n[共用スペースについて]\r\n☆無線インターネット（WI-FI）接続可\r\n☆シャワーブースにはリンスインシャンプー・ボディソープ有\r\n☆自炊ができるキッチン\r\n☆洗濯できるランドリー（有料）\r\n\r\n\r\n\r\n↓↓フロントにてお申し付けください↓↓\r\n\r\n☆有料アメニティ\r\nバスタオル（レンタル）・フェイスタオル（レンタル）・歯ブラシ・洗濯用洗剤\r\n☆貸出品\r\n変換アダプター・アンドロイド充電器・アイフォン充電器\r\n\r\n\r\n[注意事項]\r\n※男性の方はご利用いただけません。男性からのご予約があった場合はこちらでキャンセルさせていただくこともありますのでご注意ください。\r\n※高校生未満の方のご利用はお断りしております。\r\n※手洗いや洗面台、シャワールームはお部屋に付いておらず他のお客様との共同利用です。\r\n※客室エリア内、女性フロアは禁煙でございます。\r\n※ベッドの指定にはお応えできかねます。ご了承ください。\r\n※チェックインが22:00以降となる場合は、必ず事前にご連絡ください。ご連絡がない場合キャンセルとさせていただきますのでご了承ください。\r\n※館内作業のため男性従業員の立ち入りがある場合がございます。ご了承くださいませ。\r\n\r\n【宿からのお知らせ】※必ずご一読下さい。\r\n当館は22：00以降のチェックインはお断りしております。\r\nもし22：00以降のご到着がご希望の場合は、チェックインは別施設での受け付けとなりますので予めご了承下さい。\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 9300,
+              "total": 9300,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 165738,
+          "hotelName": "ホワイトホステル心斎橋",
+          "hotelKanaName": "ほわいとほすてるしんさいばし",
+          "hotelSpecial": "大阪の中心部「心斎橋」の便利な立地に、２０１７年１２月に誕生したデザイナー監修の洗練されたホステル。",
+          "hotelMinCharge": 3000,
+          "latitude": 34.6722984,
+          "longitude": 135.5046072,
+          "postalCode": "542-0083",
+          "address1": "大阪府",
+          "address2": "大阪市中央区東心斎橋1-6-20",
+          "telephoneNo": "06-6244-8000",
+          "faxNo": "06-6244-8001",
+          "access": "大阪メトロ御堂筋線心斎橋駅⑥番出口より徒歩約５分　　大阪メトロ堺筋線長堀橋駅⑦番出口より徒歩約3分",
+          "parkingInformation": "無し",
+          "nearestStation": "心斎橋",
+          "reviewCount": 71,
+          "reviewAverage": 3.37,
+          "userReview": "アクセスしやすくお値段も手ごろで助かりました。また利用したいと思います。　2026-10-06 16:36:54投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=165738\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "22:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 3,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "fd",
+              "roomName": "女性専用ドミトリー",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 9300,
+              "total": 9300,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 179013,
+          "hotelName": "ＨＯＴＥＬ　ＴＨＥ　ＲＯＣＫ",
+          "hotelKanaName": "ほてる　ざ　ろっく",
+          "hotelSpecial": "☆コラーゲンマシン使い放題☆本町駅から徒歩約4分のお洒落なカプセルホテルです♪",
+          "hotelMinCharge": 2800,
+          "latitude": 34.6794009,
+          "longitude": 135.49516330000006,
+          "postalCode": "550-0012",
+          "address1": "大阪府",
+          "address2": "大阪市西区立売堀1-9-35",
+          "telephoneNo": "06-6539-1169",
+          "faxNo": "06-6539-1169",
+          "access": "地下鉄御堂筋線　本町駅２３番出口より徒歩にて約４分／地下鉄四ツ橋線　四ツ橋駅１－Ａ出口より徒歩にて約６分",
+          "parkingInformation": "無し",
+          "nearestStation": "本町",
+          "reviewCount": 197,
+          "reviewAverage": 4.08,
+          "userReview": "初めて利用しました。料金はリーズナブルな上、駅から歩いてすぐでわかりやすく、セブンイレブンが近くにあり立地もいいです。エントランスやラウンジは少し手狭な感じはしますが、カプセルや荷物を置くスペースはゆ…　2026-10-08 07:42:28投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=179013\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 9,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "pr",
+              "roomName": "男性専用カプセルルーム",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 1,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 10000,
+              "total": 10000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 179013,
+          "hotelName": "ＨＯＴＥＬ　ＴＨＥ　ＲＯＣＫ",
+          "hotelKanaName": "ほてる　ざ　ろっく",
+          "hotelSpecial": "☆コラーゲンマシン使い放題☆本町駅から徒歩約4分のお洒落なカプセルホテルです♪",
+          "hotelMinCharge": 2800,
+          "latitude": 34.6794009,
+          "longitude": 135.49516330000006,
+          "postalCode": "550-0012",
+          "address1": "大阪府",
+          "address2": "大阪市西区立売堀1-9-35",
+          "telephoneNo": "06-6539-1169",
+          "faxNo": "06-6539-1169",
+          "access": "地下鉄御堂筋線　本町駅２３番出口より徒歩にて約４分／地下鉄四ツ橋線　四ツ橋駅１－Ａ出口より徒歩にて約６分",
+          "parkingInformation": "無し",
+          "nearestStation": "本町",
+          "reviewCount": 197,
+          "reviewAverage": 4.08,
+          "userReview": "初めて利用しました。料金はリーズナブルな上、駅から歩いてすぐでわかりやすく、セブンイレブンが近くにあり立地もいいです。エントランスやラウンジは少し手狭な感じはしますが、カプセルや荷物を置くスペースはゆ…　2026-10-08 07:42:28投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=179013\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 9,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "pr1",
+              "roomName": "女性専用カプセルルーム",
+              "planId": null,
+              "planName": null,
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 1,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 1,
+              "planContents": null
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 10000,
+              "total": 10000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 172213,
+          "hotelName": "ＩＭＡＮＯ　ＯＳＡＫＡ　ＳＨＩＮＳＡＩＢＡＳＨＩ　ＨＯＳＴＥＬ",
+          "hotelKanaName": "いまの　おおさか　しんさいばし　ほすてる",
+          "hotelSpecial": "ドッグフレンドリールームあり！一部客室でワンちゃんとご宿泊可☆",
+          "hotelMinCharge": 3250,
+          "latitude": 34.67290317131059,
+          "longitude": 135.49499130000004,
+          "postalCode": "550-0014",
+          "address1": "大阪府",
+          "address2": "大阪市西区北堀江1-13-28",
+          "telephoneNo": "06-6534-0088",
+          "faxNo": "06-6534-0087",
+          "access": "四ツ橋駅　６番出口より徒歩にて約３分",
+          "parkingInformation": "無し",
+          "nearestStation": "四ツ橋",
+          "reviewCount": 180,
+          "reviewAverage": 4.28,
+          "userReview": "また、ドッグフレンドリーでお部屋もフロント横のカフェでもとても楽しく過ごせました。また泊まりたいです　2026-10-08 22:45:39投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=172213\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "16:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 28,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "dm12",
+              "roomName": "【男女共用】ドミトリー◆ベッド12台のうち1台利用",
+              "planId": 5452358,
+              "planName": "【モニタープラン】口コミ投稿でご優待料金☆（食事なし）",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "期間限定！ご優待料金でご宿泊いただけるモニタープランをご用意いたしました・\r\n皆様の貴重なご意見を参考にさせていただき、今後より良いホステル作り\r\nに役立ててまいります。\r\nこちらのプランはチェックアウト後、口コミをご投稿いただける方限定のプランです♪\r\n\r\n【ご案内】\r\n・口コミは【楽天トラベル個人ページ⇒「過去の予約」一覧⇒\r\n【お客さまの声-投稿する】ボタンよりご投稿ください。\r\n・チェックアウト後、10日以内に口コミ投稿をお願いいたします。\r\n・口コミ投稿時は、必ず『お客さまの声』利用規約をご確認ください。\r\n\r\n◇アクセス抜群の好立地◇\r\n\r\n・[大阪国際空港]から約50分\r\n　[大阪(伊丹)空港]よりリムジンバスで約30分\r\n　⇒[JRなんば]降車、ホステルまで徒歩約12分\r\n\r\n・[関西空港]から約80分\r\n　　[関西空港]よりリムジンバスで約50分\r\n　⇒[JRなんば]降車、ホステルまで徒歩約12分\r\n\r\n・[新大阪駅]から約25分\r\n　　[新大阪駅]より地下鉄御堂筋線で約15分\r\n　⇒[心斎橋駅]下車、ホステルまで徒歩約9分\r\n\r\n◇コモンスペースのご案内◇\r\n\r\n・ミニキッチン、コインランドリー、電子レンジ、電気ケトルを完備\r\n\r\n◇共用設備について◇\r\n\r\n・シャワールーム(シャンプー、コンディショナー、ボディーソープ完備）\r\n・洗面(ドライヤー完備）\r\n・温水洗浄便座付トイレ\r\n\r\n\r\n■宿泊税について■\r\n\r\n大阪府条例により1人1泊当たり宿泊税\r\n(税抜 5， 000円〜14，999円：200円、15，000円〜19，999円：400円、20，000円〜：500円）\r\nを別途頂戴いたします。予めご了承くださいませ。\r\n※食事等を含まない室料のみが課税対象です。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 10000,
+              "total": 10000,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 179013,
+          "hotelName": "ＨＯＴＥＬ　ＴＨＥ　ＲＯＣＫ",
+          "hotelKanaName": "ほてる　ざ　ろっく",
+          "hotelSpecial": "☆コラーゲンマシン使い放題☆本町駅から徒歩約4分のお洒落なカプセルホテルです♪",
+          "hotelMinCharge": 2800,
+          "latitude": 34.6794009,
+          "longitude": 135.49516330000006,
+          "postalCode": "550-0012",
+          "address1": "大阪府",
+          "address2": "大阪市西区立売堀1-9-35",
+          "telephoneNo": "06-6539-1169",
+          "faxNo": "06-6539-1169",
+          "access": "地下鉄御堂筋線　本町駅２３番出口より徒歩にて約４分／地下鉄四ツ橋線　四ツ橋駅１－Ａ出口より徒歩にて約６分",
+          "parkingInformation": "無し",
+          "nearestStation": "本町",
+          "reviewCount": 197,
+          "reviewAverage": 4.08,
+          "userReview": "初めて利用しました。料金はリーズナブルな上、駅から歩いてすぐでわかりやすく、セブンイレブンが近くにあり立地もいいです。エントランスやラウンジは少し手狭な感じはしますが、カプセルや荷物を置くスペースはゆ…　2026-10-08 07:42:28投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=179013\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 9,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "pr",
+              "roomName": "男性専用カプセルルーム",
+              "planId": 4712143,
+              "planName": "★早割7日前プラン☆7日前までの予約でお得にご宿泊！無料軽朝食付＋ポイントUP♪",
+              "pointRate": 5,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "2020年オープン！オシャレでキレイなカプセルホテル♪\r\n女性専用フロアあり！\r\n\r\n7日前の早めのご予約でお得に♪\r\nポイント【5％】還元！！\r\n\r\n◆朝は、パンやスープとドリンク（コーヒー、紅茶、ジュースなど）が無料でお召し上がり頂けます。\r\n\r\n\r\n◆コラーゲンマシン導入しました！なんとご宿泊の方は使い放題◆\r\n\r\n【アクセス】\r\n■地下鉄「本町駅」23番出口より徒歩4分！四ツ橋駅より徒歩10分\r\nオリックス劇場にも徒歩3分の好立地！\r\n繁華街からは少し離れているので、夜はとっても静かに滞在できます。\r\nビジネス街ですので出張利用でも便利！\r\n\r\n【アメニティ】\r\n● シャワールーム（シャンプー・コンディショナー・ボディソープ完備）\r\n● バスタオル・フェイスタオル・バスマット\r\n● コットン、綿棒\r\n● ヘアドライヤー「ReFa」\r\n● 館内着（上下）※有料\r\n● スリッパ\r\n● 歯磨きセット\r\n● カミソリ　※10月1日より有料\r\n● ボディタオル　※10月1日より有料\r\n● ヘアブラシ　　※10月1日より有料\r\n\r\n\r\n【貸出品】\r\n● 充電器\r\n● 毛布\r\n● アイロン\r\n● ヘアアイロン\r\n● 荷物鍵\r\n● ヘアオイル数種類（様々なブランドのを取り揃えております）\r\n            \r\n【館内設備】\r\n■オープンしたての新しい館内！\r\n■カードキー制御で安心のセキュリティ！\r\n■レディース、ドミトリーフロアにはウルトラファインバブルシャワーの「ミラブル」「ReFa」を設置\r\n■コラーゲンマシン使い放題！\r\n■ナノケアスチーマー（レディースフロアのみ）\r\n■広々カプセル(幅100cm×奥行210cm×高さ105cm)\r\n■ズボンプレッサー（各階設置）\r\n■各階にトイレ、シャワールーム完備\r\n■ロビーには60インチの大画面TV\r\n\r\n＜周辺観光地までのアクセス＞\r\n・ユニバーサル・スタジオ・ジャパンまで電車で約30分\r\n・あべのハルカスまで電車で約20分\r\n・梅田まで電車で約10分\r\n\r\n＜ライブ会場までのアクセス＞\r\n・京セラドームまで長堀鶴見緑地線「西大橋駅」より「ドーム前千代崎駅」まで電車と徒歩で約20分\r\n・大阪城ホールまで中央線「本町駅」より「森ノ宮駅」まで電車と徒歩で約25分\r\n・オリックス劇場まで徒歩で約3分"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 10800,
+              "total": 10800,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 179013,
+          "hotelName": "ＨＯＴＥＬ　ＴＨＥ　ＲＯＣＫ",
+          "hotelKanaName": "ほてる　ざ　ろっく",
+          "hotelSpecial": "☆コラーゲンマシン使い放題☆本町駅から徒歩約4分のお洒落なカプセルホテルです♪",
+          "hotelMinCharge": 2800,
+          "latitude": 34.6794009,
+          "longitude": 135.49516330000006,
+          "postalCode": "550-0012",
+          "address1": "大阪府",
+          "address2": "大阪市西区立売堀1-9-35",
+          "telephoneNo": "06-6539-1169",
+          "faxNo": "06-6539-1169",
+          "access": "地下鉄御堂筋線　本町駅２３番出口より徒歩にて約４分／地下鉄四ツ橋線　四ツ橋駅１－Ａ出口より徒歩にて約６分",
+          "parkingInformation": "無し",
+          "nearestStation": "本町",
+          "reviewCount": 197,
+          "reviewAverage": 4.08,
+          "userReview": "初めて利用しました。料金はリーズナブルな上、駅から歩いてすぐでわかりやすく、セブンイレブンが近くにあり立地もいいです。エントランスやラウンジは少し手狭な感じはしますが、カプセルや荷物を置くスペースはゆ…　2026-10-08 07:42:28投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=179013\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 9,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "pr1",
+              "roomName": "女性専用カプセルルーム",
+              "planId": 4712143,
+              "planName": "★早割7日前プラン☆7日前までの予約でお得にご宿泊！無料軽朝食付＋ポイントUP♪",
+              "pointRate": 5,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "2020年オープン！オシャレでキレイなカプセルホテル♪\r\n女性専用フロアあり！\r\n\r\n7日前の早めのご予約でお得に♪\r\nポイント【5％】還元！！\r\n\r\n◆朝は、パンやスープとドリンク（コーヒー、紅茶、ジュースなど）が無料でお召し上がり頂けます。\r\n\r\n\r\n◆コラーゲンマシン導入しました！なんとご宿泊の方は使い放題◆\r\n\r\n【アクセス】\r\n■地下鉄「本町駅」23番出口より徒歩4分！四ツ橋駅より徒歩10分\r\nオリックス劇場にも徒歩3分の好立地！\r\n繁華街からは少し離れているので、夜はとっても静かに滞在できます。\r\nビジネス街ですので出張利用でも便利！\r\n\r\n【アメニティ】\r\n● シャワールーム（シャンプー・コンディショナー・ボディソープ完備）\r\n● バスタオル・フェイスタオル・バスマット\r\n● コットン、綿棒\r\n● ヘアドライヤー「ReFa」\r\n● 館内着（上下）※有料\r\n● スリッパ\r\n● 歯磨きセット\r\n● カミソリ　※10月1日より有料\r\n● ボディタオル　※10月1日より有料\r\n● ヘアブラシ　　※10月1日より有料\r\n\r\n\r\n【貸出品】\r\n● 充電器\r\n● 毛布\r\n● アイロン\r\n● ヘアアイロン\r\n● 荷物鍵\r\n● ヘアオイル数種類（様々なブランドのを取り揃えております）\r\n            \r\n【館内設備】\r\n■オープンしたての新しい館内！\r\n■カードキー制御で安心のセキュリティ！\r\n■レディース、ドミトリーフロアにはウルトラファインバブルシャワーの「ミラブル」「ReFa」を設置\r\n■コラーゲンマシン使い放題！\r\n■ナノケアスチーマー（レディースフロアのみ）\r\n■広々カプセル(幅100cm×奥行210cm×高さ105cm)\r\n■ズボンプレッサー（各階設置）\r\n■各階にトイレ、シャワールーム完備\r\n■ロビーには60インチの大画面TV\r\n\r\n＜周辺観光地までのアクセス＞\r\n・ユニバーサル・スタジオ・ジャパンまで電車で約30分\r\n・あべのハルカスまで電車で約20分\r\n・梅田まで電車で約10分\r\n\r\n＜ライブ会場までのアクセス＞\r\n・京セラドームまで長堀鶴見緑地線「西大橋駅」より「ドーム前千代崎駅」まで電車と徒歩で約20分\r\n・大阪城ホールまで中央線「本町駅」より「森ノ宮駅」まで電車と徒歩で約25分\r\n・オリックス劇場まで徒歩で約3分"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 10800,
+              "total": 10800,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 172213,
+          "hotelName": "ＩＭＡＮＯ　ＯＳＡＫＡ　ＳＨＩＮＳＡＩＢＡＳＨＩ　ＨＯＳＴＥＬ",
+          "hotelKanaName": "いまの　おおさか　しんさいばし　ほすてる",
+          "hotelSpecial": "ドッグフレンドリールームあり！一部客室でワンちゃんとご宿泊可☆",
+          "hotelMinCharge": 3250,
+          "latitude": 34.67290317131059,
+          "longitude": 135.49499130000004,
+          "postalCode": "550-0014",
+          "address1": "大阪府",
+          "address2": "大阪市西区北堀江1-13-28",
+          "telephoneNo": "06-6534-0088",
+          "faxNo": "06-6534-0087",
+          "access": "四ツ橋駅　６番出口より徒歩にて約３分",
+          "parkingInformation": "無し",
+          "nearestStation": "四ツ橋",
+          "reviewCount": 180,
+          "reviewAverage": 4.28,
+          "userReview": "また、ドッグフレンドリーでお部屋もフロント横のカフェでもとても楽しく過ごせました。また泊まりたいです　2026-10-08 22:45:39投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=172213\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "16:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 28,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "dm12",
+              "roomName": "【男女共用】ドミトリー◆ベッド12台のうち1台利用",
+              "planId": 6293054,
+              "planName": "【モニタープラン】口コミ投稿でご優待料金☆（朝食付き）",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 1,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "期間限定！ご優待料金でご宿泊いただけるモニタープランをご用意いたしました・\r\n皆様の貴重なご意見を参考にさせていただき、今後より良いホステル作り\r\nに役立ててまいります。\r\nこちらのプランはチェックアウト後、口コミをご投稿いただける方限定のプランです♪\r\n\r\n【ご案内】\r\n・口コミは【楽天トラベル個人ページ⇒「過去の予約」一覧⇒\r\n【お客さまの声-投稿する】ボタンよりご投稿ください。\r\n・チェックアウト後、10日以内に口コミ投稿をお願いいたします。\r\n・口コミ投稿時は、必ず『お客さまの声』利用規約をご確認ください。\r\n\r\n◇朝食のご案内◇\r\n洋食スタイルの朝食プレート\r\n\r\n◇アクセス抜群の好立地◇\r\n\r\n・[大阪国際空港]から約50分\r\n　[大阪(伊丹)空港]よりリムジンバスで約30分\r\n　⇒[JRなんば]降車、ホステルまで徒歩約12分\r\n\r\n・[関西空港]から約80分\r\n　　[関西空港]よりリムジンバスで約50分\r\n　⇒[JRなんば]降車、ホステルまで徒歩約12分\r\n\r\n・[新大阪駅]から約25分\r\n　　[新大阪駅]より地下鉄御堂筋線で約15分\r\n　⇒[心斎橋駅]下車、ホステルまで徒歩約9分\r\n\r\n◇コモンスペースのご案内◇\r\n\r\n・ミニキッチン、コインランドリー、電子レンジ、電気ケトルを完備\r\n\r\n◇共用設備について◇\r\n\r\n・シャワールーム(シャンプー、コンディショナー、ボディーソープ完備）\r\n・洗面(ドライヤー完備）\r\n・温水洗浄便座付トイレ\r\n\r\n\r\n■宿泊税について■\r\n\r\n大阪府条例により1人1泊当たり宿泊税\r\n(税抜 5， 000円〜14，999円：200円、15，000円〜19，999円：400円、20，000円〜：500円）\r\nを別途頂戴いたします。予めご了承くださいませ。\r\n※食事等を含まない室料のみが課税対象です。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 10880,
+              "total": 10880,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 172213,
+          "hotelName": "ＩＭＡＮＯ　ＯＳＡＫＡ　ＳＨＩＮＳＡＩＢＡＳＨＩ　ＨＯＳＴＥＬ",
+          "hotelKanaName": "いまの　おおさか　しんさいばし　ほすてる",
+          "hotelSpecial": "ドッグフレンドリールームあり！一部客室でワンちゃんとご宿泊可☆",
+          "hotelMinCharge": 3250,
+          "latitude": 34.67290317131059,
+          "longitude": 135.49499130000004,
+          "postalCode": "550-0014",
+          "address1": "大阪府",
+          "address2": "大阪市西区北堀江1-13-28",
+          "telephoneNo": "06-6534-0088",
+          "faxNo": "06-6534-0087",
+          "access": "四ツ橋駅　６番出口より徒歩にて約３分",
+          "parkingInformation": "無し",
+          "nearestStation": "四ツ橋",
+          "reviewCount": 180,
+          "reviewAverage": 4.28,
+          "userReview": "また、ドッグフレンドリーでお部屋もフロント横のカフェでもとても楽しく過ごせました。また泊まりたいです　2026-10-08 22:45:39投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=172213\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "16:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 28,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "fd",
+              "roomName": "【女性専用】ドミトリー◇ベッド4〜6台のうち1台利用",
+              "planId": 5452358,
+              "planName": "【モニタープラン】口コミ投稿でご優待料金☆（食事なし）",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "期間限定！ご優待料金でご宿泊いただけるモニタープランをご用意いたしました・\r\n皆様の貴重なご意見を参考にさせていただき、今後より良いホステル作り\r\nに役立ててまいります。\r\nこちらのプランはチェックアウト後、口コミをご投稿いただける方限定のプランです♪\r\n\r\n【ご案内】\r\n・口コミは【楽天トラベル個人ページ⇒「過去の予約」一覧⇒\r\n【お客さまの声-投稿する】ボタンよりご投稿ください。\r\n・チェックアウト後、10日以内に口コミ投稿をお願いいたします。\r\n・口コミ投稿時は、必ず『お客さまの声』利用規約をご確認ください。\r\n\r\n◇アクセス抜群の好立地◇\r\n\r\n・[大阪国際空港]から約50分\r\n　[大阪(伊丹)空港]よりリムジンバスで約30分\r\n　⇒[JRなんば]降車、ホステルまで徒歩約12分\r\n\r\n・[関西空港]から約80分\r\n　　[関西空港]よりリムジンバスで約50分\r\n　⇒[JRなんば]降車、ホステルまで徒歩約12分\r\n\r\n・[新大阪駅]から約25分\r\n　　[新大阪駅]より地下鉄御堂筋線で約15分\r\n　⇒[心斎橋駅]下車、ホステルまで徒歩約9分\r\n\r\n◇コモンスペースのご案内◇\r\n\r\n・ミニキッチン、コインランドリー、電子レンジ、電気ケトルを完備\r\n\r\n◇共用設備について◇\r\n\r\n・シャワールーム(シャンプー、コンディショナー、ボディーソープ完備）\r\n・洗面(ドライヤー完備）\r\n・温水洗浄便座付トイレ\r\n\r\n\r\n■宿泊税について■\r\n\r\n大阪府条例により1人1泊当たり宿泊税\r\n(税抜 5， 000円〜14，999円：200円、15，000円〜19，999円：400円、20，000円〜：500円）\r\nを別途頂戴いたします。予めご了承くださいませ。\r\n※食事等を含まない室料のみが課税対象です。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 10900,
+              "total": 10900,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 172213,
+          "hotelName": "ＩＭＡＮＯ　ＯＳＡＫＡ　ＳＨＩＮＳＡＩＢＡＳＨＩ　ＨＯＳＴＥＬ",
+          "hotelKanaName": "いまの　おおさか　しんさいばし　ほすてる",
+          "hotelSpecial": "ドッグフレンドリールームあり！一部客室でワンちゃんとご宿泊可☆",
+          "hotelMinCharge": 3250,
+          "latitude": 34.67290317131059,
+          "longitude": 135.49499130000004,
+          "postalCode": "550-0014",
+          "address1": "大阪府",
+          "address2": "大阪市西区北堀江1-13-28",
+          "telephoneNo": "06-6534-0088",
+          "faxNo": "06-6534-0087",
+          "access": "四ツ橋駅　６番出口より徒歩にて約３分",
+          "parkingInformation": "無し",
+          "nearestStation": "四ツ橋",
+          "reviewCount": 180,
+          "reviewAverage": 4.28,
+          "userReview": "また、ドッグフレンドリーでお部屋もフロント横のカフェでもとても楽しく過ごせました。また泊まりたいです　2026-10-08 22:45:39投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=172213\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "16:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 28,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "dm",
+              "roomName": "【男女共用】ドミトリー◆ベッド4〜6台のうち1台利用",
+              "planId": 5452358,
+              "planName": "【モニタープラン】口コミ投稿でご優待料金☆（食事なし）",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "期間限定！ご優待料金でご宿泊いただけるモニタープランをご用意いたしました・\r\n皆様の貴重なご意見を参考にさせていただき、今後より良いホステル作り\r\nに役立ててまいります。\r\nこちらのプランはチェックアウト後、口コミをご投稿いただける方限定のプランです♪\r\n\r\n【ご案内】\r\n・口コミは【楽天トラベル個人ページ⇒「過去の予約」一覧⇒\r\n【お客さまの声-投稿する】ボタンよりご投稿ください。\r\n・チェックアウト後、10日以内に口コミ投稿をお願いいたします。\r\n・口コミ投稿時は、必ず『お客さまの声』利用規約をご確認ください。\r\n\r\n◇アクセス抜群の好立地◇\r\n\r\n・[大阪国際空港]から約50分\r\n　[大阪(伊丹)空港]よりリムジンバスで約30分\r\n　⇒[JRなんば]降車、ホステルまで徒歩約12分\r\n\r\n・[関西空港]から約80分\r\n　　[関西空港]よりリムジンバスで約50分\r\n　⇒[JRなんば]降車、ホステルまで徒歩約12分\r\n\r\n・[新大阪駅]から約25分\r\n　　[新大阪駅]より地下鉄御堂筋線で約15分\r\n　⇒[心斎橋駅]下車、ホステルまで徒歩約9分\r\n\r\n◇コモンスペースのご案内◇\r\n\r\n・ミニキッチン、コインランドリー、電子レンジ、電気ケトルを完備\r\n\r\n◇共用設備について◇\r\n\r\n・シャワールーム(シャンプー、コンディショナー、ボディーソープ完備）\r\n・洗面(ドライヤー完備）\r\n・温水洗浄便座付トイレ\r\n\r\n\r\n■宿泊税について■\r\n\r\n大阪府条例により1人1泊当たり宿泊税\r\n(税抜 5， 000円〜14，999円：200円、15，000円〜19，999円：400円、20，000円〜：500円）\r\nを別途頂戴いたします。予めご了承くださいませ。\r\n※食事等を含まない室料のみが課税対象です。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 10900,
+              "total": 10900,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 179013,
+          "hotelName": "ＨＯＴＥＬ　ＴＨＥ　ＲＯＣＫ",
+          "hotelKanaName": "ほてる　ざ　ろっく",
+          "hotelSpecial": "☆コラーゲンマシン使い放題☆本町駅から徒歩約4分のお洒落なカプセルホテルです♪",
+          "hotelMinCharge": 2800,
+          "latitude": 34.6794009,
+          "longitude": 135.49516330000006,
+          "postalCode": "550-0012",
+          "address1": "大阪府",
+          "address2": "大阪市西区立売堀1-9-35",
+          "telephoneNo": "06-6539-1169",
+          "faxNo": "06-6539-1169",
+          "access": "地下鉄御堂筋線　本町駅２３番出口より徒歩にて約４分／地下鉄四ツ橋線　四ツ橋駅１－Ａ出口より徒歩にて約６分",
+          "parkingInformation": "無し",
+          "nearestStation": "本町",
+          "reviewCount": 197,
+          "reviewAverage": 4.08,
+          "userReview": "初めて利用しました。料金はリーズナブルな上、駅から歩いてすぐでわかりやすく、セブンイレブンが近くにあり立地もいいです。エントランスやラウンジは少し手狭な感じはしますが、カプセルや荷物を置くスペースはゆ…　2026-10-08 07:42:28投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=179013\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 9,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "pr",
+              "roomName": "男性専用カプセルルーム",
+              "planId": 5009365,
+              "planName": "☆ポイント大還元★迷ったらこれ☆無料軽朝食付き＋ポイントUP☆トリプルステイプラン♪",
+              "pointRate": 8,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 1,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "プラン選びに迷ったらこれ！！\r\n☆手ぶらで宿泊\r\n☆無料モーニング付\r\n☆ポイントアップ！8％！\r\n\r\nHOTEL THE ROCKのニュースタンダードプランです♪\r\n\r\nコロナ対策もしっかりと行っておりますので、是非安心してご利用下さい☆\r\n\r\n◆コラーゲンマシン導入しました！なんとご宿泊の方は使い放題◆\r\n\r\n【アクセス】\r\n■地下鉄「本町駅」23番出口より徒歩4分！四ツ橋駅より徒歩10分\r\nオリックス劇場にも徒歩3分の好立地！\r\n繁華街からは少し離れているので、夜はとっても静かに滞在できます。\r\nビジネス街ですので出張利用でも便利！\r\n\r\n【アメニティ】\r\n● シャワールーム（シャンプー・コンディショナー・ボディソープ完備）\r\n● バスタオル・フェイスタオル・バスマット\r\n● コットン、綿棒\r\n● ヘアドライヤー「ReFa」\r\n● 館内着（上下）※有料\r\n● スリッパ　\r\n● 歯ブラシ　\r\n● カミソリ　※10月1日より有料\r\n● ボディタオル　※10月1日より有料\r\n● ヘアブラシ　※10月1日より有料\r\n\r\n\r\n【貸出品】\r\n● 充電器\r\n● 毛布\r\n● アイロン\r\n● ヘアアイロン\r\n● 荷物鍵\r\n● ヘアオイル数種類（様々なブランドのを取り揃えております）\r\n            \r\n【館内設備】\r\n■オープンしたての新しい館内！\r\n■カードキー制御で安心のセキュリティ！\r\n■レディース、ドミトリーフロアにはウルトラファインバブルシャワーの「ミラブル」「ReFa」を設置\r\n■コラーゲンマシン使い放題！\r\n■ナノケアスチーマー（レディースフロアのみ）\r\n■広々カプセル(幅100cm×奥行210cm×高さ105cm)\r\n■ズボンプレッサー（各階設置）\r\n■各階にトイレ、シャワールーム完備\r\n■ロビーには60インチの大画面TV\r\n\r\n＜周辺観光地までのアクセス＞\r\n・ユニバーサル・スタジオ・ジャパンまで電車で約30分\r\n・あべのハルカスまで電車で約20分\r\n・梅田まで電車で約10分\r\n\r\n＜ライブ会場までのアクセス＞\r\n・京セラドームまで長堀鶴見緑地線「西大橋駅」より「ドーム前千代崎駅」まで電車と徒歩で約20分\r\n・大阪城ホールまで中央線「本町駅」より「森ノ宮駅」まで電車と徒歩で約25分\r\n・オリックス劇場まで徒歩で約3分"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 11400,
+              "total": 11400,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 179013,
+          "hotelName": "ＨＯＴＥＬ　ＴＨＥ　ＲＯＣＫ",
+          "hotelKanaName": "ほてる　ざ　ろっく",
+          "hotelSpecial": "☆コラーゲンマシン使い放題☆本町駅から徒歩約4分のお洒落なカプセルホテルです♪",
+          "hotelMinCharge": 2800,
+          "latitude": 34.6794009,
+          "longitude": 135.49516330000006,
+          "postalCode": "550-0012",
+          "address1": "大阪府",
+          "address2": "大阪市西区立売堀1-9-35",
+          "telephoneNo": "06-6539-1169",
+          "faxNo": "06-6539-1169",
+          "access": "地下鉄御堂筋線　本町駅２３番出口より徒歩にて約４分／地下鉄四ツ橋線　四ツ橋駅１－Ａ出口より徒歩にて約６分",
+          "parkingInformation": "無し",
+          "nearestStation": "本町",
+          "reviewCount": 197,
+          "reviewAverage": 4.08,
+          "userReview": "初めて利用しました。料金はリーズナブルな上、駅から歩いてすぐでわかりやすく、セブンイレブンが近くにあり立地もいいです。エントランスやラウンジは少し手狭な感じはしますが、カプセルや荷物を置くスペースはゆ…　2026-10-08 07:42:28投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=179013\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 9,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "pr1",
+              "roomName": "女性専用カプセルルーム",
+              "planId": 5009365,
+              "planName": "☆ポイント大還元★迷ったらこれ☆無料軽朝食付き＋ポイントUP☆トリプルステイプラン♪",
+              "pointRate": 8,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 1,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "プラン選びに迷ったらこれ！！\r\n☆手ぶらで宿泊\r\n☆無料モーニング付\r\n☆ポイントアップ！8％！\r\n\r\nHOTEL THE ROCKのニュースタンダードプランです♪\r\n\r\nコロナ対策もしっかりと行っておりますので、是非安心してご利用下さい☆\r\n\r\n◆コラーゲンマシン導入しました！なんとご宿泊の方は使い放題◆\r\n\r\n【アクセス】\r\n■地下鉄「本町駅」23番出口より徒歩4分！四ツ橋駅より徒歩10分\r\nオリックス劇場にも徒歩3分の好立地！\r\n繁華街からは少し離れているので、夜はとっても静かに滞在できます。\r\nビジネス街ですので出張利用でも便利！\r\n\r\n【アメニティ】\r\n● シャワールーム（シャンプー・コンディショナー・ボディソープ完備）\r\n● バスタオル・フェイスタオル・バスマット\r\n● コットン、綿棒\r\n● ヘアドライヤー「ReFa」\r\n● 館内着（上下）※有料\r\n● スリッパ　\r\n● 歯ブラシ　\r\n● カミソリ　※10月1日より有料\r\n● ボディタオル　※10月1日より有料\r\n● ヘアブラシ　※10月1日より有料\r\n\r\n\r\n【貸出品】\r\n● 充電器\r\n● 毛布\r\n● アイロン\r\n● ヘアアイロン\r\n● 荷物鍵\r\n● ヘアオイル数種類（様々なブランドのを取り揃えております）\r\n            \r\n【館内設備】\r\n■オープンしたての新しい館内！\r\n■カードキー制御で安心のセキュリティ！\r\n■レディース、ドミトリーフロアにはウルトラファインバブルシャワーの「ミラブル」「ReFa」を設置\r\n■コラーゲンマシン使い放題！\r\n■ナノケアスチーマー（レディースフロアのみ）\r\n■広々カプセル(幅100cm×奥行210cm×高さ105cm)\r\n■ズボンプレッサー（各階設置）\r\n■各階にトイレ、シャワールーム完備\r\n■ロビーには60インチの大画面TV\r\n\r\n＜周辺観光地までのアクセス＞\r\n・ユニバーサル・スタジオ・ジャパンまで電車で約30分\r\n・あべのハルカスまで電車で約20分\r\n・梅田まで電車で約10分\r\n\r\n＜ライブ会場までのアクセス＞\r\n・京セラドームまで長堀鶴見緑地線「西大橋駅」より「ドーム前千代崎駅」まで電車と徒歩で約20分\r\n・大阪城ホールまで中央線「本町駅」より「森ノ宮駅」まで電車と徒歩で約25分\r\n・オリックス劇場まで徒歩で約3分"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 11400,
+              "total": 11400,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 160946,
+          "hotelName": "ワイズキャビン大阪難波",
+          "hotelKanaName": "わいずきゃびんおおさかなんば　じょせいせんようきゃびんりにゅーあるおーぷん",
+          "hotelSpecial": "★セミセルフキャビン★セミセルフだから格安で快適にお過ごしいただけます！",
+          "hotelMinCharge": 3040,
+          "latitude": 34.66830412198879,
+          "longitude": 135.4996659176029,
+          "postalCode": "542-0071",
+          "address1": "大阪府",
+          "address2": "大阪市中央区道頓堀2丁目2番9号",
+          "telephoneNo": "06-6212-5578",
+          "faxNo": "06-6212-5571",
+          "access": "地下鉄御堂筋線なんば駅25番出口より徒歩約1分■電車で梅田へ約8分・新大阪へ約15分■関西国際空港へ南海電車で約40分",
+          "parkingInformation": "無し",
+          "nearestStation": "なんば",
+          "reviewCount": 484,
+          "reviewAverage": 4.13,
+          "userReview": "あと、ロッカーと更衣スペースも狭いの…　2026-10-05 21:25:37投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=160946\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "16:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "29:30"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 6,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "low-woman",
+              "roomName": "★女性フロア★【キャビン】WIFI＆24型液晶テレビ完備",
+              "planId": 5996724,
+              "planName": "【女早割7】★女性限定★素泊りプラン",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "【女早割7】★女性限定★素泊りプラン\r\n7日以上前からのご予約でお得に宿泊♪\r\n\r\nキャビンとは…\r\n収納式デスクや２４型テレビを完備したコンパクトに泊まるだけで十分な方にもってこいの客室です。\r\nまた、くつろぎの空間を演出したラウンジ・選べる枕・身だしなみグッズ・美容機器などご提供、快適な宿泊をお約束します。\r\n\r\nこちらのプランは食事なしのお手軽宿泊プランです。\r\n\r\n※男性キャビン専用階　女性専用階と別れておりますので、\r\nご予約の際、お間違いの内容お願い致します。\r\n\r\n*◆*——-——--—*◆*——-——--—*◆*　\r\n★難波駅２５番出口から徒歩１分の好立地\r\n*◆*———---——*◆*——---———*◆*　\r\n\r\nこれまでの「カプセルホテル」とは一味違う、モダンな作りで\r\n広々としたくつろぎ空間をご提供いたします。\r\n\r\n■　ワイズキャビン大阪難波　■\r\n・木目調を基本にした落ち着いたキャビン\r\n・男性・女性ともに大浴場を完備！(サウナ付き大浴場・小浴場は男女日によって異なりますのでご理解くださいますようお願いいたします)\r\n・館内はwifi環境完備\r\n\r\n■　ホテルへのアクセス　■\r\n・難波駅２５番出口から徒歩１分\r\n\r\n\r\n■　注意事項　■\r\n・12歳未満のお子様のご宿泊はご遠慮いただいております。\r\n・未成年の方のご宿泊には、事前に親権者同意書が必要となります。(当ホテルHPに掲載)\r\n・各キャビンでの飲食ならびに、喫煙は出来かねます\r\n・旅館業法により、キャビンを施錠することはできません。あらかじめご了承くださいませ。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 11400,
+              "total": 11400,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 172213,
+          "hotelName": "ＩＭＡＮＯ　ＯＳＡＫＡ　ＳＨＩＮＳＡＩＢＡＳＨＩ　ＨＯＳＴＥＬ",
+          "hotelKanaName": "いまの　おおさか　しんさいばし　ほすてる",
+          "hotelSpecial": "ドッグフレンドリールームあり！一部客室でワンちゃんとご宿泊可☆",
+          "hotelMinCharge": 3250,
+          "latitude": 34.67290317131059,
+          "longitude": 135.49499130000004,
+          "postalCode": "550-0014",
+          "address1": "大阪府",
+          "address2": "大阪市西区北堀江1-13-28",
+          "telephoneNo": "06-6534-0088",
+          "faxNo": "06-6534-0087",
+          "access": "四ツ橋駅　６番出口より徒歩にて約３分",
+          "parkingInformation": "無し",
+          "nearestStation": "四ツ橋",
+          "reviewCount": 180,
+          "reviewAverage": 4.28,
+          "userReview": "また、ドッグフレンドリーでお部屋もフロント横のカフェでもとても楽しく過ごせました。また泊まりたいです　2026-10-08 22:45:39投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=172213\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "PENSION",
+          "checkinTime": "16:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "23:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 28,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "fd",
+              "roomName": "【女性専用】ドミトリー◇ベッド4〜6台のうち1台利用",
+              "planId": 6293054,
+              "planName": "【モニタープラン】口コミ投稿でご優待料金☆（朝食付き）",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 1,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "期間限定！ご優待料金でご宿泊いただけるモニタープランをご用意いたしました・\r\n皆様の貴重なご意見を参考にさせていただき、今後より良いホステル作り\r\nに役立ててまいります。\r\nこちらのプランはチェックアウト後、口コミをご投稿いただける方限定のプランです♪\r\n\r\n【ご案内】\r\n・口コミは【楽天トラベル個人ページ⇒「過去の予約」一覧⇒\r\n【お客さまの声-投稿する】ボタンよりご投稿ください。\r\n・チェックアウト後、10日以内に口コミ投稿をお願いいたします。\r\n・口コミ投稿時は、必ず『お客さまの声』利用規約をご確認ください。\r\n\r\n◇朝食のご案内◇\r\n洋食スタイルの朝食プレート\r\n\r\n◇アクセス抜群の好立地◇\r\n\r\n・[大阪国際空港]から約50分\r\n　[大阪(伊丹)空港]よりリムジンバスで約30分\r\n　⇒[JRなんば]降車、ホステルまで徒歩約12分\r\n\r\n・[関西空港]から約80分\r\n　　[関西空港]よりリムジンバスで約50分\r\n　⇒[JRなんば]降車、ホステルまで徒歩約12分\r\n\r\n・[新大阪駅]から約25分\r\n　　[新大阪駅]より地下鉄御堂筋線で約15分\r\n　⇒[心斎橋駅]下車、ホステルまで徒歩約9分\r\n\r\n◇コモンスペースのご案内◇\r\n\r\n・ミニキッチン、コインランドリー、電子レンジ、電気ケトルを完備\r\n\r\n◇共用設備について◇\r\n\r\n・シャワールーム(シャンプー、コンディショナー、ボディーソープ完備）\r\n・洗面(ドライヤー完備）\r\n・温水洗浄便座付トイレ\r\n\r\n\r\n■宿泊税について■\r\n\r\n大阪府条例により1人1泊当たり宿泊税\r\n(税抜 5， 000円〜14，999円：200円、15，000円〜19，999円：400円、20，000円〜：500円）\r\nを別途頂戴いたします。予めご了承くださいませ。\r\n※食事等を含まない室料のみが課税対象です。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-17",
+              "rakutenCharge": 11780,
+              "total": 11780,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ]
+  ]
+}

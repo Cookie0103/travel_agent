@@ -1,0 +1,21 @@
+{
+  "milestone": "M1.9",
+  "runtime": "offline fixture, no paid calls",
+  "business_verification": "18 focused tests passed; full suite 329 passed / 2 live deselected; check 145 files and 3 contracts passed",
+  "evaluation": {
+    "cases": 30,
+    "passed": 1,
+    "rule_failed": 29,
+    "runtime_errors": 0,
+    "not_run": 0,
+    "repetitions": 1,
+    "private_report": ".cache/eval/20261003T075111Z-ee1faf36",
+    "limitation": "Search-only CLI fixture does not execute database business specs. This is not a model quality score."
+  },
+  "browser_evidence": "m18-workbench-2026-10-03.json",
+  "remaining": [
+    "DB business evaluation adapter and real model trials",
+    "actual browser disconnect and process recovery faults",
+    "full model statistics and external human verification"
+  ]
+}

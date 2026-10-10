@@ -1,0 +1,112 @@
+# ADR-014：归属隔离、有界分页的旅行与对话历史
+
+状态：接受，2026-10-08；依据用户 D2、批次 R1 与 design/02 §5–§7。本 ADR 先确定契约，T1.1 起实施；不新增依赖、表或运行时，不自动重放消息。
+
+## 背景与选项
+
+当前服务端已有 sessions、task_runs、run_events、正式行程及归属索引；浏览器只缓存一个 run/plan，无法列出旅行或恢复完整多轮。选择两个增量只读接口，复用 services → persistence 与现有事件/行程读回；不选 localStorage 全历史（两份真相、换设备丢失），不选重跑模型恢复（重复费用/写入）。
+
+## 契约
+
+- `GET /sessions?limit=20&cursor=…`：Bearer 当前用户；返回 `{items, next_cursor}`。items 含 `session_id, created_at, city, start_date, end_date, plan_id, current_version, last_activity_at`。无条件字段为 null；只有正式版本存在时返回 plan_id/current_version（否则 null），不将未确认草稿当已保存旅行。
+- 列表按 `(created_at DESC, session_id DESC)` 排序，以不可变创建键作 keyset 分页；后续对话/确认不改变分页位置。`last_activity_at` 是已有可核实时间的最大值：会话创建、轮次创建/结束、当前正式版本 saved_at；没有独立的手填更新时间，不冒称覆盖所有条件编辑。UI 显示为“最近对话/保存”，不是完整审计时间。
+- `GET /sessions/{id}/runs?limit=20&before=…`：先验证 session 归属；返回 `{items, next_before}`。按 `(created_at DESC, run_id DESC)` 取最近页，页内按正序返回供渲染；翻页读取更早轮次，前端按 run_id 合并、排序。
+- 每轮含现有 RunView 字段，加 `prompt` 与可选 `draft_id`；包括运行中、失败、取消轮次，不仅 completed。presentations 使用既有持久化事件读取，维持现有每轮最多 4 项的界限；draft_id 从本轮草稿 presentation 推导，不能取当前 session 的全局草稿。历史读回不调用工具或模型。
+- limit 范围 1–50；游标为版本化 base64url 的时间/UUID 边界，最大 256 字符；非法类型、时间、UUID 或越界 limit 返回 422。游标不是授权凭据，SQL 始终带当前 user_id 与 session_id 约束。相同时间的 UUID 决定稳定顺序，limit+1 判断下一页；空列表 items=[]、游标 null。
+- 未认证/过期身份返回 401；未知或其他用户的 session 统一 404，不泄漏存在性。数据库不可用沿用现有 503/unavailable，不能转为空列表。
+
+## 实现边界与兼容性
+
+- 查询归属、聚合和 keyset 位于 persistence；services 负责认证后用例/DTO；API 不越层访问数据库。保持已有 /sessions/{id}、/runs/{id}、SSE、正式行程读取接口原契约。
+- localStorage 只保留 token 与当前 session_id；身份有效性以服务端认证为准。未获接受回执的 pending message（client_message_id/text/mode）迁移到当前标签的 sessionStorage 临时 outbox，绑定身份与 session_id；401 后失效，不能转发到新身份；刷新仍保留原幂等键；服务端接受后清除，切旅行不错误重放。新标签从服务端历史恢复，不自动重试其他标签的 outbox。不存第二份历史轮次或正式行程列表。
+- 旧前端 + 新后端不受两个增量接口影响；新前端遇旧后端的新增接口 404 时显示“当前服务版本暂不支持旅行历史”，保留已有条件/对话入口，不冒充空历史、不新建身份来恢复。完整历史能力待前后端均更新。
+- **已知限制（REASONED）**：RunService 对实时 answer 有内存保留/落库固定说明的现有策略。历史接口只能返回已持久化内容，不能把 live_answers 当跨重启事实；T1.2 须实际核对实时回复/卡片恢复与来源数据保留边界，不把“列出轮次”冒称“原回复完整恢复”。本 ADR 不授权额外保存供应商原始数据或 SDK transcript。
+
+## 必须验证
+
+真实 PG：两用户隔离/未知 session、空 session/空历史、两页含相同时间键、不重复不漏旧轮次、页间新增消息、limit/游标错误、数据库失败。前端：多轮刷新/导航、确认后回复仍可见、历史前插去重、不重跑模型、(session,run) 迟到事件丢弃。轮次读取不能因草稿过期而删除整条历史或正式版本。
+
+## R2 补充：轮次业务结果（2026-10-08，T2.1 前确定）
+
+- `RunView` / `HistoricalRun` 增量可空字段 `business_result`，既有 runtime `status/error_code` 不变。结果是带 kind 的对象：`answer_only`；`draft_staged` 含 draft_id、plan_id、validation_status（complete/partial/conflict）；`stage_failed` 含应用 ErrorCode 与安全 reason（plan_exists/patch_invalid/repair_limit/other）；`confirmed` 含 plan_id、version。没有模型回复文本或供应商原始结果。
+- 可信来源是共用 execute_observed 的 stage_plan_change 返回结果，写入既有 tool_finished 事件的新可空 business_result 元数据；成功必须有合法草稿/计划UUID及服务端validation状态，失败取工具应用码和白名单原因。普通 get_saved_plan/present/read工具不能把读取已有计划冒充本轮确认；回复出现“已保存”不能产生 confirmed。SDK和离线沿同一事件转换，不写新运行时。
+- Run GET/history 从本轮最后一次 stage 事件推导（失败后成功以最后一次为准）；最后是 tool_started 而没有结果时返回null，草稿事务可能已提交，不能推断answer_only或借用前次结果。无 stage 才 answer_only，运行尚未产生业务结果时可为空。新事件有结构化结果；旧 stage失败只能给应用码/other；旧 stage成功没有新结构化元数据时为空，不能拿presentation猜其草稿（展示可指向同session另一run，且不保证对应最后stage）。不回填旧成功，不能冒称回答完成或确认。
+- 确认是独立用户API动作，确认事务不依赖模型run。读取业务结果时，只有原本轮草稿的 PlanDraftRow 在同user/session且confirmed_version非空，才投影 confirmed(plan_id,confirmed_version)；不是当前旅行另一个草稿/当前计划版本。不追加确认事件、不反复确认、不回放工具。草稿报告显示的是暂存时的validator结论；草稿有效期和实时引用仍由现有读回/确认再校验约束。
+- 复用 run_events JSONB 和 PlanDraftRow，不加表/列/迁移。事件私有且与run归属一致；event_metadata保持这组小元数据，公共trace仍不导出业务ID/回复。列表分页、最多4项presentation与供应商内容保留策略不变。
+- 前端状态从该字段显示“回复完成/草稿已暂存未保存/校验冲突不能确认/草稿未生成/已确认Vx”，runtime取消/失败仍可独立显示；不会从模型文字推断保存。新前端遇缺字段旧服务显示业务状态未提供，不用客户端猜结果；旧前端忽略增量字段。conflict确认继续由服务端拒绝。
+- 验证：阶段失败但runtime成功、conflict草稿、普通查询、失败→成功/成功→失败、无presentation但stage成功、最新stage中断没有结果必须未知、旧多stage/错序展示必须未知、确认后GET/history与重启一致、其他run/其他session引用不能确认；真实PG版本不增、无副作用/付费调用。工具元数据单测与实际服务/PG/浏览器验收分别记。
+
+## R4 补充：酒店分组与现有报价上限（2026-10-08，T4.1 前确定）
+
+- 复用现有平面offers/cards与hotel_id；不增加接口/字段/表，不扩大每次工具最多6条报价或供应商调用次数。search limit现表示不同酒店数（1–6），按首晚/本地目录上游顺序选择；每家最多展示2条不同rate_id，整体最多6条。先保每家第一条，再用剩余容量保第二条；重复rate_id不占名额。不够如实显示实际酒店/套餐数量，不宣称供应商所有套餐已覆盖。
+- 页面用hotel_id分组，一家一张卡，房型/套餐选择只改变本地所选offer；价格、来源、过期、预算与行动都绑定所选完整offer_id/evidence_id，不混用同酒店另套餐。新报价到达时旧offer不再存在就回退该组第一条，不自动hold/choose/confirm。名称不同同ID仍同一家，名称相同不同ID仍不同家。
+- 多晚依旧按同rate_id逐晚核对，保未知总价/现有调用与8K工具输出上限；整体报价超长仍以整条截断且告知数量不足。输出压缩不能偷偷按价格排序（D7），其余保持上游顺序。旧前端仍能读平面cards，新前端可分组旧cards；无存储迁移，回退不改报价事实。
+- 取舍：不把max报价扩成12或增加酒店调用来保全所有套餐；在现有6条上限内先覆盖不同酒店，再保有限第二套餐。本批最多酒店数不变，下一批8家/完整排序留附录A。验证同酒店两套餐、同名不同ID、重复rate、不够四家、多晚同计划与无额外请求、卡内切换价格/ID/过期/行动绑定。
+
+## R4 补充：三类酒店链接与回退兼容（2026-10-08，T4.2 前确定）
+
+- 原响应的hotelInformationUrl/planListUrl/reserveUrl分别映射hotel_info_url/plan_list_url/reservation_url，缺失null，不从booking_url逆猜。旧booking_url fallback保持原义与旧序列化；新增URL只用于展示，不改变价格/库存/资格/入住与调用量。
+- QuoteFields保持旧shape。HotelOffer与EvidenceRecord仅加内部可空display_details，Field(exclude=True)使嵌套Booking/HoldInput/SupplierHold与HTTP协议/payload默认dump均保持旧字段；fixture始终None，live hold继续硬拒绝。新HotelCard显式增加三个可空展示字段，新前端可读旧卡（介绍未知，旧报价链接单独标注），旧前端忽略新增卡片字段。既有RunView/history presentation是字典，可读增量字段，不重放。
+- evidence新增nullable JSONB display_details（0014），旧payload不变；add_evidence另存白名单细节，evidence_from_row将它放回内部record.display_details，不合并进value，不能覆盖ID/金额/入住条件。源仅既有provider解析，所有current/history/plan卡片读回共用。旧writer只更新payload时细节仍保留；downgrade保留列与数据，re-upgrade IF NOT EXISTS。旧记录无元数据时未知；无新表/接口/依赖。
+- 此处不提前实现T4.4字段；同展示sidecar可在该任务ADR补充后复用。完整排序/新浏览功能仍附录A。字段独立保留原值，但页面链接复用sourceHref只允许HTTPS；“查看酒店”绝不用预订页fallback，缺介绍就显示未知，套餐与预订入口各标原义。
+- 取舍：直接扩QuoteFields会使旧extra=forbid在Evidence、Booking和SupplierHold恢复/协议拒绝，即使新增null也有风险；逐处legacy投影容易漏边界，采用一处内部排除加sidecar。独立只读已检查方案，非运行验收。
+- 验证：三URL各异/缺失/不安全scheme；重启后酒店与正式行程卡链接保留；旧报价/Booking/SupplierHold由冻结原模型读取；fixture供应商等值/幂等不退化；live暂留仍拒绝；旧writer与down/up保留sidecar；Chrome实际点击介绍页（合成URL且不预订），旧历史缺新字段可读。
+
+
+## R4 补充：空/失败酒店展示事件（2026-10-08，T4.3 前确定）
+
+- 复用HotelPresentation现有cards/comparison及ToolResult wrapper；不加接口/字段/表/迁移。注册的search_hotel_offers/refresh_hotel_offer空或失败，以及component=hotel_comparison的present_travel_result失败，在共用execute_observed的tool_finished后发一条同run/context/call_id的空hotel_comparison presentation。成功search仍仅返offer，由显式present从可信ID补全比较。其他工具/行程失败不生成酒店面板。
+- 空展示cards=[]、comparable=false、lowest_offer_ids=[]，固定中文scope/reasons说明没有报价或可信应用错误类别；保原wrapper status/error.code，工具返回对象与模型可见data不变，既有tool_finished错误/业务状态不变。不能把原异常、任意suggestion/detail、请求参数或不属于会话的ID放进展示。预算冲突仅显示无法比较/追问，以哪个值为准；不调用compare/查询证据，不生成最低价，也不保存冲突标志。
+- 保持present参数1–6个可信报价ID与现有版本/归属/预算守卫，不让空presentation绕过校验。空search自动发面板即可，无需模型再调用空IDs的present。空离线比较如实完成为无结果，不把空列表归因为供应商不可用；其他要求数据的脚本仍失败，既有失败码保留。
+- UI在零报价时明确说明没有可展示报价及查询原因；与非空报价的无法判定最低价区分。已有hydrate/runCards最后同组件覆盖与归属检查恢复空面板，不借用此前成功酒店、不自动重跑。持久事件/GET/history/SSE复用，仍最多4项presentation，无额外查询/供应商调用或订单。
+- 取舍：不新造酒店读取接口、不依赖模型一定调用present、不对失败伪造成功/报价；沿用共用事件层做有限的展示投影，SDK/离线一致。验证成功/空/失败、8类码/意外异常、预算与版本/错ID守卫不变、无私有输入、非酒店工具无事件、真实PG持久恢复/重启/归属以及Chrome三态刷新。
+
+## R4 补充：地址、坐标与评价数（2026-10-08，T4.4 前确定）
+
+- 复用内部HotelDisplayDetails，增量可空address、latitude、longitude、review_count；HotelCard同样输出，QuoteFields/持久value/Booking/SupplierHold不变，无新查询。四字段另存0015可空hotel_metadata侧列，0014的display_details仍只三个URL，旧三URL严格reader回退可读；两列分别白名单校验，新读取合并到内部展示对象，不能越界覆盖报价/URL。旧记录四字段null；禁止用城市中心代替酒店坐标或由评分猜评价数。
+- 原hotelBasicInfo.address1/address2仅拼接存在的原字符串；空/全缺为null；latitude/longitude按现有请求datumType=1保WGS度数，不换算或生成距离；reviewCount保原非负整数，0是已知0而不是未知。地址与评价数在共用卡显示，坐标保留在卡数据，完整排序/距离功能仍附录A。
+- 一手依据：[乐天空室API20170426](https://webservice.rakuten.co.jp/documentation/vacant-hotel-search)，2026-10-08读取，输入datumType与输出latitude/longitude明确1为WGS度数；address1/address2/reviewCount均在现有large响应。此为文档验证，不等于真实响应实测。
+- 验证：原响应结构的MockTransport完整/部分/缺失/null/0、日期/数量/价格/上游序与调用不变；PG侧列重开/旧writer/正式V1与冻结旧报价协议保持。仓库现有rakuten_vacant_sample明确合成，真实响应fixture需另取得脱敏真实来源，不冒称其已满足该验收；是否单次现有额度查询已问用户，等待决定期间仅离线。
+- 方案更正：初选同0014 JSON新增键，独立P61指出回退T4.2/T4.3 extra=forbid拒绝，即使null也拒绝，纯解析已复现；采用独立侧列而非改宽旧reader（已提交代码不能事后改写）。0015 downgrade保数据，re-upgrade IF NOT EXISTS；旧writer不读写新列，新reader保留元数据。需冻结三URL模型、实际PG down/up与旧shape读回验证，不把新代码读旧数据等同双向兼容。
+
+## R4 补充：房型资格与稳定降级（2026-10-08，T4.5 前确定）
+
+- 用户房型偏好沿用hard_constraints文本，明确记录独立房间/宿舍或舱房接受度、禁烟、床型，不推用户性别/年龄资格。房型标签仅由既有room_type中明确词汇派生：宿舍、舱房、明确性别/学生/会员等限定；缺信息不可标适合。普通名称只声明没有识别到限制，不视为已证实没有限制。
+- 新HotelCard派生展示字段room_tags（列表）、qualification_unknown、room_preference_mismatch（布尔），不进入QuoteFields/持久value/两个展示侧列或Booking/SupplierHold。新Comparison可空room_preferences_question供已有报价读回时提示：缺独立/共享接受度、禁烟/床型时在对话问，用户明确无要求同样有效，绝不默认。共用search/refresh查询入口在调用供应商前拒绝未澄清偏好；固定离线样例先正常回答追问，不调用工具；SDK酒店推荐/比较前先澄清。旧卡缺字段可读，新前端不猜适合。
+- 只做D7资格降级：未知资格或独立房间要求与宿舍/舱房冲突的排后，其余和后置组内均保持原上游序。fixture与live在已有六报价/不同酒店截断前复用此规则；当前/正式卡从现有事实按当前条件重新派生标签，排序同规则，不改变报价金额/最低价数学口径或保存冲突标志。完整价位/评分/距离排序仍附录A，无新查询/迁移。
+- 来源限制：只能从已返回并保留的房型名称识别明确词，未读取套餐正文/未核实用户资格，不能冒称全面房型检查。标签说明这一边界；禁烟与床型偏好用于澄清保存，本批不做全房型自动匹配或新增搜索参数。
+- 守卫不放进hotel_requirements/HotelOffer模型或历史present/known_quotes：已有报价/正式版本仍可看，不使旧事实失效；预算冲突/条件版本的原守卫继续优先，房型缺偏好返回validation及固定hotel_room_preferences_missing原因/追问。价格最低仅价格事实，后置限制卡必须同时显示不符/资格未知，不据最低价宣称适合。
+- 验证：混合日/中文/英文宿舍舱房/明确限定、普通房/未知、两稳定组/无偏好/独立偏好/不同套餐保ID；截断前资格降级且无额外调用；实际PG/工具/刷新来源与旧报价shape保持；对话明确偏好不丢其他hard_constraints，否定/假设继续有限澄清。
+- 工具投影补充：新增资格字段令六套餐完整展示超过原8000字符保护，先以原离线流程实际复现。服务完整卡仍返回三URL/四元数据的显式null；仅工具展示投影省略未知可选展示键（0和已知值保留），UI默认值可读，schema将有默认值的卡字段标为可选。不提高长度上限、不删报价身份/金额/资格标签、不改持久事实。
+- 评测边界：冻结v1输入缺房型偏好，仍保留原数据/hash和历史基线身份；不向prepare/prepare_offer暗补默认值。机制测试显式合成种子补“无要求”，业务断言不改。R6当前规格评测需新版本、披露沿用已知输入，不能冒称旧集在新门槛下未变地通过。
+
+## P05 补充：当前 SDK 压缩能力核验（2026-10-09，实现前）
+
+- 仍沿 Claude Agent SDK/原 worker/Runtime/Guard 路径；不新增 runtime、付费端点、依赖或业务接口。仅独立真实 SDK 对照通过后，追加精确已验证 SDK0.2.163/CLI2.1.294；其他未知 pair 仍在 SDK 初始化前拒绝，关闭模式若收到 compact_boundary 仍立即中止。历史2.1.114证据保留。
+- 新 CLI reactive 压缩保护当前用户工具组，旧单组/极低阈值加预占上界 usage 的 fixture 无法形成可总结助手历史。测试专用子进程复用生产 worker.main，只在测试模块用 SDK 公共 query/receive_response 建立两轮合成已完成助手历史；不改生产单业务 prompt/variant 校验，不写回 SDK transcript。warmup 必须完整成功、无工具；失败抛出由原 runtime 关闭。
+- 业务工具成功之后才通过受控 usage 触发压缩，历史阶段不触发。两组完全相同人工 usage/窗口/阈值，仍原6请求与2048输出/字节预占限制；非full应恰好2次warmup+2业务请求，full另有实际摘要请求和boundary。原数据库快照/配对/续接/失败不保存断点断言全部保留。摘要替身在发出时读取原worker已flush的本轮私有事件，必须已成功load_skill；正常模式另断言成功工具事件早于compact事件，不假设摘要切片保留当前工具组。
+- 摘要识别改为实际最后user中的固定禁止工具reminder与summary结构，不假设只有一个messages；先识别摘要避免旧warmup文字误分类。合成内容/usage仅测试机制，不证明真实token或摘要质量。不扩大费用许可，也不更改冻结评测集。
+
+## B20：实时澄清的有界业务状态（2026-10-09，实施前）
+
+- 复用request_details.conversation_state保存任务枚举hotel_comparison/itinerary、任务起点TaskRun引用及单个当前追问字段。任务原文只从同owner/session的用户prompt读取；不保存助手自由摘要/供应商回复/SDK transcript。上下文独立于最近2轮回顾，已知[]儿童/1房/房型和晚数以当前request派生。住宿分项预算未知是可选，不再强制追问。
+- 新state工具update_conversation_state接受expected_revision、可选非空goals、可选awaiting_field、cancel。目标从当前用户要求记录；后续澄清保留，不由模型宣称完成清除。仅当前owned running run可更新；同会话单active run及行锁防迟到，元数据不增request.revision、不使报价/草稿过期。取消清空，新旅行没有状态；明确新任务替换旧目标。
+- 服务端只允许追问当前缺失字段（或实际预算冲突），已知字段拒绝；短答解释依赖结构化当前问题，条件更新仍遵守来源/explicit_fields。actual hotel presentation/有效空查询及实际itinerary presentation才完成对应目标；上游错误不冒充完成。
+- SDK原生Stop hook仅一次纠正有条件齐全的未完成目标；继续由SDK运行，在原HTTP/工具/时限/日预算中计数。原生stop_hook_active防循环，实际错误或费用/取消可停；不用应用重试模型或另起runtime。单次纠正仍不完成则明确未完成，保留任务。
+- 旧conditions/公开RequestView/旧writer不变，无迁移；元数据仅服务端读，旧writer更新业务revision时仍重新计算缺项/时效，不将旧任务引用当当前条件或来源指令。隐私墓碑后不读取早于偏好变更的原任务文本。
+- 依据：锁定SDK0.2.163 types.py提供HookMatcher/StopHookInput/decision=block；[官方SDK hooks](https://code.claude.com/docs/en/agent-sdk/hooks)。必须实际SDK离线验证而非只凭文档宣称支持。
+
+- Stop检查尊重awaiting_field：存在合法当前追问时停止等用户；天气unknown/unavailable不应使已授权酒店/行程全部永久停止。硬工具/额度失败仍停止；未来按独立待办隔离错误。本批不做无界修复。墓碑过滤在更新和读取共用，重新授权同类任务引用新prompt；旧删除回执不允许覆盖新非空删除语义。
+
+- 工具说明要求无主题宽搜使用city与空query，已有足够证据即进入规划；酒店查询成功优先独立展示，不等全部行程步骤。实际工具额度耗尽仍保留未完成任务，禁止以提高上限掩盖过度搜索。
+
+
+## P74：业务Stop终止与酒店失败展示（2026-10-09，实施前）
+
+- 沿用SDK原生Stop，不另建循环；真实终止 `stop_hook_prevented` 仅在本地已产生可信stop_failure且SDK无错误/subtype=success、无API错误、输出停止原因为正常结束时，映射现有blocked/conversation_incomplete或unavailable/conversation_state_unavailable。不当成功、不保存SDK成功指针；其他未知/异常终止、429、max_turns、取消优先按原分类，不能由hook掩盖供应商故障。
+- empty_hotel_payload只新增对固定可信 `hotel_search_location_required` + validation 的中文展示分支，要求在对话提供具体住宿城市/地点；不透传任意suggestion/外部异常/用户文本。保留原错误code与空卡片/无最低价语义，GET/history/SSE同一投影。
+- 测试必须覆盖真实SDK/CLI连续两次正常回答触发Stop终止（而非替身completed），未知停止无可信hook标志、hook状态不可读、真实API错误不被覆盖，及安全展示/PG恢复/预算与来源守卫。
+
+## P77：本机CLI更新后的精确能力核验（2026-10-09）
+
+本轮实际CLI为2.1.295，旧压缩关闭门禁只核验过2.1.114/2.1.294。先复用公共SDK独立离线机制实验：SDK0.2.163/CLI2.1.295，同一历史与窗口下默认5请求/1compact、关闭4请求/0compact，两组success且Guard无失败。只追加该精确pair，未知CLI/SDK及关闭时意外compact仍拒绝；不改变SDK路线、生产流程或调用上限。官方[DISABLE_AUTO_COMPACT环境变量](https://code.claude.com/docs/en/env-vars)是能力入口；是否真实有效以当前版本实测为准。机制对照不是业务工具后时序、摘要质量证明，原SDK/PG集成断言完整保留。

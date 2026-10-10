@@ -1,0 +1,721 @@
+{
+ "pagingInfo": {
+  "recordCount": 187,
+  "pageCount": 19,
+  "page": 1,
+  "first": 1,
+  "last": 10
+ },
+ "hotels": [
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 134763,
+     "hotelName": "ダイワロイネットホテル那覇おもろまち",
+     "hotelKanaName": "だいわろいねっとほてるなはおもろまち",
+     "hotelSpecial": "全室10階以上で那覇市内を見渡す眺望が魅力！最上階18階での朝食がおすすめ！大型商業施設や免税店が徒歩約3分～5分。",
+     "hotelMinCharge": 3712,
+     "latitude": 26.22326054,
+     "longitude": 127.6953298,
+     "postalCode": "900-0006",
+     "address1": "沖縄県",
+     "address2": "那覇市おもろまち1-1-12",
+     "telephoneNo": "098-862-4555",
+     "faxNo": "098-862-4556",
+     "access": "那覇空港にて「ゆいレール」で約20分「おもろまち駅」下車、徒歩約5分。空港より車で約20分～25分。",
+     "parkingInformation": "ホテル1階専用駐車場1,100円税込(1台／1泊)先着順。＊近隣提携駐車場有り1,100円税込。",
+     "nearestStation": null,
+     "reviewCount": 1732,
+     "reviewAverage": 4.44,
+     "userReview": "車椅子用の部屋を予約しました。シャワー室はバリアフリーで大変使いやすかったです。あと、浴槽に移乗ボードが有れば良かったです。　2026-10-06 16:21:37投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=134763\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "HOTEL",
+     "checkinTime": "14:00",
+     "checkoutTime": "11:00",
+     "lastCheckinTime": "29:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 16,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "omsn1",
+       "roomName": "◆お部屋タイプはホテルにおまかせ禁煙【1名】",
+       "planId": 6460247,
+       "planName": "【素泊まり】【グループ新規開業記念】期間限定プラン ",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 0,
+       "planContents": "本プランはダイワロイネットホテルズの新規開業を記念したチェーン共通プランです。\r\nダイワロイネットホテルズ78店舗目、山陰エリア初出店となる「ダイワロイネットホテル松江駅前」の2026年8月6日開業を記念し、期間限定の特別プランをご用意いたしました。\r\n--------------------\r\n【ダイワロイネットホテル松江駅前のご紹介】\r\nJR「松江駅」北口より徒歩約3分。サウナ付き大浴場やフィットネスルーム、会議室を備え、全室禁煙で多彩な客室タイプをご用意しております。※館内に喫煙所がございます。\r\n--------------------\r\n\r\n■当ホテルのご案内（ダイワロイネットホテル那覇おもろまち）\r\n沖縄の新都心「那覇おもろまち」に位置し、ビジネスや観光に便利なビジネスリゾートスタイルのホテルです。\r\n\r\n★【プラン内容】★\r\n・素泊まり\r\n※朝食をご希望の場合は別プランかフロントでもお買い求めいただけます。\r\n\r\n【連泊時の清掃について】\r\nSDGsの取り組みとして、滞在中お部屋の清掃はございません。\r\nお部屋の清掃をご希望の際は当日10時までに 清掃希望のマグネット（青色）を廊下側のドアに貼ってください。　\r\nご連絡がない場合は、お部屋には入室いたしません。\r\n※清掃のご希望をされない場合でも3日に1回はお部屋を清掃いたします。 \r\n\r\n【お子様添い寝のご案内】\r\n小学生以下（0〜12歳）までのお子様は、ベッド1台につき1名様まで、\r\nかつ大人1名様につきお子さま1名様まで、添い寝が無料です。\r\n（寝具・アメニティ無し）\r\n添い寝ではなくベッドが必要な際は人数設定の際に「大人」でご設定ください。\r\n　例）ダブルルーム　→　大人2名（お子様1名まで添い寝可能）\r\n　　　ツインルーム　→　大人2名（お子様2名まで添い寝可能）\r\n　　　ツイン：大人1名小学生3名　→　大人2名扱い（お子様2名まで添い寝可能）\r\n\r\n【寝具（ベッド）について】\r\n寝具の追加はできかねますので予めご了承ください。\r\n\r\n\r\n【注意事項に関しまして】\r\n本プランは個人利用のお客様を対象とした「インターネット販売限定」のプランです。\r\n旅行代理店様およびランドオペレーター様など、再販・転売を目的とした予約はお受けできません。\r\n予めご了承下さいませ。\r\n"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 13500,
+       "total": 13500,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 19934,
+     "hotelName": "リッチモンドホテル那覇久茂地（２０２６年７月１３日リニューアル）",
+     "hotelKanaName": "りっちもんどほてるなはくもじ（２０２６ねん７がつ１３にちりにゅーある）",
+     "hotelSpecial": "26年7月13日全館禁煙でリニューアル。美栄橋駅3分、国際通り徒歩圏内。1階コンビニ併設。ラウンジ無料アイス有",
+     "hotelMinCharge": 4675,
+     "latitude": 26.22038568,
+     "longitude": 127.682692,
+     "postalCode": "900-0015",
+     "address1": "沖縄県",
+     "address2": "那覇市久茂地2-23-12",
+     "telephoneNo": "098-869-0077",
+     "faxNo": "098-862-0088",
+     "access": "那覇空港より沖縄都市モノレール（ゆいレール）１４分、美栄橋(みえばし)駅下車徒歩約3分　国道５８号線前島交差点沿い",
+     "parkingInformation": "立体駐車場(車高2ｍ)1泊 1台1,000円 ※先着順でご利用いただけます(予約制ではございません)",
+     "nearestStation": "那覇空港",
+     "reviewCount": 4183,
+     "reviewAverage": 4.35,
+     "userReview": "美栄橋駅、国際通りまで徒歩圏内でローケーション抜群です。部屋も清潔で必要なものは揃っています。大通りに面している立地なのでタクシーも拾いやすくビジネス、観光、家族連れ宿泊、どのシーンでも利用しやすいで…　2026-10-04 07:52:23投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=19934\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "HOTEL",
+     "checkinTime": "14:00",
+     "checkoutTime": "11:00",
+     "lastCheckinTime": "29:30"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 4,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "rmsn",
+       "roomName": "◇シングル  禁煙  ベッド幅140cm",
+       "planId": 4361139,
+       "planName": "【素泊まり】シンプルステイ",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 0,
+       "planContents": "■【朝食なし】シンプルな宿泊のみのプランです■\r\n**このプランには朝食は含まれておりません**\r\nチェックイン時またはご滞在中に朝食券をお買い求めいただけます。\r\n\r\n■お子様のご宿泊について\r\n小学生以下のお子様は、添寝であればベッド1台につき1名無料でご宿泊いただけます。\r\n定員オーバーの場合には、部屋タイプのご変更や追加のご予約をお願いする場合もございます。\r\n添い寝ご利用の場合、追加のベットはございません。\r\n\r\n■ラウンジ\r\n営業時間：午後1時から8時\r\nご宿泊中のお客さまはソフトドリンクやブルーシールアイス無料（アルコールのご提供はございません）\r\n※ご宿泊以外のお客様は700円（税込）でご利用いただけます。\r\n\r\n■館内設備\r\n自動販売機（ソフトドリンク）\r\nコインランドリー(柔軟剤入り洗濯洗剤自動投入)\r\n製氷機　電子レンジ\r\n\r\n■アクセス\r\nゆいレール「美栄橋駅」より徒歩3分\r\n\r\n■駐車場\r\n併設駐車場：1泊1台1000円(税込) ■\r\n駐車場は先着順でご利用いただけます。ご予約制ではございません。\r\n(チェックイン時に駐車場をご利用いただいたお客様は、チェックアウトまで駐車スペースを確保いたします）\r\nチェックイン時に満車の際は、ホテル近くの一般コインパーキングをご利用いただくようお願いすることがございます。予めご了承下さいませ。\r\n\r\n■支払方法\r\nホテル現地精算 / 事前クレジットカード決済\r\n※ホテル現地精算の場合は、現金・クレジットカード・Edy・交通系ICカード・各種電子マネー・コード払いでお支払いいただけます。\r\n\r\n【ご予約のキャンセルについて】\r\nご予約当日18時までにご連絡いただいた場合：キャンセル料無料\r\n（当日） ： 18時から50％　22時から100％\r\n（ご連絡なく不泊の場合） ： 宿泊料金の100％\r\n\r\n【団体のお客様のキャンセルポリシー】\r\n1日10室以上予約の場合のキャンセルポリシーは以下でございます。\r\n10室以上・・7日前〜20％、3日前〜50％、前日〜80％、当日〜不泊100％\r\n20室以上・・30日前〜20％、14日前〜50％、7日前〜50％、3日前〜80％、前日〜当日・不泊100％\r\n\r\n"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 12600,
+       "total": 12600,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 67292,
+     "hotelName": "アパホテル〈那覇松山〉",
+     "hotelKanaName": "あぱほてる　なはまつやま",
+     "hotelSpecial": "【大浴場宿泊者無料入泉＆駐車場完備＆Wi-Fi接続可】那覇空港車最短10分 国際通り徒歩9分 未就学児添い寝無料",
+     "hotelMinCharge": 3690,
+     "latitude": 26.21824976,
+     "longitude": 127.6804284,
+     "postalCode": "900-0032",
+     "address1": "沖縄県",
+     "address2": "那覇市松山1-4-16",
+     "telephoneNo": "0570-004-711",
+     "faxNo": "098-868-9411",
+     "access": "那覇空港から車で最短10分、ゆいレール（モノレール）「県庁前」または「美栄橋」駅から徒歩約7分 新都心へは車で10分",
+     "parkingInformation": "立体駐車場★先着順46台1泊1,500円 【車高1.8m制限有】※新規入庫は23時迄",
+     "nearestStation": null,
+     "reviewCount": 3315,
+     "reviewAverage": 3.97,
+     "userReview": "先月も宿泊しましたが、今回はフロントの対応等は前回よりも非常に良かったです。　2026-10-08 08:58:07投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=67292\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "HOTEL",
+     "checkinTime": "15:00",
+     "checkoutTime": "10:00",
+     "lastCheckinTime": "29:30"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 70,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "s3k",
+       "roomName": "□ 禁煙室 □ シングル □",
+       "planId": 5123394,
+       "planName": "【素泊まり・事前決済限定】非接触1秒チェックイン体験プラン",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "2",
+       "salesformFlag": 0,
+       "planContents": "このプランは素泊まりプランです。\r\n予約時に事前クレジットカード決済が必要です。\r\n\r\n並ばず待たずに1秒チェックイン！\r\n1秒チェックインとは・・・\r\nホテルに到着する前にアパホテル公式アプリ上でチェックインを行い、\r\nホテル到着後に1秒チェックイン機を使って並ばず待たずにチェックイン（ルームキーの発行等）をすることです。\r\n\r\n▼予約取り込みの方法\r\nアパホテル公式アプリにログインしトップ画面下部の「予約確認」→「アパ直以外の予約検索　取り込み」から進み、必要事項の選択と入力をしてください。\r\nご宿泊者ご本人様以外のご利用はできません。\r\n\r\n▼アプリ上でのチェックイン方法\r\nご宿泊当日、チェックイン開始時刻の1時間前からアパホテル公式アプリトップ画面に表示される「1秒チェックイン」よりお進みください。\r\nお部屋への入室可能時刻はプランに設定されているチェックイン時間をご確認ください。\r\n\r\n\r\n\r\n"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 7830,
+       "total": 7830,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 104526,
+     "hotelName": "ダイワロイネットホテル沖縄県庁前",
+     "hotelKanaName": "だいわろいねっとほてるおきなわけんちょうまえ",
+     "hotelSpecial": "本館はビジネスルームが中心でユニットバス。別館はツインルーム中心で浴室は快適にバス・トイレ別、1階にコンビニ有で便利。",
+     "hotelMinCharge": 5106,
+     "latitude": 26.21322734042152,
+     "longitude": 127.67668355767204,
+     "postalCode": "900-0021",
+     "address1": "沖縄県",
+     "address2": "那覇市泉崎1-11-2",
+     "telephoneNo": "098-860-1855",
+     "faxNo": "098-860-1856",
+     "access": "「那覇空港」よりゆいレールで（約15分）「旭橋駅」下車、 徒歩約3分。那覇空港より車で約15分。国際通りへは徒歩約5分",
+     "parkingInformation": "立体駐車場36台（内ハイルーフ8台）／1,500円税込（1泊：14時〜翌11時）／先着順（予約不可）",
+     "nearestStation": null,
+     "reviewCount": 1599,
+     "reviewAverage": 4.26,
+     "userReview": "「ルームキーは機械で発行します…　2026-10-08 11:30:37投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=104526\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "HOTEL",
+     "checkinTime": "14:00",
+     "checkoutTime": "11:00",
+     "lastCheckinTime": "29:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 20,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "sds1",
+       "roomName": "【本館】スタンダードダブル【1名】喫煙■154cm幅ベッド■",
+       "planId": 6460270,
+       "planName": "【グループ新規開業記念】期間限定プラン ~素泊り~",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 0,
+       "planContents": "本プランはダイワロイネットホテルズの新規開業を記念したチェーン共通プランです。\r\nダイワロイネットホテルズ78店舗目、山陰エリア初出店となる「ダイワロイネットホテル松江駅前」の2026年8月6日開業を記念し、期間限定の特別プランをご用意いたしました。\r\n--------------------\r\n【ダイワロイネットホテル松江駅前のご紹介】\r\nJR「松江駅」北口より徒歩約3分。サウナ付き大浴場やフィットネスルーム、会議室を備え、全室禁煙で多彩な客室タイプをご用意しております。※館内に喫煙所がございます。\r\n--------------------\r\n\r\n■当ホテルのご案内（ダイワロイネットホテル沖縄県庁前）\r\n\r\n人気観光地「那覇国際通り」まで徒歩約5分\r\n「那覇バスターミナル」まで徒歩約5分\r\n\r\nフランスベッド社製マットレスで快適な睡眠をご提供\r\n\r\nさらにアネックス棟では\r\n・全部屋セミセパレートタイプのバスルーム\r\n・全部屋セキュリティーボックス設置\r\n・1階にコンビニエンスストア「セブン-イレブン」がございます\r\n\r\nビジネス・観光・リラックスの時間に快適なワンランク上のおもてなしをご提供いたします\r\n\r\n＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝\r\n\r\n※駐車場ご利用の場合は本館裏口の立体駐車場までお越しくださいませ\r\n\r\n＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝\r\n\r\n〜アネックス棟のお部屋をご予約の方へのご注意〜\r\n※チェックインは本館にて行います\r\n※朝食会場は本館1階にございます\r\n\r\n＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝＝\r\n\r\n小学生以下（12歳未満）のお子様はベッド1台に付き\r\n1名様まで添寝(無料)可能\r\nお子様にはキッズ専用アメニティーをご用意しております\r\n"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 12350,
+       "total": 12350,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 130025,
+     "hotelName": "西鉄リゾートイン那覇",
+     "hotelKanaName": "にしてつりぞーといんなは",
+     "hotelSpecial": "★2025年9月リフレッシュOPEN★客室の壁紙・カーペット・ソファを新調、スマートTV導入と装い新たに快適ステイ♪",
+     "hotelMinCharge": 5700,
+     "latitude": 26.21553889,
+     "longitude": 127.6775426,
+     "postalCode": "900-0033",
+     "address1": "沖縄県",
+     "address2": "那覇市久米2-3-13",
+     "telephoneNo": "098-869-5454",
+     "faxNo": "098-869-5455",
+     "access": "那覇空港からゆいレールで6駅目「県庁前駅」から徒歩5分！国道58号沿い、国際通りへ徒歩5分！繁華街「松山」まで徒歩5分",
+     "parkingInformation": "駐車場は先着順（予約不可）1泊1500円",
+     "nearestStation": null,
+     "reviewCount": 1366,
+     "reviewAverage": 4.16,
+     "userReview": "部屋は掃除が行き届いて、あさごはんも美味しかったです。　2026-10-08 20:41:17投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=130025\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "HOTEL",
+     "checkinTime": "15:00",
+     "checkoutTime": "11:00",
+     "lastCheckinTime": "24:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 70,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "sgnsn1",
+       "roomName": "【禁煙】コンフォートシングル",
+       "planId": 6631154,
+       "planName": "【開業記念】本町駅直結「ソラリア西鉄ホテル大阪本町」2026年12月18日OPEN♪／素泊り",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 0,
+       "planContents": "〇●〇●〇●〇●〇●〇●〇●〇●〇●〇●\r\n2026年12月18日、西鉄ホテルグループの新たな拠点として「ソラリア西鉄ホテル大阪本町」が開業いたします。\r\n大阪を代表するビジネス街・本町に位置し、主要観光地へのアクセスも良好です。\r\nソラリアブランドならではの上質な滞在空間で、お客様に心地よいひとときを提供いたします。\r\nホテル情報はコチラ：https://travel.rakuten.co.jp/HOTEL/199025/\r\n〇●〇●〇●〇●〇●〇●〇●〇●〇●〇●\r\n\r\n■プラン内容\r\n開業を記念し、西鉄ホテルグループでは期間限定の特別プランをご用意いたしました。\r\nぜひこの機会に、西鉄ホテルグループでのご滞在をお楽しみください。\r\n\r\n■那覇に泊まるなら西鉄リゾートイン那覇！\r\n那覇最大の繁華街国際通りへ徒歩約5分！\r\nオフィス街の中心地でもあり、観光やビジネスと幅広い用途でご宿泊いただけます。\r\n客室は大きめの窓で開放感のある空間を演出。\r\n観光やビジネスの拠点に、南国の風情を存分にお楽しみください。\r\n\r\n\r\n■アクセス\r\n・公共交通機関でお越しの方\r\nゆいレール『県庁前』駅から徒歩３分\r\n那覇バスターミナルから徒歩８分\r\n\r\n・お車でお越しの方\r\n那覇空港から約１０分\r\n\r\n\r\n■駐車場のご案内\r\n先着順で駐車場をご用意しております。\r\n予約はできかねますのでご了承ください。\r\n料金：1泊1，500円（税込）\r\n\r\n\r\n■連泊時の清掃についてのご案内\r\n・ご連泊中の清掃は[2日に1回]行います。\r\n・清掃の無い日は、お部屋への入室を控えさせて頂きます。\r\n・客室ドア前に新しいタオル類のみご用意いたします。\r\n・毎日の清掃を希望されるお客様は、客室備え付けの清掃指示マグネットをご利用ください。\r\n\r\n【アメニティー持参のご協力のお願い】\r\n・西鉄ホテルグループでは、プラスチック使用量の削減に向けた取り組みとして、\r\nアメニティグッズの持参を推奨しております。\r\nお客様がお気に入りの「マイアメニティ」のご持参にご協力をお願いいたします。"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 12350,
+       "total": 12350,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 40768,
+     "hotelName": "アルモントホテル那覇おもろまち",
+     "hotelKanaName": "アルモントホテルナハオモロマチ",
+     "hotelSpecial": "沖縄郷土料理を中心とした、和洋ビュッフェが大好評。最上階の準天然光明石温泉「なかゆくいの湯」は宿泊者限定無料。",
+     "hotelMinCharge": 6000,
+     "latitude": 26.22510481,
+     "longitude": 127.6964574,
+     "postalCode": "900-0006",
+     "address1": "沖縄県",
+     "address2": "那覇市おもろまち4-3-8",
+     "telephoneNo": "098-860-6611",
+     "faxNo": "098-860-6711",
+     "access": "ゆいレール「おもろまち駅」下車徒歩4分／Tギャラリア沖縄まで徒歩4分／サンエー那覇メインプレイス向い",
+     "parkingInformation": "タイムズ24がございます。",
+     "nearestStation": "那覇空港",
+     "reviewCount": 1963,
+     "reviewAverage": 4.22,
+     "userReview": "沖縄旅3泊目は、アルモントホテル那覇おもろまちへ。ここは、立地と朝食に全振りしたい人向けのホテル。モノレールの駅が近く、レンタカー返却後や空港への移動にも便利です。そして、宿泊するなら朝食付きがおすす…　2026-10-04 23:27:20投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=40768\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "HOTEL",
+     "checkinTime": "14:00",
+     "checkoutTime": "11:00",
+     "lastCheckinTime": "24:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 8,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "sgn",
+       "roomName": "☆禁煙☆シングル",
+       "planId": 5456703,
+       "planName": "シンプルステイプラン +朝食なし+",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "2",
+       "salesformFlag": 0,
+       "planContents": "◆◇◆お部屋のご指定について\r\n客室の階数、眺望等のご指定はリクエストとして承りますが、確約は出来かねます。\r\n\r\n◆◇◆　浴場：13階「なかゆくいの湯」　\r\n営業時間：16：00〜翌1：00・6：00〜10：00\r\n【大浴場について】\r\n・ご利用の際は、お部屋からタオルをお持ちください。\r\n・入れ墨・タトゥーがある方、又はシール等で隠しての入浴はご遠慮頂いております。\r\n\r\n◆◇◆提携駐車場について\r\n1階に提携のタイムズ24コインパーキングがございます。\r\nお車でお越しのお客様は、そちらをご利用ください。\r\n1泊：￥1，500　14：00〜翌日13：00まで\r\n【ご精算方法】\r\n駐車後、出庫のご予定がなければ、当日中にフロントにて前払いでお支払いをお願いいたします。　\r\n出庫後の精算は対応できません。\r\n※連泊の場合、お支払いは日ごとにお願いしております。\r\n満車時は、近隣のコインパーキングをご紹介致します。\r\n提携駐車場ではございません。現地にてご精算をお願い致します。"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 14000,
+       "total": 14000,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 27883,
+     "hotelName": "ホテルブライオン那覇",
+     "hotelKanaName": "ぶらいおん　なは",
+     "hotelSpecial": "ゆいレール美栄橋駅から徒歩１０分●国際通り徒歩８分●有線＆無線LAN(Wi-Fi)接続無料",
+     "hotelMinCharge": 4550,
+     "latitude": 26.21986348,
+     "longitude": 127.6802728,
+     "postalCode": "900-0032",
+     "address1": "沖縄県",
+     "address2": "那覇市松山2-15-13",
+     "telephoneNo": "098-868-1600",
+     "faxNo": "098-868-1232",
+     "access": "沖縄都市モノレール『美栄橋駅』より徒歩１０分／那覇空港よりお車で１０分／国際通りまで徒歩１０分／泊ふ頭まで徒歩８分",
+     "parkingInformation": "有り　普通車20台のみ先着順　1,500円　予約・キープ不可　",
+     "nearestStation": "那覇空港",
+     "reviewCount": 1807,
+     "reviewAverage": 4.14,
+     "userReview": "朝食がおにぎりなので、サクッと行けて最高です。漫画も読み放題ですしいつも、利用してます。　2026-10-05 12:31:03投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=27883\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "HOTEL",
+     "checkinTime": "15:00",
+     "checkoutTime": "11:00",
+     "lastCheckinTime": "24:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 14,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "pna",
+       "roomName": "☆スタンダードシングル【禁煙】約１３平米",
+       "planId": 5853103,
+       "planName": "【ポイント10倍】国際通り徒歩圏内★泊まってお得にポイントGET♪【素泊り】",
+       "pointRate": 10,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 0,
+       "planContents": "━━━━━━━━━━━━━━━━━━━━━━━━━━\r\n貯めて・使って嬉しい『楽天ポイント10倍付与』プランです。\r\n通常1％のポイントが当プランではプラス9％の10％に！\r\n\r\nショッピングや旅行、ライフサービス、エンタメサービスなど、様々なシーンで使えます。\r\nご旅行でも賢く、楽しく満喫してポイントゲット♪\r\n━━━━━━━━━━━━━━━━━━━━━━━━━━\r\n\r\n那覇空港からは車で約15分、美栄橋駅から徒歩約10分、\r\n那覇市の中心に立地し、空港や国際通りからも近く様々な場所へのアクセスにも便利です。\r\n\r\n◆客室のご案内\r\n・小学生まで添い寝無料\r\n・無料Wi-Fi完備（有線LANも利用できます）\r\n・ハブラシ・カミソリ・クシについては、フロントにてお客様に必要なアメニティを選んでもらう方式になっております。\r\n\r\n◆館内設備・サービス\r\n・2階にランドリー室を設備\r\n 洗濯機2台(400円・洗剤自動投入)\r\n ガス乾燥機2台(10分100円)\r\n・2階に自動販売機（ソフトドリンク・ビール）、製氷機、電子レンジ設置有り\r\n・1Fにコミックコーナー（無料レンタル）を設置\r\n ※お部屋でのご利用はフロントまでお申し出ください。\r\n\r\n◆駐車場 1泊1500円\r\n・コインパーキング16台収容の駐車場を完備\r\n※予約制ではございません\r\n※満車の場合は近隣の有料駐車場をご利用ください\r\n\r\n────────────────────\r\n▼アクセス▼\r\n那覇空港→ホテル（車約15分）\r\n那覇空港→美栄橋駅（モノレール15分）\r\n美栄橋駅→ホテル（徒歩約10分）\r\n路線バス「若松入口」停留所→ホテル(徒歩約3分)\r\n泊港→ホテル（徒歩約10分）\r\n\r\n▼観光案内▼\r\n那覇バスターミナル（徒歩約12分）\r\n国際通り（徒歩約15分）\r\n第一牧志公設市場（徒歩約15分）\r\n波の上ビーチ（徒歩約15分）\r\n美らSUNビーチ（車約20分）\r\n首里城（車約20分）\r\n\r\n▼周辺コンビニ▼\r\nファミリーマート（徒歩約3分）\r\nローソン・セブンイレブン（徒歩約3分）\r\n────────────────────"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 9240,
+       "total": 9240,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 16693,
+     "hotelName": "ＧＲＧホテル那覇",
+     "hotelKanaName": "じーあーるじー　ほてる　なは",
+     "hotelSpecial": "国際通りや繁華街を中心とした絶好のロケーション！★全室Wi-Fi完備＜接続無料！＞朝食バイキングあり！",
+     "hotelMinCharge": 3938,
+     "latitude": 26.21957183,
+     "longitude": 127.6800367,
+     "postalCode": "900-0032",
+     "address1": "沖縄県",
+     "address2": "那覇市松山2-16-10",
+     "telephoneNo": "098-868-6100",
+     "faxNo": "098-868-6122",
+     "access": "那覇空港から車で15分／泊ふ頭より徒歩８分/美栄橋駅（モノレール）より徒歩10分／国際通りまで徒歩15分",
+     "parkingInformation": "有り　５０台　１泊１台1,500円先着順 （普通車）",
+     "nearestStation": "那覇空港",
+     "reviewCount": 1778,
+     "reviewAverage": 4.13,
+     "userReview": "快適に過ごせました。　2026-10-07 20:10:03投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=16693\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "HOTEL",
+     "checkinTime": "15:00",
+     "checkoutTime": "11:00",
+     "lastCheckinTime": "24:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 8,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "nsg",
+       "roomName": "シングルルーム【禁煙】",
+       "planId": 5999788,
+       "planName": "【期間限定】沖縄限定オリオンプレミアムビール付プラン（朝食付）",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 1,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 0,
+       "planContents": "━−━−━−━−━−━−━−━\r\n沖縄限定のオリオン「ザ・プレミアムビール」を\r\n期間限定でお付けいたします。\r\n━−━−━−━−━−━−━−━\r\n\r\n■■特典■■\r\n沖縄限定オリオンプレミアムビールを泊数分プレゼント♪\r\n\r\n国際通りや繁華街を中心とした\r\n便利なロケーション\r\n泊ふ頭旅客ターミナルまで徒歩8分\r\n効率的な離島巡りも実現\r\nビジネス・観光の拠点に最適\r\n\r\n■■　朝食　■■\r\nチャンプルー料理や沖縄そばなど\r\n沖縄の家庭料理をご提供、\r\n連泊のお客様もご満足頂けるよう、\r\n日替わり料理も！\r\n・場所：1階レストラン\r\n・提供時間：朝6：30〜9：30\r\n\r\n■■サービス・設備■■\r\n・チェックイン15：00〜24：00\r\n・チェックアウト11：00\r\n・フロント24時間対応\r\n・全館無料Wi-Fi\r\n・ズボンプレッサー、アイロン、\r\n　空気清浄機など無料貸出備品\r\n・ハブラシ・くし・綿棒などアメニティは\r\n　1階ロビーにてご用意しております。\r\n・朝食レストラン（1階）：\r\n　大人1，600円、小人（小学生）：800円\r\n・自動販売機、製氷機\r\n・コインランドリー\r\n　洗濯機（洗剤自動投入）、乾燥機\r\n\r\n■■　添い寝について　■■\r\n当ホテルは12歳まで添い寝無料。\r\n朝食をご希望の場合、0歳〜6歳は無料、\r\n7歳〜12歳は800円で朝食券をフロントでお買い求め下さい。\r\n\r\n■■駐車場■■\r\n・1泊1台1，500円（50台、先着順）\r\n・車の出し入れ可能\r\n\r\n■■周辺情報■■\r\n・那覇空港まで車で15分\r\n・モノレール那覇空港駅から美栄橋駅まで約14分、\r\n美栄橋駅から徒歩約10分\r\n・泊ふ頭旅客ターミナルまで徒歩8分\r\n・国際通りまで徒歩11分\r\n・波の上ビーチまで徒歩13分\r\n・福州園まで徒歩7分"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 9714,
+       "total": 9714,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 146927,
+     "hotelName": "ホテルアベスト那覇国際通り",
+     "hotelKanaName": "あべすとなはこくさいどおり",
+     "hotelSpecial": "国際通り徒歩０分の最高立地★地域一番の接客サービスを目指します★朝は大好評　地元食材使用手作りの沖縄料理をどうぞ♪",
+     "hotelMinCharge": 5180,
+     "latitude": 26.2140234,
+     "longitude": 127.6807344,
+     "postalCode": "900-0015",
+     "address1": "沖縄県",
+     "address2": "那覇市久茂地3-1-10",
+     "telephoneNo": "098-943-5800",
+     "faxNo": "098-943-5805",
+     "access": "ゆいレール（モノレール）「県庁前」駅より徒歩２分、那覇空港より車で約15分",
+     "parkingInformation": "提携駐車場　1,000円/入出庫1泊1回限　23時半〜6時入出庫不可　詳細お問い合わせ下さい。",
+     "nearestStation": null,
+     "reviewCount": 872,
+     "reviewAverage": 4.04,
+     "userReview": "親しみやすい、笑顔が良い、日本人スタッフはもちろん外国人の方も良くて、お部屋は普通でしたが、また、泊まりに行きたいと思えるホテルでした。ありがとうございました。　2026-10-06 20:24:58投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=146927\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "HOTEL",
+     "checkinTime": "15:00",
+     "checkoutTime": "11:00",
+     "lastCheckinTime": "26:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 32,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "01",
+       "roomName": "シングルルーム禁煙【ベッド幅140cm】",
+       "planId": 5774063,
+       "planName": "【OPEN12周年記念プラン】日頃のご愛顧に感謝！☆素泊まり",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 0,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 0,
+       "planContents": "★☆ OPEN12周年記念プラン ☆★\r\n\r\n■プランのご案内■\r\nいつも当ホテルをご利用いただき、誠にありがとうございます！\r\n感謝の気持ちを込めて、お得にご宿泊いただけるプランをご用意しました。〈素泊まり〉\r\n\r\n【チェックイン】15：00〜26：00\r\n【チェックアウト】〜11：00\r\n\r\n■フリーラウンジ＆ウェルカムドリンク■\r\n3階フロント前にはフリーラウンジを設けております。【営業時間】14：00 〜 24：00\r\n無料Wi-Fi、電源完備でリラックスタイムやビジネスでもご利用いただけます。\r\n沖縄らしさ満載！南国気分を味わえるドリンクをぜひお召し上がりください♪\r\n(シークワーサージュース/ハイビスカスティー/さんぴん茶/アイスコーヒー/ホットコーヒー)\r\n※ドリンクの内容は変更する場合がございます。\r\n\r\n■その他■\r\n・シャンプーバーあり お好みのシャンプーをご利用ください♪\r\n・チェックイン前、チェックアウト後の荷物預かりサービスあり\r\n・全室Wi-Fi利用可(客室内、ロビー共にご利用いただけます)\r\n・ベッドガード・ベビーバス・ベビーカー（事前予約制）あり\r\n・自動販売機/コインランドリー/リラクゼーション/宅配など 各種サービスあり\r\n\r\n■アクセス■\r\nゆいレール\r\n県庁前駅からホテルまで徒歩2分！\r\n\r\n車・タクシー\r\n那覇空港から約15分（道路状況により変動します）\r\n\r\n■提携駐車場のご案内■\r\n県民広場地下駐車場（TEL：098-863-8309）\r\n営業時間：06：00〜23：30（時間外は出入り不可）\r\n料金：1日1，000円（バイク350円）\r\n高さ制限：車高2.2メートルまで\r\n\r\n"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 15840,
+       "total": 15840,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ],
+  [
+   {
+    "hotelBasicInfo": {
+     "hotelNo": 176757,
+     "hotelName": "沖縄ハーバービューホテル",
+     "hotelKanaName": "おきなわはーばーびゅーほてる",
+     "hotelSpecial": "2026年6月1日 全館改装、ガーデンプール リニューアルオープン｜昼夜・季節を問わずお楽しみいただける温水仕様に。",
+     "hotelMinCharge": 6901,
+     "latitude": 26.2087449,
+     "longitude": 127.68080829999997,
+     "postalCode": "900-0021",
+     "address1": "沖縄県",
+     "address2": "那覇市泉崎2-46",
+     "telephoneNo": "098-853-2111",
+     "faxNo": "098-835-9696",
+     "access": "那覇空港から車で約15分/旭橋・壷川駅、国際通りへも徒歩約10分",
+     "parkingInformation": "有り　１９０台　１８００円（税込み／泊）　先着順",
+     "nearestStation": "那覇空港",
+     "reviewCount": 1303,
+     "reviewAverage": 4.51,
+     "userReview": "皆さんの口コミ通り、ラウンジすごかったです。14時にチェックインしてティータイムから行きました。ケーキ、サンドイッチ、オリオン生ビール、それから瓶のサイダー、缶のトマトジュースなど珍しい飲み物もありま…　2026-09-17 23:30:39投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=176757\" class=\"3click\">つづきはこちら</a>"
+    }
+   },
+   {
+    "hotelDetailInfo": {
+     "reserveTelephoneNo": "050-2017-8989",
+     "middleClassCode": "okinawa",
+     "smallClassCode": "nahashi",
+     "areaName": "那覇",
+     "hotelClassCode": "HOTEL",
+     "checkinTime": "14:00",
+     "checkoutTime": "11:00",
+     "lastCheckinTime": "24:00"
+    }
+   },
+   {
+    "hotelReserveInfo": {
+     "reserveRecordCount": 7,
+     "lowestCharge": 0,
+     "highestCharge": 0
+    }
+   },
+   {
+    "roomInfo": [
+     {
+      "roomBasicInfo": {
+       "roomClass": "wrk",
+       "roomName": "ワーケーションルーム",
+       "planId": 6622103,
+       "planName": "【リトリート×ワーケーション】コーヒー＆ソフトドリンクフリー｜お気に入りの場所で思考を深める　朝食付",
+       "pointRate": 1,
+       "withDinnerFlag": 0,
+       "dinnerSelectFlag": 0,
+       "withBreakfastFlag": 1,
+       "breakfastSelectFlag": 0,
+       "payment": "1",
+       "salesformFlag": 0,
+       "planContents": "大きな窓から緑を望む「Lounge＆Bar」や\r\n那覇市内にいながらリゾートを感じる「ガーデンプール」で、\r\nコーヒーやソフトドリンクを手に、自分好みのリズムで仕事や自分を整える時間に没頭。\r\n\r\n沖縄ハーバービューホテルだからこそ叶う、\r\n開放感にあふれたリトリート＆ワーケーション体験をお届けします。\r\n\r\n■プラン特典\r\n①滞在中コーヒー・紅茶・ソフトドリンクフリー（テイクアウト可）\r\n　気分や用途に合わせてお好きな場所で愉しめるカフェ特典。\r\n　＜場所＞1F　Lounge＆Bar ／ B1F　プールサイドバー\r\n　＜対象ドリンク＞コーヒー、紅茶、オレンジジュース（滞在中何度でもご利用可）\r\n\r\n②思考を広げる快適な客室空間\r\n　ノートPCでの作業やオンライン会議もスムーズに行えるワークデスクと高速通信環境をご用意しております。\r\n　・広々としたワークデスク\r\n　・客室専用 高速Wi-Fi完備（実測70Mbps超）\r\n\r\n※客室Wi-Fiの通信速度は実測値であり、ご利用環境や時間帯により変動する場合があります。\r\n※館内（ラウンジ・プールサイド等）にも全館Free Wi-Fiを完備しております。\r\n\r\n■朝食のご案内\r\n＜場所＞B1F　プランタン\r\n＜営業時間＞7：00〜9：30\r\n\r\n【2025年7月7日 朝食会場リニューアルオープン】\r\n上質で開放的な空間へと生まれ変わったプランタンでは、\r\n五感を満たす、伝統の味と沖縄の恵みをご堪能いただけます。\r\n\r\n■館内施設＆サービス\r\n・全館でWi-Fi接続を無料でご利用いただけます。\r\n・ベビーカー、ベビーベッド貸出無料（要予約/数量限定）\r\n・チェックイン前、チェックアウト後の荷物預かりサービス\r\n・24時間ご利用可能なフィットネスルーム\r\n※シューズやウェアのレンタルはございません。\r\n※ご利用は16歳以上の方となっております。\r\n\r\n■アクセス\r\n・那覇空港より約15分（ゆいレールまたはタクシー）\r\n・国際通りまで徒歩圏内\r\n\r\n■ご宿泊のお客様へご案内\r\n・駐車場料金は1泊あたり1台1，800円を頂戴しております。\r\n・お部屋の眺望等のご要望にはお応えできかねます。\r\n・未就学児は添い寝無料でご利用いただけます。\r\n但し、大人1名様につき添い寝のお子様1名様までとさせていただきます。"
+      }
+     },
+     {
+      "dailyCharge": {
+       "stayDate": "2026-10-11",
+       "rakutenCharge": 42160,
+       "total": 42160,
+       "chargeFlag": 0
+      }
+     }
+    ]
+   }
+  ]
+ ]
+}

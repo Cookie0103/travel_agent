@@ -1,0 +1,280 @@
+{
+  "environment": "local Chrome / PostgreSQL / DEMO_MODE=true",
+  "source_head": "b6fa30b",
+  "budget_only_summary_red": {
+    "money": 0,
+    "emptyMessage": 1
+  },
+  "budget_only_summary_green": {
+    "money": 1,
+    "emptyMessage": 0
+  },
+  "pg_snapshots": {
+    "budget-only": {
+      "revision": 4,
+      "conditions": {
+        "city": null,
+        "rooms": null,
+        "adults": null,
+        "budget": "60000",
+        "currency": "JPY",
+        "end_date": null,
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": null,
+        "child_ages": null,
+        "start_date": null,
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "lodging_budget": null
+      },
+      "relation": {
+        "status": "unknown",
+        "total_lower": null,
+        "total_upper": null,
+        "currency": null,
+        "message": "住宿预算未知；不会按全程预算自动分配。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f"
+    },
+    "first-budget-save": {
+      "revision": 5,
+      "conditions": {
+        "city": "京都",
+        "rooms": 1,
+        "adults": 2,
+        "budget": "50000",
+        "currency": "JPY",
+        "end_date": null,
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": "walk",
+        "child_ages": [],
+        "start_date": null,
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "lodging_budget": {
+          "basis": "per_room_night",
+          "amount": {
+            "lower": "30000",
+            "upper": "30000"
+          },
+          "currency": "JPY"
+        }
+      },
+      "relation": {
+        "status": "unknown",
+        "total_lower": null,
+        "total_upper": null,
+        "currency": "JPY",
+        "message": "房间数或晚数未知，无法判断住宿预算总额；请补充。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f"
+    },
+    "conflict": {
+      "revision": 6,
+      "conditions": {
+        "city": "京都",
+        "rooms": 1,
+        "adults": 2,
+        "budget": "50000",
+        "currency": "JPY",
+        "end_date": "2026-11-05",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": "walk",
+        "child_ages": [],
+        "start_date": "2026-11-03",
+        "departure_time": "09:00:00",
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "lodging_budget": {
+          "basis": "per_room_night",
+          "amount": {
+            "lower": "30000",
+            "upper": "30000"
+          },
+          "currency": "JPY"
+        }
+      },
+      "relation": {
+        "status": "conflict",
+        "total_lower": "60000",
+        "total_upper": "60000",
+        "currency": "JPY",
+        "message": "住宿预算总额下限60000 JPY超过全程预算50000 JPY。请确认以哪个预算为准；解决前不能比较酒店或确认草稿。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f"
+    },
+    "resolved": {
+      "revision": 7,
+      "conditions": {
+        "city": "京都",
+        "rooms": 1,
+        "adults": 2,
+        "budget": "70000",
+        "currency": "JPY",
+        "end_date": "2026-11-05",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": "walk",
+        "child_ages": [],
+        "start_date": "2026-11-03",
+        "departure_time": "09:00:00",
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "lodging_budget": {
+          "basis": "per_room_night",
+          "amount": {
+            "lower": "30000",
+            "upper": "30000"
+          },
+          "currency": "JPY"
+        }
+      },
+      "relation": {
+        "status": "within",
+        "total_lower": "60000",
+        "total_upper": "60000",
+        "currency": "JPY",
+        "message": "住宿预算上限未超过全程预算；其他旅行费用仍需核实。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f"
+    },
+    "warning": {
+      "revision": 8,
+      "conditions": {
+        "city": "京都",
+        "rooms": 1,
+        "adults": 2,
+        "budget": "50000",
+        "currency": "JPY",
+        "end_date": "2026-11-05",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": "walk",
+        "child_ages": [],
+        "start_date": "2026-11-03",
+        "departure_time": "09:00:00",
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "lodging_budget": {
+          "basis": "per_room_night",
+          "amount": {
+            "lower": "20000",
+            "upper": "30000"
+          },
+          "currency": "JPY"
+        }
+      },
+      "relation": {
+        "status": "warning",
+        "total_lower": "40000",
+        "total_upper": "60000",
+        "currency": "JPY",
+        "message": "预算警告：住宿总额上限60000 JPY可能超过全程预算50000 JPY；原值均保留，请确认可接受范围。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f"
+    },
+    "warning-final": {
+      "revision": 8,
+      "conditions": {
+        "city": "京都",
+        "rooms": 1,
+        "adults": 2,
+        "budget": "50000",
+        "currency": "JPY",
+        "end_date": "2026-11-05",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": "walk",
+        "child_ages": [],
+        "start_date": "2026-11-03",
+        "departure_time": "09:00:00",
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "lodging_budget": {
+          "basis": "per_room_night",
+          "amount": {
+            "lower": "20000",
+            "upper": "30000"
+          },
+          "currency": "JPY"
+        }
+      },
+      "relation": {
+        "status": "warning",
+        "total_lower": "40000",
+        "total_upper": "60000",
+        "currency": "JPY",
+        "message": "预算警告：住宿总额上限60000 JPY可能超过全程预算50000 JPY；原值均保留，请确认可接受范围。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+      "run_results": [
+        {
+          "status": "failed",
+          "error_code": "conflict",
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "failed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "tool_started",
+            "tool_finished",
+            "presentation",
+            "text",
+            "completed"
+          ]
+        }
+      ],
+      "evidence_kinds": [
+        "hotel_offer",
+        "hotel_offer",
+        "hotel_offer"
+      ]
+    }
+  },
+  "browser_warning_cards": 3,
+  "prices_in_upstream_order": [
+    "15000",
+    "17400",
+    "19800"
+  ],
+  "lower_is_not_minimum_hotel_price": true,
+  "limits": [
+    "No paid model/provider calls",
+    "Concurrent budget change tested by controlled PostgreSQL interleaving, not two browser tabs",
+    "Natural language condition extraction remains T3.7",
+    "Original production incident root cause remains unknown"
+  ]
+}

@@ -1,0 +1,455 @@
+{
+  "scope": "local synthetic qualification only; zero real API calls",
+  "cards": [
+    {
+      "offer_id": "ffecfc1d-164b-4580-9b78-3ba9e15c8ab2",
+      "rate_id": "rakuten:810002:2:double",
+      "hotel_id": "810002",
+      "hotel_name": "資格検証ホテル2（合成）",
+      "room_type": "普通双床",
+      "currency": "JPY",
+      "base_amount": "36000",
+      "tax_amount": "0",
+      "fee_amount": "0",
+      "breakfast": null,
+      "refundable": null,
+      "image_url": null,
+      "review_average": null,
+      "booking_url": "https://travel.rakuten.co.jp/1",
+      "data_mode": "fixture",
+      "included_total": "36000",
+      "total_reason": null,
+      "quoted_at": "2026-10-08T14:27:25.480603Z",
+      "expires_at": "2026-10-08T14:42:25.480603Z",
+      "stay": {
+        "city": "京都",
+        "start_date": "2026-11-03",
+        "end_date": "2026-11-05",
+        "adults": 2,
+        "child_ages": [],
+        "rooms": 1,
+        "currency": "JPY"
+      },
+      "request_revision": 2,
+      "total": "36000",
+      "lodging_exceeds_trip_budget": null,
+      "lodging_exceeds_lodging_budget": null,
+      "address": null,
+      "latitude": null,
+      "longitude": null,
+      "review_count": null,
+      "hotel_info_url": "https://travel.rakuten.co.jp/1",
+      "plan_list_url": null,
+      "reservation_url": null,
+      "room_tags": [
+        "仅按房型名称识别",
+        "未核实全部资格"
+      ],
+      "qualification_unknown": false,
+      "room_preference_mismatch": false,
+      "evidence_id": "6d25d61c-7cb6-45d8-a5d4-e29f71b5c371",
+      "source_ref": "fixture:t45-hotel-metadata",
+      "content_version": "t45-synthetic-v1"
+    },
+    {
+      "offer_id": "99f673e6-603a-428c-98cf-78cf20df84a1",
+      "rate_id": "rakuten:810005:2:double",
+      "hotel_id": "810005",
+      "hotel_name": "資格検証ホテル5（合成）",
+      "room_type": "standard twin",
+      "currency": "JPY",
+      "base_amount": "20000",
+      "tax_amount": "0",
+      "fee_amount": "0",
+      "breakfast": null,
+      "refundable": null,
+      "image_url": null,
+      "review_average": null,
+      "booking_url": "https://travel.rakuten.co.jp/1",
+      "data_mode": "fixture",
+      "included_total": "20000",
+      "total_reason": null,
+      "quoted_at": "2026-10-08T14:27:25.480603Z",
+      "expires_at": "2026-10-08T14:42:25.480603Z",
+      "stay": {
+        "city": "京都",
+        "start_date": "2026-11-03",
+        "end_date": "2026-11-05",
+        "adults": 2,
+        "child_ages": [],
+        "rooms": 1,
+        "currency": "JPY"
+      },
+      "request_revision": 2,
+      "total": "20000",
+      "lodging_exceeds_trip_budget": null,
+      "lodging_exceeds_lodging_budget": null,
+      "address": null,
+      "latitude": null,
+      "longitude": null,
+      "review_count": null,
+      "hotel_info_url": "https://travel.rakuten.co.jp/1",
+      "plan_list_url": null,
+      "reservation_url": null,
+      "room_tags": [
+        "仅按房型名称识别",
+        "未核实全部资格"
+      ],
+      "qualification_unknown": false,
+      "room_preference_mismatch": false,
+      "evidence_id": "ed20c7b5-a007-4359-8f60-b6be6e69629e",
+      "source_ref": "fixture:t45-hotel-metadata",
+      "content_version": "t45-synthetic-v1"
+    },
+    {
+      "offer_id": "20479844-6403-4b60-ae88-8505d7b91030",
+      "rate_id": "rakuten:810001:2:double",
+      "hotel_id": "810001",
+      "hotel_name": "資格検証ホテル1（合成）",
+      "room_type": "女性専用ドミトリー",
+      "currency": "JPY",
+      "base_amount": "4000",
+      "tax_amount": "0",
+      "fee_amount": "0",
+      "breakfast": null,
+      "refundable": null,
+      "image_url": null,
+      "review_average": null,
+      "booking_url": "https://travel.rakuten.co.jp/1",
+      "data_mode": "fixture",
+      "included_total": "4000",
+      "total_reason": null,
+      "quoted_at": "2026-10-08T14:27:25.480603Z",
+      "expires_at": "2026-10-08T14:42:25.480603Z",
+      "stay": {
+        "city": "京都",
+        "start_date": "2026-11-03",
+        "end_date": "2026-11-05",
+        "adults": 2,
+        "child_ages": [],
+        "rooms": 1,
+        "currency": "JPY"
+      },
+      "request_revision": 2,
+      "total": "4000",
+      "lodging_exceeds_trip_budget": null,
+      "lodging_exceeds_lodging_budget": null,
+      "address": null,
+      "latitude": null,
+      "longitude": null,
+      "review_count": null,
+      "hotel_info_url": "https://travel.rakuten.co.jp/1",
+      "plan_list_url": null,
+      "reservation_url": null,
+      "room_tags": [
+        "宿舍",
+        "资格限定",
+        "仅按房型名称识别",
+        "未核实全部资格"
+      ],
+      "qualification_unknown": true,
+      "room_preference_mismatch": true,
+      "evidence_id": "4d570a67-04d5-41ae-beaa-b4bfadaf7623",
+      "source_ref": "fixture:t45-hotel-metadata",
+      "content_version": "t45-synthetic-v1"
+    },
+    {
+      "offer_id": "c3802729-e56b-4fd8-99b0-d945437f1f44",
+      "rate_id": "rakuten:810003:2:double",
+      "hotel_id": "810003",
+      "hotel_name": "資格検証ホテル3（合成）",
+      "room_type": "capsule",
+      "currency": "JPY",
+      "base_amount": "6000",
+      "tax_amount": "0",
+      "fee_amount": "0",
+      "breakfast": null,
+      "refundable": null,
+      "image_url": null,
+      "review_average": null,
+      "booking_url": "https://travel.rakuten.co.jp/1",
+      "data_mode": "fixture",
+      "included_total": "6000",
+      "total_reason": null,
+      "quoted_at": "2026-10-08T14:27:25.480603Z",
+      "expires_at": "2026-10-08T14:42:25.480603Z",
+      "stay": {
+        "city": "京都",
+        "start_date": "2026-11-03",
+        "end_date": "2026-11-05",
+        "adults": 2,
+        "child_ages": [],
+        "rooms": 1,
+        "currency": "JPY"
+      },
+      "request_revision": 2,
+      "total": "6000",
+      "lodging_exceeds_trip_budget": null,
+      "lodging_exceeds_lodging_budget": null,
+      "address": null,
+      "latitude": null,
+      "longitude": null,
+      "review_count": null,
+      "hotel_info_url": "https://travel.rakuten.co.jp/1",
+      "plan_list_url": null,
+      "reservation_url": null,
+      "room_tags": [
+        "舱房",
+        "仅按房型名称识别",
+        "未核实全部资格"
+      ],
+      "qualification_unknown": false,
+      "room_preference_mismatch": true,
+      "evidence_id": "aa6dab36-150b-49e5-ba82-8c0b088cc6d8",
+      "source_ref": "fixture:t45-hotel-metadata",
+      "content_version": "t45-synthetic-v1"
+    },
+    {
+      "offer_id": "be096892-c95c-4f07-a5b6-6dd28d68a70a",
+      "rate_id": "rakuten:810004:2:double",
+      "hotel_id": "810004",
+      "hotel_name": "資格検証ホテル4（合成）",
+      "room_type": "男性限定大床",
+      "currency": "JPY",
+      "base_amount": "7200",
+      "tax_amount": "0",
+      "fee_amount": "0",
+      "breakfast": null,
+      "refundable": null,
+      "image_url": null,
+      "review_average": null,
+      "booking_url": "https://travel.rakuten.co.jp/1",
+      "data_mode": "fixture",
+      "included_total": "7200",
+      "total_reason": null,
+      "quoted_at": "2026-10-08T14:27:25.480603Z",
+      "expires_at": "2026-10-08T14:42:25.480603Z",
+      "stay": {
+        "city": "京都",
+        "start_date": "2026-11-03",
+        "end_date": "2026-11-05",
+        "adults": 2,
+        "child_ages": [],
+        "rooms": 1,
+        "currency": "JPY"
+      },
+      "request_revision": 2,
+      "total": "7200",
+      "lodging_exceeds_trip_budget": null,
+      "lodging_exceeds_lodging_budget": null,
+      "address": null,
+      "latitude": null,
+      "longitude": null,
+      "review_count": null,
+      "hotel_info_url": "https://travel.rakuten.co.jp/1",
+      "plan_list_url": null,
+      "reservation_url": null,
+      "room_tags": [
+        "资格限定",
+        "仅按房型名称识别",
+        "未核实全部资格"
+      ],
+      "qualification_unknown": true,
+      "room_preference_mismatch": false,
+      "evidence_id": "c62626b5-7d39-43cd-ad56-fb4d52313c7c",
+      "source_ref": "fixture:t45-hotel-metadata",
+      "content_version": "t45-synthetic-v1"
+    }
+  ],
+  "pg": {
+    "revision": 2,
+    "conditions": {
+      "city": "京都",
+      "rooms": 1,
+      "adults": 2,
+      "budget": null,
+      "currency": "JPY",
+      "end_date": "2026-11-05",
+      "timezone": "Asia/Tokyo",
+      "interests": [],
+      "transport": null,
+      "child_ages": [],
+      "start_date": "2026-11-03",
+      "departure_time": null,
+      "hard_constraints": [
+        "住宿：独立房间",
+        "房型：无要求",
+        "床型：无要求"
+      ],
+      "soft_constraints": [
+        "节奏：标准"
+      ]
+    },
+    "request_details": {
+      "field_sources": {
+        "city": "conversation",
+        "rooms": "conversation",
+        "adults": "conversation",
+        "end_date": "conversation",
+        "child_ages": "conversation",
+        "start_date": "conversation",
+        "hard_constraints": "conversation",
+        "soft_constraints": "conversation"
+      },
+      "lodging_budget": null,
+      "source_revision": 2
+    },
+    "relation": {
+      "status": "unknown",
+      "total_lower": null,
+      "total_upper": null,
+      "currency": null,
+      "message": "住宿预算未知；不会按全程预算自动分配。"
+    },
+    "original_version_rows": 1,
+    "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+    "run_results": [
+      {
+        "run_id": "307bb016-ee95-4482-852a-2a6ad8622167",
+        "status": "completed",
+        "error_code": null,
+        "tools": [
+          "update_travel_request"
+        ],
+        "panels": []
+      },
+      {
+        "run_id": "90bd215d-839c-4c71-9947-400886b0a401",
+        "status": "completed",
+        "error_code": null,
+        "tools": [],
+        "panels": []
+      },
+      {
+        "run_id": "ed772793-13e9-414c-94e7-c016bd6bc356",
+        "status": "completed",
+        "error_code": null,
+        "tools": [
+          "update_travel_request"
+        ],
+        "panels": []
+      },
+      {
+        "run_id": "71d66e38-e963-4e4b-82be-be8d838aa344",
+        "status": "completed",
+        "error_code": null,
+        "tools": [],
+        "panels": [
+          {
+            "status": null,
+            "cards": 5,
+            "comparison": {
+              "scope": "仅比较列出的含税费住宿总价；早餐、退款分别展示；不代表全程预算满足",
+              "reasons": [],
+              "comparable": true,
+              "budget_relation": {
+                "status": "unknown",
+                "message": "住宿预算未知；不会按全程预算自动分配。",
+                "currency": null,
+                "total_lower": null,
+                "total_upper": null
+              },
+              "lowest_offer_ids": [
+                "20479844-6403-4b60-ae88-8505d7b91030"
+              ],
+              "room_preferences_question": null
+            }
+          }
+        ]
+      },
+      {
+        "run_id": "851f9325-0eb1-428e-a0ef-e66b71ca9ff9",
+        "status": "completed",
+        "error_code": null,
+        "tools": [],
+        "panels": []
+      },
+      {
+        "run_id": "2a0ae60d-a9fe-40be-ab17-9407ce9c9c47",
+        "status": "completed",
+        "error_code": null,
+        "tools": [],
+        "panels": []
+      }
+    ],
+    "bookings": [],
+    "supplier_holds": 0,
+    "supplier_orders": 0,
+    "quote_count": 5,
+    "hotel_details": [
+      {
+        "evidence_id": "6d25d61c-7cb6-45d8-a5d4-e29f71b5c371",
+        "display_details": {
+          "plan_list_url": null,
+          "hotel_info_url": "https://travel.rakuten.co.jp/1",
+          "reservation_url": null
+        },
+        "hotel_metadata": null
+      },
+      {
+        "evidence_id": "ed20c7b5-a007-4359-8f60-b6be6e69629e",
+        "display_details": {
+          "plan_list_url": null,
+          "hotel_info_url": "https://travel.rakuten.co.jp/1",
+          "reservation_url": null
+        },
+        "hotel_metadata": null
+      },
+      {
+        "evidence_id": "4d570a67-04d5-41ae-beaa-b4bfadaf7623",
+        "display_details": {
+          "plan_list_url": null,
+          "hotel_info_url": "https://travel.rakuten.co.jp/1",
+          "reservation_url": null
+        },
+        "hotel_metadata": null
+      },
+      {
+        "evidence_id": "aa6dab36-150b-49e5-ba82-8c0b088cc6d8",
+        "display_details": {
+          "plan_list_url": null,
+          "hotel_info_url": "https://travel.rakuten.co.jp/1",
+          "reservation_url": null
+        },
+        "hotel_metadata": null
+      },
+      {
+        "evidence_id": "c62626b5-7d39-43cd-ad56-fb4d52313c7c",
+        "display_details": {
+          "plan_list_url": null,
+          "hotel_info_url": "https://travel.rakuten.co.jp/1",
+          "reservation_url": null
+        },
+        "hotel_metadata": null
+      }
+    ],
+    "evidence_kinds": [
+      "hotel_offer",
+      "hotel_offer",
+      "hotel_offer",
+      "hotel_offer",
+      "hotel_offer"
+    ],
+    "field_sources": {
+      "city": "conversation",
+      "start_date": "conversation",
+      "end_date": "conversation",
+      "timezone": "none",
+      "adults": "conversation",
+      "child_ages": "conversation",
+      "rooms": "conversation",
+      "budget": "none",
+      "currency": "none",
+      "lodging_budget": "none",
+      "transport": "none",
+      "departure_time": "none",
+      "interests": "none",
+      "hard_constraints": "conversation",
+      "soft_constraints": "conversation"
+    },
+    "soft_constraints": [
+      "节奏：标准"
+    ],
+    "session_id": "7cfc1941-439d-4398-b35a-cb3a15800bf5"
+  }
+}

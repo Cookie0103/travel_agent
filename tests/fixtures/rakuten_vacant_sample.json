@@ -1,0 +1,1 @@
+{"hotels": [[{"hotelBasicInfo": {"hotelNo": 1, "hotelName": "合成样本", "hotelInformationUrl": "https://travel.rakuten.co.jp/1"}}, {"roomInfo": [{"roomBasicInfo": {"roomClass": "double", "roomName": "双床", "planId": 2}}, {"dailyCharge": {"stayDate": "2026-11-06", "rakutenCharge": 5000, "chargeFlag": 0}}]}]]}

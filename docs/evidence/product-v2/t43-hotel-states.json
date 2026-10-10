@@ -1,0 +1,122 @@
+{
+  "session_id": "1c832335-ad27-4ca5-bbf6-4790d9cda541",
+  "revision": 3,
+  "conditions": {
+    "city": "京都",
+    "rooms": 1,
+    "adults": 2,
+    "budget": null,
+    "currency": "JPY",
+    "end_date": "2026-11-05",
+    "timezone": "Asia/Tokyo",
+    "interests": [],
+    "transport": null,
+    "child_ages": [],
+    "start_date": "2026-11-03",
+    "departure_time": null,
+    "hard_constraints": [],
+    "soft_constraints": []
+  },
+  "quote_count": 6,
+  "supplier_holds": 0,
+  "supplier_orders": 0,
+  "original_version_rows": 1,
+  "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+  "classification": "VERIFIED local synthetic Chrome and PG; zero paid/model calls",
+  "cases": [
+    {
+      "run_id": "6e8144d6-dd10-4e48-b6e9-7537f65a689a",
+      "status": "completed",
+      "error_code": null,
+      "tools": [
+        "search_hotel_offers"
+      ],
+      "panels": [
+        {
+          "status": "empty",
+          "cards": 0,
+          "comparison": {
+            "scope": "本轮没有可展示的酒店报价，未进行价格比较。",
+            "reasons": [
+              "没有找到符合当前条件的酒店报价；请在对话中调整条件后重试。"
+            ],
+            "comparable": false,
+            "budget_relation": null,
+            "lowest_offer_ids": []
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "3a7a2d64-3bb3-4dae-a9d1-9164e88f095a",
+      "status": "completed",
+      "error_code": null,
+      "tools": [
+        "search_hotel_offers",
+        "present_travel_result"
+      ],
+      "panels": [
+        {
+          "status": "ok",
+          "cards": 6,
+          "comparison": {
+            "scope": "仅比较列出的含税费住宿总价；早餐、退款分别展示；不代表全程预算满足",
+            "reasons": [],
+            "comparable": true,
+            "budget_relation": {
+              "status": "unknown",
+              "message": "住宿预算未知；不会按全程预算自动分配。",
+              "currency": null,
+              "total_lower": null,
+              "total_upper": null
+            },
+            "lowest_offer_ids": [
+              "eb9eed52-41d5-487f-b003-3261d6628a7b"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "run_id": "a1347884-b934-4b4b-ab74-f182eb567e8a",
+      "status": "failed",
+      "error_code": "unavailable",
+      "tools": [
+        "search_hotel_offers"
+      ],
+      "panels": [
+        {
+          "status": "error",
+          "cards": 0,
+          "comparison": {
+            "scope": "本轮没有可展示的酒店报价，未进行价格比较。",
+            "reasons": [
+              "酒店查询服务暂不可用；请稍后重试。"
+            ],
+            "comparable": false,
+            "budget_relation": null,
+            "lowest_offer_ids": []
+          }
+        }
+      ]
+    }
+  ],
+  "chrome_refresh": {
+    "empty_heading_count_before_success": 1,
+    "after_fault_removed": {
+      "zero_hotel_headings": 2,
+      "failure_explanation": 1
+    },
+    "replayed_tools": 0
+  },
+  "screenshots": [
+    "t43-empty.png",
+    "t43-success.png",
+    "t43-failure.png"
+  ],
+  "limitations": [
+    "Local OSError injected into fixture, not live supplier outage",
+    "Original SDK seven failures remain R6 gate",
+    "P56 finite extraction gaps tracked separately"
+  ]
+}

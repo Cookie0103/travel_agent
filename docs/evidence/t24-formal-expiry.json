@@ -1,0 +1,35 @@
+{
+  "local_synthetic_only": true,
+  "session_id": "a681956a-f9a4-4422-a686-30a90a298944",
+  "formal_version": 1,
+  "version_rows": 1,
+  "payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+  "red_ui": {
+    "formal_v1": 1,
+    "wrong_draft_notice": 1
+  },
+  "green_ui": {
+    "formal_v1": 1,
+    "wrong_draft_notice": 0,
+    "saved_reference_notice": 1,
+    "route_update_notices": 3,
+    "place_update_notices": 0,
+    "hotel_quote_update_notice": 1
+  },
+  "route_red_expected": 3,
+  "route_red_actual": 0,
+  "pg_stale_routes": 3,
+  "pg_stale_places": 0,
+  "before_write_counts": {
+    "post": 0,
+    "patch": 0,
+    "delete": 0
+  },
+  "after_write_counts": {
+    "post": 0,
+    "patch": 0,
+    "delete": 0
+  },
+  "live_calls": 0,
+  "limits": "Actual existing local fixture V1 and expired lodging reference read in Chrome; no clock or response probe. Other helper boundaries are unit tested, not live provider verification. Red screenshot shows version context; the incorrect notice is established by actual AX/DOM counts, outside that screenshot viewport."
+}
