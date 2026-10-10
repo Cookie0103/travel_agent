@@ -86,7 +86,9 @@ def run_tests() -> int:
                 "-q",
                 "-o",
                 f"cache_dir={run_root / 'cache'}",
-            ]
+            ],
+            # 整套PG/SDK回归已有约五分钟；外层预算不改变各操作自己的期限。
+            timeout=600,
         )
     finally:
         if previous is None:

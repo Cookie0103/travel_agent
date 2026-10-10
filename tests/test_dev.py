@@ -63,7 +63,7 @@ def test_failed_test_runs_isolate_temp_and_cache_without_touching_old_files(
     monkeypatch.setenv("PYTEST_DEBUG_TEMPROOT", str(tmp_path))
     runs: list[Path] = []
 
-    def fail(command: Sequence[str]) -> int:
+    def fail(command: Sequence[str], *, timeout: int | None = 300) -> int:
         directory = Path(os.environ["PYTEST_DEBUG_TEMPROOT"])
         runs.append(directory)
         assert directory.is_relative_to(tmp_path / ".cache" / "pytest-runs")
@@ -89,6 +89,25 @@ def test_unwritable_test_directory_fails_before_starting_pytest(
         with patch.object(dev, "run_command") as run:
             assert dev.main(["test"]) == 1
     run.assert_not_called()
+
+
+def test_full_offline_suite_keeps_failure_exit_after_long_but_bounded_run(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """R08：整套测试超过五分钟也须跑完；失败仍返回原退出码，不设无限等待。"""
+    monkeypatch.setattr(dev, "ROOT", tmp_path)
+
+    def elapsed_suite(
+        command: Sequence[str], **options: object
+    ) -> subprocess.CompletedProcess[str]:
+        timeout = options["timeout"]
+        assert isinstance(timeout, int) and 0 < timeout <= 900
+        if timeout < 310:
+            raise subprocess.TimeoutExpired(command, timeout)
+        return subprocess.CompletedProcess(command, 7)
+
+    with patch("scripts.dev.subprocess.run", side_effect=elapsed_suite):
+        assert dev.main(["test"]) == 7
 
 
 def test_stopped_docker_records_blocker_without_running_compose(

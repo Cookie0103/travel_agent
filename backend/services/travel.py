@@ -56,6 +56,10 @@ def request_from_row(row: TravelRequestRow | None) -> TravelRequest:
             and (row.request_details or {}).get("hotel_search_revision") == row.revision
             else None,
             "lodging_budget": (row.request_details or {}).get("lodging_budget"),
+            "segments": (row.request_details or {}).get("segments"),
+            "lodging_budget_unlimited": (row.request_details or {}).get(
+                "lodging_budget_unlimited", False
+            ),
         }
     )
 
@@ -299,6 +303,13 @@ class TravelService:
             row = await travel.owned_request(db, context)
             current = request_from_row(row)
             assert row is not None
+            if current.segments or current.lodging_budget_unlimited:
+                raise ServiceError(
+                    409,
+                    "conflict",
+                    "当前兼容版本只读取新格式条件，暂不修改。",
+                    "new_format_read_only",
+                )
             sources = condition_sources(row)
             operation_key = operations.key(patch, source=source, explicit_fields=explicit_fields)
             cached = await operations.result(

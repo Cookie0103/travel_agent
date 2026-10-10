@@ -78,9 +78,10 @@
 
 - [本轮有限同版本验收测量](evidence/m42-controlled-sweep-2026-10-04.json)：fa9930b原40test×3，完整组97/120规则通过；余下实验已停止，partial与语义/真人unknown保留。本轮交付范围与最终结果见 [PROJECT_STATUS](../PROJECT_STATUS.md)，不重复每日运行。
 
-## 当前批次（2026-10-08 起）
+## 当前批次（2026-10-10 起）
 
 - [批次计划与记录规则](plans/README.md)：目录职责、状态标注、开发中何时记录什么、面试案例模板。
-- [2026-10-08 Product V2 修复批次](plans/2026-10-08-product-v2.md)：B01–B19 核实结论、待决事项 D1–D5、任务表与**唯一状态**、每日进展、问题解决记录。
+- [2026-10-10 多城市、住宿预算与节奏密度批次](plans/2026-10-10-multi-city-pacing.md)：定稿范围、D1–D6、任务表与**唯一状态**、每日进展、问题解决记录。
+- [上一批次 Product V2](plans/2026-10-08-product-v2.md)：历史实施与验收记录。
 - [命令与原始过程](operations/product-v2.md#2026-10-08-调查与修复准备)、[面试案例](review/cases/2026-10-08-product-v2.md)。
 - 长期设计已从 `plan/` 迁到 [docs/design/](design/README.md)（英文文件名，正文中文）。

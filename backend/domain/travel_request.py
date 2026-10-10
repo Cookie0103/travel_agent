@@ -111,8 +111,27 @@ HOTEL_FIELD_LABELS: dict[str, str] = {
 }
 
 
+class TripSegment(BaseModel):
+    """读取持久化城市段；连续性与写入派生在T1.1启用。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
+    city: str = Field(min_length=1, max_length=40)
+    arrive: date
+    depart: date
+    hotel_search_location: str | None = Field(
+        default=None, min_length=1, max_length=40, exclude_if=lambda value: value is None
+    )
+
+
 class TravelRequest(TravelConditions):
     revision: int = Field(default=0, strict=True, ge=0)
+    # 只读增量先放在响应/持久化模型；RequestPatch.set仍是原TravelConditions。
+    segments: tuple[TripSegment, ...] | None = Field(
+        default=None, max_length=6, exclude_if=lambda value: not value
+    )
+    lodging_budget_unlimited: bool = Field(
+        default=False, strict=True, exclude_if=lambda value: not value
+    )
 
     def hotel_requirements(self) -> tuple[str, ...]:
         required = ("city", "start_date", "end_date", "adults", "child_ages", "rooms")
@@ -128,6 +147,8 @@ class LegacyRequestSnapshot(TravelRequest):
 
     lodging_budget: LodgingBudget | None = Field(default=None, exclude=True)
     hotel_search_location: str | None = Field(default=None, exclude=True)
+    segments: tuple[TripSegment, ...] | None = Field(default=None, exclude=True)
+    lodging_budget_unlimited: bool = Field(default=False, exclude=True)
 
 
 class RequestPatch(BaseModel):
@@ -305,7 +326,10 @@ def lodging_budget_relation(request: TravelRequest) -> BudgetRelation:
 
 def legacy_request(request: TravelRequest) -> dict[str, object]:
     """旧版本可读取的快照，新增预算唯一持久位置为request_details。"""
-    return request.model_dump(mode="json", exclude={"lodging_budget", "hotel_search_location"})
+    return request.model_dump(
+        mode="json",
+        exclude={"lodging_budget", "hotel_search_location", "segments", "lodging_budget_unlimited"},
+    )
 
 
 def hotel_search_location_required(request: TravelRequest) -> bool:

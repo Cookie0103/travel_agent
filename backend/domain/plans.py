@@ -3,9 +3,10 @@
 from typing import Annotated, Literal, Self
 from uuid import UUID, uuid4
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, ValidationInfo, model_validator
+from pydantic.json_schema import SkipJsonSchema
 
-from backend.domain.itinerary import ItineraryProposal, ProposedItem, ValidationReport
+from backend.domain.itinerary import HotelStay, ItineraryProposal, ProposedItem, ValidationReport
 
 
 class PlanItem(ProposedItem):
@@ -18,8 +19,11 @@ class PlanItem(ProposedItem):
 
 class PlanContent(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    items: tuple[PlanItem, ...] = Field(min_length=1, max_length=24)
+    items: tuple[PlanItem, ...] = Field(min_length=1, max_length=200)
     hotel_evidence_id: UUID | None = None
+    hotel_stays: tuple[HotelStay, ...] = Field(
+        default=(), max_length=6, exclude_if=lambda value: not value
+    )
 
     @model_validator(mode="after")
     def unique_items(self) -> Self:
@@ -28,10 +32,14 @@ class PlanContent(BaseModel):
         return self
 
     def proposal(self, revision: int) -> ItineraryProposal:
-        return ItineraryProposal(
-            expected_revision=revision,
-            items=tuple(item.proposed() for item in self.items),
-            hotel_evidence_id=self.hotel_evidence_id,
+        return ItineraryProposal.model_validate(
+            {
+                "expected_revision": revision,
+                "items": tuple(item.proposed() for item in self.items),
+                "hotel_evidence_id": self.hotel_evidence_id,
+                **({"hotel_stays": self.hotel_stays} if self.hotel_stays else {}),
+            },
+            context={"persisted": True},
         )
 
 
@@ -62,15 +70,28 @@ class PlanPatch(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     base_version: int = Field(strict=True, ge=1)
     expected_revision: int = Field(strict=True, ge=0)
-    operations: tuple[Operation, ...] = Field(default=(), max_length=24)
+    operations: tuple[Operation, ...] = Field(
+        default=(), max_length=200, json_schema_extra={"maxItems": 24}
+    )
     hotel_evidence_id: UUID | None = None
+    hotel_stays: SkipJsonSchema[tuple[HotelStay, ...] | None] = Field(
+        default=None,
+        max_length=6,
+        exclude_if=lambda value: value is None,
+    )
 
     @model_validator(mode="after")
-    def valid_operations(self) -> Self:
+    def valid_operations(self, info: ValidationInfo) -> Self:
+        if not (info.context and info.context.get("persisted")) and (
+            "hotel_stays" in self.model_fields_set or len(self.operations) > 24
+        ):
+            raise ValueError("兼容读取阶段只接受旧住宿字段与最多24项操作")
         ids = [op.item_id for op in self.operations if isinstance(op, UpdateItem | RemoveItem)]
         if len(ids) != len(set(ids)):
             raise ValueError("同一行程项一次patch只能修改一次")
-        if not self.operations and "hotel_evidence_id" not in self.model_fields_set:
+        if not self.operations and not (
+            {"hotel_evidence_id", "hotel_stays"} & self.model_fields_set
+        ):
             raise ValueError("patch需要明确的项目操作或住宿操作")
         return self
 
@@ -176,6 +197,8 @@ def apply_plan_patch(current: SavedPlan, patch: PlanPatch) -> PlanContent:
         if "hotel_evidence_id" in patch.model_fields_set
         else current.content.hotel_evidence_id
     )
+    if len(items) > 24:
+        raise ValueError("旧行程patch合并后不能超过24项")
     return PlanContent(items=tuple(items), hotel_evidence_id=hotel)
 
 

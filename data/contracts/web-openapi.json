@@ -2692,6 +2692,34 @@
         ],
         "title": "HotelOffer"
       },
+      "HotelStay": {
+        "properties": {
+          "check_in": {
+            "type": "string",
+            "format": "date",
+            "title": "Check In"
+          },
+          "check_out": {
+            "type": "string",
+            "format": "date",
+            "title": "Check Out"
+          },
+          "hotel_evidence_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Hotel Evidence Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "check_in",
+          "check_out",
+          "hotel_evidence_id"
+        ],
+        "title": "HotelStay",
+        "description": "兼容读取分段住宿；写入与业务约束在后续任务启用。"
+      },
       "ItemDiff": {
         "properties": {
           "item_id": {
@@ -3173,7 +3201,7 @@
               "$ref": "#/components/schemas/PlanItem"
             },
             "type": "array",
-            "maxItems": 24,
+            "maxItems": 200,
             "minItems": 1,
             "title": "Items"
           },
@@ -3188,6 +3216,15 @@
               }
             ],
             "title": "Hotel Evidence Id"
+          },
+          "hotel_stays": {
+            "items": {
+              "$ref": "#/components/schemas/HotelStay"
+            },
+            "type": "array",
+            "maxItems": 6,
+            "title": "Hotel Stays",
+            "default": []
           }
         },
         "additionalProperties": false,
@@ -3302,6 +3339,14 @@
               }
             ],
             "title": "Hotel Evidence Id"
+          },
+          "hotel_stays": {
+            "items": {
+              "$ref": "#/components/schemas/HotelStay"
+            },
+            "type": "array",
+            "title": "Hotel Stays",
+            "default": []
           },
           "needs_refresh": {
             "items": {
@@ -3832,6 +3877,26 @@
             "minimum": 0.0,
             "title": "Revision",
             "default": 0
+          },
+          "segments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TripSegment"
+                },
+                "type": "array",
+                "maxItems": 6
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segments"
+          },
+          "lodging_budget_unlimited": {
+            "type": "boolean",
+            "title": "Lodging Budget Unlimited",
+            "default": false
           },
           "budget_relation": {
             "$ref": "#/components/schemas/BudgetRelation"
@@ -4748,11 +4813,73 @@
             "minimum": 0.0,
             "title": "Revision",
             "default": 0
+          },
+          "segments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TripSegment"
+                },
+                "type": "array",
+                "maxItems": 6
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segments"
+          },
+          "lodging_budget_unlimited": {
+            "type": "boolean",
+            "title": "Lodging Budget Unlimited",
+            "default": false
           }
         },
         "additionalProperties": false,
         "type": "object",
         "title": "TravelRequest"
+      },
+      "TripSegment": {
+        "properties": {
+          "city": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "title": "City"
+          },
+          "arrive": {
+            "type": "string",
+            "format": "date",
+            "title": "Arrive"
+          },
+          "depart": {
+            "type": "string",
+            "format": "date",
+            "title": "Depart"
+          },
+          "hotel_search_location": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40,
+                "minLength": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hotel Search Location"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "city",
+          "arrive",
+          "depart"
+        ],
+        "title": "TripSegment",
+        "description": "读取持久化城市段；连续性与写入派生在T1.1启用。"
       },
       "ValidationCheck": {
         "properties": {
@@ -5491,6 +5618,34 @@
         "title": "HotelPresentation",
         "type": "object"
       },
+      "UiHotelStay": {
+        "additionalProperties": false,
+        "description": "兼容读取分段住宿；写入与业务约束在后续任务启用。",
+        "properties": {
+          "check_in": {
+            "format": "date",
+            "title": "Check In",
+            "type": "string"
+          },
+          "check_out": {
+            "format": "date",
+            "title": "Check Out",
+            "type": "string"
+          },
+          "hotel_evidence_id": {
+            "format": "uuid",
+            "title": "Hotel Evidence Id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "check_in",
+          "check_out",
+          "hotel_evidence_id"
+        ],
+        "title": "HotelStay",
+        "type": "object"
+      },
       "UiItemDiff": {
         "additionalProperties": false,
         "properties": {
@@ -5744,6 +5899,14 @@
               }
             ],
             "title": "Hotel Evidence Id"
+          },
+          "hotel_stays": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/UiHotelStay"
+            },
+            "title": "Hotel Stays",
+            "type": "array"
           },
           "needs_refresh": {
             "items": {

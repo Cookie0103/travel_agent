@@ -2,6 +2,7 @@
 
 from datetime import UTC, datetime
 from decimal import Decimal
+from typing import Any, cast
 from uuid import uuid4
 
 import pytest
@@ -16,7 +17,95 @@ from backend.domain.plans import (
     differences,
     initial_content,
 )
+from backend.domain.travel_request import RequestPatch
+from backend.tools.travel import DEFINITIONS
 from tests.test_itinerary import item, place, record
+
+
+@pytest.mark.parametrize("kind", ["proposal", "patch"])
+def test_new_hotel_stays_are_readable_but_not_writable_during_compatibility(kind: str) -> None:
+    """R07：新住宿payload只允许持久化读取上下文，旧写入契约仍拒绝。"""
+    current = saved()
+    stay = {
+        "check_in": "2026-11-03",
+        "check_out": "2026-11-05",
+        "hotel_evidence_id": str(uuid4()),
+    }
+    model: type[ItineraryProposal] | type[PlanPatch]
+    if kind == "proposal":
+        model = ItineraryProposal
+        data = current.content.proposal(1).model_dump(mode="json")
+    else:
+        model = PlanPatch
+        data = {
+            "base_version": 1,
+            "expected_revision": 1,
+            "hotel_evidence_id": None,
+        }
+    data["hotel_stays"] = [stay]
+    data["hotel_evidence_id"] = None
+    parsed = model.model_validate(data, context={"persisted": True})
+    assert parsed.model_dump(mode="json")["hotel_stays"] == [stay]
+    with pytest.raises(ValueError):
+        model.model_validate(data)
+
+
+def test_compatibility_reads_long_content_without_expanding_the_write_limit() -> None:
+    """R07：未来30项payload回退可读，旧proposal写入仍不超过24项。"""
+    template = saved().content.items[0]
+    items = [
+        template.model_copy(update={"item_id": uuid4()}).model_dump(mode="json") for _ in range(30)
+    ]
+    content = PlanContent.model_validate({"items": items}, context={"persisted": True})
+    assert len(content.items) == 30
+    proposal = {
+        "expected_revision": 1,
+        "items": [entry.model_dump(mode="json") for entry in (i.proposed() for i in content.items)],
+    }
+    assert len(ItineraryProposal.model_validate(proposal, context={"persisted": True}).items) == 30
+    with pytest.raises(ValueError):
+        ItineraryProposal.model_validate(proposal)
+
+
+@pytest.mark.parametrize("new_field", ["segments", "lodging_budget_unlimited"])
+def test_compatibility_request_input_keeps_the_previous_write_contract(new_field: str) -> None:
+    """R04：新增条件只能读侧列，API与对话patch在T0.2仍拒绝写入。"""
+    value: object = (
+        [{"city": "京都", "arrive": "2026-11-03", "depart": "2026-11-05"}]
+        if new_field == "segments"
+        else True
+    )
+    with pytest.raises(ValueError):
+        RequestPatch.model_validate({"expected_revision": 0, "set": {new_field: value}})
+
+
+def test_compatibility_tool_schemas_keep_the_previous_write_fields() -> None:
+    """R07：兼容读字段不应向模型工具声明为可写参数。"""
+    schemas = {
+        definition.name: cast(dict[str, Any], definition.schema) for definition in DEFINITIONS
+    }
+    proposal_fields = {"expected_revision", "items", "hotel_evidence_id"}
+    patch_fields = {"base_version", "expected_revision", "operations", "hotel_evidence_id"}
+    assert set(schemas["validate_itinerary"]["properties"]) == proposal_fields
+    definitions = schemas["stage_plan_change"]["$defs"]
+    assert set(definitions["ItineraryProposal"]["properties"]) == proposal_fields
+    assert set(definitions["PlanPatch"]["properties"]) == patch_fields
+    assert definitions["ItineraryProposal"]["properties"]["items"]["maxItems"] == 24
+    assert definitions["PlanPatch"]["properties"]["operations"]["maxItems"] == 24
+
+
+def test_compatibility_patch_cannot_expand_legacy_plan_past_24_items() -> None:
+    """R07：放宽读取不能改变旧patch合并结果的24项写入边界。"""
+    current = saved()
+    template = current.content.items[0]
+    content = current.content.model_copy(
+        update={"items": tuple(template.model_copy(update={"item_id": uuid4()}) for _ in range(24))}
+    )
+    current = current.model_copy(update={"content": content})
+    change = patch(current, [{"op": "add", "item": template.proposed().model_dump(mode="json")}])
+    with pytest.raises(ValueError):
+        apply_plan_patch(current, change)
+    assert len(current.content.items) == 24
 
 
 def saved() -> SavedPlan:

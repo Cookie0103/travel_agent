@@ -18,7 +18,13 @@ from backend.domain.itinerary import ItineraryProposal, ProposedItem, RouteInput
 from backend.domain.plans import PlanDraft, SavedPlan, StageInput
 from backend.domain.travel_request import RequestPatch
 from backend.persistence import operations, plans
-from backend.persistence.models import EvidenceRow, PlanDraftRow, PlanRow, PlanVersionRow
+from backend.persistence.models import (
+    EvidenceRow,
+    PlanDraftRow,
+    PlanRow,
+    PlanVersionRow,
+    TravelRequestRow,
+)
 from backend.services.catalog import CatalogService
 from backend.services.common import ServiceError, transaction
 from backend.services.planning import PlanningService
@@ -30,6 +36,140 @@ from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import travel_setup as travel_setup
 
 pytestmark = pytest.mark.integration
+
+
+@pytest.mark.parametrize("with_segments", [False, True])
+def test_compatibility_reads_new_plan_and_request_payload_without_writing_them(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+    with_segments: bool,
+) -> None:
+    """R04/R07/R08：回退保护读取新JSONB；读取不能写回或丢弃新字段。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        service = PlanService(travel)
+        original = await service.confirm(
+            context.user_id, (await initial_draft(travel, context)).draft_id
+        )
+        old_view = await service.get(context.user_id, original.plan_id)
+        segments = [
+            {"city": "京都", "arrive": "2026-11-03", "depart": "2026-11-04"},
+            {"city": "大阪", "arrive": "2026-11-04", "depart": "2026-11-05"},
+        ]
+        stays = [
+            {
+                "check_in": segment["arrive"],
+                "check_out": segment["depart"],
+                "hotel_evidence_id": str(uuid4()),
+            }
+            for segment in segments
+        ]
+        payload = original.model_dump(mode="json")
+        payload["content"]["hotel_stays"] = stays
+        details: dict[str, object] = (
+            {"segments": segments, "lodging_budget_unlimited": True} if with_segments else {}
+        )
+        async with transaction(travel.database) as db:
+            version = await db.get(PlanVersionRow, (original.plan_id, original.version))
+            request_row = await db.get(TravelRequestRow, context.session_id)
+            assert version is not None and request_row is not None
+            version.payload = payload
+            request_row.request_details = details
+            old_conditions = dict(request_row.conditions)
+        view = await service.get(context.user_id, original.plan_id)
+        request = (await travel.get_request_view(context)).model_dump(mode="json")
+        assert view["hotel_stays"] == stays
+        assert view["cards"] == old_view["cards"]
+        assert view["hotel_evidence_id"] == old_view["hotel_evidence_id"]
+        assert view["validation"] == old_view["validation"]
+        if with_segments:
+            assert request["segments"] == segments
+            assert request["lodging_budget_unlimited"] is True
+        else:
+            assert "segments" not in request and "lodging_budget_unlimited" not in request
+        assert request["city"] == "京都" and request["revision"] == 1
+        if with_segments:
+            with pytest.raises(ServiceError) as updating:
+                await travel.patch_request(
+                    context,
+                    RequestPatch.model_validate({"expected_revision": 1, "set": {"adults": 3}}),
+                )
+            assert updating.value.reason == "new_format_read_only"
+        with pytest.raises(ServiceError) as locking:
+            await service.locks(
+                context.user_id,
+                original.plan_id,
+                LockInput(expected_version=1, locked_item_ids=()),
+            )
+        assert locking.value.reason == "new_format_read_only"
+        with pytest.raises(ServiceError) as staging:
+            await service.stage(context, patch_stage(original))
+        assert staging.value.reason == "new_format_read_only"
+        async with transaction(travel.database) as db:
+            version = await db.get(PlanVersionRow, (original.plan_id, original.version))
+            request_row = await db.get(TravelRequestRow, context.session_id)
+            assert version is not None and version.payload == payload
+            assert request_row is not None and request_row.conditions == old_conditions
+            assert request_row.request_details == details
+
+    runner.run(exercise())
+
+
+def test_compatibility_reads_long_plans_and_drafts_but_refuses_legacy_writes(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """R07/R08：真实PG中的未来30项内容可恢复，回退不能确认或改写。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        service = PlanService(travel)
+        draft = await initial_draft(travel, context)
+        payload = draft.model_dump(mode="json")
+        payload["content"]["items"] = [
+            payload["content"]["items"][0] | {"item_id": str(uuid4())} for _ in range(30)
+        ]
+        async with transaction(travel.database) as db:
+            row = await db.get(PlanDraftRow, draft.draft_id)
+            assert row is not None
+            row.payload = payload
+        draft_cards = (await service.get_draft(context.user_id, draft.draft_id))["cards"]
+        assert isinstance(draft_cards, list) and len(draft_cards) == 30
+        with pytest.raises(ServiceError) as confirming:
+            await service.confirm(context.user_id, draft.draft_id)
+        assert confirming.value.reason == "new_format_read_only"
+        future = SavedPlan(
+            plan_id=draft.plan_id,
+            version=1,
+            request_revision=draft.request_revision,
+            content=PlanDraft.model_validate(payload).content,
+            validation=draft.validation,
+            saved_at=datetime.now(UTC),
+        )
+        async with transaction(travel.database) as db:
+            plan_row = await db.get(PlanRow, draft.plan_id)
+            assert plan_row is not None and plan_row.current_version == 0
+            await plans.save(db, plan_row, future)
+        saved_cards = (await service.get(context.user_id, future.plan_id))["cards"]
+        assert isinstance(saved_cards, list) and len(saved_cards) == 30
+        with pytest.raises(ServiceError) as locking:
+            await service.locks(
+                context.user_id,
+                future.plan_id,
+                LockInput(expected_version=1, locked_item_ids=(future.content.items[0].item_id,)),
+            )
+        assert locking.value.reason == "new_format_read_only"
+        with pytest.raises(ServiceError) as staging:
+            await service.stage(context, patch_stage(future))
+        assert staging.value.reason == "new_format_read_only"
+        async with transaction(travel.database) as db:
+            plan_row = await db.get(PlanRow, future.plan_id)
+            draft_row = await db.get(PlanDraftRow, draft.draft_id)
+            version = await db.get(PlanVersionRow, (future.plan_id, 1))
+            assert plan_row is not None and plan_row.current_version == 1
+            assert draft_row is not None and draft_row.confirmed_version is None
+            assert version is not None and version.payload == future.model_dump(mode="json")
+
+    runner.run(exercise())
 
 
 def test_fixed_three_day_demo_never_repeats_sightseeing_entities(

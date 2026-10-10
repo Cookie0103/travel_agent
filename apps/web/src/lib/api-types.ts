@@ -800,6 +800,27 @@ export interface components {
             expires_at: string;
             request: components["schemas"]["LegacyRequestSnapshot"];
         };
+        /**
+         * HotelStay
+         * @description 兼容读取分段住宿；写入与业务约束在后续任务启用。
+         */
+        HotelStay: {
+            /**
+             * Check In
+             * Format: date
+             */
+            check_in: string;
+            /**
+             * Check Out
+             * Format: date
+             */
+            check_out: string;
+            /**
+             * Hotel Evidence Id
+             * Format: uuid
+             */
+            hotel_evidence_id: string;
+        };
         /** ItemDiff */
         ItemDiff: {
             /**
@@ -989,6 +1010,11 @@ export interface components {
             items: components["schemas"]["PlanItem"][];
             /** Hotel Evidence Id */
             hotel_evidence_id?: string | null;
+            /**
+             * Hotel Stays
+             * @default []
+             */
+            hotel_stays: components["schemas"]["HotelStay"][];
         };
         /** PlanItem */
         PlanItem: {
@@ -1045,6 +1071,11 @@ export interface components {
             hotel: components["schemas"]["HotelCard"] | null;
             /** Hotel Evidence Id */
             hotel_evidence_id: string | null;
+            /**
+             * Hotel Stays
+             * @default []
+             */
+            hotel_stays: components["schemas"]["HotelStay"][];
             /** Needs Refresh */
             needs_refresh: string[];
             validation: components["schemas"]["ValidationFeedback"];
@@ -1222,6 +1253,13 @@ export interface components {
              * @default 0
              */
             revision: number;
+            /** Segments */
+            segments?: components["schemas"]["TripSegment"][] | null;
+            /**
+             * Lodging Budget Unlimited
+             * @default false
+             */
+            lodging_budget_unlimited: boolean;
             budget_relation: components["schemas"]["BudgetRelation"];
             /** Field Sources */
             field_sources?: {
@@ -1515,6 +1553,33 @@ export interface components {
              * @default 0
              */
             revision: number;
+            /** Segments */
+            segments?: components["schemas"]["TripSegment"][] | null;
+            /**
+             * Lodging Budget Unlimited
+             * @default false
+             */
+            lodging_budget_unlimited: boolean;
+        };
+        /**
+         * TripSegment
+         * @description 读取持久化城市段；连续性与写入派生在T1.1启用。
+         */
+        TripSegment: {
+            /** City */
+            city: string;
+            /**
+             * Arrive
+             * Format: date
+             */
+            arrive: string;
+            /**
+             * Depart
+             * Format: date
+             */
+            depart: string;
+            /** Hotel Search Location */
+            hotel_search_location?: string | null;
         };
         /** ValidationCheck */
         ValidationCheck: {
@@ -1803,6 +1868,27 @@ export interface components {
              */
             more_url_scope: ("search" | "destination") | null;
         };
+        /**
+         * HotelStay
+         * @description 兼容读取分段住宿；写入与业务约束在后续任务启用。
+         */
+        UiHotelStay: {
+            /**
+             * Check In
+             * Format: date
+             */
+            check_in: string;
+            /**
+             * Check Out
+             * Format: date
+             */
+            check_out: string;
+            /**
+             * Hotel Evidence Id
+             * Format: uuid
+             */
+            hotel_evidence_id: string;
+        };
         /** ItemDiff */
         UiItemDiff: {
             /**
@@ -1929,6 +2015,11 @@ export interface components {
             hotel: components["schemas"]["UiHotelCard"] | null;
             /** Hotel Evidence Id */
             hotel_evidence_id: string | null;
+            /**
+             * Hotel Stays
+             * @default []
+             */
+            hotel_stays: components["schemas"]["UiHotelStay"][];
             /** Needs Refresh */
             needs_refresh: string[];
             validation: components["schemas"]["UiValidationFeedback"];

@@ -7,7 +7,7 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.hotels import QuoteFields
-from backend.domain.itinerary import ValidationReport
+from backend.domain.itinerary import HotelStay, ValidationReport
 from backend.domain.plans import ItemDiff, PlanItem
 from backend.domain.travel_request import (
     BudgetRelation,
@@ -70,6 +70,7 @@ class PlanView(BaseModel):
     cards: tuple[PlanCard, ...]
     hotel: HotelCard | None
     hotel_evidence_id: UUID | None
+    hotel_stays: tuple[HotelStay, ...] = Field(default=(), exclude_if=lambda value: not value)
     needs_refresh: tuple[UUID, ...]
     validation: ValidationFeedback
     guidance: str

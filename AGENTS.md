@@ -5,7 +5,7 @@
 
 ## 开始或恢复时
 
-1. **当前批次计划** [docs/plans/2026-10-08-product-v2.md](docs/plans/2026-10-08-product-v2.md)：范围、待决事项、任务状态、每日进展；按 [记录规则](docs/plans/README.md) 持续更新。2026-10-08 前的历史见 [旧执行计划](docs/execution/travel-agent.md)。
+1. **当前批次计划** [docs/plans/2026-10-10-multi-city-pacing.md](docs/plans/2026-10-10-multi-city-pacing.md)：范围、待决事项、任务状态、每日进展；按 [记录规则](docs/plans/README.md) 持续更新。上一批次见 [Product V2](docs/plans/2026-10-08-product-v2.md)，2026-10-08 前的历史见 [旧执行计划](docs/execution/travel-agent.md)。
 2. [设计地图](docs/design/README.md) → [任务定义与依赖](docs/design/04-roadmap.md)。
 3. [当前验收规格](docs/tasks/M4.md)及本次涉及的 02/03/05、ADR；按需读，不全仓灌入上下文。
 4. [工作流](docs/execution/workflow.md)、[工程标准](docs/execution/standards.md)；先核对 git status，不覆盖已有工作。

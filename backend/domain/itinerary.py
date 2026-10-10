@@ -1,10 +1,29 @@
 """行程草案、路线与校验结果契约；模型提供安排与证据引用，事实由服务端补齐。"""
 
+from datetime import date
 from decimal import Decimal
 from typing import Literal, Self
 from uuid import UUID, uuid4
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, PrivateAttr, model_validator
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    ValidationInfo,
+    model_validator,
+)
+from pydantic.json_schema import SkipJsonSchema
+
+
+class HotelStay(BaseModel):
+    """兼容读取分段住宿；写入与业务约束在后续任务启用。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    check_in: date
+    check_out: date
+    hotel_evidence_id: UUID
 
 
 class ProposedItem(BaseModel):
@@ -29,17 +48,34 @@ class ProposedItem(BaseModel):
 class ItineraryProposal(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     expected_revision: int = Field(strict=True, ge=0)
-    items: tuple[ProposedItem, ...] = Field(min_length=1, max_length=24)
+    items: tuple[ProposedItem, ...] = Field(
+        min_length=1, max_length=200, json_schema_extra={"maxItems": 24}
+    )
     hotel_evidence_id: UUID | None = Field(
         default=None,
         description="酒店卡片(search_hotel_offers)的evidence_id，不是offer_id；无卡片则省略",
     )
+    hotel_stays: SkipJsonSchema[tuple[HotelStay, ...]] = Field(
+        default=(),
+        max_length=6,
+        exclude_if=lambda value: not value,
+    )
+
+    @model_validator(mode="after")
+    def legacy_write(self, info: ValidationInfo) -> Self:
+        # 不变量：回退兼容读不能提前放开模型工具的写入契约。
+        if not (info.context and info.context.get("persisted")) and (
+            "hotel_stays" in self.model_fields_set or len(self.items) > 24
+        ):
+            raise ValueError("兼容读取阶段只接受旧住宿字段与最多24项写入")
+        return self
 
     def evidence_ids(self) -> tuple[UUID, ...]:
         ids = [item.place_evidence_id for item in self.items]
         ids.extend(item.route_evidence_id for item in self.items if item.route_evidence_id)
         if self.hotel_evidence_id:
             ids.append(self.hotel_evidence_id)
+        ids.extend(stay.hotel_evidence_id for stay in self.hotel_stays)
         return tuple(dict.fromkeys(ids))
 
 
