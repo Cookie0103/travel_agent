@@ -40,9 +40,17 @@ def database_failure_reason(error: BaseException) -> str:
 
 
 class ServiceError(RuntimeError):
-    def __init__(self, status: int, code: ErrorCode, message: str, reason: str = "") -> None:
+    def __init__(
+        self,
+        status: int,
+        code: ErrorCode,
+        message: str,
+        reason: str = "",
+        fields: tuple[str, ...] = (),
+    ) -> None:
         # reason是仅供TRACE的固定英文标签(不含用户/第三方文本)；message可能含插值，不进日志。
-        self.status, self.code, self.reason = status, code, reason
+        # fields是缺失条件的封闭字段名，供工具层转成missing:<字段>标签。
+        self.status, self.code, self.reason, self.fields = status, code, reason, fields
         super().__init__(message)
 
 

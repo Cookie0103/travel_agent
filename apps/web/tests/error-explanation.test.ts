@@ -77,3 +77,17 @@ test("object prototype keys as reason fall back to the code text", () => {
       "操作受限：请检查操作前提或调用限制。",
     );
 });
+test("hotel validation reasons name the cause; unavailable uses them too", () => {
+  assert.equal(
+    errorExplanation("validation", "hotel_missing_fields"),
+    "酒店查询缺少必要条件，请在对话中补充",
+  );
+  assert.equal(
+    errorExplanation("unavailable", "hotel_external_unavailable"),
+    "酒店数据源暂不可用，请稍后重试",
+  );
+  assert.equal(
+    errorExplanation("unavailable", "constructor"),
+    "服务不可用：请稍后重试读取；此次失败不等于已保存数据丢失。",
+  );
+});

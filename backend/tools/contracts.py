@@ -8,6 +8,10 @@ from pydantic import ValidationError
 from backend.domain.execution import ErrorCode, RunContext
 
 RESULT_LIMIT = 8000
+# present_travel_result的整个展示就是工具结果：5-6张带停留条件/链接/地址/坐标/证据的酒店卡
+# 约2.9k字/张(5张约14k，6张约17k；脱敏样本实测5张11.7k/6张13.9k)。按8000会让首次展示必被拒；
+# 24000留约40%余量，其余工具仍用RESULT_LIMIT。
+PRESENTATION_RESULT_LIMIT = 24000
 
 
 DEFAULT_REPAIR_ROUNDS = 3  # 静态文本的基准修复轮数(=DEFAULT/RELAXED的max_validations-1)

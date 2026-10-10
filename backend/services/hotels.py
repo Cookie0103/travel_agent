@@ -38,7 +38,12 @@ class HotelService:
             raise ServiceError(409, "conflict", relation.message, "lodging_budget_conflict")
         if missing := request.hotel_requirements():
             raise ServiceError(
-                422, "validation", "missing_fields: " + ", ".join(missing), "hotel_missing_fields"
+                422,
+                "validation",
+                "缺少：" + ", ".join(missing) + "。请先用update_travel_request记录对话里"
+                "已给出的值；对话没有给出就向用户提问；不要在条件不变时重复调用本工具。",
+                "hotel_missing_fields",
+                missing,
             )
         return request
 

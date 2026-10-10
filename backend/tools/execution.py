@@ -8,6 +8,7 @@ from pydantic import TypeAdapter, ValidationError
 
 from backend.agent.runtime import EventSink
 from backend.domain.execution import BusinessResult, RunContext, RuntimeEvent, tool_reason
+from backend.domain.travel_request import HOTEL_FIELD_LABELS
 from backend.tools.contracts import ToolDefinition, ToolExecutor, ToolResult
 from backend.trace_log import trace
 
@@ -63,6 +64,11 @@ def empty_hotel_payload(result: ToolResult) -> dict[str, object]:
     reason = reasons[result.code]
     if result.code == "conflict" and "lodging_budget_conflict" in result.detail:
         reason = "住宿预算下限超过全程预算，暂不能比较酒店。请在对话中确认以哪个为准。"
+    missing = [
+        label for field, label in HOTEL_FIELD_LABELS.items() if f"missing:{field}" in result.detail
+    ]
+    if result.code == "validation" and missing:
+        reason = "酒店查询缺少必要条件，请在对话中补充。缺少：" + "、".join(missing)
     if result.code == "validation" and "hotel_search_location_required" in result.detail:
         reason = (
             "目的地范围较大，请在对话中提供具体住宿城市或地点；"

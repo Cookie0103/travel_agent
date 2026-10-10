@@ -34,6 +34,11 @@ type ToolReason = Literal[
     "revision_stale",
     "lodging_budget_conflict",
     "hotel_search_location_required",
+    "hotel_missing_fields",
+    "hotel_room_preferences_missing",
+    "hotel_external_validation",
+    "hotel_external_unavailable",
+    "hotel_api_unconfigured",
     "schema",
     "other",
 ]

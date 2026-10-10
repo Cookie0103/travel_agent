@@ -13,6 +13,7 @@ from backend.domain.travel_request import RequestPatch
 from backend.persistence import runs
 from backend.services.common import transaction
 from backend.services.travel import TravelService
+from backend.tools.contracts import PRESENTATION_RESULT_LIMIT
 from backend.tools.travel import TravelToolExecutor
 from tests.integration.test_travel import travel_setup as travel_setup
 
@@ -400,7 +401,7 @@ def test_oversized_presentation_keeps_task_pending(
             context: RunContext, revision: int, ids: tuple[UUID, ...]
         ) -> dict[str, object]:
             result = await original(context, revision, ids)
-            result["synthetic_large_text"] = "x" * 9000
+            result["synthetic_large_text"] = "x" * PRESENTATION_RESULT_LIMIT
             return result
 
         monkeypatch.setattr(executor.hotels, "present", long_result)

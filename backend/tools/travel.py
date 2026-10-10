@@ -23,6 +23,7 @@ from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationRe
 from backend.domain.plans import StageInput
 from backend.domain.room_choices import room_choices_view
 from backend.domain.travel_request import (
+    HOTEL_FIELD_LABELS,
     ConversationRequestPatch,
     RequestPatch,
     lodging_budget_relation,
@@ -35,6 +36,7 @@ from backend.services.planning import PlanningService
 from backend.services.plans import PlanInput, PlanService
 from backend.services.travel import TravelService, require_revision
 from backend.tools.contracts import (
+    PRESENTATION_RESULT_LIMIT,
     RESULT_LIMIT,
     ToolDefinition,
     ToolResult,
@@ -195,6 +197,7 @@ DEFINITIONS = (
         + "按本会话报价或草稿ID补卡；行程展示前重新校验，不接受模型提供事实或校验结果。",
         PresentationInput.model_json_schema(),
         kind="presentation",
+        max_result_chars=PRESENTATION_RESULT_LIMIT,
     ),
 )
 SCHEMAS: dict[str, type[BaseModel]] = {
@@ -427,7 +430,11 @@ class TravelToolExecutor:
                     {},
                     code=error.code,
                     suggestion=str(error),
-                    detail=(f"service:{error.status}", error.reason or "untagged"),
+                    detail=(
+                        f"service:{error.status}",
+                        error.reason or "untagged",
+                        *(f"missing:{f}" for f in error.fields if f in HOTEL_FIELD_LABELS),
+                    ),
                 )
             except ExternalDataError as error:
                 return ToolResult(

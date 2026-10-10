@@ -99,6 +99,18 @@ class TravelConditions(BaseModel):
         return self
 
 
+# 酒店查询必需条件 -> 面向用户的固定中文名；顺序即展示顺序，未列出的字段一律不展示。
+HOTEL_FIELD_LABELS: dict[str, str] = {
+    "city": "目的地",
+    "start_date": "入住日期",
+    "end_date": "退房日期",
+    "adults": "成人人数",
+    "child_ages": "儿童年龄",
+    "rooms": "房间数",
+    "overnight_stay": "至少住一晚",
+}
+
+
 class TravelRequest(TravelConditions):
     revision: int = Field(default=0, strict=True, ge=0)
 
