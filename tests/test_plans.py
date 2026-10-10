@@ -68,12 +68,14 @@ def test_compatibility_reads_long_content_without_expanding_the_write_limit() ->
 
 
 @pytest.mark.parametrize("new_field", ["segments", "lodging_budget_unlimited"])
-def test_compatibility_request_input_keeps_the_previous_write_contract(new_field: str) -> None:
-    """R04：新增条件只能读侧列，API与对话patch在T0.2仍拒绝写入。"""
+def test_request_input_rejects_single_city_segments_and_non_boolean_unlimited(
+    new_field: str,
+) -> None:
+    """R04：T1.1启用写入后，仍拒绝单段与非严格布尔值，不放宽结构边界。"""
     value: object = (
         [{"city": "京都", "arrive": "2026-11-03", "depart": "2026-11-05"}]
         if new_field == "segments"
-        else True
+        else "true"
     )
     with pytest.raises(ValueError):
         RequestPatch.model_validate({"expected_revision": 0, "set": {new_field: value}})

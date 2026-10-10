@@ -92,9 +92,9 @@ def test_compatibility_reads_new_plan_and_request_payload_without_writing_them(
             with pytest.raises(ServiceError) as updating:
                 await travel.patch_request(
                     context,
-                    RequestPatch.model_validate({"expected_revision": 1, "set": {"adults": 3}}),
+                    RequestPatch.model_validate({"expected_revision": 1, "set": {"city": "大阪"}}),
                 )
-            assert updating.value.reason == "new_format_read_only"
+            assert updating.value.reason == "request_merge_invalid"
         with pytest.raises(ServiceError) as locking:
             await service.locks(
                 context.user_id,

@@ -6,6 +6,7 @@ from datetime import UTC, datetime, timedelta
 from uuid import uuid4
 
 import pytest
+from pydantic import ValidationError
 from sqlalchemy import URL, select
 
 from backend.domain.evidence import EvidenceKind, EvidenceRecord, evidence_conditions
@@ -23,6 +24,117 @@ from backend.services.sessions import DemoLogin, SessionService
 from backend.services.travel import TravelService
 
 pytestmark = pytest.mark.integration
+
+
+def test_multi_city_sidecar_round_trip_and_segment_only_invalidation(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """R04/R05：真实PG保留旧conditions，城市段仅存在侧列并原子失效证据。"""
+    runner, service, context = travel_setup
+
+    async def exercise() -> None:
+        request = await service.get_request(context)
+        records = [evidence(request, kind) for kind in ("hotel_offer", "route", "place")]
+        await service.record_evidence(context, records)
+        segments = [
+            {"city": "京都", "arrive": "2026-11-03", "depart": "2026-11-04"},
+            {"city": "大阪", "arrive": "2026-11-04", "depart": "2026-11-05"},
+        ]
+        result = await service.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": {"segments": segments, "lodging_budget_unlimited": True},
+                }
+            ),
+        )
+        restored = await service.get_request(context)
+        assert restored == result.request and restored.revision == 2
+        assert restored.model_dump(mode="json")["segments"] == segments
+        assert restored.lodging_budget_unlimited
+        original_view = await service.get_request_view(context)
+        for field in ("city", "start_date", "end_date"):
+            with pytest.raises(ValidationError):
+                await service.patch_request(
+                    context,
+                    RequestPatch.model_validate(
+                        {"expected_revision": 2, "set": {"segments": segments}, "clear": [field]}
+                    ),
+                )
+        assert await service.get_request_view(context) == original_view
+        same = await service.patch_request(
+            context,
+            RequestPatch.model_validate({"expected_revision": 2, "set": {"segments": segments}}),
+        )
+        assert same.request == restored and not same.changed_fields
+        with pytest.raises(ServiceError) as invalid:
+            await service.patch_request(
+                context,
+                RequestPatch.model_validate({"expected_revision": 2, "set": {"city": "大阪"}}),
+            )
+        assert invalid.value.reason == "request_merge_invalid"
+        assert await service.get_request(context) == restored
+        async with transaction(service.database) as db:
+            row = await db.get(TravelRequestRow, context.session_id)
+            assert row is not None and row.request_details is not None
+            assert row.request_details["segments"] == segments
+            assert row.request_details["lodging_budget_unlimited"] is True
+            assert "segments" not in row.conditions
+            assert "lodging_budget_unlimited" not in row.conditions
+            rows = await repository.find_evidence(db, context, [r.evidence_id for r in records])
+            assert {r.kind: r.invalidated for r in rows} == {
+                "hotel_offer": True,
+                "route": True,
+                "place": False,
+            }
+        await service.patch_request(context, RequestPatch(expected_revision=2, clear=("segments",)))
+        cleared = await service.get_request(context)
+        assert cleared.segments is None and cleared.revision == 3
+        assert cleared.lodging_budget_unlimited
+        limited = await service.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {"expected_revision": 3, "set": {"lodging_budget_unlimited": False}}
+            ),
+        )
+        assert limited.request.revision == 4 and not limited.request.lodging_budget_unlimited
+        assert await service.get_request(context) == limited.request
+
+    runner.run(exercise())
+
+
+def test_segment_derivation_cannot_bypass_manual_city_source(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """R04：模糊城市段不能通过派生绕过手填优先，明确改段只加一次revision。"""
+    runner, service, context = travel_setup
+
+    async def exercise() -> None:
+        current = await service.get_request(context)
+        patch = RequestPatch.model_validate(
+            {
+                "expected_revision": 1,
+                "set": {
+                    "segments": [
+                        {"city": "大阪", "arrive": "2026-11-03", "depart": "2026-11-04"},
+                        {"city": "京都", "arrive": "2026-11-04", "depart": "2026-11-05"},
+                    ]
+                },
+            }
+        )
+        skipped = await service.patch_request(context, patch, source="conversation")
+        assert skipped.request == current and skipped.skipped_fields == ("segments",)
+        explicit = await service.patch_request(
+            context, patch, source="conversation", explicit_fields=("segments",)
+        )
+        assert explicit.request.city == "大阪" and explicit.request.revision == 2
+        assert (
+            explicit.field_sources["city"] == explicit.field_sources["segments"] == "conversation"
+        )
+        assert await service.get_request(context) == explicit.request
+
+    runner.run(exercise())
 
 
 @pytest.fixture

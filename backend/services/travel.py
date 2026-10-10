@@ -95,6 +95,9 @@ def condition_sources(row: TravelRequestRow) -> dict[str, ConditionSource]:
     return {
         name: value if value in ("conversation", "user_form") else "none"
         for name in TravelConditions.model_fields
+        if name not in {"segments", "lodging_budget_unlimited"}
+        or name in trusted
+        or bool(details.get(name))
         for value in (trusted.get(name),)
     }
 
@@ -303,13 +306,6 @@ class TravelService:
             row = await travel.owned_request(db, context)
             current = request_from_row(row)
             assert row is not None
-            if current.segments or current.lodging_budget_unlimited:
-                raise ServiceError(
-                    409,
-                    "conflict",
-                    "当前兼容版本只读取新格式条件，暂不修改。",
-                    "new_format_read_only",
-                )
             sources = condition_sources(row)
             operation_key = operations.key(patch, source=source, explicit_fields=explicit_fields)
             cached = await operations.result(
@@ -342,10 +338,25 @@ class TravelService:
                     name
                     for name in patch.set_fields.model_fields_set | set(patch.clear)
                     if source == "conversation"
-                    and sources[name] == "user_form"
+                    and sources.get(name, "none") == "user_form"
                     and name not in explicit_fields
                 )
             )
+            if (
+                source == "conversation"
+                and patch.set_fields.segments
+                and "segments" not in explicit_fields
+                and any(
+                    sources.get(name) == "user_form" and getattr(current, name) != value
+                    for name, value in (
+                        ("city", patch.set_fields.segments[0].city),
+                        ("start_date", patch.set_fields.segments[0].arrive),
+                        ("end_date", patch.set_fields.segments[-1].depart),
+                    )
+                )
+            ):
+                # 城市段的派生值不能绕过已有手填字段的来源保护。
+                skipped = tuple(sorted(set(skipped) | {"segments"}))
             accepted = RequestPatch.model_validate(
                 {
                     "expected_revision": patch.expected_revision,
@@ -399,6 +410,9 @@ class TravelService:
                 new_sources[name] = source
             for name in accepted.clear:
                 new_sources[name] = "none"
+            if "segments" in accepted.set_fields.model_fields_set:
+                for name in changed & {"city", "start_date", "end_date"}:
+                    new_sources[name] = source
             if changed or new_sources != sources:
                 row.request_details = {
                     **(row.request_details or {}),

@@ -37,7 +37,7 @@ async def update_request(
     row.conditions = {
         key: value for key, value in legacy_request(request).items() if key != "revision"
     }
-    row.request_details = {
+    details = {
         **(row.request_details or {}),
         "hotel_search_location": request.hotel_search_location,
         "hotel_search_city": request.city if request.hotel_search_location else None,
@@ -46,6 +46,19 @@ async def update_request(
         if request.lodging_budget is not None
         else None,
     }
+    for name, value in (
+        (
+            "segments",
+            [segment.model_dump(mode="json") for segment in request.segments]
+            if request.segments is not None
+            else None,
+        ),
+        ("lodging_budget_unlimited", request.lodging_budget_unlimited),
+    ):
+        # 不变量：旧单城市写入不增加空的新侧列字段；已写过的字段支持显式清除。
+        if value or name in details:
+            details[name] = value
+    row.request_details = details
     row.source_turn_id = source_turn_id
     if invalidated:
         await db.execute(

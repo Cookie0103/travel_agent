@@ -3810,6 +3810,27 @@
               }
             ]
           },
+          "segments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TripSegment"
+                },
+                "type": "array",
+                "maxItems": 6,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segments"
+          },
+          "lodging_budget_unlimited": {
+            "type": "boolean",
+            "title": "Lodging Budget Unlimited",
+            "default": false
+          },
           "transport": {
             "anyOf": [
               {
@@ -3877,26 +3898,6 @@
             "minimum": 0.0,
             "title": "Revision",
             "default": 0
-          },
-          "segments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/TripSegment"
-                },
-                "type": "array",
-                "maxItems": 6
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Segments"
-          },
-          "lodging_budget_unlimited": {
-            "type": "boolean",
-            "title": "Lodging Budget Unlimited",
-            "default": false
           },
           "budget_relation": {
             "$ref": "#/components/schemas/BudgetRelation"
@@ -4549,6 +4550,27 @@
               }
             ]
           },
+          "segments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TripSegment"
+                },
+                "type": "array",
+                "maxItems": 6,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segments"
+          },
+          "lodging_budget_unlimited": {
+            "type": "boolean",
+            "title": "Lodging Budget Unlimited",
+            "default": false
+          },
           "transport": {
             "anyOf": [
               {
@@ -4746,6 +4768,27 @@
               }
             ]
           },
+          "segments": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/TripSegment"
+                },
+                "type": "array",
+                "maxItems": 6,
+                "minItems": 2
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Segments"
+          },
+          "lodging_budget_unlimited": {
+            "type": "boolean",
+            "title": "Lodging Budget Unlimited",
+            "default": false
+          },
           "transport": {
             "anyOf": [
               {
@@ -4813,26 +4856,6 @@
             "minimum": 0.0,
             "title": "Revision",
             "default": 0
-          },
-          "segments": {
-            "anyOf": [
-              {
-                "items": {
-                  "$ref": "#/components/schemas/TripSegment"
-                },
-                "type": "array",
-                "maxItems": 6
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Segments"
-          },
-          "lodging_budget_unlimited": {
-            "type": "boolean",
-            "title": "Lodging Budget Unlimited",
-            "default": false
           }
         },
         "additionalProperties": false,
@@ -4879,7 +4902,7 @@
           "depart"
         ],
         "title": "TripSegment",
-        "description": "读取持久化城市段；连续性与写入派生在T1.1启用。"
+        "description": "一个城市的连续停留；住宿晚数由离开日期减到达日期得出。"
       },
       "ValidationCheck": {
         "properties": {

@@ -1226,6 +1226,13 @@ export interface components {
              */
             currency: "JPY";
             lodging_budget?: components["schemas"]["LodgingBudget-Output"] | null;
+            /** Segments */
+            segments?: components["schemas"]["TripSegment"][] | null;
+            /**
+             * Lodging Budget Unlimited
+             * @default false
+             */
+            lodging_budget_unlimited: boolean;
             /** Transport */
             transport?: ("walk" | "transit" | "taxi") | null;
             /**
@@ -1253,13 +1260,6 @@ export interface components {
              * @default 0
              */
             revision: number;
-            /** Segments */
-            segments?: components["schemas"]["TripSegment"][] | null;
-            /**
-             * Lodging Budget Unlimited
-             * @default false
-             */
-            lodging_budget_unlimited: boolean;
             budget_relation: components["schemas"]["BudgetRelation"];
             /** Field Sources */
             field_sources?: {
@@ -1469,6 +1469,13 @@ export interface components {
              */
             currency: "JPY";
             lodging_budget?: components["schemas"]["LodgingBudget-Input"] | null;
+            /** Segments */
+            segments?: components["schemas"]["TripSegment"][] | null;
+            /**
+             * Lodging Budget Unlimited
+             * @default false
+             */
+            lodging_budget_unlimited: boolean;
             /** Transport */
             transport?: ("walk" | "transit" | "taxi") | null;
             /**
@@ -1526,6 +1533,13 @@ export interface components {
              */
             currency: "JPY";
             lodging_budget?: components["schemas"]["LodgingBudget-Output"] | null;
+            /** Segments */
+            segments?: components["schemas"]["TripSegment"][] | null;
+            /**
+             * Lodging Budget Unlimited
+             * @default false
+             */
+            lodging_budget_unlimited: boolean;
             /** Transport */
             transport?: ("walk" | "transit" | "taxi") | null;
             /**
@@ -1553,17 +1567,10 @@ export interface components {
              * @default 0
              */
             revision: number;
-            /** Segments */
-            segments?: components["schemas"]["TripSegment"][] | null;
-            /**
-             * Lodging Budget Unlimited
-             * @default false
-             */
-            lodging_budget_unlimited: boolean;
         };
         /**
          * TripSegment
-         * @description 读取持久化城市段；连续性与写入派生在T1.1启用。
+         * @description 一个城市的连续停留；住宿晚数由离开日期减到达日期得出。
          */
         TripSegment: {
             /** City */

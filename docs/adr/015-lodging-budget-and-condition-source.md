@@ -111,3 +111,12 @@ T4.5补充：房型偏好复用hard_constraints，有限离线肯定表达映射
 ## P84：报价旧投影与完整适用条件的核验（2026-10-09）
 
 酒店报价内嵌request继续投影旧字段，不把hotel_search_location加回旧JSON。行程校验使用既有Evidence.conditions核验包括住宿地点在内的完整当前条件；同时将内嵌旧报价的日期/人数/房数/币种/城市与Evidence.conditions的旧字段部分比较，防止仅凭外层条件接纳内部不一致的报价。地点改变仍使旧Evidence失效，原来源/时效与修复计数不变。此次是落实既有分工，不新增响应字段或持久位置。
+
+## 多城市与明确不限（2026-10-10，D1/D3，T1.1）
+
+- `TravelConditions.segments` 是2–6个连续城市段，含原文城市、到达/离开日期、可选住宿查询地点；仅最后一段允许零晚。全局city/start_date/end_date保留，更新segments时在现有patch合并入口派生首城/首日/末日；同时明确给出不一致的全局值则拒绝。清除segments保留已派生的全局单城字段。完整旅行模型再次核对一致性，部分patch允许未带全局值。
+- 城市段与 `lodging_budget_unlimited` 只存既有request_details JSONB；legacy_request/conditions/报价旧投影继续排除两者。不新增迁移、依赖或运行时。未用新字段的单城市写入不额外保存空侧列键，旧证据条件字典不变。segments语义变化同事务失效hotel_offer与route，不影响无关place/article。
+- 住宿预算三态：金额为空且unlimited=False表示未回答；有金额表示明确预算；unlimited=True表示明确不限，与金额互斥。切换使用现有set/clear，不能把False序列化省略成未操作；原total/其他币种仍兼容。是否追问/如何比较按本批D4/D5，T3.1/T2.2实施。
+- 来源/CAS/幂等复用现有规则；对话模糊设置segments不得通过派生覆盖手填城市/日期，明确改变segments可更新其派生值。派生值来源随同本次实际更新。空新字段不改变旧单城来源响应。
+- `trip_segments` 为旧单城唯一派生入口；条件未齐返回空元组。`segment_request` 只生成酒店查询/证据用内存副本，绝不写回会话。`cities_on` 在转场日包括前后城市；`same_city` 仅规范本项目有限城市别名；`pace_of` 识别软硬条件及D6别名，硬条件优先。业务查询和校验在后续任务调用这些函数，不各自重新实现。
+- 回退只到已部署 `33df5fe` 或之后：T0.2兼容读取已独立push并通过Railway API/Web同SHA成功及旧正式V1读取；该版本只读新格式，保护后续写入数据。
