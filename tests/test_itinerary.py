@@ -195,7 +195,7 @@ def test_route_scope_departure_gap_and_missing_are_distinct(change: str) -> None
     assert result.status == ("unknown" if change == "missing" else "conflict")
 
 
-def test_repeated_place_at_different_times_allowed_but_overlap_and_departure_conflict() -> None:
+def test_repeated_sightseeing_is_blocked_even_when_visit_times_do_not_overlap() -> None:
     evidence = record(place())
     current = request().model_copy(update={"departure_time": time(10, 30)})
     proposal = ItineraryProposal(
@@ -206,6 +206,7 @@ def test_repeated_place_at_different_times_allowed_but_overlap_and_departure_con
     assert {c.code for c in report.checks if c.status == "conflict"} == {
         "overlap",
         "departure_time",
+        "repeated_place_warning",
     }
     proposal = proposal.model_copy(
         update={
@@ -215,7 +216,11 @@ def test_repeated_place_at_different_times_allowed_but_overlap_and_departure_con
             )
         }
     )
-    assert validate_itinerary(current, proposal, (evidence,), NOW).status == "partial"
+    fixed_times = validate_itinerary(current, proposal, (evidence,), NOW)
+    assert fixed_times.status == "conflict"
+    assert {c.code for c in fixed_times.checks if c.status == "conflict"} == {
+        "repeated_place_warning"
+    }
 
 
 def test_unknown_route_never_makes_duration_or_fare_up() -> None:
@@ -528,9 +533,16 @@ def test_unsourced_places_cannot_prove_sightseeing_density() -> None:
 
 @pytest.mark.parametrize(
     ("category", "warn"),
-    [("museum", True), ("hotel", False), ("restaurant", False), ("train_station", False)],
+    [
+        ("museum", True),
+        ("market", True),
+        ("shopping_mall", True),
+        ("hotel", False),
+        ("restaurant", False),
+        ("train_station", False),
+    ],
 )
-def test_repeated_place_entity_across_days_is_a_warning_even_with_distinct_evidence(
+def test_repeated_sightseeing_entity_is_a_conflict_even_with_distinct_evidence(
     category: str, warn: bool
 ) -> None:
     records = tuple(
@@ -547,10 +559,29 @@ def test_repeated_place_entity_across_days_is_a_warning_even_with_distinct_evide
     )
     report = validate_itinerary(request(), proposal, records, NOW)
     repeated = [c for c in report.checks if c.code == "repeated_place_warning"]
-    assert bool(repeated) == warn and report.status == "partial"
+    assert bool(repeated) == warn and report.status == ("conflict" if warn else "partial")
     if warn:
-        assert len(repeated) == 1 and repeated[0].status == "unknown"
+        assert len(repeated) == 1 and repeated[0].status == "conflict"
         assert "3次" in repeated[0].message and "2026-11-05" in repeated[0].message
+        assert "替换" in repeated[0].message and "estimate_routes" in repeated[0].message
+
+
+def test_same_day_duplicate_is_blocked_but_same_name_distinct_places_are_allowed() -> None:
+    first = record(place().model_copy(update={"opening_hours": "24/7"}))
+    other = record(
+        place().model_copy(update={"place_id": "fixture:other", "opening_hours": "24/7"})
+    )
+    assert Place.model_validate(first.value).name == Place.model_validate(other.value).name
+    for second, conflict in ((first, True), (other, False)):
+        proposal = ItineraryProposal(
+            expected_revision=1,
+            items=(item(first), item(second, "2026-11-03T14:00+09:00", "2026-11-03T15:00+09:00")),
+        )
+        records = (first,) if second == first else (first, second)
+        report = validate_itinerary(request(), proposal, records, NOW)
+        repeated = [c for c in report.checks if c.code == "repeated_place_warning"]
+        assert bool(repeated) == conflict
+        assert all(c.status == "conflict" for c in repeated)
 
 
 def test_density_groups_by_japan_day_and_does_not_mutate_proposal() -> None:

@@ -102,7 +102,15 @@ async def generate_demo(call: DemoCall, request: TravelRequest) -> str:
     if not 2 <= days <= 3:
         raise ServiceError(422, "validation", "固定演示仅覆盖京都二至三日游")
     place_ids = []
-    for entity in ("osm:way/57111281", "osm:way/554879249"):
+    entities = (
+        "osm:way/57111281",  # 二条城
+        "osm:way/554879249",  # 京都御所
+        "osm:way/98115917",  # 金阁寺
+        "osm:way/336641107",  # 清水寺
+        "osm:way/98103477",  # 龙安寺
+        "osm:way/619903245",  # 平安神宫
+    )
+    for entity in entities[: days * 2]:
         facts = await call("get_place_facts", {"entity_id": entity})
         place_ids.append(facts.evidence_ids[0])
     offers = await call("search_hotel_offers", {"expected_revision": request.revision, "limit": 1})
@@ -113,15 +121,15 @@ async def generate_demo(call: DemoCall, request: TravelRequest) -> str:
         start = datetime.combine(date, datetime.min.time(), ZoneInfo("Asia/Tokyo"))
         legs.append(
             {
-                "from_evidence_id": place_ids[0],
-                "to_evidence_id": place_ids[1],
+                "from_evidence_id": place_ids[day * 2],
+                "to_evidence_id": place_ids[day * 2 + 1],
                 "departure": (start + timedelta(hours=11)).isoformat(),
             }
         )
         for index, hour in enumerate((10, 14)):
             items.append(
                 {
-                    "place_evidence_id": place_ids[index],
+                    "place_evidence_id": place_ids[day * 2 + index],
                     "start": (start + timedelta(hours=hour)).isoformat(),
                     "end": (start + timedelta(hours=hour + 1)).isoformat(),
                 }
@@ -146,7 +154,7 @@ async def generate_demo(call: DemoCall, request: TravelRequest) -> str:
         "present_travel_result",
         {"component": "itinerary", "draft_id": staged.data["draft_id"]},
     )
-    text = "离线脚本已生成草稿。重复景点用于演示状态流程；未知费用与路线估算仍保留。请检查后确认。"
+    text = "离线脚本已生成每天两个不同景点的固定草稿；未知费用与路线估算仍保留。请检查后确认。"
     return text
 
 

@@ -12,6 +12,7 @@ from backend.domain.execution import RunContext
 from backend.domain.plans import PlanDraft
 from backend.mcp.bridge import sdk_tool_name
 from backend.persistence import plans
+from backend.services.catalog import CatalogService
 from backend.services.common import transaction
 from backend.services.travel import TravelService
 from tests.integration.sdk_helper import run_database_worker
@@ -24,11 +25,18 @@ pytestmark = pytest.mark.integration
 
 @pytest.mark.skipif(not shutil.which("claude"), reason="需要本机Claude CLI，不访问真实模型")
 @pytest.mark.parametrize("repair", [True, False])
+@pytest.mark.parametrize("conflict", ["opening_hours", "repeated_place_warning"])
 def test_sdk_reads_conflict_and_repairs_or_reports_limit(
-    travel_setup: tuple[asyncio.Runner, TravelService, RunContext], tmp_path: Path, repair: bool
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+    tmp_path: Path,
+    repair: bool,
+    conflict: str,
 ) -> None:
     runner, travel, context = travel_setup
-    first, _ = runner.run(destinations(travel, context))
+    first, second = runner.run(destinations(travel, context))
+    if conflict == "repeated_place_warning":
+        alternative = runner.run(CatalogService(travel).get(context, "places", "osm:way/98115917"))
+        second = alternative.evidence[0]
     feedback: list[dict[str, object]] = []
 
     def forward(body: bytes) -> tuple[int, bytes]:
@@ -47,8 +55,25 @@ def test_sdk_reads_conflict_and_repairs_or_reports_limit(
             if payload["status"] == "error" or (repair and payload["data"]["status"] != "conflict"):
                 return scripted_response(body)
             checks = payload["data"]["checks"]
-            assert any(c["status"] == "conflict" and c["code"] == "opening_hours" for c in checks)
-        arguments = proposal(first, closed=not (repair and results)).model_dump(mode="json")
+            assert any(c["status"] == "conflict" and c["code"] == conflict for c in checks), checks
+        fixed = bool(repair and results)
+        candidate = proposal(first, closed=conflict == "opening_hours" and not fixed)
+        if conflict == "repeated_place_warning":
+            candidate = candidate.model_copy(
+                update={
+                    "items": (
+                        candidate.items[0],
+                        candidate.items[0].model_copy(
+                            update={
+                                "place_evidence_id": (second if fixed else first).evidence_id,
+                                "start": datetime.fromisoformat("2026-11-03T14:00+09:00"),
+                                "end": datetime.fromisoformat("2026-11-03T15:00+09:00"),
+                            }
+                        ),
+                    )
+                }
+            )
+        arguments = candidate.model_dump(mode="json")
         status, response = scripted_response(
             json.dumps({**request, "messages": []}).encode(),
             tool_calls=((sdk_tool_name("validate_itinerary"), arguments),),
@@ -78,10 +103,18 @@ def test_sdk_reads_conflict_and_repairs_or_reports_limit(
 def test_sdk_complete_three_day_chain_has_enough_turns_without_saving_formal_plan(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], tmp_path: Path
 ) -> None:
-    """R06/R08：SDK真实执行条件→两事实→酒店→路线→校验→草稿→卡片→回答。"""
+    """R06/R08：SDK真实执行条件→六个不同地点→酒店→路线→校验→草稿→卡片→回答。"""
     runner, travel, context = travel_setup
     runner.run(destinations(travel, context))  # 复用目录初始化，模型阶段重新查当前revision事实。
     proposal_data: dict[str, object] = {}
+    entities = (
+        "osm:way/57111281",
+        "osm:way/554879249",
+        "osm:way/98115917",
+        "osm:way/336641107",
+        "osm:way/98103477",
+        "osm:way/619903245",
+    )
 
     def forward(body: bytes) -> tuple[int, bytes]:
         nonlocal proposal_data
@@ -110,58 +143,65 @@ def test_sdk_complete_three_day_chain_has_enough_turns_without_saving_formal_pla
                     },
                 },
             )
-        elif step in {1, 2}:
-            tool, arguments = (
-                "get_place_facts",
-                {"entity_id": ("osm:way/57111281", "osm:way/554879249")[step - 1]},
+        elif step == 1:
+            calls: tuple[tuple[str, dict[str, object]], ...] = tuple(
+                (sdk_tool_name("get_place_facts"), {"entity_id": entity}) for entity in entities
             )
-        elif step == 3:
+            status, content = scripted_response(
+                json.dumps({**request, "messages": []}).encode(), tool_calls=calls
+            )
+            for index in range(len(calls)):
+                content = content.replace(
+                    f'"tool_{index}"'.encode(), f'"complete_plan_facts_{index}"'.encode()
+                )
+            return status, content
+        elif step == 7:
             tool, arguments = "search_hotel_offers", {"expected_revision": 2, "limit": 1}
-        elif step == 4:
-            ids = [value["evidence_ids"][0] for value in payloads[1:3]]
+        elif step == 8:
+            ids = [value["evidence_ids"][0] for value in payloads[1:7]]
             legs = [
                 {
-                    "from_evidence_id": ids[0],
-                    "to_evidence_id": ids[1],
+                    "from_evidence_id": ids[(day - 3) * 2],
+                    "to_evidence_id": ids[(day - 3) * 2 + 1],
                     "departure": f"2026-11-{day:02d}T11:00:00+09:00",
                 }
                 for day in range(3, 6)
             ]
             tool, arguments = "estimate_routes", {"expected_revision": 2, "legs": legs}
-        elif step == 5:
+        elif step == 9:
             items = []
             for day in range(3):
                 start = datetime.fromisoformat("2026-11-03T00:00:00+09:00") + timedelta(days=day)
                 for index, hour in enumerate((10, 14)):
                     item = {
-                        "place_evidence_id": payloads[index + 1]["evidence_ids"][0],
+                        "place_evidence_id": payloads[day * 2 + index + 1]["evidence_ids"][0],
                         "start": (start + timedelta(hours=hour)).isoformat(),
                         "end": (start + timedelta(hours=hour + 1)).isoformat(),
                     }
                     if index:
-                        item["route_evidence_id"] = payloads[4]["data"]["routes"][day][
+                        item["route_evidence_id"] = payloads[8]["data"]["routes"][day][
                             "evidence_id"
                         ]
                     items.append(item)
             proposal_data = {
                 "expected_revision": 2,
                 "items": items,
-                "hotel_evidence_id": payloads[3]["evidence_ids"][0],
+                "hotel_evidence_id": payloads[7]["evidence_ids"][0],
             }
             tool, arguments = "validate_itinerary", proposal_data
-        elif step == 6:
+        elif step == 10:
             assert payloads[-1]["data"]["status"] in {"complete", "partial"}
             tool, arguments = (
                 "stage_plan_change",
                 {"change": {"kind": "initial", "proposal": proposal_data}},
             )
-        elif step == 7:
+        elif step == 11:
             tool, arguments = (
                 "present_travel_result",
                 {"component": "itinerary", "draft_id": payloads[-1]["data"]["draft_id"]},
             )
         else:
-            assert step == 8
+            assert step == 12
             return scripted_response(body)
         status, content = scripted_response(
             json.dumps({**request, "messages": []}).encode(),
@@ -178,11 +218,15 @@ def test_sdk_complete_three_day_chain_has_enough_turns_without_saving_formal_pla
         max_attempts=12,
     )
     assert report["status"] == "success", (report.get("code"), report.get("reason"), guard.attempts)
-    assert guard.attempts == 9 and not guard.failures
+    assert guard.attempts == 8 and not guard.failures
     events = report["events"]
     assert isinstance(events, list)
     assert [e["tool_name"] for e in events if e["kind"] == "tool_finished"] == [
         "update_travel_request",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
         "get_place_facts",
         "get_place_facts",
         "search_hotel_offers",

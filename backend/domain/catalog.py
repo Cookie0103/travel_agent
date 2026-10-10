@@ -50,6 +50,86 @@ class Article(BaseModel):
     source: Source
 
 
+SIGHTSEEING_CATEGORIES = {
+    "museum",
+    "castle",
+    "attraction",
+    "tourist_attraction",
+    "viewpoint",
+    "heritage",
+    "memorial",
+    "monument",
+    "ruins",
+    "archaeological_site",
+    "boundary_stone",
+    "wayside_shrine",
+    "place_of_worship",
+    "temple",
+    "shrine",
+    "church",
+    "mosque",
+    "synagogue",
+    "hindu_temple",
+    "buddhist_temple",
+    "art_gallery",
+    "gallery",
+    "artwork",
+    "zoo",
+    "aquarium",
+    "theme_park",
+    "amusement_park",
+    "park",
+    "garden",
+    "national_park",
+    "historical_landmark",
+    "cultural_landmark",
+    "historical_place",
+    "observation_deck",
+    "scenic_spot",
+    "natural_feature",
+    "market",
+    "shopping_mall",
+}
+
+# 来源明确标出的生活/中转用途优先于宽泛的 tourist_attraction 标签。
+NON_SIGHTSEEING_CATEGORIES = {
+    "hotel",
+    "lodging",
+    "hostel",
+    "motel",
+    "resort_hotel",
+    "bed_and_breakfast",
+    "guest_house",
+    "apartment",
+    "restaurant",
+    "cafe",
+    "coffee_shop",
+    "bar",
+    "meal_takeaway",
+    "meal_delivery",
+    "bakery",
+    "train_station",
+    "transit_station",
+    "subway_station",
+    "bus_station",
+    "bus_stop",
+    "airport",
+    "ferry_terminal",
+    "parking",
+    "taxi_stand",
+}
+
+
+def place_category(categories: list[str]) -> str:
+    """保留来源的具体用途；不因 Google 多类型顺序丢掉已知景点类别。"""
+    normalized = [category.strip().casefold() for category in categories]
+    return (
+        next((c for c in normalized if c in NON_SIGHTSEEING_CATEGORIES), "")
+        or next((c for c in normalized if c in SIGHTSEEING_CATEGORIES), "")
+        or (normalized[0] if normalized else "unknown")
+    )
+
+
 class ContentSearchInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True, str_strip_whitespace=True)
 

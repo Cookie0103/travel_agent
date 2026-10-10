@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.adapters.live_data import LiveData
 from backend.domain.catalog import Place
 from backend.domain.execution import RunContext
-from backend.domain.itinerary import ItineraryProposal
+from backend.domain.itinerary import ItineraryProposal, ValidationReport
 from backend.domain.plans import (
     InitialStage,
     PlanContent,
@@ -51,6 +51,17 @@ class LockInput(BaseModel):
     locked_item_ids: tuple[UUID, ...] = Field(max_length=24)
 
 
+def require_unique_sightseeing(report: ValidationReport) -> None:
+    """拦住跳过显式校验与幂等回放；修复选择仍交给现有 SDK 工具往返。"""
+    if any(c.code == "repeated_place_warning" and c.status == "conflict" for c in report.checks):
+        raise ServiceError(
+            409,
+            "conflict",
+            "行程含重复景点，不能暂存；请先validate_itinerary定位，保留一次并用未使用的"
+            "有来源景点替换其余项，重新estimate_routes检查相邻路段，再校验和暂存。",
+        )
+
+
 class PlanService:
     def __init__(self, travel: TravelService) -> None:
         self.travel = travel
@@ -84,6 +95,7 @@ class PlanService:
                 report = await validate_proposal(
                     db, context, request, saved.content.proposal(request.revision), self.travel.live
                 )
+                require_unique_sightseeing(report)
                 return saved.model_copy(update={"validation": report})
             row = await plans.for_session(db, context)
             change = arguments.change
@@ -117,6 +129,7 @@ class PlanService:
             if before_validate is not None:
                 before_validate(proposal)
             report = await validate_proposal(db, context, request, proposal, self.travel.live)
+            require_unique_sightseeing(report)
             draft = PlanDraft(
                 plan_id=row.id,
                 base_version=row.current_version,

@@ -10,10 +10,12 @@ from fastapi.testclient import TestClient
 from sqlalchemy import URL
 
 from backend.api.app import create_app
+from backend.domain.catalog import Place
 from backend.domain.execution import BusinessResult, RunContext
 from backend.domain.plans import StageInput
 from backend.domain.travel_request import RequestPatch
 from backend.persistence.catalog import import_catalog
+from backend.services.catalog import CatalogService
 from backend.services.common import ServiceError
 from backend.services.plans import LockInput, PlanService
 from backend.services.runs import MessageInput, RunService, RunView
@@ -24,6 +26,7 @@ from backend.tools.travel import TravelToolExecutor
 from data.import_catalog import load_snapshot
 from tests.integration.test_sessions import login
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.test_itinerary import record
 
 pytestmark = pytest.mark.integration
 
@@ -201,6 +204,7 @@ def test_offline_workbench_compares_stages_confirms_and_changes_one_item(
                 assert before == after
         assert confirmed.content.hotel_evidence_id == saved.content.hotel_evidence_id
         # 第一日多一项后，下标3已不是第二天下午；仍必须按日期/时段定位。
+        extra_place = await CatalogService(travel).get(context, "places", "osm:way/359896810")
         extra = await plans.stage(
             context,
             StageInput.model_validate(
@@ -216,7 +220,7 @@ def test_offline_workbench_compares_stages_confirms_and_changes_one_item(
                                     "op": "add",
                                     "item": {
                                         "place_evidence_id": str(
-                                            saved.content.items[0].place_evidence_id
+                                            extra_place.evidence[0].evidence_id
                                         ),
                                         "start": "2026-11-03T09:00:00+09:00",
                                         "end": "2026-11-03T09:30:00+09:00",
@@ -302,21 +306,35 @@ def test_demo_rejects_ambiguous_second_afternoon_hidden_by_card_truncation(
         second = await executor.execute(
             context, "get_place_facts", {"entity_id": "osm:way/554879249"}
         )
+        current = await travel.get_request(context)
+        resolved = await travel.resolve_evidence(
+            context, (UUID(first.evidence_ids[0]), UUID(second.evidence_ids[0]))
+        )
+        unique = tuple(
+            record(
+                Place.model_validate(resolved[0 if index < 7 else 1].value).model_copy(
+                    update={"place_id": f"fixture:truncated-place-{index}"}
+                ),
+                current,
+            )
+            for index in range(9)
+        )
+        await travel.record_evidence(context, unique)
         items = [
             {
-                "place_evidence_id": first.evidence_ids[0],
+                "place_evidence_id": str(unique[index].evidence_id),
                 "start": f"2026-11-03T{hour:02}:00:00+09:00",
                 "end": f"2026-11-03T{hour:02}:30:00+09:00",
             }
-            for hour in range(9, 16)
+            for index, hour in enumerate(range(9, 16))
         ]
         items.extend(
             {
-                "place_evidence_id": second.evidence_ids[0],
+                "place_evidence_id": str(unique[7 + index].evidence_id),
                 "start": f"2026-11-04T{hour:02}:00:00+09:00",
                 "end": f"2026-11-04T{hour:02}:30:00+09:00",
             }
-            for hour in (14, 16)
+            for index, hour in enumerate((14, 16))
         )
         plans = PlanService(travel)
         draft = await plans.stage(

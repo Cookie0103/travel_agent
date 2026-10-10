@@ -851,3 +851,12 @@ Chrome旧真实页面computed style：primary rgb(15,118,110)/白字、body17px�
 
 - 收尾CI（VERIFIED）：bf4cbc3/37950301292、3fc830f/37950916471、4ab5532/37951675678均python/web/docker-demo三任务success；每次push后实际核验。最终本地12脚本/CSS全部HTTP200。追加固定京都两天一夜，rev5/4行程项/单晚住宿/7500已知/0冲突/7未知，未确认或预订，公开截图已看。
 - 浏览器listener异步channel关闭日志仍可见，来源未定位，不冒称控制台零错误；实际操作正常，没有据此改业务或扩展。
+
+### 2026-10-10 P-99/P-100 请求诊断与重复景点硬校验
+- 分支 batch/2026-10-10-frontend-restyle，开始工作区干净，基线 aa37b38；未新增真实模型/供应商请求。业务现场来自用户授权的只读Chrome/Railway日志，首轮78e5c73d草稿已暂存、下一HTTP在本地拒绝；最后已发送请求130888字节，拒绝实际字节当时未记，不能100%认定现场超限。二轮4a7b6068完成路线/暂存/展示，最后119296字节且确认HTTP200。
+- 首红：新增大请求、HTTP拒绝大小、规范化超限、同日/跨日实体重复断言共5 failed/3 passed（无付费调用）；初步修复邻近127 passed。独立审查发现Google多types丢二级museum，按共享分类修复并加5个反例。
+- Docker未运行导致PG15 setup errors（不是业务失败）；用户启动Docker后dev db-up成功，Docker引擎28.5.1、原项目PostgreSQL容器Healthy；测试仅使用现有隔离工具创建/清理随机本地测试库，未改用户旅行数据。第一次PG4 failed/11 passed：换第二景点后碰到漫画博物馆周三闭馆，改用来源中当天开放金阁寺；PG15 passed。随后含旧缓存回放与修复确认的领域/守卫/Google/PG专项146 passed。
+- Corepack测试入口尝试访问pnpm/latest被网络沙箱拒绝；读取package.json后直接执行完全相同的node --test tests/*.test.ts，无安装/依赖变化，前端119 passed。
+- 首次完整dev test：14 failed/1392 passed/4 live deselected/262.02s。旧固定演示及SDK/大型展示样例将两个景点跨日重复，按新政策必然被拦；修改固定演示为六个来源地点、逐天配对路线，测试fixture采用不同且明确标识的实体，冻结eval原件及历史成绩未改。旧冻结模型评测依赖的初始化已变化，不据此与历史成绩直接比较。
+- 兼容回归：plans/eval/database 39 passed；workbench/context 13 passed；SDK规划与不修复触及3轮上限5 passed，包括重复景点冲突→换开放且未用候选→partial。过程中漫画馆替换候选闭馆、逐事实调用触及SDK max_turns、原压缩脚本依赖已移除tool_result而重复load_skill均有真实失败；分别换开放候选、使用SDK已有多tool_use、脚本按已验证成功的阶段结束，未放宽生产规则/次数或删除断言。直接pytest入口因模块路径ImportError失败后改用项目python -m pytest入口。
+- dev check299文件/三平台strict/3分层契约/10文档入口通过；独立只读审查批准，无P1/P2。正常commit钩子的完整dev check/dev test及push/CI待完成。TRACE字段仅包含数字、固定phase/reason和异常类；Content-Length拒绝注明size_source=content_length，不能称已读正文实测；已转发请求req_bytes为规范化UTF-8字节，raw_bytes为接收到的原JSON字节。

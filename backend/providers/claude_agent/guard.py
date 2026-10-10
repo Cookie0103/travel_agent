@@ -17,7 +17,12 @@ from urllib.parse import urlsplit
 from backend.limits import ProbeError, Settings, StallError, price_for
 from backend.profile import current
 from backend.providers.claude_agent.budget import Budget
-from backend.providers.claude_agent.request import MAX_BYTES, TOOL_NAME, validate_request
+from backend.providers.claude_agent.request import (
+    TOOL_NAME,
+    RequestTooLarge,
+    request_byte_limit,
+    validate_request,
+)
 from backend.providers.claude_agent.response import summarize
 from backend.trace_log import trace
 
@@ -47,6 +52,13 @@ class Guard:
             return self.reject("unauthorized")
         if urlsplit(path).path != "/v1/messages":
             return self.reject("unsupported_endpoint")
+        trace(
+            "model_req_received",
+            self.run,
+            attempt=self.attempts + 1,
+            req_bytes=len(body),
+            limit_bytes=request_byte_limit(self.settings.model),
+        )
         started: float | None = None
         try:
             if not (
@@ -69,6 +81,8 @@ class Guard:
                     self.run,
                     attempt=self.attempts,
                     req_bytes=len(request.body),
+                    raw_bytes=len(body),
+                    limit_bytes=request_byte_limit(self.settings.model),
                     stream=True,  # validate_request只接受stream=true
                     max_tokens=request.max_output,
                 )
@@ -113,6 +127,8 @@ class Guard:
             if not isinstance(names, list) or any(name not in self.allowed_tools for name in names):
                 raise ProbeError("blocked", "上游返回未授权工具，停止后续请求")
             return 200, content
+        except RequestTooLarge as error:
+            return self.reject_size(error)
         except ProbeError as error:
             self.failure_details.append(str(error))
             self._trace_failure(error.code, started, why=str(error))
@@ -120,6 +136,22 @@ class Guard:
         except (OSError, http.client.HTTPException) as error:
             self._trace_failure("unavailable", started, type(error).__name__)
             return self.reject("unavailable")
+
+    def reject_size(
+        self, error: RequestTooLarge, *, size_source: str = "serialized_bytes"
+    ) -> tuple[int, bytes]:
+        self.failure_details.append(str(error))
+        trace(
+            "model_req_rejected",
+            self.run,
+            attempt=self.attempts + 1,
+            reason="request_too_large",
+            req_bytes=error.size,
+            limit_bytes=error.limit,
+            phase=error.phase,
+            size_source=size_source,
+        )
+        return self.reject(error.code)
 
     def _trace_failure(
         self, code: str, started: float | None, error_class: str = "", why: str = ""
@@ -160,15 +192,33 @@ def handler_for(guard: Guard) -> type[BaseHTTPRequestHandler]:
 
         def do_POST(self) -> None:
             self.connection.settimeout(current().upstream_timeout + 5)
+            length: int | None = None
+            limit = request_byte_limit(guard.settings.model)
             try:
                 length = int(self.headers.get("Content-Length", "0"))
-                if not 0 < length <= MAX_BYTES or self.headers.get("Transfer-Encoding"):
+                if length <= 0 or self.headers.get("Transfer-Encoding"):
                     raise ValueError
-                body = self.rfile.read(length)
-                status, content = guard.accept(
-                    self.path, self.headers.get("Authorization", ""), body
+                if length > limit:
+                    status, content = guard.reject_size(
+                        RequestTooLarge(length, limit, "ingress"), size_source="content_length"
+                    )
+                else:
+                    body = self.rfile.read(length)
+                    if len(body) != length:
+                        raise ValueError
+                    status, content = guard.accept(
+                        self.path, self.headers.get("Authorization", ""), body
+                    )
+            except (ValueError, OSError) as error:
+                trace(
+                    "model_req_rejected",
+                    guard.run,
+                    attempt=guard.attempts + 1,
+                    reason="invalid_request",
+                    declared_bytes=length,
+                    limit_bytes=limit,
+                    error_class=type(error).__name__,
                 )
-            except (ValueError, OSError):
                 status, content = guard.reject("invalid_request")
             self.send_response(status)
             self.send_header(

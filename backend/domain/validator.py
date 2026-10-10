@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from backend.domain.catalog import Place
+from backend.domain.catalog import SIGHTSEEING_CATEGORIES, Place
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.hotels import HotelOffer
 from backend.domain.itinerary import (
@@ -83,50 +83,10 @@ def validate_itinerary(
     )
 
 
-SIGHTSEEING_CATEGORIES = {
-    "museum",
-    "castle",
-    "attraction",
-    "tourist_attraction",
-    "viewpoint",
-    "heritage",
-    "memorial",
-    "monument",
-    "ruins",
-    "archaeological_site",
-    "boundary_stone",
-    "wayside_shrine",
-    "place_of_worship",
-    "temple",
-    "shrine",
-    "church",
-    "mosque",
-    "synagogue",
-    "hindu_temple",
-    "buddhist_temple",
-    "art_gallery",
-    "gallery",
-    "artwork",
-    "zoo",
-    "aquarium",
-    "theme_park",
-    "amusement_park",
-    "park",
-    "garden",
-    "national_park",
-    "historical_landmark",
-    "cultural_landmark",
-    "historical_place",
-    "observation_deck",
-    "scenic_spot",
-    "natural_feature",
-}
-
-
 def sightseeing_checks(
     request: TravelRequest, proposal: ItineraryProposal, places: list[Place | None]
 ) -> list[ValidationCheck]:
-    """只提醒已核实景点；不把酒店/餐食/交通或未知类别当景点。"""
+    """重复游览是硬冲突；密度仅提醒，不把酒店/餐食/交通或未知类别当景点。"""
     by_day: dict[date, list[str]] = {}
     by_place: dict[str, list[tuple[date, str]]] = {}
     for item, place in zip(proposal.items, places, strict=True):
@@ -166,9 +126,12 @@ def sightseeing_checks(
             checks.append(
                 check(
                     f"place:{place_id}",
-                    "unknown",
+                    "conflict",
                     "repeated_place_warning",
-                    f"重复景点提醒：{repeated[0][1]}安排{len(repeated)}次（{dates}），请确认是否有意重访。",
+                    f"重复景点冲突：{repeated[0][1]}安排{len(repeated)}次（{dates}）。"
+                    "保留一次，把其余游览替换为全行程未使用的景点；候选不足时补搜不同景点，"
+                    "不得改名称或换同地点的证据掩盖重复。替换后重新estimate_routes检查相邻路段，"
+                    "再validate_itinerary；无可用候选则说明未完成，不暂存或保存重复行程。",
                 )
             )
     return checks

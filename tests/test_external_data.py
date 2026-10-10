@@ -204,3 +204,40 @@ def test_google_missing_place_types_remain_unknown_instead_of_inventing_attracti
     assert mapped.category == "unknown"
     assert mapped.name == parsed.displayName.text
     assert mapped.latitude == parsed.location.latitude
+
+
+@pytest.mark.parametrize(
+    "types,category,duplicate",
+    [
+        (["point_of_interest", "museum"], "museum", True),
+        (["point_of_interest", "market"], "market", True),
+        (["tourist_attraction", "hotel", "lodging"], "hotel", False),
+        (["point_of_interest", "restaurant", "tourist_attraction"], "restaurant", False),
+        (["point_of_interest", "train_station"], "train_station", False),
+    ],
+)
+def test_google_all_types_feed_sightseeing_duplicate_check(
+    types: list[str], category: str, duplicate: bool
+) -> None:
+    """R06：二级景点标签不能漏判；必要住宿/餐食/交通往返仍可用。"""
+    from backend.adapters.google_maps import place_from_response
+    from backend.domain.itinerary import ItineraryProposal
+    from backend.domain.validator import validate_itinerary
+    from tests.test_itinerary import NOW, item, record, request
+
+    raw = {
+        "id": "synthetic-multi-type",
+        "displayName": {"text": "合成地点"},
+        "location": {"latitude": 35, "longitude": 135},
+        "types": types,
+    }
+    mapped = place_from_response(_Places.model_validate({"places": [raw]}).places[0], "京都")
+    assert mapped.category == category
+    evidence = record(mapped)
+    candidate = ItineraryProposal(
+        expected_revision=1,
+        items=(item(evidence), item(evidence, "2026-11-04T10:00+09:00", "2026-11-04T11:00+09:00")),
+    )
+    report = validate_itinerary(request(), candidate, (evidence,), NOW)
+    repeated = [c for c in report.checks if c.code == "repeated_place_warning"]
+    assert bool(repeated) == duplicate and all(c.status == "conflict" for c in repeated)

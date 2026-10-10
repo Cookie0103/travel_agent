@@ -8,13 +8,27 @@ from typing import Literal
 from backend.limits import ProbeError, price_for
 from backend.profile import current
 
-MAX_BYTES = 131072
+MAX_BYTES = 128 * 1024
+DEEPSEEK_MAX_BYTES = 512 * 1024
 MAX_INPUT_TOKENS = 1_048_576
 TOOL_NAME = "mcp__probe__echo"
 # 预占输入token上界 = 请求体UTF-8字节数 * 5/4 + 固定开销。任何分词器每token至少1字节，
 # 转义后的多字节JSON文本字节数仍不小于token数；x1.25与固定1024覆盖上游把tools/system
 # 渲染进聊天模板时额外增加的文本。DeepSeek思考已被强制关闭且max_tokens含思考token。
 INPUT_MARGIN_NUM, INPUT_MARGIN_DEN, INPUT_OVERHEAD_TOKENS = 5, 4, 1024
+
+
+def request_byte_limit(model: str) -> int:
+    """DeepSeek 规划需要更多工具上下文；其他线路保留原预算验证边界。"""
+    return DEEPSEEK_MAX_BYTES if model.startswith("deepseek-") else MAX_BYTES
+
+
+class RequestTooLarge(ProbeError):
+    """携带可安全记录的大小，区分 SDK 原请求与协议规范化后的请求。"""
+
+    def __init__(self, size: int, limit: int, phase: Literal["ingress", "normalized"]) -> None:
+        self.size, self.limit, self.phase = size, limit, phase
+        super().__init__("blocked", f"SDK 请求超过本地字节上限（{size} > {limit}）")
 
 
 @dataclass(frozen=True)
@@ -34,8 +48,9 @@ def validate_request(
     *,
     temperature: Literal[0] | None = None,
 ) -> Request:
-    if len(body) > MAX_BYTES:
-        raise ProbeError("blocked", "SDK 输入超过接入实验上限")
+    limit = request_byte_limit(model)
+    if len(body) > limit:
+        raise RequestTooLarge(len(body), limit, "ingress")
     try:
         raw: object = json.loads(body)
     except (ValueError, UnicodeError):
@@ -100,8 +115,8 @@ def validate_request(
                 raw.pop("output_config", None)
     if temperature is not None or model.startswith("deepseek-"):
         body = json.dumps(raw, ensure_ascii=False).encode("utf-8")
-        if len(body) > MAX_BYTES:
-            raise ProbeError("blocked", "SDK 输入超过接入实验上限")
+        if len(body) > limit:
+            raise RequestTooLarge(len(body), limit, "normalized")
     price = price_for(model)
     # 不变量：预占=该请求可能的最大费用（输入token<=字节上界，按最高输入价即
     # 未命中价*缓存写倍数；输出<=max_tokens）。无结算的尝试仍按此全额计费。

@@ -1,14 +1,16 @@
 """受控传输证明每次联网前计费、拒绝未知协议和无用量的半条响应。"""
 
+import http.client
 import json
 from decimal import Decimal
 from pathlib import Path
+from urllib.parse import urlsplit
 
 import pytest
 
 from backend.limits import ProbeError, Settings, price_for
 from backend.providers.claude_agent.budget import Budget
-from backend.providers.claude_agent.guard import Guard
+from backend.providers.claude_agent.guard import Guard, serve
 from backend.providers.claude_agent.request import TOOL_NAME, validate_request
 from tests.test_sdk_cli_offline import scripted_response
 
@@ -214,9 +216,119 @@ def test_claude_reservation_bounds_cache_write_worst_case() -> None:
     )
 
 
-def test_context_byte_limit_unchanged() -> None:
+def test_context_byte_limit_is_bounded() -> None:
     with pytest.raises(ProbeError, match="上限"):
         validate_request(_sized("deepseek-flash", 1024, 131072), "deepseek-flash")
+
+
+def test_large_deepseek_request_remains_budgeted_and_claude_limit_stays_small() -> None:
+    body = request_body(messages=[{"role": "user", "content": "x" * 300000}])
+    request = validate_request(body, "deepseek-flash")
+    price = price_for("deepseek-flash")
+    assert 128 * 1024 < len(request.body) < 512 * 1024
+    assert request.charge >= price.usage_upper(len(request.body), request.max_output)
+    claude = request_body(
+        model="claude-haiku-4-5-20251001",
+        messages=[{"role": "user", "content": "x" * (128 * 1024)}],
+    )
+    with pytest.raises(ProbeError, match="上限"):
+        validate_request(claude, "claude-haiku-4-5-20251001")
+
+
+def test_http_size_rejection_logs_declared_bytes_without_reading_or_charging(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    log = tmp_path / "trace.jsonl"
+    monkeypatch.setenv("TRAVEL_TRACE_FILE", str(log))
+    budget = Budget(tmp_path / "ledger", tmp_path / "old", Decimal(5))
+    guard = Guard(
+        Settings("secret", "deepseek-flash", Decimal(5), Decimal(0)),
+        budget,
+        lambda _: pytest.fail("oversized request must not forward"),
+        run="test-run",
+    )
+    with serve(guard) as url:
+        parsed = urlsplit(url)
+        assert parsed.hostname is not None
+        peer = http.client.HTTPConnection(parsed.hostname, parsed.port, timeout=3)
+        try:
+            peer.putrequest("POST", "/v1/messages")
+            peer.putheader("Content-Length", str(512 * 1024 + 1))
+            peer.putheader("Authorization", "Bearer " + guard.token)
+            peer.endheaders()  # 不发送正文，证明在读入大请求前拒绝。
+            response = peer.getresponse()
+            assert response.status == 400
+            response.read()
+        finally:
+            peer.close()
+    rows = [
+        json.loads(line.removeprefix("TRACE "))
+        for line in log.read_text(encoding="utf-8").splitlines()
+    ]
+    rejected = next(row for row in rows if row["ev"] == "model_req_rejected")
+    assert rejected["reason"] == "request_too_large"
+    assert rejected["req_bytes"] == 524289 and rejected["limit_bytes"] == 524288
+    assert rejected["size_source"] == "content_length"
+    assert budget.totals()[0] == guard.attempts == 0
+    assert guard.token not in log.read_text(encoding="utf-8") and "secret" not in log.read_text(
+        encoding="utf-8"
+    )
+
+
+def test_normalized_overflow_logs_measured_size_without_forwarding(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    log = tmp_path / "trace.jsonl"
+    monkeypatch.setenv("TRAVEL_TRACE_FILE", str(log))
+    data = json.loads(request_body())
+    data["messages"][0]["content"] = "private-sentinel"
+    compact = json.dumps(data, separators=(",", ":")).encode()
+    data["messages"][0]["content"] += "x" * (512 * 1024 - len(compact))
+    body = json.dumps(data, separators=(",", ":")).encode()
+    assert len(body) == 512 * 1024
+    budget = Budget(tmp_path / "ledger", tmp_path / "old", Decimal(5))
+    guard = Guard(
+        Settings("secret", "deepseek-flash", Decimal(5), Decimal(0)),
+        budget,
+        lambda _: pytest.fail("normalized oversized request must not forward"),
+    )
+    assert guard.accept("/v1/messages", "Bearer " + guard.token, body)[0] == 400
+    rows = [
+        json.loads(line.removeprefix("TRACE "))
+        for line in log.read_text(encoding="utf-8").splitlines()
+    ]
+    rejected = next(row for row in rows if row["ev"] == "model_req_rejected")
+    assert rejected["phase"] == "normalized" and rejected["req_bytes"] > 524288
+    assert rejected["size_source"] == "serialized_bytes" and rejected["limit_bytes"] == 524288
+    assert budget.totals()[0] == guard.attempts == 0
+    assert "private-sentinel" not in log.read_text(encoding="utf-8")
+
+
+def test_success_logs_both_request_sizes_and_limit_without_private_text(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    log = tmp_path / "trace.jsonl"
+    monkeypatch.setenv("TRAVEL_TRACE_FILE", str(log))
+    body = request_body(messages=[{"role": "user", "content": "private-sentinel：旅行"}])
+    forwarded: list[bytes] = []
+
+    def forward(data: bytes) -> tuple[int, bytes]:
+        forwarded.append(data)
+        return 200, response_body()
+
+    guard = Guard(
+        Settings("secret", "deepseek-flash", Decimal(5), Decimal(0)),
+        Budget(tmp_path / "ledger", tmp_path / "old", Decimal(5)),
+        forward,
+    )
+    assert guard.accept("/v1/messages", "Bearer " + guard.token, body)[0] == 200
+    logged = log.read_text(encoding="utf-8")
+    rows = [json.loads(line.removeprefix("TRACE ")) for line in logged.splitlines()]
+    received = next(row for row in rows if row["ev"] == "model_req_received")
+    sent = next(row for row in rows if row["ev"] == "model_req_start")
+    assert received["req_bytes"] == sent["raw_bytes"] == len(body)
+    assert sent["req_bytes"] == len(forwarded[0]) and sent["limit_bytes"] == 524288
+    assert "private-sentinel" not in logged and guard.token not in logged
 
 
 def test_upstream_http_error_records_status_only_and_never_leaks_body(tmp_path: Path) -> None:

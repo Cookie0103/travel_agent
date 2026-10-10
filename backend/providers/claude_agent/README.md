@@ -12,7 +12,7 @@ SDK 原始消息在这里转换为 `RuntimeEvent` / `RuntimeOutcome`。
 
 `live.run_live` → 费用守卫 → `worker` → `Agent` → SDK/MCP → 旅行工具。
 `settings`按LLM_PROVIDER显式选DeepSeek/CNY或Anthropic/USD，模型/价表共用。
-`budget/request/response/guard/http`共用预占/结算；USD累计授权为0，密钥和日预算不放行。
+`budget/request/response/guard/http`共用预占/结算；DeepSeek请求上限512 KiB，其他模型128 KiB；TRACE记录model_req_received原始大小、model_req_start转发大小/上限、model_req_rejected拒绝大小/阶段/原因（不记正文/密钥）；USD累计授权为0，密钥和日预算不放行。
 `environment/process/bootstrap/windows_job` 共用环境隔离与子进程清理。
 `backend/limits.py` 读取环境变量并给出价表/预算校验（档位在 `backend/profile.py`），`ledger`在网络调用前落盘计次与保守费用（写入失败就不发送）；不同币种分开记账。
 父进程的私有报告在 .cache/sessions；前端/CLI 不展示 SDK session_id 或原始 stderr。
