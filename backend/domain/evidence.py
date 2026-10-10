@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, JsonValue, model_validator
 
 from backend.domain.hotel_details import StoredHotelDetails
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import TravelRequest, segment_request, trip_segments
 
 EvidenceKind = Literal["place", "article", "hotel_offer", "route"]
 
@@ -52,7 +52,16 @@ class EvidenceRecord(BaseModel):
             self.retrieved_at <= now < self.valid_until
             # 不绑定revision：预算/兴趣等无关修改不应使仍有效的路段/报价过期；
             # 影响证据的条件由conditions逐字段比较，入住/路线条件变化时仍会失效。
-            and self.conditions == evidence_conditions(request, self.kind)
+            and (
+                any(
+                    self.conditions
+                    == evidence_conditions(segment_request(request, segment), self.kind)
+                    for segment in trip_segments(request)
+                    if segment.depart > segment.arrive
+                )
+                if self.kind == "hotel_offer" and request.segments
+                else self.conditions == evidence_conditions(request, self.kind)
+            )
         )
 
 

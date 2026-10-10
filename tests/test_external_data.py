@@ -190,6 +190,25 @@ def test_rakuten_run_cap_default_follows_nights_and_other_profiles_keep_config(
     asyncio.run(exercise())
 
 
+@pytest.mark.parametrize("nights,expected", [(2, 3), (1000, 8)])
+def test_segmented_rakuten_budget_uses_whole_trip_nights_with_existing_absolute_cap(
+    nights: int, expected: int
+) -> None:
+    """R05：共享全程预算不会突破原8次上限，也不会触发未知城市HTTP。"""
+
+    async def exercise() -> None:
+        usage = _CountingUsage({})
+        trip = request().model_copy(update={"end_date": date(2026, 11, 7)})
+        async with httpx.AsyncClient() as http:
+            provider = Rakuten("test", "test", "", "", http, usage)
+            point = GeoPoint(name="合成区域", latitude=35, longitude=135, broad=True)
+            with pytest.raises(ExternalDataError, match="区域过大"):
+                await provider.search(trip, point, budget_nights=nights)
+        assert usage.run_caps["rakuten"] == expected and usage.calls == 0
+
+    asyncio.run(exercise())
+
+
 def test_google_missing_place_types_remain_unknown_instead_of_inventing_attraction() -> None:
     from backend.adapters.google_maps import place_from_response
 

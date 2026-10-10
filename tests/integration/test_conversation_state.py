@@ -723,6 +723,7 @@ def test_live_hotel_location_question_survives_restart_and_queries_selected_loca
                 hotel_id: str | None = None,
                 rate_id: str | None = None,
                 limit: int = 4,
+                budget_nights: int | None = None,
             ) -> tuple[HotelOffer, ...]:
                 assert request.city == "冲绳" and request.hotel_search_location == "那霸"
                 assert point.name == "那霸" and request.lodging_budget is None

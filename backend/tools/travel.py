@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import json
 from dataclasses import replace
+from datetime import date
 from pathlib import Path
 from typing import Literal, get_args
 from uuid import UUID
@@ -65,6 +66,10 @@ class HotelSearchInput(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     expected_revision: int = Field(strict=True, ge=0)
     hotel_id: str | None = Field(default=None, min_length=1, max_length=100)
+    segment_arrive: date | None = Field(
+        default=None,
+        description="多城市时必填：所查住宿段的arrive日期；单城市省略。不修改全局旅行条件。",
+    )
     limit: int = Field(
         default=5,
         strict=True,
@@ -641,7 +646,11 @@ class TravelToolExecutor:
             )
         records = (
             await self.hotels.search(
-                context, parsed.expected_revision, parsed.hotel_id, parsed.limit
+                context,
+                parsed.expected_revision,
+                parsed.hotel_id,
+                parsed.limit,
+                segment_arrive=parsed.segment_arrive,
             )
             if isinstance(parsed, HotelSearchInput)
             else await self.hotels.refresh(context, parsed.expected_revision, parsed.offer_id)

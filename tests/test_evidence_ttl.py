@@ -14,7 +14,7 @@ from backend.adapters.rakuten import Rakuten, candidates
 from backend.domain.external_data import GeoPoint
 from backend.domain.hotels import HotelOffer, quote
 from backend.domain.itinerary import ItineraryProposal
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import TravelRequest, segment_request, trip_segments
 from backend.domain.validator import (
     HOTEL_CONDITIONS_REASON,
     HOTEL_EXPIRED_REASON,
@@ -29,6 +29,33 @@ from backend.services.travel import TravelService
 from backend.tools.travel import TravelToolExecutor
 from tests.test_external_data import sample
 from tests.test_itinerary import NOW, item, place, record, request
+from tests.test_travel_request import _record
+
+
+def test_hotel_evidence_matches_any_overnight_segment_without_changing_other_kinds() -> None:
+    """R05：酒店按住宿段适用，place/route仍用旧全局条件；不存在的段不放行。"""
+    current = TravelRequest.model_validate(
+        {
+            **request().model_dump(),
+            "segments": [
+                {"city": "京都", "arrive": "2026-11-03", "depart": "2026-11-04"},
+                {"city": "大阪", "arrive": "2026-11-04", "depart": "2026-11-05"},
+                {"city": "神户", "arrive": "2026-11-05", "depart": "2026-11-05"},
+            ],
+        }
+    )
+    segments = trip_segments(current)
+    first = _record(segment_request(current, segments[0]), "hotel_offer", NOW)
+    second = _record(segment_request(current, segments[1]), "hotel_offer", NOW)
+    zero = _record(segment_request(current, segments[2]), "hotel_offer", NOW)
+    assert first.applicable(current, NOW) and second.applicable(current, NOW)
+    assert not zero.applicable(current, NOW)
+    assert not _record(current, "hotel_offer", NOW).applicable(current, NOW)
+    assert _record(current, "place", NOW).applicable(current, NOW)
+    assert _record(current, "route", NOW).applicable(current, NOW)
+    altered = current.model_copy(update={"rooms": 2})
+    assert not second.applicable(altered, NOW)
+    assert not second.applicable(current, second.valid_until)
 
 
 def hotel_offer() -> HotelOffer:

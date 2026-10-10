@@ -1,22 +1,149 @@
 """R05：真实数据库中的报价归属、有效期、条件变化和服务端卡片补全。"""
 
 import asyncio
-from datetime import UTC, datetime, timedelta
+import json
+from datetime import UTC, date, datetime, timedelta
 from uuid import UUID, uuid4
 
+import httpx
 import pytest
 
+from backend.adapters.external_api import ApiUsage
+from backend.adapters.google_maps import GoogleMaps
+from backend.adapters.live_data import LiveData
+from backend.adapters.rakuten import Rakuten
+from backend.domain.evidence import evidence_conditions
 from backend.domain.execution import RunContext
 from backend.domain.hotels import HotelOffer
-from backend.domain.travel_request import RequestPatch
+from backend.domain.travel_request import RequestPatch, segment_request, trip_segments
 from backend.persistence.models import EvidenceRow
 from backend.services.common import ServiceError, transaction
 from backend.services.hotels import HotelService
 from backend.services.travel import TravelService
 from backend.tools.travel import TravelToolExecutor
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.test_external_data import sample
 
 pytestmark = pytest.mark.integration
+
+
+def test_segmented_queries_and_refresh_preserve_global_request_and_quote_scope(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """R04/R05：真实PG存两段报价；合成HTTP不访问供应商，refresh保留原段。"""
+    runner, travel, context = travel_setup
+    calls: list[tuple[str, str]] = []
+
+    def respond(request: httpx.Request) -> httpx.Response:
+        if "geocode" in request.url.path:
+            calls.append(("geocode", request.url.params["address"]))
+            return httpx.Response(
+                200,
+                json={
+                    "status": "OK",
+                    "results": [
+                        {
+                            "place_id": "synthetic-city",
+                            "address_components": [
+                                {"long_name": "日本", "short_name": "JP", "types": ["country"]}
+                            ],
+                            "geometry": {"location": {"lat": 35, "lng": 135}},
+                        }
+                    ],
+                },
+            )
+        calls.append(("rakuten", request.url.params["checkinDate"]))
+        payload = json.dumps(sample()).replace("2026-11-06", request.url.params["checkinDate"])
+        return httpx.Response(200, content=payload)
+
+    async def exercise() -> None:
+        changed = await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": {
+                        "segments": [
+                            {"city": "大阪", "arrive": "2026-11-03", "depart": "2026-11-04"},
+                            {
+                                "city": "神户",
+                                "arrive": "2026-11-04",
+                                "depart": "2026-11-05",
+                                "hotel_search_location": "神戸駅",
+                            },
+                            {"city": "京都", "arrive": "2026-11-05", "depart": "2026-11-05"},
+                        ]
+                    },
+                }
+            ),
+        )
+        original = changed.request
+        usage = ApiUsage(travel.database, {})
+        async with httpx.AsyncClient(transport=httpx.MockTransport(respond)) as http:
+            travel.live = LiveData(
+                GoogleMaps("test", http, usage),
+                Rakuten("test", "test", "", "", http, usage),
+                usage,
+                http,
+                {},
+            )
+            executor = TravelToolExecutor(travel)
+            missing = await executor.execute(
+                context, "search_hotel_offers", {"expected_revision": 2, "limit": 1}
+            )
+            assert missing.code == "validation" and "segment_arrive" in missing.suggestion
+            assert not calls
+            hotels = HotelService(travel)
+            with pytest.raises(ServiceError) as invalid:
+                await hotels.search(context, 2, segment_arrive=date(2026, 11, 2))
+            assert invalid.value.status == 422 and not calls
+            with pytest.raises(ServiceError) as zero:
+                await hotels.search(context, 2, segment_arrive=date(2026, 11, 5))
+            assert zero.value.status == 422 and not calls
+            first = (await hotels.search(context, 2, limit=1, segment_arrive=date(2026, 11, 3)))[0]
+            second_result = await executor.execute(
+                context,
+                "search_hotel_offers",
+                {"expected_revision": 2, "limit": 1, "segment_arrive": "2026-11-04"},
+            )
+            assert second_result.code is None
+            second = (await hotels.known_quotes(context, (UUID(second_result.evidence_ids[0]),)))[0]
+            for segment, record in zip(trip_segments(original)[:2], (first, second), strict=True):
+                assert record.conditions == evidence_conditions(
+                    segment_request(original, segment), "hotel_offer"
+                )
+                assert record.applicable(original, datetime.now(UTC))
+                assert HotelOffer.model_validate(record.value).request.city == segment.city
+            refreshed = (await hotels.refresh(context, 2, second.evidence_id))[0]
+            assert refreshed.conditions == second.conditions
+            assert refreshed.evidence_id != second.evidence_id
+            assert await travel.get_request(context) == original
+            assert [value for api, value in calls if api == "rakuten"] == [
+                "2026-11-03",
+                "2026-11-04",
+                "2026-11-04",
+            ]
+            assert [value for api, value in calls if api == "geocode"] == ["大阪", "神戸駅"]
+            await travel.resolve_evidence(context, (first.evidence_id, second.evidence_id))
+            assert usage.run_caps["rakuten"] == 3 and usage.used["rakuten"] == 3
+            before = list(calls)
+            with pytest.raises(ServiceError, match="本轮.*上限"):
+                await hotels.search(context, 2, limit=1, segment_arrive=date(2026, 11, 3))
+            assert calls == before and await travel.get_request(context) == original
+            replaced = [segment.model_dump(mode="json") for segment in trip_segments(original)]
+            replaced[1]["city"] = "奈良"
+            await travel.patch_request(
+                context,
+                RequestPatch.model_validate(
+                    {"expected_revision": 2, "set": {"segments": replaced}}
+                ),
+            )
+            with pytest.raises(ServiceError) as removed:
+                await hotels.refresh(context, 3, second.evidence_id)
+            assert removed.value.status == 422 and "原报价住宿段" in str(removed.value)
+            assert calls == before
+
+    runner.run(exercise())
 
 
 def test_tools_return_six_cards_and_comparison_cannot_accept_model_prices(

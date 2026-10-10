@@ -1,6 +1,6 @@
 """酒店查询/刷新/补卡用例；不可变报价保存在已有Evidence，避免重复事实表。"""
 
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from uuid import UUID
 
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
@@ -14,6 +14,9 @@ from backend.domain.travel_request import (
     TravelRequest,
     hotel_search_location_required,
     lodging_budget_relation,
+    same_city,
+    segment_request,
+    trip_segments,
 )
 from backend.persistence.travel import (
     entity_evidence,
@@ -47,15 +50,31 @@ class HotelService:
             )
         return request
 
+    def _segment_request(self, request: TravelRequest, arrive: date | None) -> TravelRequest:
+        if not request.segments and arrive is None:
+            return request
+        if arrive is None:
+            raise ServiceError(
+                422, "validation", "多城市酒店查询必须提供segment_arrive，选择有住宿的城市段。"
+            )
+        segment = next((s for s in trip_segments(request) if s.arrive == arrive), None)
+        if segment is None or segment.depart == segment.arrive:
+            raise ServiceError(422, "validation", "segment_arrive必须对应当前有住宿的城市段。")
+        return segment_request(request, segment)
+
     async def search(
         self,
         context: RunContext,
         revision: int,
         hotel_id: str | None = None,
         limit: int = 5,
+        *,
+        segment_arrive: date | None = None,
     ) -> tuple[EvidenceRecord, ...]:
         request = await self._request(context, revision)
-        return await self._quote(context, request, hotel_id=hotel_id, limit=limit)
+        return await self._quote(
+            context, request, hotel_id=hotel_id, limit=limit, segment_arrive=segment_arrive
+        )
 
     async def refresh(
         self, context: RunContext, revision: int, offer_id: UUID
@@ -64,7 +83,15 @@ class HotelService:
         old = (await self.known_quotes(context, (offer_id,)))[0]
         offer = HotelOffer.model_validate(old.value)
         request = await self._request(context, revision)
-        return await self._quote(context, request, rate_id=offer.rate_id, limit=1)
+        arrive = None
+        if request.segments:
+            arrive = offer.request.start_date
+            selected = self._segment_request(request, arrive)
+            if not same_city(selected.city or "", offer.request.city or ""):
+                raise ServiceError(422, "validation", "原报价住宿段已不存在，请重新按段查询酒店。")
+        return await self._quote(
+            context, request, rate_id=offer.rate_id, limit=1, segment_arrive=arrive
+        )
 
     async def _quote(
         self,
@@ -74,7 +101,13 @@ class HotelService:
         hotel_id: str | None = None,
         rate_id: str | None = None,
         limit: int,
+        segment_arrive: date | None = None,
     ) -> tuple[EvidenceRecord, ...]:
+        budget_options = {}
+        if request.segments:
+            assert request.start_date and request.end_date
+            budget_options = {"budget_nights": (request.end_date - request.start_date).days}
+        request = self._segment_request(request, segment_arrive)
         if question := room_preferences_question(request):
             raise ServiceError(422, "validation", question, "hotel_room_preferences_missing")
         if live := self.travel.live:
@@ -96,7 +129,12 @@ class HotelService:
             try:
                 point = await live.google.geocode(request.hotel_search_location or request.city)
                 offers = await live.rakuten.search(
-                    request, point, hotel_id=hotel_id, rate_id=rate_id, limit=limit
+                    request,
+                    point,
+                    hotel_id=hotel_id,
+                    rate_id=rate_id,
+                    limit=limit,
+                    **budget_options,
                 )
             except ExternalDataError as error:
                 raise ServiceError(
