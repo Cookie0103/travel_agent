@@ -15,8 +15,18 @@ const explanations: Record<ErrorCode, string> = {
 };
 
 type ToolReason = NonNullable<AppEvent["reason"]>;
+/** Run-level reasons only appear on the final failed event; they are not tool reasons. */
+const runReasons = {
+  conversation_incomplete:
+    "本轮在行程草稿完成前停止了；酒店等已完成的结果已保留。请再发一条消息，例如“继续排行程”。",
+  conversation_state_unavailable: "对话状态暂时读取失败，请稍后重试",
+  max_turns: "本轮对话轮数已用完，已完成的结果已保留；请再发一条消息继续",
+} as const;
 /** Closed reason codes recorded by the backend; "other" and unknown values fall back to the code text. */
-const reasons: Record<Exclude<ToolReason, "other">, string> = {
+const reasons: Record<
+  Exclude<ToolReason, "other" | keyof typeof runReasons>,
+  string
+> = {
   tool_call_cap: "本轮工具调用次数已用完，请把剩余需求拆成下一条消息继续",
   repair_limit: "行程校验的修复次数已用完",
   repeat_blocked: "相同请求已被拒绝，未重复执行",
@@ -44,6 +54,12 @@ export function errorExplanation(
   code: string | null | undefined,
   reason?: string | null,
 ): string {
+  if (
+    (code === "blocked" || code === "unavailable") &&
+    reason &&
+    Object.hasOwn(runReasons, reason)
+  )
+    return runReasons[reason as keyof typeof runReasons];
   // 工具原因码只解释工具级错误码；timeout/cancelled等运行级错误不借用它。
   if (
     (code === "blocked" || code === "validation" || code === "unavailable") &&

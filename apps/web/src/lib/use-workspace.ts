@@ -158,7 +158,7 @@ export function useWorkspace({
       cursor.current = after;
       // 早期出卡按事件顺序串行；失败静默，运行结束后的 hydrate 为准。
       let early = Promise.resolve();
-      let failedReason: string | null = null; // 最近一次失败工具步骤的封闭原因码
+      let failedReason: string | null = null; // 最近一次失败工具步骤或运行级失败事件的封闭原因码
       try {
         await readEvents(
           runId,
@@ -176,6 +176,9 @@ export function useWorkspace({
             cursor.current = event.sequence;
             if (event.kind === "tool_finished" && event.code)
               failedReason = event.reason ?? null;
+            // 运行级失败事件在最后到达；其封闭原因码优先于此前的工具原因。
+            if (event.kind === "failed" && event.reason)
+              failedReason = event.reason;
             setEvents((old) => [...old.slice(-79), event]);
             if (isCardEvent(event))
               early = early

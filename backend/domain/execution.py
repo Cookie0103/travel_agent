@@ -41,7 +41,12 @@ type ToolReason = Literal[
     "hotel_api_unconfigured",
     "schema",
     "other",
+    # 以下三项来自RuntimeOutcome.reason（运行级失败），只出现在failed终态事件上。
+    "conversation_incomplete",
+    "conversation_state_unavailable",
+    "max_turns",
 ]
+RUN_REASONS = ("conversation_incomplete", "conversation_state_unavailable", "max_turns")
 type EventKind = Literal[
     "started",
     "text",
@@ -191,7 +196,7 @@ class RuntimeEvent:
     text: str = ""
     tool_name: str | None = None
     code: ErrorCode | None = None
-    reason: ToolReason | None = None  # 仅tool_finished失败时设置；封闭码，不含自由文本
+    reason: ToolReason | None = None  # tool_finished失败或运行级failed时设置；封闭码，不含自由文本
     tool_call_id: UUID | None = None
     argument_keys: tuple[str, ...] = ()
     result_empty: bool | None = None
@@ -225,7 +230,13 @@ def terminal_event(context: RunContext, outcome: RuntimeOutcome) -> RuntimeEvent
         if outcome.code == "cancelled"
         else "failed"
     )
-    return RuntimeEvent(context, kind, code=outcome.code)
+    # 只持久化封闭词表内的运行级原因；其余outcome.reason（可能含供应商细节）一律不写入事件。
+    reason = (
+        cast(ToolReason, outcome.reason)
+        if kind == "failed" and outcome.reason in RUN_REASONS
+        else None
+    )
+    return RuntimeEvent(context, kind, code=outcome.code, reason=reason)
 
 
 def event_metadata(event: RuntimeEvent) -> RuntimeEvent:

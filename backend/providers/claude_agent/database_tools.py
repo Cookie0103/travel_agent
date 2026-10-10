@@ -11,12 +11,27 @@ from sqlalchemy import make_url
 
 from backend.adapters.live_data import LiveData
 from backend.adapters.supplier import SupplierClient
+from backend.domain.conversation import Task
 from backend.domain.execution import RunContext
 from backend.persistence.database import Database
 from backend.profile import current
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolResult
 from backend.tools.travel import TravelToolExecutor
+
+# 封闭词表：键来自Task；工具名与参数以backend/tools/travel.py为准。
+NEXT_STEPS: dict[Task, str] = {
+    "itinerary": (
+        "行程：直接使用本轮已找到的地点（除非一个都没找到，否则不要再搜索），"
+        "依次调用estimate_routes估算相邻地点路段 -> validate_itinerary校验"
+        "（若报告冲突，修正所指项目后再次校验） -> stage_plan_change暂存草稿 -> "
+        "present_travel_result(component=itinerary, draft_id=暂存返回的draft_id)展示"
+    ),
+    "hotel_comparison": (
+        "酒店比较：search_hotel_offers查询报价 -> "
+        "present_travel_result(component=hotel_comparison, expected_revision, offer_ids)展示"
+    ),
+}
 
 
 class DatabaseTools:
@@ -77,7 +92,7 @@ class DatabaseTools:
             preferences["revision"],
         )
 
-    async def continuation_reason(self, context: RunContext) -> str | None:
+    async def continuation_reason(self, context: RunContext, attempt: int) -> str | None:
         if self.executor.stopping_error or self.executor.calls >= self.executor.max_calls:
             return None
         state = await asyncio.wrap_future(
@@ -90,9 +105,14 @@ class DatabaseTools:
         ready = dialogue["ready_tasks"]
         if not ready:
             return None
+        steps = [NEXT_STEPS[task] for task in ready if task in NEXT_STEPS]
         return (
-            "服务端确认当前条件已齐，请立即继续用户已授权的待办，而非再确认是否执行或重复询问已知条件。住宿预算未知允许查询，不当全程金额为住宿预算；完成实际查询/校验/暂存/展示，若工具报错则如实说明。当前任务："
+            "服务端确认当前条件已齐，请立即继续用户已授权的待办，而非再确认是否执行或重复询问已知条件。"
+            "住宿预算未知允许查询，不当全程金额为住宿预算；完成实际查询/校验/暂存/展示，若工具报错则如实说明。"
+            f"不要只写总结文字就结束；这是第{attempt}次提醒。当前任务："
             + json.dumps(ready, ensure_ascii=False)
+            + "。下一步："
+            + "；".join(steps)
         )
 
     async def revisions(self, context: RunContext) -> tuple[int, int]:

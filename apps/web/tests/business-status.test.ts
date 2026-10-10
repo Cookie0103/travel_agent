@@ -149,3 +149,23 @@ test("run failure with a timeout code ignores an earlier tool reason", () => {
     runFailureMessage("timeout"),
   );
 });
+test("run-level failure reasons are shown in Chinese and take precedence only for blocked/unavailable", () => {
+  assert.match(
+    runFailureMessage("blocked", "conversation_incomplete"),
+    /^执行未完成：本轮在行程草稿完成前停止了.*继续排行程/,
+  );
+  assert.equal(
+    runFailureMessage("unavailable", "conversation_state_unavailable"),
+    "执行未完成：对话状态暂时读取失败，请稍后重试",
+  );
+  assert.match(runFailureMessage("blocked", "max_turns"), /轮数已用完/);
+  // 运行级原因不能借给 timeout 等其他运行级错误码，未知原因仍用通用文本。
+  assert.equal(
+    runFailureMessage("timeout", "conversation_incomplete"),
+    runFailureMessage("timeout"),
+  );
+  assert.equal(
+    runFailureMessage("blocked", "made_up_reason"),
+    runFailureMessage("blocked"),
+  );
+});

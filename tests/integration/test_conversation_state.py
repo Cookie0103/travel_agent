@@ -651,11 +651,11 @@ def test_current_draft_recovers_and_completes_only_its_pending_task(
     runner.run(exercise())
 
 
-def test_native_sdk_second_stop_is_business_blocked_not_provider_error(
+def test_native_sdk_fourth_stop_is_business_blocked_not_provider_error(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     tmp_path: Path,
 ) -> None:
-    """P74/R13：真实SDK两次结束但待办未完成，覆盖真实stop_hook_prevented。"""
+    """P74/R13：真实SDK连续三次提醒后第四次结束仍待办未完成，覆盖真实stop_hook_prevented。"""
     from tests.integration.sdk_helper import run_database_worker
     from tests.test_sdk_cli_offline import scripted_response
 
@@ -679,11 +679,11 @@ def test_native_sdk_second_stop_is_business_blocked_not_provider_error(
         )
 
     result, guard = run_database_worker(
-        travel, turn, tmp_path, forward, "继续合成任务", max_attempts=2
+        travel, turn, tmp_path, forward, "继续合成任务", max_attempts=4
     )
     assert result["status"] == "error" and result["code"] == "blocked"
     assert result["reason"] == "conversation_incomplete" and not guard.failures
-    assert len(requests) == 2
+    assert len(requests) == 4  # 初次 + 三次提醒
     dialogue = runner.run(travel.business_context(turn))["conversation"]
     assert isinstance(dialogue, dict) and dialogue["pending_tasks"] == ["hotel_comparison"]
 

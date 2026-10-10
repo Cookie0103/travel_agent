@@ -17,9 +17,11 @@ from claude_agent_sdk import (
     TextBlock,
     ToolUseBlock,
 )
+from claude_agent_sdk.types import StopHookInput
 
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity
 from backend.providers.claude_agent.runtime import (
+    MAX_STOP_CORRECTIONS,
     ClaudeRuntime,
     RuntimeConfig,
     literal_prompt_supported,
@@ -274,38 +276,64 @@ def test_known_terminal_boundary_overrides_last_tool_stop(reason: str, code: str
     assert outcome.sdk_session_id is None
 
 
-@pytest.mark.asyncio
-async def test_business_stop_hook_corrects_once_then_reports_incomplete_without_loop(
-    tmp_path: Path,
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    from claude_agent_sdk.types import StopHookInput
-
-    client = ScriptedClient([ResultMessage("success", 1, 1, False, 1, "sdk", result="done")])
-    adapter = runtime(tmp_path, monkeypatch, client)
-    context = RunContext(uuid4())
-
-    async def pending(current: RunContext) -> str | None:
-        assert current == context
-        return "synthetic pending work"
-
-    adapter.config = replace(adapter.config, stop_check=pending)
-    data: StopHookInput = {
+def stop_data(active: bool = False) -> StopHookInput:
+    return {
         "hook_event_name": "Stop",
         "session_id": "sdk",
         "transcript_path": "unused",
         "cwd": "unused",
-        "stop_hook_active": False,
+        "stop_hook_active": active,
     }
+
+
+@pytest.mark.asyncio
+async def test_business_stop_hook_corrects_three_times_then_reports_incomplete(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = ScriptedClient([ResultMessage("success", 1, 1, False, 1, "sdk", result="done")])
+    adapter = runtime(tmp_path, monkeypatch, client)
+    context = RunContext(uuid4())
+    attempts: list[int] = []
+
+    async def pending(current: RunContext, attempt: int) -> str | None:
+        assert current == context
+        attempts.append(attempt)
+        return f"synthetic pending work {attempt}"
+
+    adapter.config = replace(adapter.config, stop_check=pending)
     hook = adapter.stop_hook(context)
-    assert await hook(data, None, {"signal": None}) == {
-        "decision": "block",
-        "reason": "synthetic pending work",
-    }
-    second = await hook(data, None, {"signal": None})
-    assert second.get("continue_") is False and adapter.stop_corrections == 1
+    # SDK的stop_hook_active不是循环上界：第2、3次提醒时它为True，仍须继续提醒。
+    for number in (1, 2, 3):
+        assert await hook(stop_data(active=number > 1), None, {"signal": None}) == {
+            "decision": "block",
+            "reason": f"synthetic pending work {number}",
+        }
+        assert adapter.stop_corrections == number
+    fourth = await hook(stop_data(active=True), None, {"signal": None})
+    assert fourth.get("continue_") is False and adapter.stop_corrections == MAX_STOP_CORRECTIONS
+    assert attempts == [1, 2, 3, 4] and MAX_STOP_CORRECTIONS == 3
     outcome = await adapter.execute(context, "continue", None, lambda event: None, asyncio.Event())
     assert outcome.code == "blocked" and outcome.reason == "conversation_incomplete"
+
+
+@pytest.mark.asyncio
+async def test_stop_hook_stops_nudging_once_tasks_are_done(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    adapter = runtime(tmp_path, monkeypatch, ScriptedClient([]))
+    remaining = ["itinerary"]
+
+    async def pending(current: RunContext, attempt: int) -> str | None:
+        return "keep going" if remaining else None
+
+    adapter.config = replace(adapter.config, stop_check=pending)
+    hook = adapter.stop_hook(RunContext(uuid4()))
+    assert (await hook(stop_data(), None, {"signal": None})).get("decision") == "block"
+    remaining.clear()
+    assert await hook(stop_data(active=True), None, {"signal": None}) == {}
+    assert adapter.stop_corrections == 1 and adapter.stop_failure is None
 
 
 @pytest.mark.asyncio
@@ -315,11 +343,9 @@ async def test_stop_hook_missing_fields_allow_stop_and_state_failure_is_not_succ
     monkeypatch: pytest.MonkeyPatch,
     unavailable: bool,
 ) -> None:
-    from claude_agent_sdk.types import StopHookInput
-
     adapter = runtime(tmp_path, monkeypatch, ScriptedClient([]))
 
-    async def state(current: RunContext) -> str | None:
+    async def state(current: RunContext, attempt: int) -> str | None:
         if unavailable:
             raise RuntimeError("synthetic private provider content")
         return None

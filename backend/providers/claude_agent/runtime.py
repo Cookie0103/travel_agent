@@ -25,6 +25,10 @@ from backend.tools.contracts import ToolDefinition, ToolExecutor
 from backend.tools.workflow import OrderedTools, WorkflowName, workflow_guidance
 from backend.trace_log import trace
 
+# 行程需要连续约6-10次工具调用（路线、校验、暂存、展示）；一次提醒不够，
+# 但必须有界，否则模型空转会无限消耗调用额度。
+MAX_STOP_CORRECTIONS = 3
+
 
 @dataclass(frozen=True)
 class RuntimeConfig:
@@ -37,7 +41,7 @@ class RuntimeConfig:
     workflow: WorkflowName | None = None
     disable_auto_compaction: bool = False
     persist_session: bool = True
-    stop_check: Callable[[RunContext], Awaitable[str | None]] | None = None
+    stop_check: Callable[[RunContext, int], Awaitable[str | None]] | None = None
 
 
 class ClaudeRuntime:
@@ -229,14 +233,15 @@ class ClaudeRuntime:
             if data["hook_event_name"] != "Stop" or self.config.stop_check is None:
                 return {}
             try:
-                reason = await self.config.stop_check(context)
+                reason = await self.config.stop_check(context, self.stop_corrections + 1)
             except Exception:
                 # 不把数据库/用户/供应商异常正文返回给SDK；无法读取状态时不能冒称任务完成。
                 self.stop_failure = "conversation_state_unavailable"
                 return {"continue_": False, "stopReason": "业务状态暂不可读取，请稍后重试"}
             if reason is None:
                 return {}
-            if self.stop_corrections or data["stop_hook_active"]:
+            # 循环上界只看自己的计数；SDK的stop_hook_active只表示此前已触发过Stop钩子。
+            if self.stop_corrections >= MAX_STOP_CORRECTIONS:
                 self.stop_failure = "conversation_incomplete"
                 return {"continue_": False, "stopReason": "本轮未完成已授权的旅行任务"}
             self.stop_corrections += 1

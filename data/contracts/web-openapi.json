@@ -6175,7 +6175,10 @@
           "hotel_external_unavailable",
           "hotel_api_unconfigured",
           "schema",
-          "other"
+          "other",
+          "conversation_incomplete",
+          "conversation_state_unavailable",
+          "max_turns"
         ],
         "type": "string"
       },

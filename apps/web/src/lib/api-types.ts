@@ -2095,7 +2095,7 @@ export interface components {
         /** @enum {string} */
         UiStageReason: "plan_exists" | "patch_invalid" | "repair_limit" | "other";
         /** @enum {string} */
-        UiToolReason: "tool_call_cap" | "repair_limit" | "repeat_blocked" | "result_too_long" | "unregistered_tool" | "context_reuse" | "evidence_missing" | "offer_unknown_id" | "not_found" | "live_hold_disabled" | "plan_exists" | "patch_invalid" | "revision_stale" | "lodging_budget_conflict" | "hotel_search_location_required" | "hotel_missing_fields" | "hotel_room_preferences_missing" | "hotel_external_validation" | "hotel_external_unavailable" | "hotel_api_unconfigured" | "schema" | "other";
+        UiToolReason: "tool_call_cap" | "repair_limit" | "repeat_blocked" | "result_too_long" | "unregistered_tool" | "context_reuse" | "evidence_missing" | "offer_unknown_id" | "not_found" | "live_hold_disabled" | "plan_exists" | "patch_invalid" | "revision_stale" | "lodging_budget_conflict" | "hotel_search_location_required" | "hotel_missing_fields" | "hotel_room_preferences_missing" | "hotel_external_validation" | "hotel_external_unavailable" | "hotel_api_unconfigured" | "schema" | "other" | "conversation_incomplete" | "conversation_state_unavailable" | "max_turns";
         /**
          * RuntimeEvent
          * @description 前端/CLI 所需的最小事件；text 是用户输出，不进入公共 Trace。
