@@ -10,7 +10,7 @@ import pytest
 
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
-from backend.domain.travel_request import RequestPatch
+from backend.domain.travel_request import RequestPatch, pace_of
 from backend.persistence import runs
 from backend.services.common import transaction
 from backend.services.travel import TravelService
@@ -36,6 +36,32 @@ async def finish(travel: TravelService, context: RunContext) -> None:
             context,
             RuntimeOutcome(text="实时回复仅供本轮查看；详情按需更新。", sdk_session_id="synthetic"),
         )
+
+
+def test_fixture_explicit_pace_change_removes_only_known_hard_pace_in_pg(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """R14：明确改节奏使用已有删除/来源守卫，保留手填的其他硬条件。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {"expected_revision": 1, "set": {"hard_constraints": ["轻松", "不能登山"]}}
+            ),
+        )
+        turn = await create_run(travel, context, "改成特种兵")
+        events: list[RuntimeEvent] = []
+        outcome = await FixtureRuntime(TravelToolExecutor(travel)).execute(
+            turn, "改成特种兵", None, events.append, asyncio.Event()
+        )
+        assert outcome.code is None
+        current = await TravelService(travel.database).get_request(turn)
+        assert pace_of(current) == "特种兵" and current.hard_constraints == ("不能登山",)
+        assert current.revision == 3 and "已按对话更新" in outcome.text
+
+    runner.run(exercise())
 
 
 @pytest.mark.parametrize("manual_unknown", [False, True])

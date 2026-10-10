@@ -5,7 +5,7 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from backend.domain.catalog import SIGHTSEEING_CATEGORIES, Place
+from backend.domain.catalog import SIGHTSEEING_CATEGORIES, VISIT_DURATION_RANGES, Place
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.hotels import HotelOffer
 from backend.domain.itinerary import (
@@ -21,6 +21,7 @@ from backend.domain.travel_request import (
     TravelRequest,
     cities_on,
     lodging_budget_relation,
+    pace_of,
     same_city,
     segment_request,
     trip_segments,
@@ -107,12 +108,75 @@ def sightseeing_checks(
         by_day.setdefault(day, []).append(place.place_id)
         by_place.setdefault(place.place_id, []).append((day, place.name))
     limits = {"慢节奏": 3, "标准": 5, "特种兵": 8}
-    pace = next(
-        (s.removeprefix("节奏：") for s in request.soft_constraints if s.startswith("节奏：")),
-        "",
+    pace = (
+        pace_of(request) or ""
+        if request.segments
+        else next(
+            (s.removeprefix("节奏：") for s in request.soft_constraints if s.startswith("节奏：")),
+            "",
+        )
     )
     limit = limits.get(pace, 5)
     checks: list[ValidationCheck] = []
+    if request.segments:
+        assert request.start_date is not None and request.end_date is not None
+        incomplete = {request.start_date, request.end_date} | {
+            segment.arrive for segment in trip_segments(request)[1:]
+        }
+        minimum = {"慢节奏": 2, "标准": 4, "特种兵": 6}.get(pace)
+        if minimum is not None:
+            # 空白完整日按区间汇总，工作量只随项目/段数增长，不随无上限日期跨度增长。
+            boundaries = sorted(
+                incomplete
+                | {day for day in by_day if request.start_date <= day <= request.end_date}
+            )
+            for previous_day, next_day in zip(boundaries[:-1], boundaries[1:], strict=True):
+                if next_day - previous_day > timedelta(days=1):
+                    first, last = previous_day + timedelta(days=1), next_day - timedelta(days=1)
+                    checks.append(
+                        check(
+                            f"day:{first.isoformat()}",
+                            "unknown",
+                            "pace_too_sparse",
+                            f"节奏提醒：{first.isoformat()}—{last.isoformat()}完整日"
+                            f"没有已知景点，低于{pace}建议的每日{minimum}个；"
+                            "请补充不同景点或确认留白。首末日和转场日已放宽。",
+                        )
+                    )
+        for day, visits in by_day.items():
+            if minimum is not None and day not in incomplete and len(visits) < minimum:
+                checks.append(
+                    check(
+                        f"day:{day.isoformat()}",
+                        "unknown",
+                        "pace_too_sparse",
+                        f"节奏提醒：{day.isoformat()}为完整日，只有{len(visits)}个已知景点，"
+                        f"低于{pace}建议的{minimum}个；请补充不同景点或确认留白。"
+                        "首末日和转场日已放宽，不按未查询的航班/车次时刻推算。",
+                    )
+                )
+        for index in range(1, len(proposal.items)):
+            previous, current = proposal.items[index - 1 : index + 1]
+            previous_place, current_place = places[index - 1 : index + 1]
+            day = current.start.astimezone(KYOTO).date()
+            if (
+                previous.start.astimezone(KYOTO).date() == day
+                and previous.end.astimezone(KYOTO).date() == day
+                and previous_place is not None
+                and current_place is not None
+                and same_city(previous_place.city, current_place.city)
+                and current.start - previous.end > timedelta(hours=3)
+            ):
+                checks.append(
+                    check(
+                        f"day:{day.isoformat()}",
+                        "unknown",
+                        "day_gap",
+                        f"安排提醒：{day.isoformat()}同城相邻两项之间"
+                        f"{hhmm(previous.end)}—{hhmm(current.start)}空白超过3小时；"
+                        "请补充安排或说明休息，不将空白解释成已查询交通耗时。",
+                    )
+                )
     for day, visits in by_day.items():
         if len(visits) > limit:
             guidance = (
@@ -154,6 +218,30 @@ def visit_checks(
     checks: list[ValidationCheck] = []
     if end <= start:
         return [check(subject, "conflict", "visit_duration", "停留结束必须晚于开始")]
+    if request.segments and place is not None:
+        bounds = VISIT_DURATION_RANGES.get(place.category.strip().casefold())
+        if bounds:
+            lower, upper = (timedelta(minutes=minutes) for minutes in bounds)
+            duration = end - start
+            if duration < lower or duration > upper:
+                checks.append(
+                    traced(
+                        check(
+                            subject,
+                            "conflict"
+                            if duration < lower / 2 or duration > upper * 2
+                            else "unknown",
+                            "visit_duration_range",
+                            f"停留建议：{place.name}（{place.category}）安排"
+                            f"{duration.total_seconds() / 60:g}分钟，"
+                            f"建议区间{bounds[0]}–{bounds[1]}分钟；"
+                            "请调整安排并重新核对相邻路线。建议区间不代表已核实营业时间。",
+                        ),
+                        proposal,
+                        index,
+                        f" start={hhmm(item.start)} end={hhmm(item.end)}",
+                    )
+                )
     if request.start_date is None or request.end_date is None:
         checks.append(check(subject, "unknown", "trip_dates", "旅行日期未完整确认"))
     elif start.date() < request.start_date or end.date() > request.end_date:

@@ -10,6 +10,7 @@ from backend.domain.travel_request import (
     TravelRequest,
     hotel_search_location_required,
     lodging_budget_relation,
+    pace_of,
     trip_segments,
 )
 
@@ -79,10 +80,7 @@ def task_missing(
         fields.append("lodging_budget")
     if lodging_budget_relation(request).status == "conflict":
         fields.append("budget_conflict")
-    if task == "itinerary" and not any(
-        value.startswith(("节奏：标准", "节奏：慢节奏", "节奏：特种兵"))
-        for value in (*request.soft_constraints, *request.hard_constraints)
-    ):
+    if task == "itinerary" and pace_of(request) is None:
         fields.append("pace")
     return tuple(fields)
 

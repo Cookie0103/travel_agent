@@ -6,7 +6,7 @@ from decimal import Decimal
 
 from backend.domain.conversation import Task, task_missing
 from backend.domain.room_preferences import room_preferences_question
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import PACE_ALIASES, TravelRequest, pace_of
 
 NUMBER = (
     r"(?<![\d.\-一二两三四五六七八九十零〇百千万亿])"
@@ -203,22 +203,40 @@ def fixture_patch(
     elif dates := re.search(r"(\d{4}-\d{2}-\d{2})(?:到|至|—|~)(\d{4}-\d{2}-\d{2})", text):
         put("start_date", dates[1], dates)
         put("end_date", dates[2], dates)
-    if pace := re.search(r"特种兵|慢节奏|标准节奏", text):
+    pace_choices = "|".join(sorted(PACE_ALIASES, key=len, reverse=True))
+    constraints = list(request.hard_constraints)
+    removed_paces: list[str] = []
+    pace = (
+        re.search(
+            rf"(?:节奏(?:改成|改为|是|为)?\s*|改成|改为)({pace_choices})(?=$|[，,。；;\s])",
+            text,
+        )
+        or re.fullmatch(rf"\s*({pace_choices})\s*[。！]?", text)
+        or re.search(r"(特种兵|慢节奏|标准节奏)", text)
+    )
+    if pace:
+        if is_explicit(pace):
+            removed_paces = [
+                c for c in constraints if pace_of(TravelRequest(hard_constraints=(c,))) is not None
+            ]
+            if removed_paces:
+                constraints = [c for c in constraints if c not in removed_paces]
+                put("hard_constraints", constraints.copy(), pace)
         # 只替换现有节奏，不丢用户的其他软条件。
         put(
             "soft_constraints",
             [
                 c
                 for c in request.soft_constraints
-                if not c.startswith("节奏：") and c not in ("特种兵", "慢节奏", "标准")
+                if not c.startswith("节奏：")
+                and pace_of(TravelRequest(soft_constraints=(c,))) is None
             ]
-            + ["节奏：" + ("标准" if pace[0] == "标准节奏" else pace[0])],
+            + ["节奏：" + str(pace_of(TravelRequest(soft_constraints=(pace[1],))))],
             pace,
         )
-    constraints = list(request.hard_constraints)
     updates = room_updates(text)
     assert updates is not None  # 入口ambiguous_expression已拦截；不得空patch落入查询。
-    any_explicit = any(is_explicit(match) for _, _, match in updates)
+    any_explicit = bool(removed_paces) or any(is_explicit(match) for _, _, match in updates)
     for prefix, value, match in updates:
         if protect_hard_constraints and any_explicit and not is_explicit(match):
             continue
@@ -247,6 +265,7 @@ def fixture_patch(
         "set": fields,
         "clear": clear,
         "explicit_fields": sorted(explicit),
+        **({"remove_hard_constraints": removed_paces} if removed_paces else {}),
     }
 
 
@@ -264,9 +283,7 @@ def missing_question(request: TravelRequest, *, task: Task | None = None) -> str
     missing = [labels[k] for k in request.hotel_requirements() if k in labels]
     if missing:
         return "请在对话里补充：" + "、".join(missing) + "。"
-    if not any(
-        c in ("节奏：标准", "节奏：慢节奏", "节奏：特种兵") for c in request.soft_constraints
-    ):
+    if pace_of(request) is None:
         return "旅行条件已记录。你想要标准、慢节奏还是特种兵节奏？"
     if question := room_preferences_question(request):
         return question

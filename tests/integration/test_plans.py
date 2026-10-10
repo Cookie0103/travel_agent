@@ -188,7 +188,9 @@ def test_three_city_stays_survive_confirm_restore_locks_and_item_27_patch(
     runner.run(exercise())
 
 
-@pytest.mark.parametrize("fault", ["missing", "scope", "quote", "unknown_quote", "duplicate"])
+@pytest.mark.parametrize(
+    "fault", ["missing", "scope", "quote", "unknown_quote", "duplicate", "duration"]
+)
 def test_segment_scope_conflicts_cannot_confirm_and_duplicate_places_cannot_stage(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], fault: str
 ) -> None:
@@ -223,6 +225,11 @@ def test_segment_scope_conflicts_cannot_confirm_and_duplicate_places_cannot_stag
                 else {"hotel_evidence_id": second.hotel_evidence_id}
             )
             candidate = candidate.model_copy(update={"hotel_stays": (replacement, second)})
+        elif fault == "duration":
+            extreme = candidate.items[0].model_copy(
+                update={"end": candidate.items[0].start + timedelta(minutes=1)}
+            )
+            candidate = candidate.model_copy(update={"items": (extreme, *candidate.items[1:])})
         else:
             repeated = candidate.items[2].model_copy(
                 update={"place_evidence_id": candidate.items[0].place_evidence_id}
@@ -240,6 +247,11 @@ def test_segment_scope_conflicts_cannot_confirm_and_duplicate_places_cannot_stag
             return
         draft = await service.stage(context, arguments)
         assert draft.validation.status == "conflict"
+        if fault == "duration":
+            assert any(
+                c.code == "visit_duration_range" and c.status == "conflict"
+                for c in draft.validation.checks
+            )
         with pytest.raises(ServiceError, match="硬冲突"):
             await service.confirm(context.user_id, draft.draft_id)
         assert await version_count(travel, draft.plan_id) == 0

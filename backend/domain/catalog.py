@@ -91,6 +91,35 @@ SIGHTSEEING_CATEGORIES = {
     "shopping_mall",
 }
 
+# 宽松的游玩建议，不是来源核实的营业时间或用户必须停留的时长（分钟）。
+VISIT_DURATION_RANGES: dict[str, tuple[int, int]] = {
+    **dict.fromkeys(SIGHTSEEING_CATEGORIES, (20, 180)),
+    **dict.fromkeys(("museum", "art_gallery", "gallery"), (45, 180)),
+    **dict.fromkeys(
+        (
+            "temple",
+            "shrine",
+            "place_of_worship",
+            "wayside_shrine",
+            "church",
+            "mosque",
+            "synagogue",
+            "hindu_temple",
+            "buddhist_temple",
+        ),
+        (20, 120),
+    ),
+    **dict.fromkeys(
+        ("castle", "heritage", "historical_landmark", "historical_place", "cultural_landmark"),
+        (45, 150),
+    ),
+    **dict.fromkeys(("park", "garden", "national_park"), (30, 180)),
+    **dict.fromkeys(("viewpoint", "observation_deck", "scenic_spot"), (20, 90)),
+    **dict.fromkeys(("zoo", "aquarium"), (90, 240)),
+    **dict.fromkeys(("theme_park", "amusement_park"), (180, 600)),
+    **dict.fromkeys(("market", "shopping_mall"), (30, 180)),
+}
+
 # 来源明确标出的生活/中转用途优先于宽泛的 tourist_attraction 标签。
 NON_SIGHTSEEING_CATEGORIES = {
     "hotel",
