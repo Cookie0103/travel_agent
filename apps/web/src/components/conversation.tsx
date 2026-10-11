@@ -2,6 +2,7 @@
 "use client";
 import type { Workspace } from "./workbench";
 import { toolLabel } from "./tool-names";
+import type { HotelSelection } from "@/lib/hotel-groups";
 import { HotelResults, planDays } from "./results";
 import type { Run } from "@/lib/api";
 import {
@@ -77,7 +78,7 @@ export function Conversation({
 }: {
   workspace: Workspace;
   mode: Mode;
-  send: (text: string, mode: Mode) => void;
+  send: (text: string, mode: Mode, selection?: HotelSelection) => void;
   fill: (text: string) => void;
   newTrip: () => void;
   openPanel: () => void;
@@ -312,7 +313,7 @@ function TurnCards({
   run: Run;
   latest: boolean;
   mode: Mode;
-  send: (text: string, mode: Mode) => void;
+  send: (text: string, mode: Mode, selection?: HotelSelection) => void;
   openPanel: () => void;
 }) {
   const references = runCards(run);
@@ -336,6 +337,7 @@ function TurnCards({
     <>
       {hotels && (
         <HotelResults
+          key={`${run.run_id}:${workspace.request?.revision}`}
           hotels={hotels}
           disabled={disabled}
           revision={workspace.request?.revision}
@@ -346,6 +348,7 @@ function TurnCards({
               mode,
             )
           }
+          chooseSegments={(selection) => send(selection.text, mode, selection)}
           compact
         />
       )}

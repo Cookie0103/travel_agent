@@ -3,12 +3,15 @@
 from datetime import UTC, date, datetime
 from uuid import UUID
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
 from backend.domain.hotel_details import StoredHotelDetails
 from backend.domain.hotel_selection import hotel_rate_indices
 from backend.domain.hotels import HotelOffer, compare, quote
+from backend.domain.itinerary import HotelStay
 from backend.domain.room_preferences import room_assessment, room_order, room_preferences_question
 from backend.domain.travel_request import (
     TravelRequest,
@@ -26,7 +29,7 @@ from backend.persistence.travel import (
 )
 from backend.providers.hotel_fixture import load_rates
 from backend.services.common import ServiceError, transaction
-from backend.services.travel import TravelService, require_revision
+from backend.services.travel import TravelService, require_revision, resolve_records
 
 
 class HotelService:
@@ -235,6 +238,8 @@ class HotelService:
         self, context: RunContext, revision: int, ids: tuple[UUID, ...]
     ) -> dict[str, object]:
         request = await self._request(context, revision)
+        if not request.segments and len(ids) > 6:
+            raise ServiceError(422, "validation", "单城市酒店展示最多6个报价")
         known = await self.known_quotes(context, ids)
         records = await self.travel.resolve_evidence(
             context, tuple(record.evidence_id for record in known)
@@ -245,6 +250,7 @@ class HotelService:
             "component": "hotel_comparison",
             "cards": cards(records, request),
             **search_summary(records),
+            **({"segments": segment_presentations(records, request)} if request.segments else {}),
             "comparison": {
                 **compare(offers, datetime.now(UTC)),
                 "budget_relation": lodging_budget_relation(request).model_dump(mode="json"),
@@ -294,3 +300,75 @@ def cards(
             )
         )
     ]
+
+
+def segment_presentations(
+    records: tuple[EvidenceRecord, ...], request: TravelRequest
+) -> list[dict[str, object]]:
+    """保留所有住宿段（含无报价的段）；卡片只存一份，比较与乐天入口按段补齐。"""
+    groups = []
+    for segment in trip_segments(request):
+        if segment.depart == segment.arrive:
+            continue
+        scoped = segment_request(request, segment)
+        found = tuple(
+            record
+            for record in records
+            if record.conditions == evidence_conditions(scoped, "hotel_offer")
+        )
+        groups.append(
+            {
+                "city": segment.city,
+                "check_in": segment.arrive.isoformat(),
+                "check_out": segment.depart.isoformat(),
+                "evidence_ids": [str(record.evidence_id) for record in found],
+                **search_summary(found),
+                "comparison": {
+                    **(
+                        compare(
+                            tuple(HotelOffer.model_validate(record.value) for record in found),
+                            datetime.now(UTC),
+                        )
+                        if found
+                        else {
+                            "comparable": False,
+                            "reasons": ["本段尚无酒店候选，请查询后再选择"],
+                            "lowest_offer_ids": [],
+                            "scope": "本段暂无可比较报价",
+                        }
+                    ),
+                    "budget_relation": lodging_budget_relation(request).model_dump(mode="json"),
+                    "room_preferences_question": room_preferences_question(scoped),
+                },
+            }
+        )
+    return groups
+
+
+async def validate_hotel_selection(
+    db: AsyncSession, context: RunContext, request: TravelRequest, stays: tuple[HotelStay, ...]
+) -> None:
+    """消息提交事务内检查完整覆盖；不信任客户端的城市/酒店名/价格。"""
+    segments = [s for s in trip_segments(request) if s.depart > s.arrive]
+    required = {(segment.arrive, segment.depart) for segment in segments}
+    if (
+        not request.segments
+        or len(stays) != len(segments)
+        or {(stay.check_in, stay.check_out) for stay in stays} != required
+    ):
+        raise ServiceError(422, "validation", "请为每个住宿段选择一家酒店后再规划")
+    records = await resolve_records(
+        db, context, request, tuple(stay.hotel_evidence_id for stay in stays), datetime.now(UTC)
+    )
+    for stay, record in zip(stays, records, strict=True):
+        segment = next(s for s in segments if s.arrive == stay.check_in)
+        if record.kind != "hotel_offer" or record.conditions != evidence_conditions(
+            segment_request(request, segment), "hotel_offer"
+        ):
+            raise ServiceError(422, "validation", "所选酒店报价不属于对应住宿段，请重新选择")
+        offer = HotelOffer.model_validate(record.value)
+        if evidence_conditions(offer.request, "hotel_offer") != record.conditions or (
+            offer.request.start_date,
+            offer.request.end_date,
+        ) != (stay.check_in, stay.check_out):
+            raise ServiceError(422, "validation", "所选酒店入住日期不匹配，请重新选择")

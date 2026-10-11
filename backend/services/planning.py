@@ -19,6 +19,7 @@ from backend.persistence import travel as requests
 from backend.profile import current
 from backend.providers.routes_fixture import RouteRate, estimate, load_routes
 from backend.services.common import ServiceError, transaction
+from backend.services.conversation import selected_hotel_stays
 from backend.services.travel import (
     TravelService,
     hydrate_records,
@@ -124,6 +125,7 @@ class PlanningService:
     async def validate(self, context: RunContext, proposal: ItineraryProposal) -> ValidationReport:
         async with transaction(self.travel.database) as db:
             request = request_from_row(await requests.owned_request(db, context))
+            proposal = await apply_selected_hotels(db, context, request, proposal)
             return await validate_proposal(db, context, request, proposal, self.travel.live)
 
 
@@ -175,3 +177,26 @@ async def validate_proposal(
                 "（不是offer_id，也不是地点证据）；没有酒店卡片证据就省略hotel_evidence_id"
             )
         raise ServiceError(422, "validation", message, "validator:" + reason) from None
+
+
+async def apply_selected_hotels(
+    db: AsyncSession, context: RunContext, request: TravelRequest, proposal: ItineraryProposal
+) -> ItineraryProposal:
+    """只补齐该轮用户已核对的选择；不同/明确清除的住宿要求模型修正，校验不降级。"""
+    if not request.segments:
+        return proposal
+    row = await requests.owned_request(db, context)
+    assert row is not None
+    selected = selected_hotel_stays(row, context, request.revision)
+    if not selected:
+        return proposal
+    if proposal.hotel_stays:
+        if tuple(sorted(proposal.hotel_stays, key=lambda stay: stay.check_in)) == selected:
+            return proposal
+    elif "hotel_stays" not in proposal.model_fields_set and proposal.hotel_evidence_id is None:
+        return proposal.model_copy(update={"hotel_stays": selected, "hotel_evidence_id": None})
+    raise ServiceError(
+        422,
+        "validation",
+        "用户已选择各住宿段酒店，请采用selected_hotel_stays中的完整引用，不更换或清除",
+    )

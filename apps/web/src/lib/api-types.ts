@@ -958,6 +958,10 @@ export interface components {
              * @enum {string}
              */
             mode: "offline" | "deepseek" | "claude";
+            /** Expected Revision */
+            expected_revision?: number | null;
+            /** Hotel Stays */
+            hotel_stays?: components["schemas"]["HotelStay"][] | null;
         };
         /** ModelOption */
         ModelOption: {
@@ -1879,6 +1883,41 @@ export interface components {
             component: "hotel_comparison";
             /** Cards */
             cards: components["schemas"]["UiHotelCard"][];
+            /** Segments */
+            segments?: components["schemas"]["UiHotelSegmentPresentation"][];
+            comparison: components["schemas"]["UiComparison"];
+            /**
+             * Total Found
+             * @default null
+             */
+            total_found: number | null;
+            /**
+             * More Url
+             * @default null
+             */
+            more_url: string | null;
+            /**
+             * More Url Scope
+             * @default null
+             */
+            more_url_scope: ("search" | "destination") | null;
+        };
+        /** HotelSegmentPresentation */
+        UiHotelSegmentPresentation: {
+            /** City */
+            city: string;
+            /**
+             * Check In
+             * Format: date
+             */
+            check_in: string;
+            /**
+             * Check Out
+             * Format: date
+             */
+            check_out: string;
+            /** Evidence Ids */
+            evidence_ids: string[];
             comparison: components["schemas"]["UiComparison"];
             /**
              * Total Found
@@ -2218,7 +2257,7 @@ export interface components {
         /** @enum {string} */
         UiStageReason: "plan_exists" | "patch_invalid" | "repair_limit" | "other";
         /** @enum {string} */
-        UiToolReason: "tool_call_cap" | "repair_limit" | "repeat_blocked" | "result_too_long" | "unregistered_tool" | "context_reuse" | "evidence_missing" | "offer_unknown_id" | "not_found" | "live_hold_disabled" | "plan_exists" | "patch_invalid" | "revision_stale" | "lodging_budget_conflict" | "hotel_search_location_required" | "hotel_missing_fields" | "hotel_room_preferences_missing" | "hotel_external_validation" | "hotel_external_unavailable" | "hotel_api_unconfigured" | "schema" | "other" | "conversation_incomplete" | "conversation_state_unavailable" | "max_turns";
+        UiToolReason: "tool_call_cap" | "repair_limit" | "repeat_blocked" | "result_too_long" | "unregistered_tool" | "context_reuse" | "evidence_missing" | "offer_unknown_id" | "not_found" | "live_hold_disabled" | "plan_exists" | "patch_invalid" | "revision_stale" | "lodging_budget_conflict" | "hotel_search_location_required" | "hotel_missing_fields" | "hotel_room_preferences_missing" | "hotel_external_validation" | "hotel_external_unavailable" | "hotel_api_unconfigured" | "hotel_selection_required" | "schema" | "other" | "conversation_incomplete" | "conversation_state_unavailable" | "max_turns";
         /**
          * RuntimeEvent
          * @description 前端/CLI 所需的最小事件；text 是用户输出，不进入公共 Trace。

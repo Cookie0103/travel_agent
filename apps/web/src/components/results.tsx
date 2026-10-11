@@ -11,7 +11,13 @@ import {
 } from "@/lib/availability";
 import { sourceHref, type Hotels, type Plan } from "@/lib/api";
 import type { components } from "@/lib/api-types";
-import { hotelGroups, selectedHotelOffer } from "@/lib/hotel-groups";
+import {
+  hotelGroups,
+  selectedHotelOffer,
+  segmentHotelRows,
+  segmentHotelSelection,
+  type HotelSelection,
+} from "@/lib/hotel-groups";
 import { hotelLinks } from "@/lib/hotel-links";
 import { moreTile, scrollButtons } from "@/lib/hotel-more";
 import { validationGroups, checkTargets } from "@/lib/validation-groups";
@@ -313,22 +319,41 @@ function HotelStrip({
   );
 }
 
+type HotelResultsProps = {
+  compact?: boolean;
+  choose?: (card: components["schemas"]["UiHotelCard"]) => void;
+  chooseSegments?: (selection: HotelSelection & { text: string }) => void;
+  hotels: Hotels;
+  disabled: boolean;
+  revision?: number;
+  hold: (offerId: string, revision: number) => Promise<void>;
+  selectingSegment?: boolean;
+  selectedEvidenceId?: string;
+};
 export function HotelResults({
   hotels,
   disabled,
   revision,
   hold,
   choose,
+  chooseSegments,
   compact = false,
-}: {
-  compact?: boolean;
-  choose?: (card: components["schemas"]["UiHotelCard"]) => void;
-  hotels: Hotels;
-  disabled: boolean;
-  revision?: number;
-  hold: (offerId: string, revision: number) => Promise<void>;
-}) {
+  selectingSegment = false,
+  selectedEvidenceId,
+}: HotelResultsProps) {
   const now = useClock();
+  if (hotels.segments?.length)
+    return (
+      <SegmentHotelResults
+        hotels={hotels}
+        disabled={disabled}
+        revision={revision}
+        hold={hold}
+        chooseSegments={chooseSegments}
+        compact={compact}
+        now={now}
+      />
+    );
   const expired = expiredHotels(hotels, now);
   const groups = hotelGroups(hotels.cards);
   const more = moreTile(hotels);
@@ -368,6 +393,8 @@ export function HotelResults({
             revision={revision}
             hold={hold}
             choose={choose}
+            selectingSegment={selectingSegment}
+            selectedEvidenceId={selectedEvidenceId}
             expiredComparison={expired}
             lowest={hotels.comparison.lowest_offer_ids}
           />
@@ -393,6 +420,79 @@ export function HotelResults({
     </section>
   );
 }
+function SegmentHotelResults({
+  hotels,
+  disabled,
+  revision,
+  hold,
+  chooseSegments,
+  compact,
+  now,
+}: HotelResultsProps & { now: number }) {
+  const [choices, setChoices] = useState<Record<string, string>>({});
+  const rows = segmentHotelRows(hotels);
+  const selected = segmentHotelSelection(rows, choices, revision, now);
+  const count = rows.filter((row) =>
+    row.cards.some((card) => card.evidence_id === choices[row.check_in]),
+  ).length;
+  return (
+    <section className={`results-section${compact ? " is-compact" : ""}`}>
+      <h2>按住宿段选择酒店</h2>
+      <p className="muted">
+        每段选一家，选齐后统一规划。仅选择行程住宿，不会订房。
+      </p>
+      {rows.map((row) => {
+        const picked = row.cards.find(
+          (card) => card.evidence_id === choices[row.check_in],
+        );
+        return (
+          <div key={row.check_in} className="segment-hotel-row">
+            <h3>
+              {row.city} · {row.check_in} → {row.check_out}
+            </h3>
+            <p className="small">
+              {picked ? `已选择：${picked.hotel_name}` : "请选择本段入住酒店"}
+            </p>
+            <HotelResults
+              hotels={{
+                ...hotels,
+                segments: undefined,
+                cards: row.cards,
+                comparison: row.comparison,
+                total_found: row.total_found,
+                more_url: row.more_url,
+                more_url_scope: row.more_url_scope,
+              }}
+              disabled={disabled}
+              revision={revision}
+              hold={hold}
+              compact
+              selectingSegment
+              selectedEvidenceId={choices[row.check_in]}
+              choose={(card) =>
+                setChoices((previous) => ({
+                  ...previous,
+                  [row.check_in]: card.evidence_id,
+                }))
+              }
+            />
+          </div>
+        );
+      })}
+      <p className="muted small">
+        已选 {count}/{rows.length} 段
+      </p>
+      <Button
+        disabled={disabled || !selected || !chooseSegments}
+        onClick={() => {
+          if (selected && chooseSegments) chooseSegments(selected);
+        }}
+      >
+        按已选酒店统一规划
+      </Button>
+    </section>
+  );
+}
 function HotelPackage({
   offers,
   disabled,
@@ -401,6 +501,8 @@ function HotelPackage({
   choose,
   lowest,
   expiredComparison,
+  selectingSegment,
+  selectedEvidenceId,
 }: {
   offers: Hotels["cards"];
   disabled: boolean;
@@ -409,6 +511,8 @@ function HotelPackage({
   choose?: (card: Hotels["cards"][number]) => void;
   lowest: string[];
   expiredComparison: boolean;
+  selectingSegment?: boolean;
+  selectedEvidenceId?: string;
 }) {
   const [selected, setSelected] = useState<string>();
   const card = selectedHotelOffer(offers, selected);
@@ -443,7 +547,7 @@ function HotelPackage({
       {expired && (
         <p className="warning">所选套餐报价已过期，请重新比较酒店。</p>
       )}
-      {card.data_mode === "live" ? (
+      {card.data_mode === "live" || selectingSegment ? (
         <>
           {choose && (
             <Button
@@ -453,7 +557,9 @@ function HotelPackage({
               }
               onClick={() => choose(card)}
             >
-              选用此酒店
+              {selectedEvidenceId === card.evidence_id
+                ? "已选用此酒店"
+                : "选用此酒店"}
             </Button>
           )}
         </>

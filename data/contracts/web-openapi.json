@@ -3085,6 +3085,34 @@
             ],
             "title": "Mode",
             "default": "offline"
+          },
+          "expected_revision": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Revision"
+          },
+          "hotel_stays": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/HotelStay"
+                },
+                "type": "array",
+                "maxItems": 6,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Hotel Stays"
           }
         },
         "additionalProperties": false,
@@ -5637,6 +5665,13 @@
             "title": "Cards",
             "type": "array"
           },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/UiHotelSegmentPresentation"
+            },
+            "title": "Segments",
+            "type": "array"
+          },
           "comparison": {
             "$ref": "#/components/schemas/UiComparison"
           },
@@ -5687,6 +5722,84 @@
           "comparison"
         ],
         "title": "HotelPresentation",
+        "type": "object"
+      },
+      "UiHotelSegmentPresentation": {
+        "properties": {
+          "city": {
+            "title": "City",
+            "type": "string"
+          },
+          "check_in": {
+            "format": "date",
+            "title": "Check In",
+            "type": "string"
+          },
+          "check_out": {
+            "format": "date",
+            "title": "Check Out",
+            "type": "string"
+          },
+          "evidence_ids": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "title": "Evidence Ids",
+            "type": "array"
+          },
+          "comparison": {
+            "$ref": "#/components/schemas/UiComparison"
+          },
+          "total_found": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Total Found"
+          },
+          "more_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "More Url"
+          },
+          "more_url_scope": {
+            "anyOf": [
+              {
+                "enum": [
+                  "search",
+                  "destination"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "More Url Scope"
+          }
+        },
+        "required": [
+          "city",
+          "check_in",
+          "check_out",
+          "evidence_ids",
+          "comparison"
+        ],
+        "title": "HotelSegmentPresentation",
         "type": "object"
       },
       "UiHotelStayView": {
@@ -6430,6 +6543,7 @@
           "hotel_external_validation",
           "hotel_external_unavailable",
           "hotel_api_unconfigured",
+          "hotel_selection_required",
           "schema",
           "other",
           "conversation_incomplete",

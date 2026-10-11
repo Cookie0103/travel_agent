@@ -1,5 +1,6 @@
 /** Application state and recovery; only explicit user actions can submit or confirm. */
 "use client";
+import type { HotelSelection } from "./hotel-groups";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   api,
@@ -594,7 +595,7 @@ export function useWorkspace({
       if (active()) await restoreConversation(identity, active);
     });
   }
-  async function send(text: string, mode: Mode) {
+  async function send(text: string, mode: Mode, selection?: HotelSelection) {
     if (!identity || !text.trim() || busy) return false;
     const started = generation.current;
     const read = readWhile(() => generation.current === started);
@@ -602,7 +603,12 @@ export function useWorkspace({
     setError("");
     try {
       setSendError("");
-      const body = messageInput(identity.pending_message, text, mode);
+      const body = messageInput(
+        identity.pending_message,
+        text,
+        mode,
+        selection,
+      );
       remember({ ...identity, pending_message: body });
       const submitted = await read(
         api<Run>(

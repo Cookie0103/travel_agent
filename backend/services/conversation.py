@@ -2,10 +2,12 @@
 
 from datetime import datetime
 
+from pydantic import TypeAdapter
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.conversation import ConversationState, conversation_view
 from backend.domain.execution import RunContext
+from backend.domain.itinerary import HotelStay
 from backend.domain.travel_request import TravelRequest
 from backend.persistence import runs
 from backend.persistence.models import TaskRunRow, TravelRequestRow
@@ -69,3 +71,17 @@ async def snapshot(
         "短答仅回答awaiting_field，不放宽其他条件。住宿地点短答写hotel_search_location，保留city；宽区域地点需要细化，不默认选择那霸。条件齐全后继续ready_tasks；"
         "住宿分项预算未知不必追问，不拆分全程预算。",
     }
+
+
+def selected_hotel_stays(
+    row: TravelRequestRow, context: RunContext, revision: int
+) -> tuple[HotelStay, ...]:
+    """只恢复本轮、当前条件下服务端核对过的选择，下一轮不强制旧选择。"""
+    selection = (row.request_details or {}).get("selected_hotels")
+    if (
+        not isinstance(selection, dict)
+        or selection.get("run_id") != str(context.run_id)
+        or selection.get("revision") != revision
+    ):
+        return ()
+    return TypeAdapter(tuple[HotelStay, ...]).validate_python(selection["stays"])

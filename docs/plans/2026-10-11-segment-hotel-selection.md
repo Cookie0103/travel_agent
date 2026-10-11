@@ -22,8 +22,8 @@
 ## 4. 任务表
 | ID | 问题 | 依赖 | 验收条件 | 状态 | 证据 |
 | --- | --- | --- | --- | --- | --- |
-| H1 | 人工单轮额度 | 无 | 超过 40 模型请求、80 路线、50 校验仍可执行；有限档位和拒绝边界有效 | doing | 先红 2 failed；专项 118 passed；check 303 文件/三平台/3 contracts/10 文档通过；独立审查无 P1/P2；全量 1565 passed/1 历史 skip/4 live deselected；web-check 129 passed/构建通过 |
-| H2 | 按段选酒店 | H1 | 三住宿段各自候选/入口；少一段不能规划；完整选择引用正确；旧单城市兼容 | todo | — |
+| H1 | 人工单轮额度 | 无 | 超过 40 模型请求、80 路线、50 校验仍可执行；有限档位和拒绝边界有效 | done | 8d6657e · 先红 2 failed；专项 118 passed；check 303 文件/三平台/3 contracts/10 文档通过；独立审查无 P1/P2；全量 1565 passed/1 历史 skip/4 live deselected；web-check 129 passed/构建通过 |
+| H2 | 按段选酒店 | H1 | 三住宿段各自候选/入口；少一段不能规划；完整选择引用正确；旧单城市兼容 | doing | 先红→专项71 passed；全量1577 passed/1历史skip/4 live deselected（303.30s）；web133 passed/type/lint/build；check304文件三平台/契约/文档；审查5项P2已关闭，待提交 |
 | H3 | 规划修复反馈 | H2 | 本地保护停止准确分类；错误证据可定位；不放宽业务校验 | todo | — |
 | H4 | 验证发布 | H3 | 全量项目检查、真实 PG、Chrome、预算内模型与独立审查；push 后核对部署 | todo | — |
 
@@ -40,8 +40,8 @@
 ## 7. 每日进展
 ### 2026-10-11
 - 计划：H1–H4。
-- 完成：基线/工作区与实际失败日志已核对；上一多城市批次保持已完成。
-- 未完成及原因：新批次开始，正在补 H1 失败测试。
+- 完成：H1（8d6657e）；全量 1565 passed、web129、check 与独立审查通过；上一多城市批次保持已完成。
+- 未完成及原因：新批次开始，正在实施 H2，先观察分段展示/选择测试失败。
 - 下一步：H1 → H2 → H3 → H4；中断从本计划、Git 和忽略的 `.cache/segment-hotel-selection/` 恢复，不重发付费消息。
 
 ## 8. 问题解决记录
@@ -51,12 +51,15 @@
 - 方案：仅 HUMAN 使用空上限，有限档位继续保护；本地原因映射为明确 blocked 提示。
 - 先红：HUMAN 仍为 (80,60,40,50)，第 41 次 HTTP 返回 400，两个测试失败。修复后专项 118 passed，包括 45 HTTP、85 次真实 PG 路线计数/工具及 55 校验；有限档位与失败停止测试保留。
 - 实现：profile 的人工上限为 None，贯通 Guard、SDK、工具及供应商；SDK 0.2.163 公共 max_turns=None 已读源码核对（独立审查），CLI 省略该参数。CLI/评测既有显式有限入口与停止提醒次数保留，本批覆盖生产人工页面。
-- 独立审查：无 P1/P2、无重复/过度设计；全量 1565 passed/1 历史 skip/4 live deselected（302.41s），web 129 passed/类型/lint/构建通过，db-up PG Healthy；commit 待补。私人对话和原始日志不进入 Git。
+- 独立审查：无 P1/P2、无重复/过度设计；全量 1565 passed/1 历史 skip/4 live deselected（302.41s），web 129 passed/类型/lint/构建通过，db-up PG Healthy；commit 8d6657e。私人对话和原始日志不进入 Git。
 
-### P-02 多段报价混列与过早规划　状态：todo　关联：H2 H3
+### P-02 多段报价混列与过早规划　状态：doing　关联：H2 H3
 - 现象：三段报价混列，点击大阪一家立即规划，京都/奈良未选；校验反复出现 hotel_stay_missing 和 evidence_missing。
 - 根因：展示/选择未按住宿段建模（REASONED）；模型仍需规范证据引用。
-- 方案与先红后绿/结果：待补。
+- 实现：新增段元数据和一次结构化选择，原会话锁内验证完整覆盖/归属/日期/时效；规范引用随原消息幂等保存。模型漏填由原校验/暂存入口补齐，明确更换/清除拒绝；单城市不增加字段、条件或查询。
+- 先红：9报价受旧6上限拒绝、结构化消息被extra拒绝（6 failed）；前端旧分组不能覆盖3段（2 failed）；完整链接9卡48929字超过旧24000和48000，按每段原24000有界展示，不改变单城市/其他工具/512 KiB。
+- 独立审查发现并先红复现：旧stage缓存回放其他选择、旧hotel字段null绕过清除、无候选段compare空集、缺预算Stop误催；同revision新run历史卡等待标记失效。修复规范化初始key、缓存再核对选择、两种清除意图、空段元数据、先守追问/ready条件并绑定展示run。剩余缓存内容未补齐但校验通过已单独复现并拒绝回放，避免报告与持久内容不一致。
+- 结果：真实PG专项/邻接71 passed，web133 passed。最终check304文件三平台/3 contracts/10文档通过，全量1577 passed/1历史skip/4 live deselected（303.30s）；独立审查5项P2全部复核关闭；仅合成测试/脱敏结果进Git。
 
 ## 9. 验证与交付
 - 命令：`uv run python scripts/dev.py db-up / check / test / web-generate / web-check`。
@@ -65,3 +68,5 @@
 - 真实调用：先核对累计预算/供应商余额；保持机器验收限额，不使用人工免预算档绕开授权。
 - H1：check 303 文件、三平台严格类型/3 contracts/10 文档通过；全量 test 1565 passed/1 历史 skip/4 live deselected；web-check 129 passed、type/lint/build 通过；PG Healthy。
 - 独立审查：H1 无 P1/P2；其余提交与部署状态待补。
+
+- H2：check304文件/三平台/3 contracts/10文档通过；全量1577 passed/1历史skip/4 live deselected；web133 passed/type/lint/build；真实PG邻接71 passed；独立审查复核无剩余P1/P2。

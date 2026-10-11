@@ -46,6 +46,7 @@ const reasons: Record<
   hotel_room_preferences_missing: "酒店房型偏好尚未确认，请在对话中说明",
   hotel_external_validation: "酒店查询条件不被数据源接受，请调整条件后重试",
   hotel_external_unavailable: "酒店数据源暂不可用，请稍后重试",
+  hotel_selection_required: "请在每个住宿段选择一家酒店，选齐后再开始规划",
   hotel_api_unconfigured: "酒店数据源尚未配置，暂不能查询",
   schema: "工具参数格式不正确",
 };

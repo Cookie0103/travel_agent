@@ -39,6 +39,7 @@ type ToolReason = Literal[
     "hotel_external_validation",
     "hotel_external_unavailable",
     "hotel_api_unconfigured",
+    "hotel_selection_required",
     "schema",
     "other",
     # 以下三项来自RuntimeOutcome.reason（运行级失败），只出现在failed终态事件上。

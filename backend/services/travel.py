@@ -184,8 +184,44 @@ class TravelService:
                 if booking.status in {"quoted", "held", "confirmed", "unknown"}
                 and not booking.hold_expired(observed_at)
             ]
+            dialogue = await conversation.snapshot(
+                db,
+                request_row,
+                current,
+                context,
+                after=user.preference_changed_at,
+                live_hotels=self.live is not None,
+            )
+            selected = conversation.selected_hotel_stays(request_row, context, current.revision)
+            pending_tasks = dialogue["pending_tasks"]
+            assert isinstance(pending_tasks, list)
+            needs_selection = (
+                bool(current.segments)
+                and any(s.depart > s.arrive for s in current.segments or ())
+                and not selected
+                and not (plan and plan.current_version)
+                and pending_draft is None
+                and "itinerary" in pending_tasks
+            )
             return {
                 "observed_at": observed_at.isoformat(),
+                **(
+                    {"selected_hotel_stays": [s.model_dump(mode="json") for s in selected]}
+                    if selected
+                    else {}
+                ),
+                **(
+                    {
+                        "requires_hotel_selection": needs_selection,
+                        "awaiting_hotel_selection": needs_selection
+                        and (request_row.request_details or {}).get("hotel_selection_revision")
+                        == current.revision
+                        and (request_row.request_details or {}).get("hotel_selection_run_id")
+                        == str(context.run_id),
+                    }
+                    if current.segments
+                    else {}
+                ),
                 "request": RequestView.from_request(
                     current, condition_sources(request_row)
                 ).model_dump(mode="json"),
@@ -196,14 +232,7 @@ class TravelService:
                 "pending_draft": pending_draft,
                 "bookings": [booking.card() for booking in active_bookings[:8]],
                 "bookings_truncated": len(active_bookings) > 8,
-                "conversation": await conversation.snapshot(
-                    db,
-                    request_row,
-                    current,
-                    context,
-                    after=user.preference_changed_at,
-                    live_hotels=self.live is not None,
-                ),
+                "conversation": dialogue,
                 "recent_dialogue": [
                     {
                         "user": row.prompt[:1000],
@@ -274,10 +303,22 @@ class TravelService:
             current = request_from_row(row)
             assert row is not None
             state = conversation.stored_state(row)
-            if task not in state.pending_tasks:
+            waiting = (
+                task == "hotel_comparison"
+                and bool(current.segments)
+                and "itinerary" in state.pending_tasks
+                and not conversation.selected_hotel_stays(row, context, current.revision)
+            )
+            if task not in state.pending_tasks and not waiting:
                 return
             await conversation.require_current_run(db, context)
             require_revision(current, revision)
+            if waiting:
+                row.request_details = {
+                    **(row.request_details or {}),
+                    "hotel_selection_revision": revision,
+                    "hotel_selection_run_id": str(context.run_id),
+                }
             conversation.save_state(
                 row,
                 state.model_copy(

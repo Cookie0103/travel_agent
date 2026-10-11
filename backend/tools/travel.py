@@ -97,7 +97,7 @@ class PresentationInput(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     component: Literal["hotel_comparison", "itinerary"]
     expected_revision: int | None = Field(default=None, strict=True, ge=0)
-    offer_ids: tuple[UUID, ...] = Field(default=(), max_length=6)
+    offer_ids: tuple[UUID, ...] = Field(default=(), max_length=18)
     draft_id: UUID | None = None
 
     @model_validator(mode="after")
@@ -106,7 +106,7 @@ class PresentationInput(BaseModel):
             raise ValueError("报价ID不能重复")
         if self.component == "hotel_comparison":
             if self.expected_revision is None or not self.offer_ids or self.draft_id is not None:
-                raise ValueError("酒店卡片仅需要版本和1至6个报价ID")
+                raise ValueError("酒店卡片仅需要版本和1至18个报价ID（单城市最多6个）")
         elif self.draft_id is None or self.offer_ids or self.expected_revision is not None:
             raise ValueError("行程卡片仅需要草稿ID")
         return self
@@ -383,10 +383,12 @@ class TravelToolExecutor:
                 parsed = SCHEMAS[name].model_validate(arguments)
                 async with asyncio.timeout(definition.timeout_seconds):
                     result = await self._dispatch(context, name, parsed)
-                if (
-                    len(json.dumps(result.payload(), ensure_ascii=False))
-                    > definition.max_result_chars
-                ):
+                result_limit = definition.max_result_chars
+                if name == "present_travel_result" and result.data.get("segments"):
+                    segments = result.data["segments"]
+                    if isinstance(segments, list):
+                        result_limit *= len(segments)
+                if len(json.dumps(result.payload(), ensure_ascii=False)) > result_limit:
                     return ToolResult(
                         {},
                         code="blocked",

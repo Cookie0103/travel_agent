@@ -31,7 +31,7 @@ from backend.persistence.models import PlanRow
 from backend.services.calendar import calendar
 from backend.services.common import ServiceError, transaction
 from backend.services.hotels import cards as hotel_cards
-from backend.services.planning import validate_proposal
+from backend.services.planning import apply_selected_hotels, validate_proposal
 from backend.services.travel import (
     TravelService,
     hydrate_records,
@@ -83,6 +83,18 @@ class PlanService:
     ) -> PlanDraft:
         async with transaction(self.travel.database) as db:
             request = request_from_row(await requests.owned_request(db, context))
+            change = arguments.change
+            if isinstance(change, InitialStage):
+                chosen = await apply_selected_hotels(db, context, request, change.proposal)
+                if chosen != change.proposal:
+                    change = change.model_copy(update={"proposal": chosen})
+                    arguments = arguments.model_copy(update={"change": change})
+            explicit_clear = not isinstance(change, InitialStage) and (
+                "hotel_stays" in change.patch.model_fields_set
+                and not change.patch.hotel_stays
+                or "hotel_evidence_id" in change.patch.model_fields_set
+                and change.patch.hotel_evidence_id is None
+            )
             operation_key = operations.key(arguments)
             cached = await operations.result(db, context.session_id, "stage_plan", operation_key)
             if cached is not None:
@@ -95,13 +107,20 @@ class PlanService:
                     raise ServiceError(
                         409, "conflict", "原草稿已过期，请重新查询后生成", "draft_expired"
                     )
-                report = await validate_proposal(
-                    db, context, request, saved.content.proposal(request.revision), self.travel.live
-                )
+                proposal = saved.content.proposal(request.revision)
+                if explicit_clear:
+                    proposal = proposal.model_copy(update={"hotel_stays": ()})
+                chosen = await apply_selected_hotels(db, context, request, proposal)
+                if chosen != proposal:
+                    raise ServiceError(
+                        409,
+                        "conflict",
+                        "缓存草稿未包含本轮选择，请明确带上selected_hotel_stays重新暂存",
+                    )
+                report = await validate_proposal(db, context, request, proposal, self.travel.live)
                 require_unique_sightseeing(report)
                 return saved.model_copy(update={"validation": report})
             row = await plans.for_session(db, context)
-            change = arguments.change
             previous = await plans.version(db, row) if row else None
             if isinstance(change, InitialStage):
                 require_revision(request, change.proposal.expected_revision)
@@ -129,6 +148,17 @@ class PlanService:
                         422, "validation", "patch引用不存在、锁定或无效的行程项", "patch_invalid"
                     ) from None
             proposal = content.proposal(request.revision)
+            if explicit_clear:
+                proposal = proposal.model_copy(update={"hotel_stays": ()})
+            chosen = await apply_selected_hotels(db, context, request, proposal)
+            if chosen != proposal:
+                content = content.model_copy(
+                    update={
+                        "hotel_stays": chosen.hotel_stays,
+                        "hotel_evidence_id": chosen.hotel_evidence_id,
+                    }
+                )
+            proposal = chosen
             if before_validate is not None:
                 before_validate(proposal)
             report = await validate_proposal(db, context, request, proposal, self.travel.live)

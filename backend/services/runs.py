@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.adapters.tracing import TraceMetadata, write_trace
@@ -26,13 +26,16 @@ from backend.domain.execution import (
     scrub_internal_ids,
     upstream_error_text,
 )
+from backend.domain.itinerary import HotelStay
 from backend.persistence import runs, sessions
+from backend.persistence import travel as requests
 from backend.persistence.database import Database
 from backend.persistence.models import TaskRunRow
 from backend.profile import current, profile_name
 from backend.providers.claude_agent.application import GuardedRuntime
 from backend.services.common import ServiceError, database_error_details, transaction
-from backend.services.travel import TravelService
+from backend.services.hotels import validate_hotel_selection
+from backend.services.travel import TravelService, request_from_row, require_revision
 from backend.tools.contracts import ToolExecutor
 from backend.tools.travel import TravelToolExecutor
 from backend.trace_log import trace
@@ -46,6 +49,26 @@ class MessageInput(BaseModel):
     client_message_id: UUID
     text: str = Field(min_length=1, max_length=4000)
     mode: Literal["offline", "deepseek", "claude"] = "offline"
+    expected_revision: int | None = Field(default=None, strict=True, ge=0)
+    hotel_stays: tuple[HotelStay, ...] | None = Field(default=None, min_length=1, max_length=6)
+
+    @model_validator(mode="after")
+    def valid_selection(self) -> "MessageInput":
+        if (self.hotel_stays is None) != (self.expected_revision is None):
+            raise ValueError("酒店选择必须同时提供条件版本与完整住宿段")
+        return self
+
+    def selected_prompt(self) -> str:
+        if self.hotel_stays is None:
+            return self.text
+        return (
+            self.text
+            + f"\n已确认各住宿段酒店（条件版本{self.expected_revision}）：\n"
+            + "\n".join(
+                f"{stay.check_in}→{stay.check_out} evidence_id={stay.hotel_evidence_id}"
+                for stay in sorted(self.hotel_stays, key=lambda stay: stay.check_in)
+            )
+        )
 
 
 @dataclass(frozen=True)
@@ -139,6 +162,7 @@ class RunService:
 
     async def submit(self, user_id: UUID, session_id: UUID, message: MessageInput) -> RunView:
         await self._require_recovery()
+        prompt = message.selected_prompt()
         if message.mode != "offline" and not self.live_enabled:
             raise ServiceError(403, "blocked", "API真实模型模式未启用")
         async with transaction(self.database) as db:
@@ -146,14 +170,36 @@ class RunService:
                 raise ServiceError(404, "blocked", "会话不存在")
             previous = await runs.by_message(db, session_id, message.client_message_id)
             if previous is not None:
-                if (previous.prompt, previous.mode) != (message.text, message.mode):
+                if (previous.prompt, previous.mode) != (prompt, message.mode):
                     raise ServiceError(409, "conflict", "同一消息ID不能对应不同内容或模式")
                 return await recorded_view(db, previous)
             if await runs.active(db, session_id):
                 raise ServiceError(409, "conflict", "此会话已有执行，请先等待或取消")
+            request_row = None
+            if message.hotel_stays is not None:
+                check_context = RunContext(user_id, session_id)
+                request_row = await requests.owned_request(db, check_context)
+                request = request_from_row(request_row)
+                assert message.expected_revision is not None
+                require_revision(request, message.expected_revision)
+                await validate_hotel_selection(db, check_context, request, message.hotel_stays)
             row = await runs.create(
-                db, user_id, session_id, message.client_message_id, message.text, message.mode
+                db, user_id, session_id, message.client_message_id, prompt, message.mode
             )
+            if request_row is not None:
+                request_row.request_details = {
+                    **(request_row.request_details or {}),
+                    "selected_hotels": {
+                        "run_id": str(row.id),
+                        "revision": message.expected_revision,
+                        "stays": [
+                            stay.model_dump(mode="json")
+                            for stay in sorted(
+                                message.hotel_stays or (), key=lambda stay: stay.check_in
+                            )
+                        ],
+                    },
+                }
             result = view(row)
         context = RunContext(user_id, session_id, result.run_id)
         trace(
@@ -164,7 +210,9 @@ class RunService:
             profile=profile_name(),
         )
         self.cancelled[result.run_id] = asyncio.Event()
-        self.tasks[result.run_id] = asyncio.create_task(self._execute(context, message))
+        self.tasks[result.run_id] = asyncio.create_task(
+            self._execute(context, message.model_copy(update={"text": prompt}))
+        )
         return result
 
     async def get(self, user_id: UUID, run_id: UUID) -> RunView:

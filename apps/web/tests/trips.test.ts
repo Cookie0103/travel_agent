@@ -1,7 +1,7 @@
 /** R01/R03: one identity can create independent trips; the outbox stays bound to its owner. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createTrip, readTripHistory } from "../src/lib/api.ts";
+import { createTrip, readTripHistory, messageInput } from "../src/lib/api.ts";
 import {
   persistIdentity,
   restoreIdentity,
@@ -33,6 +33,51 @@ const pending = {
   text: "京都三天",
   mode: "offline" as const,
 };
+
+test("segment choices survive refresh and retry without charging a new message", () => {
+  const local = new MemoryStorage(),
+    tab = new MemoryStorage();
+  const selection = {
+    expected_revision: 3,
+    hotel_stays: [
+      {
+        check_in: "2026-11-03",
+        check_out: "2026-11-04",
+        hotel_evidence_id: "selected-osaka",
+      },
+      {
+        check_in: "2026-11-04",
+        check_out: "2026-11-05",
+        hotel_evidence_id: "selected-kyoto",
+      },
+    ],
+  };
+  const submitted = messageInput(
+    undefined,
+    "按各段酒店规划",
+    "deepseek",
+    selection,
+  );
+  persistIdentity(local, tab, { ...first, pending_message: submitted });
+  const restored = restoreIdentity(local, tab)?.pending_message;
+  assert.deepEqual(restored, submitted);
+  assert.deepEqual(
+    messageInput(restored, submitted.text, "deepseek"),
+    submitted,
+  );
+  assert.throws(
+    () =>
+      messageInput(restored, submitted.text, "deepseek", {
+        ...selection,
+        hotel_stays: [selection.hotel_stays[0]],
+      }),
+    /上一条消息/,
+  );
+  assert.equal(
+    pendingFor(tab, { ...first, token: "another-owner" }),
+    undefined,
+  );
+});
 
 test("identity persistence contains only token and session; switching never transfers a message", () => {
   const local = new MemoryStorage(),

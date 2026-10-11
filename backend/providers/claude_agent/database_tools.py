@@ -58,6 +58,17 @@ class DatabaseTools:
     async def execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
     ) -> ToolResult:
+        if name in {"estimate_routes", "validate_itinerary", "stage_plan_change"}:
+            state = await asyncio.wrap_future(
+                asyncio.run_coroutine_threadsafe(self.travel.business_context(context), self.loop)
+            )
+            if state.get("requires_hotel_selection"):
+                return ToolResult(
+                    {},
+                    code="validation",
+                    suggestion="请先逐住宿段查询约3家酒店并present展示全部段，等待用户在页面选齐后再规划；不要估算路线或暂存。",
+                    detail=("hotel_selection_required",),
+                )
         return await asyncio.wrap_future(
             asyncio.run_coroutine_threadsafe(
                 self.executor.execute(context, name, arguments), self.loop
@@ -111,6 +122,13 @@ class DatabaseTools:
         ready = dialogue["ready_tasks"]
         if not ready:
             return None
+        if state.get("awaiting_hotel_selection"):
+            return None
+        if state.get("requires_hotel_selection"):
+            return (
+                "请先逐住宿段调用search_hotel_offers(limit=3, segment_arrive)，"
+                "再present_travel_result展示所有段的酒店，等待用户在页面每段选一家后再规划。"
+            )
         steps = [NEXT_STEPS[task] for task in ready if task in NEXT_STEPS]
         return (
             "服务端确认当前条件已齐，请立即继续用户已授权的待办，而非再确认是否执行或重复询问已知条件。"

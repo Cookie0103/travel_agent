@@ -1,5 +1,6 @@
 """工作台输出契约；复用领域对象，只描述服务端补齐的卡片，不计算业务规则。"""
 
+from datetime import date
 from typing import Literal
 from uuid import UUID
 
@@ -103,10 +104,24 @@ class Comparison(BaseModel):
     scope: str
 
 
+class HotelSegmentPresentation(BaseModel):
+    city: str
+    check_in: date
+    check_out: date
+    evidence_ids: tuple[UUID, ...]
+    comparison: Comparison
+    total_found: int | None = None
+    more_url: str | None = None
+    more_url_scope: Literal["search", "destination"] | None = None
+
+
 class HotelPresentation(BaseModel):
     model_config = ConfigDict(json_schema_serialization_defaults_required=False)
     component: Literal["hotel_comparison"]
     cards: tuple[HotelCard, ...]
+    segments: tuple[HotelSegmentPresentation, ...] = Field(
+        default_factory=tuple, exclude_if=lambda value: not value
+    )
     comparison: Comparison
     total_found: int | None = None
     more_url: str | None = None

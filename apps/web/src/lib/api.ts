@@ -1,5 +1,6 @@
 /** Shared HTTP and persisted SSE reader; reconnects only read, never repeat a message. */
 import type { components } from "./api-types";
+import type { HotelSelection } from "./hotel-groups";
 import type { Mode } from "./models";
 export type RequestState = components["schemas"]["RequestView"];
 export type Run = components["schemas"]["RunView"];
@@ -49,12 +50,27 @@ export function messageInput(
   previous: Identity["pending_message"],
   text: string,
   mode: Mode,
+  selection?: HotelSelection,
 ): components["schemas"]["MessageInput"] {
-  if (previous && (previous.text !== text || previous.mode !== mode))
+  if (
+    previous &&
+    (previous.text !== text ||
+      previous.mode !== mode ||
+      (selection &&
+        JSON.stringify([previous.expected_revision, previous.hotel_stays]) !==
+          JSON.stringify([selection.expected_revision, selection.hotel_stays])))
+  )
     throw new Error(
       "上一条消息的响应尚未核对，请先重试原消息；会保留同一个去重ID。",
     );
-  return previous ?? { client_message_id: crypto.randomUUID(), text, mode };
+  return (
+    previous ?? {
+      client_message_id: crypto.randomUUID(),
+      text,
+      mode,
+      ...selection,
+    }
+  );
 }
 
 export async function readDraft(draftId: string, token: string): Promise<Plan> {

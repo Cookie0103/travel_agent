@@ -8,6 +8,7 @@ import { Banner } from "./banner";
 import { Composer, type Mode } from "./composer";
 import { Conversation, Welcome } from "./conversation";
 import { workspaceTab, type WorkspaceTab } from "@/lib/workspace-tabs";
+import type { HotelSelection } from "@/lib/hotel-groups";
 import { TripPanel } from "./trip-panel";
 
 export type Workspace = ReturnType<typeof useWorkspace>;
@@ -30,9 +31,9 @@ export function Workbench({ articleId }: { articleId?: string }) {
     void workspace.newTrip().then((changed) => {
       if (changed) setText("");
     });
-  const submit = (message: string, via: Mode) => {
+  const submit = (message: string, via: Mode, selection?: HotelSelection) => {
     if (!message.trim() || workspace.busy || workspace.restoring) return;
-    void workspace.send(message, via).then((accepted) => {
+    void workspace.send(message, via, selection).then((accepted) => {
       if (accepted) setText((current) => (current === message ? "" : current));
     });
   };

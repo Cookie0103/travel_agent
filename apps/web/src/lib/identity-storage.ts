@@ -26,7 +26,38 @@ function pending(value: unknown): Identity["pending_message"] {
     !["offline", "deepseek", "claude"].includes(String(value.mode))
   )
     return undefined;
+  let selection = {};
+  if (
+    value.hotel_stays !== undefined ||
+    value.expected_revision !== undefined
+  ) {
+    if (
+      typeof value.expected_revision !== "number" ||
+      !Number.isInteger(value.expected_revision) ||
+      value.expected_revision < 0 ||
+      !Array.isArray(value.hotel_stays) ||
+      value.hotel_stays.length < 1 ||
+      value.hotel_stays.length > 6 ||
+      !value.hotel_stays.every(
+        (stay) =>
+          record(stay) &&
+          text(stay.check_in) &&
+          text(stay.check_out) &&
+          text(stay.hotel_evidence_id),
+      )
+    )
+      return undefined;
+    selection = {
+      expected_revision: value.expected_revision,
+      hotel_stays: value.hotel_stays.map((stay) => ({
+        check_in: stay.check_in,
+        check_out: stay.check_out,
+        hotel_evidence_id: stay.hotel_evidence_id,
+      })),
+    };
+  }
   return {
+    ...selection,
     client_message_id: value.client_message_id,
     text: value.text,
     mode: value.mode as NonNullable<Identity["pending_message"]>["mode"],
