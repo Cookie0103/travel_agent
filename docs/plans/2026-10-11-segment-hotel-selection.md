@@ -41,8 +41,8 @@
 ### 2026-10-11
 - 计划：H1–H4。
 - 完成：H1（8d6657e）、H2（e69c725）、H3（ba283ba）均已push；最终全量1589 passed、web134、check与独立审查通过；上一多城市批次保持已完成。
-- 未完成及原因：H4真实三酒店选择→规划→V1保存刷新已通过；返程日结构化项目和2地点详情因Places90用尽待110授权，最终新HEAD CI/CD待核对。
-- 下一步：核对最终部署并补齐H4返程日/地点详情；不重新发送已完成的付费消息。中断从本计划、Git和忽略的 `.cache/segment-hotel-selection/` 恢复，不重发付费消息。
+- 未完成及原因：H4真实三酒店选择→规划→V1保存刷新已通过；返程日结构化项目和2地点详情因Places90用尽待110授权，Railway三服务已部署到证据提交91268b1（SUCCESS），公开网站HTTP200；最终CI从§9的PR检查入口核对。
+- 下一步：补齐H4返程日/地点详情；不重新发送已完成的付费消息。中断从本计划、Git和忽略的 `.cache/segment-hotel-selection/` 恢复，不重发付费消息。
 
 ## 8. 问题解决记录
 ### P-01 人工额度与误报　状态：done　关联：H1 H3
@@ -51,7 +51,7 @@
 - 方案：仅 HUMAN 使用空上限，有限档位继续保护；本地原因映射为明确 blocked 提示。
 - 先红：HUMAN 仍为 (80,60,40,50)，第 41 次 HTTP 返回 400，两个测试失败。修复后专项 118 passed，包括 45 HTTP、85 次真实 PG 路线计数/工具及 55 校验；有限档位与失败停止测试保留。
 - 实现：profile 的人工上限为 None，贯通 Guard、SDK、工具及供应商；SDK 0.2.163 公共 max_turns=None 已读源码核对（独立审查），CLI 省略该参数。CLI/评测既有显式有限入口与停止提醒次数保留，本批覆盖生产人工页面。
-- 独立审查：无 P1/P2、无重复/过度设计；全量 1565 passed/1 历史 skip/4 live deselected（302.41s），web 129 passed/类型/lint/构建通过，db-up PG Healthy；commit 8d6657e。私人对话和原始日志不进入 Git。
+- 独立审查：无 P1/P2、无重复/过度设计；全量 1565 passed/1 历史 skip/4 live deselected（302.41s），web 129 passed/类型/lint/构建通过，db-up PG Healthy；commit 8d6657e。私人对话和原始日志不进入 Git。最终自审同步backend/README中的旧50轮说明，历史操作记录保留原时点数据。
 
 ### P-02 多段报价混列与过早规划　状态：done　关联：H2 H3
 - 现象：三段报价混列，点击大阪一家立即规划，京都/奈良未选；校验反复出现 hotel_stay_missing 和 evidence_missing。
@@ -73,7 +73,7 @@
 - 每晚20000候选有超限，按合成验收正常对话改为不限、双人床/双床可接受；新版本重新查询，旧卡禁用；没有改价格或放宽校验。
 - VERIFIED：规划run c359ff6d（10 HTTP/15 tools），3轮validate（partial→route_departure冲突→partial零冲突），stage/present成功；三家规范报价按3→4/4→5/5→6日晚保存V1，刷新与PG实读一致。未查询跨城票价/耗时保留未知；未下单。
 - 遗留：模型仅将11/6返程日写入说明，结构化内容3天6项，需补最后日；Places日配额90用尽导致2地点详情未恢复，不是假称供应商异常。初次估算追加到100遗漏重启后两进程分别重取（预计约14次），已更正询问110替代100；授权未到前不放宽机器配额、不清账本。累计10.652244 CNY、Places90、routes79、Rakuten52。旧单城京都读/锁定/刷新V3成功，报价过期的时间修改按既有规则拒绝，不放宽校验。
-- 本条并非功能全部完成证据；H4仍doing，等待补齐及最终HEAD部署核对。
+- 本条并非功能全部完成证据；H4仍doing，等待补齐。恢复点91268b1已push，后续记录提交不改变实现；机器额度追加仍待用户明确回答。
 
 ## 9. 验证与交付
 - 命令：`uv run python scripts/dev.py db-up / check / test / web-generate / web-check`。
@@ -81,11 +81,12 @@
 - 浏览器：Chrome 合成验收会话验证三段各选一家、未选齐、独立乐天入口、统一规划、保存/刷新与旧单城市。保留脱敏截图在 docs/evidence。
 - 真实调用：先核对累计预算/供应商余额；保持机器验收限额，不使用人工免预算档绕开授权。
 - H1：check 303 文件、三平台严格类型/3 contracts/10 文档通过；全量 test 1565 passed/1 历史 skip/4 live deselected；web-check 129 passed、type/lint/build 通过；PG Healthy。
-- 独立审查：H1 无 P1/P2；其余提交与部署状态待补。
+- 独立审查：H1–H3均无剩余P1/P2；H4文档/JSON/截图只读复核无P1/P2或隐私泄露。
 
 - H2：check304文件/三平台/3 contracts/10文档通过；全量1577 passed/1历史skip/4 live deselected；web133 passed/type/lint/build；真实PG邻接71 passed；独立审查复核无剩余P1/P2。
 
 - H3：最终全量1589 passed/1历史skip/4live deselected（305.51s）；专项147 passed（8.20s）；check304文件/三平台/3契约/10文档；web134 passed/type/lint/build；独立复核无剩余P1/P2。
 
+- 发布检查：91268b1的push/PR六项CI全部SUCCESS，Railway api/web/supplier均为SUCCESS，公开页面HTTP200；[PR #6 的持续CI检查](https://github.com/Cookie0103/travel_agent/pull/6/checks)为最终提交检查入口。不合并main。
 - H4阶段证据：[合成真实验收元数据](../evidence/2026-10-11-segment-hotels-live-acceptance.json)、[选齐按钮](../evidence/2026-10-11-segment-hotels-all-selected.png)、[保存刷新](../evidence/2026-10-11-segment-hotels-saved-restored.png)、[旧单城修改刷新](../evidence/2026-10-11-segment-hotels-legacy-restored.png)。模型/API结果和未完成项分别记录，不把partial当完整验收；截图为局部视觉证据，不单独证明全部步骤或三行同屏。
 - 自审：H1/H2/H3独立审查与完整回归覆盖单城市条件/校验/读写、选择幂等/时效/归属、取消/超时/512 KiB；无新增依赖/运行时/模型循环/框架。对照§1，三行酒店、完整选择、规范住宿引用、人工次数上限与原因提示已实现；最终返程日/地点详情验收未完成，H4不标done。
