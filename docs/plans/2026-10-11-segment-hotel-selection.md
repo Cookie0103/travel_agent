@@ -10,7 +10,7 @@
 ## 2. 待用户决定
 - D1（2026-10-11 已决定）：用户明确采用“三行酒店、每段选一家、各自跳转乐天、选齐后再规划”。按住宿段而非城市名称分组，重访同城仍分别选择。
 - D2（2026-10-11 已决定）：取消 HUMAN 单轮次数上限；DEFAULT/RELAXED 和现有每日供应商配置、取消、超时、身份/版本/512 KiB 边界保持。
-- 无待确认项；按用户要求以最小改动完成可用性收尾。
+- 功能决定已定；按用户要求以最小改动完成可用性收尾。验收追加 Places 日配额90→110的授权仍待答。
 
 ## 3. 评审与设计
 - VERIFIED：失败执行触发 routes 单轮 80 次及模型 HTTP 40 次保护；上游 40 次均 200，却被映射为 provider_error。校验中存在失效/错误引用及三段住宿漏填；没有草稿。
@@ -24,8 +24,8 @@
 | --- | --- | --- | --- | --- | --- |
 | H1 | 人工单轮额度 | 无 | 超过 40 模型请求、80 路线、50 校验仍可执行；有限档位和拒绝边界有效 | done | 8d6657e · 先红 2 failed；专项 118 passed；check 303 文件/三平台/3 contracts/10 文档通过；独立审查无 P1/P2；全量 1565 passed/1 历史 skip/4 live deselected；web-check 129 passed/构建通过 |
 | H2 | 按段选酒店 | H1 | 三住宿段各自候选/入口；少一段不能规划；完整选择引用正确；旧单城市兼容 | done | e69c725 · 先红→专项71 passed；全量1577 passed/1历史skip/4 live deselected（303.30s）；web133 passed/type/lint/build；check304文件三平台/契约/文档；审查5项P2已关闭，已提交push |
-| H3 | 规划修复反馈 | H2 | 本地保护停止准确分类；错误证据可定位；不放宽业务校验 | doing | 先红6失败；审查边界先红3失败→147专项passed；check304文件三平台/3契约/10文档与web134passed/type/lint/build；全量1589passed/1历史skip/4live deselected（305.51s），等待commit/push |
-| H4 | 验证发布 | H3 | 全量项目检查、真实 PG、Chrome、预算内模型与独立审查；push 后核对部署 | doing | Chrome三行/2段禁用/3段启用、真实模型3修正轮、三酒店V1保存刷新成功；旧格式京都V2读→锁定V3→刷新成功；最后日/地点详情待配额授权 |
+| H3 | 规划修复反馈 | H2 | 本地保护停止准确分类；错误证据可定位；不放宽业务校验 | done | ba283ba · 先红6失败；审查边界先红3失败→147专项passed；check304文件三平台/3契约/10文档与web134passed/type/lint/build；全量1589passed/1历史skip/4live deselected（305.51s）；已commit/push |
+| H4 | 验证发布 | H3 | 全量项目检查、真实 PG、Chrome、预算内模型与独立审查；push 后核对部署 | doing | Chrome三行/2段禁用/3段启用、真实模型3轮校验（首次＋2轮修正）、三酒店V1保存刷新成功；旧格式京都V2读→锁定V3→刷新成功；最后日/地点详情待配额授权 |
 
 ## 5. 边界与不变量
 - 单城市证据条件、校验及保存/恢复兼容；不同住宿段不得修改全局 city/日期来查询。
@@ -40,12 +40,12 @@
 ## 7. 每日进展
 ### 2026-10-11
 - 计划：H1–H4。
-- 完成：H1（8d6657e）、H2（e69c725）；H2全量1577 passed、web133、check与独立审查通过；上一多城市批次保持已完成。
-- 未完成及原因：H3全量1589 passed、web134、check与独立复核已通过，正在提交push；H4浏览器真实三住宿段验收已开始。
-- 下一步：全量绿后提交push H3；完成H4保存/刷新及部署核对。中断从本计划、Git和忽略的 `.cache/segment-hotel-selection/` 恢复，不重发付费消息。
+- 完成：H1（8d6657e）、H2（e69c725）、H3（ba283ba）均已push；最终全量1589 passed、web134、check与独立审查通过；上一多城市批次保持已完成。
+- 未完成及原因：H4真实三酒店选择→规划→V1保存刷新已通过；返程日结构化项目和2地点详情因Places90用尽待110授权，最终新HEAD CI/CD待核对。
+- 下一步：核对最终部署并补齐H4返程日/地点详情；不重新发送已完成的付费消息。中断从本计划、Git和忽略的 `.cache/segment-hotel-selection/` 恢复，不重发付费消息。
 
 ## 8. 问题解决记录
-### P-01 人工额度与误报　状态：doing　关联：H1 H3
+### P-01 人工额度与误报　状态：done　关联：H1 H3
 - 现象：规划反复修正，80 路线/40 HTTP 后被拦截；页面显示外部服务异常。
 - 假设：✗ 上游不可用（40 次 HTTP 均 200）；✓ 本地 run 次数已达上限（cap_hit / guard blocked）；✓ SDK 错误覆盖本地原因（代码路径）。
 - 方案：仅 HUMAN 使用空上限，有限档位继续保护；本地原因映射为明确 blocked 提示。
@@ -53,7 +53,7 @@
 - 实现：profile 的人工上限为 None，贯通 Guard、SDK、工具及供应商；SDK 0.2.163 公共 max_turns=None 已读源码核对（独立审查），CLI 省略该参数。CLI/评测既有显式有限入口与停止提醒次数保留，本批覆盖生产人工页面。
 - 独立审查：无 P1/P2、无重复/过度设计；全量 1565 passed/1 历史 skip/4 live deselected（302.41s），web 129 passed/类型/lint/构建通过，db-up PG Healthy；commit 8d6657e。私人对话和原始日志不进入 Git。
 
-### P-02 多段报价混列与过早规划　状态：doing　关联：H2 H3
+### P-02 多段报价混列与过早规划　状态：done　关联：H2 H3
 - 现象：三段报价混列，点击大阪一家立即规划，京都/奈良未选；校验反复出现 hotel_stay_missing 和 evidence_missing。
 - 根因：展示/选择未按住宿段建模（REASONED）；模型仍需规范证据引用。
 - 实现：新增段元数据和一次结构化选择，原会话锁内验证完整覆盖/归属/日期/时效；规范引用随原消息幂等保存。模型漏填由原校验/暂存入口补齐，明确更换/清除拒绝；单城市不增加字段、条件或查询。
@@ -61,12 +61,12 @@
 - 独立审查发现并先红复现：旧stage缓存回放其他选择、旧hotel字段null绕过清除、无候选段compare空集、缺预算Stop误催；同revision新run历史卡等待标记失效。修复规范化初始key、缓存再核对选择、两种清除意图、空段元数据、先守追问/ready条件并绑定展示run。剩余缓存内容未补齐但校验通过已单独复现并拒绝回放，避免报告与持久内容不一致。
 - 结果：真实PG专项/邻接71 passed，web133 passed。最终check304文件三平台/3 contracts/10文档通过，全量1577 passed/1历史skip/4 live deselected（303.30s）；独立审查5项P2全部复核关闭；仅合成测试/脱敏结果进Git。
 
-### P-03 本地停止原因覆盖　状态：doing　关联：H3
+### P-03 本地停止原因覆盖　状态：done　关联：H3
 - 根因（REASONED → VERIFIED先红测试）：Guard blocked被SDK provider_error覆盖；错误reason没穿过应用白名单。增加四个固定本地原因，不透出供应商正文。
 - 先红：父进程四类原因与Guard两类真实拒绝断言失败（6 failed）；修复后专项通过。真实PG测试验证四类原因持久化/恢复；前端固定提示区分次数、上下文、预算及本地保护。
 - 独立审查两项P2：blocked盖掉worker timeout、超大输入盖掉已停止原因；3 failed复现后修复为保留取消/超时及首次原因，512 KiB拒绝及大小日志继续执行。最终专项136 passed（8.24s），web134 passed/type/lint/build，check304文件/三平台/3契约/10文档通过；复核无剩余P1/P2、无重复或过度设计。
 - 全量首次1588 passed/1 failed（306s）：旧trace断言要求静态停止文案包含“请求上限”，新增原因分类并不需要改变原日志文案，恢复原文且保留独立固定reason；没有修改旧断言。重新跑全量。
-- 多城市错证据仍404拒绝；只提示本会话当前有效的route/offer证据规范ID。测试覆盖正确引用、他人会话、已失效报价；单城市原错误文案/条件不变。最终全量1589 passed/1历史skip/4live deselected（305.51s）；trace邻接专项147 passed（8.20s），check304文件/三平台/3契约/10文档通过，commit待补。
+- 多城市错证据仍404拒绝；只提示本会话当前有效的route/offer证据规范ID。测试覆盖正确引用、他人会话、已失效报价；单城市原错误文案/条件不变。最终全量1589 passed/1历史skip/4live deselected（305.51s）；trace邻接专项147 passed（8.20s），check304文件/三平台/3契约/10文档通过，commit/push ba283ba；原诊断兼容修复独立复核通过。
 
 ### P-04 真实验收剩余配额与返程日　状态：doing　关联：H4
 - 新合成会话d22601e3，预算15 CNY保持；验收前9.336994 CNY，Places80/90。大阪/京都/奈良各住一晚，9候选分别展示，2/3按钮禁用、3/3才启用，链接各为三城的乐天页。
@@ -86,3 +86,6 @@
 - H2：check304文件/三平台/3 contracts/10文档通过；全量1577 passed/1历史skip/4 live deselected；web133 passed/type/lint/build；真实PG邻接71 passed；独立审查复核无剩余P1/P2。
 
 - H3：最终全量1589 passed/1历史skip/4live deselected（305.51s）；专项147 passed（8.20s）；check304文件/三平台/3契约/10文档；web134 passed/type/lint/build；独立复核无剩余P1/P2。
+
+- H4阶段证据：[合成真实验收元数据](../evidence/2026-10-11-segment-hotels-live-acceptance.json)、[选齐按钮](../evidence/2026-10-11-segment-hotels-all-selected.png)、[保存刷新](../evidence/2026-10-11-segment-hotels-saved-restored.png)、[旧单城修改刷新](../evidence/2026-10-11-segment-hotels-legacy-restored.png)。模型/API结果和未完成项分别记录，不把partial当完整验收；截图为局部视觉证据，不单独证明全部步骤或三行同屏。
+- 自审：H1/H2/H3独立审查与完整回归覆盖单城市条件/校验/读写、选择幂等/时效/归属、取消/超时/512 KiB；无新增依赖/运行时/模型循环/框架。对照§1，三行酒店、完整选择、规范住宿引用、人工次数上限与原因提示已实现；最终返程日/地点详情验收未完成，H4不标done。

@@ -1,0 +1,111 @@
+{
+  "day": "2026-10-11",
+  "model_spent_cny": "10.652244",
+  "model_daily_cny": "15.00",
+  "supplier_calls": {
+    "routes": 79,
+    "places": 90,
+    "geocode": 2,
+    "rakuten": 52
+  },
+  "planning_run": {
+    "id": "c359ff6d-33a0-42cc-a5c8-b49241140eaa",
+    "session_id": "d22601e3-4ca0-4bd2-a0d2-d3ffe0647fd3",
+    "status": "completed",
+    "error_code": null
+  },
+  "saved": {
+    "plan_id": "2c3d4f79-aab7-4546-86e4-5f7cfec18c89",
+    "version": 1,
+    "item_count": 6,
+    "days": [
+      "2026-11-03",
+      "2026-11-04",
+      "2026-11-05"
+    ],
+    "hotel_stays": [
+      {
+        "check_in": "2026-11-03",
+        "check_out": "2026-11-04",
+        "hotel_evidence_id": "6cff1a1c-d6a8-4349-b338-cdfbfe6c193d"
+      },
+      {
+        "check_in": "2026-11-04",
+        "check_out": "2026-11-05",
+        "hotel_evidence_id": "1879124f-be62-4178-b65a-cbd7c4a21be5"
+      },
+      {
+        "check_in": "2026-11-05",
+        "check_out": "2026-11-06",
+        "hotel_evidence_id": "e6088db4-7747-478a-89ce-85aa74f57d9b"
+      }
+    ]
+  },
+  "scope": "Synthetic local Chrome acceptance; no booking or private user conversation",
+  "profile": "relaxed",
+  "hotel_ui": {
+    "overnight_rows": 3,
+    "candidates_per_row": [
+      3,
+      3,
+      3
+    ],
+    "two_selected_planning_enabled": false,
+    "three_selected_planning_enabled": true,
+    "rakuten_urls": [
+      "https://travel.rakuten.co.jp/yado/osaka/shi.html",
+      "https://travel.rakuten.co.jp/yado/kyoto/shi.html",
+      "https://travel.rakuten.co.jp/yado/nara/nara.html"
+    ]
+  },
+  "model": {
+    "http_requests": 10,
+    "tool_calls": 15,
+    "validation_rounds": [
+      [
+        "report:partial",
+        "counts:v14/u11/c0",
+        "visit_duration_range:unknown@d1i1 start=13:30 end=16:30",
+        "route_duration:unknown",
+        "route_duration:unknown",
+        "opening_hours:unknown",
+        "route_duration:unknown",
+        "repair_round:1"
+      ],
+      [
+        "report:conflict",
+        "counts:v14/u8/c2",
+        "route_departure:conflict@d1i2 dep=17:00 pe=16:00 ns=16:00",
+        "route_departure:conflict@d2i2 dep=16:00 pe=15:30 ns=15:30",
+        "opening_hours:unknown",
+        "route_duration:unknown",
+        "other_costs:unknown",
+        "repair_round:2"
+      ],
+      [
+        "report:partial",
+        "counts:v14/u10/c0",
+        "route_duration:unknown",
+        "route_duration:unknown",
+        "opening_hours:unknown",
+        "route_duration:unknown",
+        "other_costs:unknown",
+        "repair_round:3"
+      ]
+    ],
+    "worker_status": "success"
+  },
+  "chrome_saved_and_refreshed_version": 1,
+  "limitations": [
+    "Return day 2026-11-06 is currently text only, not a structured day",
+    "Two Google place details unavailable after daily cap 90; provider facts remain unknown",
+    "Unqueried intercity timetables, durations and fares remain unknown"
+  ],
+  "legacy": {
+    "session_id": "fe27928d-fa31-417e-b969-3ea4bff5ce19",
+    "read_version": 2,
+    "lock_saved_refreshed_version": 3,
+    "expired_quote_time_change": "rejected with evidence_stale; validation unchanged"
+  },
+  "completion": "Partial acceptance; final return-day/details verification awaiting approved supplier quota"
+}
