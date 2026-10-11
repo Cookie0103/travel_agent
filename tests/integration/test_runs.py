@@ -26,6 +26,37 @@ from tests.integration.test_travel import travel_setup as travel_setup
 pytestmark = pytest.mark.integration
 
 
+@pytest.mark.parametrize(
+    "reason", ["request_limit", "request_too_large", "budget_limit", "local_guard"]
+)
+def test_local_stop_reason_survives_real_pg_event_restore(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+    reason: str,
+) -> None:
+    runner, travel, context = travel_setup
+    service = RunService(
+        travel.database,
+        runtime_factory=lambda _: FakeRuntime(RuntimeOutcome(code="blocked", reason=reason)),
+    )
+
+    async def exercise() -> None:
+        run = await service.submit(
+            context.user_id,
+            context.session_id,
+            MessageInput(client_message_id=uuid4(), text="合成保护停止"),
+        )
+        await asyncio.gather(*tuple(service.tasks.values()))
+        restored = RunService(travel.database)
+        events = await restored.events(context.user_id, run.run_id, 0)
+        assert events[-1]["kind"] == "failed"
+        assert events[-1]["code"] == "blocked" and events[-1]["reason"] == reason
+        assert (await restored.get(context.user_id, run.run_id)).status == "failed"
+        await restored.close()
+        await service.close()
+
+    runner.run(exercise())
+
+
 def test_persistence_failure_exposes_only_type_sqlstate_and_requires_recovery(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     monkeypatch: pytest.MonkeyPatch,

@@ -15,6 +15,7 @@ from backend.domain.execution import (
     RuntimeEvent,
     RuntimeOutcome,
     error_code,
+    terminal_event,
     upstream_error_text,
 )
 from backend.limits import ProbeError, Settings
@@ -33,6 +34,11 @@ from backend.providers.claude_agent.guard import Forward, Guard
         "guard_failure",
         "upstream_timeout",
         "upstream_402",
+        "request_limit",
+        "request_too_large",
+        "budget_limit",
+        "local_guard",
+        "local_guard_timeout",
     ],
 )
 def test_parent_failure_never_publishes_worker_completed(
@@ -79,6 +85,14 @@ def test_parent_failure_never_publishes_worker_completed(
             guards[0].failures.append("provider_error")
             guards[0].upstream_status = 402
             return {"status": "error", "code": "provider_error"}
+        if failure in {"request_limit", "request_too_large", "budget_limit", "local_guard"}:
+            guards[0].failures.append("blocked")
+            guards[0].stop_reason = failure
+            return {"status": "error", "code": "provider_error"}
+        if failure == "local_guard_timeout":
+            guards[0].failures.append("blocked")
+            guards[0].stop_reason = "request_limit"
+            return {"status": "error", "code": "timeout", "reason": "process_timeout"}
         return {"status": "error", "code": failure}
 
     monkeypatch.setenv("DEEPSEEK_API_KEY", "offline-only")
@@ -104,10 +118,15 @@ def test_parent_failure_never_publishes_worker_completed(
         assert report["code"] == "provider_error" and report["reason"] == "upstream_http_402"
         result = application.outcome(report, context)
         assert (result.code, result.reason) == ("provider_error", "upstream_http_402")
-    if failure == "upstream_timeout":
+    if failure in {"upstream_timeout", "local_guard_timeout"}:
         assert report["code"] == "timeout"
         assert emitted[0].code == "timeout"
         assert application.outcome(report, context).code == "timeout"
+    if failure in {"request_limit", "request_too_large", "budget_limit", "local_guard"}:
+        assert report["code"] == "blocked" and report["reason"] == failure
+        result = application.outcome(report, context)
+        assert (result.code, result.reason) == ("blocked", failure)
+        assert terminal_event(context, result).reason == failure
     with pytest.raises(ProbeError, match="conflict"):
         live.run_live("offline", context, tmp_path)
 

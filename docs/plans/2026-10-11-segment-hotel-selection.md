@@ -23,9 +23,9 @@
 | ID | 问题 | 依赖 | 验收条件 | 状态 | 证据 |
 | --- | --- | --- | --- | --- | --- |
 | H1 | 人工单轮额度 | 无 | 超过 40 模型请求、80 路线、50 校验仍可执行；有限档位和拒绝边界有效 | done | 8d6657e · 先红 2 failed；专项 118 passed；check 303 文件/三平台/3 contracts/10 文档通过；独立审查无 P1/P2；全量 1565 passed/1 历史 skip/4 live deselected；web-check 129 passed/构建通过 |
-| H2 | 按段选酒店 | H1 | 三住宿段各自候选/入口；少一段不能规划；完整选择引用正确；旧单城市兼容 | doing | 先红→专项71 passed；全量1577 passed/1历史skip/4 live deselected（303.30s）；web133 passed/type/lint/build；check304文件三平台/契约/文档；审查5项P2已关闭，待提交 |
-| H3 | 规划修复反馈 | H2 | 本地保护停止准确分类；错误证据可定位；不放宽业务校验 | todo | — |
-| H4 | 验证发布 | H3 | 全量项目检查、真实 PG、Chrome、预算内模型与独立审查；push 后核对部署 | todo | — |
+| H2 | 按段选酒店 | H1 | 三住宿段各自候选/入口；少一段不能规划；完整选择引用正确；旧单城市兼容 | done | e69c725 · 先红→专项71 passed；全量1577 passed/1历史skip/4 live deselected（303.30s）；web133 passed/type/lint/build；check304文件三平台/契约/文档；审查5项P2已关闭，已提交push |
+| H3 | 规划修复反馈 | H2 | 本地保护停止准确分类；错误证据可定位；不放宽业务校验 | doing | 先红6失败；审查边界先红3失败→147专项passed；check304文件三平台/3契约/10文档与web134passed/type/lint/build；全量1589passed/1历史skip/4live deselected（305.51s），等待commit/push |
+| H4 | 验证发布 | H3 | 全量项目检查、真实 PG、Chrome、预算内模型与独立审查；push 后核对部署 | doing | Chrome三行/2段禁用/3段启用、真实模型3修正轮、三酒店V1保存刷新成功；旧格式京都V2读→锁定V3→刷新成功；最后日/地点详情待配额授权 |
 
 ## 5. 边界与不变量
 - 单城市证据条件、校验及保存/恢复兼容；不同住宿段不得修改全局 city/日期来查询。
@@ -40,9 +40,9 @@
 ## 7. 每日进展
 ### 2026-10-11
 - 计划：H1–H4。
-- 完成：H1（8d6657e）；全量 1565 passed、web129、check 与独立审查通过；上一多城市批次保持已完成。
-- 未完成及原因：新批次开始，正在实施 H2，先观察分段展示/选择测试失败。
-- 下一步：H1 → H2 → H3 → H4；中断从本计划、Git 和忽略的 `.cache/segment-hotel-selection/` 恢复，不重发付费消息。
+- 完成：H1（8d6657e）、H2（e69c725）；H2全量1577 passed、web133、check与独立审查通过；上一多城市批次保持已完成。
+- 未完成及原因：H3全量1589 passed、web134、check与独立复核已通过，正在提交push；H4浏览器真实三住宿段验收已开始。
+- 下一步：全量绿后提交push H3；完成H4保存/刷新及部署核对。中断从本计划、Git和忽略的 `.cache/segment-hotel-selection/` 恢复，不重发付费消息。
 
 ## 8. 问题解决记录
 ### P-01 人工额度与误报　状态：doing　关联：H1 H3
@@ -61,6 +61,20 @@
 - 独立审查发现并先红复现：旧stage缓存回放其他选择、旧hotel字段null绕过清除、无候选段compare空集、缺预算Stop误催；同revision新run历史卡等待标记失效。修复规范化初始key、缓存再核对选择、两种清除意图、空段元数据、先守追问/ready条件并绑定展示run。剩余缓存内容未补齐但校验通过已单独复现并拒绝回放，避免报告与持久内容不一致。
 - 结果：真实PG专项/邻接71 passed，web133 passed。最终check304文件三平台/3 contracts/10文档通过，全量1577 passed/1历史skip/4 live deselected（303.30s）；独立审查5项P2全部复核关闭；仅合成测试/脱敏结果进Git。
 
+### P-03 本地停止原因覆盖　状态：doing　关联：H3
+- 根因（REASONED → VERIFIED先红测试）：Guard blocked被SDK provider_error覆盖；错误reason没穿过应用白名单。增加四个固定本地原因，不透出供应商正文。
+- 先红：父进程四类原因与Guard两类真实拒绝断言失败（6 failed）；修复后专项通过。真实PG测试验证四类原因持久化/恢复；前端固定提示区分次数、上下文、预算及本地保护。
+- 独立审查两项P2：blocked盖掉worker timeout、超大输入盖掉已停止原因；3 failed复现后修复为保留取消/超时及首次原因，512 KiB拒绝及大小日志继续执行。最终专项136 passed（8.24s），web134 passed/type/lint/build，check304文件/三平台/3契约/10文档通过；复核无剩余P1/P2、无重复或过度设计。
+- 全量首次1588 passed/1 failed（306s）：旧trace断言要求静态停止文案包含“请求上限”，新增原因分类并不需要改变原日志文案，恢复原文且保留独立固定reason；没有修改旧断言。重新跑全量。
+- 多城市错证据仍404拒绝；只提示本会话当前有效的route/offer证据规范ID。测试覆盖正确引用、他人会话、已失效报价；单城市原错误文案/条件不变。最终全量1589 passed/1历史skip/4live deselected（305.51s）；trace邻接专项147 passed（8.20s），check304文件/三平台/3契约/10文档通过，commit待补。
+
+### P-04 真实验收剩余配额与返程日　状态：doing　关联：H4
+- 新合成会话d22601e3，预算15 CNY保持；验收前9.336994 CNY，Places80/90。大阪/京都/奈良各住一晚，9候选分别展示，2/3按钮禁用、3/3才启用，链接各为三城的乐天页。
+- 每晚20000候选有超限，按合成验收正常对话改为不限、双人床/双床可接受；新版本重新查询，旧卡禁用；没有改价格或放宽校验。
+- VERIFIED：规划run c359ff6d（10 HTTP/15 tools），3轮validate（partial→route_departure冲突→partial零冲突），stage/present成功；三家规范报价按3→4/4→5/5→6日晚保存V1，刷新与PG实读一致。未查询跨城票价/耗时保留未知；未下单。
+- 遗留：模型仅将11/6返程日写入说明，结构化内容3天6项，需补最后日；Places日配额90用尽导致2地点详情未恢复，不是假称供应商异常。初次估算追加到100遗漏重启后两进程分别重取（预计约14次），已更正询问110替代100；授权未到前不放宽机器配额、不清账本。累计10.652244 CNY、Places90、routes79、Rakuten52。旧单城京都读/锁定/刷新V3成功，报价过期的时间修改按既有规则拒绝，不放宽校验。
+- 本条并非功能全部完成证据；H4仍doing，等待补齐及最终HEAD部署核对。
+
 ## 9. 验证与交付
 - 命令：`uv run python scripts/dev.py db-up / check / test / web-generate / web-check`。
 - 本地 SDK 测试使用现有已验证 CLI 2.1.295；生成与 web 检查前停止本批自有 dev server，避免构建缓存冲突。
@@ -70,3 +84,5 @@
 - 独立审查：H1 无 P1/P2；其余提交与部署状态待补。
 
 - H2：check304文件/三平台/3 contracts/10文档通过；全量1577 passed/1历史skip/4 live deselected；web133 passed/type/lint/build；真实PG邻接71 passed；独立审查复核无剩余P1/P2。
+
+- H3：最终全量1589 passed/1历史skip/4live deselected（305.51s）；专项147 passed（8.20s）；check304文件/三平台/3契约/10文档；web134 passed/type/lint/build；独立复核无剩余P1/P2。

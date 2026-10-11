@@ -46,6 +46,7 @@ class Guard:
     temperature: Literal[0] | None = None
     run: str = ""  # 仅TRACE用的run标识
     upstream_status: int | None = None  # 最近一次非200的上游状态码(仅数字，不含正文)
+    stop_reason: str = "local_guard"  # 只设置固定原因；运行事件仍按RUN_REASONS白名单持久化。
 
     def accept(self, path: str, token: str, body: bytes) -> tuple[int, bytes]:
         if not secrets.compare_digest(token, "Bearer " + self.token):
@@ -72,11 +73,16 @@ class Guard:
             )
             retries = 0
             while True:  # 仅首字节停滞会重试；每次尝试各自预占并计入attempts
-                if self.failures or (
-                    self.max_attempts is not None and self.attempts >= self.max_attempts
-                ):
+                if self.failures:
                     raise ProbeError("blocked", "当前实验已停止或达到请求上限")
-                request_id = self.budget.reserve(request.charge, datetime.now(UTC), self.run)
+                if self.max_attempts is not None and self.attempts >= self.max_attempts:
+                    self.stop_reason = "request_limit"
+                    raise ProbeError("blocked", "本轮模型请求次数已达上限")
+                try:
+                    request_id = self.budget.reserve(request.charge, datetime.now(UTC), self.run)
+                except ProbeError:
+                    self.stop_reason = "budget_limit"
+                    raise
                 self.attempts += 1
                 trace(
                     "model_req_start",
@@ -142,6 +148,8 @@ class Guard:
     def reject_size(
         self, error: RequestTooLarge, *, size_source: str = "serialized_bytes"
     ) -> tuple[int, bytes]:
+        if not self.failures:
+            self.stop_reason = "request_too_large"
         self.failure_details.append(str(error))
         trace(
             "model_req_rejected",

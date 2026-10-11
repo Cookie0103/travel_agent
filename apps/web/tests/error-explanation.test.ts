@@ -91,3 +91,20 @@ test("hotel validation reasons name the cause; unavailable uses them too", () =>
     "服务不可用：请稍后重试读取；此次失败不等于已保存数据丢失。",
   );
 });
+
+test("local stops explain the actual cause and keep provider, timeout and cancel errors distinct", () => {
+  const wanted = {
+    request_limit:
+      "本轮模型请求次数已用完，已完成的结果已保留；请再发一条消息继续",
+    request_too_large:
+      "本轮上下文超过请求大小上限，已完成的结果已保留；请缩小本次需求后继续",
+    budget_limit: "本地费用预算或授权检查未通过，执行已停止；请核对可用预算",
+    local_guard:
+      "本地执行保护已停止本轮，已完成的结果已保留；请读取最新状态后继续",
+  };
+  for (const [reason, text] of Object.entries(wanted)) {
+    assert.equal(errorExplanation("blocked", reason), text);
+    for (const code of ["timeout", "cancelled", "provider_error"])
+      assert.equal(errorExplanation(code, reason), errorExplanation(code));
+  }
+});

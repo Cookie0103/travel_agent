@@ -6548,7 +6548,11 @@
           "other",
           "conversation_incomplete",
           "conversation_state_unavailable",
-          "max_turns"
+          "max_turns",
+          "request_limit",
+          "request_too_large",
+          "budget_limit",
+          "local_guard"
         ],
         "type": "string"
       },

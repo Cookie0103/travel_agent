@@ -12,6 +12,7 @@ from pydantic import TypeAdapter, ValidationError
 from backend.adapters.tracing import TraceMetadata, report_metadata
 from backend.agent.runtime import EventSink
 from backend.domain.execution import (
+    RUN_REASONS,
     UPSTREAM_REASON,
     RunContext,
     RunResult,
@@ -141,6 +142,8 @@ def outcome(report: dict[str, object], context: RunContext) -> RuntimeOutcome:
         status = report.get("upstream_http_status")
         if code != "cancelled" and type(status) is int and 100 <= status <= 599:
             reason = f"{UPSTREAM_REASON}{status}"
+        elif code != "cancelled" and report.get("reason") in RUN_REASONS:
+            reason = str(report["reason"])
         return RuntimeOutcome(code=code, reason=reason)
     results = report.get("results")
     if not isinstance(results, list) or len(results) != 1:

@@ -221,6 +221,8 @@ def run_live(
                     reason=f"{UPSTREAM_REASON}{guard.upstream_status}",
                     upstream_http_status=guard.upstream_status,
                 )
+            elif "blocked" in guard.failures and report.get("code") not in {"cancelled", "timeout"}:
+                report.update(code="blocked", reason=guard.stop_reason)
         if (
             report.get("status") == "success"
             and guard.observations

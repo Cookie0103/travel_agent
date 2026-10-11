@@ -17,7 +17,7 @@ from backend.domain.conversation import (
     Task,
     conversation_view,
 )
-from backend.domain.evidence import EvidenceRecord
+from backend.domain.evidence import EvidenceKind, EvidenceRecord
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
 from backend.domain.plans import PlanDraft
@@ -574,7 +574,24 @@ async def resolve_records(
         raise ServiceError(422, "validation", "一次最多读取50条证据", "evidence_over_50")
     rows = {row.id: row for row in await travel.find_evidence(db, context, ids)}
     if set(ids) != rows.keys():
-        raise ServiceError(404, "blocked", "证据不存在或不属于当前会话", "evidence_missing")
+        if not request.segments:
+            raise ServiceError(404, "blocked", "证据不存在或不属于当前会话", "evidence_missing")
+        missing = tuple(str(id) for id in ids if id not in rows)
+        replacements = []
+        kinds: tuple[EvidenceKind, ...] = ("route", "hotel_offer")
+        for kind in kinds:
+            for row in await travel.entity_evidence(db, context, kind, missing):
+                record = travel.evidence_from_row(row)
+                if not row.invalidated and record.applicable(request, now):
+                    replacements.append(f"{record.entity_id} → evidence_id={record.evidence_id}")
+        message = (
+            "证据不存在或不属于当前会话；无效ID："
+            + ", ".join(missing)
+            + "。行程引用必须使用evidence_id，不能用place_id、route_id或offer_id。"
+        )
+        if replacements:
+            message += "本会话当前有效引用可改为：" + "；".join(replacements)
+        raise ServiceError(404, "blocked", message, "evidence_missing")
     records = tuple(travel.evidence_from_row(rows[key]) for key in ids)
     stale = sorted(
         {

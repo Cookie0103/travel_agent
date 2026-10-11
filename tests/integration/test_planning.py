@@ -12,14 +12,88 @@ from backend.domain.itinerary import ItineraryProposal, ProposedItem
 from backend.domain.travel_request import RequestPatch
 from backend.persistence.catalog import import_catalog
 from backend.services.catalog import CatalogService
-from backend.services.common import transaction
+from backend.services.common import ServiceError, transaction
 from backend.services.hotels import HotelService
+from backend.services.sessions import DemoLogin, SessionService
 from backend.services.travel import TravelService
 from backend.tools.travel import TravelToolExecutor
 from data.import_catalog import load_snapshot
 from tests.integration.test_travel import travel_setup as travel_setup
 
 pytestmark = pytest.mark.integration
+
+
+def test_unknown_and_entity_ids_are_actionable_without_accepting_or_leaking_evidence(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        request = await travel.get_request(context)
+        assert request.start_date and request.end_date
+        await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": {
+                        "segments": [
+                            {
+                                "city": "京都",
+                                "arrive": request.start_date.isoformat(),
+                                "depart": "2026-11-04",
+                            },
+                            {
+                                "city": "大阪",
+                                "arrive": "2026-11-04",
+                                "depart": request.end_date.isoformat(),
+                            },
+                        ]
+                    },
+                }
+            ),
+        )
+        found = await HotelService(travel).search(context, 2, segment_arrive=request.start_date)
+        record = found[0]
+        alias, missing = UUID(record.entity_id), uuid4()
+        with pytest.raises(ServiceError) as failure:
+            await travel.resolve_evidence(context, (alias, missing))
+        message = str(failure.value)
+        assert failure.value.reason == "evidence_missing"
+        assert str(alias) in message and str(missing) in message
+        assert str(record.evidence_id) in message and "evidence_id" in message
+        assert await travel.resolve_evidence(context, (record.evidence_id,)) == (record,)
+        sessions = SessionService(travel.database.engine.url, demo_enabled=True)
+        other = await sessions.create_demo_user(DemoLogin(display_name="合成证据隔离"))
+        session = await sessions.new_session(other.user_id)
+        foreign = RunContext(other.user_id, session.session_id)
+        with pytest.raises(ServiceError) as failure:
+            await travel.resolve_evidence(foreign, (alias,))
+        assert str(record.evidence_id) not in str(failure.value)
+        assert str(failure.value) == "证据不存在或不属于当前会话"
+        current = await travel.get_request(context)
+        await travel.patch_request(
+            foreign,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 0,
+                    "set": current.model_dump(exclude={"revision"}, exclude_none=True),
+                }
+            ),
+        )
+        with pytest.raises(ServiceError) as failure:
+            await travel.resolve_evidence(foreign, (alias,))
+        assert str(alias) in str(failure.value)
+        assert str(record.evidence_id) not in str(failure.value)
+        await travel.patch_request(
+            context, RequestPatch.model_validate({"expected_revision": 2, "set": {"rooms": 2}})
+        )
+        with pytest.raises(ServiceError) as failure:
+            await travel.resolve_evidence(context, (alias,))
+        assert str(record.evidence_id) not in str(failure.value)
+        await sessions.database.close()
+
+    runner.run(exercise())
 
 
 async def destinations(

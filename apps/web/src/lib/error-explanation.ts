@@ -21,6 +21,13 @@ const runReasons = {
     "本轮在行程草稿完成前停止了；酒店等已完成的结果已保留。请再发一条消息，例如“继续排行程”。",
   conversation_state_unavailable: "对话状态暂时读取失败，请稍后重试",
   max_turns: "本轮对话轮数已用完，已完成的结果已保留；请再发一条消息继续",
+  request_limit:
+    "本轮模型请求次数已用完，已完成的结果已保留；请再发一条消息继续",
+  request_too_large:
+    "本轮上下文超过请求大小上限，已完成的结果已保留；请缩小本次需求后继续",
+  budget_limit: "本地费用预算或授权检查未通过，执行已停止；请核对可用预算",
+  local_guard:
+    "本地执行保护已停止本轮，已完成的结果已保留；请读取最新状态后继续",
 } as const;
 /** Closed reason codes recorded by the backend; "other" and unknown values fall back to the code text. */
 const reasons: Record<

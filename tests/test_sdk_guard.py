@@ -118,6 +118,7 @@ def test_guard_forwards_success_and_caps_hidden_requests(tmp_path: Path) -> None
     assert statuses == [200, 200, 400]
     assert budget.totals()[0] == 2
     assert len(guard.observations) == 2
+    assert getattr(guard, "stop_reason", None) == "request_limit"
 
 
 @pytest.mark.parametrize("allowed", [frozenset(), frozenset({TOOL_NAME})])
@@ -270,6 +271,7 @@ def test_http_size_rejection_logs_declared_bytes_without_reading_or_charging(
     assert rejected["req_bytes"] == 524289 and rejected["limit_bytes"] == 524288
     assert rejected["size_source"] == "content_length"
     assert budget.totals()[0] == guard.attempts == 0
+    assert getattr(guard, "stop_reason", None) == "request_too_large"
     assert guard.token not in log.read_text(encoding="utf-8") and "secret" not in log.read_text(
         encoding="utf-8"
     )
@@ -359,3 +361,36 @@ def test_human_guard_passes_forty_requests_and_still_stops_after_failure(tmp_pat
     guard.failures.append("blocked")
     assert guard.accept("/v1/messages", "Bearer " + guard.token, request_body())[0] == 400
     assert guard.attempts == 45
+
+
+@pytest.mark.parametrize("first_reason", ["request_limit", "budget_limit"])
+def test_size_rejection_preserves_first_stop_reason_and_still_logs_size(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, first_reason: str
+) -> None:
+    log = tmp_path / "trace.jsonl"
+    monkeypatch.setenv("TRAVEL_TRACE_FILE", str(log))
+    monkeypatch.setenv("TRAVEL_PROFILE", "relaxed")
+    budget = Budget(
+        tmp_path / "ledger",
+        tmp_path / "old",
+        Decimal(0) if first_reason == "budget_limit" else Decimal(5),
+    )
+    guard = Guard(
+        Settings("secret", "deepseek-flash", Decimal(5), Decimal(0)),
+        budget,
+        lambda _: pytest.fail("stopped request must not forward"),
+        max_attempts=0 if first_reason == "request_limit" else 2,
+    )
+    assert guard.accept("/v1/messages", "Bearer " + guard.token, request_body())[0] == 400
+    assert guard.stop_reason == first_reason
+    huge = request_body(messages=[{"role": "user", "content": "x" * (512 * 1024)}])
+    assert guard.accept("/v1/messages", "Bearer " + guard.token, huge)[0] == 400
+    assert guard.stop_reason == first_reason
+    rows = [
+        json.loads(line.removeprefix("TRACE "))
+        for line in log.read_text(encoding="utf-8").splitlines()
+    ]
+    rejection = next(row for row in rows if row["ev"] == "model_req_rejected")
+    assert rejection["reason"] == "request_too_large"
+    assert rejection["req_bytes"] == len(huge) and rejection["limit_bytes"] == 524288
+    assert budget.totals()[0] == guard.attempts == 0

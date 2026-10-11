@@ -42,12 +42,24 @@ type ToolReason = Literal[
     "hotel_selection_required",
     "schema",
     "other",
-    # 以下三项来自RuntimeOutcome.reason（运行级失败），只出现在failed终态事件上。
+    # 以下来自RuntimeOutcome.reason（运行级失败），只出现在failed终态事件上。
     "conversation_incomplete",
     "conversation_state_unavailable",
     "max_turns",
+    "request_limit",
+    "request_too_large",
+    "budget_limit",
+    "local_guard",
 ]
-RUN_REASONS = ("conversation_incomplete", "conversation_state_unavailable", "max_turns")
+RUN_REASONS = (
+    "conversation_incomplete",
+    "conversation_state_unavailable",
+    "max_turns",
+    "request_limit",
+    "request_too_large",
+    "budget_limit",
+    "local_guard",
+)
 type EventKind = Literal[
     "started",
     "text",
