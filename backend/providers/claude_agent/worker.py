@@ -157,7 +157,7 @@ async def run_prompts(
     revision: int = 0,
     preference_revision: int = 0,
     workflow: WorkflowName | None = None,
-    max_turns: int = 6,
+    max_turns: int | None = 6,
     disable_auto_compaction: bool = False,
 ) -> dict[str, object]:
     config = RuntimeConfig(

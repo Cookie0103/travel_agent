@@ -172,10 +172,10 @@ def test_google_place_details_failure_is_not_cached() -> None:
 
 @pytest.mark.parametrize(
     "env,expected",
-    [({}, 2), ({"TRAVEL_PROFILE": "relaxed"}, 20), ({"TRAVEL_PROFILE": "human"}, 30)],
+    [({}, 2), ({"TRAVEL_PROFILE": "relaxed"}, 20), ({"TRAVEL_PROFILE": "human"}, None)],
 )
 def test_rakuten_run_cap_default_follows_nights_and_other_profiles_keep_config(
-    env: dict[str, str], expected: int
+    env: dict[str, str], expected: int | None
 ) -> None:
     async def exercise() -> None:
         usage = _CountingUsage(env)

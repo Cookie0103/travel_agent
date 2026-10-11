@@ -220,7 +220,7 @@ def test_profile_values_table() -> None:
     assert [(p.evidence_ttl_minutes, p.max_validations) for p in (DEFAULT, RELAXED, HUMAN)] == [
         (15, 4),
         (15, 4),
-        (30, 50),
+        (30, None),
     ]
 
 
@@ -247,9 +247,9 @@ def test_max_validations_outside_range_is_rejected(bad: Any) -> None:
         repair_executor(bad)
 
 
-@pytest.mark.parametrize("profile,rounds", [("", 4), ("relaxed", 4), ("human", 50)])
+@pytest.mark.parametrize("profile,rounds", [("", 4), ("relaxed", 4), ("human", None)])
 def test_live_database_tools_use_profile_repair_rounds(
-    profile: str, rounds: int, monkeypatch: pytest.MonkeyPatch
+    profile: str, rounds: int | None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     monkeypatch.setenv("TRAVEL_PROFILE", profile)
     loop = asyncio.new_event_loop()
@@ -292,3 +292,12 @@ def test_static_repair_text_follows_human_profile() -> None:
     assert tool == OLD_TOOL.replace("修复3轮", "修复49轮")
     assert "首次校验后最多49轮，不放宽" in prompt and "冲突最多修复49轮" in skill
     assert not any("3轮" in text for text in (tool, prompt, skill))
+
+
+def test_human_repair_text_does_not_claim_a_round_limit() -> None:
+    from backend.agent.persona import travel_prompt
+    from backend.tools.contracts import repair_rounds, with_repair_rounds
+
+    assert repair_rounds(None) is None
+    assert "最多修复" not in with_repair_rounds(OLD_TOOL, None)
+    assert "首次校验后按反馈修复，不放宽" in travel_prompt(None)

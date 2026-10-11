@@ -184,3 +184,27 @@ def test_naive_route_time_has_safe_repair_feedback_without_input_echo(
         assert "+09:00" in str(schema)
 
     runner.run(exercise())
+
+
+def test_human_tools_and_routes_exceed_old_run_limits(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """R15：人工次数取消仍保留真实 PG 每日计数，不清账本。"""
+    from backend.adapters.external_api import ApiUsage
+    from backend.profile import HUMAN
+
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        usage = ApiUsage(travel.database, {"TRAVEL_PROFILE": "human"})
+        executor = TravelToolExecutor(
+            travel, max_calls=HUMAN.max_calls, max_validations=HUMAN.max_validations
+        )
+        for _ in range(85):
+            await usage.consume("routes")
+            result = await executor.execute(context, "load_skill", {"name": "hotel-comparison"})
+            assert result.code is None
+        assert usage.used["routes"] == executor.calls == 85
+        assert usage.daily["routes"] == 600
+
+    runner.run(exercise())

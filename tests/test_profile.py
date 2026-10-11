@@ -38,7 +38,9 @@ def test_relaxed_is_larger_and_timeouts_stay_ordered(tmp_path: Path) -> None:
         )
         assert profile.upstream_timeout < int(env["API_TIMEOUT_MS"]) / 1000 < profile.worker_timeout
     for api, value in DEFAULT.run_caps.items():
-        assert RELAXED.run_caps[api] > value and RELAXED.daily_defaults[api] > 0
+        relaxed_cap = RELAXED.run_caps[api]
+        assert relaxed_cap is not None and value is not None
+        assert relaxed_cap > value and RELAXED.daily_defaults[api] > 0
 
 
 def test_external_caps_follow_profile_and_explicit_env_wins() -> None:
@@ -63,10 +65,10 @@ def test_human_profile_numbers_order_and_forwarding(tmp_path: Path) -> None:
     assert current({"TRAVEL_PROFILE": "human"}) is HUMAN
     assert current({"TRAVEL_PROFILE": "Human "}) is DEFAULT
     assert (HUMAN.max_calls, HUMAN.max_turns, HUMAN.max_attempts, HUMAN.max_output) == (
-        80, 60, 40, 8192,
+        None, None, None, 8192,
     )  # fmt: skip
     assert dict(HUMAN.run_caps) == {
-        "geocode": 10, "places": 60, "routes": 80, "rakuten": 30, "weather": 5,
+        "geocode": None, "places": None, "routes": None, "rakuten": None, "weather": None,
     }  # fmt: skip
     assert dict(HUMAN.daily_defaults) == {
         "geocode": 100, "places": 300, "routes": 600, "rakuten": 300, "weather": 300,
@@ -78,4 +80,15 @@ def test_human_profile_numbers_order_and_forwarding(tmp_path: Path) -> None:
     api = int(env["API_TIMEOUT_MS"]) / 1000
     assert HUMAN.upstream_timeout < api < HUMAN.worker_timeout
     assert HUMAN.worker_timeout < HUMAN.process_timeout < HUMAN.run_timeout
-    assert ApiUsage(cast(Any, None), {"TRAVEL_PROFILE": "human"}).run_caps["places"] == 60
+    assert ApiUsage(cast(Any, None), {"TRAVEL_PROFILE": "human"}).run_caps["places"] is None
+
+
+def test_human_has_no_per_run_counters_without_disabling_deadlines() -> None:
+    assert (HUMAN.max_calls, HUMAN.max_turns, HUMAN.max_attempts, HUMAN.max_validations) == (
+        None,
+        None,
+        None,
+        None,
+    )
+    assert all(cap is None for cap in HUMAN.run_caps.values())
+    assert HUMAN.run_timeout == 900 and HUMAN.max_output == 8192

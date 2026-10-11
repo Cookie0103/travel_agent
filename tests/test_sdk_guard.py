@@ -342,3 +342,20 @@ def test_upstream_http_error_records_status_only_and_never_leaks_body(tmp_path: 
     assert status == 400 and guard.upstream_status == 402
     assert guard.failures == ["provider_error"] and budget.totals()[0] == 1
     assert b"secret-upstream-body" not in content and b"sk-live" not in content
+
+
+def test_human_guard_passes_forty_requests_and_still_stops_after_failure(tmp_path: Path) -> None:
+    from backend.profile import HUMAN
+
+    guard = Guard(
+        Settings("secret", "deepseek-flash", Decimal(5), Decimal(0)),
+        Budget(tmp_path / "ledger", tmp_path / "old", Decimal(5)),
+        lambda _: (200, response_body()),
+        max_attempts=HUMAN.max_attempts,
+    )
+    for _ in range(45):
+        assert guard.accept("/v1/messages", "Bearer " + guard.token, request_body())[0] == 200
+    assert guard.attempts == 45
+    guard.failures.append("blocked")
+    assert guard.accept("/v1/messages", "Bearer " + guard.token, request_body())[0] == 400
+    assert guard.attempts == 45

@@ -78,8 +78,12 @@ class DatabaseTools:
             # 不修改持久偏好/条件或历史墓碑；只隔离本次系统上下文的当前长期偏好值。
             state.pop("preferences")
         return (
-            "\n每个用户轮次的工具调用次数有限，失败也计数（相同调用被拒后原样重试会被直接拒绝且不计数）；上限由系统静默执行，回复用户时不要提及具体次数。"
-            "找到相关结果后不要重复搜索，保留调用次数完成用户要求的校验/暂存/展示。"
+            (
+                "\n每个用户轮次的工具调用次数有限，失败也计数（相同调用被拒后原样重试会被直接拒绝且不计数）；上限由系统静默执行，回复用户时不要提及具体次数。"
+                if self.executor.max_calls is not None
+                else "\n本轮没有工具次数上限；不要重复已拒绝的相同调用，出错需定位后修正。"
+            )
+            + "找到相关结果后不要重复搜索，保留调用次数完成用户要求的校验/暂存/展示。"
             "目录详情使用place_id/article_id，行程与路线使用evidence_id，不互换。"
             + (
                 "\n本次评测仅首次校验，不允许反馈后修复；暂存和用户确认仍须校验。"
@@ -93,7 +97,9 @@ class DatabaseTools:
         )
 
     async def continuation_reason(self, context: RunContext, attempt: int) -> str | None:
-        if self.executor.stopping_error or self.executor.calls >= self.executor.max_calls:
+        if self.executor.stopping_error or (
+            self.executor.max_calls is not None and self.executor.calls >= self.executor.max_calls
+        ):
             return None
         state = await asyncio.wrap_future(
             asyncio.run_coroutine_threadsafe(self.travel.business_context(context), self.loop)

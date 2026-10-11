@@ -46,7 +46,8 @@ class ApiUsage:
             self.daily[api] = cap
 
     async def consume(self, api: ApiName) -> None:
-        if self.run_limits and self.used.get(api, 0) >= self.run_caps[api]:
+        limit = self.run_caps[api]
+        if self.run_limits and limit is not None and self.used.get(api, 0) >= limit:
             trace(
                 "cap_hit", api=api, cap="run", used=self.used.get(api, 0), limit=self.run_caps[api]
             )

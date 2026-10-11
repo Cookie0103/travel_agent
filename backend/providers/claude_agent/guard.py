@@ -41,7 +41,7 @@ class Guard:
     observations: list[dict[str, object]] = field(default_factory=list)
     failures: list[str] = field(default_factory=list)
     failure_details: list[str] = field(default_factory=list)
-    max_attempts: int = 4
+    max_attempts: int | None = 4
     allowed_tools: frozenset[str] = frozenset({TOOL_NAME})
     temperature: Literal[0] | None = None
     run: str = ""  # 仅TRACE用的run标识
@@ -72,7 +72,9 @@ class Guard:
             )
             retries = 0
             while True:  # 仅首字节停滞会重试；每次尝试各自预占并计入attempts
-                if self.failures or self.attempts >= self.max_attempts:
+                if self.failures or (
+                    self.max_attempts is not None and self.attempts >= self.max_attempts
+                ):
                     raise ProbeError("blocked", "当前实验已停止或达到请求上限")
                 request_id = self.budget.reserve(request.charge, datetime.now(UTC), self.run)
                 self.attempts += 1

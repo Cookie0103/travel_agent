@@ -64,7 +64,7 @@ def run_live(
     emit: EventSink | None = None,
     cancelled: Event | None = None,
     workflow: WorkflowName | None = None,
-    max_attempts: int = 4,
+    max_attempts: int | None = 4,
     supplier_url: str | None = None,
     persona_judge: bool = False,
     judge_kind: JudgeKind = "persona",
@@ -81,6 +81,7 @@ def run_live(
         )
     except ValueError as error:
         raise ProbeError("validation", str(error)) from None
+    attempt_limit = current().max_attempts
     if (
         judge_kind not in ("persona", "content")
         or judge_combo_invalid(
@@ -90,8 +91,9 @@ def run_live(
             supplier=bool(supplier_url),
             workflow=workflow is not None,
         )
-        or type(max_attempts) is not int
-        or not 1 <= max_attempts <= current().max_attempts
+        or (max_attempts is None and attempt_limit is not None)
+        or (max_attempts is not None and (type(max_attempts) is not int or max_attempts < 1))
+        or (max_attempts is not None and attempt_limit is not None and max_attempts > attempt_limit)
         or (workflow is not None and database_dsn is None)
         or type(persona_judge) is not bool
     ):

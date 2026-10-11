@@ -230,7 +230,7 @@ LIVE_TOOL_TIMEOUT = 75
 
 
 def repair_definitions(
-    definitions: tuple[ToolDefinition, ...], max_validations: int
+    definitions: tuple[ToolDefinition, ...], max_validations: int | None
 ) -> tuple[ToolDefinition, ...]:
     """模型可见的修复轮数随档位；DEFINITIONS本身(基准/指纹)不变。"""
     return tuple(
@@ -283,7 +283,7 @@ def call_key(name: str, arguments: dict[str, object]) -> tuple[str, str]:
     return name, json.dumps(arguments, sort_keys=True, ensure_ascii=False, default=str)
 
 
-MAX_VALIDATIONS_CAP = 50  # 构造上限，与HUMAN档一致；更大值只能是配置错误
+MAX_VALIDATIONS_CAP = 50  # 有限实验配置的构造上限；人工档用None
 
 
 class TravelToolExecutor:
@@ -292,10 +292,12 @@ class TravelToolExecutor:
         travel: TravelService,
         *,
         live: LiveData | None = None,
-        max_calls: int = 16,
-        max_validations: int = 4,
+        max_calls: int | None = 16,
+        max_validations: int | None = 4,
     ) -> None:
-        if type(max_validations) is not int or not 1 <= max_validations <= MAX_VALIDATIONS_CAP:
+        if max_validations is not None and (
+            type(max_validations) is not int or not 1 <= max_validations <= MAX_VALIDATIONS_CAP
+        ):
             raise ValueError("校验次数只允许1(单因素首次)到档位上限")
         if live is not None:
             travel.live = live
@@ -365,7 +367,7 @@ class TravelToolExecutor:
                     detail=("context_reuse",),
                 )
             self.context = context
-            if self.calls >= self.max_calls:
+            if self.max_calls is not None and self.calls >= self.max_calls:
                 return ToolResult(
                     {}, code="blocked", suggestion="本轮工具次数已达上限", detail=("tool_call_cap",)
                 )
@@ -545,7 +547,9 @@ class TravelToolExecutor:
             return ToolResult(
                 {
                     **report.feedback(),
-                    "repair_rounds_remaining": self.max_validations - self.validations,
+                    "repair_rounds_remaining": None
+                    if self.max_validations is None
+                    else self.max_validations - self.validations,
                 },
                 detail=report_detail(report),
             )
@@ -607,7 +611,7 @@ class TravelToolExecutor:
         if staging and proposal == self.last_validation:
             self.last_validation = None
             return
-        if self.validations >= self.max_validations:
+        if self.max_validations is not None and self.validations >= self.max_validations:
             message = (
                 "本次评测仅允许首次校验，不再修复；请说明仍存冲突或未知"
                 if self.max_validations == 1

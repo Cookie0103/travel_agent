@@ -238,3 +238,11 @@ def test_repeated_stage_after_repair_cap_keeps_original_stage_reason() -> None:
     assert guarded.calls == 1
     result = finished[1].business_result
     assert result is not None and result.kind == "stage_failed" and result.reason == "repair_limit"
+
+
+def test_unlimited_validation_still_counts_repairs() -> None:
+    fake = cast(TravelService, type("T", (), {"live": None, "database": None})())
+    unlimited = TravelToolExecutor(fake, max_calls=None, max_validations=None)
+    for _ in range(55):
+        unlimited._take_validation(cast(Any, object()))
+    assert unlimited.validations == 55

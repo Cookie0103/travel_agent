@@ -36,7 +36,7 @@ class RuntimeConfig:
     cli: Path
     directory: Path
     system_prompt: str
-    max_turns: int = 6
+    max_turns: int | None = 6
     timeout_seconds: float = 90
     workflow: WorkflowName | None = None
     disable_auto_compaction: bool = False
