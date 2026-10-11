@@ -26,7 +26,7 @@
 | H1 | 人工单轮额度 | 无 | 超过 40 模型请求、80 路线、50 校验仍可执行；有限档位和拒绝边界有效 | done | 8d6657e · 先红 2 failed；专项 118 passed；check 303 文件/三平台/3 contracts/10 文档通过；独立审查无 P1/P2；全量 1565 passed/1 历史 skip/4 live deselected；web-check 129 passed/构建通过 |
 | H2 | 按段选酒店 | H1 | 三住宿段各自候选/入口；少一段不能规划；完整选择引用正确；旧单城市兼容 | done | e69c725 · 先红→专项71 passed；全量1577 passed/1历史skip/4 live deselected（303.30s）；web133 passed/type/lint/build；check304文件三平台/契约/文档；审查5项P2已关闭，已提交push |
 | H3 | 规划修复反馈 | H2 | 本地保护停止准确分类；错误证据可定位；不放宽业务校验 | done | ba283ba · 先红6失败；审查边界先红3失败→147专项passed；check304文件三平台/3契约/10文档与web134passed/type/lint/build；全量1589passed/1历史skip/4live deselected（305.51s）；已commit/push |
-| H4 | 验证发布 | H3 | 全量项目检查、真实 PG、Chrome、预算内模型与独立审查；push 后核对部署 | doing | Chrome三行/2段禁用/3段启用、真实模型3轮校验（首次＋2轮修正）、三酒店V1保存刷新成功；旧格式京都V2读→锁定V3→刷新成功；Places110已批准；真实续接57d5ba76首次校验零冲突→V2保存刷新成功（4天7项）；源码未变；最终证据审查/提交中 |
+| H4 | 验证发布 | H3 | 全量项目检查、真实 PG、Chrome、预算内模型与独立审查；push 后核对部署 | done | e7ccd8d · Chrome三行/2段禁用/3段启用、预算不限后继续；真实模型首次规划2轮修正保存V1，续接8 HTTP/10 tools首次校验零冲突→V2四天七项保存刷新；真实PG核对三家酒店/原六项保持；旧单城V3锁定刷新；check304文件/三平台/3契约/10文档；源码全量1589 passed、web134；最终证据独立复核无P1/P2；已push，Railway三服务SUCCESS |
 
 ## 5. 边界与不变量
 - 单城市证据条件、校验及保存/恢复兼容；不同住宿段不得修改全局 city/日期来查询。
@@ -41,9 +41,9 @@
 ## 7. 每日进展
 ### 2026-10-11
 - 计划：H1–H4。
-- 完成：H1（8d6657e）、H2（e69c725）、H3（ba283ba）均已push；最终全量1589 passed、web134、check与独立审查通过；上一多城市批次保持已完成。
-- 未完成及原因：H4验收内容已全部走通，正在归档独立复核及提交；用户已批准110，V2四天七项及三家酒店保存刷新恢复成功。运行代码与ad4d920一致，该提交六项CI和三服务部署全部SUCCESS，公开HTTP200。
-- 下一步：独立复核最终证据后提交/push并核对最终CI/CD；中断从本计划、Git和忽略的 `.cache/segment-hotel-selection/` 恢复，不重发付费消息。
+- 完成：H1（8d6657e）、H2（e69c725）、H3（ba283ba）、H4（e7ccd8d）均已push；全量1589 passed、web134、check与独立审查通过；V2四天七项及三家酒店真实保存刷新成功，Railway三服务部署到e7ccd8d。上一多城市批次保持已完成。
+- 未完成及原因：无功能或验收遗留；事实仍有10项未知（零冲突），见§9，不将未知伪称已查证。收尾记录提交的CI/CD在PR持续检查中核对；源码与已通过六项CI的ad4d920相同。
+- 下一步：完成收尾记录push和最终CI/CD核对，交付用户集中审阅；中断从本计划、Git和忽略的 `.cache/segment-hotel-selection/` 恢复，不重发付费消息。
 
 ## 8. 问题解决记录
 ### P-01 人工额度与误报　状态：done　关联：H1 H3
@@ -69,15 +69,16 @@
 - 全量首次1588 passed/1 failed（306s）：旧trace断言要求静态停止文案包含“请求上限”，新增原因分类并不需要改变原日志文案，恢复原文且保留独立固定reason；没有修改旧断言。重新跑全量。
 - 多城市错证据仍404拒绝；只提示本会话当前有效的route/offer证据规范ID。测试覆盖正确引用、他人会话、已失效报价；单城市原错误文案/条件不变。最终全量1589 passed/1历史skip/4live deselected（305.51s）；trace邻接专项147 passed（8.20s），check304文件/三平台/3契约/10文档通过，commit/push ba283ba；原诊断兼容修复独立复核通过。
 
-### P-04 真实验收剩余配额与返程日　状态：doing　关联：H4
+### P-04 真实验收剩余配额与返程日　状态：done　关联：H4
 - 新合成会话d22601e3，预算15 CNY保持；验收前9.336994 CNY，Places80/90。大阪/京都/奈良各住一晚，9候选分别展示，2/3按钮禁用、3/3才启用，链接各为三城的乐天页。
 - 每晚20000候选有超限，按合成验收正常对话改为不限、双人床/双床可接受；新版本重新查询，旧卡禁用；没有改价格或放宽校验。
 - VERIFIED：规划run c359ff6d（10 HTTP/15 tools），3轮validate（partial→route_departure冲突→partial零冲突），stage/present成功；三家规范报价按3→4/4→5/5→6日晚保存V1，刷新与PG实读一致。未查询跨城票价/耗时保留未知；未下单。
 - 原遗留（续接前）：模型仅将11/6返程日写入说明，结构化内容3天6项，需补最后日；Places日配额90用尽导致2地点详情未恢复，不是假称供应商异常。初次估算追加到100遗漏重启后两进程分别重取（预计约14次），已更正询问110替代100；授权未到前不放宽机器配额、不清账本。累计10.652244 CNY、Places90、routes79、Rakuten52。旧单城京都读/锁定/刷新V3成功，报价过期的时间修改按既有规则拒绝，不放宽校验。
-- 2026-10-11续接：用户明确批准110替代100，保留90计数及15元模型日限；本地.env仅更新Places配额，重启本批自有API，从已存V1补返程日及缺失详情。H4仍doing，完成保存/刷新前不改done。
+- 2026-10-11续接开始时：用户明确批准110替代100，保留90计数及15元模型日限；本地.env仅更新Places配额，重启本批自有API，从已存V1补返程日及缺失详情；完成保存/刷新前保持H4 doing。
 
 - VERIFIED续接结果：run57d5ba76完成（8 HTTP/10 tools），原三报价分别refresh、原三路线重新查询；首次validate partial v16/u10/c0，0修正轮，stage/present成功。Chrome确认保存V2并刷新恢复4天7项、三家酒店及全部地点名称；PG实读V1/V2原六项ID/地点/时间/锁定/说明一致，三家酒店ID及住宿证据条件完全相等，全局city仍大阪、revision仍2。新返程日首项route=null，不伪造跨城信息。
-- 费用与配额：Places90→104（新增14，110授权内）、routes79→82、Rakuten52→55、geocode仍2；模型10.652244→11.041656 CNY（新增0.389412，15日限内）；不清账本。原缺失两地点已恢复；无代码/断言/校验修改。最终证据复核及commit后关闭本条。
+- 费用与配额：Places90→104（新增14，110授权内）、routes79→82、Rakuten52→55、geocode仍2；模型10.652244→11.041656 CNY（新增0.389412，15日限内）；不清账本。原缺失两地点已恢复；续接无代码/断言/校验修改。
+- 结果：e7ccd8d已提交push，三服务Railway部署SHA一致且SUCCESS；最终独立证据复核无P1/P2或隐私泄露。V1→V2补齐不改原六项和三家酒店，H4验收完成；未知交通/费用/住宿字段继续明确保留，不额外调用付费服务。
 
 ## 9. 验证与交付
 - 命令：`uv run python scripts/dev.py db-up / check / test / web-generate / web-check`。
@@ -91,6 +92,8 @@
 
 - H3：最终全量1589 passed/1历史skip/4live deselected（305.51s）；专项147 passed（8.20s）；check304文件/三平台/3契约/10文档；web134 passed/type/lint/build；独立复核无剩余P1/P2。
 
-- 发布检查：91268b1的push/PR六项CI全部SUCCESS，Railway api/web/supplier均为SUCCESS，公开页面HTTP200；[PR #6 的持续CI检查](https://github.com/Cookie0103/travel_agent/pull/6/checks)为最终提交检查入口。不合并main。
-- H4阶段证据：[合成真实验收元数据](../evidence/2026-10-11-segment-hotels-live-acceptance.json)、[选齐按钮](../evidence/2026-10-11-segment-hotels-all-selected.png)、[保存刷新](../evidence/2026-10-11-segment-hotels-saved-restored.png)、[旧单城修改刷新](../evidence/2026-10-11-segment-hotels-legacy-restored.png)、[V2返程日恢复](../evidence/2026-10-11-segment-hotels-return-day-restored.png)。模型/API结果和未完成项分别记录，不把partial当完整验收；截图为局部视觉证据，不单独证明全部步骤或三行同屏。
-- 自审：H1/H2/H3独立审查与完整回归覆盖单城市条件/校验/读写、选择幂等/时效/归属、取消/超时/512 KiB；无新增依赖/运行时/模型循环/框架。对照§1，三行酒店、完整选择、规范住宿引用、人工次数上限与原因提示已实现；返程日和全部地点详情现已恢复，真实V2保存/刷新及预算检查完成；待最终证据独立复核和提交后标H4 done。
+- 发布检查：ad4d920的push/PR六项CI全部SUCCESS、Railway三服务SUCCESS、公开HTTP200；e7ccd8d验收证据已push，Railway api/web/supplier均SUCCESS且SHA一致。收尾记录提交继续核对[PR #6 的持续CI检查](https://github.com/Cookie0103/travel_agent/pull/6/checks)，最终结果保存到忽略的恢复点并在交付汇报中给出；不合并main。
+- H4最终证据（e7ccd8d）：[合成真实验收元数据](../evidence/2026-10-11-segment-hotels-live-acceptance.json)、[选齐按钮](../evidence/2026-10-11-segment-hotels-all-selected.png)、[保存刷新](../evidence/2026-10-11-segment-hotels-saved-restored.png)、[旧单城修改刷新](../evidence/2026-10-11-segment-hotels-legacy-restored.png)、[V2返程日恢复](../evidence/2026-10-11-segment-hotels-return-day-restored.png)。Chrome、真实API、真实PG和独立审查分别核对；事实校验partial（v16/u10/c0）不等同全部事实已验证，保存/恢复流程验收已完成。截图为局部视觉证据，不单独证明全部步骤或三行同屏。
+- H4命令记录：真实PG Healthy；生成文件由既有web-generate更新，H3全量test 1589 passed/1历史skip/4live deselected、web-check 134 passed/type/lint/build为当前未变源码的最终结果；验收证据归档后check再次通过（304文件/三平台严格类型/3契约/10文档）。最后续接8 HTTP/10 tools、首次校验且0修正；首次规划2修正，完整保留两次run来源。原每晚预算问题通过正常对话答“不限”继续，旧单城通过读→锁定修改→保存V3→刷新，不将过期报价的时间修改拒绝说成通过。
+- 自审与§1核对：三行酒店/每段入口、选齐后规划、酒店与日期规范引用、HUMAN单轮次数取消、准确停止原因均实现；单城市条件/校验/读写、选择幂等/时效/归属、取消/超时/512 KiB有完整回归。真实V2保存/刷新、预算检查与独立证据复核均完成；无新增依赖/运行时/模型循环/框架，无重复实现或过度设计，done means无未完成项。
+- 已知限制：未查询的跨城车次/耗时/票价、当前Google路线缺失的耗时/票价、景点/餐饮费用和部分住宿细节明确未知；整个旅行预算满足度因此仍未知。三段酒店按真实报价保存，不代表订房；单次验收成功不承诺外部服务或任意输入必成功。
