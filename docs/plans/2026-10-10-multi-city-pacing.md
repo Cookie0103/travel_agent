@@ -151,7 +151,7 @@ PlanPatch:
 | T3.3 | 停留时长：类别区间表 + `visit_duration_range` | T2.2 | domain/catalog.py、domain/validator.py | ① 博物馆 15 分钟 → conflict ② 神社 6 小时 → conflict ③ 博物馆 40 分钟 → unknown ④ 酒店/餐厅 10 小时不报 ⑤ 正常行程无此类检查失败 | done | `0117374` 已push；先红10 failed→最终全量1554 passed；真实PG极端时长拒confirm且零正式版本；check303/生成/web119/构建、自审/独立复核通过 |
 | T4.1 | 提示词：删 persona.py:59“说明是模型概述、非来源核实”；`ProposedItem.note` description 改为“一句话简介”；多城市指引（按段 search_places 用段城市原文、按段查酒店、转场日留时间、跨城交通写成“建议”且不写未查询的车次/耗时/票价）；节奏/时长规则说明 | T2.2、T3.* | agent/persona.py、domain/itinerary.py、tools/travel.py | 提示词快照/现有提示词测试更新并通过；persona 不再含“非来源核实”；512 KiB 请求边界测试仍通过 | done | `7c43f30` 已push；先红2 failed→相关66 passed；512KiB守卫58 passed；最终1558 passed/check303/生成/web129/构建、自审和独立复核通过 |
 | T4.2 | 前端：按天显示城市与当晚住宿；转场日显示“转场建议（未查询车次与票价）”；顶部统一说明“行程简介由 AI 整理，游玩时间为建议安排”；历史 note 去掉末尾重复标记（只剥离固定后缀模式，不动正文）；条件面板展示城市段与“每晚预算/不限”；用现有命令重新生成 api-types | T2.2、T3.1、T4.1 | apps/web/src/lib/itinerary.ts、components/results.tsx、saved-trip.tsx、conditions.tsx、lib/pace.ts、api-types.ts（生成） | ① `web test`：3 城数据按天分组含城市与住宿；30 项可渲染；含“（模型概述，非来源核实）”等后缀的 note 被剥离、正常含“核实”字样的简介不被误删 ② `dev.py web-generate` 后 `web-check` 全过 ③ 浏览器手动走一遍三城市草稿与旧行程（截图进 docs/evidence） | blocked | 代码恢复点 `7c43f30` 已push；先红4 failed、反序1 failed、继承别名2 failed→web129/类型/lint/构建通过；旧引用格式浏览器通过，完整三城截图待Google日切（P-18），未标done |
-| T5.1 | 集中验证与交付：§9 全量；更新 §7/§8/§9；面试案例候选 | 全部 | — | ① §9 命令全部通过并贴输出摘要 ② 本地浏览器按 §9.2 #1/#3/#8 走通（截图入 docs/evidence）③ 真实模型 API 跑 1 次三城市对话到确认保存（预算按 .env 限制），记录轮次与结果；失败则开 P-条目修复后重跑，不以“离线通过”代替 ④ 独立只读审查复核回归、重复实现与过度设计 | todo | 全量与整批审查已通过；Chrome #3/#8通过；三城市真实API仅部分V1保存恢复，完整#1/真实验收未完成，见P-18与§9.1四项判定 |
+| T5.1 | 集中验证与交付：§9 全量；更新 §7/§8/§9；面试案例候选 | 全部 | — | ① §9 命令全部通过并贴输出摘要 ② 本地浏览器按 §9.2 #1/#3/#8 走通（截图入 docs/evidence）③ 真实模型 API 跑 1 次三城市对话到确认保存（预算按 .env 限制），记录轮次与结果；失败则开 P-条目修复后重跑，不以“离线通过”代替 ④ 独立只读审查复核回归、重复实现与过度设计 | blocked | 全量1559/check303/web129/生成/PG与整批审查通过；Chrome #3/#8通过；真实模型经人工完整patch指导保存五天10项/两住宿V2并刷新恢复，但地点来源/按天城市无法重取，完整#1及自然对话验收未完成（P-18/P-19/P-21） |
 
 ## 5. 边界与不变量
 
@@ -174,6 +174,14 @@ PlanPatch:
 ## 7. 每日进展
 
 （倒序，按 plans/README 模板）
+
+### 2026-10-11
+- 计划：用户已批准09:05一次续接；该时刻已过，09:18JST直接恢复本轮，不创建重复定时任务。
+- 完成：T4.1插入说明追补先红后绿；test1559 passed/1 skipped/4 deselected（299.41s）、check303、web129/类型/lint/5路由构建、生成、真实PG全部退出0。真实模型3298582d经人工完整patch指导暂存→确认V2→Chrome刷新，五天10项、两住宿、request revision3/global大阪不变，c0/u37。旧V1仍可读；P-20 DNS恢复。
+- 未完成及原因：T4.2/T5.1仍blocked；Google Places25/25耗尽，跨运行地点事实重取失败，卡片名称/按天城市缺失、路线/营业时间仍unknown，不能把人工指导的partial V2当完整自然三城验收（P-18/P-19/P-21）。今日83 HTTP、6.494056/15CNY，保留DNS失败预占，无预算/配额调整。
+- 下一步：日切后以当前V2续接，先取所需三城地点，保留足够details配额供Chrome确认/刷新；仅刷新对应两住宿、路线和过期证据，以原工具生成/校验/暂存，不提供人工完整patch作为自然对话成功证据。完整#1通过后才标done；本轮代码/证据/计划提交push，恢复路径和过程见下条。
+
+恢复点（2026-10-11 09:37 JST）：本轮改动只有AddItem插入语义description、对应schema失败测试和本计划/脱敏证据，没有自动排序、放宽校验、增加依赖/模型循环。全量1559/check303/生成/web129/构建退出0，独立复核通过；T4.2/T5.1继续blocked，四项标准未全部满足。自建三城session `1fb65c90-05d1-494d-bb0e-b0e61300c991` 现在正式V2（五天2/2/1/2/3项、两住宿），旧格式session `fe27928d-fa31-417e-b969-3ea4bff5ce19` 保留V2。只继续这两例，不读写其他旅行。原始日志ignored `.cache/multi-city-pacing/t5-*`；Chrome标签1646779650已交接；本任务web已停止以完成正式构建，结束前API也停止，PG保留。下次启动仍用进程级 `TRAVEL_CLAUDE_CLI=/Users/ke.chen/.local/share/claude/versions/2.1.295` +既有live relaxed API、dev.py web。Google UTC日切下一次是2026-10-12 09:00JST，不清计数/加配额。当前一次续接已消费，没有创建新的定时任务；额度/休眠时不能承诺继续计算。
 
 ### 2026-10-10
 - 计划：依次执行 T0.1–T5.1，D1–D6 按推荐；T0.2 先部署再进入 T1.1。
@@ -323,7 +331,32 @@ PlanPatch:
 - 证据与结果：Chrome预算问一次/不限后继续已验证；部分草稿确认V1成功（3段条件、2段真实住宿、仅京都3景点），正在刷新恢复。截图budget-question-local/unlimited-partial-draft-local；不能将这一部分草稿升级为完整三城市#1验收。UTC日切09:00JST后才可在不扩大.env配额下重跑地点补全；不清计数、不改预算/供应商限制。继续独立审查修复与旧单城浏览器验收。
 - 后续VERIFIED：部分V1刷新恢复成功，见partial-restored-local截图；单城市旧hotel_evidence_id引用格式（自建session fe27928d-fa31-417e-b969-3ea4bff5ce19）6景点/2晚住宿V1保存刷新→第二天下午14:00改15:00→V2保存刷新，其余5项目/酒店保持。真实PG只读核对V1/V2均无hotel_stays、保留旧酒店ID；截图legacy-v1-restored-local/legacy-v2-restored-local。真实费用/调用/未完成条件见2026-10-10-multi-city-live-partial.json；初次validate1次，模型修复0轮，人工补正节奏1次，不能称无需补正。
 - 续接：每日重复自动化创建被auto-review拒绝（缺该具体持久重复任务的授权），没有绕过或创建替代定时；已通过异步问题请求明早09:05JST单次续接授权，待用户回复。若没有回复，仅保留恢复点与未完成项，不能声称已安排自动续接。
+- 2026-10-11 09:18JST续接：用户明确批准一次；时间已过，直接恢复本轮。未创建未来自动化，原每日重复任务拒绝不再是授权阻塞。
 - 恢复操作：本任务启动的本地API与web开发服务已停止，PG保留。先核对本分支/HEAD/工作区，运行项目db-up；以进程级TRAVEL_CLAUDE_CLI选定2.1.295启动既有本地live relaxed API及dev.py web，保留每日守卫。Chrome仅恢复本条自建三城session，09:00JST日切后请求补齐大阪/神户景点、刷新过期酒店报价、重新validate并确认；避免重复景点，跨城交通保持未知。完成全部城市的草稿→保存→刷新后再将T4.2/T5.1标done；预算/旧引用格式截图与检查不用无故重跑。
+
+### P-19 [T5/真实模型] 补全时重复景点与步行时段冲突   状态：blocked   关联：T4.2 T5.1
+- 现象：真实续接8fbb2bfd（2026-10-11 09:19JST）四次validate仍未通过，未stage；模型重复大阪城且相邻时段未容纳已查询步行耗时，慢节奏部分日4项超建议。19工具调用/14模型HTTP，运行completed不等于验收通过。
+- 假设与排除：1. ✗ 日配额仍阻塞地点：4次地点查询均成功；2. ✗ 段酒店接口持续不可用：神户两次unavailable后已有一次成功，两段新版报价已展示，服务端没有改成模拟；3. ✗ 校验放宽可解决：不采用，重复与route_time为真实冲突；4. ✓ 生成候选/时刻排布错误（VERIFIED真实反馈），现有persona已明确全程去重和按已查询相邻路线修复，未发现需要新增模型循环的代码缺口。
+- 修复方案：在既有对话补充明确选择，大阪城只保留首日，重复项自主替换同城未使用来源候选，完整日控制2项，时刻容纳实际步行耗时；京都地点保留但必要时调整时刻。复用本轮已查报价/地点，避免重复外部请求。随后真实重跑validate→修改草稿→确认→恢复；不放宽断言/规则、不增加修复额度。
+
+- 第二次业务重跑51898bc3：20工具/17模型HTTP，三次stage产生conflict草稿，最终校验调用触发原4次限额。真实PG读回项目顺序实际为11/6逆序→11/4逆序→11/3逆序→11/7；与模型自称严格排序不符，根因VERIFIED为多次after_item_id=null依次插首导致反序，校验正确。
+- 最小T4.1追补：只给AddItem.after_item_id添加准确插入语义description（含同一锚点逆序/逐项执行/新ID不能猜），不自动排序或改变旧行为。新增实际stage工具schema回归初次测试访问错属性先修测试笔误，真正先红1 failed/11 passed（t5-patch-order-red-2.log）→计划/提示词/真实PG61 passed（4.28s）；check303三平台/3契约/10入口、生成退出0（无生成净差异），独立只读复核无P1/P2。完整test1559 passed / 1 skipped / 4 deselected（299.41s，退出0），API已加载新说明。
+- 09:27真实重跑503bf807：19 HTTP、24工具，初次+3轮校验仍conflict；首轮回酒店departure=16:00早于前项18:00、海游馆08:45不符营业时间，之后修到16:30/16:00仍未容纳route.minutes，最后route_gap两条未消除，未stage。插入说明没有改变/放宽旧规则；本次排时失败独立于反序根因。已按真实报告继续e7a837f4：保留两段hotel_stays，删除非必需的回酒店日程项目，要求逐对核对实际route departure及arrival，五天仍覆盖三城，预算/未知交通不变。今日截至此时51请求、4.364916CNY（含DNS失败保守预占），没有清账或提高限制。
+
+- e7a837f4：21 HTTP、28工具、初次+3轮仍有route_gap；实际草稿只覆盖4天，漏11/5，美利坚公园误放11/6首项，后续Harborland路线耗时未容纳。地点日配额已25/25，未提高限制。续接51aa0472只复用已查询、仍有效证据，给模型准确UUID和目标时间，把美利坚公园移到11/5，Harborland变为11/6首项不接前日路段；后续仍由真实模型调用原stage/confirm校验，不能直接写DB或跳过校验。这是人工诊断指导，不能称零人工修复。
+
+- 后续51aa0472：3 HTTP/2工具，仍同日反序，模型错误归因排序器，未使用剩余修复；079d5f84：5 HTTP/6工具，输入错UUID导致evidence_missing，未stage。最终3298582d：3 HTTP/2工具，人工依据真实草稿构造完整逆序patch作为对话输入，模型原样调用stage→present；c0/u37，Chrome确认V2并刷新成功。必须标记人工指导，不是零修复或自然对话成功；来源重取不足仍阻塞整体验收（P-21）。
+
+### P-20 [T5/外部连接] 模型DNS短暂失败   状态：done   关联：T5.1
+- 现象：重排续接764c8f91在connect阶段30003ms后gaierror，0工具调用、model_req_end error，provider_error。不能称模型业务修复失败或成功。
+- 根因证据：连接子进程DNS错误（VERIFIED日志）；尚不能认定永久网络问题。保留该次预占，不清账、不改DNS/代理/权限设置。
+- 处理：只读核对供应商DNS恢复后通过既有Chrome对话重试；与P-19输出排布问题分开，不为暂时网络故障引入新的重试循环或框架。09:23JST只读getaddrinfo已成功，51898bc3重试已正常进入业务工具；后续503bf807/e7a837f4/3298582d均完成正常HTTP业务，DNS阻塞已解除，后续不足另记P-21。
+
+### P-21 [T5/真实来源恢复] 跨运行Google事实重取耗尽配额   状态：blocked   关联：T4.2 T5.1
+- 现象（VERIFIED）：e7a837f4在原运行有地点/营业时间/路线校验，后续复用同批实际UUID时place_source/route_source变unknown；Chrome草稿/保存/刷新V2均显示“历史地点证据缺失”，没有按天城市，c0/u37。源查询配额25/25，不能把AI简介当已核实地点名。
+- 假设与排除：✗ UUID全不存在——最后准确输入通过stage/confirm；✗没有存五天/住宿——真实PG V2有五天10项/10个不同实体、两段住宿、request revision3；✓运行间缓存未共用并需要重取——services/travel.py record_evidence仅保留Google地点ID/城市、路线value=null，hydrate_records优先本运行内存，跨运行details需配额，database_tools.py各worker创建LiveData（源码REASONED）；实际cap_hit和UI缺失为VERIFIED。
+- 取舍：不通过持久化更多Google原文、提升配额/清账、伪造fixture地点、改校验或把简介提升为来源事实来过关；不新增跨进程缓存/runtime/框架。配额日切后复用既有details流程，预留Chrome读取成本，取实际相邻路线并刷新对应住宿；若仍不可行须按已有ADR/设计定位，不擅改D项。
+- 结果：保存/刷新链路结构已走通，但完整正常地点/城市显示和自然真实对话仍不足，T4.2/T5.1保留blocked。截图2026-10-11-five-day-unknown-draft-local.jpg / five-day-unknown-restored-local.jpg、脱敏JSON2026-10-11-multi-city-live-guided-partial.json；不升级为完整成功。
 
 ## 9. 验证与交付
 
@@ -357,11 +390,13 @@ uv run python scripts/dev.py web-check    # typecheck / lint / test / build
 
 Python全量使用进程级 `TRAVEL_CLAUDE_CLI` 选定已安装/CI锁定的2.1.295；未改全局CLI/.env/白名单。1 skipped为既有平台专属测试，4 deselected为既有live标记，未新增跳过。
 
-当前四项交付判定（2026-10-10，尚未完成T5.1）：
+最新追补验证（2026-10-11）：check303文件/三平台strict/3契约/10入口退出0（t5-patch-order-check.log）；test1559 passed/1 skipped/4 deselected 299.41s退出0（t5-final-test.log）；db-up PostgreSQL17 Healthy退出0（t5-resume-db.log）；web-generate退出0/无净生成差异（t5-patch-order-generate.log）；web-check129 passed/0 failed、类型/lint/5路由构建退出0（t5-final-web.log）。原有skip/deselect不新增，完整PG保存/恢复实际运行。
 
-1. §9.1全部项目命令：通过，数字见最后一行；原始完整测试t4-test-reviewed.log、检查t4-review-batch-check-final.log、生成t4-generate-final.log、前端t4-web-final.log。
-2. 本地Chrome：#3预算只问一次、回答不限继续通过；#8自建旧引用格式V1保存恢复/修改V2恢复通过，实际旧payload另由PG黄金回归覆盖；#1只有三段条件/两住宿/京都3项目的部分草稿保存恢复，完整三城未通过。截图见P-18，不把部分结果升级。
-3. 真实模型：DeepSeek两轮12 HTTP、0模型修复轮、手动补正节奏1次；部分V1确认恢复成功，本轮0.647704CNY，完整三城市真实验收仍未完成（Google每日配额日切后续接）。
+当前四项交付判定（2026-10-11，尚未完成T5.1）：
+
+1. §9.1全部项目命令：通过，最新1559/web129/check303，输出及路径见上段。
+2. 本地Chrome：#3预算只问一次、回答不限继续通过；#8自建旧引用格式V1保存恢复/修改V2恢复通过，实际旧payload另由PG黄金回归覆盖；#1五天10项/两住宿V2保存刷新已过，但正常来源地点名/按天城市显示不足，仍不算完整通过（P-21）。
+3. 真实模型：昨夜12 HTTP/0.647704CNY部分V1；今晨83 HTTP/6.494056CNY（含一次DNS失败预占），多轮失败及修复分别见P-19/JSON，最后人工完整patch指导才stage→present→Chrome确认V2。不将此当自然三城市模型成功，完整真实验收仍未完成。
 4. 整批自审/独立审查：回归、重复实现、过度设计检查和P-17修复复核通过。对照§1：PG三城市两住宿/旧payload/长行程链路通过，代码范围与不做项保持；§4的T4.2浏览器验收和T5.1完整真实验收尚缺，done means尚不满足。
 
 ### 9.2 必要测试清单（精简，核心成功+失败路径）

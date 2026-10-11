@@ -97,3 +97,11 @@ def test_multi_city_prompt_uses_segments_and_labels_unqueried_transfer_suggestio
 def test_item_intro_uses_one_shared_ai_notice_instead_of_repeated_note_markers() -> None:
     assert "非来源核实" not in travel_prompt()
     assert ProposedItem.model_fields["note"].description == "一句话简介"
+
+
+def test_patch_tool_explains_front_insert_order_to_avoid_reversed_days() -> None:
+    tool = next(tool for tool in DEFINITIONS if tool.name == "stage_plan_change")
+    schema = json.loads(json.dumps(tool.schema))
+    description = schema["$defs"]["AddItem"]["properties"]["after_item_id"].get("description", "")
+    assert "首部" in description and "逆序" in description
+    assert "同一" in description and "执行顺序" in description

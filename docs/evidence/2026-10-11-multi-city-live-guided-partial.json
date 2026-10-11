@@ -1,0 +1,111 @@
+{
+  "result": "partial_acceptance_not_complete",
+  "session_id": "1fb65c90-05d1-494d-bb0e-b0e61300c991",
+  "formal_version": 2,
+  "request_revision": 3,
+  "global_city": "大阪",
+  "segments": [
+    {
+      "city": "大阪",
+      "arrive": "2026-11-03",
+      "depart": "2026-11-05"
+    },
+    {
+      "city": "神户",
+      "arrive": "2026-11-05",
+      "depart": "2026-11-07"
+    },
+    {
+      "city": "京都",
+      "arrive": "2026-11-07",
+      "depart": "2026-11-07"
+    }
+  ],
+  "item_count": 10,
+  "days": {
+    "2026-11-03": 2,
+    "2026-11-04": 2,
+    "2026-11-05": 1,
+    "2026-11-06": 2,
+    "2026-11-07": 3
+  },
+  "unique_place_entities": 10,
+  "hotel_stays": [
+    {
+      "check_in": "2026-11-03",
+      "check_out": "2026-11-05",
+      "hotel_evidence_id": "38cfe1ea-e5e8-4007-949b-8d5360efbef0"
+    },
+    {
+      "check_in": "2026-11-05",
+      "check_out": "2026-11-07",
+      "hotel_evidence_id": "7937dfe1-cdb2-4797-b159-0392ec9bc565"
+    }
+  ],
+  "validation_status": "partial",
+  "checks": {
+    "verified": 11,
+    "unknown": 37
+  },
+  "source_limit": "Google Places daily 25/25; names/cities unavailable on restore. No quota increase/reset. Existing Google facts are run-local and stripped in DB; read does not falsely verify missing facts.",
+  "guidance": "Final model turn received a manually diagnosed complete patch using already queried UUIDs. Not autonomous natural-conversation success.",
+  "model_runs": [
+    {
+      "run": "8fbb2bfd",
+      "http": 14,
+      "tools": 19,
+      "validation_calls_before_limit": 4
+    },
+    {
+      "run": "764c8f91",
+      "http": 1,
+      "tools": 0,
+      "validation_calls_before_limit": 0
+    },
+    {
+      "run": "51898bc3",
+      "http": 17,
+      "tools": 20,
+      "validation_calls_before_limit": 4
+    },
+    {
+      "run": "503bf807",
+      "http": 19,
+      "tools": 24,
+      "validation_calls_before_limit": 4
+    },
+    {
+      "run": "e7a837f4",
+      "http": 21,
+      "tools": 28,
+      "validation_calls_before_limit": 4
+    },
+    {
+      "run": "51aa0472",
+      "http": 3,
+      "tools": 2,
+      "validation_calls_before_limit": 1
+    },
+    {
+      "run": "079d5f84",
+      "http": 5,
+      "tools": 6,
+      "validation_calls_before_limit": 1
+    },
+    {
+      "run": "3298582d",
+      "http": 3,
+      "tools": 2,
+      "validation_calls_before_limit": 1
+    }
+  ],
+  "today": {
+    "day_utc": "2026-10-11",
+    "http_requests": 83,
+    "charge_cny": "6.494056",
+    "daily_cap_cny": "15",
+    "dns_failure_reservation_retained": true
+  },
+  "browser": "Chrome draft -> confirm V2 -> reload V2 verified; full normal-name/city display pending",
+  "remaining": "Fresh-source three-city browser acceptance and natural model conversation still pending. Preserve V2, retry after quota resets with fresh scoped quotes/routes."
+}

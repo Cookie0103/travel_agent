@@ -53,7 +53,14 @@ class PlanContent(BaseModel):
 class AddItem(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     op: Literal["add"]
-    after_item_id: UUID | None = None
+    after_item_id: UUID | None = Field(
+        default=None,
+        description=(
+            "null表示插到列表首部，UUID表示插在该已存项目之后。operations按执行顺序逐项应用；"
+            "多项插到首部或同一项目之后时，须按最终目标顺序的逆序提交，否则项目会反序。"
+            "新增项目的item_id由服务端分配，不可猜测或用作本次后续插入的锚点。"
+        ),
+    )
     item: ProposedItem
 
 
