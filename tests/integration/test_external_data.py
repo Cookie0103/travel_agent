@@ -16,7 +16,7 @@ from backend.adapters.open_meteo import forecast
 from backend.adapters.rakuten import Rakuten
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError, GeoPoint
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import RequestPatch, TravelRequest
 from backend.persistence.catalog import import_catalog
 from backend.persistence.models import EvidenceRow, WeatherForecastRow
 from backend.services.catalog import CatalogService
@@ -237,6 +237,69 @@ def test_places_normal_response_persists_only_ids_and_coordinates(
             resolved = await travel.resolve_evidence(context, (result.evidence[0].evidence_id,))
             assert resolved[0].value == result.evidence[0].value
             assert usage.used == {"geocode": 1, "places": 1}
+
+    runner.run(exercise())
+
+
+def test_multi_city_google_place_keeps_query_city_across_fresh_run(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    runner, travel, context = travel_setup
+    payload = {
+        "id": "synthetic-multi-city",
+        "displayName": {"text": "合成大阪景点"},
+        "location": {"latitude": 34.7, "longitude": 135.5},
+    }
+
+    async def exercise() -> None:
+        await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": {
+                        "segments": [
+                            {"city": "京都", "arrive": "2026-11-03", "depart": "2026-11-04"},
+                            {"city": "大阪", "arrive": "2026-11-04", "depart": "2026-11-05"},
+                        ]
+                    },
+                }
+            ),
+        )
+        original = await travel.get_request(context)
+        async with transaction(travel.database) as db:
+            await import_catalog(db, load_snapshot())
+        async with httpx.AsyncClient(
+            transport=httpx.MockTransport(
+                lambda request: httpx.Response(
+                    200, json={"places": [payload]} if request.method == "POST" else payload
+                )
+            )
+        ) as http:
+            usage = ApiUsage(travel.database, {})
+            google = GoogleMaps("test", http, usage)
+            google.points["大阪"] = GeoPoint(name="大阪", latitude=34.7, longitude=135.5)
+            travel.live = LiveData(google, None, usage, http, {})
+            result = await CatalogService(travel).query(
+                context, PlaceSearchInput(city="大阪", limit=1)
+            )
+            id = result.evidence[0].evidence_id
+            async with transaction(travel.database) as db:
+                stored = await db.get(EvidenceRow, id)
+                assert stored and stored.payload["value"] == {
+                    "place_id": "gplace:synthetic-multi-city",
+                    "city": "大阪",
+                }
+                assert "合成大阪景点" not in str(stored.payload)
+            # 新worker没有首轮内存事实，必须从PG保留的真实查询城市重取详情。
+            travel.live = LiveData(GoogleMaps("test", http, usage), None, usage, http, {})
+            resolved = await travel.resolve_evidence(context, (id,))
+            assert isinstance(resolved[0].value, dict)
+            assert resolved[0].value["city"] == "大阪"
+            assert resolved[0].value["name"] == "合成大阪景点"
+            assert resolved[0].conditions == {"city": "京都"}
+            assert await travel.get_request(context) == original
+            assert usage.used == {"places": 2}
 
     runner.run(exercise())
 

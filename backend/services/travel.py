@@ -447,8 +447,17 @@ class TravelService:
                 if record.provider in {"google_places", "google_routes"}:
                     if self.live:
                         self.live.evidence[record.evidence_id] = record
+                    place_city = current.city
+                    if (
+                        current.segments
+                        and record.kind == "place"
+                        and isinstance(record.value, dict)
+                    ):
+                        query_city = record.value.get("city")
+                        if isinstance(query_city, str):
+                            place_city = query_city
                     value = (
-                        {"place_id": record.entity_id, "city": current.city}
+                        {"place_id": record.entity_id, "city": place_city}
                         if record.kind == "place"
                         else None
                     )
