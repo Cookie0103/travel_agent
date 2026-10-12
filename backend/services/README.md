@@ -1,0 +1,23 @@
+# 应用服务编排
+
+入口：sessions.SessionService，承接API身份和会话用例。
+DemoLogin契约由FastAPI复用；服务端生成身份/令牌，摘要与会话写入各自事务。
+authenticate只返回有效令牌对应的服务端user_id；会话查询始终检查所属用户。
+数据库异常映射安全ServiceError，服务退出时关闭连接池；不吞错误或回显连接参数。
+TravelService共用RequestPatch领域规则，API与工具只传服务端RunContext；补卡必须通过resolve_evidence。
+common.transaction统一事务/错误脱敏；领域纯规则与仓储SQL不在此处重复实现。
+CatalogService复用同一目录加载器，公共articles/article仅读快照；工具查询仍核对当前请求并保存Evidence。
+RunService负责消息去重、单会话执行、取消和持久事件；执行仍委托Agent，不实现模型循环。
+TravelService.business_context只返回本人最近两轮有界回顾和有效Evidence引用。
+另含conversation的有界待办/原任务用户文本/当前追问；conversation.py共用当前运行、归属和隐私墓碑检查。
+PreferenceService以用户行锁更新显式偏好、删除墓碑与回顾边界；修改后旧SDK和旧对话不再注入。
+HotelService复用Evidence持久化不可变模拟报价；补卡拒绝过期、旧版本、他人和伪造ID。
+PlanningService解析同会话当前证据、生成自制估算路段并调用纯validator；修复往返由SDK驱动。
+PlanService同事务重新校验草稿/版本/证据并确认；用户+draft幂等重放返回第一次正式版本。
+resolve_records与validate_proposal供普通工具/展示/确认共用，确认时不另开事务。
+
+BookingService持久确认后才调供应商；confirmed/unknown只对账，同报价ID幂等，报价锁价与hold有效期分开。
+patch/stage业务键与结果同事务，重复工具ID仍返回原结果；缓存也核对当前revision/base/Evidence。
+RunService启动只读裁决旧执行；PG暂不可用保留安全503，恢复核对完成前禁止新执行。
+
+HistoryService只读旅行摘要与持久轮次；游标有界，来源归属由SQL约束，接口见ADR-014。

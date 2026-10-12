@@ -1,0 +1,295 @@
+{
+  "scope": "paired rule/configuration measurements; not semantic or human quality",
+  "runtime_identity_complete": true,
+  "source_hash_map_sha256": "0cb975d98414b5ceeaa30be2b07f50dce2558a7c7ab0e7ff245dd8f20f4011ea",
+  "declared_configuration_changes": [
+    "evaluation_variant",
+    "comparison_group",
+    "sdk_resume_enabled",
+    "schema_sha256",
+    "skills"
+  ],
+  "groups": {
+    "a": {
+      "variant": "full",
+      "workflow": "autonomous",
+      "comparison_group": "B3",
+      "files_sha256": {
+        "manifest.json": "0ba14cf33be6dcd57fc27611cb51dd285a3ab11846bc5fe9fedd5e418aee11e5",
+        "results.jsonl": "5fff2556ecc7be2aa1e2f6c808df4dfaefd1b17d26015ec82c20a068c04a6779",
+        "attempts.jsonl": "d440f421405fdada36d6c13e579172a58c0ba544a0c5e05bc22c3c8ec430b6b9",
+        "summary.json": "9d47273ce13078df242ba6822f32a8cc466e026413854abc2d02610c94981ea2"
+      },
+      "measurement": {
+        "expected": 120,
+        "evaluated": 120,
+        "passed": 94,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.7833333333333333,
+        "per_repeat": [
+          {
+            "repeat": 1,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 31,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.775
+          },
+          {
+            "repeat": 2,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 31,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.775
+          },
+          {
+            "repeat": 3,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 32,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.8
+          }
+        ],
+        "rule_rate_range": {
+          "min": 0.775,
+          "max": 0.8
+        },
+        "latency_seconds": {
+          "measured_n": 120,
+          "p50": 8.246,
+          "p95": 31.834,
+          "method": "nearest-rank"
+        },
+        "latency_unknown_n": 0,
+        "first_progress_seconds": {
+          "measured_n": 93,
+          "p50": 3.393553,
+          "p95": 4.962346,
+          "method": "nearest-rank"
+        },
+        "first_progress_unknown_n": 27,
+        "tool_call_accuracy": {
+          "total": 379,
+          "correct": 0,
+          "incorrect": 0,
+          "unknown": 379,
+          "measured_subtotal": {
+            "total": 379,
+            "correct": 0,
+            "incorrect": 0,
+            "unknown": 379
+          },
+          "unknown_cases": 0,
+          "accuracy": null,
+          "scope": "all started calls; unknown semantic parameters remain unscored"
+        },
+        "original_currency_cost": {
+          "CNY": {
+            "n": 120,
+            "measured_n": 120,
+            "unknown_n": 0,
+            "total": "9.363264",
+            "measured_subtotal": "9.363264",
+            "distribution": {
+              "measured_n": 120,
+              "p50": 0.045454,
+              "p95": 0.287818,
+              "method": "nearest-rank"
+            }
+          }
+        },
+        "currency_unknown_n": 0,
+        "runtime_identities": [
+          {
+            "provider": "deepseek",
+            "model": "deepseek-flash",
+            "sdk_version": "0.2.163",
+            "cli_version": "2.1.114"
+          }
+        ],
+        "http_attempts": {
+          "total": 407,
+          "measured_subtotal": 407,
+          "unknown_n": 0
+        },
+        "tokens": {
+          "measured_n": 120,
+          "unknown_n": 0,
+          "totals": {
+            "input_tokens": 1090028,
+            "cache_read_input_tokens": 2840192,
+            "cache_creation_input_tokens": 0,
+            "output_tokens": 187853
+          }
+        },
+        "semantic_fact_quality": null,
+        "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+        "planned_pass_rate": 0.7833333333333333
+      }
+    },
+    "b": {
+      "variant": "no_tools",
+      "workflow": "autonomous",
+      "comparison_group": "B0",
+      "files_sha256": {
+        "manifest.json": "e8b2c9283336caa89bd2b8b338fc8bd9779324fe01bcc32d4f53065d25a19b09",
+        "results.jsonl": "375a5bad97e9d3be08cec35192c40a379050d2909d2c66609760e1cc6c8c62d0",
+        "attempts.jsonl": "06cfbaa04d43e77afbb9eda4fd8e22c399d43095c8bc8bcb155266220e0d65bd",
+        "summary.json": "0261be154a5bf78f782b18eac99164a3466f037a5eda801d4b6f1e05c95e72fb"
+      },
+      "measurement": {
+        "expected": 120,
+        "evaluated": 120,
+        "passed": 17,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.14166666666666666,
+        "per_repeat": [
+          {
+            "repeat": 1,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 6,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.15
+          },
+          {
+            "repeat": 2,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 6,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.15
+          },
+          {
+            "repeat": 3,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 5,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.125
+          }
+        ],
+        "rule_rate_range": {
+          "min": 0.125,
+          "max": 0.15
+        },
+        "latency_seconds": {
+          "measured_n": 120,
+          "p50": 5.255,
+          "p95": 6.614,
+          "method": "nearest-rank"
+        },
+        "latency_unknown_n": 0,
+        "first_progress_seconds": {
+          "measured_n": 0,
+          "p50": null,
+          "p95": null,
+          "method": "nearest-rank"
+        },
+        "first_progress_unknown_n": 120,
+        "tool_call_accuracy": {
+          "total": 0,
+          "correct": 0,
+          "incorrect": 0,
+          "unknown": 0,
+          "measured_subtotal": {
+            "total": 0,
+            "correct": 0,
+            "incorrect": 0,
+            "unknown": 0
+          },
+          "unknown_cases": 0,
+          "accuracy": null,
+          "scope": "all started calls; unknown semantic parameters remain unscored"
+        },
+        "original_currency_cost": {
+          "CNY": {
+            "n": 120,
+            "measured_n": 120,
+            "unknown_n": 0,
+            "total": "0.646906",
+            "measured_subtotal": "0.646906",
+            "distribution": {
+              "measured_n": 120,
+              "p50": 0.005306,
+              "p95": 0.007388,
+              "method": "nearest-rank"
+            }
+          }
+        },
+        "currency_unknown_n": 0,
+        "runtime_identities": [
+          {
+            "provider": "deepseek",
+            "model": "deepseek-flash",
+            "sdk_version": "0.2.163",
+            "cli_version": "2.1.114"
+          }
+        ],
+        "http_attempts": {
+          "total": 120,
+          "measured_subtotal": 120,
+          "unknown_n": 0
+        },
+        "tokens": {
+          "measured_n": 120,
+          "unknown_n": 0,
+          "totals": {
+            "input_tokens": 102669,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 0,
+            "output_tokens": 55196
+          }
+        },
+        "semantic_fact_quality": null,
+        "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+        "planned_pass_rate": 0.14166666666666666
+      }
+    }
+  },
+  "paired": {
+    "planned_n": 120,
+    "outcomes": {
+      "failed->failed": 24,
+      "passed->failed": 79,
+      "passed->passed": 15,
+      "failed->passed": 2
+    },
+    "rule_pass_delta_b_minus_a": -0.6416666666666667,
+    "latency_delta_b_minus_a_seconds": {
+      "measured_n": 120,
+      "p50": -3.148,
+      "p95": 0.156,
+      "method": "nearest-rank"
+    },
+    "original_currency_cost_delta_b_minus_a": {
+      "CNY": {
+        "total": "-8.716358",
+        "measured_subtotal": "-8.716358",
+        "planned_n": 120,
+        "unknown_n": 0,
+        "measured_n": 120,
+        "p50": -0.040486,
+        "p95": -0.009726,
+        "method": "nearest-rank"
+      }
+    },
+    "cost_unpaired_or_unknown_n": 0
+  },
+  "limitations": [
+    "All original failure/error/not_run rows retained in planned denominator",
+    "Missing identity/semantic answers remain unknown; no causal quality claim",
+    "B2 combines two switches; B0 also disables resume capability; fresh sessions do not use old checkpoints",
+    "Different currencies are not converted or compared; cost is conservative accounting"
+  ]
+}

@@ -1,0 +1,65 @@
+{
+  "local_synthetic_only": true,
+  "session_id": "065d2682-27f0-4e97-9a60-a5cce902898c",
+  "runs": [
+    {
+      "run_id": "76ef7b4a-7563-40b4-8f36-a4588b431a63",
+      "status": "completed",
+      "mode": "offline",
+      "business_result": {
+        "kind": "confirmed",
+        "draft_id": null,
+        "plan_id": "da4c4310-e5ee-44e6-a2d8-d8edd7469634",
+        "validation_status": null,
+        "code": null,
+        "reason": null,
+        "version": 1
+      }
+    },
+    {
+      "run_id": "f2c65e95-5682-4fa3-9332-6611eccd7d78",
+      "status": "completed",
+      "mode": "offline",
+      "business_result": {
+        "kind": "answer_only",
+        "draft_id": null,
+        "plan_id": null,
+        "validation_status": null,
+        "code": null,
+        "reason": null,
+        "version": null
+      }
+    }
+  ],
+  "new_formal_version": 1,
+  "new_version_rows": 1,
+  "existing_trip_generation_business_result": {
+    "kind": "stage_failed",
+    "draft_id": null,
+    "plan_id": null,
+    "validation_status": null,
+    "code": "conflict",
+    "reason": "plan_exists",
+    "version": null
+  },
+  "original_version": 1,
+  "original_version_rows": 1,
+  "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+  "confirm_http_calls": 1,
+  "live_calls": 0,
+  "browser_verified": [
+    "stage_failed",
+    "draft_staged_partial",
+    "confirmed_v1",
+    "confirmed_after_reload",
+    "answer_only_separate_turn"
+  ],
+  "pg_isolated_tests": [
+    "conflict_unconfirmable",
+    "latest_stage_wins",
+    "foreign_session_unknown",
+    "legacy_success_unknown",
+    "interrupted_stage_unknown"
+  ],
+  "limits": "No real model/provider calls. Runtime-completed optimistic-answer and conflict cases use controlled runtime with real isolated PostgreSQL, not Chrome or live SDK."
+}

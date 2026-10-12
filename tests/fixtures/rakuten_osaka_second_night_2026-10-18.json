@@ -1,0 +1,366 @@
+{
+  "pagingInfo": {
+    "recordCount": 5,
+    "pageCount": 1,
+    "page": 1,
+    "first": 1,
+    "last": 5
+  },
+  "hotels": [
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 184030,
+          "hotelName": "アパホテル＆リゾート〈大阪梅田駅タワー〉",
+          "hotelKanaName": "あぱほてるあんどりぞーと〈おおさかうめだえきたわー〉",
+          "hotelSpecial": "大浴殿・露天風呂、最上階展望プールを完備！超大型高層ホテルでいつもと違う1日を心ゆくまで。",
+          "hotelMinCharge": 4860,
+          "latitude": 34.69989606198336,
+          "longitude": 135.50159109577024,
+          "postalCode": "530-0057",
+          "address1": "大阪府",
+          "address2": "大阪市北区曽根崎2-8-32",
+          "telephoneNo": "0570-070-411",
+          "faxNo": "06-6363-1412",
+          "access": "大阪メトロ谷町線「東梅田駅」（4番出口）徒歩3分",
+          "parkingInformation": "入庫から24時間/3000円、20分/400円、最大6時間/1500円　※先着順になります。",
+          "nearestStation": "東梅田",
+          "reviewCount": 4101,
+          "reviewAverage": 4.29,
+          "userReview": "是非、高層階をオスス…　2026-09-22 20:10:04投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=184030\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "29:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 94,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "s2k",
+              "roomName": "スタンダードルーム（1名利用） 禁煙室【眺望なし】",
+              "planId": 5537449,
+              "planName": "【素泊まり・事前決済限定】1秒チェックインにおすすめ！",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "このプランは素泊まりプランです。\r\n予約時に事前クレジットカード決済が必要です。\r\n\r\n並ばず待たずに1秒チェックイン！\r\n1秒チェックインとは・・・\r\nホテルに到着する前にアパホテル公式アプリ上でチェックインを行い、\r\nホテル到着後に1秒チェックイン機を使って並ばず待たずにチェックイン（ルームキーの発行等）をすることです。\r\n\r\n各自治体の施行条例に基づき、1秒チェックインに加えスタッフによる予約確認が必要です。\r\n\r\n▼予約取り込みの方法\r\nアパホテル公式アプリにログインしトップ画面下部の「予約確認」→「アパ直以外の予約検索　取り込み」から進み、必要事項の選択と入力をしてください。\r\nご宿泊者ご本人様以外のご利用はできません。\r\n\r\n▼アプリ上でのチェックイン方法\r\nご宿泊当日、チェックイン開始時刻の1時間前からアパホテル公式アプリトップ画面に表示される「1秒チェックイン」よりお進みください。\r\nお部屋への入室可能時刻はプランに設定されているチェックイン時間をご確認ください。\r\n\r\n【共通案内】\r\n1704室の超高層タワー型リゾートホテルです。\r\n旅の疲れを癒せる大浴殿・露天風呂の他、最上階には展望プールがあり、コンビニ、フィットネスジムも完備！\r\n\r\n【館内案内】\r\n■1階\r\nフラワーカフェ「モンパルナス」\r\n和菓子「It Wokashi」（いとをかし）\r\n\r\n■3階\r\nレストラン「ラ・ベランダ プレミア」\r\nプロテインスムージー＆ドライフルーツ「REJU」\r\n紳士小物雑貨店「ista」\r\n\r\n■4階\r\n大浴殿・露天風呂　宿泊者無料（営業時間 15：00〜25：00、6：00〜10：00）\r\nコインランドリー\r\nコンビニエンスストア「ローソン」\r\nフィットネスジム「DECOR」\r\nドライヘッドスパ専門サロン「Face.」\r\nマッサージ「ほぐし処 悠然堂」\r\n\r\n■34階\r\nルーフトッププール\r\nレストラン「Orchid time by Osaka Metro」\r\n\r\n【フロア説明】\r\nトップフロア　34階（最上階）\r\nスカイフロア　25階〜33階\r\n眺望なし（建物内側）階数に関わらず眺望は望めません。\r\n\r\n【フロア説明】\r\nトップフロア　34階（最上階）\r\nスカイフロア　25階〜33階\r\n眺望なし（建物内側）階数に関わらず眺望は望めません。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-18",
+              "rakutenCharge": 9810,
+              "total": 9810,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 1731,
+          "hotelName": "ホテルグランヴィア大阪",
+          "hotelKanaName": "ぐらんう゛ぃあ　おおさか",
+          "hotelSpecial": "ＪＲ大阪駅直結という抜群のアクセス。客室は21～27階。最上階には特別フロア「グランヴィアフロア」をご用意",
+          "hotelMinCharge": 9250,
+          "latitude": 34.70170696,
+          "longitude": 135.4959928,
+          "postalCode": "530-0001",
+          "address1": "大阪府",
+          "address2": "大阪市北区梅田3-1-1",
+          "telephoneNo": "0570-06-1235",
+          "faxNo": "06-6347-1430",
+          "access": "ＪＲ大阪駅直結。中央改札出て右手すぐ/USJまでＪＲで約11分/京都、神戸、奈良へも電車で1本",
+          "parkingInformation": "専用駐車場はございません。近隣有料駐車場をご案内します。ホテルまでお問合せください。",
+          "nearestStation": "大阪",
+          "reviewCount": 11222,
+          "reviewAverage": 4.2,
+          "userReview": "二泊しました。三ヶ月以上前に一泊だけの予約だったところ、数日前になってもう一泊追加。連泊になったので同じ部屋へと備考欄にお願いしたところ、同じ部屋にして頂き荷物を纏めることなく外出したり部屋へ自由に戻…　2026-10-05 19:37:05投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=1731\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "12:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 41,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "sbnsbn",
+              "roomName": "【スタンダードフロア】ビジネスシングル　禁煙",
+              "planId": 2919201,
+              "planName": "シンプルステイ　-朝食なしプラン-",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "費用を抑えてご宿泊をお考えのお客様におすすめしたい、リーズナブルなプランです。\r\n\r\nポイント【1】数量限定でお部屋をご用意！\r\nポイント【2】駅直結だから、荷物を預けてラクラク移動。チェックイン前やチェックアウト後も、荷物をお預かりします。\r\n\r\n《大阪で最も便利なロケーション》\r\nJR大阪駅直結！\r\nJR新大阪駅からは、JRで5分　\r\n阪急、阪神、地下鉄御堂筋線、四ツ橋線、谷町線の各駅へも5分圏内\r\n京都・神戸へも各30分圏内。関西一円へのアクセスも抜群です\r\n\r\n※宿泊税について\r\n現地にて宿泊税をお支払いいただきます。\r\n掲載の宿泊料金は、サービス料と消費税のみが含まれた金額です。\r\n\r\n※宿泊税における「宿泊料金」とは、食事や朝食料金などを含まない、ご宿泊のみの料金をいいます。\r\n※カード決済予約の場合は宿泊税のみ現地支払となります。\r\n\r\n【宿泊税率】\r\n宿泊税率については大阪府のHPをご確認ください。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-18",
+              "rakutenCharge": 21500,
+              "total": 21500,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 176594,
+          "hotelName": "アパホテル＆リゾート〈御堂筋本町駅前タワー〉",
+          "hotelKanaName": "あぱほてるあんどりぞーと　みどうすじほんまちえきまえたわー",
+          "hotelSpecial": "大阪の中心地、梅田・難波へ電車１本５分で好アクセス! 大浴殿付きタワー型アーバンリゾートホテル",
+          "hotelMinCharge": 3780,
+          "latitude": 34.68232893852978,
+          "longitude": 135.49978190003472,
+          "postalCode": "541-0054",
+          "address1": "大阪府",
+          "address2": "大阪市中央区南本町4丁目2番9号",
+          "telephoneNo": "0570-068-911",
+          "faxNo": "06-6258-8912",
+          "access": "大阪メトロ御堂筋線・四つ橋線・中央線「本町駅」（18番出口）直結",
+          "parkingInformation": "1泊（15：00〜翌11：00）2,500円（税込）　※先着順・予約不可",
+          "nearestStation": "本町",
+          "reviewCount": 2281,
+          "reviewAverage": 4.27,
+          "userReview": "ラグジュアリー感があり、大浴場も広く癒されます。モーニングビュッフェもライブキッチンで提供されるオムレツやご当地のたこ焼き・肉吸いなど大阪グルメを堪能でき満足度は高め♪　2026-10-06 23:12:05投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=176594\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "29:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 111,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "s1k",
+              "roomName": "スタンダードルーム1名利用【禁煙室】",
+              "planId": 5188945,
+              "planName": "【素泊まり・事前決済限定】非接触1秒チェックイン体験プラン",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "このプランは素泊まり［素泊まり］プランです。\r\n予約時に事前クレジットカード決済が必要です。\r\n\r\n並ばず待たずに1秒チェックイン！\r\n1秒チェックインとは・・・\r\nホテルに到着する前にアパホテル公式アプリ上でチェックインを行い、\r\nホテル到着後に1秒チェックイン機を使って並ばず待たずにチェックイン（ルームキーの発行等）をすることです。\r\n\r\n▼予約取り込みの方法\r\n※各自治体の施行条例に基づき、1秒チェックインに加えスタッフによる予約確認が必要です。\r\nアパホテル公式アプリにログインしトップ画面下部の「予約確認」→「アパ直以外の予約検索　取り込み」から進み、必要事項の選択と入力をしてください。\r\nご宿泊者ご本人様以外のご利用はできません。\r\n\r\n▼アプリ上でのチェックイン方法\r\nご宿泊当日、チェックイン開始時刻の1時間前からアパホテル公式アプリトップ画面に表示される「1秒チェックイン」よりお進みください。\r\nお部屋への入室可能時刻はプランに設定されているチェックイン時間をご確認ください。\r\n\r\n【2泊以上される方へ連泊清掃のご案内】\r\n当館では地球環境に優しいホテル運営のため、連泊時の清掃はご希望の場合のみ実施させていただきます。\r\n清掃をご希望の場合は朝9時までに「清掃希望札」のマグネットをドアの外に貼っていただきますようお願いいたします。※シーツなどの寝具類は交換いたしません。\r\n尚、衛生面の観点から「清掃希望札」の掲示が無い場合でも3泊ごとに清掃を実施いたします。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-18",
+              "rakutenCharge": 7830,
+              "total": 7830,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 217,
+          "hotelName": "湯元「花乃井」スーパーホテル大阪天然温泉",
+          "hotelKanaName": "ゆもと　はなのい　すーぱーほてるおおさかてんねんおんせん",
+          "hotelSpecial": "楽天トラベルアワード2025ゴールド獲得！地下1000ｍから湧き出る本物の天然温泉とオートロウリュ付サウナでととのいを♪",
+          "hotelMinCharge": 3900,
+          "latitude": 34.68541134,
+          "longitude": 135.485086,
+          "postalCode": "550-0002",
+          "address1": "大阪府",
+          "address2": "大阪市西区江戸堀3-6-35",
+          "telephoneNo": "06-6447-9000",
+          "faxNo": "06-6447-9001",
+          "access": "地下鉄中央線・千日前線【阿波座駅】出口⑨右へ徒歩約5分/JR【大阪駅】大阪市営バス88系天保山行「土佐堀三丁目」下車",
+          "parkingInformation": "近隣の一般コインパーキングのご案内となります。",
+          "nearestStation": "阿波座",
+          "reviewCount": 6970,
+          "reviewAverage": 4.39,
+          "userReview": null
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "10:00",
+          "lastCheckinTime": "24:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 204,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "k0",
+              "roomName": "【素泊まり】お部屋タイプお任せ【当日までのお楽しみ】",
+              "planId": 5737392,
+              "planName": "【素泊まり】【サウナイキタイ】オンラインカード決済限定プラン☆天然温泉・サウナ付き",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "2",
+              "salesformFlag": 0,
+              "planContents": "オンライン決済限定のお得なプランになります！\r\nスムーズなチェックインが可能です！\r\n宿泊者限定のウェルカムバーもご利用可能！！\r\n\r\n【営業時間】\r\n◆チェックイン：15：00〜24：00（最終）\r\n◆チェックアウト：10：00（プランに準ずる）\r\n\r\n■共通サービス■\r\n◆天然温泉 湯元花乃井 \r\n【効能】\r\n神経痛、筋肉痛、関節痛、五十肩、運動麻痺、関節のこわばり、うちみ、くじき、慢性消化器病、痔疾、冷え性、病後回復期、疲労回復、健康増進\r\n【入浴時間】\r\n全日　11:00〜深夜1:00、6:00〜9:00\r\n\r\n\r\n◆ウェルカムバー\r\n数十種類のドリンクを無料・セルフサービスでお楽しみいただけます。\r\n【営業時間】\r\nソフトドリンク：全日　15:00〜24:00\r\nアルコール：全日　17:00〜21:00\r\n\r\n◆スーパーホテルオリジナルアメニティをもれなくプレゼント♪\r\n\r\n◆８種類から選べる快眠枕\r\nチェックイン時にフロントで枕をお選びいただけます！（先着順）\r\n\r\n◆駐車場\r\nご用意がございませんので、近隣のコインパーキングをご利用ください。\r\n\r\n最終チェックインは24時となっております。24時を過ぎますとキャンセル扱いとなり、キャンセル料が100％発生いたしますのでご注意ください。\r\nまた、フロントも24時で営業終了致します。"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-18",
+              "rakutenCharge": 9300,
+              "total": 9300,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ],
+    [
+      {
+        "hotelBasicInfo": {
+          "hotelNo": 167091,
+          "hotelName": "天然温泉　浪華の湯　ドーミーイン大阪谷町（ドーミーイン・御宿野乃　ホテルズグループ）",
+          "hotelKanaName": "てんねんおんせん　なにわのゆ　どーみーいんおおさかたにまち",
+          "hotelSpecial": "地下鉄谷町四丁目駅から徒歩約4分！大阪城や梅田・なんばエリアにもアクセス良好。天然温泉大浴場・高温サウナ完備。",
+          "hotelMinCharge": 5250,
+          "latitude": 34.68357273640035,
+          "longitude": 135.513658428836,
+          "postalCode": "540-0026",
+          "address1": "大阪府",
+          "address2": "大阪市中央区内本町2-1-9",
+          "telephoneNo": "06-6945-5489",
+          "faxNo": "06-6945-5656",
+          "access": "谷町四丁目駅　４番出口より本町通を西側へ向かい徒歩にて約４分(谷町四丁目は1-A出口にエレベーターがございます。)",
+          "parkingInformation": "敷地内立体駐車場有り　１８台　２，5００円（税込／泊）予約不要《先着順》高さ制限２．０５ｍ",
+          "nearestStation": "谷町四丁目",
+          "reviewCount": 1789,
+          "reviewAverage": 4.46,
+          "userReview": "朝食での大阪ならではの中で写真には無いですがみっくちゅじゅーちゅがとても美味しかったです。お風呂もお部屋も従業員の方も最高でした。　2026-10-04 19:51:32投稿 <a href=\"https://img.travel.rakuten.co.jp/image/tr/api/re/gJNfM/?f_hotel_no=167091\" class=\"3click\">つづきはこちら</a>"
+        }
+      },
+      {
+        "hotelDetailInfo": {
+          "reserveTelephoneNo": "050-2017-8989",
+          "middleClassCode": "osaka",
+          "smallClassCode": "shi",
+          "areaName": "大阪",
+          "hotelClassCode": "HOTEL",
+          "checkinTime": "15:00",
+          "checkoutTime": "11:00",
+          "lastCheckinTime": "28:00"
+        }
+      },
+      {
+        "hotelReserveInfo": {
+          "reserveRecordCount": 21,
+          "lowestCharge": 0,
+          "highestCharge": 0
+        }
+      },
+      {
+        "roomInfo": [
+          {
+            "roomBasicInfo": {
+              "roomClass": "d1",
+              "roomName": "◇禁煙◇ダブルルーム",
+              "planId": 4208579,
+              "planName": "【天然温泉大浴場×サウナでととのう！】ドーミーインスタンダードプラン!!≪素泊り≫",
+              "pointRate": 1,
+              "withDinnerFlag": 0,
+              "dinnerSelectFlag": 0,
+              "withBreakfastFlag": 0,
+              "breakfastSelectFlag": 0,
+              "payment": "1",
+              "salesformFlag": 0,
+              "planContents": "ドーミーイン自慢の大浴場＆サウナは毎日営業中！！\r\n大浴場で免疫力を高めよう！\r\n\r\nプロサウナーの方にも、\r\n「サウナ愛が溢れていますね」とご好評いただいている、ドーミーインの大浴場とサウナ。\r\n\r\nドーミーインをご利用いただいているお客様に、気持ちよくサウナに入っていただきごゆっくりとお寛ぎ下さい！\r\n\r\n◆ホテルスペック\r\n【１】最上階13階にて男女別天然温泉大浴場完備。\r\n【２】全客室シモンズ社製ベッド完備。\r\n\r\n◆夜鳴きそば\r\n醤油ベースのハーフサイズラーメンを無料提供\r\n【場所】最上階13階レストラン\r\n【時間】21:30〜23:00\r\n\r\n◆天然温泉 浪華の湯\r\n【場所】13階\r\n【時間】15:00〜翌朝10:00(サウナ1:00〜5:00迄停止)\r\n■男性大浴場\r\n内風呂(天然温泉)・外気浴・壺風呂・水風呂・高温サウナ\r\n■女性大浴場\r\n内風呂(天然温泉)・外気浴・壺風呂・水風呂・高温サウナ\r\n【泉質】ラドン温泉\r\n【効能】筋肉痛／関節痛／神経痛／冷え性／疲労回復／五十肩など\r\n※クレンジング／化粧水／乳液もご用意しております。\r\n\r\n◆お子様添い寝\r\n添い寝のお子様はベッド1台につき1名様までとさせていただき、別途施設利用料を申し受けます。\r\n上記、条件の人数を超えてのご予約は別にお部屋をお取りいただく事となります。\r\n尚、予約サイトのシステム上、添寝人数が複数名入力可能となっている場合がござますが、添い寝可能な人数はベッド1台につき1名様までとなります。\r\n0〜2歳…無料／3歳〜小学生…3，000円\r\n※最大定員\r\n■ダブルルーム、クイーンルーム(1ベッドタイプ)\r\n大人2名、添い寝1名迄\r\n■ツインルーム(2ベッドタイプ)\r\n大人2名、添い寝2名迄\r\n■和洋室(2ベッド、1敷布団タイプ)\r\n大人3名、添い寝3名迄\r\n"
+            }
+          },
+          {
+            "dailyCharge": {
+              "stayDate": "2026-10-18",
+              "rakutenCharge": 12600,
+              "total": 12600,
+              "chargeFlag": 0
+            }
+          }
+        ]
+      }
+    ]
+  ]
+}

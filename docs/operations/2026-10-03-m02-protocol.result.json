@@ -1,0 +1,30 @@
+{
+  "time": "2026-10-03T03:06:17.673787+00:00",
+  "model_requested": "deepseek-flash",
+  "status": "success",
+  "flows": 1,
+  "http_attempts": 2,
+  "currency": "CNY",
+  "budget_charge": "0.10",
+  "usage_cost_upper": "0.002500",
+  "price_basis": "2026-10-03 official peak CNY prices without cache discount; not a provider invoice",
+  "first": {
+    "model": "deepseek-flash",
+    "stop_reason": "tool_use",
+    "content_types": ["thinking", "text", "tool_use", "tool_use"],
+    "input_tokens": 355,
+    "output_tokens": 81,
+    "usage_cost_upper_cny": "0.001358"
+  },
+  "tool_count": 2,
+  "is_error_true_sent": true,
+  "result_order": "reversed_by_id",
+  "last": {
+    "model": "deepseek-flash",
+    "stop_reason": "end_turn",
+    "content_types": ["thinking", "text"],
+    "input_tokens": 499,
+    "output_tokens": 18,
+    "usage_cost_upper_cny": "0.001142"
+  }
+}

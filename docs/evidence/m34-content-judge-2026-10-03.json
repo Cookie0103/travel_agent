@@ -1,0 +1,27 @@
+{
+  "case_id": "plan-complete-control",
+  "status": "scored",
+  "http_attempts": 1,
+  "currency": "CNY",
+  "cost_upper": "0.002508",
+  "trace_id": "dd80860f17468a1d46c52e3f29c4afe9",
+  "identity": {
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "sdk_version": "0.2.163",
+    "cli_version": "2.1.114"
+  },
+  "dimensions": {
+    "relevance": 4,
+    "explanation": 5,
+    "tradeoffs": 4
+  },
+  "temperature": 0,
+  "runtime_proof": "score_report validates actual requests/zero tools/guard/terminal outcome before scoring",
+  "human_pairs": 0,
+  "calibration_status": "pending",
+  "grant_attempts": 81,
+  "grant_cost_upper_cny": "2.079398",
+  "source": "one actual legacy dev answer; private candidate/reason omitted",
+  "manifest_sha256": "3690ae8701f2c47291bf761d76f8149fa72c81317632e7971247ebbe2d089cbf"
+}

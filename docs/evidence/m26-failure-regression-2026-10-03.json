@@ -1,0 +1,113 @@
+{
+  "case_id": "hakone-onsen",
+  "source": "Actual M0.6 and M0.7 DeepSeek SDK development runs, revisited in M2.6",
+  "attribution": "request_understanding",
+  "root_cause": "Tool/data coverage was Kyoto-only; the prompt did not explicitly prohibit substituting a different destination. Trace alone cannot prove this cause; case requirement and prompt revision provide the missing evidence.",
+  "fix": "backend/agent/persona.py travel_prompt explicitly states Kyoto coverage and no tool calls for a specified different destination.",
+  "regression": "Original case expectations retained; one actual repeat passed, no benchmark significance claimed.",
+  "limitation": "n=1 before and n=1 after; regression does not prove general destination accuracy.",
+  "before": [
+    {
+      "name": "tool.search_places",
+      "trace_id": "0x5e73141f25ffcd91274be547f94e067d",
+      "attributes": {
+        "tool.name": "search_places",
+        "tool.argument_keys": [
+          "city",
+          "limit",
+          "query"
+        ],
+        "tool.status": "ok"
+      }
+    },
+    {
+      "name": "tool.search_content",
+      "trace_id": "0x5e73141f25ffcd91274be547f94e067d",
+      "attributes": {
+        "tool.name": "search_content",
+        "tool.argument_keys": [
+          "city",
+          "limit",
+          "query"
+        ],
+        "tool.status": "ok"
+      }
+    },
+    {
+      "name": "tool.search_places",
+      "trace_id": "0x5e73141f25ffcd91274be547f94e067d",
+      "attributes": {
+        "tool.name": "search_places",
+        "tool.argument_keys": [
+          "city",
+          "limit",
+          "query"
+        ],
+        "tool.status": "ok"
+      }
+    },
+    {
+      "name": "tool.search_content",
+      "trace_id": "0x5e73141f25ffcd91274be547f94e067d",
+      "attributes": {
+        "tool.name": "search_content",
+        "tool.argument_keys": [
+          "city",
+          "limit",
+          "query"
+        ],
+        "tool.status": "ok"
+      }
+    },
+    {
+      "name": "agent.sdk",
+      "trace_id": "0x5e73141f25ffcd91274be547f94e067d",
+      "attributes": {
+        "travel.provider": "deepseek",
+        "gen_ai.request.model": "deepseek-flash",
+        "travel.sdk_version": "0.2.163",
+        "travel.cli_version": "2.1.114",
+        "travel.http_attempts": 3,
+        "travel.tool_events_complete": true,
+        "travel.status": "completed"
+      }
+    },
+    {
+      "name": "travel.run",
+      "trace_id": "0x5e73141f25ffcd91274be547f94e067d",
+      "attributes": {
+        "travel.provider": "deepseek",
+        "gen_ai.request.model": "deepseek-flash",
+        "travel.sdk_version": "0.2.163",
+        "travel.cli_version": "2.1.114",
+        "travel.status": "completed"
+      }
+    }
+  ],
+  "after": [
+    {
+      "name": "agent.sdk",
+      "trace_id": "0xbc5e35173e48747d6105bc90f9a9b877",
+      "attributes": {
+        "travel.provider": "deepseek",
+        "gen_ai.request.model": "deepseek-flash",
+        "travel.sdk_version": "0.2.163",
+        "travel.cli_version": "2.1.114",
+        "travel.http_attempts": 1,
+        "travel.tool_events_complete": true,
+        "travel.status": "completed"
+      }
+    },
+    {
+      "name": "travel.run",
+      "trace_id": "0xbc5e35173e48747d6105bc90f9a9b877",
+      "attributes": {
+        "travel.provider": "deepseek",
+        "gen_ai.request.model": "deepseek-flash",
+        "travel.sdk_version": "0.2.163",
+        "travel.cli_version": "2.1.114",
+        "travel.status": "completed"
+      }
+    }
+  ]
+}
