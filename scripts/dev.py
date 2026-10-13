@@ -129,7 +129,7 @@ def eval_dev(*, live: bool) -> int:
     return run_command(command)
 
 
-def web(command: str) -> int:
+def web(command: str, *, webpack: bool = False) -> int:
     pnpm = shutil.which("pnpm.cmd" if os.name == "nt" else "pnpm")
     if pnpm is None:
         print("unavailable: 需要Node24+和pnpm11，见apps/web/README.md", file=sys.stderr)
@@ -141,10 +141,13 @@ def web(command: str) -> int:
     actions = {
         "web-setup": [["install", "--frozen-lockfile"]],
         "web-generate": [["run", "generate"]],
+        "web-format": [["run", "format"]],
         "web-check": [["run", name] for name in ("typecheck", "lint", "test", "build")],
         "web": [["run", "dev"]],
     }
     for action in actions[command]:
+        if webpack and action == ["run", "build"]:
+            action = [*action, "--webpack"]
         result = run_command(
             [pnpm, *action], cwd=ROOT / "apps" / "web", timeout=None if command == "web" else 300
         )
@@ -167,13 +170,15 @@ def main(argv: Sequence[str] | None = None) -> int:
         "supplier",
         "web-setup",
         "web-generate",
-        "web-check",
+        "web-format",
         "web",
         "stack-up",
         "stack-status",
         "stack-down",
     ):
         commands.add_parser(name)
+    web_check = commands.add_parser("web-check")
+    web_check.add_argument("--webpack", action="store_true")
     tests = commands.add_parser("test")
     tests.add_argument("--path", action="append", type=test_path, default=[])
     tests.add_argument("--keyword", help="只筛选测试名，live 门禁保持不变")
@@ -182,6 +187,38 @@ def main(argv: Sequence[str] | None = None) -> int:
     api.add_argument("--trace-cloud", action="store_true", help="显式上传脱敏 Trace")
     evaluation = commands.add_parser("eval-dev")
     evaluation.add_argument("--live", action="store_true", help="显式启用真实模型评测")
+    probe = commands.add_parser("probe-hotel-sort")
+    probe.add_argument("--live", action="store_true", help="显式允许最多2次乐天请求核实排序")
+    smoke = commands.add_parser("smoke-langfuse-linkage")
+    smoke.add_argument("--live", action="store_true")
+    smoke.add_argument("--trace-cloud", action="store_true")
+    v2 = commands.add_parser("eval-v2")
+    v2.add_argument("--live", action="store_true")
+    v2.add_argument("--trace-cloud", action="store_true")
+    v2.add_argument("--repeat", type=int, choices=range(1, 4), default=3)
+    v2.add_argument("--case-id", action="append", default=[])
+    memory = commands.add_parser("eval-memory")
+    memory.add_argument("--live", action="store_true")
+    memory.add_argument("--trace-cloud", action="store_true")
+    memory.add_argument("--repeat", type=int, choices=range(1, 4), default=1)
+    memory.add_argument("--case-id", action="append", default=[])
+    simulator = commands.add_parser("eval-simulator")
+    simulator.add_argument("--live", action="store_true")
+    simulator.add_argument("--trace-cloud", action="store_true")
+    simulator.add_argument("--repeat", type=int, choices=range(1, 4), default=3)
+    simulator.add_argument("--case-id", action="append", default=[])
+    triage = commands.add_parser("eval-triage")
+    triage.add_argument("results", type=Path)
+    triage.add_argument("--live", action="store_true")
+    rescore = commands.add_parser("eval-simulator-rescore")
+    rescore.add_argument("results", type=Path)
+    calibration = commands.add_parser("eval-calibration")
+    calibration.add_argument("results", type=Path, nargs="+")
+    calibration.add_argument("--live", action="store_true")
+    publish = commands.add_parser("eval-publish-v2")
+    publish.add_argument("results", type=Path, nargs="+")
+    publish.add_argument("--triage", type=Path)
+    publish.add_argument("--trace-cloud", action="store_true")
     args = parser.parse_args(argv)
     python = sys.executable
     match args.command:
@@ -223,6 +260,97 @@ def main(argv: Sequence[str] | None = None) -> int:
             )
         case "eval-dev":
             return eval_dev(live=args.live)
+        case "eval-memory":
+            if args.trace_cloud and not args.live:
+                return 2
+            if not args.live:
+                from eval.suites import load_suite
+
+                cases, _ = load_suite(ROOT, "v2-memory", "dev")
+                print(f"prepared: {len(cases)}记忆案例；未发模型调用，确定性不变量由专项测试验证")
+                return 0
+            command = [
+                python,
+                "-m",
+                "eval.run",
+                "--suite",
+                "v2-memory",
+                "--database",
+                "--repeat",
+                str(args.repeat),
+                "--max-attempts",
+                "12",
+                "--live",
+            ]
+            if args.trace_cloud:
+                command.append("--trace-cloud")
+            for case_id in args.case_id:
+                command.extend(["--case-id", case_id])
+            return run_command(command, timeout=7200)
+        case "eval-simulator":
+            if args.trace_cloud and not args.live:
+                return 2
+            command = [python, "-m", "eval.simulator", "--repeat", str(args.repeat)]
+            if args.live:
+                command.append("--live")
+            if args.trace_cloud:
+                command.append("--trace-cloud")
+            for case_id in args.case_id:
+                command.extend(["--case-id", case_id])
+            return run_command(command, timeout=14400)
+        case "eval-triage":
+            command = [python, "-m", "eval.triage", str(args.results)]
+            if args.live:
+                command.append("--live")
+            return run_command(command, timeout=7200)
+        case "eval-simulator-rescore":
+            return run_command([python, "-m", "eval.rescore_simulator", str(args.results)])
+        case "eval-calibration":
+            command = [python, "-m", "eval.calibration", *[str(p) for p in args.results]]
+            if args.live:
+                command.append("--live")
+            return run_command(command, timeout=7200)
+        case "eval-publish-v2":
+            command = [python, "-m", "eval.publish_v2", *[str(p) for p in args.results]]
+            if args.triage:
+                command.extend(["--triage", str(args.triage)])
+            if args.trace_cloud:
+                command.append("--trace-cloud")
+            return run_command(command, timeout=300)
+        case "eval-v2":
+            if args.trace_cloud and not args.live:
+                return 2
+            command = [
+                python,
+                "-m",
+                "eval.run",
+                "--suite",
+                "v2",
+                "--database",
+                "--repeat",
+                str(args.repeat),
+                "--max-attempts",
+                "12",
+            ]
+            if args.live:
+                command.append("--live")
+            if args.trace_cloud:
+                command.append("--trace-cloud")
+            for case_id in args.case_id:
+                command.extend(["--case-id", case_id])
+            return run_command(command, timeout=7200 if args.live else 600)
+        case "probe-hotel-sort":
+            if not args.live:
+                print("需要显式 --live；未发请求。", file=sys.stderr)
+                return 2
+            return run_command([python, "-m", "scripts.probe_hotel_sort", "--live"])
+        case "smoke-langfuse-linkage":
+            if not (args.live and args.trace_cloud):
+                print("需要显式 --live --trace-cloud；未发请求。", file=sys.stderr)
+                return 2
+            return run_command(
+                [python, "-m", "scripts.smoke_langfuse_linkage", "--live", "--trace-cloud"]
+            )
         case "api":
             command = [python, "-m", "backend.server"]
             if args.live:
@@ -232,8 +360,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return run_command(command, timeout=None)
         case "supplier":
             return run_command([python, "-m", "mock_supplier.server"], timeout=None)
-        case "web" | "web-setup" | "web-check" | "web-generate":
-            return web(args.command)
+        case "web" | "web-setup" | "web-check" | "web-generate" | "web-format":
+            return web(args.command, webpack=getattr(args, "webpack", False))
         case "stack-up" | "stack-status" | "stack-down":
             return run_command([python, "-m", "scripts.stack", args.command], timeout=None)
     return 2

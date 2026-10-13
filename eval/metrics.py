@@ -1,14 +1,105 @@
 """逐调用证据与首次有效进度；缺语义参数证明时unknown，不把工具成功当准确率。"""
 
+import json
+import re
 from collections import Counter
 from datetime import datetime
 
 from pydantic import ValidationError
 
+from backend.domain.evidence import EvidenceRecord
 from backend.domain.execution import RunContext, RuntimeEvent
+from backend.domain.plans import PlanContent
+from backend.domain.travel_request import TravelRequest
+from backend.domain.validator import validate_itinerary
 from backend.tools.travel import SCHEMAS
 from eval.cases import Case
 from eval.diagnostics import ArgumentFact, bind_call
+
+
+def constraint_scores(
+    request: TravelRequest, content: PlanContent, records: tuple[EvidenceRecord, ...], now: datetime
+) -> dict[str, object]:
+    report = validate_itinerary(request, content.proposal(request.revision), records, now)
+    checks = [
+        {"subject": c.subject, "code": c.code, "passed": c.status == "verified", "status": c.status}
+        for c in report.checks
+    ]
+    return {
+        "delivered": True,
+        "status": report.status,
+        "checks": checks,
+        "all_constraints": all(c.status == "verified" for c in report.checks),
+        "conflict_count": sum(c.status == "conflict" for c in report.checks),
+        "micro_pass_rate": sum(c.status == "verified" for c in report.checks) / len(checks)
+        if checks
+        else None,
+        "basis": "independent validation of persisted content; unknown is not verified",
+    }
+
+
+def subset_matches(actual: object, expected: object) -> bool:
+    """预先声明的终态子集；列表长度必须相等，防止隐藏多余副作用。"""
+    if isinstance(expected, dict):
+        return isinstance(actual, dict) and all(
+            k in actual and subset_matches(actual[k], v) for k, v in expected.items()
+        )
+    if isinstance(expected, list):
+        return (
+            isinstance(actual, list)
+            and len(actual) == len(expected)
+            and all(subset_matches(a, e) for a, e in zip(actual, expected, strict=True))
+        )
+    return type(actual) is type(expected) and actual == expected
+
+
+def process_metrics(
+    events: tuple[RuntimeEvent, ...], text: str, facts: tuple[ArgumentFact, ...] = ()
+) -> dict[str, object]:
+    starts = [e for e in events if e.kind == "tool_started"]
+    ends = [e for e in events if e.kind == "tool_finished"]
+    visible = [
+        e
+        for e in events
+        if e.kind == "presentation" and e.presentation and e.presentation.get("status") == "error"
+    ]
+    first = sum(
+        bool(
+            e.presentation
+            and isinstance(data := e.presentation.get("external"), dict)
+            and (
+                data.get("provisional") is True
+                or (
+                    data.get("kind")
+                    in {"rate_limited", "timeout", "network", "upstream_5xx", "invalid_json"}
+                    and data.get("attempts") == 1
+                    and data.get("retry_skipped") is None
+                )
+            )
+        )
+        for e in visible
+    )
+    recovered = [e for e in ends if e.external and e.external.recovered_from and e.code is None]
+    keys = []
+    for start in starts:
+        matched = [
+            f for f in facts if f.context == start.context and f.tool_call_id == start.tool_call_id
+        ]
+        if len(matched) == 1:
+            keys.append((start.tool_name, json.dumps(matched[0].arguments, sort_keys=True)))
+    refs = set(re.findall(r"(?:offer_id|evidence_id|fact_id)\s*[:=]\s*([0-9a-f-]{36})", text))
+    known = {value for e in events for value in e.evidence_ids}
+    return {
+        "tool_calls": len(starts),
+        "duplicate_calls": len(keys) - len(set(keys)) if len(keys) == len(starts) else None,
+        "recovered_without_user": sum(
+            not any(v.tool_call_id == e.tool_call_id for v in visible) for e in recovered
+        ),
+        "user_visible_errors": len(visible),
+        "user_visible_first_errors": first,
+        "grounded_ids": refs <= known if refs else None,
+        "scope": "only observed events; unavailable argument facts keep duplicate count unknown",
+    }
 
 
 def first_progress_seconds(

@@ -163,7 +163,7 @@ def exported_run(row: TaskRunRow, payloads: list[dict[str, object]]) -> dict[str
             references.append(reference)
     return {
         "run_id": str(row.id),
-        "prompt": row.prompt,
+        "prompt": row.user_text if row.user_text is not None else row.prompt,
         "answer": row.answer,
         "mode": row.mode,
         "status": row.status,

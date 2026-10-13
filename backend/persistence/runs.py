@@ -1,7 +1,6 @@
 """消息去重与应用事件持久化；读取只能看到本人的TaskRun，SSE不会触发执行。"""
 
-import json
-from dataclasses import asdict, replace
+from dataclasses import replace
 from datetime import UTC, datetime
 from uuid import UUID
 
@@ -87,15 +86,26 @@ async def recent_completed(
 
 
 async def create(
-    db: AsyncSession, user_id: UUID, session_id: UUID, message_id: UUID, prompt: str, mode: str
+    db: AsyncSession,
+    user_id: UUID,
+    session_id: UUID,
+    message_id: UUID,
+    prompt: str,
+    mode: str,
+    *,
+    user_text: str | None = None,
+    trace_id: str | None = None,
 ) -> TaskRunRow:
     row = TaskRunRow(
         user_id=user_id,
         session_id=session_id,
         client_message_id=message_id,
         prompt=prompt,
+        user_text=prompt if user_text is None else user_text,
         mode=mode,
     )
+    if trace_id is not None:
+        row.trace_id = trace_id
     db.add(row)
     await db.flush()
     return row
@@ -113,7 +123,7 @@ async def append_event(db: AsyncSession, event: RuntimeEvent) -> None:
     if row is None or row.session_id != event.context.session_id:
         raise ValueError("事件不属于此执行")
     row.last_sequence += 1
-    payload: dict[str, object] = json.loads(json.dumps(asdict(event), default=str))
+    payload: dict[str, object] = TypeAdapter(RuntimeEvent).dump_python(event, mode="json")
     db.add(RunEventRow(run_id=row.id, sequence=row.last_sequence, payload=payload))
 
 

@@ -3,7 +3,17 @@
 from datetime import date, datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, MetaData, String, Text, UniqueConstraint, func
+from sqlalchemy import (
+    Boolean,
+    DateTime,
+    ForeignKey,
+    Index,
+    MetaData,
+    String,
+    Text,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -55,6 +65,7 @@ class UserRow(Base):
     preferences: Mapped[dict[str, object]] = mapped_column(JSONB, default=dict)
     preference_deleted: Mapped[bool] = mapped_column(default=False)
     preference_changed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    memory_forgotten_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
@@ -64,6 +75,39 @@ class SessionRow(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class MemoryFactRow(Base):
+    __tablename__ = "user_memory_facts"
+    __table_args__ = (Index("ix_user_memory_facts_user_status_key", "user_id", "status", "key"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    key: Mapped[str] = mapped_column(String(30))
+    value: Mapped[object | None] = mapped_column(JSONB, nullable=True)
+    scope: Mapped[str] = mapped_column(String(10))
+    session_id: Mapped[UUID | None] = mapped_column(ForeignKey("sessions.id"), nullable=True)
+    status: Mapped[str] = mapped_column(String(20))
+    source: Mapped[str] = mapped_column(String(20))
+    source_run_id: Mapped[UUID | None] = mapped_column(ForeignKey("task_runs.id"), nullable=True)
+    evidence_quote: Mapped[str] = mapped_column(Text, default="")
+    ordinal: Mapped[int] = mapped_column(default=0)
+    valid_from: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    invalidated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    superseded_by: Mapped[UUID | None] = mapped_column(
+        ForeignKey("user_memory_facts.id"), nullable=True
+    )
+    last_confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class UserProfileSummaryRow(Base):
+    __tablename__ = "user_profile_summaries"
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), primary_key=True)
+    text: Mapped[str] = mapped_column(Text, default="")
+    cited_fact_ids: Mapped[list[str]] = mapped_column(JSONB, default=list)
+    preference_revision: Mapped[int] = mapped_column(default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    invalidated_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class CatalogRow(Base):
@@ -108,9 +152,11 @@ class TaskRunRow(Base):
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
     client_message_id: Mapped[UUID]
+    trace_id: Mapped[str | None] = mapped_column(String(32), default=lambda: uuid4().hex)
     mode: Mapped[str] = mapped_column(String(10))
     status: Mapped[str] = mapped_column(String(20), default="running")
     prompt: Mapped[str] = mapped_column(Text)
+    user_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     answer: Mapped[str] = mapped_column(Text, default="")
     error_code: Mapped[str | None] = mapped_column(String(30))
     last_sequence: Mapped[int] = mapped_column(default=0)
@@ -124,6 +170,21 @@ class RunEventRow(Base):
     run_id: Mapped[UUID] = mapped_column(ForeignKey("task_runs.id"), primary_key=True)
     sequence: Mapped[int] = mapped_column(primary_key=True)
     payload: Mapped[dict[str, object]] = mapped_column(JSONB)
+
+
+class ChoiceCardRow(Base):
+    __tablename__ = "choice_cards"
+    __table_args__ = (UniqueConstraint("session_id", "id"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
+    source_run_id: Mapped[UUID] = mapped_column(ForeignKey("task_runs.id"))
+    kind: Mapped[str] = mapped_column(String(30))
+    expected_revision: Mapped[int]
+    content: Mapped[dict[str, object]] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    answered_option_id: Mapped[str | None] = mapped_column(String(40))
+    answered_run_id: Mapped[UUID | None] = mapped_column(ForeignKey("task_runs.id"))
 
 
 class PlanRow(Base):

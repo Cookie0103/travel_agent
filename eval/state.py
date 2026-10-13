@@ -17,11 +17,12 @@ from backend.domain.execution import RunContext, RuntimeEvent
 from backend.domain.hotels import HotelOffer
 from backend.domain.plans import PlanDraft, SavedPlan
 from backend.domain.preferences import PreferencePatch, PreferenceVersion
-from backend.domain.travel_request import RequestPatch
-from backend.persistence import plans
+from backend.domain.travel_request import RequestPatch, pace_of
+from backend.persistence import memory, plans
 from backend.persistence.models import (
     BookingRow,
     EvidenceRow,
+    MemoryFactRow,
     PlanDraftRow,
     PlanRow,
     PlanVersionRow,
@@ -32,6 +33,8 @@ from backend.persistence.models import (
 from backend.services.bookings import BookingService
 from backend.services.common import ServiceError, transaction
 from backend.services.hotels import HotelService
+from backend.services.memory import MemoryService
+from backend.services.memory import changed as memory_changed
 from backend.services.plans import LockInput, PlanService
 from backend.services.preferences import PreferenceService
 from backend.services.travel import TravelService
@@ -43,6 +46,7 @@ from eval.business_metrics import (
     ConstraintMeasurement,
 )
 from eval.cases import Case, InitialState
+from eval.metrics import subset_matches
 from mock_supplier.scenarios import HoldAttempt
 
 
@@ -103,7 +107,21 @@ async def snapshot(travel: TravelService, context: RunContext) -> StateSnapshot:
         return StateSnapshot(
             digest([plan.current_version if plan else 0, versions]),
             digest(orders),
-            digest([user.preferences, user.preference_revision, user.preference_deleted]),
+            digest(
+                [
+                    [
+                        {
+                            "key": f.key,
+                            "value": f.value,
+                            "scope": f.scope,
+                            "session_id": f.session_id,
+                        }
+                        for f in await memory.active(db, context.user_id, context.session_id)
+                    ],
+                    user.preference_revision,
+                    user.preference_deleted,
+                ]
+            ),
             digest(request.model_dump(mode="json")),
             saved,
             frozenset(row.id for row in draft_rows),
@@ -128,6 +146,27 @@ async def prepare_state(
         service = PreferenceService(travel.database)
         current = await service.get(context.user_id)
         await service.change(context.user_id, PreferenceVersion(expected_revision=current.revision))
+    if state.memory:
+        async with transaction(travel.database) as db:
+            user = await db.get(UserRow, context.user_id)
+            assert user is not None
+            now = datetime.now(UTC)
+            for ordinal, fact in enumerate(state.memory):
+                db.add(
+                    MemoryFactRow(
+                        user_id=context.user_id,
+                        key=fact.key,
+                        value=fact.value,
+                        scope=fact.scope,
+                        session_id=context.session_id if fact.scope == "trip" else None,
+                        status="active",
+                        source="manual",
+                        ordinal=ordinal,
+                        valid_from=now,
+                        last_confirmed_at=now,
+                    )
+                )
+            memory_changed(user)
     if state.saved_plan:
         events: list[RuntimeEvent] = []
         outcome = await demo_command(
@@ -254,6 +293,18 @@ async def assess_business(
         "no_new_supplier_order": after.orders == before.orders,
         "no_implicit_preference_write": after.preferences == before.preferences,
     }
+    if case.expected_state:
+        current = await travel.get_request(context)
+        actual_state = {
+            "request": {**current.model_dump(mode="json"), "pace": pace_of(current)},
+            "saved_version": after.saved.version if after.saved else 0,
+            "hotel_stays": [s.model_dump(mode="json") for s in after.saved.content.hotel_stays]
+            if after.saved
+            else [],
+            "bookings": [b.card() for b in after.bookings],
+            "memory": await MemoryService(travel.database).snapshot(context),
+        }
+        checks["expected_state"] = subset_matches(actual_state, case.expected_state)
     starts = [
         e
         for e in events
@@ -366,6 +417,13 @@ async def assess_business(
         elif name == "request_unchanged":
             checks[name] = after.request == before.request
         elif name == "expected_tool_failure":
+            if case.external_fault:
+                checks[name] = any(
+                    e.external and e.external.kind and e.code in case.expected_tool_errors
+                    for e in events
+                    if e.kind == "tool_finished"
+                )
+                continue
             affected = [
                 b
                 for b in after.bookings

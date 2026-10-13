@@ -37,6 +37,34 @@ from tests.integration.test_travel import travel_setup as travel_setup
 pytestmark = pytest.mark.integration
 
 
+def test_export_uses_original_user_text_instead_of_server_augmented_prompt(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        async with transaction(travel.database) as db:
+            row = await runs.create(
+                db,
+                context.user_id,
+                context.session_id,
+                uuid4(),
+                "用户原话\n服务端内部续接说明",
+                "offline",
+                user_text="用户原话",
+            )
+            await runs.finish(
+                db,
+                RunContext(context.user_id, context.session_id, row.id),
+                RuntimeOutcome(text="回答"),
+            )
+        exported = await HistoryService(travel.database).export(context.user_id, context.session_id)
+        assert "服务端内部续接说明" not in json.dumps(exported, ensure_ascii=False)
+        assert "用户原话" in json.dumps(exported, ensure_ascii=False)
+
+    runner.run(exercise())
+
+
 @pytest.mark.parametrize("code", ["timeout", "provider_error"])
 def test_failed_live_answer_keeps_fixed_explanation_and_partial_text(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],

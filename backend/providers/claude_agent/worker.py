@@ -11,9 +11,16 @@ from uuid import UUID, uuid4
 
 from pydantic import TypeAdapter
 
+from backend.adapters.evaluation_faults import EvaluationFault, validate_fault
 from backend.agent.persona import JudgeKind, evaluation_judge_prompt, travel_prompt
 from backend.agent.runtime import Agent
-from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, event_metadata
+from backend.domain.execution import (
+    RunContext,
+    RunResult,
+    RuntimeEvent,
+    RuntimeIdentity,
+    event_metadata,
+)
 from backend.limits import Provider
 from backend.profile import current
 from backend.providers.claude_agent.checkpoints import Checkpoints
@@ -97,6 +104,18 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         )
     definitions = evaluation_definitions(variant, database=isinstance(dsn, str))
     real_data = payload.get("real_data") is True
+    try:
+        evaluation_fault: EvaluationFault | None = TypeAdapter(
+            EvaluationFault | None
+        ).validate_python(payload.get("evaluation_fault"))
+        if evaluation_fault:
+            validate_fault(
+                evaluation_fault, profile="eval", database_dsn=dsn if isinstance(dsn, str) else ""
+            )
+            if real_data or persona_judge:
+                raise ValueError
+    except ValueError:
+        return {"status": "error", "code": "validation"}
     if real_data:
         definitions = live_definitions(definitions)
     if variant == "no_tools":
@@ -113,7 +132,10 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
     if isinstance(dsn, str):
         supplier_url = payload.get("supplier_url")
         async with database_tools(
-            dsn, supplier_url if isinstance(supplier_url, str) else None, real_data=real_data
+            dsn,
+            supplier_url if isinstance(supplier_url, str) else None,
+            real_data=real_data,
+            evaluation_fault=evaluation_fault,
         ) as executor:
             if variant == "no_repairs":
                 executor.executor.max_validations = 1
@@ -198,6 +220,11 @@ async def run_prompts(
         else None
     )
     if resumed is not None:
+        if isinstance(executor, DatabaseTools) and not await executor.checkpoint_allowed(
+            context, resumed.context.run_id
+        ):
+            resumed = None
+    if resumed is not None:
         agent.restore(resumed)
         reference_id = resumed.id
     if checkpoints:
@@ -230,14 +257,14 @@ async def run_prompts(
                     executor,
                 )
         result = await agent.run(context, prompt, emit, reference_id=reference_id)
-        results.append(asdict(result))
+        results.append(TypeAdapter(RunResult).dump_python(result, mode="json"))
         if result.outcome.code:
             return {
                 "status": "error",
                 "code": result.outcome.code,
                 "reason": result.outcome.reason,
                 "results": results,
-                "events": [asdict(e) for e in events],
+                "events": TypeAdapter(list[RuntimeEvent]).dump_python(events, mode="json"),
                 "identity": asdict(identity),
             }
         assert result.reference
@@ -254,7 +281,7 @@ async def run_prompts(
     return {
         "status": "success",
         "results": results,
-        "events": [asdict(e) for e in events],
+        "events": TypeAdapter(list[RuntimeEvent]).dump_python(events, mode="json"),
         "identity": asdict(identity),
         "resume_mode": "sdk" if resumed else "business_snapshot",
         "checkpoint_persisted": persisted,

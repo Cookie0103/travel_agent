@@ -6,15 +6,18 @@ import os
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from threading import Thread
+from uuid import UUID
 
 from sqlalchemy import make_url
 
+from backend.adapters.evaluation_faults import EvaluationFault, evaluation_data
 from backend.adapters.live_data import LiveData
 from backend.adapters.supplier import SupplierClient
 from backend.domain.conversation import Task
 from backend.domain.execution import RunContext
 from backend.persistence.database import Database
 from backend.profile import current
+from backend.services.memory import MemoryService
 from backend.services.travel import TravelService
 from backend.tools.contracts import ToolResult
 from backend.tools.travel import TravelToolExecutor
@@ -42,11 +45,21 @@ class DatabaseTools:
         supplier_url: str | None = None,
         *,
         real_data: bool = False,
+        evaluation_fault: EvaluationFault | None = None,
     ) -> None:
         self.loop = loop
         self.supplier_url = supplier_url
         self.travel = TravelService(
-            database, LiveData.from_environment(os.environ, database) if real_data else None
+            database,
+            evaluation_data(
+                evaluation_fault,
+                database,
+                database.engine.url.render_as_string(hide_password=False),
+            )
+            if evaluation_fault
+            else LiveData.from_environment(os.environ, database)
+            if real_data
+            else None,
         )
         self.executor = TravelToolExecutor(
             self.travel,
@@ -54,6 +67,14 @@ class DatabaseTools:
             max_validations=current().max_validations,
         )
         self.executor.bookings.supplier = SupplierClient(supplier_url)
+
+    async def checkpoint_allowed(self, context: RunContext, source_run_id: UUID) -> bool:
+        return await asyncio.wrap_future(
+            asyncio.run_coroutine_threadsafe(
+                MemoryService(self.travel.database).checkpoint_allowed(context, source_run_id),
+                self.loop,
+            )
+        )
 
     async def execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
@@ -88,6 +109,8 @@ class DatabaseTools:
         if not include_preferences:
             # 不修改持久偏好/条件或历史墓碑；只隔离本次系统上下文的当前长期偏好值。
             state.pop("preferences")
+            state.pop("memory", None)
+            state.pop("profile_summary", None)
         return (
             (
                 "\n每个用户轮次的工具调用次数有限，失败也计数（相同调用被拒后原样重试会被直接拒绝且不计数）；上限由系统静默执行，回复用户时不要提及具体次数。"
@@ -146,14 +169,20 @@ class DatabaseTools:
 
 @asynccontextmanager
 async def database_tools(
-    dsn: str, supplier_url: str | None = None, *, real_data: bool = False
+    dsn: str,
+    supplier_url: str | None = None,
+    *,
+    real_data: bool = False,
+    evaluation_fault: EvaluationFault | None = None,
 ) -> AsyncIterator[DatabaseTools]:
     loop = asyncio.SelectorEventLoop()
     thread = Thread(target=loop.run_forever, name="travel-database", daemon=True)
     database = Database(make_url(dsn))
     thread.start()
     try:
-        tools = DatabaseTools(loop, database, supplier_url, real_data=real_data)
+        tools = DatabaseTools(
+            loop, database, supplier_url, real_data=real_data, evaluation_fault=evaluation_fault
+        )
         try:
             yield tools
         finally:

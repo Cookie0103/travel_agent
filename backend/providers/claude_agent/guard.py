@@ -2,6 +2,7 @@
 
 import http.client
 import json
+import random
 import secrets
 import threading
 import time
@@ -39,6 +40,7 @@ class Guard:
     token: str = field(default_factory=lambda: secrets.token_urlsafe(32), repr=False)
     attempts: int = 0
     observations: list[dict[str, object]] = field(default_factory=list)
+    http_requests: list[dict[str, object]] = field(default_factory=list)
     failures: list[str] = field(default_factory=list)
     failure_details: list[str] = field(default_factory=list)
     max_attempts: int | None = 4
@@ -47,6 +49,8 @@ class Guard:
     run: str = ""  # 仅TRACE用的run标识
     upstream_status: int | None = None  # 最近一次非200的上游状态码(仅数字，不含正文)
     stop_reason: str = "local_guard"  # 只设置固定原因；运行事件仍按RUN_REASONS白名单持久化。
+    http_retries: int = 0
+    last_http_retries: int = 0
 
     def accept(self, path: str, token: str, body: bytes) -> tuple[int, bytes]:
         if not secrets.compare_digest(token, "Bearer " + self.token):
@@ -61,6 +65,7 @@ class Guard:
             limit_bytes=request_byte_limit(self.settings.model),
         )
         started: float | None = None
+        self.last_http_retries = 0
         try:
             if not (
                 self.settings.currency
@@ -72,7 +77,10 @@ class Guard:
                 body, self.settings.model, self.allowed_tools, temperature=self.temperature
             )
             retries = 0
-            while True:  # 仅首字节停滞会重试；每次尝试各自预占并计入attempts
+            http_retried = False
+            retry_delay = 0.0
+            request_started = time.monotonic()
+            while True:  # HTTP一次或既有stall重试；不叠加，每次各自预占。
                 if self.failures:
                     raise ProbeError("blocked", "当前实验已停止或达到请求上限")
                 if self.max_attempts is not None and self.attempts >= self.max_attempts:
@@ -84,6 +92,10 @@ class Guard:
                     self.stop_reason = "budget_limit"
                     raise
                 self.attempts += 1
+                if http_retried:
+                    time.sleep(retry_delay)
+                    self.http_retries += 1
+                    self.last_http_retries = 1
                 trace(
                     "model_req_start",
                     self.run,
@@ -95,11 +107,39 @@ class Guard:
                     max_tokens=request.max_output,
                 )
                 started = time.monotonic()
+                http_request: dict[str, object] = {
+                    "complete": False,
+                    "attempt": self.attempts,
+                    "started_at_ns": time.time_ns(),
+                }
+                self.http_requests.append(http_request)
                 try:
                     status, content = self.forward(request.body)
+                    http_request["status"] = status
+                    if (status == 429 or 500 <= status <= 599) and not retries and not http_retried:
+                        delay = (1 if status == 429 else 0.5) + random.uniform(0, 0.3)
+                        # 保留SDK既有API期限：重试的完整upstream_timeout需放进已有余量。
+                        spare = current().request_worst_case - current().upstream_timeout + 8
+                        if time.monotonic() - request_started + delay < spare and (
+                            self.max_attempts is None or self.attempts < self.max_attempts
+                        ):
+                            http_retried = True
+                            self._trace_failure(
+                                "provider_error", started, why=f"upstream HTTP {status}"
+                            )
+                            trace(
+                                "upstream_retry",
+                                self.run,
+                                n=1,
+                                reason="rate_limited" if status == 429 else "upstream_5xx",
+                                waited_s=delay,
+                            )
+                            retry_delay = delay
+                            continue
                     break
                 except StallError as stall:
-                    if retries >= current().upstream_retries:
+                    http_request["error_kind"] = "timeout"
+                    if http_retried or retries >= current().upstream_retries:
                         raise
                     retries += 1
                     # 停滞的那次预占不退款，保持已占用；SDK此时尚未收到任何字节。
@@ -112,10 +152,25 @@ class Guard:
                         last_phase=stall.last_phase,
                         waited_s=stall.waited_s,
                     )
+                finally:
+                    http_request["ended_at_ns"] = time.time_ns()
             if status != 200:
                 self.upstream_status = status
                 raise ProbeError("provider_error", f"上游 HTTP {status}")
             observation = summarize(content, request, self.settings.model, self.settings.currency)
+            http_request.update(
+                {
+                    key: observation[key]
+                    for key in (
+                        "input_tokens",
+                        "cache_read_input_tokens",
+                        "cache_creation_input_tokens",
+                        "output_tokens",
+                    )
+                    if key in observation
+                }
+            )
+            http_request["complete"] = True
             trace(
                 "model_req_end",
                 self.run,

@@ -36,4 +36,4 @@
 
 ## 批次计划
 
-修复/开发批次不再作为本目录的第 07 篇，统一放在 [docs/plans/](../plans/README.md)。当前批次：[2026-10-08 Product V2 修复](../plans/2026-10-08-product-v2.md)。
+修复/开发批次统一放在 [docs/plans/](../plans/README.md)。当前批次：[交互、记忆与评测](../plans/2026-10-13-interaction-memory-eval.md)。

@@ -21,7 +21,7 @@ class ProbeError(RuntimeError):
 
 
 class StallError(ProbeError):
-    """上游在首字节期限内无任何响应头：唯一可重试的失败（此时没有响应字节到达）。"""
+    """上游在首字节期限内无任何响应头；按档位重试，不与HTTP重试叠加。"""
 
     def __init__(self, last_phase: str, waited_s: float) -> None:
         self.last_phase, self.waited_s = last_phase, waited_s

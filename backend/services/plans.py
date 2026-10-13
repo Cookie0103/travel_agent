@@ -386,7 +386,9 @@ async def content_view(
                 "hotel_stays": [
                     {
                         **stay.model_dump(mode="json"),
-                        "hotel": hotel_cards((evidence[stay.hotel_evidence_id],), request)[0]
+                        "hotel": hotel_cards(
+                            (evidence[stay.hotel_evidence_id],), request, selectable=False
+                        )[0]
                         if stay.hotel_evidence_id in evidence
                         else None,
                     }
@@ -398,7 +400,7 @@ async def content_view(
         ),
         "cards": cards,
         "hotel_evidence_id": str(content.hotel_evidence_id) if content.hotel_evidence_id else None,
-        "hotel": hotel_cards((evidence[content.hotel_evidence_id],), request)[0]
+        "hotel": hotel_cards((evidence[content.hotel_evidence_id],), request, selectable=False)[0]
         if content.hotel_evidence_id in evidence
         else None,
         "needs_refresh": stale,

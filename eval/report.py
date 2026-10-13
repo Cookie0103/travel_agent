@@ -61,6 +61,7 @@ def measured_summary(rows: list[dict[str, object]], repeats: int) -> dict[str, o
     ]
     return {
         "per_repeat": per_repeat,
+        "reliability": reliability(rows, repeats),
         "rule_rate_range": {
             "min": min(rates) if rates else None,
             "max": max(rates) if rates else None,
@@ -84,6 +85,7 @@ def measured_summary(rows: list[dict[str, object]], repeats: int) -> dict[str, o
         "semantic_fact_quality": None,
         "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
         "business_metrics": business_summary(rows),
+        "v2_metrics": v2_summary(rows),
     }
 
 
@@ -169,4 +171,219 @@ def cost_summary(rows: list[dict[str, object]]) -> dict[str, object]:
         "total": str(sum(values, Decimal(0))) if len(values) == len(rows) else None,
         "measured_subtotal": str(sum(values, Decimal(0))) if values else None,
         "distribution": distribution([float(v) for v in values]),
+        "cost_per_success": str(
+            sum(values, Decimal(0)) / sum(r.get("status") == "passed" for r in rows)
+        )
+        if len(values) == len(rows) and any(r.get("status") == "passed" for r in rows)
+        else None,
+    }
+
+
+def reliability(rows: list[dict[str, object]], k: int) -> dict[str, object]:
+    groups: dict[str, list[dict[str, object]]] = {}
+    for row in rows:
+        if isinstance(name := row.get("case_id"), str):
+            groups.setdefault(name, []).append(row)
+    complete = [
+        group
+        for group in groups.values()
+        if len(group) == k
+        and {r.get("repeat") for r in group} == set(range(1, k + 1))
+        and all(r.get("status") in {"passed", "failed"} for r in group)
+    ]
+    observed = len(complete) == len(groups) and bool(groups)
+    return {
+        "k": k,
+        "cases": len(groups),
+        "complete_cases": len(complete),
+        "pass_at_1": sum(r["status"] == "passed" for g in complete for r in g) / (len(complete) * k)
+        if observed
+        else None,
+        "pass_at_k": sum(any(r["status"] == "passed" for r in g) for g in complete) / len(complete)
+        if observed
+        else None,
+        "pass_power_k": sum(all(r["status"] == "passed" for r in g) for g in complete)
+        / len(complete)
+        if observed
+        else None,
+        "basis": "predeclared independent trials; errors/missing trials remain unknown",
+    }
+
+
+def simulation_summary(rows: list[dict[str, object]], repeats: int) -> dict[str, object]:
+    """只汇总实际末态：交付分母是要求保存的场景，未知约束不算满足。"""
+    requested = [r for r in rows if r.get("case_id") == "v2-user-three-segments"]
+    measurements = [
+        value for r in requested if isinstance(value := r.get("saved_constraints"), dict)
+    ]
+    delivered = [r for r in measurements if r.get("delivered") is True]
+    checks = [value for r in delivered if isinstance(value := r.get("checks"), list) and value]
+    valid = [
+        group
+        for group in checks
+        if all(
+            isinstance(c, dict) and c.get("status") in {"verified", "unknown", "conflict"}
+            for c in group
+        )
+    ]
+    flat = [c for group in valid for c in group]
+    complete = bool(delivered) and len(valid) == len(delivered)
+    process = {}
+    for key in (
+        "tool_calls",
+        "duplicate_calls",
+        "recovered_without_user",
+        "user_visible_errors",
+        "user_visible_first_errors",
+    ):
+        values = [p.get(key) for row in rows if isinstance(p := row.get("process"), dict)]
+        counts = [v for v in values if isinstance(v, int) and not isinstance(v, bool) and v >= 0]
+        process[key] = (
+            sum(counts) if len(values) == len(rows) and len(counts) == len(values) else None
+        )
+    costs = cost_summary([{**r, "run_accounted": r.get("cost_cny")} for r in rows])
+    durations = latency_values(rows, "elapsed_seconds")
+    return {
+        "n": len(rows),
+        "passed": sum(r.get("status") == "passed" for r in rows),
+        **rate(rows),
+        "cost_cny": costs["total"],
+        "original_currency_cost": {"currency": "CNY", **costs},
+        "reliability": reliability(
+            [{**r, "repeat": r.get("repeat", r.get("trial"))} for r in rows], repeats
+        ),
+        "saved_constraints": {
+            "requested": len(requested),
+            "delivered": len(delivered),
+            "delivery_rate": len(delivered) / len(requested)
+            if requested
+            and len(measurements) == len(requested)
+            and all(type(m.get("delivered")) is bool for m in measurements)
+            else None,
+            "verified_checks": sum(c["status"] == "verified" for c in flat),
+            "unknown_checks": sum(c["status"] == "unknown" for c in flat),
+            "conflict_checks": sum(c["status"] == "conflict" for c in flat),
+            "micro": sum(c["status"] == "verified" for c in flat) / len(flat) if complete else None,
+            "macro": sum(
+                sum(c["status"] == "verified" for c in group) / len(group) for group in valid
+            )
+            / len(valid)
+            if complete
+            else None,
+            "all_constraints_rate": sum(
+                all(c["status"] == "verified" for c in group) for group in valid
+            )
+            / len(valid)
+            if complete
+            else None,
+            "scope": "independent validation of saved content only; "
+            "partial has unknowns; delivery is separate",
+        },
+        "process": process,
+        "elapsed_seconds": distribution(durations),
+        "elapsed_unknown_n": len(rows) - len(durations),
+        "basis": "synthetic goals; actual SDK+PG; no real suppliers; uncalibrated semantics",
+    }
+
+
+def memory_summary(rows: list[dict[str, object]]) -> dict[str, object]:
+    measured = [m for row in rows if isinstance((m := row.get("memory_metrics")), dict)]
+    categories: dict[str, object] = {}
+    for category in (
+        "extraction",
+        "trip",
+        "negation",
+        "third_party",
+        "update",
+        "abstain",
+        "poison",
+    ):
+        values = [m for m in measured if m.get("category") == category]
+        counts = {
+            key: sum(int(str(m[key])) for m in values)
+            for key in ("true_positive", "false_positive", "false_negative")
+        }
+        tp, fp, fn = counts["true_positive"], counts["false_positive"], counts["false_negative"]
+        categories[category] = {
+            "n": len(values),
+            **counts,
+            "precision": tp / (tp + fp) if tp + fp else None,
+            "recall": tp / (tp + fn) if tp + fn else None,
+            "exact_rate": sum(m.get("exact") is True for m in values) / len(values)
+            if values
+            else None,
+            "invalid_attempts": sum(int(str(m["invalid_attempts"])) for m in values),
+        }
+    tp = sum(int(str(m["true_positive"])) for m in measured)
+    fp = sum(int(str(m["false_positive"])) for m in measured)
+    fn = sum(int(str(m["false_negative"])) for m in measured)
+    return {
+        "status": "measured_uncalibrated" if measured else "pending_real_suite",
+        "categories": categories,
+        "n": len(measured),
+        "precision": tp / (tp + fp) if tp + fp else None,
+        "recall": tp / (tp + fn) if tp + fn else None,
+        "cross_user_leaks": sum(m.get("cross_user_leakage") is True for m in measured)
+        if measured
+        else None,
+        "deleted_residuals": sum(m.get("deletion_residue") is True for m in measured)
+        if measured
+        else None,
+        "basis": "synthetic cases/aliases; model extraction/server probes; uncalibrated",
+    }
+
+
+def v2_summary(rows: list[dict[str, object]]) -> dict[str, object]:
+    states = [
+        check["expected_state"]
+        for row in rows
+        if isinstance(check := row.get("checks"), dict)
+        and type(check.get("expected_state")) is bool
+    ]
+    process = [value for row in rows if isinstance(value := row.get("process_metrics"), dict)]
+    saved = [value for row in rows if isinstance(value := row.get("saved_constraints"), dict)]
+    measured = [
+        value for value in saved if isinstance(value.get("checks"), list) and value["checks"]
+    ]
+    checks = [check for value in measured for check in value["checks"] if isinstance(check, dict)]
+    return {
+        "terminal_state_n": len(states),
+        "terminal_state_pass_rate": sum(states) / len(states) if states else None,
+        "process": {
+            name: sum(int(str(value[name])) for value in process)
+            if process and len(process) == len(rows)
+            else None
+            for name in (
+                "tool_calls",
+                "recovered_without_user",
+                "user_visible_errors",
+                "user_visible_first_errors",
+            )
+        },
+        "saved_plan_delivery_rate": sum(value.get("delivered") is True for value in saved)
+        / len(saved)
+        if saved
+        else None,
+        "constraint_micro": sum(c.get("passed") is True for c in checks) / len(checks)
+        if checks
+        else None,
+        "constraint_macro": sum(value.get("all_constraints") is True for value in measured)
+        / len(measured)
+        if measured
+        else None,
+        "constraint_measured_n": len(measured),
+        "memory": memory_summary(rows),
+        "triage": {
+            "status": "pending_model_reference",
+            "accuracy": None,
+            "regression_candidates": [
+                {
+                    "case_id": row.get("case_id"),
+                    "trial": row.get("repeat"),
+                    "failed_checks": row.get("failed_checks"),
+                }
+                for row in rows
+                if row.get("status") == "failed"
+            ],
+        },
     }

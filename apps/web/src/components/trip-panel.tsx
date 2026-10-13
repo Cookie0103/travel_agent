@@ -208,7 +208,9 @@ export function TripPanel({
         <PreferencePanel
           key={identity.session_id}
           identity={identity}
+          refreshKey={`${workspace.run?.run_id ?? ""}:${workspace.run?.status ?? ""}`}
           onError={workspace.fail}
+          onChanged={() => void workspace.refresh()}
         />
       </details>
     </aside>

@@ -55,6 +55,7 @@
 - [M1 业务集中记录](review/M1.md)、[基础 API 真实 HTTP 证据](evidence/m11-api-smoke-2026-10-03.json)、[M1 规格](tasks/M1.md)。
 - [M0 集中审查记录](review/M0.md)、[SDK 真实接入结果](protocols/protocol-agent-sdk.md)、[旅行工具真实查询证据](evidence/travel-query-2026-10-03.json)。
 - [本地 Trace 与云导出决策](adr/005-observability-export.md)、[Langfuse 页面验收缺口](blocked/langfuse.md)。
+- 本批设计：[受限重试](adr/020-external-error-retry.md)、[选择卡](adr/021-server-owned-choice-cards.md)、[酒店恢复](adr/022-hotel-budget-recovery.md)、[观测关联](adr/023-observability-linkage.md)、[确认记忆](adr/024-confirmed-memory-facts.md)、[派生画像](adr/025-derived-user-profile.md)；[只读导出与操作](operations/interaction-memory-eval.md)、[面试案例](review/cases/2026-10-13-interaction-memory-eval.md)。
 - [初始真实评测](evidence/m06-baseline-2026-10-03.json)、[范围坏例回归](evidence/m07-scope-regression-2026-10-03.json)、[角色校准待办](blocked/persona-calibration.md)。
 
 - 2026-10-03：[长程工作流](execution/workflow.md)、[工程标准](execution/standards.md)、[操作日志](operations/2026-10-03-autonomous.md)。已取消逐任务人工关卡，保留自动验证与独立审查。

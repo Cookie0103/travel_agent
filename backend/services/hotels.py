@@ -1,14 +1,21 @@
 """酒店查询/刷新/补卡用例；不可变报价保存在已有Evidence，避免重复事实表。"""
 
 from datetime import UTC, date, datetime
+from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
-from backend.domain.external_data import ExternalDataError
+from backend.domain.external_data import ExternalDataError, external_code
 from backend.domain.hotel_details import StoredHotelDetails
+from backend.domain.hotel_recovery import (
+    HotelSearchDiagnostics,
+    evaluate,
+    nightly_price,
+    nightly_upper,
+)
 from backend.domain.hotel_selection import hotel_rate_indices
 from backend.domain.hotels import HotelOffer, compare, quote
 from backend.domain.itinerary import HotelStay
@@ -28,6 +35,7 @@ from backend.persistence.travel import (
     hotel_offer_elsewhere,
 )
 from backend.providers.hotel_fixture import load_rates
+from backend.services.choices import ChoiceCard, ChoiceService
 from backend.services.common import ServiceError, transaction
 from backend.services.travel import TravelService, require_revision, resolve_records
 
@@ -96,6 +104,37 @@ class HotelService:
             context, request, rate_id=offer.rate_id, limit=1, segment_arrive=arrive
         )
 
+    async def search_result(
+        self,
+        context: RunContext,
+        revision: int,
+        hotel_id: str | None = None,
+        limit: int = 5,
+        *,
+        segment_arrive: date | None = None,
+    ) -> tuple[tuple[EvidenceRecord, ...], HotelSearchDiagnostics, ChoiceCard | None]:
+        request = await self._request(context, revision)
+        diagnosis = HotelSearchDiagnostics()
+        records = await self._quote(
+            context,
+            request,
+            hotel_id=hotel_id,
+            limit=limit,
+            segment_arrive=segment_arrive,
+            diagnosis=diagnosis,
+        )
+        card = (
+            await ChoiceService(self.travel).propose_budget(
+                context,
+                request,
+                diagnosis,
+                expires_at=min((r.valid_until for r in records if r.valid_until), default=None),
+            )
+            if diagnosis.tier is not None
+            else None
+        )
+        return records, diagnosis, card
+
     async def _quote(
         self,
         context: RunContext,
@@ -105,11 +144,13 @@ class HotelService:
         rate_id: str | None = None,
         limit: int,
         segment_arrive: date | None = None,
+        diagnosis: HotelSearchDiagnostics | None = None,
     ) -> tuple[EvidenceRecord, ...]:
-        budget_options = {}
+        budget_nights = None
         if request.segments:
             assert request.start_date and request.end_date
-            budget_options = {"budget_nights": (request.end_date - request.start_date).days}
+            budget_nights = (request.end_date - request.start_date).days
+        original = request
         request = self._segment_request(request, segment_arrive)
         if question := room_preferences_question(request):
             raise ServiceError(422, "validation", question, "hotel_room_preferences_missing")
@@ -131,22 +172,40 @@ class HotelService:
             assert request.city
             try:
                 point = await live.google.geocode(request.hotel_search_location or request.city)
-                offers = await live.rakuten.search(
-                    request,
-                    point,
-                    hotel_id=hotel_id,
-                    rate_id=rate_id,
-                    limit=limit,
-                    **budget_options,
-                )
+                if diagnosis is not None and nightly_upper(original) is not None:
+                    offers = await live.rakuten.search_diagnosed(
+                        request,
+                        point,
+                        hotel_id=hotel_id,
+                        rate_id=rate_id,
+                        limit=limit,
+                        budget_nights=budget_nights,
+                        diagnosis=diagnosis,
+                        budget_request=original,
+                        rescue_segments=len(
+                            [s for s in trip_segments(original) if s.depart > s.arrive]
+                        ),
+                    )
+                else:
+                    offers = await live.rakuten.search(
+                        request,
+                        point,
+                        hotel_id=hotel_id,
+                        rate_id=rate_id,
+                        limit=limit,
+                        budget_nights=budget_nights,
+                    )
+                    if diagnosis is not None:
+                        evaluate(offers, original, diagnosis, limit=limit)
             except ExternalDataError as error:
                 raise ServiceError(
-                    422 if error.validation else 503,
-                    "validation" if error.validation else "unavailable",
+                    422 if external_code(error.info) == "validation" else 503,
+                    external_code(error.info),
                     "乐天酒店查询暂不可用：" + str(error),
                     "hotel_external_validation"
                     if error.validation
                     else "hotel_external_unavailable",
+                    external=error.info,
                 ) from None
             records = [
                 EvidenceRecord(
@@ -203,7 +262,45 @@ class HotelService:
         )
         records = [records[index] for index in ordered]
         rate_keys = [rate_keys[index] for index in ordered]
-        records = [records[index] for index in hotel_rate_indices(rate_keys, limit)]
+        if diagnosis is not None:
+            diagnosis.upstream_count = len(records)
+            offers = tuple(HotelOffer.model_validate(r.value) for r in records)
+            diagnosis.dropped_room = sum(
+                room_assessment(o.room_type, request).room_preference_mismatch for o in offers
+            )
+            diagnosis.dropped_unknown_price = sum(o.total is None for o in offers)
+            offers = tuple(
+                o
+                for o in offers
+                if not room_assessment(o.room_type, request).room_preference_mismatch
+            )
+            if nightly_upper(original) is not None:
+                diagnosis.steps.append("price_sorted_fixture")
+                best: dict[str, HotelOffer] = {}
+                for offer in offers:
+                    old = best.get(offer.hotel_id)
+                    if old is None or (nightly_price(offer) or Decimal("Infinity")) < (
+                        nightly_price(old) or Decimal("Infinity")
+                    ):
+                        best[offer.hotel_id] = offer
+                offers = tuple(best.values())
+                shown = limit
+            else:
+                offers = tuple(
+                    offers[i]
+                    for i in hotel_rate_indices([(o.hotel_id, o.rate_id) for o in offers], limit)
+                )
+                shown = len(offers)
+            chosen = evaluate(offers, original, diagnosis, limit=shown)
+            by_offer = {UUID(r.entity_id): r for r in records}
+            records = [
+                by_offer[o.offer_id].model_copy(
+                    update={"display_details": StoredHotelDetails(search_diagnostics=diagnosis)}
+                )
+                for o in chosen
+            ]
+        else:
+            records = [records[index] for index in hotel_rate_indices(rate_keys, limit)]
         if records:
             await self.travel.record_evidence(context, records)
         return tuple(records)
@@ -259,7 +356,7 @@ class HotelService:
         }
 
 
-SEARCH_FIELDS = {"search_total_found", "more_url", "more_url_scope"}
+SEARCH_FIELDS = {"search_total_found", "more_url", "more_url_scope", "search_diagnostics"}
 
 
 def search_summary(records: tuple[EvidenceRecord, ...]) -> dict[str, object]:
@@ -274,15 +371,30 @@ def search_summary(records: tuple[EvidenceRecord, ...]) -> dict[str, object]:
         "total_found": details.search_total_found,
         "more_url": details.more_url,
         "more_url_scope": details.more_url_scope,
+        **(
+            {"relaxation": details.search_diagnostics.model_dump(mode="json")}
+            if details.search_diagnostics
+            else {}
+        ),
     }
 
 
 def cards(
-    records: tuple[EvidenceRecord, ...], request: TravelRequest | None = None
+    records: tuple[EvidenceRecord, ...],
+    request: TravelRequest | None = None,
+    *,
+    selectable: bool = True,
 ) -> list[dict[str, object]]:
     return [
         {
             **HotelOffer.model_validate(record.value).card(request),
+            **(
+                {"request_revision": request.revision}
+                if selectable
+                and request is not None
+                and record.applicable(request, datetime.now(UTC))
+                else {}
+            ),
             **(record.display_details or StoredHotelDetails()).model_dump(
                 mode="json", exclude=SEARCH_FIELDS
             ),
@@ -292,6 +404,7 @@ def cards(
             "evidence_id": str(record.evidence_id),
             "source_ref": record.source_ref,
             "content_version": record.content_version,
+            **budget_excess(HotelOffer.model_validate(record.value), request),
         }
         for record in (
             records[index]
@@ -300,6 +413,16 @@ def cards(
             )
         )
     ]
+
+
+def budget_excess(offer: HotelOffer, request: TravelRequest | None) -> dict[str, object]:
+    upper, price = nightly_upper(request or offer.request), nightly_price(offer)
+    if upper is None or price is None or price <= upper:
+        return {}
+    return {
+        "budget_excess": str(price - upper),
+        "budget_excess_percent": str(((price - upper) / upper * 100).quantize(Decimal("0.1"))),
+    }
 
 
 def segment_presentations(
@@ -367,6 +490,15 @@ async def validate_hotel_selection(
         ):
             raise ServiceError(422, "validation", "所选酒店报价不属于对应住宿段，请重新选择")
         offer = HotelOffer.model_validate(record.value)
+        upper = nightly_upper(request)
+        price = nightly_price(offer)
+        if upper is not None and price is not None and price > upper:
+            raise ServiceError(
+                422,
+                "validation",
+                "所选酒店超过原住宿预算，请先接受预算放宽。",
+                "hotel_over_budget_unaccepted",
+            )
         if evidence_conditions(offer.request, "hotel_offer") != record.conditions or (
             offer.request.start_date,
             offer.request.end_date,

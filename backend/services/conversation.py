@@ -44,11 +44,12 @@ async def valid_state(
 ) -> tuple[ConversationState, TaskRunRow | None]:
     state = stored_state(row)
     origin = await runs.owned(db, context.user_id, state.goal_run_id) if state.goal_run_id else None
-    if (
-        origin is None
-        or origin.session_id != context.session_id
-        or (after and origin.created_at < after)
-    ):
+    if origin is None or origin.session_id != context.session_id:
+        return ConversationState(), None
+    if after and origin.created_at < after:
+        # 仅确认服务写入此证明；保留封闭待办，绝不恢复旧原任务正文。
+        if state.safe_after is not None and state.safe_after >= after:
+            return state, None
         return ConversationState(), None
     return state, origin
 

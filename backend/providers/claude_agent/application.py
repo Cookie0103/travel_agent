@@ -4,11 +4,13 @@ import asyncio
 import importlib.metadata
 import logging
 import os
+from collections.abc import Mapping
 from pathlib import Path
 from threading import Event
 
 from pydantic import TypeAdapter, ValidationError
 
+from backend.adapters.evaluation_faults import EvaluationFault, validate_fault
 from backend.adapters.tracing import TraceMetadata, report_metadata
 from backend.agent.runtime import EventSink
 from backend.domain.execution import (
@@ -37,10 +39,18 @@ class GuardedRuntime:
         *,
         provider: Provider | None = None,
         real_data: bool = False,
+        evaluation_fault: EvaluationFault | None = None,
+        evaluation: Mapping[str, object] | None = None,
     ) -> None:
         self.root, self.database_dsn = root, database_dsn
         self.real_data = real_data
+        if evaluation_fault is not None:
+            validate_fault(evaluation_fault, profile="eval", database_dsn=database_dsn)
+            if real_data:
+                raise ValueError("故障评测不能混用真实供应商")
+        self.evaluation_fault, self.evaluation = evaluation_fault, evaluation
         self.trace_metadata: TraceMetadata | None = None
+        self.observed_events: tuple[RuntimeEvent, ...] = ()
         self.provider = provider or provider_name(os.environ)
         self.identity = RuntimeIdentity(
             self.provider,
@@ -58,6 +68,7 @@ class GuardedRuntime:
         cancelled: asyncio.Event,
     ) -> RuntimeOutcome:
         self.trace_metadata = None
+        self.observed_events = ()
         if sdk_session_id is not None:
             return RuntimeOutcome(code="blocked", reason="business_resume_not_verified")
         if cancelled.is_set():
@@ -88,6 +99,8 @@ class GuardedRuntime:
                 max_attempts=current().max_attempts,
                 provider=self.provider,
                 real_data=self.real_data,
+                evaluation_fault=self.evaluation_fault,
+                evaluation=self.evaluation,
             )
         )
         watcher = asyncio.create_task(cancelled.wait())
@@ -132,6 +145,7 @@ class GuardedRuntime:
             ):
                 raise ValueError("Trace执行版本不一致")
             self.trace_metadata = metadata
+            self.observed_events = tuple(events)
         except (ValueError, ArithmeticError, KeyError):
             LOGGER.warning("SDK Trace metadata unavailable: %s", context.run_id)
 
@@ -144,7 +158,20 @@ def outcome(report: dict[str, object], context: RunContext) -> RuntimeOutcome:
             reason = f"{UPSTREAM_REASON}{status}"
         elif code != "cancelled" and report.get("reason") in RUN_REASONS:
             reason = str(report["reason"])
-        return RuntimeOutcome(code=code, reason=reason)
+        external = None
+        if type(status) is int and 100 <= status <= 599:
+            from backend.domain.external_data import ExternalAttempt
+
+            external = ExternalAttempt(
+                status=status,
+                kind="rate_limited"
+                if status == 429
+                else "upstream_5xx"
+                if status >= 500
+                else "bad_request",
+                attempts=2 if report.get("last_http_retries") == 1 else 1,
+            )
+        return RuntimeOutcome(code=code, reason=reason, external=external)
     results = report.get("results")
     if not isinstance(results, list) or len(results) != 1:
         return RuntimeOutcome(code="provider_error", reason="invalid_live_result")

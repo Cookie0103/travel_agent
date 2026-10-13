@@ -159,7 +159,7 @@ def test_stall_after_first_byte_is_not_retried(
     assert named(records, "child_last_phase")[0]["phase"] == "model_req_first_byte"
 
 
-@pytest.mark.parametrize("http_status", [400, 429, 503])
+@pytest.mark.parametrize("http_status", [400])
 def test_http_error_status_is_not_retried(
     http_status: int,
     tmp_path: Path,
@@ -172,6 +172,28 @@ def test_http_error_status_is_not_retried(
     assert status == 400 and rig.guard.failures == ["provider_error"]
     assert rig.guard.attempts == 1 and rig.harness.spawns == 1
     assert not named(events(capsys), "upstream_retry")
+
+
+@pytest.mark.parametrize("http_status", [429, 503])
+def test_transient_http_error_retries_once_and_accounts_each_attempt(
+    http_status: int,
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    script: list[Step] = [("ev", "model_req_first_byte"), ("done", http_status)]
+    rig = Rig(tmp_path, monkeypatch, "human", [script, success_script()])
+    status, content = rig.post()
+    out = capsys.readouterr().out
+    assert status == 200 and b"private-key" not in content and "private-key" not in out
+    assert not rig.guard.failures
+    assert rig.guard.attempts == rig.harness.spawns == rig.budget.totals()[0] == 2
+    records = [
+        json.loads(x.removeprefix("TRACE ")) for x in out.splitlines() if x.startswith("TRACE ")
+    ]
+    retries = named(records, "upstream_retry")
+    assert len(retries) == 1
+    assert retries[0]["reason"] == ("rate_limited" if http_status == 429 else "upstream_5xx")
 
 
 @pytest.mark.parametrize("profile,expected", [("default", DEFAULT), ("relaxed", RELAXED)])

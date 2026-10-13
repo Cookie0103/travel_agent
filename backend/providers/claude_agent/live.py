@@ -3,10 +3,13 @@
 import json
 import os
 import time
+from collections.abc import Mapping
 from functools import partial
 from pathlib import Path
 from threading import Event
+from typing import get_args
 
+from backend.adapters.evaluation_faults import EvaluationFault, validate_fault
 from backend.adapters.tracing import cloud_exporter, trace_report
 from backend.agent.persona import JudgeKind
 from backend.agent.runtime import EventSink
@@ -71,7 +74,19 @@ def run_live(
     evaluation_variant: EvaluationVariant = "full",
     provider: Provider | None = None,
     real_data: bool = False,
+    evaluation_fault: EvaluationFault | None = None,
+    evaluation: Mapping[str, object] | None = None,
+    trace_id: str | None = None,
 ) -> dict[str, object]:
+    if evaluation_fault is not None:
+        try:
+            validate_fault(evaluation_fault, profile="eval", database_dsn=database_dsn or "")
+            if real_data or persona_judge:
+                raise ValueError
+        except ValueError:
+            raise ProbeError(
+                "validation", "故障评测需要专用本地评测库；不能混用生产/评审路径"
+            ) from None
     try:
         validate_variant(
             evaluation_variant,
@@ -83,7 +98,7 @@ def run_live(
         raise ProbeError("validation", str(error)) from None
     attempt_limit = current().max_attempts
     if (
-        judge_kind not in ("persona", "content")
+        judge_kind not in get_args(JudgeKind.__value__)
         or judge_combo_invalid(
             judge_kind,
             persona_judge,
@@ -172,6 +187,7 @@ def run_live(
                     "judge_kind": judge_kind,
                     "evaluation_variant": evaluation_variant,
                     "real_data": real_data,
+                    "evaluation_fault": evaluation_fault,
                 },
                 cancelled=cancelled,
                 progress=drain,
@@ -190,8 +206,12 @@ def run_live(
             )
         count, charge = budget.totals()
         report.update(
+            evaluation=dict(evaluation or {}),
             http_attempts=guard.attempts,
             requests=guard.observations,
+            http_requests=guard.http_requests,
+            http_retries=guard.http_retries,
+            last_http_retries=guard.last_http_retries,
             grant_attempts=count,
             currency=settings.currency,
             grant_accounted=str(charge),
@@ -199,6 +219,8 @@ def run_live(
             guard_failures=guard.failures,
             guard_failure_details=guard.failure_details,
         )
+        if trace_id is not None:
+            report["trace_id"] = trace_id
         if settings.currency == "CNY":
             report.update(
                 grant_accounted_cny=str(charge), run_accounted_cny=str(charge - before_charge)
@@ -278,13 +300,13 @@ def run_live(
 
 
 def report_metadata_only(report: dict[str, object]) -> dict[str, object]:
-    from dataclasses import asdict
-
     from pydantic import TypeAdapter
 
     safe = dict(report)
     events = TypeAdapter(list[RuntimeEvent]).validate_python(report.get("events", []))
-    safe["events"] = [asdict(event_metadata(event)) for event in events]
+    safe["events"] = TypeAdapter(list[RuntimeEvent]).dump_python(
+        [event_metadata(event) for event in events], mode="json"
+    )
     results = report.get("results")
     if isinstance(results, list):
         safe["results"] = [

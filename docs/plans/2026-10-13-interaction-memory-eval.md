@@ -47,6 +47,8 @@
 - D8：保留逐晚核价；每段最多两次限制首晚搜索。后续逐晚核价及瞬时错误重试另外计入现有配额。未知完整总价不得按首晚乘晚数伪造。分档放宽仍只判断已有数据。
 - D9：长期记忆始终逐条确认；本批不做免确认开关。覆盖 V2 D4 的自动记住开关描述。
 
+- D10（用户已批准，2026-10-14）：允许按T2更新test_upstream_stall、test_run_trace、test_external_data、test_trace_log四组冲突旧断言，并按T4更新test_multi_city_itinerary的超预算规划旧断言。400、流开始后不重试、停滞保护、SDK版本、安全、费用及隐私断言仍保留。此前未擅自更新；批准后真实SDK/PG/OTLP专项9通过、相关单元60通过。
+
 ## 3. 评审与设计
 
 用户的原则：**第一次出错先自动再试；第二次仍然出错才告诉用户；告诉时说清楚是哪一步、什么原因、已经尝试了什么、用户可以怎么做。** 第一次出错绝不能直接展示给用户。
@@ -327,16 +329,16 @@
 | ID | 状态 | 提交与证据 |
 | --- | --- | --- |
 | T0 | done | ff60566；check307/1607后端/135前端；预算与项目入口专项44，审查通过 |
-| T1 | doing | 1607 passed、web135、Chrome两轮跨重启原文一致、独立审查无P1/P2；待提交SHA |
-| T2 | todo | 待验证 |
-| T3 | todo | 待验证 |
-| T4 | todo | 待验证 |
-| T6 | todo | 待验证 |
-| T7a | todo | 待验证 |
-| T5a | todo | 待验证 |
-| T7b | todo | 待验证 |
-| T5b | todo | 待验证 |
-| T8 | todo | 待验证 |
+| T1 | done | 96846d4；check307、1607 passed、web135；真实Chrome两轮跨重启原文一致；独立审查无P1/P2 |
+| T2 | done | 实现、D10冲突断言修正、单层重试与计费/隐私保护全部通过，最终全量1786通过；随本批提交 |
+| T3 | done | Chrome点选与恢复通过；直接请求节奏卡修复，真实专项3/3，随本批提交 |
+| T4 | done | 真实京都排序/预算接受报价可用、逐晚核价及D10拦截断言通过，随本批提交 |
+| T6 | done | 同轮真实云联验、数值score读回通过；批量ack13回归/只读审查通过，重发授权待用户 |
+| T7a | done | 离线新套件通过，评分/分诊/盲标/汇总与来源hash完整，随本批提交 |
+| T5a | done | 确认/跨会话/遗忘Chrome、PG隔离/迁移/竞态与SDK回归通过，随本批提交 |
+| T7b | awaiting-upload | E5 24/24、E6 15/20、首次E7 19/24、节奏复测3/3；E8/E9完成，云分数批量重发等待具体授权 |
+| T5b | done | Chrome显式生成→遗忘→刷新/PG清空通过，1HTTP/0.001100CNY，随本批提交 |
+| T8 | doing | 最终稳定全量1786通过、web141/构建通过；独立审查无剩余P1/P2；提交push中 |
 
 ## 5. 边界与不变量
 
@@ -357,13 +359,107 @@
 
 ## 7. 每日进展
 
+### 2026-10-14
+- 计划：完成T0/T1，继续T2及后续。
+- 完成：ff60566（T0）、96846d4（T1），新分支push；完整1607 passed、web135、静态307，真实Chrome两轮恢复和独立审查通过。
+- 未完成及原因：T2–T8尚在执行；人工标注明天由用户填写，不阻塞。
+- 下一步：T2主体已实现，旧断言例外等待D10；先推进独立T3。当前API后台session8118（需后续重启载入新代码）、web10532已恢复，Chrome测试tab1646780667（Ke Chrome id3）。
+
 ### 2026-10-13
 - 计划：按 T0 → T1 → T2 → T3 → T4 → T6 → T7a → T5a → T7b → T5b → T8 执行。
 - 完成：读取 V2 与相关架构；用户决定 D8、D9；新分支已建立（VERIFIED）。
-- 未完成及原因：基线旧CLI门禁4失败已定位；固定已有2.1.295后通过。T0/T1待提交，T2后续。
+- 未完成及原因：基线旧CLI门禁4失败已定位；固定已有2.1.295后通过。T0/T1随本批提交，T2后续。
 - 下一步：db-up、check、test、web-check，开始 T1。
 
 ## 8. 问题解决记录
+
+### P-05 T2：单层恢复与旧断言冲突（已验证）
+- 现象/根因：VERIFIED，原request_json一次请求失败即抛出，所有ExternalDataError归unavailable；stopping_error不复位；UI activity与failedReason直接采用code。旧测试还明确断言429/503不重试。
+- 排除：不新增运行时/重试框架，不放宽SDK版本、API_TIMEOUT、计费、Google保存规则。200坏SSE不重放；HTTP和HUMAN stall不叠加。
+- 实现：闭合ExternalAttempt、单次退避、配额先提交、Rakuten loop锁/默认1.1秒假设、deadline跳过；最终同参数去重和400一次修正置于原锁；同工具成功恢复；metadata四事件入口/RunResult均用TypeAdapter。quota安全X/Y、类别/状态/等待/尝试数进入错误卡/回答/UI；trace汇总保留逐次kind，保留已有单条api_call消费者。
+- 先红后绿：t2-adapter-red 9failed/1passed → adapter-green 19passed；executor-red 3failed →当前6passed；t2-repeat-red1failed →repeat-green6passed；guard-red5failed/2passed →current8passed；web-red缺字段/函数 →生成+实现后138测试通过。新增web-format项目入口RED1failed→GREEN1passed，复用已有Prettier脚本。
+- 专项：t2-focused130passed/8.78秒；t2-final-focused44passed/5.06秒；t2-compat17passed/2.90秒。check311源文件三平台/3分层/10地图通过（后续再完整复核）。
+- 全量中间点：t2-full1625passed/8failed/1skip/4deselected/322.65秒。3项构造兼容与生成漂移已修且17专项通过；其余旧单次请求预期不擅改，等待D10。
+- 审查：review_t0两轮只读，发现首错丢失、400后其他失败绕过、并发缓存窗口已修；追加具体错误文案、实际模型重试计数、RunResult序列化已修，待最终复审。5项审查回归用相同候选中修复前行为验证RED5failed，再恢复修复GREEN5passed（t2-review-red/green），另进程事件去正文往返通过。新增回归不改旧安全断言。
+- 环境：Next首次在沙箱产生端口权限失败，停止本批web进程并清理生成.next缓存后，具备本地端口权限的dev web-check完整通过（t2-web-clean-check：138测试/构建通过）。源码无构建绕过；随后需重开web。
+- 费用：本项全部合成供应商/模型，没有新增真实调用；Railway未改。待D10后完整复跑、提交pushT2；其间先推进独立T3。
+
+
+### P-06 T3：点选、历史状态与来源保留（已验证）
+- 根因：REASONED，已有结构化酒店选择事务可复用，但presentation无choice、MessageInput仅hotel_stays、awaitingpace不自动出卡。
+- 实现：新增有界领域卡和0016表；模型只提供kind/版本；消息、卡片回答、原RequestPatch同事务。提取patch_request_in_transaction保持原来源/失效/操作凭据逻辑，不复制规则。Pace清两层有限别名，保留其他条件。
+- 先红后绿：domain缺模块RED→4passed；PG缺service RED→选择与原消息/条件专项31passed；metadata未知附带字段RED1failed→2passed；显式修改已有pace RED1failed→GREEN1passed。原生SDK2.1.295+PG合成SSE1passed/4.45秒，同一卡自动/显式往返。
+- 独立审查：review_t0发现两项P2（已有pace不能创建修正卡；历史旧卡丢失已答状态）。显式create允许改已有pace，自动awaiting仍只限缺失。恢复/分页只补choice PG状态，不补所有历史Google卡；最终复审待做。
+- Chrome真实验收：独立合成旅行4轮completed。第一张卡Enter选择比较轻松→慢节奏，自动续问日期/人数；刷新后旧卡仍选中且禁用。第二张在已有节奏时生成、点击特种兵成功；本地API重启保持回答/卡片。0正式行程/0预订/0新增供应商调用。
+- 额外根因VERIFIED：第一轮模型在同一patch中重写不变hard、增加soft；PG操作凭据revision3.changed_fields仅soft，但旧逻辑把hard来源降为conversation。新增同值重写回归RED1failed→原来源/选择专项GREEN9passed；保留手填来源，不影响明确新值更新。第二次真实点选后hard来源user_form。
+- 费用VERIFIED：T3共12模型HTTP/0.318704CNY；本批累计T1+T3=0.370348CNY。Places累计7次仍是T1初始旧行程补卡，T3未增加。证据docs/evidence/t3-pace-choice-2026-10-13.json及4张截图，均合成内容，不含密钥/私人对话。
+- 最终审查：readonly reviewer确认显式改已有节奏、历史卡PG状态恢复、同值回写来源三项无剩余P1/P2。历史选择函数移除后得到有效RED，恢复后前端141项与生产构建通过；三平台319check通过。
+- 全量中间运行t3-full为1635pass/16fail：1项三类参数文案兼容已改代码保留原“两类参数不得混填”的准确说明；4项T2旧断言待D10；11个SDK子进程worker_exit发生于运行中T4引入瞬时导入错误，此次全量无效、不得作最终验收。修复后SDK酒店及旧对话/T3卡合并38项通过，必须稳定代码后重跑全量。
+- 恢复：当前本地API session93082/PID35217（尚载入T3，真实T4前须重启）；web已停，待构建后恢复；Chrome1646780667。继续同一批次，不改Railway。
+
+### P-07 T4：酒店诊断、报价覆盖与预算确认（已验证）
+
+- 根因证据：默认standard第一页30条，没有预算筛选；后端在完整核价前limit，可能漏掉预算内报价。真实两成人一间11/14京都返回392条计数，standard第一页最低每间31600；+roomCharge样本标准化后最低16124且每间升序，原rakutenCharge因混合0/1单位不升序。官方说明chargeFlag=0每人、1每间，仅首晚价格；已复用price()，不把首晚乘晚数当完整价。证据：docs/evidence/t4-rakuten-sort-2026-10-13.json（2次HTTP，无原响应/酒店标识/密钥）。
+- 方案：每段S0→最多一次首晚升序S1，仍逐晚核价；预算存在时保留返回页候选、酒店ID分15组核实，完整报价预算排序后才limit。1.5/2/3档只筛已有报价，儿童/未知价不进入档位，下限预算不放宽。全程total换算按全程晚数与间数，不能每段重复使用整个总额。
+- S1配额不足保留已核实S0、写skipped；核价中配额耗尽不保留未完成总价。deadline不足跳过S1；其他上游错误保留T2分类。默认run cap按V2为min(8,全程晚数+1)+住宿段数，后续核价/重试均占原计数。
+- 确认复用T3消息事务：卡绑定版本、上限及报价TTL；不同上限不合并；接受更新全程住宿上限、报价仍verified，保持不改条件；模型不能代改预算。规划单城/多段及段选择锁内统一拦截未接受超预算。
+- 审查P1修复：无关revision或keep后模型伪造explicit_fields改预算，RED2→GREEN；单城旧hotel引用漏guard及total每段复用整额，分别RED→GREEN。P2修复：limit1漏第二个完整便宜报价、daily quota丢S0、不同tier卡静默合并，均有效RED→GREEN；TTL卡缺失RED2→GREEN。
+- 检查：38项PG/SDK/旧对话/T3选择集成通过、12项纯规则通过、dev门禁17项通过。早期混合专项文件顺序使pytest子目录fixture未加载，重排为集成独立组后通过；不改fixture/旧断言。全量时daily测试须适配已有计数并清理其1次合成增量。
+- 待做：最终check/web/full、Chrome酒店放宽接受恢复、最终审查、ADR/设计导航。D10增加旧multi_city_itinerary中“超预算仍partial”的例外问题，尚未改该断言。Railway原样，真实费用仍T1+T3累计0.370348CNY；本项目前只2次乐天，无新模型调用。
+- 真实Chrome补充：第一轮合成会话25515625、run2a444d11 completed但工具result_too_long两次，第三次触及3/3调用配额。根因VERIFIED：bounded_offers只量offers、未量relaxation/choice，加上external后超8000；用户看到失败，不能算验收通过。本次6模型HTTP/0.168588CNY、1 geocode与3 rakuten（另有探针2 rakuten）；累计本批0.538936CNY。截图t4-hotel-integration-before-fix.jpg。
+- 完整回归暴露并修复16项集成问题：无预算路径须保留上游顺序及“limit酒店数、每店最多两套餐”的旧行为；不能拿模型精简offers当完整UIcards自动展示（缺stay/request_revision且重复presentation）。无预算仍沿用hotel_rate_indices，未知总价不被挪到末尾；非空查询只自动出预算卡，完整酒店展示继续原present工具。固定诊断只自动展示空结果。全部旧断言保持原样。
+- 输出上限修复RED：新test_search_size_includes_diagnosis_and_choice_envelope缺metadata参数失败；bounded_offers量整个metadata并为external留600字；不扩大既有8000上限。修复后57项PG/SDK/eval/workbench/报价查找、45项纯规则（含旧排序/长度）通过。
+- 稳定全量中间点t4-full-stable：1649passed/21failed/1skip/4deselected/326.72秒。其中16项上述回归已专项GREEN，其余5项旧需求冲突待D10。t4-full-after-live-fix稳定复跑中，期间不修改runtime源码。readonly审查T4上轮无剩余P1/P2，但真实集成修复还需复核。
+- 稳定全量复跑：t4-full-after-live-fix为1666passed/5failed/1skip/4deselected/334.58秒；全部5个失败仅D10旧语义，没有擅改断言。check324三平台、web141生产构建已通过（后续T6 RED加入后静态check暂只因新未实现参数失败，不能称整树仍绿）。
+- 真实预算接受VERIFIED：合成会话25515625，source run db13218e出10000→20000的×2卡，card0fa0ed81；accept run3507e472完成、预算revision3/user_form，valid报价16124沿用；接受与刷新没有新供应商查询。总供应商累计places7/geocode1/rakuten7（本项2探针+3失败+2成功），模型累计677/31.009778CNY；T4目前14次HTTP/0.476142CNY，本批累计0.846490CNY。未生成正式行程或预订，最终需PG计数复核。
+- Chrome尾部修复：原预算卡已自动显示，但模型再次present被拒并误说无法点选；同run/revision既有卡现在可redisplay、仍不能凭空生成预算卡。旧quote revision使已接受预算后的有效报价按钮禁用；cards仅在record.applicable时投影当前展示revision，原报价及Evidence不变。两个有效RED→PG/旧酒店/旧分段选择/T3卡30项GREEN。readonly reviewer最终复核含上述改动无剩余P1/P2。真实重展可选状态收口中。
+
+### P-08 T6 同轮关联与评分（已验证）
+- VERIFIED：0017本地迁移已应用，新run在消息事务分配trace锚点；旧记录nullable，不回填历史。全span复用SDK OTel且HMAC假名，逐实际模型HTTP只记录时间/用量/状态，无正文；数值score幂等失败不影响业务。
+- RED：新锚点、模型span、score入口及双flag门禁先失败；GREEN 47纯专项与PG1，check三平台/3分层/10地图通过。只读审查发现200破流未标ERROR，新增回归先红后修复，专项复跑中。
+- VERIFIED真实联验：8a5d018f，PG锚点46572af43401442784a02663cc0cde67；2PG工具=2云工具，3实际模型HTTP=3云模型span，HMAC/tags正确，linkage_smoke=1.0读回，0供应商新增。证据t6-langfuse-linkage-2026-10-13.json；0.078608CNY。
+- T4证据收口：t4-budget-recovery-2026-10-13.json；4轮答案均保存，0正式plan/0booking；第四轮有效报价按钮可选且无重查。T4共16HTTP/0.538944CNY，本批截至T6共0.987900CNY（历史682HTTP/31.151188CNY）；places7/geocode1/rakuten7不变。模型最后一次重展误称已过期，UI服务器TTL正确，记录为抽样质量问题，不伪报全部文字正确。
+- 恢复：本地API现运行--live --trace-cloud，日志api-t6-cloud.log；web本任务既有本地进程。Railway维持不变；T7a→T5a→T7b继续，D10的5旧断言仍未改。
+- T6独立复核无剩余P1/P2，99纯专项/32追踪专项、check330三平台、web141完整构建通过。全量1680passed/6failed/1skip/4deselected335.18秒：5项仍D10；额外历史多城卡片revision投影回归已单独RED复现。根因不是追踪：T4有效quote的当前revision投影误用于保存历史；content_view现在显式selectable=False保留历史quote版本，旧断言与接受预算路径5PG专项GREEN。历史TTL越过5分钟可掩盖旧回归，因此最终在新鲜证据下验证。
+
+### P-09 T7a 评测设施与隔离（已验证）
+- VERIFIED：新v2_interaction八场景×3，实际本地随机评测库与MockTransport，24/24；6自动恢复、首次瞬时失败错误卡0，真实模型/供应商HTTP0。仅证明设施，不证明模型能力。最终正式plan交付率0，约束micro/macro保持unknown；无伪造保存成果。见t7a-offline-2026-10-13.json。
+- 先红后绿：可靠性/子集/过程/κ缺入口RED→4GREEN；5坏行程均冲突、生产故障门禁与7闭合HTTP序列→19GREEN；PG owned running run与expected_state新字段RED→原DB专项10GREEN；trace闭合case/trial/suite字段RED→61纯专项GREEN。原评测PG/SDK40项全部原断言通过。
+- 设施错误记录：初始room_preferences是ConversationRequestPatch字段，不能放TravelConditions；改现有房型hard文本。第一版fault匹配旧app域名，真实adapter已openapi；离线失败21/24暴露，修匹配后18/24；新未冻结case的429应为现有rate_limited，×3无候选应为空；修明确预期后24/24。旧断言/冻结集均未更改，不把失败过程隐藏。
+- REASONED：使用同一SDK与guard，无第二运行时。故障注入只显式用途eval+本地UUID评测库，worker与parent重校验；生产LiveData不读故障env、未支持请求不回真实网络。新评测run/事件/finish复用现有持久接口，同轮PG trace锚点；numeric scores复用T6，只有显式live/cloud开启。
+- E8闭合9标签+unknown与40步白名单、E9盲标CSV/κ脚本已具备；模型分诊与实际30条多样回答选择移到本批T7b真实输出后，避免让用户标重复fixture。真人字段保持空白，不阻塞T5。只读独立审查最终复核无剩余P1/P2：固定种子洗牌、上下文保留、人工字段空白；result_tools只判实际酒店结果；首次瞬时错误排除quota/deadline跳过。T7a稳定全量1710 passed/5 D10 failed/1skip/4deselect，340.70秒；5旧断言待用户D10，未改/未跳过。
+- T5预审：迁移后必须清旧JSON正文，回退只能从仍active事实重建；无冲突批量ADD不能因为确认第一张的全局pref revision而让其他卡全失效；projection保留每字段20条/数组顺序/no-op；消融需屏蔽新memory。删除清事实与衍生内容、保留原用户历史，SDKcheckpoint按现revision失效，不另实现缓存。
+
+### P-10 T5a 确认事实、遗忘与迁移（已验证）
+- 实施：0018事实表与旧JSON迁移；唯一active事实投影保持原Preferences接口；propose_memory只接受当前owned run用户引用，逐条固定选择卡；memory API只按身份读取/删除，trip只注入当前session，当前旅行条件优先。前端事实/来源/生效区间/历史/单条删除已接通。
+- RED→GREEN：新API不存在404→归属/删除与原偏好15项通过；再次忘记pending时revision不推进、同quote不同提议错误复用卡（2失败）→14通过；SQLJSONnull误当残留使重复DELETE推进版本→改判JSON.NULL，旧幂等断言原样通过。
+- 更新验证：UPDATE保存旧有效区间与superseded_by；trip不修改长期原值，拒绝的引用不再提议；单删清value/quote并清依赖pending，跨用户目标404。新增trip兴趣UPDATE同时注入旧/新值RED→只遮盖目标事实，待SDK专项验证。
+- 迁移RED：回退后旧代码修改兼容JSON，再升级时修改丢失。修复仅调和已变化的兼容字段；旧代码全部忘记清所有事实；已经deleted内容不复活。真实随机PG升级/回退/再升级1项GREEN，不接触开发或Railway库。
+- 前端web-check类型/lint/141测试/build通过；随后追加删除后刷新选择卡待复核。原生SDK合成记忆往返与原test_sdk_preferences原断言正在运行。尚未发T5真实模型/供应商调用；全批费用仍0.987900CNY。T5尚未宣布完成；T7b/E9实际30表、T5b、T8继续。
+
+- 审查最终5项P2均真实RED→GREEN并只读复核：所有最终scope单值/集合冲突409；目标被替代/冲突后卡stale；PATCH仅重写实际改变字段；0019新增可信user_text、不回填旧生成prompt；当前active/proposed不受100条历史限额挤掉。原生SDK/旧偏好/checkpoint29通过、最终PG26通过、check348三平台/分层/导航通过；当前全量运行中，保持源码稳定。
+- T5 Chrome真实首轮未通过：两次propose_memory因ops各项value_error被拒，PG0事实/0卡，但模型文字声称已提取三条待确认。schema.value实际只有string/null和长度，未说明各key的闭合值；原通用错误提示也无修正枚举信息。先记录失败，不伪称已保存；待全量结束后补模型可见值规范和失败说明，再做正常自然语言验收。该轮3HTTP/0.083180CNY，累计1.071080CNY，0真实供应商。
+- T6补核官方OTel规范：gen_ai.usage.input_tokens应含缓存输入。逐HTTP缓存计数复制及span求和已有新RED(10而非55)→GREEN；guard缓存观测+旧guard/记忆77纯测试通过，不改变旧无缓存断言。一次纯组因沙箱端口限制1失败，按既有本地端口授权重跑全部77通过，无源码绕过。
+- T7b首个真实酒店场景启动门禁失败，尚未发模型/供应商请求：eval.run真实入口未像backend.server加载.env，preflight缺线路配置；待当前全量完成后补显式live配置加载及失败测试，再用首trial实测费用估算余下。T7b未因此标完成。
+
+- T5全量1734 passed/6 failed/1skip/4deselect，343.97秒：5项既知D10冲突不改；另R06一秒TTL合成证据在全量中实际跨过1.74秒失效，生产过期拒绝正确，单独原断言重跑1通过/0.16秒，未放宽TTL或改断言，最终全量再复核。schema模型可见性、显式live加载.env的2项真实RED→8GREEN；check349三平台通过。值约束在domain一处定义，同时进入SDK schema、工具说明与修正提示，不靠让真实用户填写枚举。
+- T7b E5 pilot VERIFIED：v2-429-ok实际DeepSeek3HTTP/0.096540CNY，假供应商一次429自动恢复，PG终态规则通过，首错可见0、未正式保存/订单；trace d044ef4db26d4ce79d0f24a93e7673dd，三项数值score回写成功。私有结果.cache/eval/20261013T201642Z-a1dc279a。REASONED：按同等复杂度24 trial约2.316960CNY；仅小样本估算，不等于最终整批支出。8×3正式集仍待运行，真实旅行供应商0。
+
+- T5 Chrome最终VERIFIED：两条long_term pace/transport、companion仅trip，本批始终点击确认；第一张确认不阻止后两张。原会话切回/刷新三卡answered状态一致。新会话只回忆特种兵/公共交通，同行未知；逐条删除本次三个合成事实后，value/quote全清，revision3→6，memory快照空、旧偏好词不进入近期回顾，真实模型回答三项未知。七个真实run/10HTTP/0.275782CNY，0供应商/正式plan/订单。证据t5-confirmed-memory-2026-10-13.json及三张可见交互截图；原始用户/助手历史按T1保留，不用“删除后残留0”冒充历史正文清空。
+- REASONED小修：真实trip确认回复“不保存”不够清楚；persona明确说“本会话已生效，长期不保存”，后续E6/E7验证。默认eval仅在显式live加载.env，不扩大预算；测试注册env撤销，避免合成key污染后续测试。
+- 恢复点：local API exec43594、web38229；T7b E5正式eval exec9022，日志t7b-e5-live.log。实际SDK评测期间保持runtime源码稳定；本地PG已0019，Railway未迁移/部署/切分支。T5最后全量1734/6失败中5D10+一秒TTL时钟敏感R06，原断言单跑通过，最终需再跑。
+
+### P-11 T7b 实际模型与模拟用户（已验证）
+- E6实际完成（VERIFIED）：20案例/35HTTP/0.974874CNY，规则15/20，提议precision/recall各10/13≈0.7692。三个free-text输出含正确否定含义但不命中预声明别名、两案例额外调用工具；不能当作5个产品语义缺陷，不事后改期望/扩别名提分。三投毒场景0提议、第三人/未知均0提议。证据t7b-e6-memory-2026-10-13.json。
+- E6只读审查三个探针P2已修（VERIFIED）：active目标foreign propose、全历史body存在性、infra与非法操作分开；两个故障mutant先红2fail/1pass→新探针与分类6pass，后续综合11pass。原20次旧弱探针不证明更强不变量，证据移除原零泄漏/零残留聚合；新探针验证另记。Langfuse部分score HTTP429，业务继续且私有结果保留，不能声称全20云分数回写成功。
+- E7工程复用SDK无工具用户角色/现有消息与确认服务，每trial父OTel根，PG创建事务继承同trace；初始pilot（VERIFIED）2用户轮、8HTTP/0.201768CNY，接受预算10000→20000，14子span同父trace b74a0780aa4a9c694edde163d4a62d8e。REASONED仅按首trial24次估4.842432CNY；三段规划可能更贵。pilot评分后补强真实卡点击/非空展示/完整条件/独立约束/否定回忆/终态检查，正式集使用补强后源hash，保留pilot不合并进24次。
+- E7只读审查3P2已修且新增真PG8种空回答终态全失败、执行前锚点断言与否定回忆回归；6专项通过，check357三平台/层契约/文档入口通过。原始运行事件仅私有评测旁观，PG仍保存脱敏presentation；首次错误检查不从裁剪事件冒充0。正式集未开始前账户807HTTP/34.838840CNY，全批4.675552CNY，日/批限额保持60/150，0评测真实供应商，Railway未改。
+- E7正式集exec50337、t7b-e7-live.log：补强评分源码固定，首正式trial0.176544CNY，按24次约4.237056CNY（REASONED，非实际总额）。后到审查另两P2：pace需先酒店交付、429需限定酒店恢复；recall要排除“不喜欢特种兵”。源码保持冻结，全部trial原始事件落盘后统一修正重算；旧已推云rule分数如有变化需修正，不隐去失败。T8已同步design/02/03/05/roadmap导航与候选面试案例，T5b仍未实现。
+- E5正式8×3完成：24/24规则通过，69模型HTTP/2.138688CNY，6自动恢复、首次错误卡0，6最终错误卡来自耗尽重试的429和400（三次各一）；全24数值score请求成功。pass@1、pass@3、pass^3各1.0，仅本dev故障集合；0正式计划交付，约束micro/macro仍unknown。脱敏证据t7b-e5-real-model-2026-10-13.json；私有原始.cache/eval/20261013T202941Z-584136f7。
+- E6新增独立v2-memory 20案例/7类；E5 v2八例固定文件，不混进20案例。所有key/scope/op期望与文本别名在实测前声明；precision/recall无分母None，非法尝试单列且exact要求无错误；不声称已人工校准。actor终态先评分，再做服务探针（没有事实时手动canary）：双用户read/delete/foreign-target 404、全部忘记清value/quote/active/旧回顾；原始用户/助手历史保留不算业务记忆残留。真实工具投毒只通过显式eval UUID库MockTransport，生产不读开关。
+- 先红后绿：缺memory_metrics入口RED→2质量/套件测试GREEN，缺eval-memory门禁RED→CLI测试GREEN，25纯专项、真实PG setup/UPDATE/评分/隔离/删除1项通过，check353三平台通过；独立只读审查进行中。默认eval-memory仅prepared，不调用模型。20×1实际DeepSeek现已启动，期间保持source稳定。
+- T5产品补修：历史记录优先user_text，追加的服务端技术说明不再显示为用户气泡；原始历史与SDK继续接收生成说明不变。新RED→49 PG/原生SDK/旧history/偏好原断言通过；导出与最终全量待T8复核。
+- 金额：E6前全批3.498910CNY（T5真实0.275782、E5 pilot0.096540、E5正式2.138688），账户764HTTP/33.662198CNY；不是每天账本清零。E6最终后再重算。E7模拟8×3、E8模型分诊、E9真实30盲标表、T5b画像、T8提交push仍待完成，不能在此停止。
 
 ### P-01 [预检] V2 自洽性与代码核对　状态：done　关联：T0
 - 环境：基线 0076478，本地，工作区开工前干净。
@@ -379,23 +475,57 @@
 - 方案：尝试增加精确2.1.296组合，原集成4失败消失，但既有单元测试明确以该版本为未核验反例（1失败）。放弃此做法，恢复原名单，使用本机已安装2.1.295复跑63专项全过；不改旧断言、不改全局CLI/.env。
 - 证据：baseline-test.log 已先红；t0-sdk-green.log（1失败62通过）；t0-sdk-pinned.log（63通过，31.13秒）。
 
-### P-03 [回答丢失] 最终回答落库、时效与导出　状态：doing　关联：T1
+### P-03 [回答丢失] 最终回答落库、时效与导出　状态：done　关联：T1
 - 根因：原 transient 分支以占位替换最终answer，live_answers只在当前进程保留900秒（REASONED；先红PG测试已复现）。
 - 取舍：复用 finish 事务；引用和截断标记存现有终态事件JSON，不新增表/列或第二套恢复机制。恢复和导出只读。
 - D1 断言变化：test_runs 原“内存全文/PG占位不同”改为“PG最终回答跨服务一致，旧占位原样读”；history.test.ts 同序列不再用标签内存覆盖PG回答，旧占位标旧版未保存；conversation_state.py:37 合成占位改合成真实最终回答。test_business_result.py:69 实际是脱敏Trace断言，不涉及占位，保持原样（V2行号推断已核对）。
 - 测试：首轮fixture遗漏sdk_session_id产生missing_session，已纠正并针对原四文件重新跑有效RED（3失败1通过）；候选恢复后GREEN5通过，含导出双用户/只读事务。前端旧保留逻辑RED3失败。
 - 遗留：Chrome真实两轮/重启、独立审查、全量与前端关卡尚待；没有生产部署。
 
-### P-04 [审查修正] 回答引用、失败文字与累计费用　状态：doing　关联：T0/T1
+### P-04 [审查修正] 回答引用、失败文字与累计费用　状态：done　关联：T0/T1
 - 独立只读审查发现：行程卡裁剪后无顶层offer_ids；导出真实酒店引用在cards/segments；空失败文字缺固定说明；本批累计漏legacy同日起费用。
 - 实现：复用本人草稿/不可变版本的content.proposal().evidence_ids，并最终EvidenceRow归属过滤；导出只提取cards/segments ID；失败固定说明后附已有文字；费用复用legacy entries，不增账本。
 - RED：跨日旧账本、timeout/provider_error固定说明、裁剪后本人草稿引用，均先红；真实HotelService.present导出候选回退验证RED缺引用，恢复GREEN。构造StageInput时最初误传proposal，已按实际契约修正并重跑有效RED。
 - D1补充断言更正：test_runs的live_failed旧GET空字串改固定provider_error说明，原因是V2 T1要求失败最终回答也持久可导出；其他旧错误状态断言保持。
 - 兼容：新RunView角标默认可空，生成类型可省略，避免生成器把非空默认值变必需而强迫改无关旧fixture。标准数据读取会返回实际0/false。
 - 项目命令：增加受限test --path/--keyword、format与api显式live/cloud参数。原默认离线/固定not-live门禁保持；专项及实际formatter/JSON保留测试先红后绿。
-- 结果：44专项通过；独立只读复核四项均修复，无剩余P1/P2。完整检查307文件、3平台、3分层契约通过；1607 passed、1 skipped、4 deselected，311.59秒；前端135通过/构建通过。待提交SHA。
+- 结果：44专项通过；独立只读复核四项均修复，无剩余P1/P2。完整检查307文件、3平台、3分层契约通过；1607 passed、1 skipped、4 deselected，311.59秒；前端135通过/构建通过。提交：ff60566（T0）、96846d4（T1），均已push。
+
+
+### P-12 组合审查：遗忘竞态、确认续接与画像（已验证）
+
+- 根因与排除（VERIFIED）：删除后旧running来源仍可能提议；确认推进偏好边界会误裁原待办；画像作废只清后端而UI仍显示旧状态。均使用同一用户锁、真实PG和明确时间边界复现，不用放宽安全不变量解决。
+- 方案：0020持久遗忘边界阻止迟到提议与旧SDK checkpoint；确认只保留封闭待办的safe_after，不恢复旧goal_prompt；后续原目标追问保留证明，新目标/取消清除。画像0021派生于active长期事实，显式SDK无工具生成、真实fact引用过滤、前后CAS；任何事实变化事务清正文/引用。UI mutation推进generation，成功立即清旧画像并重读。
+- 先红后绿：记忆确认/迟到提议RED5、checkpoint拒绝RED1→11GREEN；下一轮追问遗漏safe_after RED3→GREEN；组合原SDK/会话/偏好60与43项通过。画像纯/PG专项通过；完整报告身份与ExternalAttempt JSON往返、盲标采样专项4通过。只读审查复核无剩余P1/P2。
+- Chrome（VERIFIED）：本任务合成用户手动确认一条寺庙兴趣，点击更新画像，1真实DeepSeek HTTP/0.001100CNY；单条删除即清画像、刷新仍空，PG正文/引用皆空。0真实旅行供应商/订单，Railway不变；证据docs/evidence/t5b-profile-2026-10-13.json。
+
+### P-13 收尾关卡的真实失败与修复（已验证）
+
+- D10已获用户批准。仅按V2更新五组冲突预期，保留400/流开始后不重试、费用、安全、版本和隐私断言；真实SDK/本机OTLP9通过，unit60通过。
+- 第一次最终全量1769 passed/1 failed/1 skipped/4 deselected，345.01秒。剩余R06使用导入时NOW创建五分钟证据，却用执行时wall clock验证；实际valid_until=22:13:45.214045，执行now=22:13:48.449938（UTC），生产正确拒绝过期。只改该合成测试now为已有fixture NOW，完整报告断言与TTL不变；该文件11通过。最终全量重跑中，不用跳过或扩大TTL掩盖失败。
+- 只读导出发现仍展示server augmented prompt，新增PG测试先红，导出与历史UI统一优先user_text，旧行NULL回退prompt。最终全量纳入该回归。
+- 本机Turbopack CSS子进程绑定端口失败；停止本任务服务仍复现。显式dev web-check --webpack保留全部四道前端关卡，141测试和生产构建通过；默认部署命令、依赖与权限配置不变。
+- E6失败聚焦采样：既有五案例×3，真实5/15通过、10条失败，目的仅补足盲标负样本，不合并到原20案例成功率。原E7正式19/24及两个partial保存行程单独留证，未知约束不算通过；后续节奏修复回归另记。
+
+
+- 最终稳定全量（评分批量修复前）：1778 passed/1 skipped/4 deselected，345.36秒；前端最终141测试与Webpack生产构建通过。新增批量回执检查后再跑最终全量，不引用中断日志作为完成证据。
+- E7节奏修复后正式专项3/3（1.453798CNY），原8×3仍19/24。E8实际10条分诊完成，标签尚未人工核实；E9最终30/30格式有效、模型全判通过，AI预标注另存26/4，human_pass/rater/notes全空，κ pending。交换两对实际任务上下文相同；不混合失败聚焦E6采样进原20条成功率。
+- 最終模型账本1267HTTP/46.305064CNY，基线649/30.163288，本批618HTTP/16.141776CNY，所有失败/格式无效/pilot均计入，未清零。真实供应商Rakuten7、Places7、geocode1；无真实订单；Railway保持。
+- 批量评分独立审查又发现ack只比ID不足，新增None/400/字符串状态RED3→GREEN，严格整型2xx再算接收，13项评分回归通过，复核无P1/P2。
+- E10数值发布：逐条scores接口实际2/81组完全接收，其余429。按官方v4保留的score-create批量接口复用现有push_scores，原默认路径保留；全部/部分回执新测试先红后绿，畸形回执失败非致命。每个trace一次请求、幂等score ID、全事件ack后才算accepted。自动审批拒绝实际批量重发，认为概括授权不足以覆盖具体外部上传，已向用户询问明确数值授权；未绕过，原始分数/来源hash/回执都保留本地，0新增模型调用。
+
 
 ## 9. 验证与交付
+
+
+### 最终开发交付（2026-10-14，VERIFIED）
+
+- 最终稳定源码：check 372文件、win32/linux/darwin严格类型、3分层契约、10文档入口全部通过；test **1786 passed / 1 skipped / 4 deselected，346.71秒**；web-check --webpack **141 passed / 0 failed**，类型、lint及生产构建通过。日志final-verified-check/full、final-delivery-web保留本地。
+- done means 1–6、8：真实Chrome/PG/SDK及云联验已验证；第7项离线与真实抽样、本地报告完成，**81组数值score批量重发因自动审批要求具体授权仍待用户回答**。先前2/81组直接上传完整接收，批量接口修复13回归与独立审查通过。没有把接收回执冒充云读回，没有把未上传称为已上传。
+- 所有功能均在指定新分支；代码、脱敏证据、设计/ADR/操作步骤和案例一并提交，不改Railway。源码共享T2–T8约束且等待D10批准后集中通过最终关卡，组合提交避免留下暂时互相冲突的中间树。
+- 人工工作：本地 `.cache/batch-2026-10-13/calibration/human-labels.csv` 30行人工字段全空；AI预标注另存agent-provisional.json；用户明天盲标后再计算κ。模型参考全判通过，尚未校准，不能当真人真值。
+- 能力限制：首次E7 19/24；节奏缺陷修复后3/3单独记录。两个三段保存为partial，未知约束不计通过；预算拒绝的模拟控制/重复提示与E6自由文本别名规则局限保留在实际结果，不更改冻结金标掩盖失败。
+- 费用：本批账本618模型HTTP / 16.141776CNY，所有调用都计入；0真实订单，Railway未变。本地Postgres迁移head0021；生产仍旧代码，须用户决定部署后，回答才会按本批新逻辑存到Railway PostgreSQL。
 
 1. `uv run python scripts/dev.py check`：三平台严格类型、3 个分层契约、文档地图全部通过。
 2. `uv run python scripts/dev.py test`：全量通过，与 T0 基线相比**没有回归**。如果有，先用 `git stash`（或基线 commit）复跑，证明是否为既有问题。
@@ -560,7 +690,7 @@ T5b：摘要中引用了不存在或他人的事实时，该句被丢弃；被�
 - T0提交ff60566；显式使用已有2.1.295，63压缩/SDK专项通过；原2.1.296门禁保持。新分支已push，Railway保持。
 
 ### 2026-10-14 恢复点
-- 本批继续使用2026-10-13文件/分支，不因午夜另建批次。当前T0已提交ff60566，T1源码待提交；check307通过，原生CLI固定2.1.295；T1最终全量 t1-final-full.log：1607 passed/1skip/4 deselected，311.59秒；web135通过。真实DeepSeek2HTTP/0.051644CNY；Places7次在初始旧行程补详情时发生，新测试会话恢复未新增调用。Railway未改。
+- 本批继续使用2026-10-13文件/分支，不因午夜另建批次。当前T0已提交ff60566，T1已提交96846d4，均push；T2正在核对；check307通过，原生CLI固定2.1.295；T1最终全量 t1-final-full.log：1607 passed/1skip/4 deselected，311.59秒；web135通过。真实DeepSeek2HTTP/0.051644CNY；Places7次在初始旧行程补详情时发生，新测试会话恢复未新增调用。Railway未改。
 
 ### T0/T1 提交前实测（VERIFIED）
 - 后端全量：1607 passed、1 skipped、4 deselected，311.59秒；原基线1585 passed/4 failed，固定已有CLI2.1.295解决4个环境版本门禁失败，新增覆盖18项，旧断言只按D1语义更正。

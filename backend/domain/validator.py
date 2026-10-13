@@ -7,6 +7,7 @@ from uuid import UUID
 
 from backend.domain.catalog import SIGHTSEEING_CATEGORIES, VISIT_DURATION_RANGES, Place
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
+from backend.domain.hotel_recovery import nightly_price, nightly_upper
 from backend.domain.hotels import HotelOffer
 from backend.domain.itinerary import (
     CheckStatus,
@@ -445,6 +446,9 @@ def budget_checks(
         checks.extend(hotel_checks)
     elif proposal.hotel_evidence_id:
         known, hotel_checks = hotel_cost(request, evidence[proposal.hotel_evidence_id], now)
+        hotel_checks.extend(
+            accepted_hotel_budget_checks(request, evidence[proposal.hotel_evidence_id])
+        )
         checks.extend(hotel_checks)
     else:
         checks.append(check("hotel", "unknown", "hotel_missing", "未选择住宿报价，不猜测住宿费用"))
@@ -547,6 +551,7 @@ def stay_costs(
             continue
         known += cost
         hotel_checks.extend(nightly_budget_checks(scoped, record))
+        hotel_checks.extend(accepted_hotel_budget_checks(request, record))
         checks.extend(entry.model_copy(update={"subject": subject}) for entry in hotel_checks)
     return known, checks
 
@@ -574,6 +579,30 @@ def nightly_budget_checks(request: TravelRequest, record: EvidenceRecord) -> lis
                 "unknown",
                 "hotel_over_nightly_budget",
                 "住宿报价超过每间房每晚预算上限，建议在此住宿段选择更低价报价。",
+            )
+        ]
+    return []
+
+
+def accepted_hotel_budget_checks(
+    request: TravelRequest, record: EvidenceRecord
+) -> list[ValidationCheck]:
+    if record.status != "verified":
+        return []
+    offer = HotelOffer.model_validate(record.value)
+    upper, price = nightly_upper(request), nightly_price(offer)
+    if (
+        upper is not None
+        and price is not None
+        and offer.currency == request.currency
+        and price > upper
+    ):
+        return [
+            check(
+                "hotel",
+                "conflict",
+                "hotel_over_budget_unaccepted",
+                "住宿报价超过原预算上限，请先接受预算放宽或选择预算内报价。",
             )
         ]
     return []

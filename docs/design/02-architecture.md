@@ -131,7 +131,7 @@ DeepSeek 官方提供 [Claude Code 接入配置](https://api-docs.deepseek.com/z
 - **澄清进度不靠助手全文**：同一快照读取有限待办、原任务用户文本与当前追问；缺项从当前条件派生。房型枚举输入投影到原条件，SDK 原生 Stop 仅一次纠正可执行而未完成的任务，费用/工具边界不变；契约见 [ADR-014](../adr/014-session-history.md)、[ADR-015](../adr/015-lodging-budget-and-condition-source.md)。
 - **压缩由 SDK 处理**：应用控制注入内容与工具结果长度；M3.1 验证压缩后硬条件、证据引用与工具结果仍正确，不手工重写 SDK transcript / thinking 块。
 - **Skills**：首版保留注册制 `load_skill` 旅行工具，从受控资源读取；不自动加载用户主目录、仓库开发规则或上游 Skills。若改为 SDK 原生 Skill，需单独验证所需权限与配置，不同时维护两套加载器。
-- **长期偏好（B 档）**：仅从用户表达提取，用户可查看、修改、删除；当前旅行条件优先。不能从攻略或工具结果提取偏好。
+- **长期偏好（B 档）**：以带来源的事实保存，模型只能引用本轮可信用户原话提出ADD/UPDATE/INVALIDATE，每条经页面选择确认后生效。本批始终逐条确认；long_term跨会话，trip只用于原会话；当前旅行条件优先。删除清除事实正文并切断旧回顾/SDK续接，原对话历史按D1继续保留。兼容/preferences投影、迁移/回退、来源与确认约束见[ADR-024](../adr/024-confirmed-memory-facts.md)。
 - SDK 会话文件视为可能含完整上下文的私有运行数据：隔离用户、限制访问、排除 Git，不作为公共日志或评测报告上传。
 
 ## 6. 状态与可靠执行
@@ -189,6 +189,7 @@ quoted ──hold──▶ held ──用户点确认──▶ confirmed ──�
 | `POST /bookings/{id}/confirm` | 用户确认预订（§6.3） |
 | `GET /bookings/{id}` | 查预订状态 |
 | `GET/PATCH/DELETE /preferences` | 查看、修改、删除长期偏好（B 档） |
+| `GET /memory`、`GET/DELETE /memory/{id}` | 本人事实、历史墓碑与单条遗忘；确认走服务端选择卡消息事务 |
 
 所有接口和工具都检查当前用户是否拥有该资源。测试中至少用两个用户验证互相看不到对方数据。
 
@@ -198,7 +199,7 @@ quoted ──hold──▶ held ──用户点确认──▶ confirmed ──�
 
 用 OpenTelemetry 记录，发送到自托管的 Langfuse 查看：
 - 一次 TaskRun 是一个 trace；
-- SDK 执行、工具调用、校验和预订操作各有 span；模型子调用仅在 SDK 提供可核验信息时单独记录，否则明确观测缺口，不伪造逐请求 Trace；
+- SDK执行、工具调用各有span；出站守卫观测的每个实际HTTP请求单独生成gen_ai.chat，记录真实时间、状态、原币种用量/费用；未完整usage保持unknown，不用估计token冒充计费。PG TaskRun.trace_id为同轮锚点，用户/会话使用HMAC，云score只有有限数值且失败不覆盖业务终态。[ADR-023](../adr/023-observability-linkage.md)定义字段与隐私边界；
 - span 上记录：模型名（实际返回的）、token 用量、耗时、工具参数摘要、结果状态、TravelRequest 的 revision、关联的 Evidence ID。
 
 公共日志和 Trace 不存 API 密钥、完整 prompt 或模型内部推理原文；SDK 私有会话存储按 §5 单独管理。

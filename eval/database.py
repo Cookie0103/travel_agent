@@ -12,14 +12,21 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import URL, select
 
+from backend.adapters.evaluation_faults import evaluation_data
 from backend.adapters.local_http import serve_http
 from backend.adapters.supplier import SupplierClient
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent
 from backend.domain.evidence import EvidenceRecord
-from backend.domain.execution import RunContext, RuntimeEvent
+from backend.domain.execution import (
+    RunContext,
+    RuntimeEvent,
+    RuntimeOutcome,
+    event_metadata,
+    scrub_internal_ids,
+)
 from backend.domain.travel_request import RequestPatch
-from backend.persistence import travel
+from backend.persistence import runs, travel
 from backend.persistence.catalog import import_catalog, load_catalog
 from backend.persistence.database import Database
 from backend.persistence.models import EvidenceRow
@@ -34,6 +41,7 @@ from eval.business_metrics import BusinessAssessment
 from eval.cases import Case, InitialState
 from eval.content import AnswerRecord, Grounding
 from eval.graders import Observation
+from eval.metrics import constraint_scores
 from eval.state import StateSnapshot, assess_business, prepare_state, snapshot
 from mock_supplier.scenarios import SupplierScenario
 
@@ -56,6 +64,12 @@ class DatabaseEvaluation:
         if case.data_version != "kyoto-fixture-v1":
             raise ValueError("尚不支持此评测数据版本")
         state = InitialState.model_validate(case.initial_state)
+        await self.travel.close_data()
+        self.travel.live = (
+            evaluation_data(case.external_fault, self.sessions.database, self.dsn())
+            if case.external_fault
+            else None
+        )
         if (state.booking != "none" or case.fault) and not self.supplier_url:
             raise ValueError("预订/故障评测需要专用本机供应商")
         if self.scenario:
@@ -72,7 +86,11 @@ class DatabaseEvaluation:
         await prepare_state(
             self.travel, context, state, self.supplier_url or "http://127.0.0.1:8001"
         )
-        context = replace(context, run_id=uuid4())
+        async with transaction(self.travel.database) as db:
+            run = await runs.create(
+                db, context.user_id, context.session_id, uuid4(), case.input, "offline"
+            )
+            context = replace(context, run_id=run.id)
         self.baselines[context.run_id] = await snapshot(self.travel, context)
         if self.scenario:
             self.scenario.fault = case.fault
@@ -93,6 +111,46 @@ class DatabaseEvaluation:
             actual.events,
             tuple(self.scenario.attempts) if self.scenario else (),
         )
+
+    async def trace_anchor(self, context: RunContext) -> str:
+        async with transaction(self.sessions.database) as db:
+            row = await runs.owned(db, context.user_id, context.run_id)
+            if row is None or not row.trace_id:
+                raise ValueError("评测run trace锚点缺失")
+            return row.trace_id
+
+    async def record(self, context: RunContext, actual: Observation) -> None:
+        async with transaction(self.sessions.database) as db:
+            for event in actual.events:
+                if event.context != context:
+                    raise ValueError("评测事件归属不一致")
+                await runs.append_event(db, event_metadata(event))
+            await runs.finish(
+                db,
+                context,
+                RuntimeOutcome(
+                    text=scrub_internal_ids(actual.text),
+                    code=None if actual.status == "completed" else "provider_error",
+                ),
+            )
+
+    async def saved_constraints(self, context: RunContext) -> dict[str, object]:
+        after = await snapshot(self.travel, context)
+        if after.saved is None:
+            return {"delivered": False, "checks": [], "all_constraints": None}
+        request = await self.travel.get_request(context)
+        try:
+            records = await self.travel.resolve_evidence(
+                context, after.saved.content.proposal(request.revision).evidence_ids()
+            )
+            return constraint_scores(request, after.saved.content, records, datetime.now(UTC))
+        except (ServiceError, ValueError):
+            return {
+                "delivered": True,
+                "status": "unavailable",
+                "checks": [],
+                "all_constraints": None,
+            }
 
     async def content_record(self, case: Case, context: RunContext, text: str) -> AnswerRecord:
         """在临时库清理前捕获身份限定事实；旧/失效证据也保留以识别错引用。"""
@@ -131,7 +189,9 @@ class DatabaseEvaluation:
             executor = OrderedTools(executor, workflow)
         runtime = FixtureRuntime(executor)
         events: list[RuntimeEvent] = []
-        result = await Agent(runtime).run(context, case.input, events.append)
+        result = await Agent(runtime).run(
+            context, "演示：比较酒店" if case.external_fault else case.input, events.append
+        )
         return Observation(
             "failed" if result.outcome.code else "completed", result.outcome.text, tuple(events)
         ), {"identity": asdict(runtime.identity), "data_version": self.data_version}
@@ -177,6 +237,7 @@ async def database_evaluation(
         else:
             yield evaluation
     finally:
+        await evaluation.travel.close_data()
         await evaluation.sessions.close()
 
 

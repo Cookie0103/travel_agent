@@ -181,6 +181,286 @@
         }
       }
     },
+    "/memory": {
+      "get": {
+        "summary": "Memory Facts",
+        "operationId": "memory_facts_memory_get",
+        "parameters": [
+          {
+            "name": "include_history",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": false,
+              "title": "Include History"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MemoryFactView"
+                  },
+                  "title": "Response Memory Facts Memory Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/memory/{fact_id}": {
+      "get": {
+        "summary": "Memory Fact",
+        "operationId": "memory_fact_memory__fact_id__get",
+        "parameters": [
+          {
+            "name": "fact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Fact Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MemoryFactView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "Delete Memory Fact",
+        "operationId": "delete_memory_fact_memory__fact_id__delete",
+        "parameters": [
+          {
+            "name": "fact_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Fact Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferenceVersion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Preferences"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/profile-summary": {
+      "get": {
+        "summary": "Get Profile",
+        "operationId": "get_profile_profile_summary_get",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "Update Profile",
+        "operationId": "update_profile_profile_summary_post",
+        "parameters": [
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreferenceVersion"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfileView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health": {
       "get": {
         "summary": "Health",
@@ -733,6 +1013,72 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/RunView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sessions/{session_id}/choices/{choice_id}": {
+      "get": {
+        "summary": "Get Choice",
+        "operationId": "get_choice_sessions__session_id__choices__choice_id__get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "choice_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Choice Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChoiceCard"
                 }
               }
             }
@@ -1967,6 +2313,154 @@
         "title": "BusinessResult",
         "description": "Small server facts; never derive a business commit from runtime text."
       },
+      "ChoiceCard": {
+        "properties": {
+          "choice_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Choice Id"
+          },
+          "kind": {
+            "$ref": "#/components/schemas/ChoiceKind"
+          },
+          "session_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Session Id"
+          },
+          "source_run_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Source Run Id"
+          },
+          "expected_revision": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Expected Revision"
+          },
+          "question": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Question"
+          },
+          "options": {
+            "items": {
+              "$ref": "#/components/schemas/ChoiceOption"
+            },
+            "type": "array",
+            "maxItems": 3,
+            "minItems": 2,
+            "title": "Options"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "expires_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires At"
+          },
+          "answered_option_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answered Option Id"
+          },
+          "stale": {
+            "type": "boolean",
+            "title": "Stale",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "kind",
+          "session_id",
+          "source_run_id",
+          "expected_revision",
+          "question",
+          "options"
+        ],
+        "title": "ChoiceCard"
+      },
+      "ChoiceKind": {
+        "type": "string",
+        "enum": [
+          "pace",
+          "budget_relaxation",
+          "memory_confirm"
+        ]
+      },
+      "ChoiceOption": {
+        "properties": {
+          "option_id": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_-]*$",
+            "title": "Option Id"
+          },
+          "label": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Label"
+          },
+          "value": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Value"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "option_id",
+          "label",
+          "value"
+        ],
+        "title": "ChoiceOption"
+      },
+      "ChoiceSelection": {
+        "properties": {
+          "choice_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Choice Id"
+          },
+          "option_id": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_-]*$",
+            "title": "Option Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "choice_id",
+          "option_id"
+        ],
+        "title": "ChoiceSelection"
+      },
       "DemoIdentity": {
         "properties": {
           "user_id": {
@@ -2501,6 +2995,28 @@
               }
             ],
             "title": "Content Version"
+          },
+          "budget_excess": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Excess"
+          },
+          "budget_excess_percent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Excess Percent"
           }
         },
         "additionalProperties": false,
@@ -2713,6 +3229,135 @@
           "request"
         ],
         "title": "HotelOffer"
+      },
+      "HotelSearchDiagnostics": {
+        "properties": {
+          "upstream_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upstream Count"
+          },
+          "count_basis": {
+            "type": "string",
+            "title": "Count Basis",
+            "default": "ASSUMED：上游 recordCount 按酒店计数；过滤数按返回房型计数"
+          },
+          "dropped_room": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Dropped Room",
+            "default": 0
+          },
+          "dropped_unknown_price": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Dropped Unknown Price",
+            "default": 0
+          },
+          "dropped_min_price": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Dropped Min Price",
+            "default": 0
+          },
+          "in_budget": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "In Budget",
+            "default": 0
+          },
+          "over_budget": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Over Budget",
+            "default": 0
+          },
+          "original_upper": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Original Upper"
+          },
+          "applied_upper": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Applied Upper"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tier"
+          },
+          "steps": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Steps"
+          },
+          "cause": {
+            "type": "string",
+            "enum": [
+              "coverage",
+              "budget",
+              "room_filter",
+              "upstream_empty",
+              "unknown_prices"
+            ],
+            "title": "Cause",
+            "default": "upstream_empty"
+          },
+          "skipped": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "quota",
+                  "deadline"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skipped"
+          },
+          "message": {
+            "type": "string",
+            "title": "Message",
+            "default": ""
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "HotelSearchDiagnostics"
       },
       "HotelStay": {
         "properties": {
@@ -3085,6 +3730,178 @@
         ],
         "title": "LodgingBudget"
       },
+      "MemoryFactView": {
+        "properties": {
+          "fact_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Fact Id"
+          },
+          "key": {
+            "$ref": "#/components/schemas/MemoryKey"
+          },
+          "value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Value"
+          },
+          "scope": {
+            "$ref": "#/components/schemas/MemoryScope"
+          },
+          "session_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Session Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/MemoryStatus"
+          },
+          "source": {
+            "$ref": "#/components/schemas/MemorySource"
+          },
+          "source_run_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Run Id"
+          },
+          "evidence_quote": {
+            "type": "string",
+            "title": "Evidence Quote"
+          },
+          "valid_from": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Valid From"
+          },
+          "invalidated_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Invalidated At"
+          },
+          "superseded_by": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Superseded By"
+          },
+          "last_confirmed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Last Confirmed At"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "fact_id",
+          "key",
+          "value",
+          "scope",
+          "session_id",
+          "status",
+          "source",
+          "source_run_id",
+          "evidence_quote",
+          "valid_from",
+          "invalidated_at",
+          "superseded_by",
+          "last_confirmed_at",
+          "created_at"
+        ],
+        "title": "MemoryFactView"
+      },
+      "MemoryKey": {
+        "type": "string",
+        "enum": [
+          "pace",
+          "transport",
+          "lodging_type",
+          "room_type",
+          "smoking",
+          "dietary",
+          "interest",
+          "avoid",
+          "companion_pattern",
+          "budget_style"
+        ]
+      },
+      "MemoryScope": {
+        "type": "string",
+        "enum": [
+          "long_term",
+          "trip"
+        ]
+      },
+      "MemorySource": {
+        "type": "string",
+        "enum": [
+          "user_utterance",
+          "manual",
+          "migrated"
+        ]
+      },
+      "MemoryStatus": {
+        "type": "string",
+        "enum": [
+          "proposed",
+          "active",
+          "rejected",
+          "superseded",
+          "deleted"
+        ]
+      },
       "MessageInput": {
         "properties": {
           "client_message_id": {
@@ -3135,6 +3952,16 @@
               }
             ],
             "title": "Hotel Stays"
+          },
+          "selection": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ChoiceSelection"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -4529,6 +5356,16 @@
               }
             ],
             "title": "More Url Scope"
+          },
+          "search_diagnostics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HotelSearchDiagnostics"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -5023,6 +5860,50 @@
         ],
         "title": "TripSegment",
         "description": "一个城市的连续停留；住宿晚数由离开日期减到达日期得出。"
+      },
+      "UserProfileView": {
+        "properties": {
+          "text": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
+          },
+          "cited_fact_ids": {
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "type": "array",
+            "title": "Cited Fact Ids",
+            "default": []
+          },
+          "created_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created At"
+          },
+          "can_update": {
+            "type": "boolean",
+            "title": "Can Update",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "UserProfileView"
       },
       "ValidationCheck": {
         "properties": {
@@ -5667,6 +6548,28 @@
               }
             ],
             "title": "Content Version"
+          },
+          "budget_excess": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Excess"
+          },
+          "budget_excess_percent": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Budget Excess Percent"
           }
         },
         "required": [
@@ -5758,6 +6661,16 @@
             ],
             "default": null,
             "title": "More Url Scope"
+          },
+          "relaxation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiHotelSearchDiagnostics"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -5766,6 +6679,140 @@
           "comparison"
         ],
         "title": "HotelPresentation",
+        "type": "object"
+      },
+      "UiHotelSearchDiagnostics": {
+        "additionalProperties": false,
+        "properties": {
+          "upstream_count": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Upstream Count"
+          },
+          "count_basis": {
+            "default": "ASSUMED：上游 recordCount 按酒店计数；过滤数按返回房型计数",
+            "title": "Count Basis",
+            "type": "string"
+          },
+          "dropped_room": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Dropped Room",
+            "type": "integer"
+          },
+          "dropped_unknown_price": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Dropped Unknown Price",
+            "type": "integer"
+          },
+          "dropped_min_price": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Dropped Min Price",
+            "type": "integer"
+          },
+          "in_budget": {
+            "default": 0,
+            "minimum": 0,
+            "title": "In Budget",
+            "type": "integer"
+          },
+          "over_budget": {
+            "default": 0,
+            "minimum": 0,
+            "title": "Over Budget",
+            "type": "integer"
+          },
+          "original_upper": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Original Upper"
+          },
+          "applied_upper": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Applied Upper"
+          },
+          "tier": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Tier"
+          },
+          "steps": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Steps",
+            "type": "array"
+          },
+          "cause": {
+            "default": "upstream_empty",
+            "enum": [
+              "coverage",
+              "budget",
+              "room_filter",
+              "upstream_empty",
+              "unknown_prices"
+            ],
+            "title": "Cause",
+            "type": "string"
+          },
+          "skipped": {
+            "anyOf": [
+              {
+                "enum": [
+                  "quota",
+                  "deadline"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Skipped"
+          },
+          "message": {
+            "default": "",
+            "title": "Message",
+            "type": "string"
+          }
+        },
+        "title": "HotelSearchDiagnostics",
         "type": "object"
       },
       "UiHotelSegmentPresentation": {
@@ -5834,6 +6881,16 @@
             ],
             "default": null,
             "title": "More Url Scope"
+          },
+          "relaxation": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiHotelSearchDiagnostics"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -6531,6 +7588,151 @@
         ],
         "type": "string"
       },
+      "UiExternalAttempt": {
+        "additionalProperties": false,
+        "description": "闭合、无正文的请求结果；可进入工具、事件和 trace。",
+        "properties": {
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiExternalKind"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "status": {
+            "anyOf": [
+              {
+                "maximum": 599,
+                "minimum": 100,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Status"
+          },
+          "attempts": {
+            "default": 0,
+            "maximum": 2,
+            "minimum": 0,
+            "title": "Attempts",
+            "type": "integer"
+          },
+          "waited_seconds": {
+            "default": 0,
+            "maximum": 75,
+            "minimum": 0,
+            "title": "Waited Seconds",
+            "type": "number"
+          },
+          "recovered_from": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiExternalKind"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "first_failure": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiExternalKind"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "retry_skipped": {
+            "anyOf": [
+              {
+                "enum": [
+                  "quota",
+                  "deadline"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Retry Skipped"
+          },
+          "provisional": {
+            "default": false,
+            "title": "Provisional",
+            "type": "boolean"
+          },
+          "cap_scope": {
+            "anyOf": [
+              {
+                "enum": [
+                  "run",
+                  "daily"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Cap Scope"
+          },
+          "used": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Used"
+          },
+          "limit": {
+            "anyOf": [
+              {
+                "minimum": 0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Limit"
+          }
+        },
+        "title": "ExternalAttempt",
+        "type": "object"
+      },
+      "UiExternalKind": {
+        "enum": [
+          "rate_limited",
+          "timeout",
+          "network",
+          "upstream_5xx",
+          "bad_request",
+          "not_found_empty",
+          "quota_exhausted",
+          "invalid_json"
+        ],
+        "type": "string"
+      },
       "UiRunContext": {
         "description": "由服务端生成的业务 ID；不能把 SDK session_id 当成用户身份。",
         "properties": {
@@ -6734,6 +7936,50 @@
             "default": false,
             "title": "Answer Truncated",
             "type": "boolean"
+          },
+          "external": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiExternalAttempt"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "relaxation_cause": {
+            "anyOf": [
+              {
+                "enum": [
+                  "coverage",
+                  "budget",
+                  "room_filter",
+                  "upstream_empty",
+                  "unknown_prices"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relaxation Cause"
+          },
+          "relaxation_tier": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Relaxation Tier"
           }
         },
         "required": [

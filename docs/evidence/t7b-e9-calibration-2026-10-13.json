@@ -1,0 +1,93 @@
+{
+  "date": "2026-10-14",
+  "scope": "balanced actual rule outcomes; not a representative content-success rate",
+  "human_csv": ".cache/batch-2026-10-13/calibration/human-labels.csv",
+  "raw_directory": ".cache/calibration/e92f4072367441d590dd781fa022f076",
+  "samples": 30,
+  "distinct_cases": 24,
+  "rule_positive": 15,
+  "rule_negative": 15,
+  "human_columns_empty": true,
+  "human_agreement": {
+    "status": "pending",
+    "paired": 0,
+    "exact_rate": null,
+    "kappa": null,
+    "confusion": [
+      [
+        0,
+        0
+      ],
+      [
+        0,
+        0
+      ]
+    ],
+    "basis": "actual human labels only; model reference remains uncalibrated until paired"
+  },
+  "model_reference_valid": 30,
+  "model_content_http": 30,
+  "model_content_cost_cny": "0.074632",
+  "position": {
+    "pairs": [
+      {
+        "case_id": "v2-mem-trip-solo",
+        "judgments": [
+          {
+            "reverse": false,
+            "normalized": "positive",
+            "trace_id": "f70675a3e608199b50ce8f4cbfc6fd56",
+            "cost_cny": "0.001672",
+            "http_attempts": 1
+          },
+          {
+            "reverse": true,
+            "normalized": "negative",
+            "trace_id": "f8f5fb4668cf84e45381daff7440927d",
+            "cost_cny": "0.001756",
+            "http_attempts": 1
+          }
+        ],
+        "consistent": false
+      },
+      {
+        "case_id": "v2-mem-update-invalidate",
+        "judgments": [
+          {
+            "reverse": false,
+            "normalized": "negative",
+            "trace_id": "1e3b1e39c4cf15436eea4d1ebfe0249e",
+            "cost_cny": "0.001640",
+            "http_attempts": 1
+          },
+          {
+            "reverse": true,
+            "normalized": "negative",
+            "trace_id": "10b8cafc56b2f5a79fa66c977b73a240",
+            "cost_cny": "0.001626",
+            "http_attempts": 1
+          }
+        ],
+        "consistent": true
+      }
+    ],
+    "limitation": "small synthetic text comparison; not proof of general absence of position bias",
+    "requested_pairs": 2,
+    "matched_pairs": 2,
+    "matching": "same case, actual task context and conditions; rechecked after guard fix",
+    "guard_fix_changed_selected_pairs": false
+  },
+  "first_round": {
+    "directory": ".cache/calibration/dad2d33267f2491db042ffc711119d0f",
+    "model_reference_valid": 22,
+    "invalid": 8,
+    "cost_cny": "0.073336",
+    "retained": true
+  },
+  "agent_provisional": {
+    "samples": 30,
+    "human_verified": false,
+    "file": ".cache/batch-2026-10-13/calibration/agent-provisional.json"
+  },
+  "limitation": "All references uncalibrated. No fact accuracy established. Invalid first-round outputs not counted as pass."
+}

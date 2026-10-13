@@ -13,9 +13,10 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.adapters.tracing import TraceMetadata, write_trace
+from backend.adapters.tracing import TraceMetadata, current_trace_id, write_trace
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent, Runtime
+from backend.domain.choices import ChoiceSelection
 from backend.domain.execution import (
     BusinessResult,
     RunContext,
@@ -26,6 +27,7 @@ from backend.domain.execution import (
     scrub_internal_ids,
     upstream_error_text,
 )
+from backend.domain.external_data import external_explanation
 from backend.domain.itinerary import HotelStay
 from backend.persistence import runs, sessions
 from backend.persistence import travel as requests
@@ -33,6 +35,7 @@ from backend.persistence.database import Database
 from backend.persistence.models import TaskRunRow
 from backend.profile import current, profile_name
 from backend.providers.claude_agent.application import GuardedRuntime
+from backend.services.choices import ChoiceService, owned_card, selected_option, selection_prompt
 from backend.services.common import ServiceError, database_error_details, transaction
 from backend.services.hotels import validate_hotel_selection
 from backend.services.travel import TravelService, request_from_row, require_revision
@@ -51,10 +54,15 @@ class MessageInput(BaseModel):
     mode: Literal["offline", "deepseek", "claude"] = "offline"
     expected_revision: int | None = Field(default=None, strict=True, ge=0)
     hotel_stays: tuple[HotelStay, ...] | None = Field(default=None, min_length=1, max_length=6)
+    selection: ChoiceSelection | None = None
 
     @model_validator(mode="after")
     def valid_selection(self) -> "MessageInput":
-        if (self.hotel_stays is None) != (self.expected_revision is None):
+        if self.hotel_stays is not None and self.selection is not None:
+            raise ValueError("酒店选择与选择卡不得混填")
+        if (self.hotel_stays is None and self.selection is None) != (
+            self.expected_revision is None
+        ):
             raise ValueError("酒店选择必须同时提供条件版本与完整住宿段")
         return self
 
@@ -172,9 +180,22 @@ class RunService:
         async with transaction(self.database) as db:
             if await sessions.get_session(db, user_id, session_id, lock=True) is None:
                 raise ServiceError(404, "blocked", "会话不存在")
+            choice = None
+            if message.selection is not None:
+                choice = await owned_card(db, user_id, session_id, message.selection.choice_id)
+                option = selected_option(choice, message.selection.option_id)
+                prompt += "\n" + selection_prompt(choice, option)
             previous = await runs.by_message(db, session_id, message.client_message_id)
             if previous is not None:
-                if (previous.prompt, previous.mode) != (prompt, message.mode):
+                choice_mismatch = False
+                if choice is not None:
+                    assert message.selection is not None
+                    choice_mismatch = (
+                        choice.answered_run_id != previous.id
+                        or choice.expected_revision != message.expected_revision
+                        or choice.answered_option_id != message.selection.option_id
+                    )
+                if (previous.prompt, previous.mode) != (prompt, message.mode) or choice_mismatch:
                     raise ServiceError(409, "conflict", "同一消息ID不能对应不同内容或模式")
                 return await recorded_view(db, previous)
             if await runs.active(db, session_id):
@@ -188,8 +209,24 @@ class RunService:
                 require_revision(request, message.expected_revision)
                 await validate_hotel_selection(db, check_context, request, message.hotel_stays)
             row = await runs.create(
-                db, user_id, session_id, message.client_message_id, prompt, message.mode
+                db,
+                user_id,
+                session_id,
+                message.client_message_id,
+                prompt,
+                message.mode,
+                user_text=message.text,
+                trace_id=current_trace_id(),
             )
+            if choice is not None and message.selection is not None:
+                assert message.expected_revision is not None
+                await ChoiceService(TravelService(self.database)).accept(
+                    db,
+                    RunContext(user_id, session_id, row.id),
+                    choice,
+                    message.selection,
+                    message.expected_revision,
+                )
             if request_row is not None:
                 request_row.request_details = {
                     **(request_row.request_details or {}),
@@ -301,7 +338,9 @@ class RunService:
         def emit(event: RuntimeEvent) -> None:
             # 终态由finish和状态原子落库，避免SSE先看到完成、数据库却仍在运行。
             if event.kind not in {"completed", "failed", "cancelled"}:
-                queue.put_nowait(event)
+                queue.put_nowait(
+                    event_metadata(event) if isinstance(runtime, GuardedRuntime) else event
+                )
 
         try:
             executor = TravelToolExecutor(TravelService(self.database))
@@ -346,6 +385,8 @@ class RunService:
                 if transient and outcome.code:
                     # 失败说明来自封闭码；模型已生成的可见文字保留，流式中间事件仍裁剪。
                     detail = upstream_error_text(outcome.reason) or f"执行未完成：{outcome.code}"
+                    if outcome.external is not None:
+                        detail += "\n" + external_explanation(outcome.external)
                     outcome = replace(
                         outcome,
                         text="\n\n".join(text for text in (detail, outcome.text) if text),
@@ -376,6 +417,11 @@ class RunService:
     ) -> None:
         """仅从已提交事件导出脱敏Trace；失败不能覆盖业务终态。"""
         try:
+            async with transaction(self.database) as db:
+                row = await runs.owned(db, context.user_id, context.run_id)
+                anchor = row.trace_id if row else None
+                condition = await requests.owned_request(db, context)
+                revision = condition.revision if condition else None
             recorded: list[RuntimeEvent] = []
             after = 0
             while rows := await self.events(context.user_id, context.run_id, after):
@@ -394,6 +440,8 @@ class RunService:
                 identity,
                 metadata=metadata,
                 trace_cloud=self.trace_cloud,
+                trace_id=anchor,
+                revision=revision,
             )
         except Exception:
             LOGGER.warning("TaskRun Trace unavailable: %s", context.run_id)

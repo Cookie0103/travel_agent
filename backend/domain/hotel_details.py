@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.domain.hotel_recovery import HotelSearchDiagnostics
+
 
 class HotelMetadata(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -26,3 +28,4 @@ class StoredHotelDetails(HotelDisplayDetails):
     search_total_found: int | None = Field(default=None, ge=0)
     more_url: str | None = None
     more_url_scope: Literal["search", "destination"] | None = None
+    search_diagnostics: HotelSearchDiagnostics | None = None

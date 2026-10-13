@@ -9,6 +9,7 @@ from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.execution import ErrorCode
+from backend.domain.external_data import ExternalAttempt
 from backend.persistence.database import Database
 
 LOGGER = logging.getLogger(__name__)
@@ -47,10 +48,12 @@ class ServiceError(RuntimeError):
         message: str,
         reason: str = "",
         fields: tuple[str, ...] = (),
+        external: ExternalAttempt | None = None,
     ) -> None:
         # reason是仅供TRACE的固定英文标签(不含用户/第三方文本)；message可能含插值，不进日志。
         # fields是缺失条件的封闭字段名，供工具层转成missing:<字段>标签。
         self.status, self.code, self.reason, self.fields = status, code, reason, fields
+        self.external = external
         super().__init__(message)
 
 

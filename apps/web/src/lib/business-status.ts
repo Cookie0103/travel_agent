@@ -1,4 +1,4 @@
-import type { Run } from "./api";
+import type { AppEvent, Run } from "./api";
 import { errorExplanation } from "./error-explanation.ts";
 const runtimeLabels: Record<string, string> = {
   running: "处理中",
@@ -15,7 +15,8 @@ export const runStatus = (status: string): string =>
 export const runFailureMessage = (
   code: string | null | undefined,
   reason?: string | null,
-): string => `执行未完成：${errorExplanation(code, reason)}`;
+  external?: AppEvent["external"],
+): string => `执行未完成：${errorExplanation(code, reason, external)}`;
 
 /** A completed reply is not proof of staging, validation or a formal commit. */
 export function runLabel(run: Run): string {

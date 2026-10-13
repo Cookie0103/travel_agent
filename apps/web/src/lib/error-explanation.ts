@@ -61,6 +61,37 @@ const reasons: Record<
 export function errorExplanation(
   code: string | null | undefined,
   reason?: string | null,
+  external?: AppEvent["external"],
+): string {
+  if (external?.provisional) return "正在修正查询参数";
+  if (!external) return baseExplanation(code, reason);
+  const kinds = {
+    rate_limited: "供应商请求过于频繁",
+    timeout: "供应商响应超时",
+    network: "供应商网络连接失败",
+    upstream_5xx: "供应商服务暂时异常",
+    bad_request: "供应商拒绝请求参数或权限",
+    not_found_empty: "供应商返回空结果",
+    quota_exhausted: "供应商调用配额已用完",
+    invalid_json: "供应商返回的数据格式无效",
+  } as const;
+  let message = external.kind
+    ? kinds[external.kind]
+    : baseExplanation(code, reason);
+  if (external.status !== null) message += `（HTTP ${external.status}）`;
+  if (external.used !== null && external.limit !== null)
+    message += `；${external.cap_scope === "run" ? "本轮" : "今日"}已用${external.used}/${external.limit}次`;
+  if (external.attempts > 1) message += `；已重试${external.attempts - 1}次`;
+  if (external.retry_skipped)
+    message += `；因${external.retry_skipped === "quota" ? "配额不足" : "剩余执行时间不足"}未执行重试`;
+  if (external.waited_seconds > 0)
+    message += `；已等待${external.waited_seconds.toFixed(1)}秒`;
+  return message + "。请核对条件或稍后再试。";
+}
+
+function baseExplanation(
+  code: string | null | undefined,
+  reason?: string | null,
 ): string {
   if (
     (code === "blocked" || code === "unavailable") &&

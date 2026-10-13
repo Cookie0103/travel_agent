@@ -1,7 +1,7 @@
 # 代码架构地图
 
 业务设计唯一来源：[design/02](docs/design/02-architecture.md)、[领域与工具](docs/design/03-data-tools.md)。
-当前实施/缺口看[执行计划](docs/execution/travel-agent.md)。此处只帮助定位代码，不另定义业务。
+当前实施/缺口看[当前批次](docs/plans/2026-10-13-interaction-memory-eval.md)。此处只帮助定位代码，不另定义业务。
 
 | 目录 | 职责与入口 |
 | --- | --- |
@@ -19,6 +19,8 @@
 主链：消息API → RunService → Agent → 隔离SDK worker → MCP → TravelToolExecutor → 业务服务 → 仓储。
 事件链：worker私有进度 → 父进程验证 → RunService事务保存 → SSE读取；重连不触发执行。
 确认链：页面确认API → 业务事务。模型没有正式保存/下单工具，后续实现仍保持此边界。
+
+本批入口：`services/choices.py`负责服务器选择卡；`services/memory.py`负责确认事实、遗忘边界及SDK续接裁决；`services/user_profile.py`负责有引用的派生画像。画像显式生成仍走`providers/claude_agent/structured.py`的同一SDK无工具路径。`eval/simulator.py`复用应用服务执行合成用户动作，`eval/report.py`分别汇总交付、约束与成本。
 
 三个状态源：SDK私有会话用于模型上下文；应用事件用于展示；数据库领域对象用于业务判断。
 SDK文件与数据库事务不是同一原子操作；恢复验收见[可靠性](docs/RELIABILITY.md)。

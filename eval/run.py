@@ -12,12 +12,14 @@ import time
 from dataclasses import asdict
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import TextIO, get_args
+from typing import TextIO, TypedDict, get_args
 from uuid import uuid4
 
 import psycopg
+from dotenv import load_dotenv
 from pydantic import TypeAdapter
 
+from backend.adapters.tracing import push_scores
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent
 from backend.domain.execution import RunContext, RunResult, RuntimeEvent
@@ -41,12 +43,20 @@ from eval.cases import Case
 from eval.database import DatabaseEvaluation, database_evaluation, selector_runner
 from eval.diagnostics import diagnose
 from eval.graders import Observation, grade
-from eval.metrics import first_progress_seconds, tool_call_accuracy
+from eval.memory_metrics import inspect_memory
+from eval.metrics import first_progress_seconds, process_metrics, tool_call_accuracy
 from eval.persona import rules as persona_rules
 from eval.report import measured_summary
 from eval.suites import load_suite
+from eval.triage import compact_steps
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+class ObserveOptions(TypedDict, total=False):
+    variant: EvaluationVariant
+    evaluation: dict[str, object]
+    trace_cloud: bool
 
 
 async def observe(
@@ -58,6 +68,8 @@ async def observe(
     workflow: WorkflowName | None = None,
     max_attempts: int = 4,
     variant: EvaluationVariant = "full",
+    evaluation: dict[str, object] | None = None,
+    trace_cloud: bool = False,
 ) -> tuple[Observation, dict[str, object]]:
     validate_variant(variant, database=business is not None, workflow=workflow)
     if variant != "full" and (not live or not business):
@@ -74,6 +86,10 @@ async def observe(
                 max_attempts=max_attempts,
                 supplier_url=business.supplier_url,
                 evaluation_variant=variant,
+                evaluation_fault=case.external_fault,
+                evaluation=evaluation,
+                trace_id=await business.trace_anchor(context),
+                trace_cloud=trace_cloud,
             )
             if business
             else run_live(case.input, context, ROOT)
@@ -103,6 +119,7 @@ async def run_cases(
     repeats: int = 1,
     suite: dict[str, object] | None = None,
     variant: EvaluationVariant = "full",
+    trace_cloud: bool = False,
 ) -> dict[str, object]:
     validate_variant(variant, database=business is not None, workflow=workflow)
     if variant != "full" and (not live or not business):
@@ -170,6 +187,7 @@ async def run_cases(
                     max_attempts=max_attempts,
                     repeat_index=repeat_index,
                     variant=variant,
+                    trace_cloud=trace_cloud,
                 )
                 if not stop
                 else {
@@ -241,6 +259,7 @@ async def attempt_case(
     max_attempts: int,
     repeat_index: int = 1,
     variant: EvaluationVariant = "full",
+    trace_cloud: bool = False,
 ) -> dict[str, object]:
     try:
         context = await business.prepare(case) if business else RunContext(uuid4())
@@ -269,6 +288,8 @@ async def attempt_case(
         workflow=workflow,
         max_attempts=max_attempts,
         variant=variant,
+        repeat_index=repeat_index,
+        trace_cloud=trace_cloud,
     )
 
 
@@ -281,9 +302,21 @@ async def run_case(
     workflow: WorkflowName | None = None,
     max_attempts: int = 4,
     variant: EvaluationVariant = "full",
+    repeat_index: int = 1,
+    trace_cloud: bool = False,
 ) -> dict[str, object]:
     start = time.perf_counter()
     started_at = datetime.now(UTC)
+    options: ObserveOptions = {}
+    if variant != "full":
+        options["variant"] = variant
+    if case.case_id.startswith("v2-"):
+        options["evaluation"] = {
+            "case_id": case.case_id,
+            "trial": repeat_index,
+            "suite": "v2-memory" if case.memory_category else "v2-interaction",
+        }
+        options["trace_cloud"] = trace_cloud
     if variant != "full":
         validate_variant(variant, database=business is not None, workflow=workflow)
         if not live or not business:
@@ -297,7 +330,7 @@ async def run_case(
                 business=business,
                 workflow=workflow,
                 max_attempts=max_attempts,
-                **({"variant": variant} if variant != "full" else {}),
+                **options,
             )
             if business
             else await observe(case, live, context)
@@ -308,18 +341,50 @@ async def run_case(
     verification_failed = False
     content_record: dict[str, object] | None = None
     business_metrics = BusinessMetrics.for_case(case)
+    saved_constraints: dict[str, object] | None = None
     if business:
         try:
+            await business.record(context, actual)
             assessment = await business.assess(case, context, actual)
             checks.update(assessment.checks)
             business_metrics = assessment.metrics
             content_record = (await business.content_record(case, context, actual.text)).model_dump(
                 mode="json"
             )
+            saved_constraints = await business.saved_constraints(context)
         except (ServiceError, ValueError, OSError):
             checks["business_verification_available"] = False
             verification_failed = True
     trace_id = report.get("trace_id")
+    memory_metrics: dict[str, object] | None = None
+    if case.memory_category and business:
+        try:
+            memory_metrics = await inspect_memory(business, context, case, actual.events)
+            checks["memory_exact"] = memory_metrics["exact"] is True
+            checks["memory_cross_user_isolated"] = memory_metrics["cross_user_leakage"] is False
+            checks["memory_deletion_complete"] = memory_metrics["deletion_residue"] is False
+        except (ServiceError, ValueError, OSError):
+            checks["memory_verification_available"] = False
+            verification_failed = True
+    scores_pushed: bool | None = None
+    if trace_cloud and isinstance(trace_id, str):
+        recovered = process_metrics(actual.events, actual.text)["recovered_without_user"]
+        scores = {"rule_pass": float(all(checks.values()))}
+        if "expected_state" in checks:
+            scores["terminal_state"] = float(checks["expected_state"])
+        if isinstance(recovered, int):
+            scores["recovered_without_user"] = float(recovered)
+        if memory_metrics:
+            for name in ("precision", "recall"):
+                value = memory_metrics.get(name)
+                if isinstance(value, (int, float)):
+                    scores["memory_" + name] = float(value)
+            scores["memory_exact"] = float(memory_metrics["exact"] is True)
+        scores_pushed = await asyncio.to_thread(
+            push_scores,
+            trace_id,
+            scores,
+        )
     return {
         "case_id": case.case_id,
         "status": "error"
@@ -348,6 +413,11 @@ async def run_case(
         "tool_call_accuracy": tool_call_accuracy(case, actual.events),
         "tools": [e.tool_name for e in actual.events if e.kind == "tool_started"],
         "tool_count": sum(e.kind == "tool_started" for e in actual.events),
+        "process_metrics": process_metrics(actual.events, actual.text),
+        "process_steps": compact_steps(actual.events),
+        "saved_constraints": saved_constraints,
+        "memory_metrics": memory_metrics,
+        "scores_pushed": scores_pushed,
         "text": actual.text,
         "content_record": content_record,
         "identity": report.get("identity"),
@@ -449,7 +519,10 @@ def main() -> int:
         sys.stdout.reconfigure(encoding="utf-8")
     parser = argparse.ArgumentParser(description="旅行任务规则评测；默认离线，不把规则分当模型质量")
     parser.add_argument("--split", choices=["dev", "test"], default="dev")
-    parser.add_argument("--suite", choices=["legacy", "frozen"], default="legacy")
+    parser.add_argument(
+        "--suite", choices=["legacy", "frozen", "v2", "v2-memory"], default="legacy"
+    )
+    parser.add_argument("--trace-cloud", action="store_true")
     parser.add_argument(
         "--live", action="store_true", help="使用显式供应商；须有独立授权且产生费用"
     )
@@ -473,6 +546,8 @@ def main() -> int:
     )
     arguments = parser.parse_args()
     try:
+        if arguments.trace_cloud and not (arguments.live and arguments.database):
+            raise ValueError("云评测需显式live与专用数据库")
         if arguments.catalog_dir and (
             not arguments.database or arguments.suite != "legacy" or arguments.split != "dev"
         ):
@@ -502,6 +577,7 @@ def main() -> int:
                             repeats=arguments.repeat,
                             suite=suite,
                             variant=arguments.variant,
+                            trace_cloud=arguments.trace_cloud,
                         )
             return await run_cases(
                 cases,
@@ -519,6 +595,7 @@ def main() -> int:
         if not arguments.database and (arguments.workflow or arguments.max_attempts != 4):
             raise ValueError("固定流程或自定义请求上限需要--database")
         if arguments.live:
+            load_dotenv(ROOT / ".env", encoding="utf-8", override=False)
             check_evaluation_size(ROOT, len(cases) * arguments.repeat)
         with selector_runner() as runner:
             summary = runner.run(evaluate())

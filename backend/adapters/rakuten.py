@@ -1,6 +1,7 @@
 """乐天空室查询：逐晚核对同一酒店/计划/房型，不推算缺失价格。"""
 
 import re
+import time
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from urllib.parse import urlsplit
@@ -8,9 +9,10 @@ from urllib.parse import urlsplit
 import httpx
 from pydantic import BaseModel, Field, JsonValue
 
-from backend.adapters.external_api import ApiUsage, parse_response, request_json
+from backend.adapters.external_api import REQUEST_DEADLINE, ApiUsage, parse_response, request_json
 from backend.domain.external_data import ExternalDataError, GeoPoint
 from backend.domain.hotel_details import StoredHotelDetails
+from backend.domain.hotel_recovery import HotelSearchDiagnostics, evaluate, nightly_upper
 from backend.domain.hotel_selection import hotel_rate_indices
 from backend.domain.hotels import HotelOffer, Money
 from backend.domain.room_choices import recognized_room_choices
@@ -150,6 +152,7 @@ class Rakuten:
         hotel_ids: tuple[int, ...] = (),
         *,
         by_plan: bool = False,
+        sort: str = "standard",
     ) -> tuple[tuple[Candidate, ...], int | None]:
         """by_plan=False按施設(searchPattern=0)每家一条；by_plan=True只用于单个酒店，列出其套餐。
 
@@ -171,7 +174,7 @@ class Rakuten:
             "hits": 30,
             "responseType": "large",
             "searchPattern": 1 if by_plan else 0,
-            "sort": "standard",
+            "sort": sort,
         }
         if "房型：禁烟" in recognized_room_choices(request.hard_constraints):
             params["squeezeCondition"] = "kinen"
@@ -221,12 +224,36 @@ class Rakuten:
         limit: int = 5,
         budget_nights: int | None = None,
     ) -> tuple[HotelOffer, ...]:
+        return await self.search_diagnosed(
+            request,
+            point,
+            hotel_id=hotel_id,
+            rate_id=rate_id,
+            limit=limit,
+            budget_nights=budget_nights,
+        )
+
+    async def search_diagnosed(
+        self,
+        request: TravelRequest,
+        point: GeoPoint,
+        *,
+        hotel_id: str | None = None,
+        rate_id: str | None = None,
+        limit: int = 5,
+        budget_nights: int | None = None,
+        diagnosis: HotelSearchDiagnostics | None = None,
+        rescue_segments: int = 0,
+        budget_request: TravelRequest | None = None,
+        _price_sorted: bool = False,
+    ) -> tuple[HotelOffer, ...]:
         assert request.start_date and request.end_date and request.adults and request.rooms
         nights = (request.end_date - request.start_date).days
+        first_day, rooms = request.start_date, request.rooms
         if self.usage.default_profile:  # 其他档位按配置的run_caps原值
             # 多城市共享全程晚数预算；实际报价仍只核查当前段，硬上限与每日额度不变。
-            self.usage.run_caps["rakuten"] = min(
-                8, (nights if budget_nights is None else budget_nights) + 1
+            self.usage.run_caps["rakuten"] = (
+                min(8, (nights if budget_nights is None else budget_nights) + 1) + rescue_segments
             )
         if point.broad:
             raise ExternalDataError(
@@ -244,7 +271,18 @@ class Rakuten:
             point,
             (int(selected_id),) if selected_id else (),
             by_plan=by_plan,
+            sort="+roomCharge" if _price_sorted else "standard",
         )
+        diagnosis = diagnosis if diagnosis is not None else HotelSearchDiagnostics()
+        diagnosis.upstream_count = found
+        diagnosis.dropped_room = sum(
+            room_assessment(i.room.roomName, request).room_preference_mismatch for i in first
+        )
+        diagnosis.dropped_unknown_price = sum(
+            self.price(i, request, request.start_date) is None for i in first
+        )
+        diagnosis.dropped_min_price = sum(self.price_unreliable(i, request) for i in first)
+        upper = nightly_upper(budget_request or request)
         if by_plan:
             selected = tuple(
                 item
@@ -264,7 +302,16 @@ class Rakuten:
                 )
             )
         else:
-            selected = self.lowest_per_hotel(first, request)[:limit]
+            selected = self.lowest_per_hotel(first, request)
+            if upper is not None:
+                selected = tuple(
+                    sorted(
+                        selected,
+                        key=lambda i: (self.price(i, request, first_day) or Decimal(0)) / rooms,
+                    )
+                )
+            if upper is None:
+                selected = selected[:limit]
         reason = (
             "儿童计价未知"
             if request.child_ages
@@ -282,10 +329,27 @@ class Rakuten:
             hotel_ids = tuple(dict.fromkeys(item.hotel.hotelNo for item in selected))
             for offset in range(1, nights):
                 day = request.start_date + timedelta(days=offset)
-                nightly = {
-                    item.key: item
-                    for item in await self.nightly(request, day, point, hotel_ids, by_plan=by_plan)
-                }
+                nightly: dict[str, Candidate] = {}
+                try:
+                    for group in range(0, len(hotel_ids), 15):
+                        nightly.update(
+                            {
+                                item.key: item
+                                for item in await self.nightly(
+                                    request,
+                                    day,
+                                    point,
+                                    hotel_ids[group : group + 15],
+                                    by_plan=by_plan,
+                                )
+                            }
+                        )
+                except ExternalDataError as error:
+                    if upper is None or error.info.kind != "quota_exhausted":
+                        raise
+                    diagnosis.skipped = "quota"
+                    totals = {item.key: None for item in selected}
+                    break
                 for item in selected:
                     # 后几晚同样不接受促销价，否则会把总价低估。
                     value = (
@@ -300,7 +364,7 @@ class Rakuten:
                     )
         now = datetime.now(UTC)
         more_url = None if by_plan else self.destination_url(first)
-        return tuple(
+        offers = tuple(
             HotelOffer(
                 rate_id=item.key,
                 hotel_id=str(item.hotel.hotelNo),
@@ -345,6 +409,58 @@ class Rakuten:
                 data_mode="live",
             )
             for item in selected
+        )
+        chosen = evaluate(offers, budget_request or request, diagnosis, limit=limit)
+        if (
+            upper is not None
+            and (offers or (found and (not first or diagnosis.dropped_room < len(first))))
+            and diagnosis.in_budget == 0
+            and not _price_sorted
+            and not by_plan
+            and diagnosis.skipped is None
+        ):
+            deadline = REQUEST_DEADLINE.get()
+            if (
+                deadline is not None
+                and time.monotonic() + 8 + self.usage.rakuten_interval >= deadline
+            ):
+                diagnosis.skipped = "deadline"
+            elif not self.usage.run_limits or self.usage.used.get("rakuten", 0) < (
+                self.usage.run_caps["rakuten"] or 0
+            ):
+                before_rescue = diagnosis.model_copy(deep=True)
+                diagnosis.steps.append("price_sorted_requery")
+                try:
+                    return await self.search_diagnosed(
+                        request,
+                        point,
+                        limit=limit,
+                        budget_nights=budget_nights,
+                        diagnosis=diagnosis,
+                        rescue_segments=rescue_segments,
+                        budget_request=budget_request,
+                        _price_sorted=True,
+                    )
+                except ExternalDataError as error:
+                    if error.info.kind != "quota_exhausted":
+                        raise
+                    for name in HotelSearchDiagnostics.model_fields:
+                        setattr(diagnosis, name, getattr(before_rescue, name))
+                    diagnosis.skipped = "quota"
+            else:
+                diagnosis.skipped = "quota"
+            chosen = evaluate(offers, budget_request or request, diagnosis, limit=limit)
+        return tuple(
+            o.model_copy(
+                update={
+                    "display_details": o.display_details.model_copy(
+                        update={"search_diagnostics": diagnosis}
+                    )
+                    if o.display_details
+                    else None
+                }
+            )
+            for o in chosen
         )
 
     @staticmethod

@@ -27,7 +27,12 @@ def grade(case: Case, actual: Observation) -> dict[str, bool]:
         and len(starts) == len(started)
         and len(ends) == len(finished)
     )
-    has_results = complete and any(e.code is None and e.result_empty is False for e in finished)
+    has_results = complete and any(
+        e.code is None
+        and e.result_empty is False
+        and (not case.result_tools or e.tool_name in case.result_tools)
+        for e in finished
+    )
     return {
         "completed": actual.status in case.allowed_final_statuses and bool(actual.text.strip()),
         "tool_selection": set(case.required_tools) <= names,

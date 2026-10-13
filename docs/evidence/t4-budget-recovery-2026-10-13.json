@@ -1,0 +1,54 @@
+{
+  "verification": "VERIFIED",
+  "runs": [
+    {
+      "run_id": "2a444d11-b599-402a-bdb5-ed3e97ed79b0",
+      "status": "completed",
+      "answer_saved": true
+    },
+    {
+      "run_id": "db13218e-113d-4908-8901-7dadb5091682",
+      "status": "completed",
+      "answer_saved": true
+    },
+    {
+      "run_id": "3507e472-78b5-4d05-847f-105bffa0a76c",
+      "status": "completed",
+      "answer_saved": true
+    },
+    {
+      "run_id": "d7458dcb-00cd-4dde-8c77-ddd71734a8b6",
+      "status": "completed",
+      "answer_saved": true
+    }
+  ],
+  "plans": 0,
+  "bookings": 0,
+  "request_revision": 3,
+  "lodging_budget": {
+    "amount": {
+      "lower": null,
+      "upper": "20000.00"
+    },
+    "basis": "per_room_night",
+    "currency": "JPY"
+  },
+  "model_ledger_requests": 679,
+  "model_ledger_cny": "31.072580",
+  "supplier_ledger": {
+    "places": 7,
+    "geocode": 1,
+    "rakuten": 7
+  },
+  "model_T4_HTTP": 16,
+  "model_T4_CNY": "0.538944",
+  "first_run_failed_acceptance": true,
+  "budget_choice_accepted": true,
+  "quote_valid_after_budget_change": true,
+  "screenshots": [
+    "t4-budget-before-accept.jpg",
+    "t4-budget-after-accept.jpg",
+    "t4-budget-valid-quote.jpg"
+  ],
+  "known_model_fidelity_issue": "最后一次仅重展示中模型文字误判报价过期，服务端仍判断有效且选择按钮可用；真实操作以服务端TTL为准。"
+}

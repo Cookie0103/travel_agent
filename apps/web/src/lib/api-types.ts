@@ -40,6 +40,59 @@ export interface paths {
         patch: operations["patch_preferences_preferences_patch"];
         trace?: never;
     };
+    "/memory": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Memory Facts */
+        get: operations["memory_facts_memory_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/memory/{fact_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Memory Fact */
+        get: operations["memory_fact_memory__fact_id__get"];
+        put?: never;
+        post?: never;
+        /** Delete Memory Fact */
+        delete: operations["delete_memory_fact_memory__fact_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/profile-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profile */
+        get: operations["get_profile_profile_summary_get"];
+        put?: never;
+        /** Update Profile */
+        post: operations["update_profile_profile_summary_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -189,6 +242,23 @@ export interface paths {
         put?: never;
         /** Message */
         post: operations["message_sessions__session_id__messages_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/sessions/{session_id}/choices/{choice_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Choice */
+        get: operations["get_choice_sessions__session_id__choices__choice_id__get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -557,6 +627,66 @@ export interface components {
             /** Version */
             version?: number | null;
         };
+        /** ChoiceCard */
+        ChoiceCard: {
+            /**
+             * Choice Id
+             * Format: uuid
+             */
+            choice_id?: string;
+            kind: components["schemas"]["ChoiceKind"];
+            /**
+             * Session Id
+             * Format: uuid
+             */
+            session_id: string;
+            /**
+             * Source Run Id
+             * Format: uuid
+             */
+            source_run_id: string;
+            /** Expected Revision */
+            expected_revision: number;
+            /** Question */
+            question: string;
+            /** Options */
+            options: components["schemas"]["ChoiceOption"][];
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at?: string;
+            /** Expires At */
+            expires_at?: string | null;
+            /** Answered Option Id */
+            answered_option_id?: string | null;
+            /**
+             * Stale
+             * @default false
+             */
+            stale: boolean;
+        };
+        /** @enum {string} */
+        ChoiceKind: "pace" | "budget_relaxation" | "memory_confirm";
+        /** ChoiceOption */
+        ChoiceOption: {
+            /** Option Id */
+            option_id: string;
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
+        };
+        /** ChoiceSelection */
+        ChoiceSelection: {
+            /**
+             * Choice Id
+             * Format: uuid
+             */
+            choice_id: string;
+            /** Option Id */
+            option_id: string;
+        };
         /** DemoIdentity */
         DemoIdentity: {
             /**
@@ -748,6 +878,10 @@ export interface components {
             source_ref: string | null;
             /** Content Version */
             content_version: string | null;
+            /** Budget Excess */
+            budget_excess?: string | null;
+            /** Budget Excess Percent */
+            budget_excess_percent?: string | null;
         };
         /** HotelOffer */
         HotelOffer: {
@@ -803,6 +937,62 @@ export interface components {
              */
             expires_at: string;
             request: components["schemas"]["LegacyRequestSnapshot"];
+        };
+        /** HotelSearchDiagnostics */
+        HotelSearchDiagnostics: {
+            /** Upstream Count */
+            upstream_count?: number | null;
+            /**
+             * Count Basis
+             * @default ASSUMED：上游 recordCount 按酒店计数；过滤数按返回房型计数
+             */
+            count_basis: string;
+            /**
+             * Dropped Room
+             * @default 0
+             */
+            dropped_room: number;
+            /**
+             * Dropped Unknown Price
+             * @default 0
+             */
+            dropped_unknown_price: number;
+            /**
+             * Dropped Min Price
+             * @default 0
+             */
+            dropped_min_price: number;
+            /**
+             * In Budget
+             * @default 0
+             */
+            in_budget: number;
+            /**
+             * Over Budget
+             * @default 0
+             */
+            over_budget: number;
+            /** Original Upper */
+            original_upper?: string | null;
+            /** Applied Upper */
+            applied_upper?: string | null;
+            /** Tier */
+            tier?: string | null;
+            /** Steps */
+            steps?: string[];
+            /**
+             * Cause
+             * @default upstream_empty
+             * @enum {string}
+             */
+            cause: "coverage" | "budget" | "room_filter" | "upstream_empty" | "unknown_prices";
+            /** Skipped */
+            skipped?: ("quota" | "deadline") | null;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
         };
         /**
          * HotelStay
@@ -947,6 +1137,47 @@ export interface components {
             /** Currency */
             currency: string;
         };
+        /** MemoryFactView */
+        MemoryFactView: {
+            /**
+             * Fact Id
+             * Format: uuid
+             */
+            fact_id: string;
+            key: components["schemas"]["MemoryKey"];
+            /** Value */
+            value: string | null;
+            scope: components["schemas"]["MemoryScope"];
+            /** Session Id */
+            session_id: string | null;
+            status: components["schemas"]["MemoryStatus"];
+            source: components["schemas"]["MemorySource"];
+            /** Source Run Id */
+            source_run_id: string | null;
+            /** Evidence Quote */
+            evidence_quote: string;
+            /** Valid From */
+            valid_from: string | null;
+            /** Invalidated At */
+            invalidated_at: string | null;
+            /** Superseded By */
+            superseded_by: string | null;
+            /** Last Confirmed At */
+            last_confirmed_at: string | null;
+            /**
+             * Created At
+             * Format: date-time
+             */
+            created_at: string;
+        };
+        /** @enum {string} */
+        MemoryKey: "pace" | "transport" | "lodging_type" | "room_type" | "smoking" | "dietary" | "interest" | "avoid" | "companion_pattern" | "budget_style";
+        /** @enum {string} */
+        MemoryScope: "long_term" | "trip";
+        /** @enum {string} */
+        MemorySource: "user_utterance" | "manual" | "migrated";
+        /** @enum {string} */
+        MemoryStatus: "proposed" | "active" | "rejected" | "superseded" | "deleted";
         /** MessageInput */
         MessageInput: {
             /**
@@ -966,6 +1197,7 @@ export interface components {
             expected_revision?: number | null;
             /** Hotel Stays */
             hotel_stays?: components["schemas"]["HotelStay"][] | null;
+            selection?: components["schemas"]["ChoiceSelection"] | null;
         };
         /** ModelOption */
         ModelOption: {
@@ -1467,6 +1699,7 @@ export interface components {
             more_url?: string | null;
             /** More Url Scope */
             more_url_scope?: ("search" | "destination") | null;
+            search_diagnostics?: components["schemas"]["HotelSearchDiagnostics"] | null;
         };
         /** TravelConditions */
         TravelConditions: {
@@ -1620,6 +1853,23 @@ export interface components {
             depart: string;
             /** Hotel Search Location */
             hotel_search_location?: string | null;
+        };
+        /** UserProfileView */
+        UserProfileView: {
+            /** Text */
+            text?: string | null;
+            /**
+             * Cited Fact Ids
+             * @default []
+             */
+            cited_fact_ids: string[];
+            /** Created At */
+            created_at?: string | null;
+            /**
+             * Can Update
+             * @default false
+             */
+            can_update: boolean;
         };
         /** ValidationCheck */
         ValidationCheck: {
@@ -1881,6 +2131,10 @@ export interface components {
             source_ref: string | null;
             /** Content Version */
             content_version: string | null;
+            /** Budget Excess */
+            budget_excess?: string | null;
+            /** Budget Excess Percent */
+            budget_excess_percent?: string | null;
         };
         /** HotelPresentation */
         UiHotelPresentation: {
@@ -1909,6 +2163,78 @@ export interface components {
              * @default null
              */
             more_url_scope: ("search" | "destination") | null;
+            relaxation?: components["schemas"]["UiHotelSearchDiagnostics"] | null;
+        };
+        /** HotelSearchDiagnostics */
+        UiHotelSearchDiagnostics: {
+            /**
+             * Upstream Count
+             * @default null
+             */
+            upstream_count: number | null;
+            /**
+             * Count Basis
+             * @default ASSUMED：上游 recordCount 按酒店计数；过滤数按返回房型计数
+             */
+            count_basis: string;
+            /**
+             * Dropped Room
+             * @default 0
+             */
+            dropped_room: number;
+            /**
+             * Dropped Unknown Price
+             * @default 0
+             */
+            dropped_unknown_price: number;
+            /**
+             * Dropped Min Price
+             * @default 0
+             */
+            dropped_min_price: number;
+            /**
+             * In Budget
+             * @default 0
+             */
+            in_budget: number;
+            /**
+             * Over Budget
+             * @default 0
+             */
+            over_budget: number;
+            /**
+             * Original Upper
+             * @default null
+             */
+            original_upper: string | null;
+            /**
+             * Applied Upper
+             * @default null
+             */
+            applied_upper: string | null;
+            /**
+             * Tier
+             * @default null
+             */
+            tier: string | null;
+            /** Steps */
+            steps?: string[];
+            /**
+             * Cause
+             * @default upstream_empty
+             * @enum {string}
+             */
+            cause: "coverage" | "budget" | "room_filter" | "upstream_empty" | "unknown_prices";
+            /**
+             * Skipped
+             * @default null
+             */
+            skipped: ("quota" | "deadline") | null;
+            /**
+             * Message
+             * @default
+             */
+            message: string;
         };
         /** HotelSegmentPresentation */
         UiHotelSegmentPresentation: {
@@ -1942,6 +2268,7 @@ export interface components {
              * @default null
              */
             more_url_scope: ("search" | "destination") | null;
+            relaxation?: components["schemas"]["UiHotelSearchDiagnostics"] | null;
         };
         /** HotelStayView */
         UiHotelStayView: {
@@ -2242,6 +2569,60 @@ export interface components {
         /** @enum {string} */
         UiEventKind: "started" | "text" | "tool_started" | "tool_finished" | "presentation" | "context_compacted" | "completed" | "failed" | "cancelled" | "partial" | "awaiting_user";
         /**
+         * ExternalAttempt
+         * @description 闭合、无正文的请求结果；可进入工具、事件和 trace。
+         */
+        UiExternalAttempt: {
+            /** @default null */
+            kind: components["schemas"]["UiExternalKind"] | null;
+            /**
+             * Status
+             * @default null
+             */
+            status: number | null;
+            /**
+             * Attempts
+             * @default 0
+             */
+            attempts: number;
+            /**
+             * Waited Seconds
+             * @default 0
+             */
+            waited_seconds: number;
+            /** @default null */
+            recovered_from: components["schemas"]["UiExternalKind"] | null;
+            /** @default null */
+            first_failure: components["schemas"]["UiExternalKind"] | null;
+            /**
+             * Retry Skipped
+             * @default null
+             */
+            retry_skipped: ("quota" | "deadline") | null;
+            /**
+             * Provisional
+             * @default false
+             */
+            provisional: boolean;
+            /**
+             * Cap Scope
+             * @default null
+             */
+            cap_scope: ("run" | "daily") | null;
+            /**
+             * Used
+             * @default null
+             */
+            used: number | null;
+            /**
+             * Limit
+             * @default null
+             */
+            limit: number | null;
+        };
+        /** @enum {string} */
+        UiExternalKind: "rate_limited" | "timeout" | "network" | "upstream_5xx" | "bad_request" | "not_found_empty" | "quota_exhausted" | "invalid_json";
+        /**
          * RunContext
          * @description 由服务端生成的业务 ID；不能把 SDK session_id 当成用户身份。
          */
@@ -2331,6 +2712,12 @@ export interface components {
              * @default false
              */
             answer_truncated: boolean;
+            /** @default null */
+            external: components["schemas"]["UiExternalAttempt"] | null;
+            /** Relaxation Cause */
+            relaxation_cause?: ("coverage" | "budget" | "room_filter" | "upstream_empty" | "unknown_prices") | null;
+            /** Relaxation Tier */
+            relaxation_tier?: number | string | null;
         };
     };
     responses: never;
@@ -2449,6 +2836,175 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Preferences"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    memory_facts_memory_get: {
+        parameters: {
+            query?: {
+                include_history?: boolean;
+            };
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryFactView"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    memory_fact_memory__fact_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                fact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MemoryFactView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_memory_fact_memory__fact_id__delete: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                fact_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferenceVersion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Preferences"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_profile_summary_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfileView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_profile_profile_summary_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PreferenceVersion"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserProfileView"];
                 };
             };
             /** @description Validation Error */
@@ -2796,6 +3352,40 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RunView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_choice_sessions__session_id__choices__choice_id__get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                session_id: string;
+                choice_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ChoiceCard"];
                 };
             };
             /** @description Validation Error */

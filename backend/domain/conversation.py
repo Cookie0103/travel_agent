@@ -3,7 +3,7 @@
 from typing import Literal, Self
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from backend.domain.room_choices import missing_room_choices
 from backend.domain.travel_request import (
@@ -38,6 +38,7 @@ class ConversationState(BaseModel):
     pending_tasks: tuple[Task, ...] = Field(default=(), max_length=2)
     goal_run_id: UUID | None = None
     awaiting_field: Question | None = None
+    safe_after: AwareDatetime | None = Field(default=None, exclude_if=lambda value: value is None)
 
 
 class ConversationStateInput(BaseModel):

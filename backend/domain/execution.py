@@ -3,10 +3,13 @@
 import re
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
+from decimal import Decimal
 from typing import Annotated, Literal, cast, get_args
 from uuid import UUID, uuid4
 
 from pydantic import Field
+
+from backend.domain.external_data import ExternalAttempt
 
 type ErrorCode = Literal[
     "validation",
@@ -219,6 +222,11 @@ class RuntimeEvent:
     evidence_ids: tuple[str, ...] = ()
     business_result: BusinessResult | None = None
     answer_truncated: bool = False
+    external: ExternalAttempt | None = None
+    relaxation_cause: (
+        Literal["coverage", "budget", "room_filter", "upstream_empty", "unknown_prices"] | None
+    ) = field(default_factory=lambda: None)
+    relaxation_tier: Decimal | None = field(default_factory=lambda: None)
 
 
 @dataclass(frozen=True)
@@ -227,6 +235,7 @@ class RuntimeOutcome:
     sdk_session_id: str | None = None
     code: ErrorCode | None = None
     reason: str = "completed"
+    external: ExternalAttempt | None = None
 
 
 @dataclass(frozen=True)
@@ -250,7 +259,7 @@ def terminal_event(context: RunContext, outcome: RuntimeOutcome) -> RuntimeEvent
         if kind == "failed" and outcome.reason in RUN_REASONS
         else None
     )
-    return RuntimeEvent(context, kind, code=outcome.code, reason=reason)
+    return RuntimeEvent(context, kind, code=outcome.code, reason=reason, external=outcome.external)
 
 
 def event_metadata(event: RuntimeEvent) -> RuntimeEvent:
@@ -271,5 +280,40 @@ def event_metadata(event: RuntimeEvent) -> RuntimeEvent:
                     if key in {"component", "draft_id", "plan_id", "offer_ids", "expected_revision"}
                 }
             )
+            if data.get("component") == "choice":
+                safe = {
+                    key: value
+                    for key, value in data.items()
+                    if key
+                    in {
+                        "component",
+                        "choice_id",
+                        "kind",
+                        "session_id",
+                        "source_run_id",
+                        "question",
+                        "options",
+                        "expected_revision",
+                        "created_at",
+                        "expires_at",
+                        "answered_option_id",
+                        "stale",
+                    }
+                }
+                options = safe.get("options")
+                if safe.get("kind") == "memory_confirm":
+                    safe["question"] = (
+                        "是否保存这条偏好？"  # 偏好正文仅从事实按需补全，删除后不留副本。
+                    )
+                if isinstance(options, list):
+                    safe["options"] = [
+                        {
+                            key: value
+                            for key, value in option.items()
+                            if key in {"option_id", "label", "value"}
+                        }
+                        for option in options[:3]
+                        if isinstance(option, dict)
+                    ]
             presentation = {"data": safe}
     return replace(event, text="", presentation=presentation)

@@ -31,9 +31,17 @@ class FrozenSuite(BaseModel):
 
 
 def load_suite(
-    root: Path, name: Literal["legacy", "frozen"], split: Literal["dev", "test"]
+    root: Path, name: Literal["legacy", "frozen", "v2", "v2-memory"], split: Literal["dev", "test"]
 ) -> tuple[list[Case], dict[str, object]]:
     folder = root / "eval" / "cases"
+    if name in ("v2", "v2-memory"):
+        files = (folder / ("v2_memory.jsonl" if name == "v2-memory" else "v2_interaction.jsonl"),)
+        return load_cases(files, split), {
+            "name": "v2-memory" if name == "v2-memory" else "v2-interaction",
+            "frozen": False,
+            "scope": "capability and mechanism dev suite; frozen_v1 unchanged",
+            "sha256": {file.name: hashlib.sha256(file.read_bytes()).hexdigest() for file in files},
+        }
     if name == "legacy":
         return load_cases(tuple(folder / file for file in LEGACY_FILES), split), {
             "name": "legacy-30",

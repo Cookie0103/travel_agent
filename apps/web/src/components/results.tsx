@@ -137,7 +137,7 @@ function Hotel({
             来源：
             <SourceRef value={card.source_ref} />
             <br />
-            报价条件版本 {card.request_revision}
+            适用条件版本 {card.request_revision}
             <br />
             来源版本 {card.content_version?.slice(0, 12) || "未知"}
           </p>
@@ -165,6 +165,12 @@ function Hotel({
         )}
         {card.lodging_exceeds_lodging_budget === true && (
           <p className="warning">报价超过住宿预算上限</p>
+        )}
+        {card.budget_excess && (
+          <p className="warning">
+            超出原每间每晚预算 +¥{formatYen(card.budget_excess)}（+
+            {card.budget_excess_percent}%）
+          </p>
         )}
         {card.lodging_exceeds_lodging_budget === null && (
           <p className="muted small">

@@ -3,6 +3,7 @@
 import asyncio
 import hashlib
 import json
+import time
 from dataclasses import replace
 from datetime import date, datetime
 from pathlib import Path
@@ -12,15 +13,18 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 from sqlalchemy.exc import SQLAlchemyError
 
+from backend.adapters.external_api import REQUEST_DEADLINE
 from backend.adapters.live_data import LiveData
 from backend.adapters.open_meteo import forecast
 from backend.domain.booking import HoldHotelInput
+from backend.domain.choices import ChoiceKind
 from backend.domain.condition_labels import update_message
 from backend.domain.conversation import ConversationStateInput
 from backend.domain.execution import RunContext, ToolReason
-from backend.domain.external_data import ExternalDataError
+from backend.domain.external_data import ExternalDataError, external_code
 from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
+from backend.domain.memory import VALUE_GUIDE, MemoryProposal
 from backend.domain.opening_hours import KYOTO
 from backend.domain.plans import StageInput
 from backend.domain.room_choices import room_choices_view
@@ -32,8 +36,10 @@ from backend.domain.travel_request import (
 )
 from backend.services.bookings import BookingService
 from backend.services.catalog import CatalogResult, CatalogService
+from backend.services.choices import ChoiceService
 from backend.services.common import ServiceError
 from backend.services.hotels import HotelService, cards
+from backend.services.memory import MemoryService
 from backend.services.planning import PlanningService
 from backend.services.plans import PlanInput, PlanService
 from backend.services.travel import TravelService, require_revision
@@ -92,18 +98,30 @@ class RefreshOfferInput(BaseModel):
 
 
 class PresentationInput(BaseModel):
-    """酒店比较填component=hotel_comparison、expected_revision和offer_ids；行程只填component=itinerary和stage返回的draft_id。两类参数不得混填。offer_ids填酒店卡片的offer_id；行程的hotel_evidence_id填卡片的evidence_id。"""
+    """酒店比较填component=hotel_comparison、expected_revision和offer_ids；行程只填component=itinerary和stage返回的draft_id。酒店比较与行程两类参数不得混填；选择卡填component=choice、kind和expected_revision，服务端提供选项，也不能混用其他组件参数。offer_ids填酒店卡片的offer_id；行程的hotel_evidence_id填卡片的evidence_id。"""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
-    component: Literal["hotel_comparison", "itinerary"]
+    component: Literal["hotel_comparison", "itinerary", "choice"]
     expected_revision: int | None = Field(default=None, strict=True, ge=0)
     offer_ids: tuple[UUID, ...] = Field(default=(), max_length=18)
     draft_id: UUID | None = None
+    kind: ChoiceKind | None = None
 
     @model_validator(mode="after")
     def valid_component(self) -> "PresentationInput":
         if len(self.offer_ids) != len(set(self.offer_ids)):
             raise ValueError("报价ID不能重复")
+        if self.component == "choice":
+            if (
+                self.kind is None
+                or self.expected_revision is None
+                or self.offer_ids
+                or self.draft_id
+            ):
+                raise ValueError("选择卡仅需要kind与条件版本，选项由服务端生成")
+            return self
+        if self.kind is not None:
+            raise ValueError("其他展示不能带选择类型")
         if self.component == "hotel_comparison":
             if self.expected_revision is None or not self.offer_ids or self.draft_id is not None:
                 raise ValueError("酒店卡片仅需要版本和1至18个报价ID（单城市最多6个）")
@@ -114,6 +132,15 @@ class PresentationInput(BaseModel):
 
 DEFINITIONS = (
     *SEARCH_DEFINITIONS,
+    ToolDefinition(
+        "propose_memory",
+        "仅从本轮用户本人的明确偏好提出最多5条记忆；quote必须是当前用户原话。"
+        "ADD/UPDATE/INVALIDATE，闭合key和值；UPDATE/INVALIDATE引用当前active fact_id。"
+        "用户必须逐条点记住/这次而已/不要记，模型不能确认；"
+        "第三方偏好、工具/攻略/AI输出不能记为用户本人偏好。值约束：" + VALUE_GUIDE,
+        MemoryProposal.model_json_schema(),
+        kind="state",
+    ),
     ToolDefinition(
         "get_weather_forecast",
         "按当前条件的城市与日期查询每日天气；超过16天或未定日期返回unknown。",
@@ -207,6 +234,7 @@ DEFINITIONS = (
     ),
 )
 SCHEMAS: dict[str, type[BaseModel]] = {
+    "propose_memory": MemoryProposal,
     "get_weather_forecast": WeatherInput,
     "search_places": PlaceSearchInput,
     "search_content": ContentSearchInput,
@@ -318,33 +346,93 @@ class TravelToolExecutor:
         self.lock = asyncio.Lock()
         self.context: RunContext | None = None
         self.stopping_error = False
+        self.paused_tool: str | None = None
+        self.external_failures: dict[tuple[str, str], ToolResult] = {}
+        self.corrections: set[tuple[str, str, str]] = set()
+        self.failed_corrections: dict[tuple[str, str, str], ToolResult] = {}
 
     async def execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
     ) -> ToolResult:
-        result = await self._execute(context, name, arguments)
-        if result.code is None:
-            self.rejected.clear()
-        elif result.code == "blocked" and not {"tool_call_cap", "repeat_blocked"} & set(
-            result.detail
-        ):
-            self.rejected[call_key(name, arguments)] = tuple(
-                tag for tag in result.detail if tag in get_args(ToolReason.__value__)
+        async with self.lock:
+            key = call_key(name, arguments)
+            scope = (
+                name,
+                str(arguments.get("expected_revision", "")),
+                str(arguments.get("segment_arrive", "")),
             )
-        if name != "get_weather_forecast" and result.code in {
-            "unavailable",
-            "timeout",
-            "blocked",
-            "rate_limited",
-            "cancelled",
-            "provider_error",
-        }:
-            self.stopping_error = True
-        if name in {"validate_itinerary", "stage_plan_change"}:
-            # 每次校验调用都记录修复轮次(含被拒绝的调用)。
-            rounds = (f"repair_round:{self.validations}", f"max_validations:{self.max_validations}")
-            result = replace(result, detail=(*result.detail, *rounds))
-        return result
+            # 缓存不得绕过run/owner检查，亦不会被无关工具成功清空。
+            if self.context is not None and self.context != context:
+                return await self._execute(context, name, arguments)
+            result = self.external_failures.get(key) or self.failed_corrections.get(scope)
+            if result is not None and result.external and result.external.provisional:
+                result = replace(
+                    result,
+                    external=result.external.model_copy(update={"provisional": False}),
+                    suggestion="相同错误参数不能重复查询，请向用户说明需核对的条件",
+                )
+                self.external_failures[key] = result
+                self.failed_corrections[scope] = result
+            if result is None:
+                result = await self._execute(context, name, arguments)
+                if (
+                    result.external
+                    and result.external.kind == "bad_request"
+                    and result.external.status == 400
+                ):
+                    if scope not in self.corrections:
+                        self.corrections.add(scope)
+                        result = replace(
+                            result,
+                            external=result.external.model_copy(update={"provisional": True}),
+                            suggestion="供应商拒绝查询参数；请修正参数一次，不要重复相同请求",
+                        )
+                    else:
+                        self.failed_corrections[scope] = result
+                if (
+                    scope in self.corrections
+                    and result.code is not None
+                    and not (result.external and result.external.provisional)
+                ):
+                    self.failed_corrections[scope] = result
+                if result.external and result.code is not None:
+                    self.external_failures[key] = result
+            if result.code is None:
+                self.rejected.clear()
+                if name == self.paused_tool:
+                    self.stopping_error, self.paused_tool = False, None
+            elif result.code == "blocked" and not {"tool_call_cap", "repeat_blocked"} & set(
+                result.detail
+            ):
+                self.rejected[call_key(name, arguments)] = tuple(
+                    tag for tag in result.detail if tag in get_args(ToolReason.__value__)
+                )
+            if (
+                name != "get_weather_forecast"
+                and not (result.external and result.external.provisional)
+                and (
+                    result.code
+                    in {
+                        "unavailable",
+                        "timeout",
+                        "blocked",
+                        "rate_limited",
+                        "cancelled",
+                        "provider_error",
+                    }
+                    or (result.code is not None and result.external is not None)
+                )
+            ):
+                self.stopping_error = True
+                self.paused_tool = name
+            if name in {"validate_itinerary", "stage_plan_change"}:
+                # 每次校验调用都记录修复轮次(含被拒绝的调用)。
+                rounds = (
+                    f"repair_round:{self.validations}",
+                    f"max_validations:{self.max_validations}",
+                )
+                result = replace(result, detail=(*result.detail, *rounds))
+            return result
 
     async def _execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
@@ -358,114 +446,138 @@ class TravelToolExecutor:
                 suggestion="请选择已注册的旅行工具",
                 detail=("unregistered_tool",),
             )
-        async with self.lock:
-            if self.context is not None and self.context != context:
-                return ToolResult(
-                    {},
-                    code="blocked",
-                    suggestion="执行器不能跨run或用户复用",
-                    detail=("context_reuse",),
-                )
-            self.context = context
-            if self.max_calls is not None and self.calls >= self.max_calls:
-                return ToolResult(
-                    {}, code="blocked", suggestion="本轮工具次数已达上限", detail=("tool_call_cap",)
-                )
-            if (original := self.rejected.get(call_key(name, arguments))) is not None:
-                return ToolResult(
-                    {},
-                    code="blocked",
-                    suggestion="相同调用刚被拒绝且其间没有成功的调用；请修改输入，或向用户说明无法完成",
-                    detail=("repeat_blocked", *original),
-                )
-            self.calls += 1
+        if self.context is not None and self.context != context:
+            return ToolResult(
+                {},
+                code="blocked",
+                suggestion="执行器不能跨run或用户复用",
+                detail=("context_reuse",),
+            )
+        self.context = context
+        if self.max_calls is not None and self.calls >= self.max_calls:
+            return ToolResult(
+                {}, code="blocked", suggestion="本轮工具次数已达上限", detail=("tool_call_cap",)
+            )
+        if (original := self.rejected.get(call_key(name, arguments))) is not None:
+            return ToolResult(
+                {},
+                code="blocked",
+                suggestion="相同调用刚被拒绝且其间没有成功的调用；请修改输入，或向用户说明无法完成",
+                detail=("repeat_blocked", *original),
+            )
+        self.calls += 1
+        try:
+            parsed = SCHEMAS[name].model_validate(arguments)
+            live = self.travel.live
+            before = len(live.usage.observations) if live else 0
+            deadline = REQUEST_DEADLINE.set(time.monotonic() + definition.timeout_seconds)
             try:
-                parsed = SCHEMAS[name].model_validate(arguments)
                 async with asyncio.timeout(definition.timeout_seconds):
                     result = await self._dispatch(context, name, parsed)
-                result_limit = definition.max_result_chars
-                if name == "present_travel_result" and result.data.get("segments"):
-                    segments = result.data["segments"]
-                    if isinstance(segments, list):
-                        result_limit *= len(segments)
-                if len(json.dumps(result.payload(), ensure_ascii=False)) > result_limit:
-                    return ToolResult(
-                        {},
-                        code="blocked",
-                        suggestion="结果过长，请缩小limit或查询范围",
-                        detail=("result_too_long",),
+                if live and (observations := live.usage.observations[before:]):
+                    # 优先保留已恢复的请求，逐晚正常核价不覆盖其重试证据。
+                    info = next((o for o in observations if o.recovered_from), observations[-1])
+                    result = replace(result, external=info)
+            finally:
+                REQUEST_DEADLINE.reset(deadline)
+            result_limit = definition.max_result_chars
+            if name == "present_travel_result" and result.data.get("segments"):
+                segments = result.data["segments"]
+                if isinstance(segments, list):
+                    result_limit *= len(segments)
+            if len(json.dumps(result.payload(), ensure_ascii=False)) > result_limit:
+                return ToolResult(
+                    {},
+                    code="blocked",
+                    suggestion="结果过长，请缩小limit或查询范围",
+                    detail=("result_too_long",),
+                )
+            if result.code is None:
+                if isinstance(parsed, PresentationInput) and parsed.component != "choice":
+                    revision = (
+                        parsed.expected_revision
+                        if parsed.component == "hotel_comparison"
+                        else result.data.get("request_revision")
                     )
-                if result.code is None:
-                    if isinstance(parsed, PresentationInput):
-                        revision = (
-                            parsed.expected_revision
-                            if parsed.component == "hotel_comparison"
-                            else result.data.get("request_revision")
-                        )
-                        assert isinstance(revision, int)
-                        await self.travel.complete_conversation_task(
-                            context, parsed.component, revision
-                        )
-                    elif isinstance(parsed, HotelSearchInput | RefreshOfferInput) and result.empty:
-                        await self.travel.complete_conversation_task(
-                            context, "hotel_comparison", parsed.expected_revision
-                        )
-                return result
-            except ValidationError as error:
-                if any(
-                    item["type"] == "timezone_aware"
-                    for item in error.errors(include_input=False, include_context=False)
-                ):
-                    return ToolResult(
-                        {},
-                        code="validation",
-                        suggestion="日期时间必须带时区；京都当地时间使用+09:00",
-                        detail=("schema", *validation_paths(error)),
+                    assert isinstance(revision, int)
+                    await self.travel.complete_conversation_task(
+                        context, parsed.component, revision
                     )
+                elif isinstance(parsed, HotelSearchInput | RefreshOfferInput) and result.empty:
+                    await self.travel.complete_conversation_task(
+                        context, "hotel_comparison", parsed.expected_revision
+                    )
+            return result
+        except ValidationError as error:
+            if any(
+                item["type"] == "timezone_aware"
+                for item in error.errors(include_input=False, include_context=False)
+            ):
                 return ToolResult(
                     {},
                     code="validation",
-                    suggestion=(PresentationInput.__doc__ or "检查工具参数")
-                    if name == "present_travel_result"
-                    else "由模型修正参数，不向用户重复追问已知条件：room_preferences仅用枚举，"
-                    "未提组省略，无要求用any，不传null；房型明确改值的explicit_fields填"
-                    "['hard_constraints']（不是bed或room_preferences）；set/clear不得重叠，"
-                    "typed房型与hard_constraints不得矛盾。"
-                    if name == "update_travel_request"
-                    else "检查工具参数；不接受用户/会话身份字段",
+                    suggestion="日期时间必须带时区；京都当地时间使用+09:00",
                     detail=("schema", *validation_paths(error)),
                 )
-            except ServiceError as error:
-                return ToolResult(
-                    {},
-                    code=error.code,
-                    suggestion=str(error),
-                    detail=(
-                        f"service:{error.status}",
-                        error.reason or "untagged",
-                        *(f"missing:{f}" for f in error.fields if f in HOTEL_FIELD_LABELS),
-                    ),
-                )
-            except ExternalDataError as error:
-                return ToolResult(
-                    {},
-                    code="validation" if error.validation else "unavailable",
-                    suggestion=str(error),
-                    detail=("external_data", "validation" if error.validation else "unavailable"),
-                )
-            except TimeoutError:
-                return ToolResult(
-                    {}, code="timeout", suggestion="本轮工具执行超时", detail=("tool_timeout",)
-                )
-            except (OSError, ValueError, SQLAlchemyError) as error:
-                return ToolResult(
-                    {},
-                    code="unavailable",
-                    suggestion="本地业务数据暂不可用",
-                    detail=("local_error", type(error).__name__),
-                )
+            return ToolResult(
+                {},
+                code="validation",
+                suggestion=(PresentationInput.__doc__ or "检查工具参数")
+                if name == "present_travel_result"
+                else "由模型修正参数，不向用户重复追问已知条件：room_preferences仅用枚举，"
+                "未提组省略，无要求用any，不传null；房型明确改值的explicit_fields填"
+                "['hard_constraints']（不是bed或room_preferences）；set/clear不得重叠，"
+                "typed房型与hard_constraints不得矛盾。"
+                if name == "update_travel_request"
+                else "请按闭合值修正propose_memory参数："
+                + VALUE_GUIDE
+                + "。工具失败时没有生成确认卡，不能声称已提取待确认或已保存。"
+                if name == "propose_memory"
+                else "检查工具参数；不接受用户/会话身份字段",
+                detail=("schema", *validation_paths(error)),
+            )
+        except ServiceError as error:
+            return ToolResult(
+                {},
+                code=error.code,
+                suggestion=str(error),
+                external=error.external,
+                detail=(
+                    f"service:{error.status}",
+                    error.reason or "untagged",
+                    *(f"missing:{f}" for f in error.fields if f in HOTEL_FIELD_LABELS),
+                ),
+            )
+        except ExternalDataError as error:
+            return ToolResult(
+                {},
+                code=external_code(error.info),
+                suggestion=str(error),
+                external=error.info,
+                detail=("external_data", "validation" if error.validation else "unavailable"),
+            )
+        except TimeoutError:
+            return ToolResult(
+                {}, code="timeout", suggestion="本轮工具执行超时", detail=("tool_timeout",)
+            )
+        except (OSError, ValueError, SQLAlchemyError) as error:
+            return ToolResult(
+                {},
+                code="unavailable",
+                suggestion="本地业务数据暂不可用",
+                detail=("local_error", type(error).__name__),
+            )
 
     async def _dispatch(self, context: RunContext, name: str, parsed: BaseModel) -> ToolResult:
+        if isinstance(parsed, MemoryProposal):
+            choices = await MemoryService(self.travel.database).propose(context, parsed)
+            return ToolResult({"choices": choices}, empty=not choices)
+        if isinstance(parsed, PresentationInput) and parsed.component == "choice":
+            assert parsed.kind is not None and parsed.expected_revision is not None
+            card = await ChoiceService(self.travel).create(
+                context, parsed.kind, parsed.expected_revision
+            )
+            return ToolResult({"component": "choice", **card.model_dump(mode="json")})
         if isinstance(parsed, ConversationStateInput):
             return ToolResult(await self.travel.update_conversation_state(context, parsed))
         if isinstance(parsed, WeatherInput):
@@ -653,22 +765,29 @@ class TravelToolExecutor:
                 warnings=warning,
                 data_mode="live" if self.travel.live else "fixture",
             )
-        records = (
-            await self.hotels.search(
+        diagnosis, choice = None, None
+        if isinstance(parsed, HotelSearchInput):
+            records, diagnosis, choice = await self.hotels.search_result(
                 context,
                 parsed.expected_revision,
                 parsed.hotel_id,
                 parsed.limit,
                 segment_arrive=parsed.segment_arrive,
             )
-            if isinstance(parsed, HotelSearchInput)
-            else await self.hotels.refresh(context, parsed.expected_revision, parsed.offer_id)
-        )
+        else:
+            records = await self.hotels.refresh(context, parsed.expected_revision, parsed.offer_id)
         request = await self.travel.get_request(context)
         require_revision(request, parsed.expected_revision)
-        offers, trimmed = bounded_offers(cards(records, request), warning)
+        metadata: dict[str, object] = {
+            **({"relaxation": diagnosis.model_dump(mode="json")} if diagnosis else {}),
+            **({"choice": choice.model_dump(mode="json")} if choice else {}),
+        }
+        offers, trimmed = bounded_offers(cards(records, request), warning, metadata=metadata)
         return ToolResult(
-            {"offers": offers},
+            {
+                "offers": offers,
+                **metadata,
+            },
             empty=not records,
             evidence_ids=tuple(str(offer["evidence_id"]) for offer in offers),
             warnings=(*warning, TRIMMED_WARNING) if trimmed else warning,
@@ -727,7 +846,10 @@ OFFER_DROP = ("stay", "request_revision", "image_url")  # 同一次查询共用�
 
 
 def bounded_offers(
-    offers: list[dict[str, object]], warning: tuple[str, ...]
+    offers: list[dict[str, object]],
+    warning: tuple[str, ...],
+    *,
+    metadata: dict[str, object] | None = None,
 ) -> tuple[list[dict[str, object]], bool]:
     """去重复展示字段，仍超长按上游顺序保留整张卡；不按价格重排或截断JSON。"""
     rows = [{k: v for k, v in offer.items() if k not in OFFER_DROP} for offer in offers]
@@ -735,13 +857,13 @@ def bounded_offers(
 
     def size(count: int) -> int:
         probe = ToolResult(
-            {"offers": rows[:count]},
+            {"offers": rows[:count], **(metadata or {})},
             evidence_ids=tuple(str(o["evidence_id"]) for o in rows[:count]),
             warnings=(*warning, TRIMMED_WARNING),
         )
         return len(json.dumps(probe.payload(), ensure_ascii=False))
 
-    while kept > 1 and size(kept) > RESULT_LIMIT:
+    while kept > 1 and size(kept) > RESULT_LIMIT - (600 if metadata is not None else 0):
         kept -= 1
     return rows[:kept], kept < len(rows)
 

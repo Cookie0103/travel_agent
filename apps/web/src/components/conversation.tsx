@@ -16,6 +16,7 @@ import { RunSteps } from "./activity-drawer";
 import { Markdown } from "./markdown";
 import { Loading, Skeleton } from "./ui/loading";
 import { Button } from "./ui/button";
+import { ChoiceCard } from "./choice-card";
 import {
   runLabel,
   stageGuidance,
@@ -352,6 +353,24 @@ function TurnCards({
   };
   return (
     <>
+      {(references.choices ?? []).map((original) => {
+        const card =
+          workspace.choiceCards.find(
+            (card) => card.choice_id === original.choice_id,
+          ) ?? original;
+        return (
+          <ChoiceCard
+            key={card.choice_id}
+            card={card}
+            busy={workspace.busy || workspace.restoring}
+            sessionId={workspace.identity?.session_id}
+            revision={workspace.request?.revision}
+            select={(optionId) =>
+              void workspace.selectChoice(card, optionId, mode)
+            }
+          />
+        );
+      })}
       {hotels && (
         <HotelResults
           key={`${run.run_id}:${workspace.request?.revision}`}

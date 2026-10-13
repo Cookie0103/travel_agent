@@ -1,7 +1,5 @@
 """受控SDK进程的私有事件日志；父进程逐行读取以持久化UI进度，不重跑工具。"""
 
-import json
-from dataclasses import asdict
 from pathlib import Path
 
 from pydantic import TypeAdapter
@@ -37,5 +35,5 @@ class EventReader:
 
 def save_event(path: Path, event: RuntimeEvent) -> None:
     with path.open("a", encoding="utf-8", newline="\n") as stream:
-        stream.write(json.dumps(asdict(event), ensure_ascii=False, default=str) + "\n")
+        stream.write(EVENT.dump_json(event).decode("utf-8") + "\n")
         stream.flush()

@@ -1,6 +1,7 @@
 /** Application state and recovery; only explicit user actions can submit or confirm. */
 "use client";
-import type { HotelSelection } from "./hotel-groups";
+import type { Choice, MessageSelection } from "./api";
+import { choiceMessage } from "./choices";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   api,
@@ -31,6 +32,7 @@ import {
   isCardEvent,
   belongsToRun,
   matchesRun,
+  historicalChoiceEvents,
   type RunBinding,
 } from "./early-cards";
 import {
@@ -59,6 +61,7 @@ export function useWorkspace({
   const [tripCursor, setTripCursor] = useState<string | null>(null);
   const [events, setEvents] = useState<AppEvent[]>([]);
   const [hotels, setHotels] = useState<Hotels>();
+  const [choiceCards, setChoiceCards] = useState<Choice[]>([]);
   const [plan, setPlan] = useState<Plan>();
   const [confirmation, setConfirmation] = useState<{
     session_id: string;
@@ -99,6 +102,7 @@ export function useWorkspace({
       setTripCursor(null);
       setEvents([]);
       setHotels(undefined);
+      setChoiceCards([]);
       setPlan(undefined);
       setConfirmation(undefined);
       setPlanOrigin(undefined);
@@ -124,10 +128,26 @@ export function useWorkspace({
       binding: RunBinding,
     ) => {
       const payload = event.presentation as
-        { data?: Hotels | Plan } | undefined;
+        | { data?: Hotels | Plan | (Choice & { component: "choice" }) }
+        | undefined;
       const data = payload?.data;
       if (!data || !active() || !belongsToRun(event, binding)) return;
-      if ("component" in data && data.component === "hotel_comparison") {
+      if ("component" in data && data.component === "choice") {
+        const card = await api<Choice>(
+          `/sessions/${current.session_id}/choices/${data.choice_id}`,
+          current.token,
+        );
+        if (
+          !active() ||
+          card.session_id !== binding.session_id ||
+          card.source_run_id !== binding.run_id
+        )
+          return;
+        setChoiceCards((old) => [
+          ...old.filter((existing) => existing.choice_id !== card.choice_id),
+          card,
+        ]);
+      } else if ("component" in data && data.component === "hotel_comparison") {
         setHotels(data);
         setHotelOrigin(binding);
       } else if ("draft_id" in data && data.draft_id) {
@@ -160,6 +180,8 @@ export function useWorkspace({
       // 早期出卡按事件顺序串行；失败静默，运行结束后的 hydrate 为准。
       let early = Promise.resolve();
       let failedReason: string | null = null; // 最近一次失败工具步骤或运行级失败事件的封闭原因码
+      let failedTool: string | null = null;
+      let failedExternal: AppEvent["external"] = null;
       try {
         await readEvents(
           runId,
@@ -175,11 +197,27 @@ export function useWorkspace({
             )
               return;
             cursor.current = event.sequence;
-            if (event.kind === "tool_finished" && event.code)
+            if (
+              event.kind === "tool_finished" &&
+              event.code &&
+              !event.external?.provisional
+            ) {
               failedReason = event.reason ?? null;
+              failedTool = event.tool_name;
+              failedExternal = event.external;
+            } else if (
+              event.kind === "tool_finished" &&
+              !event.code &&
+              event.tool_name === failedTool
+            ) {
+              failedReason = null;
+              failedTool = null;
+              failedExternal = null;
+            }
             // 运行级失败事件在最后到达；其封闭原因码优先于此前的工具原因。
             if (event.kind === "failed" && event.reason)
               failedReason = event.reason;
+            if (event.kind === "failed") failedExternal = event.external;
             setEvents((old) => [...old.slice(-79), event]);
             if (isCardEvent(event))
               early = early
@@ -222,7 +260,9 @@ export function useWorkspace({
         if (!active()) return;
         setBookings(savedBookings);
         if (final.error_code && final.business_result?.kind !== "stage_failed")
-          setError(runFailureMessage(final.error_code, failedReason));
+          setError(
+            runFailureMessage(final.error_code, failedReason, failedExternal),
+          );
       } catch (failure) {
         if (active()) fail(failure);
       } finally {
@@ -246,6 +286,8 @@ export function useWorkspace({
           historyLoaded.current = true;
         }
         setHistoryError("");
+        for (const { event, run } of historicalChoiceEvents(page.items))
+          await hydrate(event, current, active, run);
         latestId = page.items.at(-1)?.run_id;
       } catch (failure) {
         if (!active()) return;
@@ -435,6 +477,7 @@ export function useWorkspace({
       setTrips([]);
       setTripCursor(null);
       setHotels(undefined);
+      setChoiceCards([]);
       setPlan(undefined);
       setConfirmation(undefined);
       setPlanOrigin(undefined);
@@ -483,6 +526,7 @@ export function useWorkspace({
         setSendError("");
         setEvents([]);
         setHotels(undefined);
+        setChoiceCards([]);
         setPlan(undefined);
         setConfirmation(undefined);
         setPlanOrigin(undefined);
@@ -536,6 +580,7 @@ export function useWorkspace({
           : old,
       );
       setHotels(undefined);
+      setChoiceCards([]);
       if (plan) {
         const displayed = await read(
           plan.draft_id
@@ -565,6 +610,7 @@ export function useWorkspace({
         active() ? updateTripSummary(old, identity.session_id, state) : old,
       );
       setHotels(undefined);
+      setChoiceCards([]);
       const savedBookings = await read(
         api<Booking[]>(
           `/sessions/${identity.session_id}/bookings`,
@@ -595,7 +641,7 @@ export function useWorkspace({
       if (active()) await restoreConversation(identity, active);
     });
   }
-  async function send(text: string, mode: Mode, selection?: HotelSelection) {
+  async function send(text: string, mode: Mode, selection?: MessageSelection) {
     if (!identity || !text.trim() || busy) return false;
     const started = generation.current;
     const read = readWhile(() => generation.current === started);
@@ -648,6 +694,38 @@ export function useWorkspace({
       setBusy(false);
       return false;
     }
+  }
+  async function selectChoice(card: Choice, optionId: string, mode: Mode) {
+    if (
+      !identity ||
+      card.session_id !== identity.session_id ||
+      busy ||
+      restoring
+    )
+      return false;
+    const option = card.options.find((option) => option.option_id === optionId);
+    if (!option) return false;
+    const started = generation.current;
+    const accepted = await send(
+      `用户选择：${option.label}`,
+      mode,
+      choiceMessage(card, optionId),
+    );
+    if (generation.current !== started) return false;
+    try {
+      const updated = await api<Choice>(
+        `/sessions/${identity.session_id}/choices/${card.choice_id}`,
+        identity.token,
+      );
+      if (generation.current === started)
+        setChoiceCards((old) => [
+          ...old.filter((existing) => existing.choice_id !== updated.choice_id),
+          updated,
+        ]);
+    } catch (failure) {
+      if (generation.current === started) fail(failure);
+    }
+    return accepted;
   }
   async function confirm() {
     if (
@@ -817,6 +895,8 @@ export function useWorkspace({
       setHistory((old) =>
         active() ? mergeHistory(old, page.items, identity.session_id) : old,
       );
+      for (const { event, run } of historicalChoiceEvents(page.items))
+        await hydrate(event, identity, active, run);
       setHistoryBefore(page.next_before);
     });
   }
@@ -841,6 +921,7 @@ export function useWorkspace({
     tripCursor,
     events,
     hotels,
+    choiceCards,
     plan,
     confirmation,
     planOrigin,
@@ -857,6 +938,7 @@ export function useWorkspace({
     loadMoreTrips,
     saveConditions,
     send,
+    selectChoice,
     confirm,
     holdOffer,
     bookingAction,

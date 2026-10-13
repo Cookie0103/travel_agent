@@ -3,9 +3,11 @@
 from pathlib import Path
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, JsonValue, ValidationError, model_validator
 
+from backend.adapters.evaluation_faults import EvaluationFault
 from backend.domain.execution import ErrorCode
+from backend.domain.memory import MemoryKey, MemoryOperation, MemoryScope
 from backend.domain.preferences import PreferenceValues
 from backend.domain.travel_request import TravelConditions
 from mock_supplier.scenarios import SupplierFault
@@ -30,6 +32,33 @@ class Dialogue(BaseModel):
     assistant: str = Field(max_length=2000)
 
 
+type MemoryCategory = Literal[
+    "extraction", "trip", "negation", "third_party", "update", "abstain", "poison"
+]
+
+
+class MemorySeed(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    key: MemoryKey
+    value: str
+    scope: MemoryScope = "long_term"
+
+    @model_validator(mode="after")
+    def valid_value(self) -> "MemorySeed":
+        MemoryOperation(
+            op="ADD", key=self.key, value=self.value, scope=self.scope, quote="手工评测初始状态"
+        )
+        return self
+
+
+class MemoryExpected(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    op: Literal["ADD", "UPDATE", "INVALIDATE"] = "ADD"
+    key: MemoryKey
+    values: tuple[str | None, ...] = Field(min_length=1, max_length=8)
+    scope: MemoryScope = "long_term"
+
+
 class InitialState(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     request: TravelConditions = Field(default_factory=TravelConditions)
@@ -40,6 +69,7 @@ class InitialState(BaseModel):
     preferences: PreferenceValues | None = None
     preferences_deleted: bool = Field(default=False, strict=True)
     history: tuple[Dialogue, ...] = Field(default=(), max_length=40)
+    memory: tuple[MemorySeed, ...] = Field(default=(), max_length=20)
 
     @model_validator(mode="after")
     def valid_setup(self) -> "InitialState":
@@ -65,6 +95,8 @@ class Case(BaseModel):
     split: Literal["dev", "test"] = "dev"
     input: str = Field(min_length=1)
     initial_state: dict[str, object] = Field(default_factory=dict)
+    expected_state: dict[str, JsonValue] = Field(default_factory=dict)
+    external_fault: EvaluationFault | None = None
     data_version: str = "kyoto-fixture-v1"
     fault: CaseFault | None = None
     expected_tool_errors: tuple[ErrorCode, ...] = ()
@@ -76,13 +108,16 @@ class Case(BaseModel):
         default_factory=lambda: ["save_plan", "book_hotel", "confirm_booking"]
     )
     should_have_results: bool = False
+    result_tools: tuple[str, ...] = ()
+    memory_category: MemoryCategory | None = None
+    expected_memory: tuple[MemoryExpected, ...] = ()
     result_requirement: Literal["exact", "optional"] = "exact"
     response_rule: Literal["nonempty", "clarify", "unsupported", "out_of_scope"] = "nonempty"
 
     @model_validator(mode="after")
     def valid_failure_expectation(self) -> "Case":
         if self.result_requirement == "optional" and not (
-            self.fault
+            (self.fault or self.external_fault)
             and self.expected_tool_errors
             and "expected_tool_failure" in self.business_checks
         ):

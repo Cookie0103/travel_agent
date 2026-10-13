@@ -165,7 +165,7 @@ def test_google_place_details_failure_is_not_cached() -> None:
             for _ in range(2):
                 with pytest.raises(ExternalDataError):
                     await google.details("gplace:missing", "京都")
-        assert usage.calls == 2 and not google.places
+        assert usage.calls == 4 and not google.places
 
     asyncio.run(exercise())
 

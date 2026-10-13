@@ -46,6 +46,7 @@ def worker_environment(
         "GOOGLE_PLACES_DAILY_CAP",
         "GOOGLE_ROUTES_DAILY_CAP",
         "RAKUTEN_DAILY_CAP",
+        "RAKUTEN_MIN_INTERVAL_SECONDS",
         "WEATHER_DAILY_CAP",
         "TRAVEL_PROFILE",
     }

@@ -6,6 +6,7 @@ from typing import Literal, Protocol
 from pydantic import ValidationError
 
 from backend.domain.execution import ErrorCode, RunContext
+from backend.domain.external_data import ExternalAttempt
 
 RESULT_LIMIT = 8000
 # present_travel_result的整个展示就是工具结果：5-6张带停留条件/链接/地址/坐标/证据的酒店卡
@@ -66,10 +67,11 @@ class ToolResult:
     warnings: tuple[str, ...] = ()
     suggestion: str = ""
     detail: tuple[str, ...] = ()  # 仅供TRACE的脱敏诊断标签，不进入payload/模型
+    external: ExternalAttempt | None = None
 
     def payload(self) -> dict[str, object]:
         """正文状态是工具契约的一部分，兼容忽略 MCP is_error 的模型。"""
-        return {
+        payload: dict[str, object] = {
             "status": "error" if self.code else "empty" if self.empty else "ok",
             "data": self.data,
             "evidence_ids": list(self.evidence_ids),
@@ -77,6 +79,9 @@ class ToolResult:
             "warnings": list(self.warnings),
             "error": {"code": self.code, "suggestion": self.suggestion} if self.code else None,
         }
+        if self.external is not None:
+            payload["external"] = self.external.model_dump(mode="json")
+        return payload
 
 
 class ToolExecutor(Protocol):

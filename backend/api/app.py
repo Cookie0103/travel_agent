@@ -12,8 +12,10 @@ from fastapi.responses import JSONResponse, Response, StreamingResponse
 from backend.api.events import stream_events
 from backend.services.bookings import Booking, BookingService, HoldHotelInput
 from backend.services.catalog import Article, CatalogService
+from backend.services.choices import ChoiceCard, ChoiceService
 from backend.services.common import ServiceError
 from backend.services.history import HistoryService, RunPage, SessionPage
+from backend.services.memory import MemoryFactView, MemoryService
 from backend.services.models import ModelOption, model_options
 from backend.services.plans import LockInput, PlanService, SavedPlan
 from backend.services.preferences import (
@@ -35,6 +37,7 @@ from backend.services.travel import (
     RunContext,
     TravelService,
 )
+from backend.services.user_profile import UserProfileService, UserProfileView
 from backend.services.views import PlanView, RequestView
 
 
@@ -54,6 +57,8 @@ def create_app(
     plans = PlanService(travel)
     bookings = booking_service or BookingService(travel)
     preferences = PreferenceService(sessions.database)
+    memory = MemoryService(sessions.database)
+    profile = UserProfileService(sessions.database, live_enabled=runs.live_enabled)
     catalog = CatalogService(travel)
     history = HistoryService(sessions.database)
 
@@ -97,6 +102,34 @@ def create_app(
         body: PreferenceVersion, user_id: Annotated[UUID, Depends(identity)]
     ) -> Preferences:
         return await preferences.change(user_id, body)
+
+    @app.get("/memory")
+    async def memory_facts(
+        user_id: Annotated[UUID, Depends(identity)], include_history: bool = False
+    ) -> tuple[MemoryFactView, ...]:
+        return await memory.facts(user_id, include_history=include_history)
+
+    @app.get("/memory/{fact_id}")
+    async def memory_fact(
+        fact_id: UUID, user_id: Annotated[UUID, Depends(identity)]
+    ) -> MemoryFactView:
+        return await memory.get(user_id, fact_id)
+
+    @app.delete("/memory/{fact_id}")
+    async def delete_memory_fact(
+        fact_id: UUID, body: PreferenceVersion, user_id: Annotated[UUID, Depends(identity)]
+    ) -> Preferences:
+        return await memory.delete(user_id, fact_id, body)
+
+    @app.get("/profile-summary")
+    async def get_profile(user_id: Annotated[UUID, Depends(identity)]) -> UserProfileView:
+        return await profile.get(user_id)
+
+    @app.post("/profile-summary")
+    async def update_profile(
+        body: PreferenceVersion, user_id: Annotated[UUID, Depends(identity)]
+    ) -> UserProfileView:
+        return await profile.generate(user_id, body)
 
     @app.get("/health")
     async def health() -> dict[str, str]:
@@ -164,6 +197,12 @@ def create_app(
         session_id: UUID, body: MessageInput, user_id: Annotated[UUID, Depends(identity)]
     ) -> RunView:
         return await runs.submit(user_id, session_id, body)
+
+    @app.get("/sessions/{session_id}/choices/{choice_id}")
+    async def get_choice(
+        session_id: UUID, choice_id: UUID, user_id: Annotated[UUID, Depends(identity)]
+    ) -> ChoiceCard:
+        return await ChoiceService(travel).get(user_id, session_id, choice_id)
 
     @app.get("/runs/{run_id}")
     async def get_run(run_id: UUID, user_id: Annotated[UUID, Depends(identity)]) -> RunView:

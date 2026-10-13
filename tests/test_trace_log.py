@@ -213,7 +213,7 @@ async def test_api_call_logs_host_and_path_but_never_query_or_key(
         else:
             await call
     out = capsys.readouterr().out
-    (record,) = records(out)
+    (record,) = [item for item in records(out) if item["ev"] == "api_call"]
     assert SECRET not in out and record["path"] == "/v1/search" and record["host"] == "api.example"
     assert record["ev"] == "api_call" and record["api"] == "rakuten"
     assert record["error_class"] == ("ReadTimeout" if fail else None)

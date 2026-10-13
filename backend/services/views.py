@@ -7,6 +7,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
 from backend.domain.hotel_details import HotelDisplayDetails
+from backend.domain.hotel_recovery import HotelSearchDiagnostics
 from backend.domain.hotels import QuoteFields
 from backend.domain.itinerary import HotelStay, ValidationReport
 from backend.domain.plans import ItemDiff, PlanItem
@@ -50,6 +51,12 @@ class HotelCard(QuoteFields, HotelDisplayDetails):
     evidence_id: UUID
     source_ref: str | None
     content_version: str | None
+    budget_excess: str | None = Field(
+        default_factory=lambda: None, exclude_if=lambda value: value is None
+    )
+    budget_excess_percent: str | None = Field(
+        default_factory=lambda: None, exclude_if=lambda value: value is None
+    )
 
 
 class ValidationFeedback(ValidationReport):
@@ -113,6 +120,9 @@ class HotelSegmentPresentation(BaseModel):
     total_found: int | None = None
     more_url: str | None = None
     more_url_scope: Literal["search", "destination"] | None = None
+    relaxation: HotelSearchDiagnostics | None = Field(
+        default_factory=lambda: None, exclude_if=lambda value: value is None
+    )
 
 
 class HotelPresentation(BaseModel):
@@ -126,3 +136,6 @@ class HotelPresentation(BaseModel):
     total_found: int | None = None
     more_url: str | None = None
     more_url_scope: Literal["search", "destination"] | None = None
+    relaxation: HotelSearchDiagnostics | None = Field(
+        default_factory=lambda: None, exclude_if=lambda value: value is None
+    )

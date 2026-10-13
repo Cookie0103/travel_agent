@@ -28,6 +28,18 @@ def test_failed_sync_does_not_install_commit_hook() -> None:
     assert run.call_args.args[0] == ["uv", "sync", "--locked"]
 
 
+def test_explicit_webpack_build_still_runs_every_frontend_gate() -> None:
+    with patch("scripts.dev.shutil.which", return_value="pnpm"):
+        with patch.object(dev, "run_command", return_value=0) as run:
+            assert dev.main(["web-check", "--webpack"]) == 0
+            assert [call.args[0] for call in run.call_args_list] == [
+                ["pnpm", "run", "typecheck"],
+                ["pnpm", "run", "lint"],
+                ["pnpm", "run", "test"],
+                ["pnpm", "run", "build", "--webpack"],
+            ]
+
+
 @pytest.mark.parametrize("error", [FileNotFoundError(), subprocess.TimeoutExpired("tool", 1)])
 def test_unavailable_or_timed_out_command_returns_failure(error: Exception) -> None:
     with patch("scripts.dev.subprocess.run", side_effect=error):
@@ -92,6 +104,36 @@ def test_local_api_live_and_trace_require_explicit_flags() -> None:
             "--live",
             "--trace-cloud",
         ]
+
+
+def test_hotel_sort_probe_requires_explicit_live_flag() -> None:
+    with patch.object(dev, "run_command", return_value=0) as run:
+        assert dev.main(["probe-hotel-sort"]) == 2
+        run.assert_not_called()
+        assert dev.main(["probe-hotel-sort", "--live"]) == 0
+        assert run.call_args.args[0] == [sys.executable, "-m", "scripts.probe_hotel_sort", "--live"]
+
+
+def test_langfuse_smoke_requires_both_explicit_authorization_flags() -> None:
+    with patch.object(dev, "run_command", return_value=0) as run:
+        for flags in ([], ["--live"], ["--trace-cloud"]):
+            assert dev.main(["smoke-langfuse-linkage", *flags]) == 2
+            run.assert_not_called()
+        assert dev.main(["smoke-langfuse-linkage", "--live", "--trace-cloud"]) == 0
+        assert run.call_args.args[0][-3:] == [
+            "scripts.smoke_langfuse_linkage",
+            "--live",
+            "--trace-cloud",
+        ]
+
+
+def test_v2_eval_default_is_offline_and_cloud_needs_live() -> None:
+    with patch.object(dev, "run_command", return_value=0) as run:
+        assert dev.main(["eval-v2", "--trace-cloud"]) == 2
+        run.assert_not_called()
+        assert dev.main(["eval-v2"]) == 0
+        assert "--live" not in run.call_args.args[0]
+        assert "--database" in run.call_args.args[0]
 
 
 def test_failed_test_runs_isolate_temp_and_cache_without_touching_old_files(
@@ -171,6 +213,16 @@ def test_available_docker_starts_only_postgres() -> None:
         assert dev.main(["db-up"]) == 0
     assert run.call_count == 2
     assert run.call_args.args[0][-1] == "postgres"
+
+
+def test_web_formatter_uses_existing_package_script() -> None:
+    with (
+        patch("scripts.dev.shutil.which", return_value="pnpm"),
+        patch.object(dev, "run_command", return_value=0) as run,
+    ):
+        assert dev.main(["web-format"]) == 0
+    assert run.call_args.args[0] == ["pnpm", "run", "format"]
+    assert run.call_args.kwargs["cwd"] == dev.ROOT / "apps" / "web"
 
 
 @pytest.mark.parametrize("args", [["eval-dev"], ["eval-dev", "--live"]])

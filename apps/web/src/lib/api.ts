@@ -10,6 +10,13 @@ export type Plan = components["schemas"]["UiPlanView"];
 export type Article = components["schemas"]["Article"];
 export type Hotels = components["schemas"]["UiHotelPresentation"];
 export type Booking = components["schemas"]["Booking"];
+export type Choice = components["schemas"]["ChoiceCard"];
+export type MessageSelection =
+  | HotelSelection
+  | {
+      expected_revision: number;
+      selection: components["schemas"]["ChoiceSelection"];
+    };
 export type AppEvent = components["schemas"]["UiRuntimeEvent"] & {
   sequence: number;
 };
@@ -50,15 +57,23 @@ export function messageInput(
   previous: Identity["pending_message"],
   text: string,
   mode: Mode,
-  selection?: HotelSelection,
+  selection?: MessageSelection,
 ): components["schemas"]["MessageInput"] {
   if (
     previous &&
     (previous.text !== text ||
       previous.mode !== mode ||
       (selection &&
-        JSON.stringify([previous.expected_revision, previous.hotel_stays]) !==
-          JSON.stringify([selection.expected_revision, selection.hotel_stays])))
+        JSON.stringify([
+          previous.expected_revision,
+          previous.hotel_stays,
+          previous.selection,
+        ]) !==
+          JSON.stringify([
+            selection.expected_revision,
+            "hotel_stays" in selection ? selection.hotel_stays : undefined,
+            "selection" in selection ? selection.selection : undefined,
+          ])))
   )
     throw new Error(
       "上一条消息的响应尚未核对，请先重试原消息；会保留同一个去重ID。",

@@ -214,18 +214,15 @@ def test_api_actual_sdk_usage_reaches_committed_trace_and_otlp(
             )
             await asyncio.wait_for(asyncio.gather(*tuple(service.tasks.values())), timeout=40)
             final = await service.get(context.user_id, created.run_id)
-            assert final.status == ("failed" if upstream_failure else "completed")
+            assert final.status == "completed"
             assert not service.persistence_failures and not service.tasks
             assert (await travel.get_request(context)).revision == 1
             assert runtime.identity is initial and runtime.trace_metadata is not None
             metadata = runtime.trace_metadata
             assert metadata.identity.cli_version != "reported-by-worker"
-            assert len(guards) == 1 and calls == guards[0].attempts == 2
-            assert (
-                len(metadata.requests)
-                == len(guards[0].observations)
-                == (1 if upstream_failure else 2)
-            )
+            expected_attempts = 3 if upstream_failure else 2
+            assert len(guards) == 1 and calls == guards[0].attempts == expected_attempts
+            assert len(metadata.requests) == len(guards[0].observations) == 2
             assert metadata.accounted == guards[0].budget.totals()[1]
             path = (
                 tmp_path
@@ -246,7 +243,7 @@ def test_api_actual_sdk_usage_reaches_committed_trace_and_otlp(
             local = [json.loads(line) for line in raw.splitlines()]
             sdk = next(s for s in local if s["name"] == "agent.sdk")["attributes"]
             assert sdk["travel.cli_version"] == metadata.identity.cli_version
-            assert sdk["travel.http_attempts"] == 2
+            assert sdk["travel.http_attempts"] == expected_attempts
             assert sdk["travel.usage_complete"] is (not upstream_failure)
             assert sdk["travel.unobserved_responses"] == (1 if upstream_failure else 0)
             assert sdk["travel.run_accounted_cny"] == str(metadata.accounted)
@@ -270,7 +267,7 @@ def test_api_actual_sdk_usage_reaches_committed_trace_and_otlp(
             cloud_sdk = next(s for s in spans if s.name == "agent.sdk")
             attrs = {a.key: a.value for a in cloud_sdk.attributes}
             assert attrs["travel.cli_version"].string_value == metadata.identity.cli_version
-            assert attrs["travel.http_attempts"].int_value == 2
+            assert attrs["travel.http_attempts"].int_value == expected_attempts
             assert attrs["travel.run_accounted_cny"].string_value == str(metadata.accounted)
             assert attrs["travel.usage_complete"].bool_value is (not upstream_failure)
 

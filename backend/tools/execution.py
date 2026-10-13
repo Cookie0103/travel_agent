@@ -8,6 +8,8 @@ from pydantic import TypeAdapter, ValidationError
 
 from backend.agent.runtime import EventSink
 from backend.domain.execution import BusinessResult, RunContext, RuntimeEvent, tool_reason
+from backend.domain.external_data import external_explanation
+from backend.domain.hotel_recovery import HotelSearchDiagnostics
 from backend.domain.travel_request import HOTEL_FIELD_LABELS
 from backend.tools.contracts import ToolDefinition, ToolExecutor, ToolResult
 from backend.trace_log import trace
@@ -62,6 +64,8 @@ def empty_hotel_payload(result: ToolResult) -> dict[str, object]:
         "cancelled": "酒店查询已取消；需要时可重新查询。",
     }
     reason = reasons[result.code]
+    if result.external is not None:
+        reason = "酒店查询未完成：" + external_explanation(result.external)
     if result.code == "conflict" and "lodging_budget_conflict" in result.detail:
         reason = "住宿预算下限超过全程预算，暂不能比较酒店。请在对话中确认以哪个为准。"
     missing = [
@@ -139,8 +143,15 @@ async def execute_observed(
         limit_s=definition.timeout_seconds if definition else None,
         error_class=error_class,
         detail=list(result.detail) if result.detail else None,
+        external=result.external.model_dump(mode="json") if result.external else None,
     )
     revision = result.data.get("request_revision")
+    diagnosis = None
+    if isinstance((raw_diagnosis := result.data.get("relaxation")), dict):
+        try:
+            diagnosis = HotelSearchDiagnostics.model_validate(raw_diagnosis)
+        except ValidationError:
+            pass
     emit(
         RuntimeEvent(
             context,
@@ -155,18 +166,77 @@ async def execute_observed(
             else None,
             evidence_ids=result.evidence_ids,
             business_result=stage_result(result) if safe_name == "stage_plan_change" else None,
+            external=result.external,
+            relaxation_cause=diagnosis.cause if diagnosis else None,
+            relaxation_tier=diagnosis.tier if diagnosis else None,
         )
     )
     payload = None
+    if safe_name == "propose_memory" and result.code is None:
+        choices = result.data.get("choices")
+        if isinstance(choices, list):
+            for card in choices:
+                if isinstance(card, dict):
+                    emit(
+                        RuntimeEvent(
+                            context,
+                            "presentation",
+                            tool_name=name,
+                            tool_call_id=call_id,
+                            presentation={"status": "ok", "data": {"component": "choice", **card}},
+                        )
+                    )
+    if safe_name == "search_hotel_offers" and result.code is None:
+        budget_choice = result.data.get("choice")
+        if isinstance(budget_choice, dict):
+            emit(
+                RuntimeEvent(
+                    context,
+                    "presentation",
+                    tool_name=name,
+                    tool_call_id=call_id,
+                    presentation={"status": "ok", "data": {"component": "choice", **budget_choice}},
+                )
+            )
+        presentation_diagnosis = result.data.get("relaxation")
+        if isinstance(presentation_diagnosis, dict) and result.empty:
+            payload = {
+                **result.payload(),
+                "data": {
+                    "component": "hotel_comparison",
+                    "cards": result.data.get("offers", []),
+                    "relaxation": presentation_diagnosis,
+                    "comparison": {
+                        "comparable": not result.empty,
+                        "lowest_offer_ids": [],
+                        "scope": "真实核实的住宿报价；预算放宽须确认",
+                        "budget_relation": None,
+                        "reasons": [presentation_diagnosis.get("message", "")],
+                    },
+                },
+            }
     if safe_name == "present_travel_result" and result.code is None:
         payload = result.payload()
     elif (
-        safe_name in {"search_hotel_offers", "refresh_hotel_offer"}
-        and (result.empty or result.code is not None)
-    ) or (
-        safe_name == "present_travel_result"
-        and arguments.get("component") == "hotel_comparison"
-        and result.code is not None
+        safe_name == "update_conversation_state"
+        and result.code is None
+        and isinstance((choice := result.data.get("choice")), dict)
+    ):
+        payload = {"status": "ok", "data": {"component": "choice", **choice}}
+    elif (
+        payload is None
+        and not (result.external and result.external.provisional)
+        and (
+            (
+                safe_name in {"search_hotel_offers", "refresh_hotel_offer"}
+                and (result.empty or result.code is not None)
+            )
+            or (
+                safe_name == "present_travel_result"
+                and arguments.get("component") == "hotel_comparison"
+                and result.code is not None
+            )
+        )
     ):
         payload = empty_hotel_payload(result)
     if payload is not None:

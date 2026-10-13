@@ -151,7 +151,7 @@ class HistoryService:
                         business_result=current.business_result,
                         stale_refs=current.stale_refs,
                         answer_truncated=current.answer_truncated,
-                        prompt=row.prompt,
+                        prompt=row.user_text if row.user_text is not None else row.prompt,
                         draft_id=draft_id(events),
                     )
                 )

@@ -15,6 +15,8 @@ uv run python scripts/dev.py web-check
 uv run python scripts/dev.py api --live
 ```
 
+本机Turbopack的CSS子进程在绑定内部端口时出现 `Operation not permitted`，停止本任务前端服务后仍复现；这不是业务类型或单元测试失败。可执行 `uv run python scripts/dev.py web-check --webpack`，保留全部类型、lint、Node测试和生产构建检查，仅显式选择Next自带Webpack。默认CI/部署构建不变，不新增依赖。[官方CLI选项](https://nextjs.org/docs/app/api-reference/cli/next#next-build-options)。
+
 当前本机默认 CLI 2.1.296，压缩关闭实验的已核验名单止于 2.1.295。测试前在当前进程设置 `TRAVEL_CLAUDE_CLI` 指向本机已有的 2.1.295 文件，不改 `.env`、全局 CLI 或未知版本门禁。其他平台选择当地已有的已核验版本，不硬编码到产品代码。
 
 模型日预算 60 CNY、累计 150 CNY 从 2026-10-13 UTC 日期起生效，HUMAN 同样受限。旧日期和旧账本格式保留，未结算预占按全额计费，不清零。供应商配额独立记账。
@@ -47,3 +49,61 @@ railway connect Postgres
 ## 验证日志
 
 本机原始日志保留在 ignored 的 `.cache/batch-2026-10-13/`，正式结果写在当前批次计划。完整测试输出与私有运行报告不提交到公共仓库。
+
+## 乐天价格排序口径验证
+
+授权后执行 `uv run python scripts/dev.py probe-hotel-sort --live`；不带 `--live` 返回2且不发请求。包括失败重试总共最多2次HTTP，保留每日计数与既有节流，不重设生产额度。探针只保存脱敏数值与计数到[证据](../evidence/t4-rakuten-sort-2026-10-13.json)，不会保存原始响应或酒店标识。
+
+2026-10-13 UTC实测：京都11/14–15、2成人1间、禁烟独立房。standard与+roomCharge各1次成功。上游recordCount均392；前者返回30家，标准化最低每间31600；后者返回23个不同酒店/30房型，最低16124。排序样本每间标准化金额升序，原rakutenCharge因混合chargeFlag不是升序。不要直接按原金额筛预算。
+
+[官方空室API](https://webservice.rakuten.co.jp/documentation/vacant-hotel-search)说明：sort=+roomCharge价格升序，chargeFlag=0每人、1每间；dailyCharge只对应一晚。接口返回页有限且有房型/套餐重复；recordCount按酒店的解释仍标ASSUMED，过滤数按返回房型计数。一次样本不证明所有日期或房型覆盖，也不能把首晚价乘晚数当已核实全价。
+
+测试使用既有已核验CLI；PG集成与纯规则专项分组运行，避免跨目录文件交错时pytest未加载子目录conftest。完整suite保持原入口。不要在SDK测试运行中修改其子进程将导入的源码，最终全量须在稳定代码上重跑。
+
+## Langfuse同轮联验
+
+本地API通过项目入口`api --live --trace-cloud`启动后，执行`uv run python scripts/dev.py smoke-langfuse-linkage --live --trace-cloud`。任一授权标志缺失都会在创建用户或联网前拒绝。凭据从本地配置读取，不输出、不提交。新合成用户只要求节奏卡；失败不自动重新付费。
+
+脚本从PG读取run.trace_id；按该ID及有界时间读取v2 observations，选择core/basic/trace_context/metadata，不读io。比较全span的session HMAC、tags、PG工具事件数量、实际模型HTTP数量；用固定幂等ID推送数值分数并从v3 scores读回。[官方API与字段](https://langfuse.com/docs/api-and-data-platform/features/public-api)、[v4上下文要求](https://langfuse.com/integrations/native/opentelemetry/migration-to-v4)。证据保存在[JSON](../evidence/t6-langfuse-linkage-2026-10-13.json)，不包含私有会话正文或凭据。
+
+## V2评测与恢复
+
+```text
+uv run python scripts/dev.py eval-v2
+uv run python scripts/dev.py eval-v2 --live --trace-cloud --repeat 3
+uv run python scripts/dev.py eval-memory
+uv run python scripts/dev.py eval-memory --live --trace-cloud
+uv run python scripts/dev.py eval-simulator
+uv run python scripts/dev.py eval-simulator --live --trace-cloud --repeat 3
+uv run python scripts/dev.py eval-triage <结果目录/results.jsonl>
+uv run python scripts/dev.py eval-triage <结果目录/results.jsonl> --live
+uv run python scripts/dev.py eval-calibration <实际结果1.jsonl> <实际结果2.jsonl> --live
+```
+
+默认只准备/离线；显式live才用DeepSeek。评测用随机本地`travel_agent_eval_<UUID>`数据库，旅行外部数据全用MockTransport，未知路径不回退真实网络；运行完清理仅本次随机数据库。生产用户、订单、Railway都不参与。模拟用户也走同SDK固定温度/零工具，隐藏目标表外回答不知道，最多8用户动作；每trial含用户模拟调用的真实成本。完成不代表成功，规则与保存后独立约束另算。
+
+结果与原始合成回答保存在ignored `.cache/eval/`、`.cache/simulator/`，manifest绑定实际源码hash和预声明case。模型调用期间不改运行源码；改变评分探针时保留原结果，并对同批所有原始事件统一重算，不能只替换失败样本。分诊每条失败最多一次、输出用x模式防覆盖，标签是未人工核实参考，未知保持unknown。
+
+本批CLI固定2.1.295；在命令前设置对应`TRAVEL_CLAUDE_CLI`。账本全程保留；中断后先读results/attempts/账本核对已发生调用，不直接从头重复收费。运行中的SDK评测和全量测试均须保持源码稳定。本次部分无工具评审与离线全量同时运行，各自使用不同会话/测试库/账本；需要改运行源码时先等二者结束。E6服务器探针检查的是记忆事实/快照/旧回顾，用户要求保留的原始历史不算遗忘残留。
+
+## 30条盲标与AI预标注
+
+`eval-calibration`只从实际非空回答选15条规则通过与15条规则失败，先保证任务多样性，再取后续trial，固定种子洗牌；这不是质量好坏均衡，也不是总体成功率抽样。多轮样本附实际用户动作，评价末回复时使用这些上下文。模型格式无效会保留unknown，不伪造参考分。
+
+CSV的`human_pass`、`human_rater`与`notes`由用户填写：`human_pass`填0或1，判断回复的相关性、解释与取舍是否都达到「基本可用」，诚实说明资料不足可以通过；填写自己的评审者名称，疑问写notes。先做盲标，再看hidden-reference或agent-provisional；后者是AI预标注，不是真人真值。本批交付表、隐藏模型参考、AI预标注分别保存在本地ignored `.cache/batch-2026-10-13/calibration/`；原始运行结果保留在 `.cache/calibration/`，不会上传正文到Langfuse。
+
+填写后执行 `uv run python -m eval.calibrate_v2 <human-labels.csv> <hidden-reference.json>`，脚本只对实际真人标注且有有效模型参考的行计算一致率、κ、混淆矩阵；不足30对标为pending。不代填人名、不用AI预标注冒充人工。两对A/B交换只是很小的偏差探针，不证明评审器无位置偏差。
+
+
+## 重发已有评测的数值分数
+
+```text
+uv run python scripts/dev.py eval-publish-v2 <结果1.jsonl> <结果2.jsonl> --triage <model-triage.jsonl>
+uv run python scripts/dev.py eval-publish-v2 <结果1.jsonl> <结果2.jsonl> --triage <model-triage.jsonl> --trace-cloud
+```
+
+默认仅统计待发布数量，零网络、零模型调用；显式trace-cloud才把已有trace的封闭数值指标上传到已配置项目。缺失/非有限值不补零，旧E6弱隐私探针不发布，分诊标签名称带unverified。manifest绑定全部结果与来源文件hash；每条上传回执在ignored `.cache/published-v2/`。回执表示接收，不能冒充读回。
+
+每个trace使用一次 `/api/public/ingestion` 的 `score-create` 批次，分数ID按trace和指标幂等，事件ID每次新建，必须所有事件均获successes确认且errors为空才算成功。[官方限流说明](https://langfuse.com/faq/all/api-limits)、[v4评分事件支持](https://langfuse.com/faq/all/deprecated-api-migration)。先前逐条scores接口实际只有2/81组完整接收，其余429；原回执保留。自动审批要求本次批量重发另获具体授权，在用户回答前不执行上传。
+
+本机前端最终验收使用 `web-check --webpack`，包括类型、lint、141项测试及生产构建。默认Turbopack在此本机CSS构建子进程绑定端口失败；[Next.js官方build选项](https://nextjs.org/docs/app/api-reference/cli/next#next-build-options)支持显式Webpack。默认部署配置保持。

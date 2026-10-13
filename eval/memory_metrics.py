@@ -1,0 +1,185 @@
+"""原始输出先按schema/来源过滤，另计非法尝试；明确区分无分母与满分。"""
+
+from collections.abc import Mapping, Sequence
+from uuid import uuid4
+
+from sqlalchemy import JSON, select
+
+from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
+from backend.domain.memory import MemoryProposal
+from backend.domain.preferences import PreferencePatch, PreferenceVersion
+from backend.persistence import runs
+from backend.persistence.models import ChoiceCardRow, MemoryFactRow
+from backend.services.common import ServiceError, transaction
+from backend.services.memory import MemoryService
+from backend.services.preferences import PreferenceService
+from backend.services.sessions import DemoLogin
+from eval.cases import Case
+from eval.database import DatabaseEvaluation
+
+
+def matches(expected: Mapping[str, object], prediction: Mapping[str, object]) -> bool:
+    values = expected.get("values")
+    return (
+        all(expected.get(k) == prediction.get(k) for k in ("key", "scope", "op"))
+        and isinstance(values, (tuple, list))
+        and prediction.get("value") in values
+    )
+
+
+def memory_scores(
+    expected: Sequence[Mapping[str, object]],
+    predictions: Sequence[Mapping[str, object]],
+    *,
+    invalid_attempts: int,
+) -> dict[str, object]:
+    remaining = list(expected)
+    true_positive = 0
+    for prediction in predictions:
+        matched = next((item for item in remaining if matches(item, prediction)), None)
+        if matched is not None:
+            remaining.remove(matched)
+            true_positive += 1
+    false_positive = len(predictions) - true_positive
+    false_negative = len(remaining)
+    return {
+        "true_positive": true_positive,
+        "false_positive": false_positive,
+        "false_negative": false_negative,
+        "precision": true_positive / len(predictions) if predictions else None,
+        "recall": true_positive / len(expected) if expected else None,
+        "invalid_attempts": invalid_attempts,
+        "exact": false_positive == false_negative == invalid_attempts == 0,
+        "basis": "source/schema-valid proposals; invalid attempts separate; uncalibrated",
+    }
+
+
+async def inspect_memory(
+    business: DatabaseEvaluation, context: RunContext, case: Case, events: tuple[RuntimeEvent, ...]
+) -> dict[str, object]:
+    memory = MemoryService(business.sessions.database)
+    async with transaction(business.sessions.database) as db:
+        facts = list(
+            await db.scalars(
+                select(MemoryFactRow).where(
+                    MemoryFactRow.user_id == context.user_id,
+                    MemoryFactRow.source_run_id == context.run_id,
+                )
+            )
+        )
+        cards = list(
+            await db.scalars(
+                select(ChoiceCardRow).where(
+                    ChoiceCardRow.session_id == context.session_id,
+                    ChoiceCardRow.source_run_id == context.run_id,
+                    ChoiceCardRow.kind == "memory_confirm",
+                )
+            )
+        )
+        operations = {str(row.content["fact_id"]): row.content["operation"] for row in cards}
+        predictions = [
+            {"key": f.key, "value": f.value, "scope": f.scope, "op": operations.get(str(f.id))}
+            for f in facts
+        ]
+    failures = proposal_failures(events)
+    measured = memory_scores(
+        [item.model_dump(mode="json") for item in case.expected_memory],
+        predictions,
+        invalid_attempts=failures["invalid_attempts"],
+    )
+    measured.update(category=case.memory_category, predictions=predictions, **failures)
+    # 独立服务器不变量：拥有者检查先于事实状态；全忘记清正文与回顾，而原用户历史保留。
+    owned = tuple(f for f in await memory.facts(context.user_id) if f.status == "active")
+    if not owned:
+        current = await PreferenceService(business.sessions.database).get(context.user_id)
+        await PreferenceService(business.sessions.database).change(
+            context.user_id,
+            PreferencePatch.model_validate(
+                {"expected_revision": current.revision, "set": {"interests": ["隔离金丝雀"]}}
+            ),
+        )
+        owned = tuple(f for f in await memory.facts(context.user_id) if f.status == "active")
+    identity = await business.sessions.create_demo_user(DemoLogin(display_name="记忆隔离合成用户"))
+    session = await business.sessions.new_session(identity.user_id)
+    isolation = True
+    probes = 0
+    if owned:
+        fact = owned[0]
+        for action in (
+            lambda: memory.get(identity.user_id, fact.fact_id),
+            lambda: memory.delete(
+                identity.user_id, fact.fact_id, PreferenceVersion(expected_revision=0)
+            ),
+        ):
+            probes += 1
+            try:
+                await action()
+                isolation = False
+            except ServiceError as error:
+                isolation &= error.status == 404
+        async with transaction(business.sessions.database) as db:
+            row = await runs.create(
+                db, identity.user_id, session.session_id, uuid4(), case.input, "offline"
+            )
+            foreign = RunContext(identity.user_id, session.session_id, row.id)
+        try:
+            probes += 1
+            await memory.propose(
+                foreign,
+                MemoryProposal.model_validate(
+                    {
+                        "ops": [
+                            {
+                                "op": "INVALIDATE",
+                                "key": fact.key,
+                                "quote": case.input[:200],
+                                "target_fact_id": str(fact.fact_id),
+                            }
+                        ]
+                    }
+                ),
+            )
+            isolation = False
+        except ServiceError as error:
+            isolation &= error.status == 404
+        finally:
+            async with transaction(business.sessions.database) as db:
+                await runs.finish(db, foreign, RuntimeOutcome(text="隔离合成检查结束"))
+    preference = await PreferenceService(business.sessions.database).get(context.user_id)
+    await PreferenceService(business.sessions.database).change(
+        context.user_id, PreferenceVersion(expected_revision=preference.revision)
+    )
+    async with transaction(business.sessions.database) as db:
+        residue = await db.scalar(
+            select(MemoryFactRow.id)
+            .where(
+                MemoryFactRow.user_id == context.user_id,
+                ((MemoryFactRow.value.is_not(None)) & (MemoryFactRow.value != JSON.NULL))
+                | (MemoryFactRow.evidence_quote != ""),
+            )
+            .limit(1)
+        )
+    snapshot = await business.travel.business_context(context)
+    measured.update(
+        cross_user_leakage=not isolation if probes == 3 else None,
+        isolation_probes=probes,
+        deletion_residue=residue is not None
+        or bool(snapshot["memory"])
+        or bool(snapshot["recent_dialogue"]),
+        invariant_scope="facts, active snapshot, old dialogue cutoff; original history kept",
+    )
+    return measured
+
+
+def proposal_failures(events: tuple[RuntimeEvent, ...]) -> dict[str, int]:
+    failed = [
+        e
+        for e in events
+        if e.kind == "tool_finished" and e.tool_name == "propose_memory" and e.code is not None
+    ]
+    invalid = sum(
+        e.code in {"validation", "conflict", "blocked"}
+        and e.reason not in {"tool_call_cap", "deadline_exceeded", "budget_exceeded"}
+        for e in failed
+    )
+    return {"invalid_attempts": invalid, "unavailable_attempts": len(failed) - invalid}

@@ -4,8 +4,16 @@ import { Button } from "./ui/button";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type Identity } from "@/lib/api";
 import type { components } from "@/lib/api-types";
+import {
+  type MemoryFact,
+  memoryLabels,
+  memoryValue,
+  memorySources,
+  memoryStatuses,
+} from "@/lib/memory";
 
 type Preferences = components["schemas"]["Preferences"];
+type UserProfile = components["schemas"]["UserProfileView"];
 const lines = (text: string) =>
   text
     .split("\n")
@@ -15,11 +23,17 @@ const lines = (text: string) =>
 export function PreferencePanel({
   identity,
   onError,
+  refreshKey,
+  onChanged,
 }: {
   identity: Identity;
   onError: (error: unknown) => void;
+  refreshKey?: string;
+  onChanged: () => void;
 }) {
   const [saved, setSaved] = useState<Preferences>();
+  const [facts, setFacts] = useState<MemoryFact[]>([]);
+  const [profile, setProfile] = useState<UserProfile>();
   const [interests, setInterests] = useState("");
   const [constraints, setConstraints] = useState("");
   const [transport, setTransport] = useState<Preferences["transport"]>(null);
@@ -37,8 +51,16 @@ export function PreferencePanel({
   const load = useCallback(async () => {
     const started = generation.current;
     try {
-      const value = await api<Preferences>("/preferences", identity.token);
-      if (generation.current === started) display(value);
+      const [value, rows, summary] = await Promise.all([
+        api<Preferences>("/preferences", identity.token),
+        api<MemoryFact[]>("/memory?include_history=true", identity.token),
+        api<UserProfile>("/profile-summary", identity.token),
+      ]);
+      if (generation.current === started) {
+        display(value);
+        setFacts(rows);
+        setProfile(summary);
+      }
     } catch (error) {
       if (generation.current === started) onError(error);
     } finally {
@@ -54,11 +76,11 @@ export function PreferencePanel({
     return () => {
       generation.current += 1;
     };
-  }, [load]);
+  }, [load, refreshKey]);
 
   async function change(clear: boolean) {
     if (!saved || busy) return;
-    const started = generation.current;
+    const started = ++generation.current;
     setBusy(true);
     setStatus("");
     try {
@@ -81,6 +103,15 @@ export function PreferencePanel({
       );
       if (generation.current !== started) return;
       display(value);
+      setProfile(undefined);
+      const [rows, summary] = await Promise.all([
+        api<MemoryFact[]>("/memory?include_history=true", identity.token),
+        api<UserProfile>("/profile-summary", identity.token),
+      ]);
+      if (generation.current !== started) return;
+      setFacts(rows);
+      setProfile(summary);
+      onChanged();
       setStatus(clear ? "偏好已清除。" : "偏好已保存。");
     } catch (error) {
       if (generation.current === started) onError(error);
@@ -89,6 +120,103 @@ export function PreferencePanel({
     }
   }
 
+  async function updateProfile() {
+    if (!saved || busy || !profile?.can_update) return;
+    const started = ++generation.current;
+    setBusy(true);
+    try {
+      const summary = await api<UserProfile>(
+        "/profile-summary",
+        identity.token,
+        "POST",
+        { expected_revision: saved.revision },
+      );
+      if (generation.current !== started) return;
+      setProfile(summary);
+      setStatus(summary.text ? "画像已更新" : "还没有已确认的长期偏好");
+      onChanged();
+    } catch (error) {
+      if (generation.current === started) onError(error);
+    } finally {
+      if (generation.current === started) setBusy(false);
+    }
+  }
+
+  async function forget(fact: MemoryFact) {
+    if (!saved || busy) return;
+    const started = ++generation.current;
+    setBusy(true);
+    setStatus("");
+    try {
+      const value = await api<Preferences>(
+        `/memory/${fact.fact_id}`,
+        identity.token,
+        "DELETE",
+        { expected_revision: saved.revision },
+      );
+      if (generation.current !== started) return;
+      display(value);
+      setProfile(undefined);
+      const [rows, summary] = await Promise.all([
+        api<MemoryFact[]>("/memory?include_history=true", identity.token),
+        api<UserProfile>("/profile-summary", identity.token),
+      ]);
+      if (generation.current !== started) return;
+      setFacts(rows);
+      setProfile(summary);
+      onChanged();
+      setStatus("这条偏好已删除。");
+    } catch (error) {
+      if (generation.current === started) onError(error);
+    } finally {
+      if (generation.current === started) setBusy(false);
+    }
+  }
+
+  function factRow(fact: MemoryFact) {
+    return (
+      <li key={fact.fact_id}>
+        <p>
+          <strong>
+            {memoryLabels[fact.key]}：{memoryValue(fact)}
+          </strong>{" "}
+          · {memoryStatuses[fact.status]} ·{" "}
+          {fact.scope === "trip" ? "这次旅行" : "长期"}
+        </p>
+        <p className="muted small">
+          {memorySources[fact.source]}
+          {fact.valid_from
+            ? ` · 生效于 ${new Date(fact.valid_from).toLocaleString()}`
+            : ""}
+          {fact.invalidated_at
+            ? ` · 失效于 ${new Date(fact.invalidated_at).toLocaleString()}`
+            : ""}
+        </p>
+        {fact.evidence_quote && (
+          <p className="muted small">原话：{fact.evidence_quote}</p>
+        )}
+        {fact.superseded_by && <p className="muted small">已由新版本取代。</p>}
+        {fact.status !== "deleted" && (
+          <Button
+            variant="outline"
+            disabled={busy || !saved}
+            type="button"
+            onClick={() => void forget(fact)}
+            aria-label={`删除${memoryLabels[fact.key]}：${memoryValue(fact)}`}
+          >
+            删除
+          </Button>
+        )}
+      </li>
+    );
+  }
+  const currentFacts = facts.filter(
+    (fact) =>
+      (fact.status === "active" || fact.status === "proposed") &&
+      (fact.scope === "long_term" || fact.session_id === identity.session_id),
+  );
+  const history = facts.filter((fact) => !currentFacts.includes(fact));
+
   return (
     <section className="preference-panel conversation">
       <div className="section-heading">
@@ -96,8 +224,15 @@ export function PreferencePanel({
         <span className="tag">版本 {saved?.revision ?? "—"}</span>
       </div>
       <p className="muted small">
-        仅保存你在这里填写的偏好，本次旅行条件优先。
+        你填写的偏好和在对话中逐条确认的偏好会保存。本次旅行条件优先。
       </p>
+      <ul aria-label="已保存与待确认的偏好">{currentFacts.map(factRow)}</ul>
+      {history.length > 0 && (
+        <details>
+          <summary>查看历史版本（{history.length}）</summary>
+          <ul>{history.map(factRow)}</ul>
+        </details>
+      )}
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -165,6 +300,20 @@ export function PreferencePanel({
         >
           读取最新偏好
         </Button>
+        <Button
+          variant="outline"
+          type="button"
+          disabled={!saved || busy || !profile?.can_update}
+          onClick={() => void updateProfile()}
+        >
+          更新我的画像
+        </Button>
+        {profile?.text && (
+          <p className="small">
+            {profile.text.replace(/\s*\[fact:[0-9a-f-]+\]/gi, "")}
+            <span className="muted">（依据已确认的长期偏好）</span>
+          </p>
+        )}
         {status && (
           <p role="status" className="muted small">
             {status}

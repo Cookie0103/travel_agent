@@ -3,6 +3,7 @@
 import type { AppEvent } from "@/lib/api";
 import { toolLabel } from "./tool-names";
 import { errorExplanation } from "@/lib/error-explanation";
+import { toolCompletionState } from "@/lib/external-status";
 
 type Entry =
   | {
@@ -10,9 +11,10 @@ type Entry =
       key: string;
       name: string | null;
       keys: string[];
-      state: "running" | "ok" | "failed";
+      state: "running" | "ok" | "failed" | "correcting";
       code: string | null;
       reason: string | null;
+      external?: AppEvent["external"];
     }
   | { type: "compacted"; key: string }
   | { type: "presentation"; key: string };
@@ -37,12 +39,13 @@ export function activityEntries(events: AppEvent[]): Entry[] {
       const entry = event.tool_call_id
         ? open.get(event.tool_call_id)
         : undefined;
-      const state = event.code ? "failed" : "ok";
+      const state = toolCompletionState(event.code, event.external);
       if (entry)
         Object.assign(entry, {
           state,
           code: event.code,
           reason: event.reason ?? null,
+          external: event.external,
         });
       else
         entries.push({
@@ -53,6 +56,7 @@ export function activityEntries(events: AppEvent[]): Entry[] {
           state,
           code: event.code,
           reason: event.reason ?? null,
+          external: event.external,
         });
     } else if (event.kind === "context_compacted")
       entries.push({ type: "compacted", key: `c${event.sequence}` });
@@ -75,7 +79,7 @@ export function RunSteps({ events }: { events: AppEvent[] }) {
         {entries.map((entry) => (
           <li key={entry.key}>
             {entry.type === "tool"
-              ? `${entry.state === "ok" ? "✓" : entry.state === "failed" ? "✗" : "●"} ${toolLabel(entry.name)}${entry.state === "failed" ? ` — ${errorExplanation(entry.code, entry.reason)}` : ""}`
+              ? `${entry.state === "ok" ? "✓" : entry.state === "failed" ? "✗" : "●"} ${toolLabel(entry.name)}${entry.state === "failed" || entry.state === "correcting" ? ` — ${errorExplanation(entry.code, entry.reason, entry.external)}` : ""}`
               : entry.type === "compacted"
                 ? "上下文已压缩"
                 : "已更新卡片"}
