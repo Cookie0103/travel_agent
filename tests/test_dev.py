@@ -53,6 +53,47 @@ def test_offline_test_command_cannot_enable_live_tests() -> None:
     assert exc.value.code == 2
 
 
+def test_scoped_tests_keep_offline_marker_and_fixed_argument_boundaries() -> None:
+    """专项选择仍经过项目入口，不能覆盖 live 门禁或注入 pytest 参数。"""
+    with patch.object(dev, "run_command", return_value=7) as run:
+        assert dev.main(["test", "--path", "tests/test_dev.py", "--keyword", "budget"]) == 7
+    command = run.call_args.args[0]
+    assert command[:5] == [sys.executable, "-m", "pytest", "-m", "not live"]
+    assert "tests/test_dev.py" in command
+    assert command[command.index("-k") + 1] == "budget"
+    for path in ("../outside.py", "--live", "scripts/dev.py"):
+        with pytest.raises(SystemExit) as exc:
+            dev.main(["test", "--path", path])
+        assert exc.value.code == 2
+
+
+def test_project_formatter_edits_python_and_preserves_other_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setattr(dev, "ROOT", tmp_path)
+    code = tmp_path / "sample.py"
+    data = tmp_path / "sample.json"
+    code.write_text("x= 1\n", encoding="utf-8")
+    data.write_text('{"x":1}', encoding="utf-8")
+    assert dev.main(["format"]) == 0
+    assert code.read_text(encoding="utf-8") == "x = 1\n"
+    assert data.read_text(encoding="utf-8") == '{"x":1}'
+
+
+def test_local_api_live_and_trace_require_explicit_flags() -> None:
+    with patch.object(dev, "run_command", return_value=0) as run:
+        assert dev.main(["api"]) == 0
+        assert run.call_args.args[0] == [sys.executable, "-m", "backend.server"]
+        assert dev.main(["api", "--live", "--trace-cloud"]) == 0
+        assert run.call_args.args[0] == [
+            sys.executable,
+            "-m",
+            "backend.server",
+            "--live",
+            "--trace-cloud",
+        ]
+
+
 def test_failed_test_runs_isolate_temp_and_cache_without_touching_old_files(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,

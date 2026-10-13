@@ -1,7 +1,7 @@
 """SDK 联网前持久预占，完整 usage 后结算；未知费用保留全部预占。"""
 
 from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
@@ -16,6 +16,10 @@ GRANT = "2026-10-03-travel-autonomous"
 DAILY_CNY_AUTHORIZATION = Decimal("15.00")
 # 用户明确仅今日暂停日限；原账本和其他日期的限制不变。
 UNCAPPED_CNY_DAY = "2026-10-04"
+# 新授权不回写历史日期；账本格式和旧 grant 保持，未结算预占仍计入本批。
+BATCH_START = date(2026, 10, 13)
+BATCH_DAILY_CNY = Decimal(60)
+BATCH_TOTAL_CNY = Decimal(150)
 LIMITS: dict[Currency, tuple[Decimal | None, int | None]] = {
     "CNY": (None, None),
     "USD": (Decimal(0), 0),
@@ -55,6 +59,8 @@ class Budget:
     def daily_limit(self, now: datetime) -> Decimal | None:
         """None仅表示获准日期无日限；零配置仍在预占前拒绝。"""
         if self.currency == "CNY":
+            if now.astimezone(UTC).date() >= BATCH_START:
+                return min(self.daily, BATCH_DAILY_CNY)
             if not current().daily_cny_cap:  # HUMAN档：以供应商账户余额为准，不设每日上限
                 return None
             if now.astimezone(UTC).date().isoformat() == UNCAPPED_CNY_DAY:
@@ -116,15 +122,13 @@ class Budget:
         day = now.astimezone(UTC).date().isoformat()
         total = sum((value for _, value in charges.values()), Decimal(0))
         daily = sum((v for d, v in charges.values() if d == day), Decimal(0))
+        legacy = Ledger(self.legacy).entries()
         daily += sum(
-            (
-                Decimal(e.charge)
-                for e in Ledger(self.legacy).entries()
-                if e.day == day and e.currency == self.currency
-            ),
+            (Decimal(e.charge) for e in legacy if e.day == day and e.currency == self.currency),
             Decimal(0),
         )
-        capped = self.currency != "CNY" or current().daily_cny_cap
+        batch = self.currency == "CNY" and now.astimezone(UTC).date() >= BATCH_START
+        capped = batch or self.currency != "CNY" or current().daily_cny_cap
         daily_limit = self.daily_limit(now) if self.daily.is_finite() else None
         numbers = {  # 仅数字/日期，供TRACE判断是哪个额度触发
             "day": day,
@@ -149,6 +153,21 @@ class Budget:
             trace("budget_block", run, cause="invalid", **numbers)
             raise ProbeError("blocked", "日预算非法或已禁用")
         total_limit, request_limit = LIMITS[self.currency]
+        batch_spent = sum(
+            (value for day, value in charges.values() if date.fromisoformat(day) >= BATCH_START),
+            Decimal(0),
+        )
+        batch_spent += sum(
+            (
+                Decimal(entry.charge)
+                for entry in legacy
+                if entry.currency == self.currency and date.fromisoformat(entry.day) >= BATCH_START
+            ),
+            Decimal(0),
+        )
+        if batch and batch_spent + amount > BATCH_TOTAL_CNY:
+            trace("budget_block", run, cause="batch", batch_spent=str(batch_spent), **numbers)
+            raise ProbeError("blocked", "已达本批累计调用授权上限")
         if (request_limit is not None and len(charges) >= request_limit) or (
             total_limit is not None and total + amount > total_limit
         ):

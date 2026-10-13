@@ -1,6 +1,6 @@
 # 文档目录：先看哪一份
 
-当前采用 Claude Agent SDK 路线并进入长程自主开发。**只需看 [执行计划](execution/travel-agent.md)** 就能知道当前进度、决定、证据与下一步；阶段性材料无需逐项批准。
+当前采用 Claude Agent SDK 路线并进入长程自主开发。**只需看 [当前批次计划](plans/2026-10-13-interaction-memory-eval.md)** 就能知道当前进度、决定、证据与下一步；阶段性材料无需逐项批准。
 想知道各个代码目录放什么，先看 [项目首页](../README.md)。
 
 ## 工程地图与约定（按任务读取）
@@ -31,7 +31,7 @@
 
 | 你想了解什么 | 去哪里看 | 什么时候写 |
 | --- | --- | --- |
-| 当前做到哪里、如何恢复 | [执行计划](execution/travel-agent.md) | 持续更新，唯一实时进度入口 |
+| 当前做到哪里、如何恢复 | [当前批次计划](plans/2026-10-13-interaction-memory-eval.md) | 持续更新，唯一实时进度入口 |
 | 完整功能如何学习 | [review/](review/) | 按里程碑汇总，最终集中学习 |
 | 一整批完成了哪些任务 | [review/batch/](review/batch/) | 每批结束时一份总结 |
 | 什么问题让工作停下了 | [blocked/](blocked/README.md) | 遇到阻塞才记录，不是每次测试一份 |
@@ -85,3 +85,5 @@
 - [上一批次 Product V2](plans/2026-10-08-product-v2.md)：历史实施与验收记录。
 - [命令与原始过程](operations/product-v2.md#2026-10-08-调查与修复准备)、[面试案例](review/cases/2026-10-08-product-v2.md)。
 - 长期设计已从 `plan/` 迁到 [docs/design/](design/README.md)（英文文件名，正文中文）。
+
+- [交互与记忆操作](operations/interaction-memory-eval.md)：本地验证与 Railway 私有对话的只读导出。

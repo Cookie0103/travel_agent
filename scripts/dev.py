@@ -63,7 +63,15 @@ def record_blocked(reason: str) -> None:
         path.write_text(f"{existing}\n- {stamp} — {reason}\n", encoding="utf-8", newline="\n")
 
 
-def run_tests() -> int:
+def test_path(value: str) -> str:
+    """专项路径只允许仓库 tests 内的文件，不开放 pytest 任意参数透传。"""
+    path = (ROOT / value).resolve()
+    if not path.is_relative_to(ROOT / "tests") or path.suffix != ".py" or not path.is_file():
+        raise argparse.ArgumentTypeError("专项测试必须是 tests/ 内的 Python 文件")
+    return path.relative_to(ROOT).as_posix()
+
+
+def run_tests(paths: Sequence[str] = (), keyword: str | None = None) -> int:
     """每次测试使用新目录，避免用户终端与沙箱复用彼此无权限的 pytest 文件。"""
     parent = ROOT / ".cache" / "pytest-runs"
     try:
@@ -84,6 +92,8 @@ def run_tests() -> int:
                 "-m",
                 "not live",
                 "-q",
+                *paths,
+                *(["-k", keyword] if keyword else []),
                 "-o",
                 f"cache_dir={run_root / 'cache'}",
             ],
@@ -151,10 +161,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     for name in (
         "setup",
         "check",
-        "test",
+        "format",
         "db-up",
         "db-migrate",
-        "api",
         "supplier",
         "web-setup",
         "web-generate",
@@ -165,6 +174,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         "stack-down",
     ):
         commands.add_parser(name)
+    tests = commands.add_parser("test")
+    tests.add_argument("--path", action="append", type=test_path, default=[])
+    tests.add_argument("--keyword", help="只筛选测试名，live 门禁保持不变")
+    api = commands.add_parser("api")
+    api.add_argument("--live", action="store_true", help="显式允许已授权的真实模型消息")
+    api.add_argument("--trace-cloud", action="store_true", help="显式上传脱敏 Trace")
     evaluation = commands.add_parser("eval-dev")
     evaluation.add_argument("--live", action="store_true", help="显式启用真实模型评测")
     args = parser.parse_args(argv)
@@ -187,9 +202,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                     [python, "scripts/check_docs.py"],
                 ]
             )
+        case "format":
+            return run_command([python, "-m", "ruff", "format", "."])
         case "test":
             # 不变量：dev test 总是排除 live，且不开放覆盖 marker 的透传参数。
-            return run_tests()
+            return run_tests(args.path, args.keyword)
         case "db-up":
             return db_up()
         case "db-migrate":
@@ -207,7 +224,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         case "eval-dev":
             return eval_dev(live=args.live)
         case "api":
-            return run_command([python, "-m", "backend.server"], timeout=None)
+            command = [python, "-m", "backend.server"]
+            if args.live:
+                command.append("--live")
+            if args.trace_cloud:
+                command.append("--trace-cloud")
+            return run_command(command, timeout=None)
         case "supplier":
             return run_command([python, "-m", "mock_supplier.server"], timeout=None)
         case "web" | "web-setup" | "web-check" | "web-generate":
