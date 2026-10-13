@@ -25,15 +25,17 @@ export function mergeHistory(
 }
 
 export function mergeRun(previous: Run | undefined, incoming: Run): Run {
-  if (!previous || previous.run_id !== incoming.run_id) return incoming;
-  if (incoming.last_sequence < previous.last_sequence) return previous;
-  // Live answers are not persisted: keep this tab's reply after the server cache expires.
-  const retainedNotice = "实时回复仅供本轮查看；行程引用已保存，详情按需更新。";
   if (
-    incoming.last_sequence === previous.last_sequence &&
-    previous.answer &&
-    previous.answer !== retainedNotice
+    previous?.run_id === incoming.run_id &&
+    incoming.last_sequence < previous.last_sequence
   )
-    return { ...incoming, answer: previous.answer };
+    return previous;
+  if (
+    [
+      "实时回复仅供本轮查看；行程引用已保存，详情按需更新。",
+      "实时回复仅供本轮查看；详情按需更新。",
+    ].includes(incoming.answer)
+  )
+    return { ...incoming, answer: "该轮回答在旧版本中未保存。" };
   return incoming;
 }

@@ -301,7 +301,7 @@ def test_next_turn_gets_bounded_owned_dialogue_and_valid_evidence(
     "reason,expected",
     [
         ("upstream_http_402", "DeepSeek 返回 402：账户余额不足，请充值后重试"),
-        ("live_failed", ""),
+        ("live_failed", "执行未完成：provider_error"),
     ],
 )
 def test_live_upstream_http_error_is_shown_in_run_answer(
@@ -336,11 +336,11 @@ def test_live_upstream_http_error_is_shown_in_run_answer(
     runner.run(exercise())
 
 
-def test_live_reply_cache_and_history_have_distinct_retention_boundaries(
+def test_saved_live_answer_and_legacy_notice_do_not_depend_on_memory(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
-    """T1.2：真实PG+合成已完成轮次核验保留边界，不调用模型。"""
-    from datetime import UTC, datetime, timedelta
+    """D1：PG 是最终回答的事实来源；旧占位无法补造，重启不改内容。"""
+    from datetime import UTC, datetime
 
     from backend.services.common import transaction
     from backend.services.history import HistoryService
@@ -350,27 +350,24 @@ def test_live_reply_cache_and_history_have_distinct_retention_boundaries(
     notice = "实时回复仅供本轮查看；行程引用已保存，详情按需更新。"
 
     async def exercise() -> None:
-        async with transaction(travel.database) as db:
-            row = await runs.create(
-                db, context.user_id, context.session_id, uuid4(), "合成实时问题", "deepseek"
+        for answer in ("合成实时全文", notice):
+            async with transaction(travel.database) as db:
+                row = await runs.create(
+                    db, context.user_id, context.session_id, uuid4(), "合成实时问题", "deepseek"
+                )
+                row.status = "completed"
+                row.answer = answer
+                row.last_sequence = 3
+                row.finished_at = datetime.now(UTC)
+                run_id = row.id
+            current = await service.get(context.user_id, run_id)
+            page = await HistoryService(travel.database).runs(
+                context.user_id, context.session_id, 20, None
             )
-            row.status = "completed"
-            row.answer = notice
-            row.last_sequence = 3
-            row.finished_at = datetime.now(UTC)
-            run_id = row.id
-        service.live_answers[run_id] = (datetime.now(UTC), "合成实时全文")
-        current = await service.get(context.user_id, run_id)
-        page = await HistoryService(travel.database).runs(
-            context.user_id, context.session_id, 20, None
-        )
-        assert current.answer == "合成实时全文"
-        assert page.items[0].answer == notice and page.items[0].prompt == "合成实时问题"
-        service.live_answers[run_id] = (datetime.now(UTC) - timedelta(seconds=901), current.answer)
-        expired = await service.get(context.user_id, run_id)
-        restarted = await RunService(travel.database).get(context.user_id, run_id)
-        assert expired.answer == restarted.answer == notice
-        assert current.last_sequence == expired.last_sequence == restarted.last_sequence == 3
-        assert not service.tasks and not service.live_answers
+            restored = next(item for item in page.items if item.run_id == run_id)
+            restarted = await RunService(travel.database).get(context.user_id, run_id)
+            assert current.answer == restored.answer == restarted.answer == answer
+            assert current.last_sequence == restarted.last_sequence == 3
+        assert not service.tasks
 
     runner.run(exercise())

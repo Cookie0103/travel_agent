@@ -506,3 +506,8 @@ B1 v2已停止并诊断真实输出失败：派生3ca3b17f原63已执行（25pas
 同fa169源码B1最终完整120已严格load/compare通过：38pass/48failed/34error、0not_run，原13→14→63→120 lineage保留，原三个partial文件不改，原实际slot0重放。exec96685已自动进入no_skills .cache/eval/20261004T035158Z-2c33dbaf，随后no_preferences/no_repairs/no_compaction。单一公开证据更新四组；对每组120原SDK report上下文核对，补真实工具次数与context_compacted观测、报告有序hash摘要，配置关闭不是机制生效或因果改善。全文不含原prompt/arguments/UUID/keys；完整参数审阅准备仅绑定不正确，human/expected仍0。地图检查10通过，0新模型HTTP。
 
 </details>
+
+
+## 2026-10-13 用户 D1 更正说明（按 V2 明确要求追加）
+
+本文件冻结后的原历史决定不改写。用户本批决定保存经内部 ID 清理的模型最终回答，作为本人私有对话记录写入 task_runs.answer；替代实时最终回复只放内存900秒的策略。Google 原始响应、中间文本事件、thinking 和 SDK transcript 的留存边界保持。报价引用读取时重新检查时效，旧占位不得伪造恢复。契约见 [ADR-014](../adr/014-session-history.md)，实施状态只维护在[当前批次](../plans/2026-10-13-interaction-memory-eval.md)。本条是需求更正，不是新的实时进度入口。

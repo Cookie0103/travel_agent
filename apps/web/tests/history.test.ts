@@ -72,7 +72,7 @@ test("late older page cannot roll a completed reply back to running", () => {
       [{ ...completed, answer: "持久化简短说明" }],
       "trip",
     ),
-    [completed],
+    [{ ...completed, answer: "持久化简短说明" }],
   );
   assert.throws(
     () => mergeHistory([], [{ ...run("x"), session_id: "other" }], "trip"),
@@ -102,11 +102,11 @@ test("refreshing the first page preserves loaded earlier turns and their full re
   const page = [{ ...latest, answer: "持久化简短说明" }];
   assert.deepEqual(mergeHistory([earlier, latest], page, "trip"), [
     earlier,
-    latest,
+    page[0],
   ]);
 });
 
-test("latest GET after reply cache expiry preserves full answer but refreshes metadata", () => {
+test("same-sequence server answer and metadata replace the old local copy", () => {
   const current = run("a", 5);
   const persisted = {
     ...current,
@@ -115,9 +115,19 @@ test("latest GET after reply cache expiry preserves full answer but refreshes me
   };
   assert.deepEqual(mergeRun(current, persisted), {
     ...persisted,
-    answer: current.answer,
+    answer: "该轮回答在旧版本中未保存。",
   });
   assert.equal(mergeRun(persisted, current).answer, current.answer);
   assert.deepEqual(mergeRun(current, run("a", 1)), current);
   assert.deepEqual(mergeRun(current, run("b")), run("b"));
+});
+
+test("legacy notice is labeled on initial recovery without inventing a reply", () => {
+  const old = {
+    ...run("old"),
+    answer: "实时回复仅供本轮查看；详情按需更新。",
+  };
+  assert.equal(mergeRun(undefined, old).answer, "该轮回答在旧版本中未保存。");
+  const actual = { ...run("new"), answer: "原始完整回答" };
+  assert.deepEqual(mergeRun(undefined, actual), actual);
 });

@@ -2095,6 +2095,28 @@
               }
             ]
           },
+          "stale_refs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Refs"
+          },
+          "answer_truncated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer Truncated"
+          },
           "prompt": {
             "type": "string",
             "title": "Prompt",
@@ -4088,6 +4110,28 @@
                 "type": "null"
               }
             ]
+          },
+          "stale_refs": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stale Refs"
+          },
+          "answer_truncated": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answer Truncated"
           }
         },
         "type": "object",
@@ -6685,6 +6729,11 @@
               }
             ],
             "default": null
+          },
+          "answer_truncated": {
+            "default": false,
+            "title": "Answer Truncated",
+            "type": "boolean"
           }
         },
         "required": [

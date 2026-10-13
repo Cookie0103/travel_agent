@@ -622,6 +622,10 @@ export interface components {
                 [key: string]: unknown;
             }[];
             business_result?: components["schemas"]["BusinessResult"] | null;
+            /** Stale Refs */
+            stale_refs?: number | null;
+            /** Answer Truncated */
+            answer_truncated?: boolean | null;
             /**
              * Prompt
              * @default
@@ -1333,6 +1337,10 @@ export interface components {
                 [key: string]: unknown;
             }[];
             business_result?: components["schemas"]["BusinessResult"] | null;
+            /** Stale Refs */
+            stale_refs?: number | null;
+            /** Answer Truncated */
+            answer_truncated?: boolean | null;
         };
         /** SavedPlan */
         SavedPlan: {
@@ -2318,6 +2326,11 @@ export interface components {
             evidence_ids: string[];
             /** @default null */
             business_result: components["schemas"]["UiBusinessResult"] | null;
+            /**
+             * Answer Truncated
+             * @default false
+             */
+            answer_truncated: boolean;
         };
     };
     responses: never;

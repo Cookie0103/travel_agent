@@ -8,10 +8,10 @@ from datetime import UTC, date, datetime
 from uuid import UUID
 
 from backend.domain.travel_request import TravelRequest
-from backend.persistence import history, runs, sessions
+from backend.persistence import history, sessions
 from backend.persistence.database import Database
 from backend.services.common import ServiceError, transaction
-from backend.services.runs import RunView, view
+from backend.services.runs import RunView, recorded_view
 
 
 def boundary(cursor: str | None) -> history.Boundary | None:
@@ -106,6 +106,13 @@ class HistoryService:
     def __init__(self, database: Database) -> None:
         self.database = database
 
+    async def export(
+        self, user_id: UUID | None = None, session_id: UUID | None = None
+    ) -> dict[str, object]:
+        """只供拥有数据库凭据的运维脚本调用，不作为匿名 HTTP 接口。"""
+        async with transaction(self.database) as db:
+            return await history.export_history(db, user_id, session_id)
+
     async def sessions(self, user_id: UUID, limit: int, after: str | None) -> SessionPage:
         before = boundary(after)
         async with transaction(self.database) as db:
@@ -128,8 +135,8 @@ class HistoryService:
             next_before = cursor(page[-1].created_at, page[-1].id) if len(rows) > limit else None
             items = []
             for row in reversed(page):
-                current = view(row)
-                events = await runs.presentations(db, row.id)
+                current = await recorded_view(db, row)
+                events = current.presentations
                 items.append(
                     HistoricalRun(
                         current.run_id,
@@ -141,7 +148,9 @@ class HistoryService:
                         current.last_sequence,
                         current.created_at,
                         events,
-                        business_result=await runs.business_result(db, row),
+                        business_result=current.business_result,
+                        stale_refs=current.stale_refs,
+                        answer_truncated=current.answer_truncated,
                         prompt=row.prompt,
                         draft_id=draft_id(events),
                     )

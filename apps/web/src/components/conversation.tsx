@@ -154,6 +154,7 @@ export function Conversation({
                     <Markdown text={row.answer} />
                   </div>
                 )}
+                <AnswerNotices run={row} />
                 {runErrorMessage(row) && (
                   <p className="error">{runErrorMessage(row)}</p>
                 )}
@@ -198,6 +199,7 @@ export function Conversation({
                 <Markdown text={run.answer} />
               </div>
             )}
+            <AnswerNotices run={run} />
             {runErrorMessage(run) && (
               <p className="error">{runErrorMessage(run)}</p>
             )}
@@ -248,6 +250,21 @@ export function Conversation({
         </div>
       )}
     </div>
+  );
+}
+
+function AnswerNotices({ run }: { run: Run }) {
+  return (
+    <>
+      {(run.stale_refs ?? 0) > 0 && (
+        <p className="small muted">
+          此回答中的 {run.stale_refs} 个报价已过期，可让我刷新。
+        </p>
+      )}
+      {run.answer_truncated && (
+        <p className="small muted">回答过长，已截断保存。</p>
+      )}
+    </>
   );
 }
 

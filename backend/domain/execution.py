@@ -218,6 +218,7 @@ class RuntimeEvent:
     request_revision: int | None = None
     evidence_ids: tuple[str, ...] = ()
     business_result: BusinessResult | None = None
+    answer_truncated: bool = False
 
 
 @dataclass(frozen=True)

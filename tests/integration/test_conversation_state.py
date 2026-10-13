@@ -34,7 +34,7 @@ async def finish(travel: TravelService, context: RunContext) -> None:
         await runs.finish(
             db,
             context,
-            RuntimeOutcome(text="实时回复仅供本轮查看；详情按需更新。", sdk_session_id="synthetic"),
+            RuntimeOutcome(text="合成已完成回答", sdk_session_id="synthetic"),
         )
 
 

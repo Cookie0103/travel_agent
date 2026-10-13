@@ -83,6 +83,8 @@ class RunView:
     created_at: datetime
     presentations: tuple[dict[str, object], ...] = ()
     business_result: BusinessResult | None = None
+    stale_refs: int | None = None
+    answer_truncated: bool | None = None
 
 
 def view(row: TaskRunRow | None) -> RunView:
@@ -103,10 +105,13 @@ def view(row: TaskRunRow | None) -> RunView:
 async def recorded_view(db: AsyncSession, row: TaskRunRow | None) -> RunView:
     result = view(row)
     assert row is not None
+    stale, truncated = await runs.answer_metadata(db, row)
     return replace(
         result,
         presentations=await runs.presentations(db, row.id),
         business_result=await runs.business_result(db, row),
+        stale_refs=stale,
+        answer_truncated=truncated,
     )
 
 
@@ -131,7 +136,6 @@ class RunService:
         self.persistence_failures: set[UUID] = set()
         self.recovery_pending = False
         self.recovery_lock = asyncio.Lock()
-        self.live_answers: dict[UUID, tuple[datetime, str]] = {}
 
     async def initialize(self, *, only_pending: bool = False) -> None:
         """单API进程启动：释放中断执行，不自动重复任何付费或预订操作。"""
@@ -221,14 +225,6 @@ class RunService:
             result = await recorded_view(db, await runs.owned(db, user_id, run_id))
         if run_id in self.persistence_failures:
             raise ServiceError(503, "unavailable", "执行记录写入失败，需要恢复核对")
-        now = datetime.now(result.created_at.tzinfo)
-        self.live_answers = {
-            key: value
-            for key, value in self.live_answers.items()
-            if (now - value[0]).total_seconds() < 900
-        }
-        if run_id in self.live_answers:
-            result = replace(result, answer=self.live_answers[run_id][1])
         return result
 
     async def events(self, user_id: UUID, run_id: UUID, after: int) -> list[dict[str, object]]:
@@ -347,18 +343,12 @@ class RunService:
             )
             try:
                 await consumer
-                if transient:
-                    # 供应商HTTP错误：固定说明(仅由状态码生成)同时作为本轮可见回复和落库文本。
-                    detail = upstream_error_text(outcome.reason) if outcome.code else None
-                    self.live_answers[context.run_id] = (
-                        datetime.now().astimezone(),
-                        outcome.text or detail or "",
-                    )
+                if transient and outcome.code:
+                    # 失败说明来自封闭码；模型已生成的可见文字保留，流式中间事件仍裁剪。
+                    detail = upstream_error_text(outcome.reason) or f"执行未完成：{outcome.code}"
                     outcome = replace(
                         outcome,
-                        text="实时回复仅供本轮查看；行程引用已保存，详情按需更新。"
-                        if outcome.code is None
-                        else detail or f"执行未完成：{outcome.code}",
+                        text="\n\n".join(text for text in (detail, outcome.text) if text),
                     )
                 async with transaction(self.database) as db:
                     await runs.finish(db, context, outcome)

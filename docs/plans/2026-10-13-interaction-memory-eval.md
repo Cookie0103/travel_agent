@@ -326,7 +326,7 @@
 
 | ID | 状态 | 提交与证据 |
 | --- | --- | --- |
-| T0 | doing | 预检与预算实现通过；待提交SHA |
+| T0 | done | ff60566；check307/1607后端/135前端；预算与项目入口专项44，审查通过 |
 | T1 | doing | 1607 passed、web135、Chrome两轮跨重启原文一致、独立审查无P1/P2；待提交SHA |
 | T2 | todo | 待验证 |
 | T3 | todo | 待验证 |
@@ -365,7 +365,7 @@
 
 ## 8. 问题解决记录
 
-### P-01 [预检] V2 自洽性与代码核对　状态：doing　关联：T0
+### P-01 [预检] V2 自洽性与代码核对　状态：done　关联：T0
 - 环境：基线 0076478，本地，工作区开工前干净。
 - 已核实：Rakuten.search 逐晚核验同套餐；V2 两次总调用描述不适用于多晚（REASONED）；用户以 D8 澄清。D4 确认与自动记住冲突，用户以 D9 澄清。
 - SDK 优先：T1 复用 finish 与 recover；T2 统一适配器重试；T3 卡片被 T4/T5 共用；T6 trace_id 被 T7 使用；T5 复用偏好版本与 SDK 失效。
@@ -374,7 +374,7 @@
 - 本地 .env：DAILY_BUDGET_CNY 原值 15.00 → 60；其他变量不改。全批 150 CNY 复用既有账本、按 2026-10-13 起 UTC 日期累计，由 guard 拦截；计划同步记录本批差额；不重置历史。
 - 验证与遗留：见 §9；check 已通过；test 既有 4 失败、1585 通过、1 skipped、4 deselected，298.01 秒；web 134 通过。
 
-### P-02 [既有问题] CLI 更新导致压缩控制基线失败　状态：doing　关联：T0/T7
+### P-02 [既有问题] CLI 更新导致压缩控制基线失败　状态：done　关联：T0/T7
 - 现象：原提交完整 test 4 项失败，reason=auto_compaction_capability，0 请求；实际CLI2.1.296，代码名单止于2.1.295。
 - 方案：尝试增加精确2.1.296组合，原集成4失败消失，但既有单元测试明确以该版本为未核验反例（1失败）。放弃此做法，恢复原名单，使用本机已安装2.1.295复跑63专项全过；不改旧断言、不改全局CLI/.env。
 - 证据：baseline-test.log 已先红；t0-sdk-green.log（1失败62通过）；t0-sdk-pinned.log（63通过，31.13秒）。
@@ -557,10 +557,10 @@ T5b：摘要中引用了不存在或他人的事实时，该句被丢弃；被�
 - web-check：134 passed / 0 failed，类型/lint/build 通过；测试部分312.36ms，其余未单独计时。
 - 模型账本基线：649 HTTP / 30.163288 CNY 历史；2026-10-13 当日 0 CNY。本地 PG 当日供应商计数空，未发真实调用。
 - T0 补测：新预算与专项命令 RED 7 failed / 13 passed → GREEN 43 passed；历史预算测试断言保持原样。
-- 当前：预算修正、专项 test --path/--keyword、CLI 精确版本2.1.296压缩控制验证待全量复核与审查；新分支尚未提交。
+- T0提交ff60566；显式使用已有2.1.295，63压缩/SDK专项通过；原2.1.296门禁保持。新分支已push，Railway保持。
 
 ### 2026-10-14 恢复点
-- 本批继续使用2026-10-13文件/分支，不因午夜另建批次。当前T0/T1源码未提交；check307通过，原生CLI固定2.1.295；T1最终全量 t1-final-full.log：1607 passed/1skip/4 deselected，311.59秒；web135通过。真实DeepSeek2HTTP/0.051644CNY；Places7次在初始旧行程补详情时发生，新测试会话恢复未新增调用。Railway未改。
+- 本批继续使用2026-10-13文件/分支，不因午夜另建批次。当前T0已提交ff60566，T1源码待提交；check307通过，原生CLI固定2.1.295；T1最终全量 t1-final-full.log：1607 passed/1skip/4 deselected，311.59秒；web135通过。真实DeepSeek2HTTP/0.051644CNY；Places7次在初始旧行程补详情时发生，新测试会话恢复未新增调用。Railway未改。
 
 ### T0/T1 提交前实测（VERIFIED）
 - 后端全量：1607 passed、1 skipped、4 deselected，311.59秒；原基线1585 passed/4 failed，固定已有CLI2.1.295解决4个环境版本门禁失败，新增覆盖18项，旧断言只按D1语义更正。
@@ -569,3 +569,5 @@ T5b：摘要中引用了不存在或他人的事实时，该句被丢弃；被�
 - 真实费用：账本649→651请求，历史30.163288→30.214932CNY，本批0.051644CNY。供应商Places7次，发生在打开旧本地正式行程按需补详情（15:18:54），新验收会话后无供应商调用；Rakuten/geocode/routes/weather0。
 - 脱敏证据：[JSON](../evidence/t1-answer-persistence-2026-10-13.json)、[刷新后](../evidence/t1-two-turns-after-refresh-2026-10-13.jpg)、[重启后第二轮](../evidence/t1-restored-second-answer-2026-10-13.jpg)。Railway不变。
 - 独立审查：review_t0只读，发现4项P2全部有回归验证并复核，无剩余P1/P2；提交将分T0基础与T1功能，随后直接T2。
+
+- T0提交 ff60566，已推送指定新分支；本机.git/hooks/pre-commit未安装（提交输出未运行钩子），没有禁用/跳过钩子，提交前已独立运行并通过完整项目check/test/web-check。

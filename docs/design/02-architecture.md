@@ -126,6 +126,7 @@ DeepSeek 官方提供 [Claude Code 接入配置](https://api-docs.deepseek.com/z
 ## 5. 上下文与记忆
 
 - **三类状态分开**：SDK 会话记录用于模型续接；应用事件用于 UI / Trace；PostgreSQL 领域状态是 TravelRequest、Evidence、行程和预订的事实来源。
+- **最终对话回答**：用户 D1 决定最终回答随 TaskRun finish 事务持久化到 PG，供本人历史恢复；中间全文事件和 Google 原始响应仍不长期保留。时效角标与旧占位提示见 [ADR-014](../adr/014-session-history.md)。
 - **旅行条件不靠 SDK 记忆**：每次开始/恢复从服务端重新读取 revision 和有效 Evidence。模型提交条件修改仍走 `update_travel_request`，不能因会话文本较新就覆盖数据库。
 - **澄清进度不靠助手全文**：同一快照读取有限待办、原任务用户文本与当前追问；缺项从当前条件派生。房型枚举输入投影到原条件，SDK 原生 Stop 仅一次纠正可执行而未完成的任务，费用/工具边界不变；契约见 [ADR-014](../adr/014-session-history.md)、[ADR-015](../adr/015-lodging-budget-and-condition-source.md)。
 - **压缩由 SDK 处理**：应用控制注入内容与工具结果长度；M3.1 验证压缩后硬条件、证据引用与工具结果仍正确，不手工重写 SDK transcript / thinking 块。
