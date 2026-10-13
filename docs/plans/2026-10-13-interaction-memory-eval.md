@@ -338,7 +338,7 @@
 | T5a | done | 确认/跨会话/遗忘Chrome、PG隔离/迁移/竞态与SDK回归通过，随本批提交 |
 | T7b | awaiting-upload | E5 24/24、E6 15/20、首次E7 19/24、节奏复测3/3；E8/E9完成，云分数批量重发等待具体授权 |
 | T5b | done | Chrome显式生成→遗忘→刷新/PG清空通过，1HTTP/0.001100CNY，随本批提交 |
-| T8 | doing | 最终稳定全量1786通过、web141/构建通过；独立审查无剩余P1/P2；提交push中 |
+| T8 | done | 最终1786后端/141前端与构建通过、独立审查无P1/P2；60fd0fd已push指定分支；云评分重发按T7b等待具体授权 |
 
 ## 5. 边界与不变量
 
@@ -519,6 +519,8 @@
 
 
 ### 最终开发交付（2026-10-14，VERIFIED）
+
+- 开发提交 **60fd0fd** 已push `origin/batch/2026-10-13-interaction-memory-eval`。T0 ff60566、T1 96846d4此前已push；本次记录提交随后一并push。完整源码与脱敏证据已保存在远端，本地人工CSV不提交。无Railway操作。
 
 - 最终稳定源码：check 372文件、win32/linux/darwin严格类型、3分层契约、10文档入口全部通过；test **1786 passed / 1 skipped / 4 deselected，346.71秒**；web-check --webpack **141 passed / 0 failed**，类型、lint及生产构建通过。日志final-verified-check/full、final-delivery-web保留本地。
 - done means 1–6、8：真实Chrome/PG/SDK及云联验已验证；第7项离线与真实抽样、本地报告完成，**81组数值score批量重发因自动审批要求具体授权仍待用户回答**。先前2/81组直接上传完整接收，批量接口修复13回归与独立审查通过。没有把接收回执冒充云读回，没有把未上传称为已上传。
