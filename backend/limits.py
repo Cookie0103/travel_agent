@@ -7,9 +7,6 @@ from typing import Literal
 
 Currency = Literal["CNY", "USD"]
 Provider = Literal["deepseek", "anthropic"]
-BASE_URL = "https://api.deepseek.com/anthropic"
-MAX_TOKENS = 1024
-MAX_REQUEST_BYTES = 8192
 
 
 class ProbeError(RuntimeError):
