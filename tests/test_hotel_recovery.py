@@ -1,7 +1,7 @@
 """预算诊断只使用完整真实总价，逐档判断不发请求。"""
 
 import json
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from uuid import uuid4
 
@@ -105,13 +105,18 @@ def test_total_budget_cannot_be_reused_in_full_for_each_segment() -> None:
 
 def test_single_city_legacy_hotel_reference_cannot_bypass_budget() -> None:
     current = budget_request("1000")
-    destination, hotel = record(place(), current), record(offer(), current)
+    original = (record(place(), current), record(offer(), current))
+    now = datetime.now(UTC)
+    destination, hotel = tuple(
+        value.model_copy(update={"retrieved_at": now, "valid_until": now + timedelta(minutes=5)})
+        for value in original
+    )
     proposal = ItineraryProposal(
         expected_revision=current.revision,
         items=(item(destination, "2026-11-06T10:00+09:00", "2026-11-06T11:00+09:00"),),
         hotel_evidence_id=hotel.evidence_id,
     )
-    report = validate_itinerary(current, proposal, (destination, hotel), datetime.now(UTC))
+    report = validate_itinerary(current, proposal, (destination, hotel), now)
     assert report.status == "conflict"
     assert any(c.code == "hotel_over_budget_unaccepted" for c in report.checks)
 

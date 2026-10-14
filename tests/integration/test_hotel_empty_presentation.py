@@ -134,7 +134,13 @@ def test_failure_panel_keeps_budget_revision_and_unknown_id_guards_without_quote
                 events.append,
                 definition=next(d for d in DEFINITIONS if d.name == name),
             )
-            assert result.code == code and not result.data
+            assert result.code == code
+            # F2的闭合诊断不含报价；其他工具的失败仍必须空正文。
+            assert result.data == (
+                {"choice_card": "none", "attempts": 0, "auto_retried": False}
+                if name == "search_hotel_offers"
+                else {}
+            )
             assert events[-1].kind == "presentation"
             assert "cards': []" in str(events[-1].presentation)
         request = await travel.get_request(context)

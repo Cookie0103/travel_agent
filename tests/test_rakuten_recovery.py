@@ -23,6 +23,7 @@ class Usage:
 
 class SyntheticRakuten(Rakuten):
     def __init__(self, amounts: tuple[int, int]) -> None:
+        self.data_mode = "synthetic"
         self.usage = Usage()  # type: ignore[assignment]
         self.amounts = amounts
         self.calls: list[tuple[date, str]] = []

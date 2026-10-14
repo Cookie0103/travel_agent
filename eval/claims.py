@@ -6,7 +6,7 @@ from datetime import datetime
 
 from backend.domain.execution import RuntimeEvent
 
-CLAIM_SCORER_VERSION = "claims-v4-scoped-negation"
+CLAIM_SCORER_VERSION = "claims-v5-local-denial"
 
 CLAIM_WORDS = {
     "card": ("预算确认卡", "记忆确认卡", "确认卡", "选择卡", "酒店比较卡"),
@@ -52,6 +52,8 @@ def clause_prefix(sentence: str, position: int) -> str:
 
 def asserted(sentence: str, position: int) -> bool:
     prefix = clause_prefix(sentence, position)
+    if re.search(r"(?:未|没|不)(?:再)?$", prefix.strip()):
+        return False
     return not any(w in prefix for w in CLAIM_WORDS["negative"]) and not any(
         w in sentence[:position] for w in CLAIM_WORDS["future"]
     )
@@ -88,6 +90,12 @@ def claim_consistency(
             if any(w in clause_prefix(sentence, position) for w in CLAIM_WORDS["history"]):
                 if results["card"] is not False:
                     results["card"] = None
+                continue
+            if re.match(
+                r"^\s*(?:在本轮)?(?:的)?(?:状态)?(?:为|是)?[：:\s“”\"]*"
+                r"(?:未展示|未生成|未出现|不存在|没有了|none)",
+                sentence[match.end() :],
+            ):
                 continue
             kind = {"预算确认卡": "budget_relaxation", "记忆确认卡": "memory_confirm"}.get(word)
             supported = any(d.get("kind") == kind for d in cards) if kind else bool(cards) or hotels

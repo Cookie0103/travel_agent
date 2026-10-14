@@ -141,3 +141,23 @@ def test_refusal_to_show_a_card_does_not_assert_one_exists() -> None:
     result = claim_consistency("你已拒绝这个档位，我不会再提预算确认卡。", ())
     assert result["card"] is True and result["passed"] is True
     assert claim_consistency("我不会代选，但页面有预算确认卡，请你选择。", ())["card"] is False
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "适配器未自动重试。",
+        "适配器未再自动重试。",
+        "我没自动重试。",
+        "预算确认卡在本轮状态为“未展示”（none）。",
+        "预算确认卡未展示。",
+    ],
+)
+def test_explicit_local_denial_is_not_an_unsupported_positive_claim(answer: str) -> None:
+    assert claim_consistency(answer, ())["passed"] is True
+
+
+def test_card_denial_does_not_hide_a_later_positive_statement() -> None:
+    assert (
+        claim_consistency("预算确认卡未展示，但页面有预算确认卡，请你选择。", ())["card"] is False
+    )

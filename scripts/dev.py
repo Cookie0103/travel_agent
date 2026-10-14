@@ -215,9 +215,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     rescore = commands.add_parser("eval-simulator-rescore")
     rescore.add_argument("results", type=Path)
     rescore.add_argument("--out", type=Path)
+    rescore.add_argument("--hashes", type=Path)
     memory_rescore = commands.add_parser("eval-memory-rescore")
     memory_rescore.add_argument("results", type=Path)
     memory_rescore.add_argument("--out", type=Path)
+    memory_rescore.add_argument("--hashes", type=Path)
     calibration = commands.add_parser("eval-calibration")
     calibration.add_argument("results", type=Path, nargs="+")
     calibration.add_argument("--live", action="store_true")
@@ -321,6 +323,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return run_command(command, timeout=7200)
         case "eval-simulator-rescore" | "eval-memory-rescore":
             command = [python, "-m", "eval.rescore_simulator", str(args.results)]
+            if args.hashes:
+                command.extend(["--hashes", str(args.hashes)])
             if args.out:
                 command += ["--out", str(args.out)]
             return run_command(command)

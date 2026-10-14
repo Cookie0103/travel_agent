@@ -335,7 +335,7 @@ def write_rescore(results: Path, hashes: Path, out: Path | None = None) -> dict[
             if "present_travel_result" in TypeAdapter(list[str]).validate_python(r.get("tools", []))
             and str(r.get("case_id")).startswith("v2-mem-")
         ),
-        "scorer_version": SCORER_VERSION if memory_cases else "interaction-v4-scoped-claims",
+        "scorer_version": SCORER_VERSION if memory_cases else "interaction-v5-local-denial",
         "gold_sha256": gold_hashes,
         "cost_cny": str(
             sum(
