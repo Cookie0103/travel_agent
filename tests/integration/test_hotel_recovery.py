@@ -7,25 +7,122 @@ from uuid import uuid4
 
 import httpx
 import pytest
-from sqlalchemy import text
+from sqlalchemy import func, select, text
 
 from backend.adapters.external_api import ApiUsage
 from backend.adapters.rakuten import Rakuten
+from backend.domain.choices import ChoiceSelection
 from backend.domain.execution import RunContext, RuntimeOutcome
 from backend.domain.external_data import GeoPoint
 from backend.domain.hotel_recovery import HotelSearchDiagnostics
 from backend.domain.travel_request import RequestPatch
 from backend.persistence import runs
-from backend.services.choices import ChoiceService
+from backend.persistence.models import ChoiceCardRow
+from backend.services.choices import ChoiceService, owned_card
 from backend.services.common import ServiceError
 from backend.services.hotels import HotelService, cards
 from backend.services.runs import MessageInput, RunService
 from backend.services.travel import TravelService
+from backend.tools.travel import TravelToolExecutor
 from tests.integration.test_travel import travel_setup as travel_setup
 from tests.test_external_data import sample
 from tests.test_hotel_recovery import budget_request
 
 pytestmark = pytest.mark.integration
+
+
+@pytest.mark.parametrize("change", ["same", "revision", "higher"])
+def test_declined_budget_is_not_reoffered_only_for_same_revision_and_amount(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext], change: str
+) -> None:
+    runner, travel, original = travel_setup
+
+    async def exercise() -> None:
+        patched = await travel.patch_request(
+            original,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": {
+                        "lodging_budget": {
+                            "amount": {"upper": "5000"},
+                            "currency": "JPY",
+                            "basis": "per_room_night",
+                        }
+                    },
+                }
+            ),
+            source="user_form",
+        )
+        request = patched.request
+        async with travel.database.sessions.begin() as db:
+            first = await runs.create(
+                db, original.user_id, original.session_id, uuid4(), "比较酒店", "offline"
+            )
+        context = RunContext(original.user_id, original.session_id, first.id)
+        _, diagnosis, card = await HotelService(travel).search_result(context, request.revision)
+        assert card
+        async with travel.database.sessions.begin() as db:
+            await runs.finish(db, context, RuntimeOutcome(text="选择预算"))
+            keep = await runs.create(
+                db, original.user_id, original.session_id, uuid4(), "保持预算", "offline"
+            )
+            keep_context = RunContext(original.user_id, original.session_id, keep.id)
+            row = await owned_card(db, original.user_id, original.session_id, card.choice_id)
+            await ChoiceService(travel).accept(
+                db,
+                keep_context,
+                row,
+                ChoiceSelection(choice_id=card.choice_id, option_id="keep"),
+                request.revision,
+            )
+            await runs.finish(db, keep_context, RuntimeOutcome(text="保持原预算"))
+        if change == "revision":
+            request = (
+                await travel.patch_request(
+                    original,
+                    RequestPatch.model_validate(
+                        {"expected_revision": request.revision, "set": {"transport": "taxi"}}
+                    ),
+                    source="user_form",
+                )
+            ).request
+        async with travel.database.sessions.begin() as db:
+            later = await runs.create(
+                db, original.user_id, original.session_id, uuid4(), "再比较酒店", "offline"
+            )
+        later_context = RunContext(original.user_id, original.session_id, later.id)
+        if change == "higher":
+            assert diagnosis.tier is not None and diagnosis.tier < Decimal(3)
+            diagnosis.tier = Decimal(3)
+            diagnosis.applied_upper = Decimal(5000) * diagnosis.tier
+            assert await ChoiceService(travel).propose_budget(later_context, request, diagnosis)
+        else:
+            result = await TravelToolExecutor(travel).execute(
+                later_context, "search_hotel_offers", {"expected_revision": request.revision}
+            )
+            assert result.code is None
+            if change == "same":
+                assert result.data.get("choice") is None
+                relaxation = result.data["relaxation"]
+                assert isinstance(relaxation, dict) and relaxation["declined"] is True
+            else:
+                assert result.data.get("choice") is not None
+        async with travel.database.sessions() as db:
+            count = await db.scalar(
+                select(func.count())
+                .select_from(ChoiceCardRow)
+                .where(
+                    ChoiceCardRow.session_id == original.session_id,
+                    ChoiceCardRow.kind == "budget_relaxation",
+                )
+            )
+        assert count == (1 if change == "same" else 2)
+        assert (
+            await ChoiceService(travel).get(original.user_id, original.session_id, card.choice_id)
+        ).answered_option_id == "keep"
+
+    runner.run(exercise())
 
 
 @pytest.mark.parametrize("option", ["accept", "keep"])
@@ -213,6 +310,7 @@ def test_different_segment_tiers_have_distinct_bound_choices(
                 original_upper=Decimal(5000), applied_upper=Decimal(10000), tier=Decimal(2)
             ),
         )
+        assert first is not None and second is not None
         assert first.choice_id != second.choice_id
         assert "10000" in second.options[0].label
         assert (

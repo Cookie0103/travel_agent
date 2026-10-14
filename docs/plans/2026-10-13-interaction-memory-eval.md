@@ -353,8 +353,8 @@
 | ID | 状态 | 验收与证据 |
 | --- | --- | --- |
 | F0 | done | f4faa8f；起点干净d2371c9；55原始文件hash冻结；check372/后端1786 passed(346.50秒)/前端141与构建通过；PG正常，账本1267HTTP/46.305064CNY |
-| F9 | done | 24行原文完全一致/人工栏0；41专项、check374通过、独立审查无P1/P2；提交随本任务 |
-| F1 | todo | 同条件同金额拒绝不再提，接受路径不变 |
+| F9 | done | 2068e84；24行原文完全一致/人工栏0；41专项、check374通过、独立审查无P1/P2；提交随本任务 |
+| F1 | done | 16真实PG专项/check374/审查通过；同条件同金额拒绝不再提，接受路径不变；随本任务提交 |
 | F2 | todo | 卡/重试元数据与确定性说法检查 |
 | F3 | todo | 合成来源标识与生产隔离 |
 | F4 | todo | 分城市完整评测地点及评测独立配额 |
@@ -565,6 +565,13 @@
 - 最小方案：复用旧CSV/manifest/预标注，按case去重24行，偏向失败参考但不把预标注写入表；中文模板、原文直拷、名词解释；来源全部hash绑定、输出x。新表少于20有效行一致率和κ为None，旧30表接口兼容。
 - 先红后绿：missing human_sheet/统计helper→GREEN；真实词表漏词RED→修复；19有效行仍κ=1 RED→严格门槛GREEN。41邻近专项通过，check374三平台/分层/文档通过；独立审查复核无P1/P2。
 - 实测VERIFIED：24 distinct case、原文全相等、人工字段0；最终输出.cache/batch-2026-10-14/labeling/。初次无人工draft保留在labeling-draft，未覆盖旧30表或原始结果。0模型/网络，真人校准仍pending。
+
+
+### P-16 F1：保持预算跨run不重复出卡（已验证）
+- VERIFIED先红：同revision新run仍创建同金额可点击卡，PG1失败/2通过。根因去重带source_run_id，保持不改revision。
+- 方案：在现有session锁/currentrun/revision事务内查询同session+revision+精确量化金额+keep历史拒绝，不新增迁移。返回None并设置闭合declined，旧卡仍已回答，不同金额/条件允许，接受和TTL不改。
+- 验证：16真实PG choices/hotel专项通过，check374三平台/分层/文档通过；只读审查无P1/P2，无重复抽象。propose_budget返回可空的新契约，旧不同段测试仅加强nonNone类型断言，原期望值不改。
+- F2待处理审查建议：拒绝诊断原message仍含请确认，下一任务按封闭choice_card重写，避免同时请接受/禁止再提。
 
 ## 9. 验证与交付
 

@@ -105,7 +105,7 @@ class ChoiceService:
         diagnosis: HotelSearchDiagnostics,
         *,
         expires_at: datetime | None = None,
-    ) -> ChoiceCard:
+    ) -> ChoiceCard | None:
         if (
             diagnosis.applied_upper is None
             or diagnosis.original_upper is None
@@ -121,6 +121,19 @@ class ChoiceService:
             proposed = (lodging.amount.upper * (diagnosis.tier or 1)).quantize(
                 Decimal("0.01"), rounding=ROUND_CEILING
             )
+            declined = await db.scalar(
+                select(ChoiceCardRow.id).where(
+                    ChoiceCardRow.session_id == context.session_id,
+                    ChoiceCardRow.kind == "budget_relaxation",
+                    ChoiceCardRow.expected_revision == request.revision,
+                    ChoiceCardRow.content["proposed_upper"].astext == str(proposed),
+                    ChoiceCardRow.answered_option_id == "keep",
+                )
+            )
+            if declined is not None:
+                diagnosis.declined = True
+                diagnosis.message += " 用户已拒绝这一金额的放宽；不要重复建议或提及预算确认卡。"
+                return None
             existing = await db.scalar(
                 select(ChoiceCardRow).where(
                     ChoiceCardRow.session_id == context.session_id,

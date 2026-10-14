@@ -31,6 +31,7 @@ class HotelSearchDiagnostics(BaseModel):
     )
     skipped: Literal["quota", "deadline"] | None = None
     message: str = ""
+    declined: bool = False
 
 
 def nightly_upper(request: TravelRequest) -> Decimal | None:
