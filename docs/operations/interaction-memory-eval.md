@@ -127,3 +127,13 @@ uv run python scripts/dev.py eval-human-score .cache/batch-2026-10-14/labeling/�
 ### F8 未核实分诊线索
 
 离线粗检：`uv run python scripts/dev.py eval-triage <results.jsonl> --check-references <model-triage.jsonl> --out <新目录>`。输出用x模式，来源前后hash核对；不允许结合`--live`。当前10条结果在`.cache/batch-2026-10-14/f8-triage/consistency.json`，5不一致/5无法判断；原标签不改、根因准确率不计算。新参数元数据仅闭合类型/操作/范围/组件/日期及服务端选项ID，不含原文值和引用。
+
+### F12/F13 最终验证与保存证据（2026-10-14）
+
+F12共22个真实SDK试验（15计划、7诊断/修复回归），账本新增252HTTP/8.444428CNY。仅各命令进程设置`DAILY_BUDGET_CNY=10`，.env与Railway不动。UTC2026-10-14从08时到09时执行，未跨日；每次HTTP先预占，失败也计入。原始七目录、22条结果的路径/哈希/费用见`docs/evidence/f12-deepseek-acceptance-2026-10-14.json`，同文件记各版本及不同目录trial_key，不混淆同名trial1。
+
+新结果读取时冻结索引`.cache/batch-2026-10-14/f12-frozen-input-hashes-final.json`保留原55项并追加14项结果/manifest；新69项不是全都F0冻结。原22条全部用`eval-simulator-rescore --hashes <此索引> --out <新目录>`离线重算，新输出在`f12-v5/`，原4/9与真实误导不覆盖。错误场景九条v5为8/9；未重跑400/429模型，只有新增无候选3条和拒绝3条用于指引修复回归。三城市3条中1条规则通过、2保存partial，未知10/12不算通过，无保存的约束不填0。
+
+旧51条的最终统一输出在`.cache/batch-2026-10-14/f13-v5/{e7,pace,e5}/`，交互版本`interaction-v5-local-denial`、说法版本`claims-v5-local-denial`；manifest记录实际源4270583及逐文件hash，摘要逐trial列改变检查。旧F5与首次v4、原始19/24和24/24均保留。F6两个记忆集合仍分别20/20和15/15，不混成35/35成功率，不把旧三隔离探针说成实际测过第四项。
+
+最终命令日志：`f13-regression-final-check.log`、`f13-final-full-test.log`（1907 passed/1skip/4deselect，347.53s）、`f13-final-web-generate.log`与`f13-final-web-check.log`（143passed/构建通过）。首轮全量的5失败和基线d237隔离复现保存在`f13-full-test.log`、`f13-baseline-rakuten.log`、`f13-baseline-clock-red.log`；保留验证过程，不以调整安全/金标断言过关。任务状态和最后提交只见批次计划。
