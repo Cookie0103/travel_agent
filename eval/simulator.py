@@ -24,6 +24,8 @@ from backend.domain.choices import ChoiceSelection
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.itinerary import HotelStay
 from backend.domain.travel_request import RequestPatch, pace_of
+from backend.limits import ProbeError
+from backend.persistence import runs as run_rows
 from backend.persistence.database import configuration, database_url
 from backend.persistence.models import ChoiceCardRow, PlanDraftRow
 from backend.persistence.temporary import temporary_database
@@ -40,6 +42,7 @@ from eval.database import DatabaseEvaluation, database_evaluation, selector_runn
 from eval.metrics import process_metrics
 from eval.report import simulation_summary
 from eval.run import manifest
+from eval.simulator_failures import ControllerReason, failure_details
 from eval.simulator_metrics import (
     claims_pass,
     dialogue_claims,
@@ -264,9 +267,15 @@ async def trial(
     service = TrialRuns(business, scenario, repeat, trace_id, directory / "traces", cloud, events)
     action = UserAction(kind="message", text=scenario.initial)
     error: str | None = None
+    controller_failure: dict[str, object] | None = None
+    failure_reason: ControllerReason = "service_rejected"
+    raw_simulator_output: str | None = None
+    rejected_action: dict[str, object] | None = None
     initial_orders = (await snapshot(business.travel, context)).orders
     try:
         for turn in range(8):
+            rejected_action = action.model_dump(mode="json")
+            failure_reason = "service_rejected"
             if action.kind == "done":
                 break
             if action.kind == "new_session":
@@ -283,6 +292,7 @@ async def trial(
                     or not isinstance(draft_ids, list)
                     or str(action.draft_id) not in draft_ids
                 ):
+                    failure_reason = "unauthorized_draft"
                     raise ValueError("未授权或不存在的确认草稿")
                 assert action.draft_id
                 await PlanService(business.travel).confirm(identity.user_id, action.draft_id)
@@ -293,6 +303,7 @@ async def trial(
             selection = None
             if action.kind == "choice":
                 assert action.choice_id and action.option_id
+                failure_reason = "choice_missing"
                 card = await ChoiceService(business.travel).get(
                     identity.user_id, context.session_id, action.choice_id
                 )
@@ -301,8 +312,16 @@ async def trial(
                     or card.answered_option_id
                     or action.option_id not in {o.option_id for o in card.options}
                 ):
+                    failure_reason = (
+                        "stale_choice"
+                        if card.stale
+                        else "answered_choice"
+                        if card.answered_option_id
+                        else "unknown_option"
+                    )
                     raise ValueError("模拟用户选择无效")
                 selection = ChoiceSelection(choice_id=action.choice_id, option_id=action.option_id)
+            failure_reason = "invalid_simulator_output"
             message = MessageInput(
                 client_message_id=uuid4(),
                 text=action.text,
@@ -311,12 +330,16 @@ async def trial(
                 selection=selection,
                 hotel_stays=action.hotel_stays,
             )
+            failure_reason = "service_rejected"
             submitted = await service.submit(identity.user_id, context.session_id, message)
             task = service.tasks.get(submitted.run_id)
             if task:
                 await task
             result = await service.get(identity.user_id, submitted.run_id)
             context = RunContext(identity.user_id, context.session_id, result.run_id)
+            async with transaction(business.sessions.database) as db:
+                recorded = await run_rows.owned(db, identity.user_id, result.run_id)
+                answered_at = recorded.finished_at if recorded else None
             transcript.append(
                 {
                     "user": action.model_dump(mode="json"),
@@ -324,9 +347,13 @@ async def trial(
                     "status": result.status,
                     "presentations": result.presentations,
                     "session_id": str(context.session_id),
+                    "run_id": str(context.run_id),
+                    "answered_at": answered_at.isoformat() if answered_at else None,
                 }
             )
             visible = await page(business, context)
+            failure_reason = "simulator_unavailable"
+            raw_simulator_output, rejected_action = None, None
             response, _ = await asyncio.to_thread(
                 structured_call,
                 "simulator",
@@ -343,9 +370,12 @@ async def trial(
                 trace_cloud=cloud,
                 evaluation={"suite": "v2-user", "case_id": scenario.case_id, "trial": repeat},
             )
+            raw_simulator_output = response
+            failure_reason = "invalid_simulator_output"
             action = UserAction.model_validate_json(response)
-    except (ValueError, ServiceError) as failure:
+    except (ValueError, ServiceError, ProbeError) as failure:
         error = type(failure).__name__
+        controller_failure = failure_details(failure_reason, raw_simulator_output, rejected_action)
     finally:
         await service.close()
     request = await business.travel.get_request(context)
@@ -478,6 +508,7 @@ async def trial(
         "claim_consistency": claims,
         "no_reoffer_after_decline": no_reoffer,
         "error": error,
+        "controller_failure": controller_failure,
         "rounds": len(transcript),
         "text": str(transcript[-1]["answer"]) if transcript else "",
         "user_input": scenario.initial,

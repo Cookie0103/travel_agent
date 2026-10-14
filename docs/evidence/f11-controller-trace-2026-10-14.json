@@ -1,0 +1,22 @@
+{
+  "status": "VERIFIED",
+  "scope": "private redacted failure artifacts; no external uploads",
+  "unit_passed": 46,
+  "pg_passed": 4,
+  "check_files": 388,
+  "red": {
+    "invalid_controller_output": 2,
+    "unavailable_simulator": 1,
+    "secret_key_fields": 2,
+    "conditional_expiry": 1
+  },
+  "fixed_reason_categories": 8,
+  "max_utf8_bytes_per_private_field": 2048,
+  "source_difference_paths": 28,
+  "added": 8,
+  "modified": 20,
+  "removed": 0,
+  "model_http": 0,
+  "cost_cny": "0",
+  "historical_rescore": "F13, all 51 uniformly; originals unchanged"
+}

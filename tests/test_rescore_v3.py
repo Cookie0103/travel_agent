@@ -2,6 +2,7 @@
 
 import hashlib
 import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
@@ -84,3 +85,29 @@ def test_unfrozen_input_cannot_borrow_another_files_frozen_hash(
     candidate.write_text('{"different": true}\n', encoding="utf-8")
     with pytest.raises(ValueError, match="冻结输入hash"):
         write_rescore(candidate, hashes)
+
+
+def test_new_turn_uses_finished_time_and_current_card_expiry_but_old_time_stays_unknown() -> None:
+    now = datetime.now(UTC)
+    context = RunContext(uuid4(), uuid4(), uuid4())
+    events = (
+        RuntimeEvent(
+            context,
+            "presentation",
+            presentation={
+                "data": {
+                    "component": "hotel_comparison",
+                    "cards": [{"expires_at": (now + timedelta(minutes=5)).isoformat()}],
+                }
+            },
+        ),
+    )
+    turn: dict[str, object] = {
+        "status": "completed",
+        "session_id": str(context.session_id),
+        "run_id": str(context.run_id),
+        "answer": "报价已过期。",
+        "presentations": [],
+    }
+    assert dialogue_claims([turn], events)[0]["expiry"] is None
+    assert dialogue_claims([{**turn, "answered_at": now.isoformat()}], events)[0]["expiry"] is False

@@ -109,6 +109,13 @@ def claim_consistency(
             position = sentence.find(word)
             if position < 0 or not asserted(sentence, position):
                 continue
+            prefix = clause_prefix(sentence, position)
+            if re.search(r"(?:若|如果|假如)(?:报价|价格)?$", prefix.strip()):
+                continue
+            if any(w in prefix for w in CLAIM_WORDS["history"]):
+                if results["expiry"] is not False:
+                    results["expiry"] = None
+                continue
             if answered_at is None or not valid_until:
                 if results["expiry"] is not False:
                     results["expiry"] = None

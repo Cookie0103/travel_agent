@@ -2,6 +2,16 @@
   "date": "2026-10-14",
   "scope": "post-fix pace regression only; separate from first formal 8x3",
   "raw_results": ".cache/simulator/ab2d2463e9fe4443bc4d78ce97b158c5/results.jsonl",
+  "raw_results_sha256": "0f84838f1c7074b0b9bf3a2f6c65bc4468382e94f9b428fa4d71428087b841a1",
+  "source_comparison": {
+    "baseline_manifest": ".cache/simulator/87fef04527574b649962b3c5dbc48f8f/manifest.json",
+    "rerun_manifest": ".cache/simulator/ab2d2463e9fe4443bc4d78ce97b158c5/manifest.json",
+    "baseline_manifest_sha256": "eab187435a3552c8ea935d64968331f27313ffe0158adfe25ad6ca64b56df324",
+    "rerun_manifest_sha256": "661eb80e2add1bd6ff6c3eed4c4e3bfad9585d4a64be8ae0814f31b4be1783b8",
+    "different_paths": 28, "added": 8, "modified": 20, "removed": 0,
+    "scope": "manifest.sha256记录的backend/data/eval/mock_supplier及配置/scripts/dev.py范围，非全仓Git差异",
+    "note": "节奏重跑基于不同源码，相差28个记录路径；两次code_commit均96846d4且worktree_dirty=true。伴随其他改动，专项3/3不能作为单因素因果对照。"
+  },
   "summary": {
     "n": 3,
     "passed": 3,

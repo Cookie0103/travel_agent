@@ -120,3 +120,18 @@ def test_card_kind_follows_the_actual_card_word_not_unrelated_budget_text() -> N
 
 def test_offering_to_show_a_future_card_does_not_assert_it_is_visible() -> None:
     assert claim_consistency("我可以展示节奏选择卡让你选。", ())["passed"] is True
+
+
+def test_conditional_or_historical_expiry_does_not_assert_current_quotes_expired() -> None:
+    now = datetime.now(UTC)
+    dates = (now + timedelta(minutes=5),)
+    assert (
+        claim_consistency("若已过期会先重新报价。", (), answered_at=now, valid_until=dates)[
+            "passed"
+        ]
+        is True
+    )
+    assert (
+        claim_consistency("之前的报价已过期。", (), answered_at=now, valid_until=dates)["expiry"]
+        is None
+    )

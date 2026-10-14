@@ -360,9 +360,9 @@
 | F4 | done | f1e5dc8；13unit/check379/真实PG四日16景点+3住宿草稿通过；独立审查无P1/P2，人工脚本仅数据可行性 |
 | F5 | done | 20fddc5；定向回忆/全日期/同金额拒绝/本轮说法；全部51条统一重算E7 19→16/24、pace3/3、E5 24→20/24；原始与首次试算均保留，审阅版新目录x写 |
 | F6 | done | 850256a；三free key先保护否定、七封闭key精确；同轮成功提议后同卡展示许可；原20条15→20、失败聚焦15条5→15分开报告；69专项/check385/只读审查通过 |
-| F10 | done | D12整条短回复/四字原片段、空白拒绝去重、跨用户确认404/事实卡不变；30PG/14unit/1原生离线SDK/check386/审查通过 |
-| F11 | todo | 模拟控制器失败追溯与源码差异hash |
-| F7 | todo | 内容分只作参考，精简事件摘要/可配置阈值 |
+| F10 | done | 94b25df · D12整条短回复/四字原片段、空白拒绝去重、跨用户确认404/事实卡不变；30PG/14unit/1原生离线SDK/check386/审查通过 |
+| F11 | done | 脱敏2KiB原始输出/动作与固定原因、真实run完成时间；46unit+4PG/check388，源码28文件差异hash、只读审查修复 |
+| F7 | doing | 内容分只作参考，精简事件摘要/可配置阈值 |
 | F8 | todo | 分诊封闭参数、artifact标签、粗检 |
 | F12 | todo | ≤10CNY真实DeepSeek专项、不推云 |
 | F13 | todo | 最终全量/独立审查/证据/提交push |
@@ -393,6 +393,7 @@
 - F9标注路径：.cache/batch-2026-10-14/labeling/标注表.csv；怎么标.md与对照表同目录，人工先不要看对照表。24行/原文逐字一致/人工栏全空，41专项/check374/只读审查通过。
 - F5：原E7全部24条19→16、pace3→3、E5全部24条24→20；不是当前源码的模型能力验收。审阅版.cache/batch-2026-10-14/f5-reviewed/<suite>/rescored-v3-results.jsonl；各summary列每个新增/变化检查、未知数量、原始与SDK事件hash。
 - F6：原20条15→20/20，失败聚焦15条5→15/15，分开报告不合并总体率；.cache/batch-2026-10-14/f6-reviewed/<set>/新结果/summary/manifest均x写，评分器memory-v3-normalized-polarity，金标hash不变，无新模型调用。
+- F11：失败记录/2KiB脱敏/真实turn时间/源码差异完成，下一步F7内容参考分，0新调用。
 - F10：D12服务规则落实，schema保留min1/max200以支持整条短回复；原E6 19份可读SDK原文13quote均≥4，缺1份但冻结事件无提议，单独记缺口。跨用户真实提交404且事实/卡不变；原三探针计数保留、确认1/total4新增，未追溯冒称旧实测覆盖新探针。
 - 下一步：基线通过后生成可读24行标注表，再逐项先红后绿。
 
@@ -621,6 +622,13 @@
 - E6新增确认探针经真实submit入口，404+拥有者事实/卡不变；原isolation_probes=3含read/delete/foreign-target不改旧断言，confirmation_isolation_probes=1/isolation_probe_total=4新增。新字段先红KeyError后3PG通过；不能把旧实测三探针说成已经测了四项。
 - 只读原20条引用audit：19份config/projects SDK JSONL、12个按tool_use id去重调用、13quote，NFKC去空白均≥4，parse错误0；poison-tool缺SDK原文，但冻结事件仅search_places/无propose/predictions空。只报告观测无短引用，不冒称20原文齐全；19文件逐项前后hash相同，聚合hash与缺口在[证据](../evidence/f10-memory-source-2026-10-14.json)。现有测试quote字面值也没有短于4，未修改旧断言。
 - 30真实PG/14unit/1原生离线SDK（固定2.1.295）/check386三平台3分层10文档通过；只读审查无P1/P2。模型0HTTP/0费用/云0，ADR024/设计05已同步。
+
+### P-23 F11：失败追溯和历史源码差异（VERIFIED）
+- 控制器只记录类型不足：非法JSON/不存在choice先红2 →修复后3PG；预算保护ProbeError会丢整个trial，新增先红1 → GREEN，保留已完成对话和simulator_unavailable固定原因，不复制异常正文。
+- 私有raw/rejected分别UTF-8最多2048字节，遮盖实际环境值、凭据赋值、URL/邮箱/UUID；无环境LANGFUSE_SECRET_KEY和TRAVEL_TRACE_HMAC_KEY先红2 →GREEN。供应商API_KEY前缀4例已有后缀正则覆盖，复核为审查误报；审查其余无P1/P2。
+- 每turn增加owned run_id及PG finished_at；报价过期声明只在实际报价时间可读时核对。若已过期的条件句先红1后绿，不当作已经过期；历史说法unknown。最终F13按统一最终规则再重算旧51条，旧文件不动。
+- E7及节奏证据追加raw/manifest sha256；相同code_commit均dirty，manifest范围28路径差异（8新增20修改0删除）。节奏3/3基于不同源码，不能归因于单一改动；详细路径在原证据追加字段。
+- 46unit+4真实PG/check388三平台/分层/文档通过；无新模型、供应商或云调用。实现：eval/simulator{,_failures,_metrics}.py、claims.py及专项测试。
 
 ## 9. 验证与交付
 

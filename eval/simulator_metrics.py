@@ -2,11 +2,11 @@
 
 import re
 from collections.abc import Mapping, Sequence
-from datetime import timedelta
+from datetime import datetime, timedelta
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from pydantic import TypeAdapter
+from pydantic import AwareDatetime, TypeAdapter, ValidationError
 
 from backend.domain.execution import RuntimeEvent
 from backend.domain.plans import SavedPlan
@@ -146,8 +146,47 @@ def dialogue_claims(
         ):
             results.append({"passed": None, "card": None, "retry": None, "expiry": None})
             continue
-        results.append(claim_consistency(str(turn.get("answer", "")), tuple(group)))
+        answered_at: datetime | None
+        try:
+            answered_at = TypeAdapter(AwareDatetime | None).validate_python(turn.get("answered_at"))
+        except ValidationError:
+            answered_at = None
+        results.append(
+            claim_consistency(
+                str(turn.get("answer", "")),
+                tuple(group),
+                answered_at=answered_at,
+                valid_until=quote_expiries(tuple(group)),
+            )
+        )
     return results
+
+
+def quote_expiries(events: tuple[RuntimeEvent, ...]) -> tuple[datetime, ...]:
+    dates: list[datetime] = []
+    for event in events:
+        data = event.presentation.get("data") if isinstance(event.presentation, dict) else None
+        if not isinstance(data, dict) or data.get("component") != "hotel_comparison":
+            continue
+        cards = data.get("cards", [])
+        segments = data.get("segments", [])
+        if isinstance(segments, list) and segments:
+            cards = []
+            for segment in segments:
+                if not isinstance(segment, dict) or not isinstance(segment.get("cards"), list):
+                    return ()
+                cards.extend(segment["cards"])
+        if not isinstance(cards, list) or any(not isinstance(c, dict) for c in cards):
+            return ()
+        try:
+            dates.extend(
+                TypeAdapter(AwareDatetime).validate_python(c.get("expires_at"))
+                for c in cards
+                if isinstance(c, dict)
+            )
+        except ValidationError:
+            return ()  # 任一报价缺时间则整组未知，不能跳过它后声称全部过期。
+    return tuple(dates)
 
 
 def claims_pass(results: Sequence[Mapping[str, bool | None]]) -> bool | None:
