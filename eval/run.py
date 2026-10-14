@@ -40,6 +40,8 @@ from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
 from backend.tools.workflow import WORKFLOWS, WorkflowName
 from eval.business_metrics import BusinessMetrics
 from eval.cases import Case
+from eval.claims import claim_consistency
+from eval.content import AnswerRecord
 from eval.database import DatabaseEvaluation, database_evaluation, selector_runner
 from eval.diagnostics import diagnose
 from eval.graders import Observation, grade
@@ -356,6 +358,19 @@ async def run_case(
             checks["business_verification_available"] = False
             verification_failed = True
     trace_id = report.get("trace_id")
+    answer_record = AnswerRecord.model_validate(content_record) if content_record else None
+    claims = claim_consistency(
+        actual.text,
+        actual.events,
+        answered_at=answer_record.observed_at if answer_record else None,
+        valid_until=tuple(
+            g.record.valid_until for g in answer_record.evidence if g.record.kind == "hotel_offer"
+        )
+        if answer_record
+        else (),
+    )
+    if case.case_id.startswith("v2-") and claims["passed"] is not None:
+        checks["claim_consistency"] = claims["passed"] is True
     memory_metrics: dict[str, object] | None = None
     if case.memory_category and business:
         try:
@@ -415,6 +430,7 @@ async def run_case(
         "tool_count": sum(e.kind == "tool_started" for e in actual.events),
         "process_metrics": process_metrics(actual.events, actual.text),
         "process_steps": compact_steps(actual.events),
+        "claim_consistency": claims,
         "saved_constraints": saved_constraints,
         "memory_metrics": memory_metrics,
         "scores_pushed": scores_pushed,

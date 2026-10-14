@@ -212,6 +212,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     triage.add_argument("--live", action="store_true")
     rescore = commands.add_parser("eval-simulator-rescore")
     rescore.add_argument("results", type=Path)
+    rescore.add_argument("--out", type=Path)
     calibration = commands.add_parser("eval-calibration")
     calibration.add_argument("results", type=Path, nargs="+")
     calibration.add_argument("--live", action="store_true")
@@ -309,7 +310,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 command.append("--live")
             return run_command(command, timeout=7200)
         case "eval-simulator-rescore":
-            return run_command([python, "-m", "eval.rescore_simulator", str(args.results)])
+            command = [python, "-m", "eval.rescore_simulator", str(args.results)]
+            if args.out:
+                command += ["--out", str(args.out)]
+            return run_command(command)
         case "eval-calibration":
             command = [python, "-m", "eval.calibration", *[str(p) for p in args.results]]
             if args.live:

@@ -116,3 +116,7 @@ def test_card_kind_follows_the_actual_card_word_not_unrelated_budget_text() -> N
         ),
     )
     assert claim_consistency("预算保持原样，只提出记忆确认卡。", events)["passed"] is True
+
+
+def test_offering_to_show_a_future_card_does_not_assert_it_is_visible() -> None:
+    assert claim_consistency("我可以展示节奏选择卡让你选。", ())["passed"] is True

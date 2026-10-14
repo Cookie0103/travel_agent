@@ -40,6 +40,15 @@ from eval.database import DatabaseEvaluation, database_evaluation, selector_runn
 from eval.metrics import process_metrics
 from eval.report import simulation_summary
 from eval.run import manifest
+from eval.simulator_metrics import (
+    claims_pass,
+    dialogue_claims,
+    no_reoffer_after_decline,
+    saved_items_cover_segments,
+)
+from eval.simulator_metrics import (
+    recalled as recalled,
+)
 from eval.state import snapshot
 from eval.structured import structured_call
 from scripts.dev import configure_environment
@@ -354,6 +363,7 @@ async def trial(
         "completed_runs": all(t.get("status", "completed") == "completed" for t in transcript),
     }
     case_id = scenario.case_id
+    no_reoffer: bool | None = None
     shown = any(
         isinstance(e.presentation, dict)
         and isinstance(data := e.presentation.get("data"), dict)
@@ -384,6 +394,10 @@ async def trial(
             and e.result_empty is False
             for e in events
         )
+        if case_id.endswith("reject"):
+            no_reoffer = no_reoffer_after_decline(transcript)
+            if no_reoffer is not None:
+                checks["no_reoffer_after_decline"] = no_reoffer
     elif case_id == "v2-user-clarify":
         checks["clarified"] = (
             str(request.start_date) == "2026-11-03"
@@ -434,6 +448,7 @@ async def trial(
         checks["saved_three"] = (
             final.saved is not None and len(final.saved.content.hotel_stays) == 3
         )
+        checks["saved_items_cover_segments"] = saved_items_cover_segments(final.saved, conditions)
         constraints = await business.saved_constraints(context)
         checks["saved_no_conflicts"] = (
             constraints.get("delivered") is True
@@ -450,12 +465,18 @@ async def trial(
             and e.external.recovered_from
             for e in events
         )
+    claims = dialogue_claims(transcript, tuple(events))
+    claim_result = claims_pass(claims)
+    if claim_result is not None:
+        checks["claim_consistency"] = claim_result
     row: dict[str, object] = {
         "case_id": case_id,
         "trial": repeat,
         "trace_id": trace_id,
         "status": "passed" if all(checks.values()) else "failed",
         "checks": checks,
+        "claim_consistency": claims,
+        "no_reoffer_after_decline": no_reoffer,
         "error": error,
         "rounds": len(transcript),
         "text": str(transcript[-1]["answer"]) if transcript else "",
@@ -476,29 +497,6 @@ async def trial(
             },
         )
     return row
-
-
-def recalled(answer: str, *, long_term: bool) -> bool:
-    """保守词面探针；含否定/混合回忆不算成功，语义正确性仍待人工校准。"""
-    if long_term:
-        return "特种兵" in answer and not any(
-            word in answer
-            for word in (
-                "没说",
-                "没有",
-                "未知",
-                "不知道",
-                "不清楚",
-                "不确定",
-                "未提供",
-                "不喜欢",
-                "不爱",
-                "讨厌",
-            )
-        )
-    return any(word in answer for word in ("未知", "不知道", "不清楚", "还没", "没有")) and not any(
-        word in answer for word in ("一个人", "单人", "独自", "solo")
-    )
 
 
 def hotel_delivered(events: tuple[RuntimeEvent, ...]) -> bool:
