@@ -363,7 +363,7 @@
 | F10 | done | 94b25df · D12整条短回复/四字原片段、空白拒绝去重、跨用户确认404/事实卡不变；30PG/14unit/1原生离线SDK/check386/审查通过 |
 | F11 | done | 1e26805 · 脱敏2KiB原始输出/动作与固定原因、真实run完成时间；46unit+4PG/check388，源码28文件差异hash、只读审查修复 |
 | F7 | done | 92542da + a4856ba · 未校准参考分/非通过门槛、阈值默认3可配置、当前回答事件摘要；54专项含6原生离线SDK、24邻近/13来源专项、check390/生成契约/只读审查 |
-| F8 | done | 封闭参数/选项、artifact标签、10旧线索粗检5不一致5无法判断；32unit/check391/生成契约/只读审查 |
+| F8 | done | 01ecf68 · 封闭参数/选项、artifact标签、10旧线索粗检5不一致5无法判断；32unit/check391/生成契约/只读审查 |
 | F12 | doing | ≤10CNY真实DeepSeek专项、不推云 |
 | F13 | todo | 最终全量/独立审查/证据/提交push |
 
@@ -644,6 +644,12 @@
 - 实际旧10条离线粗检：5个wrong_tool指向金标必需propose_memory→不一致；其余5条无法判断，0条与事件一致。不能把错误出现当模型忽略错误、不能换算根因准确率。原标签/正文不动，新输出.cache/batch-2026-10-14/f8-triage/consistency.json。
 - F0全部55hash前后不变；另外3项triage输入/参考/manifest是本轮读取时补记hash，非F0冻结项。封闭原金标加载只读，未改断言/金标。
 - 32专项unit/check391三平台3分层10文档、web-generate通过；只读审查无P1/P2。0模型/供应商/云调用；ADR025与事件生成契约同步。
+
+### P-26 F12：首个实测暴露新轨迹集合类型缺口（VERIFIED，正式验收继续）
+- 前置账本1267HTTP/46.305064CNY，UTC2026-10-14今日0、本T/F批16.141776。所有F12进程DAILY_BUDGET_CNY=10覆盖仅当前进程，不改.env/Railway；既有逐HTTP预占与60/150授权仍有效。UTC距换日>15h，每job7200s，换日前2h不新开；费用包括失败与模拟用户。
+- 首个budget-reject 0.293508CNY；产品拒绝后保持预算且不再出卡，claims true；新轨迹no_reoffer为unknown，不能当该专项已通过。原因RunView.presentations tuple直接送入只接受list的探针，落盘JSON才变list；不是用户需求或金标问题。
+- PG先红2（实际trial转录presentations不是list）；最小修复在转录边界list(result.presentations)，不改探针判定或产品。19专项（4真实PG+15unit）及check391全通过，只读审查无P1/P2。正式3次在修复后另跑，pilot原记录保持不动，pilot费用仍计入10CNY。
+- 根据pilot初算15次约4.40CNY（ASSUMED，不承诺重型三城市单次同价）；优先完成拒绝3及E5错误9，再观察三城市1次据实判断剩余两次。新源码测试与审查通过后再收费，期间冻结源码。
 
 ## 9. 验证与交付
 

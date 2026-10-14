@@ -345,7 +345,7 @@ async def trial(
                     "user": action.model_dump(mode="json"),
                     "answer": result.answer,
                     "status": result.status,
-                    "presentations": result.presentations,
+                    "presentations": list(result.presentations),
                     "session_id": str(context.session_id),
                     "run_id": str(context.run_id),
                     "answered_at": answered_at.isoformat() if answered_at else None,

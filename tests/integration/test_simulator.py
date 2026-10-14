@@ -129,6 +129,7 @@ def test_controller_failure_preserves_redacted_output_and_rejected_action(
                 assert isinstance(dialogue, list) and isinstance(dialogue[0], dict)
                 assert dialogue[0]["run_id"]
                 assert dialogue[0]["answered_at"]
+                assert isinstance(dialogue[0]["presentations"], list)
 
         runner.run(exercise())
 
