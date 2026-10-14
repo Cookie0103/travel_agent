@@ -207,6 +207,19 @@ def test_call_cap_is_never_remembered_as_repeat() -> None:
     assert not capped.rejected
 
 
+def test_repair_limit_instructs_staging_and_presenting_latest_candidate() -> None:
+    guarded = executor()
+    candidate = cast(Any, object())
+    for _ in range(4):
+        guarded._take_validation(candidate)
+    with pytest.raises(ServiceError) as stopped:
+        guarded._take_validation(candidate)
+    assert stopped.value.reason == "repair_limit"
+    assert "stage_plan_change" in str(stopped.value)
+    assert "present_travel_result" in str(stopped.value)
+    assert guarded.validations == 4
+
+
 def test_repeated_stage_after_repair_cap_keeps_original_stage_reason() -> None:
     context = RunContext(uuid4())
     guarded = executor(max_validations=1)

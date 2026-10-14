@@ -346,7 +346,7 @@ def test_upstream_http_error_records_status_only_and_never_leaks_body(tmp_path: 
     assert b"secret-upstream-body" not in content and b"sk-live" not in content
 
 
-def test_human_guard_passes_forty_requests_and_still_stops_after_failure(tmp_path: Path) -> None:
+def test_human_guard_stops_before_twenty_fifth_request_or_reservation(tmp_path: Path) -> None:
     from backend.profile import HUMAN
 
     guard = Guard(
@@ -355,12 +355,13 @@ def test_human_guard_passes_forty_requests_and_still_stops_after_failure(tmp_pat
         lambda _: (200, response_body()),
         max_attempts=HUMAN.max_attempts,
     )
-    for _ in range(45):
+    for _ in range(24):
         assert guard.accept("/v1/messages", "Bearer " + guard.token, request_body())[0] == 200
-    assert guard.attempts == 45
-    guard.failures.append("blocked")
+    assert guard.attempts == 24
+    before = guard.budget.totals()
     assert guard.accept("/v1/messages", "Bearer " + guard.token, request_body())[0] == 400
-    assert guard.attempts == 45
+    assert guard.attempts == 24 and guard.stop_reason == "request_limit"
+    assert guard.budget.totals() == before
 
 
 @pytest.mark.parametrize("first_reason", ["request_limit", "budget_limit"])

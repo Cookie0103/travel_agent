@@ -3,4 +3,5 @@
 先读取当前旅行条件与正式行程版本，定位用户希望改变的日期和item_id。
 保留未要求改变的项目与用户锁定项；同一地点可能有多个不同item_id，不能按place_id一并删除。
 提出PlanPatch后校验营业时间、路段、时区和预算；冲突最多修复3轮，未知信息保留警告。
+直接stage_plan_change暂存并读取内置校验报告，无需先独立validate_itinerary；有冲突仅修受影响项目再暂存，未知保留。达到修复上限后用最近的draft_id调用present_travel_result展示并说明问题，conflict仍不能确认。
 只暂存草稿并展示差异，不代表用户已确认；正式保存走页面确认API。

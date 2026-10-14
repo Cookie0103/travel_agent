@@ -761,6 +761,14 @@ class TravelToolExecutor:
                 if self.max_validations == 1
                 else f"首次校验和{self.max_validations - 1}轮修复已用完，请说明仍存冲突或未知"
             )
+            message += (
+                "。校验次数已用完，不要再调用validate_itinerary。"
+                "若已有draft_id，立即present_travel_result展示最近的草稿；"
+                "否则用最近一次成功校验的完全相同候选调用stage_plan_change"
+                "（不增加修复次数），然后present_travel_result。"
+                "如实说明仍存的冲突或未知，不确认保存；"
+                "无合法候选或暂存被拒时说明未完成，不绕过证据/重复景点检查。"
+            )
             raise ServiceError(429, "blocked", message, "repair_limit")
         self.validations += 1
 

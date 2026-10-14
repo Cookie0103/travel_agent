@@ -103,7 +103,7 @@ def test_child_trace_file_is_relayed_only_when_line_is_complete(
 
 
 @pytest.mark.parametrize(
-    "profile,upstream,worker,ttl,rounds", [("human", 120, 840, 30, None), ("", 90, 210, 15, 4)]
+    "profile,upstream,worker,ttl,rounds", [("human", 120, 840, 30, 4), ("", 90, 210, 15, 4)]
 )
 def test_boot_line_reports_effective_profile_limits(
     profile: str,

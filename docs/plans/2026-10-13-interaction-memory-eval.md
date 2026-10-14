@@ -366,6 +366,7 @@
 | F8 | done | 01ecf68 · 封闭参数/选项、artifact标签、10旧线索粗检5不一致5无法判断；32unit/check391/生成契约/只读审查 |
 | F12 | done | b5a9af6/038d68d；15计划+7额外回归=22试验，252HTTP/8.444428CNY≤10；拒绝/错误专项各3均通过（版本与重算另列）；三城市1/3规则通过、2partial/1未保存，非完整核实 |
 | F13 | done | 3fe33ab/4270583与本次文档提交；1907passed/1skip/4deselect347.53秒、check391、web143+构建；51旧交互v5统一重算/35旧记忆F6、55hash未变；最终独立复核无剩余P1/P2；提交记录以Git为准 |
+| S03 | done | 用户批准Claude提速03计划：默认stage内置校验、HUMAN 4次校验/24次模型HTTP、工具不限；专项181/check390与独立审查通过；两次真实36.766s/82.149s，未稳定达到50s；最终1904passed/1skip/4deselect352.02s；本次本地提交见Git，不push |
 
 ## 5. 边界与不变量
 
@@ -385,6 +386,12 @@
 - 交付时向用户报告：分支、SHA、各关卡数字、未完成项与恢复点，以及「需要用户本人做」的事项（D7 标注、是否部署）。
 
 ## 7. 每日进展
+
+### 2026-10-14 提速小修03（交付）
+- 计划：按用户批准的Claude `03-speed-and-delivery-plan.md` 执行A/B/C；1次基线、修改后最多2次真实DeepSeek，本地commit、不push/部署。
+- 完成：起点a693789、A/B/C小修及先红后绿；用户明确24上限用于模型HTTP（max_attempts），工具max_calls保持不限；仅按授权更新档位/流程文案冲突预期。专项181、check390、最终全量1904passed/1skip/4deselect352.02s、一次独立审查无新增P1/P2；本次本地提交交付，不push。
+- 目标未稳定达到：真实验收已结束（1基线＋2修改后，34HTTP/2.505164CNY），不加跑。36.766s草稿第二天密度不足，82.149s展示2冲突草稿，未稳定达到50s。
+- 执行取舍：减少已有足够候选时的重复同城搜索，候选不足与酒店地点核实仍允许必要查询，保持严格去重与节奏要求；出口不宣称无效引用/重复景点等拒绝也必然生成草稿。
 
 ### 2026-10-14 修复F批
 - 计划：F0→F9优先→F1/F2/F3/F4/F5/F6/F10/F11/F7/F8→F12→F13。
@@ -684,6 +691,14 @@
 - 三城市首trial(d44464…/1)8轮无保存，constraints未测/None；后续同源码49d906…/1保存6景点、日期11/3–5缺11/6、3酒店、partial，已核实15/未知10；49d906…/2保存8景点、四日期11/3–6覆盖、3酒店、partial，已核实19/未知12。规则1/3、保存2/3、全约束核实0/3，不宣传完整行程。不同文件trial_key区分同名trial1。
 - 首轮协议/交互衔接因果REASONED：第3轮hotels只要求保存住宿；后续普通message才规划/补节奏及首末日条件，未携带新选择且revision推进，工具拒绝hotel_selection_required符合ADR019。三城曾各返回8景点，无重复景点校验失败，无validate/stage。既有same run/rev边界不放宽；模型把本轮不可用说成会话没有报价、重复查询也暴露解释局限，不归为纯模拟器bug或F4库存不足。
 - F12完成后输入读取时冻结69hash（含55原F0与14新结果/manifest），全部22条按v5新目录统一重算，旧结果与早期v3/v4全部保留。详细trial/check、来源hash/费用/约束在[f12证据](../evidence/f12-deepseek-acceptance-2026-10-14.json)。所有待确认执行问题已处理；人工24行仍用户填写，≥20有效行后才校准。
+
+### P-30 S03提速与草稿出口（已本地交付，目标未稳定达到）
+- 依据：用户批准 `.cache/claude-review/2026-10-14/03-speed-and-delivery-plan.md`，取代此前三项建议；只本地commit、不push/部署。用户明确24为模型HTTP max_attempts而非工具max_calls，工具仍不限；只更新本次档位/流程文案冲突旧预期，所有安全断言保持。
+- A：persona/Stop续行/改程Skill统一初稿直接stage、读取内置完整validation再展示；可选独立validate保留。报告本来已有validation，无协议/数据库/校验算法修改。B：HUMAN max_validations=4/max_attempts=24；超限指向已有draft或最近成功校验的相同候选。C：足够候选不重复搜，必要补搜/酒店定位仍允许，路段批量最多6，保留密度/去重。24仍可能在交付前截断，出口提示不代表绝对保证。
+- 测试：配置2RED→6GREEN、出口1RED→15GREEN、真实PG两条conflict出口2RED→Plans30GREEN、A文案2RED→TTL33GREEN、停止/补搜矛盾1RED→Persona13GREEN；guard61/trace11/Stop12通过。guard第25次不联网/不预占；同候选stage不增加次数、present展示conflict/unknown、confirm仍拒绝且正式版本0。全量首次1902通过/1旧Stop文案失败，351.58s；按已授权流程文案例外改正，专项12GREEN。收集旧断言的第二轮正常SIGINT清理，最终稳定源码1904passed/1skip/4deselect352.02s通过，本次本地commit交付、不push。
+- 实测：唯一基线临时库漏导目录，15.840s/4HTTP/.142714只展示酒店，无完整行程；导出dataclass错误后从保留元数据恢复，不加跑基线、不伪造对照。after-1目录补齐、真实API，36.766s/9HTTP/.531318，stage2/validate0，7项按日5/2，partial12核实17未知，第二天不满足4–5景点。after-2同需求、两处提示一致性修正后，82.149s/21HTTP/1.831132，schema错误/错误patch带来多次往返，实际校验止于4；最后stage_failed不等于无草稿，匹配展示事件证明最近2冲突草稿已展示（20核实28未知），不能确认。
+- 证据：`.cache/speed-03/summary.json` 列每请求耗时/token/源码hash；所有原始结果保留，最后验收5运行文件hash与交付源码一致，旧55输入hash未变。after-2未导出最终草稿内容（末次business_result失败且临时库清理），报告只据工具报告和匹配展示事件，不用模型自报数当独立核验。共34HTTP/2.505164CNY，订单/正式保存/云上传0，未部署。两次不能证明稳定50秒或百分比提速，按用户要求到此收尾。
+- 报告：`.cache/claude-review/2026-10-14/report-03.md`。未实施引用式暂存、自动展示、流式文字和长行程专项；没有因此再加真实评测或要求新增人工标注。
 
 ## 9. 验证与交付
 

@@ -52,12 +52,12 @@ async def test_itinerary_nudge_names_the_concrete_tool_sequence_and_attempt(
         text.index(name)
         for name in (
             "estimate_routes",
-            "validate_itinerary",
             "stage_plan_change",
             "present_travel_result",
         )
     ]
     assert order == sorted(order) and "component=itinerary" in text and "draft_id" in text
+    assert "内置校验" in text
     assert "search_hotel_offers" not in text and "住宿预算未知允许查询" in text
 
 

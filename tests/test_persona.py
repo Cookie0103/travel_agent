@@ -99,6 +99,16 @@ def test_item_intro_uses_one_shared_ai_notice_instead_of_repeated_note_markers()
     assert ProposedItem.model_fields["note"].description == "一句话简介"
 
 
+def test_repair_cap_guidance_preserves_presentation_and_needed_candidate_search() -> None:
+    from backend.providers.claude_agent.database_tools import NEXT_STEPS
+
+    prompt = travel_prompt()
+    assert "达到修复上限就说明剩余冲突，不继续调用" not in prompt
+    assert "额度用完后" in prompt and "已暂存的草稿" in prompt
+    assert "候选数量不足" in NEXT_STEPS["itinerary"]
+    assert "stage_plan_change" in NEXT_STEPS["itinerary"]
+
+
 def test_patch_tool_explains_front_insert_order_to_avoid_reversed_days() -> None:
     tool = next(tool for tool in DEFINITIONS if tool.name == "stage_plan_change")
     schema = json.loads(json.dumps(tool.schema))

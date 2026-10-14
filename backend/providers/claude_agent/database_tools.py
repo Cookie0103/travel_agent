@@ -25,9 +25,9 @@ from backend.tools.travel import TravelToolExecutor
 # 封闭词表：键来自Task；工具名与参数以backend/tools/travel.py为准。
 NEXT_STEPS: dict[Task, str] = {
     "itinerary": (
-        "行程：直接使用本轮已找到的地点（除非一个都没找到，否则不要再搜索），"
-        "依次调用estimate_routes估算相邻地点路段 -> validate_itinerary校验"
-        "（若报告冲突，修正所指项目后再次校验） -> stage_plan_change暂存草稿 -> "
+        "行程：直接使用本轮已有地点；候选数量不足或须替换闭馆/重复景点时才补搜不同主题，已有足够候选不再搜索。"
+        "依次调用estimate_routes批量估算相邻地点路段 -> stage_plan_change暂存并内置校验"
+        "（若报告冲突，只修正所指项目后再次暂存；额度已用完则展示最近的合法草稿与剩余问题） -> "
         "present_travel_result(component=itinerary, draft_id=暂存返回的draft_id)展示"
     ),
     "hotel_comparison": (

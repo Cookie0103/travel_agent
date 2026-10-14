@@ -1,4 +1,4 @@
-"""开发期限额档位；relaxed/human 区分机器有限次数与人工无单轮次数，费用授权/预算上限不在此处。"""
+"""执行档位；人工工具不限，模型请求与修复有界，费用授权由账本负责。"""
 
 import os
 from collections.abc import Mapping
@@ -40,11 +40,11 @@ RELAXED = Limits(
     {"geocode": 100, "places": 150, "routes": 400, "rakuten": 300, "weather": 300},
 )  # fmt: skip
 HUMAN = Limits(
-    None, None, None, 120, 840, 850, 900.0, 8192,
+    None, None, 24, 120, 840, 850, 900.0, 8192,
     {"geocode": None, "places": None, "routes": None, "rakuten": None, "weather": None},
     {"geocode": 100, "places": 300, "routes": 600, "rakuten": 300, "weather": 300},
     first_byte_timeout=25.0, upstream_retries=2, daily_cny_cap=False,
-    evidence_ttl_minutes=30, max_validations=None,
+    evidence_ttl_minutes=30, max_validations=4,
 )  # fmt: skip
 PROFILES = {"relaxed": RELAXED, "human": HUMAN}  # 人工手测用human；机器/评测保持default
 

@@ -137,3 +137,10 @@ F12共22个真实SDK试验（15计划、7诊断/修复回归），账本新增25
 旧51条的最终统一输出在`.cache/batch-2026-10-14/f13-v5/{e7,pace,e5}/`，交互版本`interaction-v5-local-denial`、说法版本`claims-v5-local-denial`；manifest记录实际源4270583及逐文件hash，摘要逐trial列改变检查。旧F5与首次v4、原始19/24和24/24均保留。F6两个记忆集合仍分别20/20和15/15，不混成35/35成功率，不把旧三隔离探针说成实际测过第四项。
 
 最终命令日志：`f13-regression-final-check.log`、`f13-final-full-test.log`（1907 passed/1skip/4deselect，347.53s）、`f13-final-web-generate.log`与`f13-final-web-check.log`（143passed/构建通过）。首轮全量的5失败和基线d237隔离复现保存在`f13-full-test.log`、`f13-baseline-rakuten.log`、`f13-baseline-clock-red.log`；保留验证过程，不以调整安全/金标断言过关。任务状态和最后提交只见批次计划。
+
+
+### S03 提速小修（2026-10-14，仅本地提交）
+
+用户计划与执行报告分别在 `.cache/claude-review/2026-10-14/03-speed-and-delivery-plan.md`、同目录 `report-03.md`。临时验收通过现有应用RunService与SDK，使用随机本地eval库和实际只读供应商查询；1基线＋2修改后，34HTTP/2.505164CNY。原日志/结果、每请求耗时/token与5个运行文件hash在 `.cache/speed-03/`，不提交用户/供应商原文。基线初始化失误与修改后质量缺口不隐藏，不能计算同场景百分比提速。
+
+专项按文件分别用 `uv run python scripts/dev.py test --path <tests文件>`，共181通过；静态检查 `dev check` 390文件/3平台/3分层/10入口通过。第一次全量有1条旧续行文案断言，按用户明确允许的流程预期例外修正；中间旧断言收集后SIGINT正常清理；最终 `dev test` 1904passed/1skip/4deselect，352.02s，日志 `delivery-full-test.log`。真实模型验收后没有追加调用，Railway不推送/部署，旧55输入hash不变。完整状态与限制见批次计划P-30。

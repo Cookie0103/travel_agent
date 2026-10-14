@@ -918,6 +918,71 @@ def test_four_validations_allow_staging_same_final_candidate_but_not_new_repair(
     runner.run(exercise())
 
 
+@pytest.mark.parametrize("path", ["validate_itinerary", "stage_plan_change"])
+def test_repair_cap_still_presents_conflicted_candidate_without_confirming(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext], path: str
+) -> None:
+    """R07/R08：两条路径均可交付带冲突/未知的草稿，确认仍原样拒绝。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        first, _ = await destinations(travel, context)
+        executor = TravelToolExecutor(travel, max_calls=None, max_validations=4)
+        candidate = proposal(first, closed=True)
+        staged = None
+        for index in range(4):
+            candidate = candidate.model_copy(
+                update={
+                    "items": (
+                        candidate.items[0].model_copy(
+                            update={
+                                "start": datetime.fromisoformat("2026-11-03T18:00+09:00")
+                                + timedelta(minutes=index),
+                                "end": datetime.fromisoformat("2026-11-03T19:00+09:00")
+                                + timedelta(minutes=index),
+                            }
+                        ),
+                    )
+                }
+            )
+            arguments = candidate.model_dump(mode="json")
+            staged = await executor.execute(
+                context,
+                path,
+                {"change": {"kind": "initial", "proposal": arguments}}
+                if path == "stage_plan_change"
+                else arguments,
+            )
+            assert staged.code is None
+        assert executor.validations == 4
+        blocked = await executor.execute(
+            context, "validate_itinerary", candidate.model_dump(mode="json")
+        )
+        assert blocked.code == "blocked" and "repair_limit" in blocked.detail
+        assert "stage_plan_change" in blocked.suggestion
+        assert "present_travel_result" in blocked.suggestion
+        draft = await executor.execute(
+            context,
+            "stage_plan_change",
+            {"change": {"kind": "initial", "proposal": candidate.model_dump(mode="json")}},
+        )
+        assert draft.code is None and executor.validations == 4
+        draft_id = UUID(str(draft.data["draft_id"]))
+        presented = await executor.execute(
+            context, "present_travel_result", {"component": "itinerary", "draft_id": str(draft_id)}
+        )
+        assert presented.code is None and presented.data["cards"]
+        report = presented.data["validation"]
+        assert isinstance(report, dict) and report["status"] == "conflict"
+        assert "unknown" in {check["status"] for check in report["checks"]}
+        with pytest.raises(ServiceError) as confirming:
+            await PlanService(travel).confirm(context.user_id, draft_id)
+        assert confirming.value.code == "conflict"
+        assert await version_count(travel, UUID(str(draft.data["plan_id"]))) == 0
+
+    runner.run(exercise())
+
+
 def test_confirm_api_requires_identity_and_only_saves_owned_draft(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:

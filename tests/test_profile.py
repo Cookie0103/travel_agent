@@ -65,7 +65,7 @@ def test_human_profile_numbers_order_and_forwarding(tmp_path: Path) -> None:
     assert current({"TRAVEL_PROFILE": "human"}) is HUMAN
     assert current({"TRAVEL_PROFILE": "Human "}) is DEFAULT
     assert (HUMAN.max_calls, HUMAN.max_turns, HUMAN.max_attempts, HUMAN.max_output) == (
-        None, None, None, 8192,
+        None, None, 24, 8192,
     )  # fmt: skip
     assert dict(HUMAN.run_caps) == {
         "geocode": None, "places": None, "routes": None, "rakuten": None, "weather": None,
@@ -83,12 +83,12 @@ def test_human_profile_numbers_order_and_forwarding(tmp_path: Path) -> None:
     assert ApiUsage(cast(Any, None), {"TRAVEL_PROFILE": "human"}).run_caps["places"] is None
 
 
-def test_human_has_no_per_run_counters_without_disabling_deadlines() -> None:
+def test_human_keeps_tools_unlimited_but_bounds_model_and_repairs() -> None:
     assert (HUMAN.max_calls, HUMAN.max_turns, HUMAN.max_attempts, HUMAN.max_validations) == (
         None,
         None,
-        None,
-        None,
+        24,
+        4,
     )
     assert all(cap is None for cap in HUMAN.run_caps.values())
     assert HUMAN.run_timeout == 900 and HUMAN.max_output == 8192

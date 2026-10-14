@@ -220,7 +220,7 @@ def test_profile_values_table() -> None:
     assert [(p.evidence_ttl_minutes, p.max_validations) for p in (DEFAULT, RELAXED, HUMAN)] == [
         (15, 4),
         (15, 4),
-        (30, None),
+        (30, 4),
     ]
 
 
@@ -247,7 +247,7 @@ def test_max_validations_outside_range_is_rejected(bad: Any) -> None:
         repair_executor(bad)
 
 
-@pytest.mark.parametrize("profile,rounds", [("", 4), ("relaxed", 4), ("human", None)])
+@pytest.mark.parametrize("profile,rounds", [("", 4), ("relaxed", 4), ("human", 4)])
 def test_live_database_tools_use_profile_repair_rounds(
     profile: str, rounds: int | None, monkeypatch: pytest.MonkeyPatch
 ) -> None:
@@ -262,7 +262,7 @@ def test_live_database_tools_use_profile_repair_rounds(
 
 OLD_TOOL = "检查引用证据的行程；冲突需修正，未知保留警告。首次校验后最多修复3轮，不能改写报告。"
 OLD_PROMPT = (
-    "展示行程前调用validate_itinerary；conflict按具体反馈修正，"
+    "展示行程前由stage_plan_change内置校验；conflict按具体反馈修正，"
     "首次校验后最多3轮，不放宽用户硬条件。"
 )
 OLD_SKILL = "提出PlanPatch后校验营业时间、路段、时区和预算；冲突最多修复3轮，未知信息保留警告。"
