@@ -1,0 +1,683 @@
+{
+  "date": "2026-10-14",
+  "status": "VERIFIED",
+  "scope": "all authorized F12 scenarios plus recorded debugging reruns; synthetic vendors, real DeepSeek SDK",
+  "paid_http": 252,
+  "accounted_upper_cny": "8.444428",
+  "limit_cny": "10",
+  "http_before": 1267,
+  "http_after": 1519,
+  "cost_before_cny": "46.305064",
+  "cost_after_cny": "54.749492",
+  "raw_trials": 22,
+  "planned_trials": 15,
+  "additional_debug_trials": 7,
+  "final_acceptance": {
+    "budget_reject": {
+      "n": 3,
+      "no_reoffer": 3,
+      "claims": 3
+    },
+    "v2_400": {
+      "n": 3,
+      "claims_v5": 3,
+      "basis": "all original 3 current-batch answers uniformly rescored; local denial correction, no new model"
+    },
+    "v2_429_twice": {
+      "n": 3,
+      "claims_v5": 3,
+      "basis": "all original 3 current-batch answers uniformly rescored"
+    },
+    "v2_budget_none": {
+      "n": 3,
+      "claims": 3,
+      "basis": "new 3 after explicit no-candidate wording; earlier genuine failure retained"
+    },
+    "three_segments": {
+      "n": 3,
+      "rule_passed": 1,
+      "saved": 2,
+      "full_date_coverage": 1,
+      "all_constraints_verified": 0
+    }
+  },
+  "groups": [
+    {
+      "group": "pilot",
+      "source": ".cache/simulator/8992e2d09f68455f844030eeefdaf290/results.jsonl",
+      "raw_sha256": "8b40be68d1f82fbbd4c10e3abd482e462e2378aac87f71ffa5cee30eb6577e8c",
+      "manifest_sha256": "1466ad42b5d426c139f30e2126098184243a0b21adb74158a86d66da8638bbd3",
+      "n": 1,
+      "raw_passed": 1,
+      "v5_passed": 1,
+      "v5_changed_checks": [
+        {
+          "case_id": "v2-user-budget-reject",
+          "trial": 1,
+          "checks": {
+            "no_reoffer_after_decline": {
+              "old": null,
+              "new": true
+            }
+          }
+        }
+      ],
+      "cost_cny": "0.293508",
+      "trials": [
+        {
+          "case_id": "v2-user-budget-reject",
+          "trial": 1,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "no_orders": true,
+            "no_first_error": true,
+            "controller_valid": true,
+            "finished": true,
+            "completed_runs": true,
+            "budget_choice": true,
+            "budget_answered": true,
+            "hotel_options": true,
+            "claim_consistency": true,
+            "no_reoffer_after_decline": true
+          }
+        }
+      ]
+    },
+    {
+      "group": "reject_before",
+      "source": ".cache/simulator/3e4da721b9ad49ba9aa7c7ea4df82ee7/results.jsonl",
+      "raw_sha256": "91fbf14e8eedf9523f683e2d7f2167d122f7e031c8a58903d944dc7c7d517c8c",
+      "manifest_sha256": "d4176a9bffef22dd343c19fadc274fda7e483384d63a2b97d0dc78a07e49b896",
+      "n": 3,
+      "raw_passed": 1,
+      "v5_passed": 1,
+      "v5_changed_checks": [],
+      "cost_cny": "1.882858",
+      "trials": [
+        {
+          "case_id": "v2-user-budget-reject",
+          "trial": 1,
+          "raw_status": "failed",
+          "v5_status": "failed",
+          "checks": {
+            "no_orders": true,
+            "no_first_error": true,
+            "controller_valid": true,
+            "finished": true,
+            "completed_runs": true,
+            "budget_choice": true,
+            "budget_answered": true,
+            "hotel_options": true,
+            "no_reoffer_after_decline": true,
+            "claim_consistency": false
+          }
+        },
+        {
+          "case_id": "v2-user-budget-reject",
+          "trial": 2,
+          "raw_status": "failed",
+          "v5_status": "failed",
+          "checks": {
+            "no_orders": true,
+            "no_first_error": true,
+            "controller_valid": true,
+            "finished": true,
+            "completed_runs": true,
+            "budget_choice": true,
+            "budget_answered": true,
+            "hotel_options": true,
+            "no_reoffer_after_decline": true,
+            "claim_consistency": false
+          }
+        },
+        {
+          "case_id": "v2-user-budget-reject",
+          "trial": 3,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "no_orders": true,
+            "no_first_error": true,
+            "controller_valid": true,
+            "finished": true,
+            "completed_runs": true,
+            "budget_choice": true,
+            "budget_answered": true,
+            "hotel_options": true,
+            "no_reoffer_after_decline": true,
+            "claim_consistency": true
+          }
+        }
+      ]
+    },
+    {
+      "group": "reject_after",
+      "source": ".cache/simulator/62cd7c500199423295eb099a7beb2fad/results.jsonl",
+      "raw_sha256": "1c4e8d028f3e2710c96712a5920726dd3d08925271d03500267f97e0ed4e3f98",
+      "manifest_sha256": "d785b6e0ba16dc7cf96497784abf087561c4af013eeffbf226796a5425fe01af",
+      "n": 3,
+      "raw_passed": 3,
+      "v5_passed": 3,
+      "v5_changed_checks": [],
+      "cost_cny": "1.597708",
+      "trials": [
+        {
+          "case_id": "v2-user-budget-reject",
+          "trial": 1,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "no_orders": true,
+            "no_first_error": true,
+            "controller_valid": true,
+            "finished": true,
+            "completed_runs": true,
+            "budget_choice": true,
+            "budget_answered": true,
+            "hotel_options": true,
+            "no_reoffer_after_decline": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-user-budget-reject",
+          "trial": 2,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "no_orders": true,
+            "no_first_error": true,
+            "controller_valid": true,
+            "finished": true,
+            "completed_runs": true,
+            "budget_choice": true,
+            "budget_answered": true,
+            "hotel_options": true,
+            "no_reoffer_after_decline": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-user-budget-reject",
+          "trial": 3,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "no_orders": true,
+            "no_first_error": true,
+            "controller_valid": true,
+            "finished": true,
+            "completed_runs": true,
+            "budget_choice": true,
+            "budget_answered": true,
+            "hotel_options": true,
+            "no_reoffer_after_decline": true,
+            "claim_consistency": true
+          }
+        }
+      ]
+    },
+    {
+      "group": "errors",
+      "source": ".cache/eval/20261014T082929Z-dd33d049/results.jsonl",
+      "raw_sha256": "0c8e4a68abbe50dde7a7881a88bdf26ca10cf7bc47e0a10d262e5ac3a7df5d1a",
+      "manifest_sha256": "484dc7182cbc4f1d39e7788246e484c1092f042cab82a504034b25e76edbc6a9",
+      "n": 9,
+      "raw_passed": 4,
+      "v5_passed": 8,
+      "v5_changed_checks": [
+        {
+          "case_id": "v2-400",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-400",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-429-twice",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-400",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": false,
+              "new": true
+            }
+          }
+        }
+      ],
+      "cost_cny": "0.782504",
+      "trials": [
+        {
+          "case_id": "v2-429-twice",
+          "trial": 1,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "completed": true,
+            "tool_selection": true,
+            "no_unnecessary_tools": true,
+            "has_results": true,
+            "no_forbidden_tool": true,
+            "tool_success": true,
+            "response_rule": true,
+            "no_unconfirmed_plan_save": true,
+            "no_new_supplier_order": true,
+            "no_implicit_preference_write": true,
+            "expected_state": true,
+            "expected_tool_failure": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-400",
+          "trial": 1,
+          "raw_status": "failed",
+          "v5_status": "passed",
+          "checks": {
+            "completed": true,
+            "tool_selection": true,
+            "no_unnecessary_tools": true,
+            "has_results": true,
+            "no_forbidden_tool": true,
+            "tool_success": true,
+            "response_rule": true,
+            "no_unconfirmed_plan_save": true,
+            "no_new_supplier_order": true,
+            "no_implicit_preference_write": true,
+            "expected_state": true,
+            "expected_tool_failure": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-budget-none",
+          "trial": 1,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "completed": true,
+            "tool_selection": true,
+            "no_unnecessary_tools": true,
+            "has_results": true,
+            "no_forbidden_tool": true,
+            "tool_success": true,
+            "response_rule": true,
+            "no_unconfirmed_plan_save": true,
+            "no_new_supplier_order": true,
+            "no_implicit_preference_write": true,
+            "expected_state": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-429-twice",
+          "trial": 2,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "completed": true,
+            "tool_selection": true,
+            "no_unnecessary_tools": true,
+            "has_results": true,
+            "no_forbidden_tool": true,
+            "tool_success": true,
+            "response_rule": true,
+            "no_unconfirmed_plan_save": true,
+            "no_new_supplier_order": true,
+            "no_implicit_preference_write": true,
+            "expected_state": true,
+            "expected_tool_failure": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-400",
+          "trial": 2,
+          "raw_status": "failed",
+          "v5_status": "passed",
+          "checks": {
+            "completed": true,
+            "tool_selection": true,
+            "no_unnecessary_tools": true,
+            "has_results": true,
+            "no_forbidden_tool": true,
+            "tool_success": true,
+            "response_rule": true,
+            "no_unconfirmed_plan_save": true,
+            "no_new_supplier_order": true,
+            "no_implicit_preference_write": true,
+            "expected_state": true,
+            "expected_tool_failure": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-budget-none",
+          "trial": 2,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "completed": true,
+            "tool_selection": true,
+            "no_unnecessary_tools": true,
+            "has_results": true,
+            "no_forbidden_tool": true,
+            "tool_success": true,
+            "response_rule": true,
+            "no_unconfirmed_plan_save": true,
+            "no_new_supplier_order": true,
+            "no_implicit_preference_write": true,
+            "expected_state": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-429-twice",
+          "trial": 3,
+          "raw_status": "failed",
+          "v5_status": "passed",
+          "checks": {
+            "completed": true,
+            "tool_selection": true,
+            "no_unnecessary_tools": true,
+            "has_results": true,
+            "no_forbidden_tool": true,
+            "tool_success": true,
+            "response_rule": true,
+            "no_unconfirmed_plan_save": true,
+            "no_new_supplier_order": true,
+            "no_implicit_preference_write": true,
+            "expected_state": true,
+            "expected_tool_failure": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-400",
+          "trial": 3,
+          "raw_status": "failed",
+          "v5_status": "passed",
+          "checks": {
+            "completed": true,
+            "tool_selection": true,
+            "no_unnecessary_tools": true,
+            "has_results": true,
+            "no_forbidden_tool": true,
+            "tool_success": true,
+            "response_rule": true,
+            "no_unconfirmed_plan_save": true,
+            "no_new_supplier_order": true,
+            "no_implicit_preference_write": true,
+            "expected_state": true,
+            "expected_tool_failure": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-budget-none",
+          "trial": 3,
+          "raw_status": "failed",
+          "v5_status": "failed",
+          "checks": {
+            "completed": true,
+            "tool_selection": true,
+            "no_unnecessary_tools": true,
+            "has_results": true,
+            "no_forbidden_tool": true,
+            "tool_success": true,
+            "response_rule": true,
+            "no_unconfirmed_plan_save": true,
+            "no_new_supplier_order": true,
+            "no_implicit_preference_write": true,
+            "expected_state": true,
+            "claim_consistency": false
+          }
+        }
+      ]
+    },
+    {
+      "group": "none_after",
+      "source": ".cache/eval/20261014T084623Z-54a8c701/results.jsonl",
+      "raw_sha256": "11769fed8a4028abc049f892ca2c1ed40fc9b34ca208da31118f7cfbb3f7f2c3",
+      "manifest_sha256": "98ee4de5c8059d16ac08be59e617d09bff7438abe9463682868cc67816820207",
+      "n": 3,
+      "raw_passed": 3,
+      "v5_passed": 3,
+      "v5_changed_checks": [],
+      "cost_cny": "0.179964",
+      "trials": [
+        {
+          "case_id": "v2-budget-none",
+          "trial": 1,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "completed": true,
+            "tool_selection": true,
+            "no_unnecessary_tools": true,
+            "has_results": true,
+            "no_forbidden_tool": true,
+            "tool_success": true,
+            "response_rule": true,
+            "no_unconfirmed_plan_save": true,
+            "no_new_supplier_order": true,
+            "no_implicit_preference_write": true,
+            "expected_state": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-budget-none",
+          "trial": 2,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "completed": true,
+            "tool_selection": true,
+            "no_unnecessary_tools": true,
+            "has_results": true,
+            "no_forbidden_tool": true,
+            "tool_success": true,
+            "response_rule": true,
+            "no_unconfirmed_plan_save": true,
+            "no_new_supplier_order": true,
+            "no_implicit_preference_write": true,
+            "expected_state": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-budget-none",
+          "trial": 3,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "completed": true,
+            "tool_selection": true,
+            "no_unnecessary_tools": true,
+            "has_results": true,
+            "no_forbidden_tool": true,
+            "tool_success": true,
+            "response_rule": true,
+            "no_unconfirmed_plan_save": true,
+            "no_new_supplier_order": true,
+            "no_implicit_preference_write": true,
+            "expected_state": true,
+            "claim_consistency": true
+          }
+        }
+      ]
+    },
+    {
+      "group": "three_pilot",
+      "source": ".cache/simulator/d44464e6bbc64e0187534ff5cbcd520a/results.jsonl",
+      "raw_sha256": "9fa224b7a3075059bc67c8f15804f3009cc866f331f559d15ba4408f319ddf85",
+      "manifest_sha256": "17fbf8e8c7ca7ba60ef6e360df10a7301c9c040d88828bb1ca78d61e11c99fce",
+      "n": 1,
+      "raw_passed": 0,
+      "v5_passed": 0,
+      "v5_changed_checks": [],
+      "cost_cny": "1.094840",
+      "trials": [
+        {
+          "case_id": "v2-user-three-segments",
+          "trial": 1,
+          "raw_status": "failed",
+          "v5_status": "failed",
+          "checks": {
+            "no_orders": true,
+            "no_first_error": true,
+            "controller_valid": true,
+            "finished": false,
+            "completed_runs": true,
+            "saved_three": false,
+            "saved_items_cover_segments": false,
+            "saved_no_conflicts": false,
+            "claim_consistency": true
+          }
+        }
+      ]
+    },
+    {
+      "group": "three_remaining",
+      "source": ".cache/simulator/49d90662fb4b42b5806ade2445683b98/results.jsonl",
+      "raw_sha256": "6fe63d7d941cc3cf6a353d4dcbfdceb748ecc2b5f5ef51a99a514b04f525cd90",
+      "manifest_sha256": "12f65656e897fa9777dd8222feef476060a989f89e865938dd098fb67e50ab0a",
+      "n": 2,
+      "raw_passed": 1,
+      "v5_passed": 1,
+      "v5_changed_checks": [],
+      "cost_cny": "2.613046",
+      "trials": [
+        {
+          "case_id": "v2-user-three-segments",
+          "trial": 1,
+          "raw_status": "failed",
+          "v5_status": "failed",
+          "checks": {
+            "no_orders": true,
+            "no_first_error": true,
+            "controller_valid": true,
+            "finished": true,
+            "completed_runs": true,
+            "saved_three": true,
+            "saved_items_cover_segments": false,
+            "saved_no_conflicts": true,
+            "claim_consistency": true
+          }
+        },
+        {
+          "case_id": "v2-user-three-segments",
+          "trial": 2,
+          "raw_status": "passed",
+          "v5_status": "passed",
+          "checks": {
+            "no_orders": true,
+            "no_first_error": true,
+            "controller_valid": true,
+            "finished": true,
+            "completed_runs": true,
+            "saved_three": true,
+            "saved_items_cover_segments": true,
+            "saved_no_conflicts": true,
+            "claim_consistency": true
+          }
+        }
+      ]
+    }
+  ],
+  "three_segments": [
+    {
+      "trial_key": ".cache/simulator/d44464e6bbc64e0187534ff5cbcd520a/1",
+      "status": "failed",
+      "saved_items_cover_segments": false,
+      "delivered": false,
+      "verified_constraints": null,
+      "unknown_constraints": null,
+      "conflicts": null,
+      "all_constraints": null,
+      "saved_dates": {},
+      "saved_items": null,
+      "hotel_stays": null,
+      "validation_status": null,
+      "note": "没有保存不填0项约束；partial不代表完整核实；跨文件trial_key防轮次混淆"
+    },
+    {
+      "trial_key": ".cache/simulator/49d90662fb4b42b5806ade2445683b98/1",
+      "status": "failed",
+      "saved_items_cover_segments": false,
+      "delivered": true,
+      "verified_constraints": 15,
+      "unknown_constraints": 10,
+      "conflicts": 0,
+      "all_constraints": false,
+      "saved_dates": {
+        "2026-11-03": 2,
+        "2026-11-04": 2,
+        "2026-11-05": 2
+      },
+      "saved_items": 6,
+      "hotel_stays": 3,
+      "validation_status": "partial",
+      "note": "没有保存不填0项约束；partial不代表完整核实；跨文件trial_key防轮次混淆"
+    },
+    {
+      "trial_key": ".cache/simulator/49d90662fb4b42b5806ade2445683b98/2",
+      "status": "passed",
+      "saved_items_cover_segments": true,
+      "delivered": true,
+      "verified_constraints": 19,
+      "unknown_constraints": 12,
+      "conflicts": 0,
+      "all_constraints": false,
+      "saved_dates": {
+        "2026-11-03": 2,
+        "2026-11-04": 2,
+        "2026-11-05": 2,
+        "2026-11-06": 2
+      },
+      "saved_items": 8,
+      "hotel_stays": 3,
+      "validation_status": "partial",
+      "note": "没有保存不填0项约束；partial不代表完整核实；跨文件trial_key防轮次混淆"
+    }
+  ],
+  "original_f0_hashes_retained": 55,
+  "f12_input_hashes": 69,
+  "f12_input_hash_note": "F12 sources frozen at read time after completion, not F0 originals",
+  "railway": "unchanged",
+  "langfuse_uploads": 0,
+  "new_content_judge_calls": 0,
+  "new_triage_calls": 0,
+  "human_labels": 0,
+  "supplier_calls": "synthetic transports only; no real orders",
+  "limitations": [
+    "No saved plan means constraints unmeasured, not zero unknowns.",
+    "Three-city date coverage is not complete verified itinerary: 15/10 and 19/12 verified/unknown on partial saved plans.",
+    "First no-save protocol attribution is REASONED, based on same run/revision selection scope and repeated queries.",
+    "Debug failures and earlier score versions remain immutable."
+  ]
+}
