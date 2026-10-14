@@ -10,7 +10,7 @@ import {
   partyLabel,
 } from "@/lib/availability";
 import { sourceHref, type Hotels, type Plan } from "@/lib/api";
-import { sourceLabel } from "@/lib/data-mode";
+import { canHoldHotel, sourceLabel } from "@/lib/data-mode";
 import type { components } from "@/lib/api-types";
 import {
   hotelGroups,
@@ -552,7 +552,7 @@ function HotelPackage({
       {expired && (
         <p className="warning">所选套餐报价已过期，请重新比较酒店。</p>
       )}
-      {card.data_mode === "live" || selectingSegment ? (
+      {!canHoldHotel(card.data_mode, selectingSegment) ? (
         <>
           {choose && (
             <Button

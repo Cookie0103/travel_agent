@@ -135,3 +135,9 @@ def test_conditional_or_historical_expiry_does_not_assert_current_quotes_expired
         claim_consistency("之前的报价已过期。", (), answered_at=now, valid_until=dates)["expiry"]
         is None
     )
+
+
+def test_refusal_to_show_a_card_does_not_assert_one_exists() -> None:
+    result = claim_consistency("你已拒绝这个档位，我不会再提预算确认卡。", ())
+    assert result["card"] is True and result["passed"] is True
+    assert claim_consistency("我不会代选，但页面有预算确认卡，请你选择。", ())["card"] is False

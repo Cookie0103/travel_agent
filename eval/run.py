@@ -40,7 +40,7 @@ from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
 from backend.tools.workflow import WORKFLOWS, WorkflowName
 from eval.business_metrics import BusinessMetrics
 from eval.cases import Case
-from eval.claims import claim_consistency
+from eval.claims import CLAIM_SCORER_VERSION, claim_consistency
 from eval.content import AnswerRecord
 from eval.database import DatabaseEvaluation, database_evaluation, selector_runner
 from eval.diagnostics import diagnose
@@ -523,6 +523,7 @@ def manifest(
         },
         "selected_cases": [c.model_dump() for c in cases],
         "schema_sha256": schema_fingerprint(definitions),
+        "claim_scorer_version": CLAIM_SCORER_VERSION,
         "pricing": (
             "backend/providers/claude_agent/limits.py; original-currency upper bound; hash above"
         ),

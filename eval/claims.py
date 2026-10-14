@@ -6,6 +6,8 @@ from datetime import datetime
 
 from backend.domain.execution import RuntimeEvent
 
+CLAIM_SCORER_VERSION = "claims-v4-scoped-negation"
+
 CLAIM_WORDS = {
     "card": ("预算确认卡", "记忆确认卡", "确认卡", "选择卡", "酒店比较卡"),
     "retry": ("自动重试", "已重试", "已尝试"),
@@ -17,6 +19,7 @@ CLAIM_WORDS = {
         "不存在",
         "不能",
         "不再",
+        "不会",
         "无需",
         "并未",
         "未进行",

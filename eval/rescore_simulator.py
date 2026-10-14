@@ -12,11 +12,12 @@ from pydantic import TypeAdapter
 from backend.domain.execution import RunContext, RuntimeEvent
 from backend.domain.plans import SavedPlan
 from eval.cases import Case
-from eval.claims import claim_consistency
+from eval.claims import CLAIM_SCORER_VERSION, claim_consistency
 from eval.content import AnswerRecord
 from eval.graders import memory_presentations_allowed
 from eval.memory_metrics import SCORER_VERSION, memory_scores
 from eval.report import reliability
+from eval.run import manifest
 from eval.simulator import hotel_delivered, recalled
 from eval.simulator_metrics import (
     claims_pass,
@@ -334,7 +335,7 @@ def write_rescore(results: Path, hashes: Path, out: Path | None = None) -> dict[
             if "present_travel_result" in TypeAdapter(list[str]).validate_python(r.get("tools", []))
             and str(r.get("case_id")).startswith("v2-mem-")
         ),
-        "scorer_version": SCORER_VERSION if memory_cases else "f5-v3",
+        "scorer_version": SCORER_VERSION if memory_cases else "interaction-v4-scoped-claims",
         "gold_sha256": gold_hashes,
         "cost_cny": str(
             sum(
@@ -365,7 +366,9 @@ def write_rescore(results: Path, hashes: Path, out: Path | None = None) -> dict[
         output.write(
             json.dumps(
                 {
+                    **manifest([]),
                     "scorer_version": summary["scorer_version"],
+                    "claim_scorer_version": CLAIM_SCORER_VERSION,
                     "gold_sha256": gold_hashes,
                     "input_sha256": original_digest,
                     "source_events_frozen_at": source_frozen_at,

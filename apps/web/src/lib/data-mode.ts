@@ -15,3 +15,8 @@ export function sourceLabel(mode: Mode): string {
       return "模拟报价";
   }
 }
+
+/** Only fixture rooms support the simulated hold; provider quotes are selected. */
+export function canHoldHotel(mode: Mode, selectingSegment = false): boolean {
+  return mode === "fixture" && !selectingSegment;
+}
