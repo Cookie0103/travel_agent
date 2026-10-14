@@ -59,7 +59,7 @@ class QuoteFields(BaseModel):
     image_url: str | None = None
     review_average: float | None = None
     booking_url: str | None = None
-    data_mode: Literal["fixture", "live"] = "fixture"
+    data_mode: Literal["fixture", "live", "synthetic"] = "fixture"
     included_total: Money | None = None
     total_reason: str | None = None
     quoted_at: AwareDatetime
@@ -82,7 +82,7 @@ class HotelOffer(QuoteFields):
 
     @property
     def total(self) -> Decimal | None:
-        if self.data_mode == "live":
+        if self.data_mode in {"live", "synthetic"}:
             return self.included_total
         if self.tax_amount is None or self.fee_amount is None:
             return None

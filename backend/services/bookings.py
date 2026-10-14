@@ -47,8 +47,8 @@ class BookingService:
 
     async def hold(self, context: RunContext, body: HoldHotelInput) -> Booking:
         known = (await HotelService(self.travel).known_quotes(context, (body.offer_id,)))[0]
-        if known.data_mode == "live":
-            raise ServiceError(422, "blocked", "实时酒店只能前往乐天查看，不提供模拟暂留")
+        if known.data_mode in {"live", "synthetic"}:
+            raise ServiceError(422, "blocked", "实时酒店与合成评测报价只用于查询，不提供模拟暂留")
         async with transaction(self.travel.database) as db:
             request = request_from_row(await travel.owned_request(db, context))
             require_revision(request, body.expected_revision)

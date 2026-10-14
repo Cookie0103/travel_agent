@@ -13,3 +13,5 @@
 读回使用[官方Public API](https://langfuse.com/docs/api-and-data-platform/features/public-api)的v2 observations与v3 scores，限定trace ID和时间，observations只读core/basic/trace_context/metadata，排除io。v4要求每个span均携带上下文，见[迁移说明](https://langfuse.com/integrations/native/opentelemetry/migration-to-v4)。只保存白名单证据，不存云响应正文。
 
 实测：PG与云工具数量2=2，模型HTTP3=3，HMAC/tags一致，数值score读回；0供应商调用，0.078608CNY。见[脱敏证据](../evidence/t6-langfuse-linkage-2026-10-13.json)。这些数字只证明一次链路验收，不证明模型任务质量。
+
+2026-10-14 F3：受保护本地eval构造方显式指定synthetic来源，生产默认live且不读取评测来源开关。适配器、证据、工具、页面和参考评审使用同一来源标识，合成报价不可从服务层进入模拟暂留；source_label为合成评测数据，不以测试数字冒充供应商实时结果。

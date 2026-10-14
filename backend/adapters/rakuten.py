@@ -10,7 +10,7 @@ import httpx
 from pydantic import BaseModel, Field, JsonValue
 
 from backend.adapters.external_api import REQUEST_DEADLINE, ApiUsage, parse_response, request_json
-from backend.domain.external_data import ExternalDataError, GeoPoint
+from backend.domain.external_data import ExternalDataError, GeoPoint, ProviderDataMode
 from backend.domain.hotel_details import StoredHotelDetails
 from backend.domain.hotel_recovery import HotelSearchDiagnostics, evaluate, nightly_upper
 from backend.domain.hotel_selection import hotel_rate_indices
@@ -140,9 +140,12 @@ class Rakuten:
         referer: str,
         http: httpx.AsyncClient,
         usage: ApiUsage,
+        *,
+        data_mode: ProviderDataMode = "live",
     ) -> None:
         self.app_id, self.access_key, self.affiliate_id = app_id, access_key, affiliate_id
         self.referer, self.http, self.usage = referer, http, usage
+        self.data_mode = data_mode
 
     async def query(
         self,
@@ -406,7 +409,7 @@ class Rakuten:
                     more_url=more_url,
                     more_url_scope="destination" if more_url else None,
                 ),
-                data_mode="live",
+                data_mode=self.data_mode,
             )
             for item in selected
         )

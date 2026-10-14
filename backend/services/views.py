@@ -6,6 +6,7 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
+from backend.domain.external_data import DataMode
 from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.hotel_recovery import HotelSearchDiagnostics
 from backend.domain.hotels import QuoteFields
@@ -47,7 +48,7 @@ class HotelCard(QuoteFields, HotelDisplayDetails):
     total: str | None
     lodging_exceeds_trip_budget: bool | None
     lodging_exceeds_lodging_budget: bool | None = None
-    data_mode: Literal["fixture", "live"]
+    data_mode: Literal["fixture", "live", "synthetic"]
     evidence_id: UUID
     source_ref: str | None
     content_version: str | None
@@ -68,7 +69,7 @@ class PlanCard(PlanItem):
     model_config = ConfigDict(json_schema_serialization_defaults_required=True)
     name: str
     source_ref: str | None
-    data_mode: Literal["fixture", "snapshot", "live"]
+    data_mode: DataMode
     city: str | None = Field(default=None, exclude_if=lambda value: value is None)
 
 

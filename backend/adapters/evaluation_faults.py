@@ -43,11 +43,12 @@ def evaluation_data(scenario: str, database: Database, database_dsn: str) -> Liv
     )
     usage = ApiUsage(database, {"RAKUTEN_MIN_INTERVAL_SECONDS": "0"})
     return LiveData(
-        GoogleMaps("synthetic", http, usage),
-        Rakuten("synthetic", "synthetic", "", "", http, usage),
+        GoogleMaps("synthetic", http, usage, data_mode="synthetic"),
+        Rakuten("synthetic", "synthetic", "", "", http, usage, data_mode="synthetic"),
         usage,
         http,
         {},
+        data_mode="synthetic",
     )
 
 

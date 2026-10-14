@@ -10,7 +10,7 @@ from sqlalchemy import text
 
 from backend.adapters.external_api import ApiUsage, parse_response, request_json
 from backend.domain.catalog import Place, Source, place_category
-from backend.domain.external_data import Coordinates, ExternalDataError, GeoPoint
+from backend.domain.external_data import Coordinates, ExternalDataError, GeoPoint, ProviderDataMode
 from backend.domain.external_data import broad_region as broad_region
 from backend.domain.itinerary import RouteEstimate
 from backend.domain.travel_request import Transport
@@ -98,7 +98,9 @@ def opening_hours(hours: _Hours | None) -> str | None:
     return "; ".join(f"{day} {','.join(intervals)}" for day, intervals in parts.items())
 
 
-def place_from_response(value: _GooglePlace, city: str) -> Place:
+def place_from_response(
+    value: _GooglePlace, city: str, *, data_mode: ProviderDataMode = "live"
+) -> Place:
     now = datetime.now(UTC)
     return Place(
         place_id="gplace:" + value.id,
@@ -111,22 +113,36 @@ def place_from_response(value: _GooglePlace, city: str) -> Place:
         opening_hours=opening_hours(value.regularOpeningHours),
         field_sources={},
         source=Source(
-            provider="google_places",
-            source_ref=value.googleMapsUri
+            provider="synthetic" if data_mode == "synthetic" else "google_places",
+            source_ref=f"synthetic:places/{value.id}"
+            if data_mode == "synthetic"
+            else value.googleMapsUri
             or f"https://www.google.com/maps/search/?api=1&query_place_id={value.id}&query=place",
             content_version=now.isoformat(),
             retrieved_at=now,
-            license="Google Maps Platform Terms",
-            license_url="https://cloud.google.com/maps-platform/terms",
-            attribution="Google Maps",
-            data_mode="live",
+            license="Self-authored evaluation data"
+            if data_mode == "synthetic"
+            else "Google Maps Platform Terms",
+            license_url="#synthetic-evaluation"
+            if data_mode == "synthetic"
+            else "https://cloud.google.com/maps-platform/terms",
+            attribution="合成评测数据" if data_mode == "synthetic" else "Google Maps",
+            data_mode=data_mode,
         ),
     )
 
 
 class GoogleMaps:
-    def __init__(self, api_key: str, http: httpx.AsyncClient, usage: ApiUsage) -> None:
+    def __init__(
+        self,
+        api_key: str,
+        http: httpx.AsyncClient,
+        usage: ApiUsage,
+        *,
+        data_mode: ProviderDataMode = "live",
+    ) -> None:
         self.api_key, self.http, self.usage = api_key, http, usage
+        self.data_mode = data_mode
         self.points: dict[str, GeoPoint] = {}
         self.places: dict[str, Place] = {}
 
@@ -255,7 +271,8 @@ class GoogleMaps:
             body=body,
         )
         result = tuple(
-            place_from_response(item, city) for item in parse_response(_Places, payload).places
+            place_from_response(item, city, data_mode=self.data_mode)
+            for item in parse_response(_Places, payload).places
         )
         for item in result:
             self.places[item.place_id] = item
@@ -279,7 +296,9 @@ class GoogleMaps:
                 "id,displayName,location,types,regularOpeningHours,googleMapsUri"
             ),
         )
-        place = place_from_response(parse_response(_GooglePlace, payload), city)
+        place = place_from_response(
+            parse_response(_GooglePlace, payload), city, data_mode=self.data_mode
+        )
         self.places[place.place_id] = place
         return place
 

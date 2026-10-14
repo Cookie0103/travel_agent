@@ -215,7 +215,7 @@ async def execute_observed(
                     "comparison": {
                         "comparable": not result.empty,
                         "lowest_offer_ids": [],
-                        "scope": "真实核实的住宿报价；预算放宽须确认",
+                        "scope": "已核对的住宿报价；预算放宽须确认",
                         "budget_relation": None,
                         "reasons": [presentation_diagnosis.get("message", "")],
                     },

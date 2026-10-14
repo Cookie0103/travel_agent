@@ -355,8 +355,8 @@
 | F0 | done | f4faa8f；起点干净d2371c9；55原始文件hash冻结；check372/后端1786 passed(346.50秒)/前端141与构建通过；PG正常，账本1267HTTP/46.305064CNY |
 | F9 | done | 2068e84；24行原文完全一致/人工栏0；41专项、check374通过、独立审查无P1/P2；提交随本任务 |
 | F1 | done | 865be75；16真实PG专项/check374/审查通过；同条件同金额拒绝不再提，接受路径不变；随本任务提交 |
-| F2 | done | 51unit/11PG原生SDK、check376、web-generate通过；卡/重试事实和确定性说法粗检，F5接统一重算 |
-| F3 | todo | 合成来源标识与生产隔离 |
+| F2 | done | 4fc2082；51unit/11PG原生SDK、check376、web-generate通过；卡/重试事实和确定性说法粗检，F5接统一重算 |
+| F3 | done | 62unit/31真实PG/check378/前端142与构建通过、只读无P1/P2；synthetic全链路标签及服务暂留隔离 |
 | F4 | todo | 分城市完整评测地点及评测独立配额 |
 | F5 | todo | 模拟评分修正、全部原始结果统一重算 |
 | F6 | todo | 自由文本归一化、否定保护、允许展示确认工具 |
@@ -579,6 +579,14 @@
 - 最小方案：复用ExternalAttempt和现有result限额，新增确定性claims粗检；报价缺实际时间/历史卡保持unknown，不加第二模型。拒绝诊断文案改为保持预算/替代方向，不再同时请接受。
 - RED→GREEN：metadata missing、样本片段虚构卡/重试、新增字段越8000上限、溢出后丢HTTP观察、无数字的已尝试步骤、否定作用域、历史卡、具体卡类型均有回归。51unit/11真实PG原生SDK、check376三平台/契约/文档、web-generate通过；只读复核无P1/P2。
 - 程序探针仅词面粗检，不声称语义全集或真人评分；F5接入全部E5/E7统一重算，新数字另列，不覆盖原始结果。本F任务无付费模型/真实供应商/云上传。
+
+
+### P-18 F3：合成来源不能冒充实时（已验证）
+- 根因REASONED：只替换HTTP transport但适配器/证据/工具warnings写死live/实时。来源由构造方显式传ProviderDataMode，生产from_environment固定live、不读评测开关；受保护随机本地eval工厂设synthetic。
+- 实现：适配器→Source/报价→Evidence→工具payload/source_label→前端来源标签，路线也传播；synthetic报价仍用included_total，不能退回fixture税费算法。工具错误保留实际来源，warnings明确测试数据。
+- 先红后绿：unit缺mode/参数RED→GREEN；PG测试初版test库触发既有隔离门禁，改用temporary_database(eval)后通过（不放宽门禁）；PG实时warning真RED→GREEN；前端missing来源helper RED→142测试/build通过。
+- 审查P2：服务hold只拦live会使synthetic走模拟供应商。初版测试误patch类型注解，调用本地mock返回503；纠正替身到实际SupplierClient.hold后真RED，扩展服务拒绝live/synthetic，GREEN同时证明无BookingRow与无供应商调用，fixture路径不改。
+- 验证：62unit、31真实PG（含旧bookings）、check378三平台/3契约/10入口、web-generate/142前端测试/构建通过；独立审查复核无P1/P2。0付费模型/真实供应商/真实订单/云上传。
 
 ## 9. 验证与交付
 

@@ -4,6 +4,9 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+type ProviderDataMode = Literal["live", "synthetic"]
+type DataMode = Literal["fixture", "snapshot"] | ProviderDataMode
+
 type ExternalKind = Literal[
     "rate_limited",
     "timeout",

@@ -10,6 +10,7 @@ from backend.adapters.external_api import ApiUsage
 from backend.adapters.google_maps import GoogleMaps
 from backend.adapters.rakuten import Rakuten
 from backend.domain.evidence import EvidenceRecord
+from backend.domain.external_data import ProviderDataMode
 from backend.persistence.database import Database
 
 
@@ -20,6 +21,7 @@ class LiveData:
     usage: ApiUsage
     http: httpx.AsyncClient
     evidence: dict[UUID, EvidenceRecord]
+    data_mode: ProviderDataMode = "live"
 
     @classmethod
     def from_environment(

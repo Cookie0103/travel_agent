@@ -216,12 +216,14 @@ class HotelService:
                     kind="hotel_offer",
                     request_revision=request.revision,
                     conditions=evidence_conditions(request, "hotel_offer"),
-                    provider="rakuten_travel",
-                    source_ref=offer.booking_url,
+                    provider="synthetic" if offer.data_mode == "synthetic" else "rakuten_travel",
+                    source_ref=f"synthetic:hotel/{offer.rate_id}"
+                    if offer.data_mode == "synthetic"
+                    else offer.booking_url,
                     content_version=offer.quoted_at.isoformat(),
                     retrieved_at=offer.quoted_at,
                     valid_until=offer.expires_at,
-                    data_mode="live",
+                    data_mode=offer.data_mode,
                 )
                 for offer in offers
             ]

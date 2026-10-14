@@ -687,6 +687,7 @@ export interface components {
             /** Option Id */
             option_id: string;
         };
+        DataMode: ("fixture" | "snapshot") | components["schemas"]["ProviderDataMode"];
         /** DemoIdentity */
         DemoIdentity: {
             /**
@@ -827,7 +828,7 @@ export interface components {
              * Data Mode
              * @enum {string}
              */
-            data_mode: "fixture" | "live";
+            data_mode: "fixture" | "live" | "synthetic";
             /** Included Total */
             included_total?: string | null;
             /** Total Reason */
@@ -921,7 +922,7 @@ export interface components {
              * @default fixture
              * @enum {string}
              */
-            data_mode: "fixture" | "live";
+            data_mode: "fixture" | "live" | "synthetic";
             /** Included Total */
             included_total: string | null;
             /** Total Reason */
@@ -1262,11 +1263,7 @@ export interface components {
             name: string;
             /** Source Ref */
             source_ref: string | null;
-            /**
-             * Data Mode
-             * @enum {string}
-             */
-            data_mode: "fixture" | "snapshot" | "live";
+            data_mode: components["schemas"]["DataMode"];
             /** City */
             city?: string | null;
         };
@@ -1436,6 +1433,8 @@ export interface components {
              */
             revision: number;
         };
+        /** @enum {string} */
+        ProviderDataMode: "live" | "synthetic";
         /** RequestPatch */
         RequestPatch: {
             /** Expected Revision */
@@ -1652,7 +1651,7 @@ export interface components {
              * Provider
              * @enum {string}
              */
-            provider: "osm" | "wikivoyage" | "google_places";
+            provider: "osm" | "wikivoyage" | "google_places" | "synthetic";
             /** Source Ref */
             source_ref: string;
             /** Content Version */
@@ -1673,7 +1672,7 @@ export interface components {
              * @default snapshot
              * @enum {string}
              */
-            data_mode: "snapshot" | "live";
+            data_mode: "snapshot" | "live" | "synthetic";
         };
         /** @enum {string} */
         StageReason: "plan_exists" | "patch_invalid" | "repair_limit" | "other";
@@ -1990,6 +1989,7 @@ export interface components {
             /** Scope */
             scope: string;
         };
+        UiDataMode: ("fixture" | "snapshot") | components["schemas"]["UiProviderDataMode"];
         /** HotelCard */
         UiHotelCard: {
             /**
@@ -2076,7 +2076,7 @@ export interface components {
              * Data Mode
              * @enum {string}
              */
-            data_mode: "fixture" | "live";
+            data_mode: "fixture" | "live" | "synthetic";
             /**
              * Included Total
              * @default null
@@ -2363,11 +2363,7 @@ export interface components {
             name: string;
             /** Source Ref */
             source_ref: string | null;
-            /**
-             * Data Mode
-             * @enum {string}
-             */
-            data_mode: "fixture" | "snapshot" | "live";
+            data_mode: components["schemas"]["UiDataMode"];
             /**
              * City
              * @default null
@@ -2502,6 +2498,8 @@ export interface components {
              */
             version_changed: boolean;
         };
+        /** @enum {string} */
+        UiProviderDataMode: "live" | "synthetic";
         /** ValidationCheck */
         UiValidationCheck: {
             /** Subject */

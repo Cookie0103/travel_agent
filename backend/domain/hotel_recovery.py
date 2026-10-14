@@ -120,7 +120,7 @@ def evaluate(
         f"异常低价{diagnosis.dropped_min_price}；预算内{diagnosis.in_budget}、超预算{diagnosis.over_budget}。"
     )
     explanation = (
-        f"原每间每晚上限¥{upper}下没有合格候选；已查看¥{diagnosis.applied_upper}档的真实报价，请确认是否接受（全程所有住宿段共用）。"
+        f"原每间每晚上限¥{upper}下没有合格候选；已查看¥{diagnosis.applied_upper}档的完整报价，请确认是否接受（全程所有住宿段共用）。"
         if diagnosis.tier is not None
         else "价格升序重查找到了预算内报价，原排序第一页覆盖不足，预算保持原样。"
         if diagnosis.cause == "coverage"

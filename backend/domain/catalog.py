@@ -8,14 +8,14 @@ from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 class Source(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    provider: Literal["osm", "wikivoyage", "google_places"]
+    provider: Literal["osm", "wikivoyage", "google_places", "synthetic"]
     source_ref: str = Field(min_length=1)
     content_version: str = Field(min_length=1)
     retrieved_at: AwareDatetime
     license: str = Field(min_length=1)
     license_url: str = Field(min_length=1)
     attribution: str = Field(min_length=1)
-    data_mode: Literal["snapshot", "live"] = "snapshot"
+    data_mode: Literal["snapshot", "live", "synthetic"] = "snapshot"
 
 
 class Place(BaseModel):

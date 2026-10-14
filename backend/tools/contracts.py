@@ -6,7 +6,7 @@ from typing import Literal, Protocol
 from pydantic import ValidationError
 
 from backend.domain.execution import ErrorCode, RunContext
-from backend.domain.external_data import ExternalAttempt
+from backend.domain.external_data import DataMode, ExternalAttempt
 
 RESULT_LIMIT = 8000
 # present_travel_result的整个展示就是工具结果：5-6张带停留条件/链接/地址/坐标/证据的酒店卡
@@ -62,7 +62,7 @@ class ToolResult:
     data: dict[str, object]
     code: ErrorCode | None = None
     empty: bool = False
-    data_mode: Literal["fixture", "snapshot", "live"] = "fixture"
+    data_mode: DataMode = "fixture"
     evidence_ids: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
     suggestion: str = ""
@@ -79,6 +79,8 @@ class ToolResult:
             "warnings": list(self.warnings),
             "error": {"code": self.code, "suggestion": self.suggestion} if self.code else None,
         }
+        if self.data_mode == "synthetic":
+            payload["source_label"] = "合成评测数据"
         if self.external is not None:
             payload["external"] = self.external.model_dump(mode="json")
         return payload

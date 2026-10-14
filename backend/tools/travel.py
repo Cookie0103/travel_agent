@@ -420,6 +420,8 @@ class TravelToolExecutor:
                     self.failed_corrections[scope] = result
                 if result.external and result.code is not None:
                     self.external_failures[key] = result
+            if result.external is not None and self.travel.live:
+                result = replace(result, data_mode=self.travel.live.data_mode)
             if result.code is None:
                 self.rejected.clear()
                 if name == self.paused_tool:
@@ -616,7 +618,7 @@ class TravelToolExecutor:
                 return ToolResult({}, code="validation", suggestion="请先指定城市并配置Google API")
             point = await live.google.geocode(request.city)
             return ToolResult(
-                await forecast(live.http, live.usage, point, request), data_mode="live"
+                await forecast(live.http, live.usage, point, request), data_mode=live.data_mode
             )
         if isinstance(parsed, HoldHotelInput):
             if self.travel.live:
@@ -675,8 +677,10 @@ class TravelToolExecutor:
                     ]
                 },
                 evidence_ids=tuple(str(record.evidence_id) for record in records),
-                data_mode="live" if self.travel.live else "fixture",
-                warnings=("Google Maps 路线查询，未知时长/票价不猜测",)
+                data_mode=self.travel.live.data_mode if self.travel.live else "fixture",
+                warnings=("合成评测数据，路线时长/票价仅作测试",)
+                if self.travel.live and self.travel.live.data_mode == "synthetic"
+                else ("Google Maps 路线查询，未知时长/票价不猜测",)
                 if self.travel.live
                 else ("自制双向路段估算，非实时路线或票价；费用按全员估算，无儿童折扣",),
             )
@@ -766,7 +770,9 @@ class TravelToolExecutor:
         parsed: HotelSearchInput | RefreshOfferInput | PresentationInput,
     ) -> ToolResult:
         warning = (
-            ("乐天实时查询，含税和服务费；未知明细不猜测，仅住宿成本，不代表全程预算满足",)
+            ("合成评测数据，不是真实酒店；仅住宿成本，未知明细不猜测",)
+            if self.travel.live and self.travel.live.data_mode == "synthetic"
+            else ("乐天实时查询，含税和服务费；未知明细不猜测，仅住宿成本，不代表全程预算满足",)
             if self.travel.live
             else ("虚构酒店与模拟价格，非实时库存；仅住宿成本，不代表全程预算满足",)
         )
@@ -789,7 +795,7 @@ class TravelToolExecutor:
                 data,
                 evidence_ids=tuple(str(card["evidence_id"]) for card in presented),
                 warnings=warning,
-                data_mode="live" if self.travel.live else "fixture",
+                data_mode=self.travel.live.data_mode if self.travel.live else "fixture",
             )
         diagnosis, choice = None, None
         if isinstance(parsed, HotelSearchInput):
@@ -817,7 +823,7 @@ class TravelToolExecutor:
             empty=not records,
             evidence_ids=tuple(str(offer["evidence_id"]) for offer in offers),
             warnings=(*warning, TRIMMED_WARNING) if trimmed else warning,
-            data_mode="live" if self.travel.live else "fixture",
+            data_mode=self.travel.live.data_mode if self.travel.live else "fixture",
         )
 
 
@@ -833,11 +839,17 @@ def catalog_result(result: CatalogResult, *, summary: bool = False) -> ToolResul
     return ToolResult(
         {result.collection: rows},
         empty=not rows,
-        data_mode="live" if any(e.data_mode == "live" for e in result.evidence) else "snapshot",
+        data_mode="synthetic"
+        if any(e.data_mode == "synthetic" for e in result.evidence)
+        else "live"
+        if any(e.data_mode == "live" for e in result.evidence)
+        else "snapshot",
         evidence_ids=tuple(str(e.evidence_id) for e in result.evidence),
         warnings=result.warnings
         + (
-            ("Google Maps 实时查询，缺失字段仍未知",)
+            ("合成评测数据，不是真实地点；缺失字段仍未知",)
+            if any(e.data_mode == "synthetic" for e in result.evidence)
+            else ("Google Maps 实时查询，缺失字段仍未知",)
             if any(e.data_mode == "live" for e in result.evidence)
             else ("历史快照非实时事实；缺失字段未知；证据可追溯不等于信息已实时核实",)
         ),

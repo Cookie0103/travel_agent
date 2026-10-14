@@ -10,6 +10,7 @@ import {
   partyLabel,
 } from "@/lib/availability";
 import { sourceHref, type Hotels, type Plan } from "@/lib/api";
+import { sourceLabel } from "@/lib/data-mode";
 import type { components } from "@/lib/api-types";
 import {
   hotelGroups,
@@ -93,9 +94,7 @@ function Hotel({
         <div className="hotel-image hotel-image-empty" aria-hidden="true" />
       )}
       <div className="hotel-top">
-        <span className="tag">
-          {card.data_mode === "live" ? "乐天实时" : "模拟报价"}
-        </span>
+        <span className="tag">{sourceLabel(card.data_mode)}</span>
         <h3 title={card.hotel_name}>{card.hotel_name}</h3>
         {review && <p className="small">{review}</p>}
         {card.address && <p className="small">{card.address}</p>}
@@ -750,6 +749,11 @@ export function PlanResults({
                           <p className="tabular">
                             {date(item.start)} — {date(item.end)}
                           </p>
+                          {item.data_mode === "synthetic" && (
+                            <p className="warning small">
+                              {sourceLabel(item.data_mode)}
+                            </p>
+                          )}
                           {plan.needs_refresh.includes(
                             item.place_evidence_id,
                           ) && (

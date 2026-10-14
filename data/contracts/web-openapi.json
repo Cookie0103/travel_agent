@@ -2461,6 +2461,20 @@
         ],
         "title": "ChoiceSelection"
       },
+      "DataMode": {
+        "anyOf": [
+          {
+            "type": "string",
+            "enum": [
+              "fixture",
+              "snapshot"
+            ]
+          },
+          {
+            "$ref": "#/components/schemas/ProviderDataMode"
+          }
+        ]
+      },
       "DemoIdentity": {
         "properties": {
           "user_id": {
@@ -2872,7 +2886,8 @@
             "type": "string",
             "enum": [
               "fixture",
-              "live"
+              "live",
+              "synthetic"
             ],
             "title": "Data Mode"
           },
@@ -3162,7 +3177,8 @@
             "type": "string",
             "enum": [
               "fixture",
-              "live"
+              "live",
+              "synthetic"
             ],
             "title": "Data Mode",
             "default": "fixture"
@@ -4088,13 +4104,7 @@
             "title": "Source Ref"
           },
           "data_mode": {
-            "type": "string",
-            "enum": [
-              "fixture",
-              "snapshot",
-              "live"
-            ],
-            "title": "Data Mode"
+            "$ref": "#/components/schemas/DataMode"
           },
           "city": {
             "anyOf": [
@@ -4554,6 +4564,13 @@
         "additionalProperties": false,
         "type": "object",
         "title": "Preferences"
+      },
+      "ProviderDataMode": {
+        "type": "string",
+        "enum": [
+          "live",
+          "synthetic"
+        ]
       },
       "RequestPatch": {
         "properties": {
@@ -5163,7 +5180,8 @@
             "enum": [
               "osm",
               "wikivoyage",
-              "google_places"
+              "google_places",
+              "synthetic"
             ],
             "title": "Provider"
           },
@@ -5201,7 +5219,8 @@
             "type": "string",
             "enum": [
               "snapshot",
-              "live"
+              "live",
+              "synthetic"
             ],
             "title": "Data Mode",
             "default": "snapshot"
@@ -6206,6 +6225,20 @@
         "title": "Comparison",
         "type": "object"
       },
+      "UiDataMode": {
+        "anyOf": [
+          {
+            "enum": [
+              "fixture",
+              "snapshot"
+            ],
+            "type": "string"
+          },
+          {
+            "$ref": "#/components/schemas/UiProviderDataMode"
+          }
+        ]
+      },
       "UiHotelCard": {
         "additionalProperties": false,
         "properties": {
@@ -6426,7 +6459,8 @@
           "data_mode": {
             "enum": [
               "fixture",
-              "live"
+              "live",
+              "synthetic"
             ],
             "title": "Data Mode",
             "type": "string"
@@ -7073,13 +7107,7 @@
             "title": "Source Ref"
           },
           "data_mode": {
-            "enum": [
-              "fixture",
-              "snapshot",
-              "live"
-            ],
-            "title": "Data Mode",
-            "type": "string"
+            "$ref": "#/components/schemas/UiDataMode"
           },
           "city": {
             "anyOf": [
@@ -7377,6 +7405,13 @@
         ],
         "title": "PlanView",
         "type": "object"
+      },
+      "UiProviderDataMode": {
+        "enum": [
+          "live",
+          "synthetic"
+        ],
+        "type": "string"
       },
       "UiValidationCheck": {
         "additionalProperties": false,

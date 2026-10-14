@@ -111,12 +111,20 @@ class PlanningService:
                     kind="route",
                     request_revision=request.revision,
                     conditions=evidence_conditions(request, "route"),
-                    provider="google_routes" if live else "self-authored-route-table",
-                    source_ref="https://maps.google.com/" if live else "fixture:kyoto-routes-v1",
+                    provider="synthetic"
+                    if live and live.data_mode == "synthetic"
+                    else "google_routes"
+                    if live
+                    else "self-authored-route-table",
+                    source_ref="synthetic:routes"
+                    if live and live.data_mode == "synthetic"
+                    else "https://maps.google.com/"
+                    if live
+                    else "fixture:kyoto-routes-v1",
                     content_version=now.isoformat() if live else version,
                     retrieved_at=now,
                     valid_until=now + timedelta(minutes=current().evidence_ttl_minutes),
-                    data_mode="live" if live else "fixture",
+                    data_mode=live.data_mode if live else "fixture",
                 )
             )
         await self.travel.record_evidence(context, results)
