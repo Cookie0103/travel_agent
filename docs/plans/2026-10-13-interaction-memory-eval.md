@@ -362,9 +362,9 @@
 | F6 | done | 850256a；三free key先保护否定、七封闭key精确；同轮成功提议后同卡展示许可；原20条15→20、失败聚焦15条5→15分开报告；69专项/check385/只读审查通过 |
 | F10 | done | 94b25df · D12整条短回复/四字原片段、空白拒绝去重、跨用户确认404/事实卡不变；30PG/14unit/1原生离线SDK/check386/审查通过 |
 | F11 | done | 1e26805 · 脱敏2KiB原始输出/动作与固定原因、真实run完成时间；46unit+4PG/check388，源码28文件差异hash、只读审查修复 |
-| F7 | done | 92542da + 类型补提交 · 未校准参考分/非通过门槛、阈值默认3可配置、当前回答事件摘要；54专项含6原生离线SDK、24邻近/13来源专项、check390/生成契约/只读审查 |
-| F8 | doing | 分诊封闭参数、artifact标签、粗检 |
-| F12 | todo | ≤10CNY真实DeepSeek专项、不推云 |
+| F7 | done | 92542da + a4856ba · 未校准参考分/非通过门槛、阈值默认3可配置、当前回答事件摘要；54专项含6原生离线SDK、24邻近/13来源专项、check390/生成契约/只读审查 |
+| F8 | done | 封闭参数/选项、artifact标签、10旧线索粗检5不一致5无法判断；32unit/check391/生成契约/只读审查 |
+| F12 | doing | ≤10CNY真实DeepSeek专项、不推云 |
 | F13 | todo | 最终全量/独立审查/证据/提交push |
 
 ## 5. 边界与不变量
@@ -393,6 +393,7 @@
 - F9标注路径：.cache/batch-2026-10-14/labeling/标注表.csv；怎么标.md与对照表同目录，人工先不要看对照表。24行/原文逐字一致/人工栏全空，41专项/check374/只读审查通过。
 - F5：原E7全部24条19→16、pace3→3、E5全部24条24→20；不是当前源码的模型能力验收。审阅版.cache/batch-2026-10-14/f5-reviewed/<suite>/rescored-v3-results.jsonl；各summary列每个新增/变化检查、未知数量、原始与SDK事件hash。
 - F6：原20条15→20/20，失败聚焦15条5→15/15，分开报告不合并总体率；.cache/batch-2026-10-14/f6-reviewed/<set>/新结果/summary/manifest均x写，评分器memory-v3-normalized-polarity，金标hash不变，无新模型调用。
+- F8：10条分诊离线粗检和封闭参数完成；F12准备读取账本后真实专项。
 - F7：参考分/当前回答封闭摘要完成，下一步F8；0新模型调用。
 - F11：失败记录/2KiB脱敏/真实turn时间/源码差异完成，下一步F7内容参考分，0新调用。
 - F10：D12服务规则落实，schema保留min1/max200以支持整条短回复；原E6 19份可读SDK原文13quote均≥4，缺1份但冻结事件无提议，单独记缺口。跨用户真实提交404且事实/卡不变；原三探针计数保留、确认1/total4新增，未追溯冒称旧实测覆盖新探针。
@@ -636,6 +637,13 @@
 - 两评审入口传封闭JudgeEvents：工具名/结果码/choice_card/attempts/actual data_mode与预算/记忆卡存在性；缺源未知，不含UUID、正文、参数、第三方报价。RuntimeEvent记录实际ToolResult来源，经持久metadata保留；自动web-generate同步契约。
 - 独立审查P2发现聚合全部历史卡会支持末轮假说法：新多轮测试先红1，抽出并复用F5严格分组/身份逻辑，只取candidate对应最后回答run；不匹配或缺组未知。首轮有卡末轮无卡反例、单轮有卡正例都绿；审查复核无P1/P2。
 - 54专项含6原生离线SDK（固定2.1.295）；24邻近评分器、13事件来源专项；最终check发现新测试object切片类型错误；补明确list类型后5专项及check390三平台/分层/文档全部通过，另提交纠正，未改写历史。未修改任何旧断言或金标；本批无付费评审/分诊、无云上传。ADR025记录新增摘要契约。
+
+### P-25 F8：分诊只观察封闭参数并对线索粗检（VERIFIED）
+- 新投影/粗检测试先红2→GREEN。ToolArgumentFacts只有key/scope/op、component/kind、住宿段日期；SCHEMAS过滤参数键，choice选项仅封闭ID，无value/quote/地名/UUID。实际execute_observed→持久metadata→JSON往返测试确认无自由文本，非法值丢弃为未知。
+- 模型标签追加grader_artifact/simulator_artifact，保留unknown；报告标题未核实的分诊线索，failed_check说明采用固定模板。未运行分诊模型或推云。
+- 实际旧10条离线粗检：5个wrong_tool指向金标必需propose_memory→不一致；其余5条无法判断，0条与事件一致。不能把错误出现当模型忽略错误、不能换算根因准确率。原标签/正文不动，新输出.cache/batch-2026-10-14/f8-triage/consistency.json。
+- F0全部55hash前后不变；另外3项triage输入/参考/manifest是本轮读取时补记hash，非F0冻结项。封闭原金标加载只读，未改断言/金标。
+- 32专项unit/check391三平台3分层10文档、web-generate通过；只读审查无P1/P2。0模型/供应商/云调用；ADR025与事件生成契约同步。
 
 ## 9. 验证与交付
 

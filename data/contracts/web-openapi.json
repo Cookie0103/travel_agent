@@ -7604,6 +7604,14 @@
         "title": "BusinessResult",
         "type": "object"
       },
+      "UiChoiceKind": {
+        "enum": [
+          "pace",
+          "budget_relaxation",
+          "memory_confirm"
+        ],
+        "type": "string"
+      },
       "UiErrorCode": {
         "enum": [
           "validation",
@@ -7778,6 +7786,74 @@
         ],
         "type": "string"
       },
+      "UiMemoryArguments": {
+        "additionalProperties": false,
+        "properties": {
+          "key": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiMemoryKey"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "scope": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiMemoryScope"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "op": {
+            "anyOf": [
+              {
+                "enum": [
+                  "ADD",
+                  "UPDATE",
+                  "INVALIDATE"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Op"
+          }
+        },
+        "title": "MemoryArguments",
+        "type": "object"
+      },
+      "UiMemoryKey": {
+        "enum": [
+          "pace",
+          "transport",
+          "lodging_type",
+          "room_type",
+          "smoking",
+          "dietary",
+          "interest",
+          "avoid",
+          "companion_pattern",
+          "budget_style"
+        ],
+        "type": "string"
+      },
+      "UiMemoryScope": {
+        "enum": [
+          "long_term",
+          "trip"
+        ],
+        "type": "string"
+      },
       "UiRunContext": {
         "description": "由服务端生成的业务 ID；不能把 SDK session_id 当成用户身份。",
         "properties": {
@@ -7811,6 +7887,85 @@
           "other"
         ],
         "type": "string"
+      },
+      "UiToolArgumentFacts": {
+        "additionalProperties": false,
+        "properties": {
+          "ops": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/UiMemoryArguments"
+            },
+            "maxItems": 5,
+            "title": "Ops",
+            "type": "array"
+          },
+          "component": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hotel_comparison",
+                  "itinerary",
+                  "choice"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Component"
+          },
+          "kind": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiChoiceKind"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "segment_arrive": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Segment Arrive"
+          },
+          "option_id": {
+            "anyOf": [
+              {
+                "enum": [
+                  "standard",
+                  "intensive",
+                  "relaxed",
+                  "accept",
+                  "keep",
+                  "remember",
+                  "trip",
+                  "reject"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Option Id"
+          }
+        },
+        "title": "ToolArgumentFacts",
+        "type": "object"
       },
       "UiToolReason": {
         "enum": [
@@ -8047,6 +8202,17 @@
             "anyOf": [
               {
                 "$ref": "#/components/schemas/UiDataMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
+          },
+          "arguments": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiToolArgumentFacts"
               },
               {
                 "type": "null"

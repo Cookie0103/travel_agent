@@ -210,6 +210,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     triage = commands.add_parser("eval-triage")
     triage.add_argument("results", type=Path)
     triage.add_argument("--live", action="store_true")
+    triage.add_argument("--check-references", type=Path)
+    triage.add_argument("--out", type=Path)
     rescore = commands.add_parser("eval-simulator-rescore")
     rescore.add_argument("results", type=Path)
     rescore.add_argument("--out", type=Path)
@@ -310,6 +312,10 @@ def main(argv: Sequence[str] | None = None) -> int:
             return run_command(command, timeout=14400)
         case "eval-triage":
             command = [python, "-m", "eval.triage", str(args.results)]
+            if args.check_references:
+                command.extend(["--check-references", str(args.check_references)])
+            if args.out:
+                command.extend(["--out", str(args.out)])
             if args.live:
                 command.append("--live")
             return run_command(command, timeout=7200)

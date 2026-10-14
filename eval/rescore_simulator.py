@@ -230,11 +230,16 @@ def changed_checks(old: dict[str, object], new: dict[str, object]) -> dict[str, 
     }
 
 
-def write_rescore(results: Path, hashes: Path, out: Path | None = None) -> dict[str, object]:
+def verify_originals(hashes: Path) -> dict[str, str]:
     frozen = TypeAdapter(dict[str, str]).validate_json(hashes.read_bytes())
     for relative, digest in frozen.items():
         if hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() != digest:
             raise ValueError(f"原始文件hash改变：{relative}")
+    return frozen
+
+
+def write_rescore(results: Path, hashes: Path, out: Path | None = None) -> dict[str, object]:
+    frozen = verify_originals(hashes)
     original_digest = hashlib.sha256(results.read_bytes()).hexdigest()
     if original_digest not in frozen.values():
         raise ValueError("待重算文件不属于冻结输入hash")

@@ -11,6 +11,7 @@ from backend.agent.runtime import EventSink
 from backend.domain.execution import BusinessResult, RunContext, RuntimeEvent, tool_reason
 from backend.domain.external_data import external_explanation
 from backend.domain.hotel_recovery import HotelSearchDiagnostics
+from backend.domain.tool_facts import argument_facts
 from backend.domain.travel_request import HOTEL_FIELD_LABELS
 from backend.tools.contracts import ToolDefinition, ToolExecutor, ToolResult
 from backend.trace_log import trace
@@ -120,6 +121,7 @@ async def execute_observed(
             tool_name=safe_name,
             tool_call_id=call_id,
             argument_keys=keys,
+            arguments=argument_facts(safe_name, arguments),
         )
     )
     if len(_CALLS) > 256:

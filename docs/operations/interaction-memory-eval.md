@@ -123,3 +123,7 @@ uv run python scripts/dev.py eval-human-score .cache/batch-2026-10-14/labeling/�
 ### F7 内容参考分与封闭事件摘要
 
 内容模型分仅展示为「未校准参考分」，不作为任务通过门槛。`eval-calibration --threshold 3` 保持默认；可选1–5，实际值与task_pass_gate=false写入新manifest。摘要仅有注册工具名、结果码、choice_card、实际attempts、data_mode及预算/记忆卡存在性；旧来源缺失保持未知，不混入正文或第三方资料。旧30份评分文件保持只读；本F批不运行该命令的`--live`，人工至少20有效行前不生成κ结论。
+
+### F8 未核实分诊线索
+
+离线粗检：`uv run python scripts/dev.py eval-triage <results.jsonl> --check-references <model-triage.jsonl> --out <新目录>`。输出用x模式，来源前后hash核对；不允许结合`--live`。当前10条结果在`.cache/batch-2026-10-14/f8-triage/consistency.json`，5不一致/5无法判断；原标签不改、根因准确率不计算。新参数元数据仅闭合类型/操作/范围/组件/日期及服务端选项ID，不含原文值和引用。

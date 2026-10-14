@@ -10,6 +10,7 @@ from uuid import UUID, uuid4
 from pydantic import Field
 
 from backend.domain.external_data import DataMode, ExternalAttempt
+from backend.domain.tool_facts import ToolArgumentFacts
 
 type ErrorCode = Literal[
     "validation",
@@ -229,6 +230,7 @@ class RuntimeEvent:
     relaxation_tier: Decimal | None = field(default_factory=lambda: None)
     choice_card: Literal["shown", "none", "declined"] | None = None
     data_mode: DataMode | None = None
+    arguments: ToolArgumentFacts | None = None
 
 
 @dataclass(frozen=True)

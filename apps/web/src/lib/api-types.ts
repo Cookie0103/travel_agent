@@ -2573,6 +2573,8 @@ export interface components {
             version: number | null;
         };
         /** @enum {string} */
+        UiChoiceKind: "pace" | "budget_relaxation" | "memory_confirm";
+        /** @enum {string} */
         UiErrorCode: "validation" | "blocked" | "unavailable" | "timeout" | "rate_limited" | "provider_error" | "conflict" | "cancelled";
         /** @enum {string} */
         UiEventKind: "started" | "text" | "tool_started" | "tool_finished" | "presentation" | "context_compacted" | "completed" | "failed" | "cancelled" | "partial" | "awaiting_user";
@@ -2630,6 +2632,22 @@ export interface components {
         };
         /** @enum {string} */
         UiExternalKind: "rate_limited" | "timeout" | "network" | "upstream_5xx" | "bad_request" | "not_found_empty" | "quota_exhausted" | "invalid_json";
+        /** MemoryArguments */
+        UiMemoryArguments: {
+            /** @default null */
+            key: components["schemas"]["UiMemoryKey"] | null;
+            /** @default null */
+            scope: components["schemas"]["UiMemoryScope"] | null;
+            /**
+             * Op
+             * @default null
+             */
+            op: ("ADD" | "UPDATE" | "INVALIDATE") | null;
+        };
+        /** @enum {string} */
+        UiMemoryKey: "pace" | "transport" | "lodging_type" | "room_type" | "smoking" | "dietary" | "interest" | "avoid" | "companion_pattern" | "budget_style";
+        /** @enum {string} */
+        UiMemoryScope: "long_term" | "trip";
         /**
          * RunContext
          * @description 由服务端生成的业务 ID；不能把 SDK session_id 当成用户身份。
@@ -2653,6 +2671,31 @@ export interface components {
         };
         /** @enum {string} */
         UiStageReason: "plan_exists" | "patch_invalid" | "repair_limit" | "other";
+        /** ToolArgumentFacts */
+        UiToolArgumentFacts: {
+            /**
+             * Ops
+             * @default []
+             */
+            ops: components["schemas"]["UiMemoryArguments"][];
+            /**
+             * Component
+             * @default null
+             */
+            component: ("hotel_comparison" | "itinerary" | "choice") | null;
+            /** @default null */
+            kind: components["schemas"]["UiChoiceKind"] | null;
+            /**
+             * Segment Arrive
+             * @default null
+             */
+            segment_arrive: string | null;
+            /**
+             * Option Id
+             * @default null
+             */
+            option_id: ("standard" | "intensive" | "relaxed" | "accept" | "keep" | "remember" | "trip" | "reject") | null;
+        };
         /** @enum {string} */
         UiToolReason: "tool_call_cap" | "repair_limit" | "repeat_blocked" | "result_too_long" | "unregistered_tool" | "context_reuse" | "evidence_missing" | "offer_unknown_id" | "not_found" | "live_hold_disabled" | "plan_exists" | "patch_invalid" | "revision_stale" | "lodging_budget_conflict" | "hotel_search_location_required" | "hotel_missing_fields" | "hotel_room_preferences_missing" | "hotel_external_validation" | "hotel_external_unavailable" | "hotel_api_unconfigured" | "hotel_selection_required" | "schema" | "other" | "conversation_incomplete" | "conversation_state_unavailable" | "max_turns" | "request_limit" | "request_too_large" | "budget_limit" | "local_guard";
         /**
@@ -2733,6 +2776,8 @@ export interface components {
             choice_card: ("shown" | "none" | "declined") | null;
             /** @default null */
             data_mode: components["schemas"]["UiDataMode"] | null;
+            /** @default null */
+            arguments: components["schemas"]["UiToolArgumentFacts"] | null;
         };
     };
     responses: never;
