@@ -107,3 +107,15 @@ uv run python scripts/dev.py eval-publish-v2 <结果1.jsonl> <结果2.jsonl> --t
 每个trace使用一次 `/api/public/ingestion` 的 `score-create` 批次，分数ID按trace和指标幂等，事件ID每次新建，必须所有事件均获successes确认且errors为空才算成功。[官方限流说明](https://langfuse.com/faq/all/api-limits)、[v4评分事件支持](https://langfuse.com/faq/all/deprecated-api-migration)。先前逐条scores接口实际只有2/81组完整接收，其余429；原回执保留。自动审批要求本次批量重发另获具体授权，在用户回答前不执行上传。
 
 本机前端最终验收使用 `web-check --webpack`，包括类型、lint、141项测试及生产构建。默认Turbopack在此本机CSS构建子进程绑定端口失败；[Next.js官方build选项](https://nextjs.org/docs/app/api-reference/cli/next#next-build-options)支持显式Webpack。默认部署配置保持。
+
+
+## F9中文盲标（2026-10-14，替代本批旧30条表）
+
+本次表为 `.cache/batch-2026-10-14/labeling/标注表.csv`，24个不同用例。AI原文不改，名词解释帮助理解，三个人工问题只填是/否，拿不准就在不确定填是或留题目空白；人工五栏均未预填。先看同目录怎么标.md，先不要看对照表.json。题目评价已有回答，不随后续代码修复变更。
+
+```text
+uv run python scripts/dev.py eval-human-sheet
+uv run python scripts/dev.py eval-human-score .cache/batch-2026-10-14/labeling/标注表.csv .cache/batch-2026-10-14/labeling/对照表.json
+```
+
+生成只读旧CSV/manifest/AI预标注/隐藏参考，绑定hash，输出目录必须不存在，不覆盖。统计零模型调用，三题全是为通过，任一否为失败；不确定/漏填不计，有效至少20条才报告一致率与κ。旧30条格式兼容保留，不把AI参考当真人。生成命令不要对已开始填写的表重复执行。

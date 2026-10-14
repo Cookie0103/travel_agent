@@ -215,6 +215,11 @@ def main(argv: Sequence[str] | None = None) -> int:
     calibration = commands.add_parser("eval-calibration")
     calibration.add_argument("results", type=Path, nargs="+")
     calibration.add_argument("--live", action="store_true")
+    human_sheet = commands.add_parser("eval-human-sheet")
+    human_sheet.add_argument("--out", type=Path)
+    human_score = commands.add_parser("eval-human-score")
+    human_score.add_argument("csv", type=Path)
+    human_score.add_argument("references", type=Path)
     publish = commands.add_parser("eval-publish-v2")
     publish.add_argument("results", type=Path, nargs="+")
     publish.add_argument("--triage", type=Path)
@@ -310,6 +315,15 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.live:
                 command.append("--live")
             return run_command(command, timeout=7200)
+        case "eval-human-sheet":
+            command = [python, "-m", "eval.human_sheet"]
+            if args.out:
+                command.extend(["--out", str(args.out)])
+            return run_command(command)
+        case "eval-human-score":
+            return run_command(
+                [python, "-m", "eval.calibrate_v2", str(args.csv), str(args.references)]
+            )
         case "eval-publish-v2":
             command = [python, "-m", "eval.publish_v2", *[str(p) for p in args.results]]
             if args.triage:

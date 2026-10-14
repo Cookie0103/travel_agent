@@ -7,7 +7,9 @@ import random
 from pathlib import Path
 
 
-def agreement(pairs: list[tuple[int, int]]) -> dict[str, object]:
+def agreement(
+    pairs: list[tuple[int, int]], *, minimum_pairs: int = 30, allow_partial: bool = True
+) -> dict[str, object]:
     if any(
         type(a) is not int or type(b) is not int or a not in (0, 1) or b not in (0, 1)
         for a, b in pairs
@@ -19,8 +21,10 @@ def agreement(pairs: list[tuple[int, int]]) -> dict[str, object]:
     chance = (
         sum(sum(matrix[i]) * sum(row[i] for row in matrix) for i in range(2)) / n**2 if n else None
     )
+    if n < minimum_pairs and not allow_partial:
+        observed, chance = None, None
     return {
-        "status": "pending" if n < 30 else "paired",
+        "status": "pending" if n < minimum_pairs else "paired",
         "paired": n,
         "exact_rate": observed,
         "kappa": (observed - chance) / (1 - chance)
@@ -29,6 +33,30 @@ def agreement(pairs: list[tuple[int, int]]) -> dict[str, object]:
         "confusion": matrix,
         "basis": "actual human labels only; model reference remains uncalibrated until paired",
     }
+
+
+def human_pairs(rows: list[dict[str, str]], references: dict[str, object]) -> list[tuple[int, int]]:
+    pairs = []
+    for row in rows:
+        if "编号" in row:
+            answers = [
+                row.get(key, "").strip()
+                for key in ("Q1按要求做了吗", "Q2说得清楚不矛盾吗", "Q3知道下一步吗")
+            ]
+            if row.get("不确定", "").strip() not in ("", "否", "0") or any(
+                a not in ("是", "否") for a in answers
+            ):
+                continue
+            identifier, value = row["编号"], int(all(a == "是" for a in answers))
+        else:
+            if not row.get("human_rater", "").strip() or row.get("human_pass") not in ("0", "1"):
+                continue
+            identifier, value = row["sample_id"], int(row["human_pass"])
+        reference = references.get(identifier)
+        model = reference.get("model_reference") if isinstance(reference, dict) else None
+        if type(model) is int and model in (0, 1):
+            pairs.append((model, value))
+    return pairs
 
 
 def prepare(rows: list[dict[str, object]], directory: Path) -> Path:
@@ -93,17 +121,19 @@ def main() -> int:
     args = parser.parse_args()
     references = json.loads(args.references.read_text(encoding="utf-8"))
     references = references.get("references", references)
-    pairs = []
     with args.csv.open(encoding="utf-8-sig", newline="") as handle:
-        for row in csv.DictReader(handle):
-            reference = references.get(row["sample_id"], {}).get("model_reference")
-            if (
-                row.get("human_rater", "").strip()
-                and row.get("human_pass") in ("0", "1")
-                and type(reference) is int
-            ):
-                pairs.append((reference, int(row["human_pass"])))
-    print(json.dumps(agreement(pairs), ensure_ascii=False))
+        rows = list(csv.DictReader(handle))
+    readable = bool(rows and "编号" in rows[0])
+    print(
+        json.dumps(
+            agreement(
+                human_pairs(rows, references),
+                minimum_pairs=20 if readable else 30,
+                allow_partial=not readable,
+            ),
+            ensure_ascii=False,
+        )
+    )
     return 0
 
 
