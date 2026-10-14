@@ -359,8 +359,8 @@
 | F3 | done | 5f10ca1；62unit/31真实PG/check378/前端142与构建通过、只读无P1/P2；synthetic全链路标签及服务暂留隔离 |
 | F4 | done | f1e5dc8；13unit/check379/真实PG四日16景点+3住宿草稿通过；独立审查无P1/P2，人工脚本仅数据可行性 |
 | F5 | done | 20fddc5；定向回忆/全日期/同金额拒绝/本轮说法；全部51条统一重算E7 19→16/24、pace3/3、E5 24→20/24；原始与首次试算均保留，审阅版新目录x写 |
-| F6 | done | 三free key先保护否定、七封闭key精确；同轮成功提议后同卡展示许可；原20条15→20、失败聚焦15条5→15分开报告；69专项/check385/只读审查通过 |
-| F10 | todo | D12原话长度规则、跨用户确认卡隔离 |
+| F6 | done | 850256a；三free key先保护否定、七封闭key精确；同轮成功提议后同卡展示许可；原20条15→20、失败聚焦15条5→15分开报告；69专项/check385/只读审查通过 |
+| F10 | done | D12整条短回复/四字原片段、空白拒绝去重、跨用户确认404/事实卡不变；30PG/14unit/1原生离线SDK/check386/审查通过 |
 | F11 | todo | 模拟控制器失败追溯与源码差异hash |
 | F7 | todo | 内容分只作参考，精简事件摘要/可配置阈值 |
 | F8 | todo | 分诊封闭参数、artifact标签、粗检 |
@@ -393,6 +393,7 @@
 - F9标注路径：.cache/batch-2026-10-14/labeling/标注表.csv；怎么标.md与对照表同目录，人工先不要看对照表。24行/原文逐字一致/人工栏全空，41专项/check374/只读审查通过。
 - F5：原E7全部24条19→16、pace3→3、E5全部24条24→20；不是当前源码的模型能力验收。审阅版.cache/batch-2026-10-14/f5-reviewed/<suite>/rescored-v3-results.jsonl；各summary列每个新增/变化检查、未知数量、原始与SDK事件hash。
 - F6：原20条15→20/20，失败聚焦15条5→15/15，分开报告不合并总体率；.cache/batch-2026-10-14/f6-reviewed/<set>/新结果/summary/manifest均x写，评分器memory-v3-normalized-polarity，金标hash不变，无新模型调用。
+- F10：D12服务规则落实，schema保留min1/max200以支持整条短回复；原E6 19份可读SDK原文13quote均≥4，缺1份但冻结事件无提议，单独记缺口。跨用户真实提交404且事实/卡不变；原三探针计数保留、确认1/total4新增，未追溯冒称旧实测覆盖新探针。
 - 下一步：基线通过后生成可读24行标注表，再逐项先红后绿。
 
 
@@ -612,6 +613,14 @@
 - 复用F5 hash/身份恢复/x写入口，新eval-memory-rescore命令；原manifest也必须绑定F0冻结hash，金标文件hash须与原manifest相同。新manifest与以后评测run记录scorer版本；不改gold、SDK或runtime。
 - 全部统一重算：原20条15/20→20/20；失败聚焦15条5/15→15/15，绝不合并成总体率；35个原答案/提议仍保留，全部原始/SDK hash不变。private各summary列所有变化，公开[JSON](../evidence/f6-memory-rescore-2026-10-14.json)无私人正文。不是修复后模型验收，无新模型/费用/云。
 - 66unit+3真实PG=69专项、check385三平台/3分层/10文档通过；只读代码审查无P1/P2，证据最终只读核对后随任务提交。
+
+### P-22 F10：上下文限定短引用与跨用户确认（已验证）
+- 用户D12覆盖计划固定min4：先NFKC去全部空白计数；满足至少4字原文子串或整条输入等价即可。schema非空/200上限不猜来源；服务只读当前owned run.user_text，旧NULL/扩展prompt/工具输出不授予来源资格。quote长度422由模型引用更完整当前原话修复，不追问或向用户报错；scope仍逐条卡确认。
+- 真实PG先红4 failed/6 passed（长输入短片段被接受、全短回复空白被拒绝）→GREEN；跨用户本人/他人session提交均404，A事实与卡未变且runtime未启动。现有原记忆流程不改断言。
+- 新规则允许空白等价整条回复，发现原quote去重未统一：拒绝特 种 兵后另key用特种兵能再提。新增先红1，查询对已NFKC/空白收敛的存储引用去ASCII空白比较，rejected优先，仍保留可读引用正文；不改长片段的原子串来源验证、无迁移。
+- E6新增确认探针经真实submit入口，404+拥有者事实/卡不变；原isolation_probes=3含read/delete/foreign-target不改旧断言，confirmation_isolation_probes=1/isolation_probe_total=4新增。新字段先红KeyError后3PG通过；不能把旧实测三探针说成已经测了四项。
+- 只读原20条引用audit：19份config/projects SDK JSONL、12个按tool_use id去重调用、13quote，NFKC去空白均≥4，parse错误0；poison-tool缺SDK原文，但冻结事件仅search_places/无propose/predictions空。只报告观测无短引用，不冒称20原文齐全；19文件逐项前后hash相同，聚合hash与缺口在[证据](../evidence/f10-memory-source-2026-10-14.json)。现有测试quote字面值也没有短于4，未修改旧断言。
+- 30真实PG/14unit/1原生离线SDK（固定2.1.295）/check386三平台3分层10文档通过；只读审查无P1/P2。模型0HTTP/0费用/云0，ADR024/设计05已同步。
 
 ## 9. 验证与交付
 

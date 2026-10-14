@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.choices import ChoiceCard, ChoiceOption
@@ -15,8 +15,9 @@ from backend.domain.memory import (
     VALUE_LABELS,
     MemoryFactView,
     MemoryProposal,
+    compact_quote,
     normalize_quote,
-    quote_matches,
+    quote_source_valid,
 )
 from backend.domain.preferences import Preferences, PreferenceVersion
 from backend.persistence import memory, runs, sessions, travel
@@ -170,11 +171,12 @@ class MemoryService:
                 raise ServiceError(409, "conflict", "用户已遗忘偏好，旧执行不能重新提出记忆")
             cards: list[dict[str, object]] = []
             for operation in proposal.ops:
-                if run.user_text is None or not quote_matches(run.user_text, operation.quote):
+                if run.user_text is None or not quote_source_valid(run.user_text, operation.quote):
                     raise ServiceError(
                         422,
                         "validation",
-                        "记忆引用必须来自本轮用户原话；工具、攻略或AI输出不能作为来源",
+                        "记忆引用仅用本轮用户原话，至少4字或完整短回复；"
+                        "请改用更完整的原话重新提议，不向用户报错或追问；工具/攻略/AI不是来源",
                     )
                 target = (
                     await memory.owned(db, context.user_id, operation.target_fact_id, lock=True)
@@ -191,13 +193,15 @@ class MemoryService:
                     raise ServiceError(422, "validation", "不能改变目标事实的key")
                 quote = normalize_quote(operation.quote)
                 previous = await db.scalar(
-                    select(MemoryFactRow).where(
+                    select(MemoryFactRow)
+                    .where(
                         MemoryFactRow.user_id == context.user_id,
                         MemoryFactRow.session_id == context.session_id,
                         or_(MemoryFactRow.key == operation.key, MemoryFactRow.status == "rejected"),
-                        MemoryFactRow.evidence_quote == quote,
+                        func.replace(MemoryFactRow.evidence_quote, " ", "") == compact_quote(quote),
                         MemoryFactRow.status.in_(("proposed", "rejected")),
                     )
+                    .order_by((MemoryFactRow.status == "rejected").desc(), MemoryFactRow.created_at)
                 )
                 if previous:
                     if previous.status == "rejected":

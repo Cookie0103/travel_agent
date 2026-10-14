@@ -57,6 +57,9 @@ def test_memory_evaluation_scores_actual_owned_update_and_probes_invariants(
             metrics = await inspect_memory(business, context, case, ())
             assert metrics["true_positive"] == 1 and metrics["exact"] is True
             assert metrics["cross_user_leakage"] is False
+            assert metrics["cross_user_confirmation_blocked"] is True
+            assert metrics["confirmation_isolation_probes"] == 1
+            assert metrics["isolation_probe_total"] == 4
             assert metrics["deletion_residue"] is False
             assert await memory.snapshot(context) == []
 

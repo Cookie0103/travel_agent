@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from sqlalchemy import JSON, select
 
+from backend.agent.fixture_runtime import FixtureRuntime
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.memory import MemoryProposal
 from backend.domain.preferences import PreferencePatch, PreferenceVersion
@@ -15,7 +16,9 @@ from backend.persistence.models import ChoiceCardRow, MemoryFactRow
 from backend.services.common import ServiceError, transaction
 from backend.services.memory import MemoryService
 from backend.services.preferences import PreferenceService
+from backend.services.runs import MessageInput, RunService
 from backend.services.sessions import DemoLogin
+from backend.tools.search import SearchExecutor
 from eval.cases import Case
 from eval.database import DatabaseEvaluation
 
@@ -113,6 +116,54 @@ def memory_scores(
     }
 
 
+async def confirmation_isolated(
+    business: DatabaseEvaluation, owner: RunContext, foreign: RunContext
+) -> bool:
+    """真实提交入口：外用户确认本轮拥有者卡须404，事实与卡状态都不变。"""
+    memory = MemoryService(business.sessions.database)
+    session = await business.sessions.new_session(owner.user_id)
+    original = "这是记忆确认隔离测试原话"
+    async with transaction(business.sessions.database) as db:
+        run = await runs.create(db, owner.user_id, session.session_id, uuid4(), original, "offline")
+        context = RunContext(owner.user_id, session.session_id, run.id)
+    cards = await memory.propose(
+        context,
+        MemoryProposal.model_validate(
+            {"ops": [{"op": "ADD", "key": "interest", "value": "隔离确认样本", "quote": original}]}
+        ),
+    )
+    async with transaction(business.sessions.database) as db:
+        await runs.finish(db, context, RuntimeOutcome(text="等待合成确认检查"))
+    before = await memory.facts(owner.user_id, include_history=True)
+    service = RunService(
+        business.sessions.database, runtime_factory=lambda _: FixtureRuntime(SearchExecutor())
+    )
+    blocked = False
+    try:
+        await service.submit(
+            foreign.user_id,
+            foreign.session_id,
+            MessageInput.model_validate(
+                {
+                    "client_message_id": uuid4(),
+                    "text": "记住",
+                    "expected_revision": 0,
+                    "selection": {"choice_id": cards[0]["choice_id"], "option_id": "remember"},
+                }
+            ),
+        )
+    except ServiceError as error:
+        blocked = error.status == 404
+    finally:
+        await service.close()
+    async with transaction(business.sessions.database) as db:
+        card = await db.get(ChoiceCardRow, cards[0]["choice_id"])
+        unchanged = card is not None and card.answered_option_id is None
+    return (
+        blocked and unchanged and await memory.facts(owner.user_id, include_history=True) == before
+    )
+
+
 async def inspect_memory(
     business: DatabaseEvaluation, context: RunContext, case: Case, events: tuple[RuntimeEvent, ...]
 ) -> dict[str, object]:
@@ -162,6 +213,7 @@ async def inspect_memory(
     session = await business.sessions.new_session(identity.user_id)
     isolation = True
     probes = 0
+    confirmation: bool | None = None
     if owned:
         fact = owned[0]
         for action in (
@@ -204,6 +256,7 @@ async def inspect_memory(
         finally:
             async with transaction(business.sessions.database) as db:
                 await runs.finish(db, foreign, RuntimeOutcome(text="隔离合成检查结束"))
+        confirmation = await confirmation_isolated(business, context, foreign)
     preference = await PreferenceService(business.sessions.database).get(context.user_id)
     await PreferenceService(business.sessions.database).change(
         context.user_id, PreferenceVersion(expected_revision=preference.revision)
@@ -220,8 +273,13 @@ async def inspect_memory(
         )
     snapshot = await business.travel.business_context(context)
     measured.update(
-        cross_user_leakage=not isolation if probes == 3 else None,
+        cross_user_leakage=not (isolation and confirmation)
+        if probes == 3 and confirmation is not None
+        else None,
         isolation_probes=probes,
+        cross_user_confirmation_blocked=confirmation,
+        confirmation_isolation_probes=int(confirmation is not None),
+        isolation_probe_total=probes + int(confirmation is not None),
         deletion_residue=residue is not None
         or bool(snapshot["memory"])
         or bool(snapshot["recent_dialogue"]),

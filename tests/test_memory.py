@@ -5,13 +5,28 @@ from uuid import uuid4
 import pytest
 from pydantic import ValidationError
 
-from backend.domain.memory import MemoryOperation, quote_matches
+from backend.domain.memory import MemoryOperation, quote_matches, quote_source_valid
 from backend.tools.travel import DEFINITIONS
 
 
 def test_quote_matching_normalizes_width_and_whitespace_but_requires_substring() -> None:
     assert quote_matches("我喜欢ＡＢＣ　和公共交通", "ABC 和公共交通")
     assert not quote_matches("我只想去京都", "喜欢奢华酒店")
+
+
+@pytest.mark.parametrize(
+    ("prompt", "quote", "expected"),
+    [
+        ("我喜欢ＡＢＣＤ的画", "ABCD", True),
+        ("我喜欢特种兵旅行", "特种兵", False),
+        ("特　种 兵", "特种兵", True),
+        ("京都酒店", "    ", False),
+    ],
+)
+def test_quote_source_applies_normalized_length_and_whole_message_exception(
+    prompt: str, quote: str, expected: bool
+) -> None:
+    assert quote_source_valid(prompt, quote) is expected
 
 
 def test_model_visible_memory_schema_explains_key_specific_values() -> None:

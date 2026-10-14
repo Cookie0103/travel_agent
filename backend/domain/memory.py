@@ -78,13 +78,30 @@ def quote_matches(prompt: str, quote: str) -> bool:
     return bool(normalize_quote(quote)) and normalize_quote(quote) in normalize_quote(prompt)
 
 
+def compact_quote(text: str) -> str:
+    return "".join(unicodedata.normalize("NFKC", text).split())
+
+
+def quote_source_valid(prompt: str, quote: str) -> bool:
+    """可信当前用户文本：四字以上原文片段，或归一化后整条短回复。"""
+    quoted, original = compact_quote(quote), compact_quote(prompt)
+    return bool(quoted) and (
+        quoted == original or (len(quoted) >= 4 and quote_matches(prompt, quote))
+    )
+
+
 class MemoryOperation(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
     op: Literal["ADD", "UPDATE", "INVALIDATE"]
     key: MemoryKey
     value: str | None = Field(default=None, min_length=1, max_length=80, description=VALUE_GUIDE)
     scope: MemoryScope = "long_term"
-    quote: str = Field(min_length=1, max_length=200)
+    quote: str = Field(
+        min_length=1,
+        max_length=200,
+        description="仅引用本轮用户原话：NFKC去空白后至少4字，或等于本轮整条短回复；"
+        "过短片段请改用更完整原话重新提议，不向用户报错或追问",
+    )
     target_fact_id: UUID | None = None
 
     @model_validator(mode="after")
