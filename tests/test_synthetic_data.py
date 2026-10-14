@@ -25,6 +25,8 @@ def test_production_and_explicit_eval_factories_keep_distinct_source_modes() -> 
         assert evaluation.data_mode == "synthetic"
         assert evaluation.google and evaluation.google.data_mode == "synthetic"
         assert evaluation.rakuten and evaluation.rakuten.data_mode == "synthetic"
+        assert evaluation.usage.daily["places"] == 60
+        assert production.usage.daily["places"] == 25
     finally:
         asyncio.run(production.close())
         asyncio.run(evaluation.close())

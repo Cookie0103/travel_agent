@@ -356,8 +356,8 @@
 | F9 | done | 2068e84；24行原文完全一致/人工栏0；41专项、check374通过、独立审查无P1/P2；提交随本任务 |
 | F1 | done | 865be75；16真实PG专项/check374/审查通过；同条件同金额拒绝不再提，接受路径不变；随本任务提交 |
 | F2 | done | 4fc2082；51unit/11PG原生SDK、check376、web-generate通过；卡/重试事实和确定性说法粗检，F5接统一重算 |
-| F3 | done | 62unit/31真实PG/check378/前端142与构建通过、只读无P1/P2；synthetic全链路标签及服务暂留隔离 |
-| F4 | todo | 分城市完整评测地点及评测独立配额 |
+| F3 | done | 5f10ca1；62unit/31真实PG/check378/前端142与构建通过、只读无P1/P2；synthetic全链路标签及服务暂留隔离 |
+| F4 | done | 13unit/check379/真实PG四日16景点+3住宿草稿通过；独立审查无P1/P2，人工脚本仅数据可行性 |
 | F5 | todo | 模拟评分修正、全部原始结果统一重算 |
 | F6 | todo | 自由文本归一化、否定保护、允许展示确认工具 |
 | F10 | todo | D12原话长度规则、跨用户确认卡隔离 |
@@ -587,6 +587,13 @@
 - 先红后绿：unit缺mode/参数RED→GREEN；PG测试初版test库触发既有隔离门禁，改用temporary_database(eval)后通过（不放宽门禁）；PG实时warning真RED→GREEN；前端missing来源helper RED→142测试/build通过。
 - 审查P2：服务hold只拦live会使synthetic走模拟供应商。初版测试误patch类型注解，调用本地mock返回503；纠正替身到实际SupplierClient.hold后真RED，扩展服务拒绝live/synthetic，GREEN同时证明无BookingRow与无供应商调用，fixture路径不改。
 - 验证：62unit、31真实PG（含旧bookings）、check378三平台/3契约/10入口、web-generate/142前端测试/构建通过；独立审查复核无P1/P2。0付费模型/真实供应商/真实订单/云上传。
+
+
+### P-19 F4：三城独立资料与离线数据可行性（已验证）
+- VERIFIED：原MockTransport每城相同8个ID与坐标，新的三城独立12点/详情稳定/未知404 unit先红2→13GREEN。评测工厂places日配额60，生产25与所有单轮保护不改，地理中心独立；不预先改模型提示。
+- Ruling：计划提FixtureRuntime生成多城市草稿，但现有产品固定演示只京都2–3日，扩展会改变用户行为。用已有WaitingRuntime离线替身处理用户选择，真实工具/PG/validator/stage验证三城资料可支持全日期草稿；不增加运行时、不宣称模型完成。
+- 首次PG单run触发既有geocode2配额（VERIFIED），改测试为真实多轮每城市新run/新LiveData生命周期，保留日计数与单轮保护；不禁用限额。真实PG全四日16景点/三住宿段草稿通过、无重复地点警告；资料可行性不等于路线/费用全核实，更不等于模型旅行成功。
+- 13unit、1真实PG数据草稿、check379三平台/分层/文档通过；只读审查无P1/P2。0付费模型/真实供应商/云上传；F12使用这些新数据观察真实模型。
 
 ## 9. 验证与交付
 

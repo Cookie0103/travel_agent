@@ -49,3 +49,38 @@ def test_injected_sequences_are_closed_and_never_network(
             ).status_code
             for _ in range(2)
         ] == expected
+
+
+def test_three_city_place_inventory_is_distinct_complete_and_stable_on_detail_read() -> None:
+    transport = fault_transport(
+        "coverage",
+        profile="eval",
+        database_dsn="postgresql://localhost/travel_agent_eval_" + uuid4().hex,
+    )
+    ids: set[str] = set()
+    coordinates: set[tuple[float, float]] = set()
+    with httpx.Client(transport=transport) as client:
+        for city in ("京都", "大阪", "奈良"):
+            places = client.post(
+                "https://places.googleapis.com/v1/places:searchText",
+                json={"textQuery": "観光スポット " + city, "pageSize": 20},
+            ).json()["places"]
+            assert len(places) >= 12
+            city_ids = {p["id"] for p in places}
+            city_coordinates = {
+                (p["location"]["latitude"], p["location"]["longitude"]) for p in places
+            }
+            assert not ids & city_ids and not coordinates & city_coordinates
+            assert all(p["displayName"]["text"].startswith("合成" + city) for p in places)
+            detail = client.get(
+                "https://places.googleapis.com/v1/places/" + places[-1]["id"]
+            ).json()
+            assert detail == places[-1]
+            ids.update(city_ids)
+            coordinates.update(city_coordinates)
+        assert (
+            client.get(
+                "https://places.googleapis.com/v1/places/synthetic-京都-place-999"
+            ).status_code
+            == 404
+        )
