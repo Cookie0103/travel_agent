@@ -314,6 +314,29 @@ def call_key(name: str, arguments: dict[str, object]) -> tuple[str, str]:
 MAX_VALIDATIONS_CAP = 50  # 有限实验配置的构造上限；人工档用None
 
 
+def hotel_search_facts(result: ToolResult, name: str) -> ToolResult:
+    """工具事实由实际卡与HTTP观察决定；模型不能据诊断tier猜卡或累计重试。"""
+    if name != "search_hotel_offers":
+        return result
+    relaxation = result.data.get("relaxation")
+    state = (
+        "declined"
+        if isinstance(relaxation, dict) and relaxation.get("declined") is True
+        else "shown"
+        if isinstance(result.data.get("choice"), dict)
+        else "none"
+    )
+    return replace(
+        result,
+        data={
+            **result.data,
+            "choice_card": state,
+            "attempts": result.external.attempts if result.external else 0,
+            "auto_retried": bool(result.external and result.external.attempts > 1),
+        },
+    )
+
+
 class TravelToolExecutor:
     def __init__(
         self,
@@ -363,7 +386,7 @@ class TravelToolExecutor:
             )
             # 缓存不得绕过run/owner检查，亦不会被无关工具成功清空。
             if self.context is not None and self.context != context:
-                return await self._execute(context, name, arguments)
+                return hotel_search_facts(await self._execute(context, name, arguments), name)
             result = self.external_failures.get(key) or self.failed_corrections.get(scope)
             if result is not None and result.external and result.external.provisional:
                 result = replace(
@@ -432,7 +455,7 @@ class TravelToolExecutor:
                     f"max_validations:{self.max_validations}",
                 )
                 result = replace(result, detail=(*result.detail, *rounds))
-            return result
+            return hotel_search_facts(result, name)
 
     async def _execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
@@ -480,6 +503,7 @@ class TravelToolExecutor:
                     result = replace(result, external=info)
             finally:
                 REQUEST_DEADLINE.reset(deadline)
+            result = hotel_search_facts(result, name)
             result_limit = definition.max_result_chars
             if name == "present_travel_result" and result.data.get("segments"):
                 segments = result.data["segments"]
@@ -491,6 +515,8 @@ class TravelToolExecutor:
                     code="blocked",
                     suggestion="结果过长，请缩小limit或查询范围",
                     detail=("result_too_long",),
+                    external=result.external,
+                    data_mode=result.data_mode,
                 )
             if result.code is None:
                 if isinstance(parsed, PresentationInput) and parsed.component != "choice":

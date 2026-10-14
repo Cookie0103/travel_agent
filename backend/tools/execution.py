@@ -2,6 +2,7 @@
 
 import json
 import time
+from typing import Literal
 from uuid import UUID, uuid4
 
 from pydantic import TypeAdapter, ValidationError
@@ -169,6 +170,11 @@ async def execute_observed(
             external=result.external,
             relaxation_cause=diagnosis.cause if diagnosis else None,
             relaxation_tier=diagnosis.tier if diagnosis else None,
+            choice_card=TypeAdapter(Literal["shown", "none", "declined"]).validate_python(
+                result.data["choice_card"]
+            )
+            if "choice_card" in result.data
+            else None,
         )
     )
     payload = None

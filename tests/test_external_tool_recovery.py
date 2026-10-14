@@ -28,6 +28,60 @@ class SyntheticExecutor(TravelToolExecutor):
         return response
 
 
+def test_hotel_results_report_actual_retry_and_closed_choice_state() -> None:
+    async def exercise() -> None:
+        for info in (
+            ExternalAttempt(kind="bad_request", status=400, attempts=1),
+            ExternalAttempt(kind="rate_limited", status=429, attempts=2),
+        ):
+            executor = SyntheticExecutor()
+            executor.responses = [ExternalDataError("合成错误", info=info)]
+            result = await executor.execute(
+                RunContext(uuid4()), "search_hotel_offers", {"expected_revision": 1}
+            )
+            assert result.data["choice_card"] == "none"
+            assert result.data["attempts"] == info.attempts
+            assert result.data["auto_retried"] is (info.attempts > 1)
+        executor = SyntheticExecutor()
+        executor.responses = [ToolResult({"relaxation": {"declined": True}})]
+        result = await executor.execute(
+            RunContext(uuid4()), "search_hotel_offers", {"expected_revision": 1}
+        )
+        assert result.data["choice_card"] == "declined"
+
+    asyncio.run(exercise())
+
+
+def test_hotel_metadata_is_counted_inside_existing_result_limit() -> None:
+    async def exercise() -> None:
+        executor = SyntheticExecutor()
+        executor.responses = [ToolResult({"padding": "x" * 7830})]
+        result = await executor.execute(
+            RunContext(uuid4()), "search_hotel_offers", {"expected_revision": 1}
+        )
+        assert result.code == "blocked" and "result_too_long" in result.detail
+
+    asyncio.run(exercise())
+
+
+def test_rejected_oversized_result_preserves_the_actual_http_attempts() -> None:
+    async def exercise() -> None:
+        executor = SyntheticExecutor()
+        executor.responses = [
+            ToolResult(
+                {"padding": "x" * 7900},
+                external=ExternalAttempt(attempts=2, recovered_from="timeout"),
+            )
+        ]
+        result = await executor.execute(
+            RunContext(uuid4()), "search_hotel_offers", {"expected_revision": 1}
+        )
+        assert result.code == "blocked"
+        assert result.data["attempts"] == 2 and result.data["auto_retried"] is True
+
+    asyncio.run(exercise())
+
+
 def test_bad_request_allows_only_one_correction_and_is_provisional() -> None:
     async def exercise() -> None:
         executor = SyntheticExecutor()

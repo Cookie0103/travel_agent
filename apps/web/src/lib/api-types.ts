@@ -993,6 +993,11 @@ export interface components {
              * @default
              */
             message: string;
+            /**
+             * Declined
+             * @default false
+             */
+            declined: boolean;
         };
         /**
          * HotelStay
@@ -2235,6 +2240,11 @@ export interface components {
              * @default
              */
             message: string;
+            /**
+             * Declined
+             * @default false
+             */
+            declined: boolean;
         };
         /** HotelSegmentPresentation */
         UiHotelSegmentPresentation: {
@@ -2718,6 +2728,11 @@ export interface components {
             relaxation_cause?: ("coverage" | "budget" | "room_filter" | "upstream_empty" | "unknown_prices") | null;
             /** Relaxation Tier */
             relaxation_tier?: number | string | null;
+            /**
+             * Choice Card
+             * @default null
+             */
+            choice_card: ("shown" | "none" | "declined") | null;
         };
     };
     responses: never;

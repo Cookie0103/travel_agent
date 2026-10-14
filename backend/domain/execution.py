@@ -227,6 +227,7 @@ class RuntimeEvent:
         Literal["coverage", "budget", "room_filter", "upstream_empty", "unknown_prices"] | None
     ) = field(default_factory=lambda: None)
     relaxation_tier: Decimal | None = field(default_factory=lambda: None)
+    choice_card: Literal["shown", "none", "declined"] | None = None
 
 
 @dataclass(frozen=True)

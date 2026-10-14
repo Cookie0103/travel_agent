@@ -3353,6 +3353,11 @@
             "type": "string",
             "title": "Message",
             "default": ""
+          },
+          "declined": {
+            "type": "boolean",
+            "title": "Declined",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -6810,6 +6815,11 @@
             "default": "",
             "title": "Message",
             "type": "string"
+          },
+          "declined": {
+            "default": false,
+            "title": "Declined",
+            "type": "boolean"
           }
         },
         "title": "HotelSearchDiagnostics",
@@ -7980,6 +7990,23 @@
               }
             ],
             "title": "Relaxation Tier"
+          },
+          "choice_card": {
+            "anyOf": [
+              {
+                "enum": [
+                  "shown",
+                  "none",
+                  "declined"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Choice Card"
           }
         },
         "required": [

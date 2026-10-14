@@ -132,7 +132,10 @@ class ChoiceService:
             )
             if declined is not None:
                 diagnosis.declined = True
-                diagnosis.message += " 用户已拒绝这一金额的放宽；不要重复建议或提及预算确认卡。"
+                diagnosis.message = (
+                    f"已查看¥{diagnosis.applied_upper}档的报价，但用户已拒绝这一金额的放宽；"
+                    "原预算保持不变。不要重复建议或提及预算确认卡，改给原预算下的替代方向。"
+                )
                 return None
             existing = await db.scalar(
                 select(ChoiceCardRow).where(

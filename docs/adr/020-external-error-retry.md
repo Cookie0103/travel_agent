@@ -19,3 +19,5 @@
 ## 取舍与验证
 
 不新增重试框架、运行时、依赖或第二套计数。供应商异常注入使用 MockTransport 与真实 PostgreSQL；限速用虚拟时钟。模型重试以合成转发器证明未知费用、半条流与混合停滞边界。真实调用和最终通过数仅记录在[当前批次](../plans/2026-10-13-interaction-memory-eval.md)。
+
+2026-10-14 F2：酒店结果闭合声明choice_card及单次查询HTTP attempts/auto_retried，超长正文被拒绝仍保留ExternalAttempt；模型不能把参数修正的第二次工具调用说成适配器自动重试。卡片无方案/已拒绝时不得请用户点卡，实际卡由服务端presentation提供。
