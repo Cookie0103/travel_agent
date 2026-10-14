@@ -45,7 +45,7 @@ from eval.content import AnswerRecord
 from eval.database import DatabaseEvaluation, database_evaluation, selector_runner
 from eval.diagnostics import diagnose
 from eval.graders import Observation, grade
-from eval.memory_metrics import inspect_memory
+from eval.memory_metrics import SCORER_VERSION, inspect_memory
 from eval.metrics import first_progress_seconds, process_metrics, tool_call_accuracy
 from eval.persona import rules as persona_rules
 from eval.report import measured_summary
@@ -147,6 +147,9 @@ async def run_cases(
                 ),
                 "business_database": business is not None,
                 "business_metrics_version": 1,
+                "memory_scorer_version": SCORER_VERSION
+                if any(c.memory_category for c in cases)
+                else None,
                 "database_name": business.sessions.database.engine.url.database
                 if business
                 else None,

@@ -358,8 +358,8 @@
 | F2 | done | 4fc2082；51unit/11PG原生SDK、check376、web-generate通过；卡/重试事实和确定性说法粗检，F5接统一重算 |
 | F3 | done | 5f10ca1；62unit/31真实PG/check378/前端142与构建通过、只读无P1/P2；synthetic全链路标签及服务暂留隔离 |
 | F4 | done | f1e5dc8；13unit/check379/真实PG四日16景点+3住宿草稿通过；独立审查无P1/P2，人工脚本仅数据可行性 |
-| F5 | done | 定向回忆/全日期/同金额拒绝/本轮说法；全部51条统一重算E7 19→16/24、pace3/3、E5 24→20/24；原始与首次试算均保留，审阅版新目录x写 |
-| F6 | todo | 自由文本归一化、否定保护、允许展示确认工具 |
+| F5 | done | 20fddc5；定向回忆/全日期/同金额拒绝/本轮说法；全部51条统一重算E7 19→16/24、pace3/3、E5 24→20/24；原始与首次试算均保留，审阅版新目录x写 |
+| F6 | done | 三free key先保护否定、七封闭key精确；同轮成功提议后同卡展示许可；原20条15→20、失败聚焦15条5→15分开报告；69专项/check385/只读审查通过 |
 | F10 | todo | D12原话长度规则、跨用户确认卡隔离 |
 | F11 | todo | 模拟控制器失败追溯与源码差异hash |
 | F7 | todo | 内容分只作参考，精简事件摘要/可配置阈值 |
@@ -392,6 +392,7 @@
 - 未完成：F1–F13继续；未发真实模型或云上传。
 - F9标注路径：.cache/batch-2026-10-14/labeling/标注表.csv；怎么标.md与对照表同目录，人工先不要看对照表。24行/原文逐字一致/人工栏全空，41专项/check374/只读审查通过。
 - F5：原E7全部24条19→16、pace3→3、E5全部24条24→20；不是当前源码的模型能力验收。审阅版.cache/batch-2026-10-14/f5-reviewed/<suite>/rescored-v3-results.jsonl；各summary列每个新增/变化检查、未知数量、原始与SDK事件hash。
+- F6：原20条15→20/20，失败聚焦15条5→15/15，分开报告不合并总体率；.cache/batch-2026-10-14/f6-reviewed/<set>/新结果/summary/manifest均x写，评分器memory-v3-normalized-polarity，金标hash不变，无新模型调用。
 - 下一步：基线通过后生成可读24行标注表，再逐项先红后绿。
 
 
@@ -604,6 +605,14 @@
 - 首次试算误把可以展示选择卡判为已出卡，回归修复后全部重算到f5-reviewed新目录x模式；首次旧目录v3和原有所有results/rescores均保留，无覆盖。原F0 55hash不变，SDK补充35(E7)+24(E5)，pace0新增依赖；各summary记录hash与时间。证据[JSON](../evidence/f5-uniform-rescore-2026-10-14.json)。
 - 80unit与2真实PG专项、check382三平台/3分层/10文档通过；只读审查无剩余P1/P2。新模型HTTP0/费用0/云上传0；F12另测当前修复源码，不将本重算当新验收。
 
+### P-21 F6：自由文本别名与确认卡展示评分（已验证）
+- 根因VERIFIED：三种正确free-text措辞被精确比较判错；propose_memory成功后展示同memory_confirm卡被算额外工具。别名RED4 failed/6 passed；空白否定RED1 failed/10 passed；展示正例RED1 failed/2 passed。审查另发现不想避免/不要避免会连续剥离，两个反例RED2 failed/11 passed后保护。
+- 方案：仅avoid/dietary/interest做NFKC/空白标点归一化，检查原方向后才去固定修饰，核心词匹配；七闭集原精确比较不改，key/scope/op不改。dietary不想吃素/不吃素及空白变体拒绝；avoid喜欢早起/否定避免拒绝；interest不喜欢早起拒绝。此为有限词面探针，未人工校准。
+- 额外展示许可须同context、成功propose后、同choice_id、成功present且实际memory_confirm；不开放search/route或其他卡。原非法次数、跨用户/删除/隐式写不变量保留，测试独立验证不能因措辞归一化变通过。
+- 复用F5 hash/身份恢复/x写入口，新eval-memory-rescore命令；原manifest也必须绑定F0冻结hash，金标文件hash须与原manifest相同。新manifest与以后评测run记录scorer版本；不改gold、SDK或runtime。
+- 全部统一重算：原20条15/20→20/20；失败聚焦15条5/15→15/15，绝不合并成总体率；35个原答案/提议仍保留，全部原始/SDK hash不变。private各summary列所有变化，公开[JSON](../evidence/f6-memory-rescore-2026-10-14.json)无私人正文。不是修复后模型验收，无新模型/费用/云。
+- 66unit+3真实PG=69专项、check385三平台/3分层/10文档通过；只读代码审查无P1/P2，证据最终只读核对后随任务提交。
+
 ## 9. 验证与交付
 
 ### F0修复基线（VERIFIED）
@@ -615,6 +624,8 @@
 | E7全部24条 | 19/24 | 19/24 | 16/24，2条说法unknown单列 |
 | 节奏专项3条 | 3/3 | 无 | 3/3 |
 | E5全部24条 | 24/24 | 无 | 20/24 |
+| E6原20条（F6） | 15/20 | 无 | 20/20 |
+| E6失败聚焦15条（F6） | 5/15 | 无 | 15/15，单列不可合并 |
 - 对应trial/check及hash见P20与f5-uniform-rescore证据；总规则分仍不能代替事实完整性或真人校准。
 
 

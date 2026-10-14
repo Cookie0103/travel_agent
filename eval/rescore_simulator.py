@@ -11,8 +11,11 @@ from pydantic import TypeAdapter
 
 from backend.domain.execution import RunContext, RuntimeEvent
 from backend.domain.plans import SavedPlan
+from eval.cases import Case
 from eval.claims import claim_consistency
 from eval.content import AnswerRecord
+from eval.graders import memory_presentations_allowed
+from eval.memory_metrics import SCORER_VERSION, memory_scores
 from eval.report import reliability
 from eval.simulator import hotel_delivered, recalled
 from eval.simulator_metrics import (
@@ -21,6 +24,7 @@ from eval.simulator_metrics import (
     no_reoffer_after_decline,
     saved_items_cover_segments,
 )
+from eval.suites import load_suite
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -137,20 +141,27 @@ def rescore(row: dict[str, object]) -> dict[str, object]:
     }
 
 
-def rescore_interaction(row: dict[str, object]) -> dict[str, object]:
+def record_events(row: dict[str, object]) -> tuple[AnswerRecord, tuple[RuntimeEvent, ...] | None]:
     record = AnswerRecord.model_validate(row["content_record"])
     path = event_path(record.context)
     if not path.exists():
-        return {
-            **row,
-            "claim_consistency": {"passed": None, "card": None, "retry": None, "expiry": None},
-            "rescore_basis": "F5 v3: SDK events unavailable; unknown",
-        }
+        return record, None
     events = TypeAdapter(tuple[RuntimeEvent, ...]).validate_python(
         [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
     )
     if any(e.context != record.context for e in events):
         raise ValueError("原始SDK事件不属于本轮回答")
+    return record, events
+
+
+def rescore_interaction(row: dict[str, object]) -> dict[str, object]:
+    record, events = record_events(row)
+    if events is None:
+        return {
+            **row,
+            "claim_consistency": {"passed": None, "card": None, "retry": None, "expiry": None},
+            "rescore_basis": "F5 v3: SDK events unavailable; unknown",
+        }
     claims = claim_consistency(
         record.text,
         events,
@@ -170,6 +181,38 @@ def rescore_interaction(row: dict[str, object]) -> dict[str, object]:
         "status": "passed" if all(checks.values()) else "failed",
         "rescore_basis": "F5 v3: all original E5 answers and identity-matched SDK events; "
         "no model rerun",
+    }
+
+
+def rescore_memory(row: dict[str, object], case: Case) -> dict[str, object]:
+    metrics = TypeAdapter(dict[str, object]).validate_python(row["memory_metrics"])
+    predictions = TypeAdapter(list[dict[str, object]]).validate_python(metrics["predictions"])
+    score = memory_scores(
+        [item.model_dump(mode="json") for item in case.expected_memory],
+        predictions,
+        invalid_attempts=TypeAdapter(int).validate_python(metrics["invalid_attempts"]),
+    )
+    checks = TypeAdapter(dict[str, bool]).validate_python(row["checks"])
+    checks["memory_exact"] = score["exact"] is True
+    _, events = record_events(row)
+    display: bool | None = None
+    if events is not None:
+        names = {e.tool_name for e in events if e.kind == "tool_started"}
+        allowed = set(case.allowed_tools)
+        if "present_travel_result" in names:
+            display = memory_presentations_allowed(events)
+            if display:
+                allowed.add("present_travel_result")
+        checks["no_unnecessary_tools"] = names <= allowed
+    return {
+        **row,
+        "checks": checks,
+        "memory_metrics": {**metrics, **score},
+        "memory_presentation_allowed": display,
+        "failed_checks": [name for name, ok in checks.items() if not ok],
+        "status": "passed" if all(checks.values()) else "failed",
+        "rescore_basis": "F6 memory-v3: all original source-valid predictions; unchanged gold; "
+        "normalized free text and polarity; verified same-run memory presentation only",
     }
 
 
@@ -209,8 +252,25 @@ def write_rescore(results: Path, hashes: Path, out: Path | None = None) -> dict[
         for path in source_events(original)
     }
     source_frozen_at = datetime.now(UTC).isoformat()
+    memory_cases: dict[str, Case] = {}
+    gold_hashes: dict[str, str] = {}
+    if any(str(row.get("case_id")).startswith("v2-mem-") for row in original):
+        cases, suite = load_suite(ROOT, "v2-memory", "dev")
+        metadata_path = results.parent / "manifest.json"
+        if hashlib.sha256(metadata_path.read_bytes()).hexdigest() not in frozen.values():
+            raise ValueError("原始记忆manifest不属于冻结输入hash")
+        metadata = TypeAdapter(dict[str, object]).validate_json(metadata_path.read_bytes())
+        old_suite = TypeAdapter(dict[str, object]).validate_python(metadata["evaluation_suite"])
+        if old_suite.get("sha256") != suite["sha256"]:
+            raise ValueError("记忆金标文件与原始manifest的hash不符")
+        memory_cases = {case.case_id: case for case in cases}
+        gold_hashes = TypeAdapter(dict[str, str]).validate_python(suite["sha256"])
     rows = [
-        rescore(row) if str(row.get("case_id")).startswith("v2-user-") else rescore_interaction(row)
+        rescore_memory(row, memory_cases[str(row["case_id"])])
+        if str(row.get("case_id")).startswith("v2-mem-")
+        else rescore(row)
+        if str(row.get("case_id")).startswith("v2-user-")
+        else rescore_interaction(row)
         for row in original
     ]
     for relative, source_digest in source_hashes.items():
@@ -223,7 +283,8 @@ def write_rescore(results: Path, hashes: Path, out: Path | None = None) -> dict[
     directory.mkdir(parents=True, exist_ok=True)
     target = directory / "rescored-v3-results.jsonl"
     summary_path = directory / "rescored-v3-summary.json"
-    if target.exists() or summary_path.exists():
+    manifest_path = directory / "rescored-v3-manifest.json"
+    if target.exists() or summary_path.exists() or manifest_path.exists():
         raise FileExistsError("v3重算输出已存在，不覆盖")
     previous_path = results.parent / "rescored-results.jsonl"
     previous = (
@@ -260,7 +321,16 @@ def write_rescore(results: Path, hashes: Path, out: Path | None = None) -> dict[
             ]
             is None
             for r in rows
+            if "claim_consistency" in r
         ),
+        "unknown_memory_presentation_n": sum(
+            r.get("memory_presentation_allowed") is None
+            for r in rows
+            if "present_travel_result" in TypeAdapter(list[str]).validate_python(r.get("tools", []))
+            and str(r.get("case_id")).startswith("v2-mem-")
+        ),
+        "scorer_version": SCORER_VERSION if memory_cases else "f5-v3",
+        "gold_sha256": gold_hashes,
         "cost_cny": str(
             sum(
                 (Decimal(str(r.get("cost_cny", r.get("run_accounted_cny", "0")))) for r in rows),
@@ -273,7 +343,7 @@ def write_rescore(results: Path, hashes: Path, out: Path | None = None) -> dict[
         "original_sha256": hashlib.sha256(results.read_bytes()).hexdigest(),
         "source_event_sha256": source_hashes,
         "source_events_frozen_at": source_frozen_at,
-        "source_events_basis": "F5首次读取前补充冻结，非F0的55项；重算后逐项复核",
+        "source_events_basis": "本次重算首次读取前补充冻结，非F0的55项；重算后逐项复核",
         "changed": [
             changed_checks(old, new)
             for old, new in zip(original, rows, strict=True)
@@ -286,6 +356,21 @@ def write_rescore(results: Path, hashes: Path, out: Path | None = None) -> dict[
             output.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
     with summary_path.open("x", encoding="utf-8") as output:
         output.write(json.dumps(summary, ensure_ascii=False, indent=2) + "\n")
+    with manifest_path.open("x", encoding="utf-8") as output:
+        output.write(
+            json.dumps(
+                {
+                    "scorer_version": summary["scorer_version"],
+                    "gold_sha256": gold_hashes,
+                    "input_sha256": original_digest,
+                    "source_events_frozen_at": source_frozen_at,
+                    "scope": "uniform offline rescore; original files unchanged; no model calls",
+                },
+                ensure_ascii=False,
+                indent=2,
+            )
+            + "\n"
+        )
     return summary
 
 

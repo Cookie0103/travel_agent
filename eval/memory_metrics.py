@@ -1,5 +1,7 @@
 """原始输出先按schema/来源过滤，另计非法尝试；明确区分无分母与满分。"""
 
+import re
+import unicodedata
 from collections.abc import Mapping, Sequence
 from uuid import uuid4
 
@@ -17,14 +19,70 @@ from backend.services.sessions import DemoLogin
 from eval.cases import Case
 from eval.database import DatabaseEvaluation
 
+FREE_KEYS = frozenset({"avoid", "dietary", "interest"})
+SCORER_VERSION = "memory-v3-normalized-polarity"
+MODIFIERS = (
+    "这次旅行",
+    "本次旅行",
+    "不喜欢",
+    "避免",
+    "不要",
+    "不想",
+    "尽量",
+    "这次",
+    "本次",
+    "只在",
+    "长期",
+    "一直",
+)
+NEGATIVE = re.compile(r"不(?:太|想|愿意|要)?(?:喜欢|吃|爱)|不要|不想|讨厌|拒绝")
+
+
+def normalized_surface(value: str) -> str:
+    return "".join(
+        c
+        for c in unicodedata.normalize("NFKC", value)
+        if not c.isspace() and not unicodedata.category(c).startswith("P")
+    )
+
+
+def normalized_value(value: str) -> str:
+    text = normalized_surface(value)
+    while True:
+        prefix = next((word for word in MODIFIERS if text.startswith(word)), None)
+        if prefix is None:
+            return text
+        text = text[len(prefix) :]
+
+
+def free_value_matches(key: str, value: str, expected: str) -> bool:
+    # 先检查原始方向，再去掉修饰；avoid的key本身表达避免，不要求值重复否定。
+    raw = normalized_surface(value)
+    if key == "avoid" and re.search(r"(?:不想|不要|不愿意|不)(?:再|去)?(?:避免|讨厌|排斥)", raw):
+        return False
+    if key == "avoid" and any(
+        not re.search(r"(?:不|没)(?:太|很|怎么)?$", raw[: m.start()])
+        for m in re.finditer("喜欢", raw)
+    ):
+        return False
+    if key in {"dietary", "interest"} and bool(NEGATIVE.search(raw)) != bool(
+        NEGATIVE.search(normalized_surface(expected))
+    ):
+        return False
+    core = normalized_value(expected)
+    return bool(core) and core in normalized_value(value)
+
 
 def matches(expected: Mapping[str, object], prediction: Mapping[str, object]) -> bool:
     values = expected.get("values")
-    return (
-        all(expected.get(k) == prediction.get(k) for k in ("key", "scope", "op"))
-        and isinstance(values, (tuple, list))
-        and prediction.get("value") in values
-    )
+    if not all(
+        expected.get(k) == prediction.get(k) for k in ("key", "scope", "op")
+    ) or not isinstance(values, (tuple, list)):
+        return False
+    key, value = expected.get("key"), prediction.get("value")
+    if key not in FREE_KEYS or not isinstance(key, str) or not isinstance(value, str):
+        return value in values
+    return any(isinstance(gold, str) and free_value_matches(key, value, gold) for gold in values)
 
 
 def memory_scores(
@@ -51,6 +109,7 @@ def memory_scores(
         "invalid_attempts": invalid_attempts,
         "exact": false_positive == false_negative == invalid_attempts == 0,
         "basis": "source/schema-valid proposals; invalid attempts separate; uncalibrated",
+        "scorer_version": SCORER_VERSION,
     }
 
 
