@@ -15,5 +15,6 @@
   "source_projection_tests": 13,
   "check_files": 390,
   "multi_turn": "current answer run only; missing or ambiguous remains unknown",
-  "review": "no remaining P1/P2"
+  "review": "no remaining P1/P2",
+  "check_status": "passed all three strict platforms, 3 layer contracts, 10 documentation entries after explicit test type narrowing"
 }

@@ -122,5 +122,7 @@ def test_multiturn_reference_uses_only_last_answer_events_or_unknown() -> None:
     wrong = {**row, "text": "未绑定的其他回答"}
     assert row_event_summary(wrong, events).budget_card is None
     assert row_event_summary(row, events[:1]).budget_card is None
-    positive = row_event_summary({"text": "第一轮", "dialogue": row["dialogue"][:1]}, events[:1])
+    dialogue = row["dialogue"]
+    assert isinstance(dialogue, list)
+    positive = row_event_summary({"text": "第一轮", "dialogue": dialogue[:1]}, events[:1])
     assert positive.budget_card is True
