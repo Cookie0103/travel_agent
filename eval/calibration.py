@@ -9,9 +9,14 @@ from uuid import uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.domain.execution import RuntimeEvent
 from eval.calibrate_v2 import agreement, prepare
 from eval.content import QualityScore
+from eval.event_summary import JudgeEvents, event_summary
+from eval.persona import content_reference
+from eval.rescore_simulator import original_events, record_events
 from eval.run import manifest
+from eval.simulator_metrics import dialogue_event_groups
 from eval.structured import structured_call
 from eval.suites import load_suite
 from scripts.dev import configure_environment
@@ -110,12 +115,29 @@ def comparison_pairs(
     return pairs
 
 
+def row_event_summary(
+    row: dict[str, object], events: tuple[RuntimeEvent, ...] | None
+) -> JudgeEvents:
+    if events is None:
+        return event_summary(None)
+    dialogue = row.get("dialogue")
+    if not isinstance(dialogue, list):
+        # 单轮AnswerRecord已由record_events核对context。
+        return event_summary(events)
+    turns = [turn for turn in dialogue if isinstance(turn, dict) and "status" in turn]
+    groups = dialogue_event_groups(turns, events)
+    if not turns or len(groups) != len(turns) or row.get("text") != turns[-1].get("answer"):
+        return event_summary(None)
+    return event_summary(groups[-1])
+
+
 def main() -> int:
     from dotenv import load_dotenv
 
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("results", type=Path, nargs="+")
     parser.add_argument("--live", action="store_true")
+    parser.add_argument("--threshold", type=int, choices=range(1, 6), default=3)
     args = parser.parse_args()
     cases = {}
     for suite in ("v2", "v2-memory"):
@@ -132,6 +154,14 @@ def main() -> int:
                     "initial_state": case.initial_state,
                     "expected_memory": [m.model_dump(mode="json") for m in case.expected_memory],
                 }
+            events = (
+                original_events(row)
+                if isinstance(row.get("steps"), list)
+                else record_events(row)[1]
+                if isinstance(row.get("content_record"), dict)
+                else None
+            )
+            row["event_summary"] = row_event_summary(row, events).model_dump(mode="json")
             row["origin"] = str(path.relative_to(ROOT)) if path.is_absolute() else str(path)
             row["user_input"] = task_context(row)
             rows.append(row)
@@ -144,7 +174,9 @@ def main() -> int:
                 **manifest([]),
                 "purpose": "balanced_rule_outcomes_blind_calibration",
                 "sources": [str(p) for p in args.results],
-                "model_binary_threshold": "all relevance/explanation/tradeoffs >=3",
+                "model_binary_threshold": args.threshold,
+                "content_score_title": "未校准参考分",
+                "task_pass_gate": False,
                 "selection": "unique case first; subsequent trials round-robin; "
                 "fixed shuffle; not representative success rate",
                 "human_labels": "empty until user labels",
@@ -173,17 +205,21 @@ def main() -> int:
                     "task": sample["task"],
                     "conditions": sample["conditions"],
                     "candidate": sample["answer"],
+                    "event_summary": references["references"][sample["sample_id"]]["event_summary"],
                 },
                 ROOT,
             )
             try:
                 quality = QualityScore.model_validate_json(response)
                 fields = quality.model_dump()
-                value = int(
-                    all(fields[key] >= 3 for key in ("relevance", "explanation", "tradeoffs"))
-                )
+                reference = content_reference(quality, threshold=args.threshold)
+                value = int(reference["binary_reference"] is True)
                 references["references"][sample["sample_id"]].update(
-                    model_reference=value, model_quality=fields
+                    model_reference=value,
+                    model_quality=fields,
+                    content_score_title="未校准参考分",
+                    task_pass_gate=False,
+                    model_binary_threshold=args.threshold,
                 )
             except ValueError:
                 value = None

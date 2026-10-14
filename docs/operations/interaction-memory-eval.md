@@ -119,3 +119,7 @@ uv run python scripts/dev.py eval-human-score .cache/batch-2026-10-14/labeling/�
 ```
 
 生成只读旧CSV/manifest/AI预标注/隐藏参考，绑定hash，输出目录必须不存在，不覆盖。统计零模型调用，三题全是为通过，任一否为失败；不确定/漏填不计，有效至少20条才报告一致率与κ。旧30条格式兼容保留，不把AI参考当真人。生成命令不要对已开始填写的表重复执行。
+
+### F7 内容参考分与封闭事件摘要
+
+内容模型分仅展示为「未校准参考分」，不作为任务通过门槛。`eval-calibration --threshold 3` 保持默认；可选1–5，实际值与task_pass_gate=false写入新manifest。摘要仅有注册工具名、结果码、choice_card、实际attempts、data_mode及预算/记忆卡存在性；旧来源缺失保持未知，不混入正文或第三方资料。旧30份评分文件保持只读；本F批不运行该命令的`--live`，人工至少20有效行前不生成κ结论。

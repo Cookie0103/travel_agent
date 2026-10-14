@@ -89,5 +89,14 @@
     "human_verified": false,
     "file": ".cache/batch-2026-10-13/calibration/agent-provisional.json"
   },
-  "limitation": "All references uncalibrated. No fact accuracy established. Invalid first-round outputs not counted as pass."
+  "limitation": "All references uncalibrated. No fact accuracy established. Invalid first-round outputs not counted as pass.",
+  "F7_note": {
+    "title": "未校准参考分",
+    "task_pass_gate": false,
+    "historical_threshold": 3,
+    "new_threshold_configurable": true,
+    "new_judge_calls": 0,
+    "old_scores_unchanged": true,
+    "pending": "人工标注完成后才比较旧评审/新评审/人工，不将全判通过视为内容成功率"
+  }
 }

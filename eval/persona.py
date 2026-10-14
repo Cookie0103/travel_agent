@@ -11,6 +11,7 @@ from pydantic import BaseModel, ConfigDict, Field, ValidationError
 from backend.agent.persona import RUBRIC as RUBRIC
 from backend.agent.persona import load_persona
 from eval.content import HumanQuality, QualityScore
+from eval.event_summary import JudgeEvents
 from scripts.dev import configure_environment
 
 
@@ -29,6 +30,7 @@ class Sample(BaseModel):
     human_score: int | None = Field(default=None, ge=0, le=5, strict=True)
     human_rater: str | None = None
     human_quality: HumanQuality | None = None
+    event_summary: JudgeEvents = Field(default_factory=JudgeEvents)
     judge_response: str | None = None
     judge_model: str | None = None
     judge_temperature: int | None = Field(default=None, strict=True)
@@ -80,6 +82,25 @@ def calibration(samples: list[Sample]) -> dict[str, object]:
     }
 
 
+def validate_threshold(threshold: int) -> int:
+    if type(threshold) is not int or not 1 <= threshold <= 5:
+        raise ValueError("参考分阈值必须为1至5整数")
+    return threshold
+
+
+def content_reference(quality: QualityScore, *, threshold: int = 3) -> dict[str, object]:
+    validate_threshold(threshold)
+    return {
+        "title": "未校准参考分",
+        "threshold": threshold,
+        "task_pass_gate": False,
+        "quality": quality.model_dump(mode="json"),
+        "binary_reference": all(
+            getattr(quality, key) >= threshold for key in ("relevance", "explanation", "tradeoffs")
+        ),
+    }
+
+
 def content_calibration(samples: list[Sample]) -> dict[str, object]:
     dimensions: dict[str, dict[str, object]] = {}
     for dimension in ("relevance", "explanation", "tradeoffs"):
@@ -111,6 +132,8 @@ def content_calibration(samples: list[Sample]) -> dict[str, object]:
         if all(d["status"] == "calibrated" for d in dimensions.values())
         else "pending",
         "dimensions": dimensions,
+        "title": "未校准参考分",
+        "task_pass_gate": False,
         "limitations": "内容模型分不证明事实准确；真人三维配对分别校准",
     }
 

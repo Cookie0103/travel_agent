@@ -2731,6 +2731,8 @@ export interface components {
              * @default null
              */
             choice_card: ("shown" | "none" | "declined") | null;
+            /** @default null */
+            data_mode: components["schemas"]["UiDataMode"] | null;
         };
     };
     responses: never;

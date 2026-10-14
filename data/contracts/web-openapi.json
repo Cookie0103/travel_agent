@@ -8042,6 +8042,17 @@
             ],
             "default": null,
             "title": "Choice Card"
+          },
+          "data_mode": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UiDataMode"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null
           }
         },
         "required": [

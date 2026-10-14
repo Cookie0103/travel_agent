@@ -105,6 +105,7 @@ def prepare(rows: list[dict[str, object]], directory: Path) -> Path:
             references[sample] = {
                 "rule_reference": int(row["status"] == "passed"),
                 "model_reference": None,
+                "event_summary": row.get("event_summary"),
             }
     (directory / "hidden-reference.json").write_text(
         json.dumps({"seed": 20261013, "references": references}, ensure_ascii=False, indent=2)

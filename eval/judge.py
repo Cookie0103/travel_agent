@@ -17,7 +17,7 @@ from backend.limits import ProbeError
 from backend.providers.claude_agent.live import check_evaluation_size, run_live
 from backend.providers.claude_agent.settings import load_runtime_settings
 from eval.content import QualityScore
-from eval.persona import JudgeScore, Sample, calibration, content_calibration
+from eval.persona import JudgeScore, Sample, calibration, content_calibration, validate_threshold
 from eval.run import manifest
 from scripts.dev import configure_environment
 
@@ -105,8 +105,22 @@ def record(handle: TextIO, row: dict[str, object]) -> None:
     os.fsync(handle.fileno())
 
 
-def evaluate(samples: list[Sample], root: Path, *, kind: JudgeKind = "persona") -> Path:
+def judge_input(sample: Sample, *, kind: JudgeKind) -> dict[str, object]:
+    payload: dict[str, object] = {
+        "scene": sample.scene,
+        "user_input": sample.user_input,
+        "candidate": sample.text,
+    }
+    if kind == "content":
+        payload["event_summary"] = sample.event_summary.model_dump(mode="json")
+    return payload
+
+
+def evaluate(
+    samples: list[Sample], root: Path, *, kind: JudgeKind = "persona", threshold: int = 3
+) -> Path:
     validate_samples(samples, kind)
+    validate_threshold(threshold)
     check_evaluation_size(root, len(samples))
     settings = load_runtime_settings(os.environ)
     if settings.provider != "deepseek":
@@ -121,6 +135,9 @@ def evaluate(samples: list[Sample], root: Path, *, kind: JudgeKind = "persona") 
             {
                 **manifest([], ()),
                 "purpose": kind + "_judge",
+                "content_score_title": "未校准参考分",
+                "task_pass_gate": False,
+                "model_binary_threshold": threshold,
                 "model": settings.model,
                 "temperature": 0,
                 "sample_count": len(samples),
@@ -147,7 +164,7 @@ def evaluate(samples: list[Sample], root: Path, *, kind: JudgeKind = "persona") 
             context = RunContext(uuid4())
             record(attempts, {"case_id": sample.case_id, "context": asdict(context)})
             prompt = json.dumps(
-                {"scene": sample.scene, "user_input": sample.user_input, "candidate": sample.text},
+                judge_input(sample, kind=kind),
                 ensure_ascii=False,
             )
             try:
@@ -183,13 +200,14 @@ def main() -> int:
     parser.add_argument("samples", type=Path)
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--kind", choices=["persona", "content"], default="persona")
+    parser.add_argument("--threshold", type=int, choices=range(1, 6), default=3)
     args = parser.parse_args()
     try:
         samples = load_samples(args.samples, kind=args.kind)
         if not args.live:
             print(json.dumps({"status": "prepared", "samples": len(samples), "http_attempts": 0}))
             return 0
-        directory = evaluate(samples, ROOT, kind=args.kind)
+        directory = evaluate(samples, ROOT, kind=args.kind, threshold=args.threshold)
         scored = [
             Sample.model_validate_json(line)
             for line in (directory / "samples.jsonl").read_text(encoding="utf-8").splitlines()

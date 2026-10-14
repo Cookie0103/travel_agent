@@ -168,6 +168,7 @@ async def execute_observed(
             evidence_ids=result.evidence_ids,
             business_result=stage_result(result) if safe_name == "stage_plan_change" else None,
             external=result.external,
+            data_mode=result.data_mode,
             relaxation_cause=diagnosis.cause if diagnosis else None,
             relaxation_tier=diagnosis.tier if diagnosis else None,
             choice_card=TypeAdapter(Literal["shown", "none", "declined"]).validate_python(

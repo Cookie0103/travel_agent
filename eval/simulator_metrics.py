@@ -120,22 +120,22 @@ def no_reoffer_after_decline(dialogue: Sequence[Mapping[str, object]]) -> bool |
     return None if unknown or not declined else True
 
 
-def dialogue_claims(
+def dialogue_event_groups(
     dialogue: Sequence[Mapping[str, object]], events: tuple[RuntimeEvent, ...]
-) -> list[dict[str, bool | None]]:
+) -> list[tuple[RuntimeEvent, ...] | None]:
     groups: dict[str, list[RuntimeEvent]] = {}
     for event in events:
         groups.setdefault(str(event.context.run_id), []).append(event)
     turns = [turn for turn in dialogue if "status" in turn]
     # 老轨迹未存run_id：只有run总数、顺序、session和presentation都吻合才恢复。
     if len(groups) != len(turns):
-        return [{"passed": None, "card": None, "retry": None, "expiry": None}]
-    results: list[dict[str, bool | None]] = []
+        return [None]
+    results: list[tuple[RuntimeEvent, ...] | None] = []
     for turn, (run_id, group) in zip(turns, groups.items(), strict=True):
         if turn.get("session_id") != str(group[0].context.session_id) or (
             turn.get("run_id") is not None and turn.get("run_id") != run_id
         ):
-            results.append({"passed": None, "card": None, "retry": None, "expiry": None})
+            results.append(None)
             continue
         presentations = turn.get("presentations")
         if isinstance(presentations, list) and any(
@@ -144,7 +144,24 @@ def dialogue_claims(
             and context.get("run_id") != run_id
             for event in presentations
         ):
-            results.append({"passed": None, "card": None, "retry": None, "expiry": None})
+            results.append(None)
+            continue
+        results.append(tuple(group))
+    return results
+
+
+def dialogue_claims(
+    dialogue: Sequence[Mapping[str, object]], events: tuple[RuntimeEvent, ...]
+) -> list[dict[str, bool | None]]:
+    turns = [turn for turn in dialogue if "status" in turn]
+    groups = dialogue_event_groups(dialogue, events)
+    unknown: dict[str, bool | None] = {"passed": None, "card": None, "retry": None, "expiry": None}
+    if len(groups) != len(turns):
+        return [unknown]
+    results: list[dict[str, bool | None]] = []
+    for turn, group in zip(turns, groups, strict=True):
+        if group is None:
+            results.append(unknown.copy())
             continue
         answered_at: datetime | None
         try:

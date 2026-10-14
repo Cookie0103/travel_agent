@@ -219,6 +219,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     calibration = commands.add_parser("eval-calibration")
     calibration.add_argument("results", type=Path, nargs="+")
     calibration.add_argument("--live", action="store_true")
+    calibration.add_argument("--threshold", type=int, choices=range(1, 6), default=3)
     human_sheet = commands.add_parser("eval-human-sheet")
     human_sheet.add_argument("--out", type=Path)
     human_score = commands.add_parser("eval-human-score")
@@ -318,7 +319,14 @@ def main(argv: Sequence[str] | None = None) -> int:
                 command += ["--out", str(args.out)]
             return run_command(command)
         case "eval-calibration":
-            command = [python, "-m", "eval.calibration", *[str(p) for p in args.results]]
+            command = [
+                python,
+                "-m",
+                "eval.calibration",
+                *[str(p) for p in args.results],
+                "--threshold",
+                str(args.threshold),
+            ]
             if args.live:
                 command.append("--live")
             return run_command(command, timeout=7200)
