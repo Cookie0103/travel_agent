@@ -24,10 +24,24 @@ def model_name(environment: Mapping[str, str], provider: Provider) -> str:
     return environment.get(key, "").strip() or "unconfigured"
 
 
+def anthropic_host(environment: Mapping[str, str]) -> str:
+    """只接受用户已授权的HTTPS根地址，不允许任意转发、端口或URL凭据。"""
+    base = environment.get("ANTHROPIC_BASE_URL", "").strip() or "https://api.anthropic.com"
+    hosts = {
+        "https://api.anthropic.com": "api.anthropic.com",
+        "https://api.teamorouter.com": "api.teamorouter.com",
+    }
+    host = hosts.get(base.removesuffix("/"))
+    if host is None:
+        raise ProbeError("blocked", "Anthropic Base URL不在已授权的HTTPS网关名单内")
+    return host
+
+
 def load_runtime_settings(environment: Mapping[str, str]) -> Settings:
     provider = provider_name(environment)
     if provider == "deepseek":
         return load_settings(environment)
+    anthropic_host(environment)
     key = environment.get("ANTHROPIC_API_KEY", "").strip()
     if not key or key in {"你的真实密钥", "你的密钥"}:
         raise ProbeError("validation", "未配置Anthropic API Key")

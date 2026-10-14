@@ -138,6 +138,16 @@ F12共22个真实SDK试验（15计划、7诊断/修复回归），账本新增25
 
 最终命令日志：`f13-regression-final-check.log`、`f13-final-full-test.log`（1907 passed/1skip/4deselect，347.53s）、`f13-final-web-generate.log`与`f13-final-web-check.log`（143passed/构建通过）。首轮全量的5失败和基线d237隔离复现保存在`f13-full-test.log`、`f13-baseline-rakuten.log`、`f13-baseline-clock-red.log`；保留验证过程，不以调整安全/金标断言过关。任务状态和最后提交只见批次计划。
 
+### S04 TeamoRouter配置（2026-10-14）
+
+用户指定api服务使用以下非秘密配置：`ANTHROPIC_BASE_URL=https://api.teamorouter.com`、`ANTHROPIC_MODEL=claude-haiku-5-5`、`ANTHROPIC_LIVE_ENABLED=1`、`DAILY_BUDGET_USD=10`。密钥通过`railway variable set ANTHROPIC_API_KEY --stdin --skip-deploys --service api`隐藏输入，不放进命令行/文件/日志。其他变量设置也先skip-deploys，代码push后自动部署。保留DeepSeek配置和原有模型菜单；刷新页面选择Claude即可使用本次Haiku。
+
+回退：只在api服务设置`ANTHROPIC_LIVE_ENABLED=0`并部署，或菜单选择DeepSeek。换回官方地址需重新使用官方密钥；不要把网关密钥发送给官方接口。
+
+本次禁止真实Claude验收；`dev test`默认not live，SDK往返响应全部本地脚本化。日志位于`.cache/teamorouter-setup/`（不提交）：`red.log`、`green.log`、`native-sdk.log`、`check-complete.log`、`full-test-allowed.log`。本机先沙箱复现PG/回环访问权限错误，再在获准环境使用既有CLI2.1.295运行；check的PATH需包含本项目venv。最高长上下文官方价用于保守预算，不把网关折扣或UI可选当作模型效果验证。实际状态见批次计划S04/P31。
+
+最终实测：77专项通过；391文件格式/lint/三平台严格类型、3分层和10入口全部通过；全量1918passed/1skip/4live deselect，354.17秒；新增Haiku原生SDK参数用例另由三模型专项3passed/13.90秒覆盖。只读审查无P1/P2；没有改旧测试预期，真实Claude/DeepSeek调用均0。拟提交内容密钥扫描无真实key。
+
 
 ### S03 提速小修（2026-10-14，仅本地提交）
 

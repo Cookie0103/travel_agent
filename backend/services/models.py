@@ -26,7 +26,7 @@ def model_options(environment: Mapping[str, str], live_enabled: bool) -> list[Mo
         else:
             try:
                 settings = load_runtime_settings({**environment, "LLM_PROVIDER": provider})
-                check_authorization(settings.currency)
+                check_authorization(settings.currency, environment)
             except ProbeError as error:
                 reason = str(error)
         options.append(

@@ -21,7 +21,12 @@ from tests.test_sdk_cli_offline import scripted_response
 
 @pytest.mark.skipif(not shutil.which("claude"), reason="需要本机 Claude CLI；不调用真实模型")
 @pytest.mark.parametrize(
-    "provider,model", [("deepseek", "deepseek-flash"), ("anthropic", "claude-haiku-4-5-20251001")]
+    "provider,model",
+    [
+        ("deepseek", "deepseek-flash"),
+        ("anthropic", "claude-haiku-4-5-20251001"),
+        ("anthropic", "claude-haiku-5-5"),
+    ],
 )
 def test_sdk_executes_travel_tools_and_resumes_same_session(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, provider: Provider, model: str

@@ -69,6 +69,10 @@ def price_for(model: str) -> Price:
         "claude-haiku-4-5-20251001": Price(
             Decimal("1"), Decimal("5"), Decimal("0.01"), 200_000, Decimal(2), "USD"
         ),
+        # 2026-10-14：高于100k输入的最高档；网关折扣不作为费用保护依据。
+        "claude-haiku-5-5": Price(
+            Decimal("0.50"), Decimal("2.50"), Decimal("0.01"), 1_000_000, Decimal(2), "USD"
+        ),
     }
     if model not in prices:
         raise ProbeError("validation", "DEEPSEEK_MODEL/ANTHROPIC_MODEL缺失或未配置对应计价规则")

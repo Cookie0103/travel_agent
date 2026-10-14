@@ -14,6 +14,7 @@ from backend.limits import ProbeError, Provider, StallError
 from backend.profile import current
 from backend.providers.claude_agent.process import progress_hook, run_process, spawn_hook
 from backend.providers.claude_agent.response import message_stopped
+from backend.providers.claude_agent.settings import anthropic_host
 from backend.trace_log import FILE_ENV, RUN_ENV, trace
 
 MAX_RESPONSE_BYTES = 1_048_576
@@ -101,6 +102,7 @@ def forward_messages(provider: Provider, api_key: str, body: bytes) -> tuple[int
             "SSL_CERT_FILE",
             "SSL_CERT_DIR",
             "TRAVEL_PROFILE",
+            "ANTHROPIC_BASE_URL",
         }
     }
     env.update(PYTHONPATH=str(root), PYTHONUTF8="1", PYTHONIOENCODING="utf-8")
@@ -195,7 +197,7 @@ def _direct_request(
     host, path, authorization = (
         ("api.deepseek.com", "/anthropic/v1/messages", "Authorization")
         if provider == "deepseek"
-        else ("api.anthropic.com", "/v1/messages", "x-api-key")
+        else (anthropic_host(os.environ), "/v1/messages", "x-api-key")
     )
     connection = http.client.HTTPSConnection(host, timeout=current().upstream_timeout - 5)
     started, phase = time.monotonic(), "connect"  # 仅用于TRACE：失败发生在哪个阶段

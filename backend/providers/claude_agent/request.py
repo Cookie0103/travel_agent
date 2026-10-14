@@ -88,6 +88,8 @@ def validate_request(
     if not all(isinstance(name, str) for name in names) or set(names) != allowed_tools:
         raise ProbeError("blocked", "SDK 试图使用未授权工具")
     _check_blocks(raw)
+    if model == "claude-haiku-5-5":
+        _normalize_haiku(raw)
     if temperature is not None:
         if (
             type(temperature) is not int
@@ -113,7 +115,7 @@ def validate_request(
                 raw["output_config"] = config
             else:
                 raw.pop("output_config", None)
-    if temperature is not None or model.startswith("deepseek-"):
+    if temperature is not None or model.startswith("deepseek-") or model == "claude-haiku-5-5":
         body = json.dumps(raw, ensure_ascii=False).encode("utf-8")
         if len(body) > limit:
             raise RequestTooLarge(len(body), limit, "normalized")
@@ -127,6 +129,24 @@ def validate_request(
     )
     charge = price.usage_upper(int(inputs * price.cache_write_multiplier), output)
     return Request(body, charge, output, temperature)
+
+
+def _normalize_haiku(raw: dict[str, object]) -> None:
+    """旧CLI可能省略disabled；新Haiku默认思考，明确落实现有非思考选项。"""
+    if "thinking" in raw and raw["thinking"] != {"type": "disabled"}:
+        raise ProbeError("blocked", "Haiku接入仅允许已配置的非思考模式")
+    raw["thinking"] = {"type": "disabled"}
+    config = raw.get("output_config")
+    if config is not None:
+        if not isinstance(config, dict):
+            raise ProbeError("validation", "输出配置必须为对象")
+        effort = config.get("effort", "medium")
+        if not isinstance(effort, str) or effort not in {"low", "medium", "high"}:
+            raise ProbeError("blocked", "Haiku关闭思考时仅支持high或更低effort")
+    for key, default in (("temperature", 1), ("top_p", 0.99), ("top_k", None)):
+        value = raw.pop(key, None)
+        if value is not None and (type(value) not in {int, float} or value != default):
+            raise ProbeError("blocked", "Haiku 5.5不接受自定义采样参数")
 
 
 def _check_blocks(value: object, depth: int = 0) -> None:

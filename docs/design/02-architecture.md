@@ -207,6 +207,7 @@ quoted ──hold──▶ held ──用户点确认──▶ confirmed ──�
 ### 8.2 预算
 
 - DeepSeek 使用 `DAILY_BUDGET_CNY`；Anthropic 使用 `DAILY_BUDGET_USD`，后续 OpenAI 若接入共用美元线路。独立记账，不自动换汇或借用余额。
+- 2026-10-14用户授权线上TeamoRouter Haiku 5.5，`ANTHROPIC_LIVE_ENABLED=1`显式启用；默认0保持未授权拒绝。仅允许官方和用户指定网关的HTTPS根地址，规则见[ADR-027](../adr/027-teamorouter-haiku.md)。
 - 缺失、空白、非法、0 或不足均拒绝相应真实调用。预算不是调用授权；此前两请求授权已使用；新 SDK 实验使用执行计划中记录的本轮整体授权，不逐次询问。
 - SDK `max_budget_usd` 是自身美元估算上限，不是 DeepSeek 人民币额度，也不是每日账本；返回的美元估计不能直接当作 DeepSeek 账单。
 - M0.2 先离线核实内部重试、压缩和其他辅助模型请求的边界，设置输入/输出限制、工具次数、轮次与总时限。若无法保证用户的请求上限和保守费用上界，live 入口拒绝运行并记录待解决项，不能只在任务结束后看 usage。

@@ -1,5 +1,7 @@
 """SDK 联网前持久预占，完整 usage 后结算；未知费用保留全部预占。"""
 
+import os
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from decimal import Decimal
@@ -22,8 +24,17 @@ LIMITS: dict[Currency, tuple[Decimal | None, int | None]] = {
 }
 
 
-def check_authorization(currency: Currency) -> None:
-    amount, count = LIMITS[currency]
+def authorization_limits(
+    currency: Currency, environment: Mapping[str, str] = os.environ
+) -> tuple[Decimal | None, int | None]:
+    """2026-10-14用户授权线上Claude；独立开关默认关，密钥/日预算不授予权限。"""
+    if currency == "USD" and environment.get("ANTHROPIC_LIVE_ENABLED") == "1":
+        return None, None  # 按用户设置的美元日上限控制；每轮HTTP仍有上限
+    return LIMITS[currency]
+
+
+def check_authorization(currency: Currency, environment: Mapping[str, str] = os.environ) -> None:
+    amount, count = authorization_limits(currency, environment)
     if (amount is not None and amount <= 0) or (count is not None and count <= 0):
         raise ProbeError("blocked", "美元累计金额和次数授权均为0；日预算不能授予调用权限")
 
@@ -68,7 +79,7 @@ class Budget:
             raise ProbeError("validation", "计划请求数必须为正整数")
         self.check_authorization()
         used, _ = self.totals()
-        limit = LIMITS[self.currency][1]
+        limit = authorization_limits(self.currency)[1]
         if limit is not None and used + minimum > limit:
             raise ProbeError("blocked", "即使每案例只请求一次，累计授权也不足完整评测")
 
@@ -148,7 +159,7 @@ class Budget:
         ):
             trace("budget_block", run, cause="invalid", **numbers)
             raise ProbeError("blocked", "日预算非法或已禁用")
-        total_limit, request_limit = LIMITS[self.currency]
+        total_limit, request_limit = authorization_limits(self.currency)
         if (request_limit is not None and len(charges) >= request_limit) or (
             total_limit is not None and total + amount > total_limit
         ):

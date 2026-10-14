@@ -88,3 +88,4 @@
 - 长期设计已从 `plan/` 迁到 [docs/design/](design/README.md)（英文文件名，正文中文）。
 
 - [交互与记忆操作](operations/interaction-memory-eval.md)：本地验证与 Railway 私有对话的只读导出。
+- [TeamoRouter Haiku接入边界](adr/027-teamorouter-haiku.md)：固定网关、美元授权开关和保守费用。
