@@ -2,6 +2,7 @@
 
 import json
 import time
+from dataclasses import replace
 from typing import Literal
 from uuid import UUID, uuid4
 
@@ -24,6 +25,10 @@ def _chars(result: ToolResult) -> int:
         return len(json.dumps(result.payload(), ensure_ascii=False, default=str))
     except (TypeError, ValueError):
         return -1
+
+
+# 本运行已由服务端自动展示的草稿；模型随后重复调用展示工具时不再发第二张行程卡。
+_AUTO_SHOWN: dict[UUID, set[str]] = {}
 
 
 def stage_result(result: ToolResult) -> BusinessResult | None:
@@ -224,7 +229,14 @@ async def execute_observed(
                     },
                 },
             }
-    if safe_name in {"present_travel_result", "present_form"} and result.code is None:
+    already_shown = safe_name == "present_travel_result" and arguments.get(
+        "draft_id"
+    ) in _AUTO_SHOWN.get(context.run_id, ())
+    if (
+        safe_name in {"present_travel_result", "present_form"}
+        and result.code is None
+        and not already_shown
+    ):
         payload = result.payload()
     elif (
         safe_name == "update_conversation_state"
@@ -258,4 +270,45 @@ async def execute_observed(
                 presentation=payload,
             )
         )
+    shown = await auto_present(executor, context, safe_name, result)
+    if shown is not None:
+        if len(_AUTO_SHOWN) > 256:
+            _AUTO_SHOWN.clear()
+        _AUTO_SHOWN.setdefault(context.run_id, set()).add(str(result.data["draft_id"]))
+        emit(
+            RuntimeEvent(
+                context,
+                "presentation",
+                tool_name="present_travel_result",
+                tool_call_id=uuid4(),
+                presentation=shown.payload(),
+            )
+        )
+        result = replace(
+            result,
+            data={
+                **result.data,
+                "presented": "草稿已由服务端展示，不要再调用present_travel_result，直接回复用户",
+            },
+        )
     return result
+
+
+async def auto_present(
+    executor: ToolExecutor, context: RunContext, name: str, staged: ToolResult
+) -> ToolResult | None:
+    """暂存成功且无硬冲突时由服务端展示草稿，省去模型再调一次展示工具；冲突草稿仍由模型决定如何说明。"""
+    report = staged.data.get("validation")
+    draft_id = staged.data.get("draft_id")
+    if (
+        name != "stage_plan_change"
+        or staged.code is not None
+        or not isinstance(report, dict)
+        or report.get("status") == "conflict"
+        or not isinstance(draft_id, str)
+    ):
+        return None
+    shown = await executor.execute(
+        context, "present_travel_result", {"component": "itinerary", "draft_id": draft_id}
+    )
+    return shown if shown.code is None else None

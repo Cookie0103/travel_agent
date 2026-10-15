@@ -121,7 +121,6 @@ def test_other_group_answers_only_become_constraint_text_and_replace_on_reask() 
     "answers",
     [
         {**BASE, "transport": ("plane",)},  # 未知option_id
-        {"pace": ("relaxed",), "companion": ("family",)},  # 缺必填题
         {**BASE, "transport": ("walk", "taxi")},  # 单选给两项
         {**BASE, "budget": ("a",)},  # 卡片没有的题目
         {**BASE, "times_corrected": ("x",)},  # 没有时间题却给更正
@@ -131,6 +130,15 @@ def test_invalid_answers_are_rejected(answers: dict[str, tuple[str, ...]]) -> No
     request = TravelRequest()
     with pytest.raises(ValueError):
         form_patch(request, build_form(request, groups(choice_group())), answers)
+
+
+def test_unanswered_groups_are_skipped_unless_the_model_marks_them_required() -> None:
+    request = TravelRequest()
+    optional = build_form(request, groups(choice_group()))
+    assert apply(request, optional, {"pace": ("relaxed",)}).transport == request.transport
+    required = build_form(request, groups(choice_group(required=True)))
+    with pytest.raises(ValueError):
+        form_patch(request, required, {"pace": ("relaxed",)})
 
 
 def test_multi_group_accepts_several_and_optional_group_may_be_skipped() -> None:
@@ -159,14 +167,20 @@ def test_separate_long_time_conditions_can_be_corrected_without_truncating_other
     kept = apply(request, form, {**answers, "times": ("yes",)})
     assert kept.hard_constraints == ("禁烟", arrival, departure, "每天08:00出发", "节奏：标准")
     bad_cases: list[dict[str, tuple[str, ...]]] = [
-        {**answers, "times_corrected": (corrected[0],)},  # 条数不符
         {**answers, "times_corrected": ("  ", departure)},  # 空白更正
+        {**answers, "times_corrected": ()},  # 选了不对却没写
         {**answers, "times": ("yes",), "times_corrected": corrected},  # 确认正确却混填更正
-        {"transport": ("walk",), "pace": ("standard",)},  # 时间题未答
+        {"transport": ("walk",), "times_corrected": corrected},  # 没答时间题却给更正
+        {},  # 一题都没答
     ]
     for bad in bad_cases:
         with pytest.raises(ValueError):
             form_patch(request, form, bad)
+    free = ("11月10日10点到，11月12日晚上9点走",)  # 自由文本：条数不必与原条件一致
+    text = apply(request, form, {**answers, "times_corrected": free})
+    assert text.hard_constraints == ("禁烟", "每天08:00出发", "节奏：标准", *free)
+    only_times = apply(request, form, {"times": ("yes",)})  # 只回答一题也可提交
+    assert only_times.hard_constraints == request.hard_constraints
 
 
 def test_answered_form_records_selection_and_corrected_times() -> None:
@@ -183,7 +197,7 @@ def test_answered_form_records_selection_and_corrected_times() -> None:
     )
     by_key = {group.key: group for group in done.groups}
     assert by_key["transport"].selected == ("taxi",)
-    assert by_key["times"].shown == ("11月10日10:00抵达",) and by_key["times"].selected == ("yes",)
+    assert by_key["times"].shown == ("11月10日10:00抵达",) and by_key["times"].selected == ("no",)
 
 
 def test_legacy_details_selection_and_card_content_are_read_as_form() -> None:

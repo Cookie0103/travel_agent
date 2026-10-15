@@ -253,8 +253,7 @@ def test_combined_details_are_saved_once_with_the_message_and_restored(
 @pytest.mark.parametrize(
     "failure",
     [
-        "incomplete",
-        "time_unanswered",
+        "empty",
         "empty_correction",
         "unknown_option",
         "two_for_single",
@@ -300,10 +299,8 @@ def test_invalid_combined_details_do_not_write_a_message_or_change_conditions(
             "pace": ["standard"],
             "times": ["yes"],
         }
-        if failure == "incomplete":
-            del answers["transport"]
-        if failure == "time_unanswered":
-            del answers["times"]
+        if failure == "empty":
+            answers.clear()
         if failure == "empty_correction":
             answers.update(times=["no"], times_corrected=["   "])
         if failure == "unknown_option":

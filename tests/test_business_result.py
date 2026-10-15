@@ -64,9 +64,12 @@ def test_read_only_result_cannot_mark_confirmation_and_metadata_is_not_public_tr
             execute_observed(Executor(), context, name, {}, events.append, definition=definition)
         )
     assert events[2].business_result is None
-    staged = events[-1].business_result
+    finished = next(
+        e for e in events if e.kind == "tool_finished" and e.tool_name == "stage_plan_change"
+    )
+    staged = finished.business_result
     assert staged is not None and staged.kind == "draft_staged"
-    assert event_metadata(events[-1]).business_result == staged
+    assert event_metadata(finished).business_result == staged
     path = tmp_path / "trace.jsonl"
     write_trace(
         path,

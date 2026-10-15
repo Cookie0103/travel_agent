@@ -29,23 +29,20 @@ export function validAnswers(card: Choice, answers: FormAnswers): boolean {
     ),
   );
   if (Object.keys(answers).some((key) => !keys.has(key))) return false;
+  if (!groups.some((g) => answers[g.key]?.length)) return false;
   return groups.every((g) => {
     const given = answers[g.key] ?? [];
-    if (g.required && !given.length) return false;
+    const fixed = answers[`${g.key}_corrected`];
+    if (!given.length) return !g.required && fixed === undefined;
     if (g.kind === "choice")
       return (
         new Set(given).size === given.length &&
         (g.multi || given.length <= 1) &&
         given.every((id) => g.options.some((o) => o.option_id === id))
       );
-    const fixed = answers[`${g.key}_corrected`];
-    if (given.length > 1 || (given.length && !["yes", "no"].includes(given[0])))
-      return false;
+    if (given.length > 1 || !["yes", "no"].includes(given[0])) return false;
     if (given[0] !== "no") return fixed === undefined;
-    return (
-      fixed?.length === g.shown?.length &&
-      fixed.every((t) => !!t.trim() && t.length <= 200)
-    );
+    return !!fixed?.length && fixed.every((t) => !!t.trim() && t.length <= 200);
   });
 }
 

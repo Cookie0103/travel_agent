@@ -41,12 +41,12 @@ class FormGroupInput(BaseModel):
     key: str = Field(min_length=1, max_length=30, pattern=KEY)
     label: str = Field(min_length=1, max_length=20)
     multi: bool = False
-    required: bool = True
+    required: bool = False
     options: tuple[FormOption, ...] = Field(default=(), max_length=6)
 
 
 class FormGroup(FormGroupInput):
-    """kind=times只由服务端按已有时间条件生成：shown为原文，答案yes/no，no时逐条更正。"""
+    """kind=times只由服务端按已有时间条件生成：shown为原文，答案yes/no，no时给自由文本更正。"""
 
     kind: Literal["choice", "times"] = "choice"
     selected: tuple[str, ...] = Field(default=(), max_length=6)  # 预选或已提交的答案
@@ -261,7 +261,7 @@ def answered_form(form: ChoiceForm, answers: dict[str, tuple[str, ...]]) -> Choi
         update: dict[str, object] = {"selected": answers.get(group.key, ())}
         if group.kind == "times":
             corrected = answers.get("times_corrected")
-            update.update(shown=corrected or group.shown, selected=("yes",))
+            update.update(shown=corrected or group.shown)
         groups.append(group.model_copy(update=update))
     return ChoiceForm(groups=tuple(groups))
 
@@ -273,6 +273,8 @@ def form_patch(
     keys = {group.key for group in form.groups}
     if set(answers) - keys - ({"times_corrected"} if TIMES_KEY in keys else set()):
         raise ValueError("答案包含卡片没有的题目")
+    if not any(answers.get(group.key) for group in form.groups):
+        raise ValueError("请至少回答一题")
     typed: dict[str, object] = {}
     hard, soft = request.hard_constraints, request.soft_constraints
     for group in form.groups:
@@ -283,6 +285,8 @@ def form_patch(
         if len(ids) > 1 and not group.multi:
             raise ValueError(f"「{group.label}」只能选一项")
         if not ids:
+            if group.kind == "times" and answers.get("times_corrected") is not None:
+                raise ValueError("时间不正确时必须填写更正；确认正确时不能混填更正")
             if group.required:
                 raise ValueError(f"请先回答「{group.label}」")
             continue
@@ -296,8 +300,8 @@ def form_patch(
             if (ids == ("no",)) != (corrected is not None):
                 raise ValueError("时间不正确时必须填写更正；确认正确时不能混填更正")
             if corrected is not None:
-                if len(corrected) != len(group.shown) or any(not t.strip() for t in corrected):
-                    raise ValueError("请逐条更正时间安排，保留未修改的部分")
+                if not corrected or any(not t.strip() for t in corrected):
+                    raise ValueError("请写出正确的抵达/离开时间")
                 hard = (*(t for t in hard if t not in group.shown), *corrected)
         else:
             prefix = f"{group.label}："

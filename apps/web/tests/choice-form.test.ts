@@ -54,7 +54,7 @@ const form = {
         label: "抵达／离开时间对吗？",
         kind: "times",
         multi: false,
-        required: true,
+        required: false,
         options: [],
         shown: ["10/20 09:00抵达", "10/22 22:00离开"],
       },
@@ -66,29 +66,36 @@ const ok = { transport: ["transit"], times: ["yes"] };
 test("answers are validated only against the card's own groups", () => {
   assert.ok(validAnswers(form, ok));
   assert.ok(validAnswers(form, { ...ok, interests: ["food", "temple"] }));
-  assert.ok(!validAnswers(form, { times: ["yes"] }), "required missing");
   assert.ok(!validAnswers(form, { ...ok, transport: ["taxi"] }), "foreign");
   assert.ok(!validAnswers(form, { ...ok, transport: ["walk", "transit"] }));
   assert.ok(!validAnswers(form, { ...ok, interests: ["food", "food"] }));
   assert.ok(!validAnswers(form, { ...ok, extra: ["x"] }), "unknown key");
-  assert.ok(!validAnswers(form, { transport: ["walk"] }), "times unresolved");
+  assert.ok(
+    validAnswers(form, { transport: ["walk"] }),
+    "times may be skipped",
+  );
+  assert.ok(
+    validAnswers(form, { times: ["yes"] }) === false,
+    "required missing",
+  );
+  assert.ok(!validAnswers(form, {}), "nothing answered");
+  assert.ok(!validAnswers(form, { ...ok, times_corrected: [] }), "stray empty");
   assert.ok(!validAnswers(form, { ...ok, times: ["maybe"] }));
   assert.ok(!validAnswers(form, { ...ok, times_corrected: ["x", "y"] }));
 });
 
-test("a rejected times answer needs one non-empty correction per shown item", () => {
+test("a rejected times answer needs free text, not one entry per shown item", () => {
   const no = { transport: ["walk"], times: ["no"] };
-  const fixed = ["10/20 10:00抵达", "10/22 21:00离开"];
-  assert.ok(validAnswers(form, { ...no, times_corrected: fixed }));
-  assert.ok(!validAnswers(form, no));
-  assert.ok(!validAnswers(form, { ...no, times_corrected: [fixed[0]] }));
-  assert.ok(!validAnswers(form, { ...no, times_corrected: [fixed[0], "  "] }));
   assert.ok(
-    !validAnswers(form, {
+    validAnswers(form, {
       ...no,
-      times_corrected: [fixed[0], "x".repeat(201)],
+      times_corrected: ["10/20 10点到，10/22 晚上9点走"],
     }),
   );
+  assert.ok(!validAnswers(form, no), "no text yet");
+  assert.ok(!validAnswers(form, { ...no, times_corrected: [""] }));
+  assert.ok(!validAnswers(form, { ...no, times_corrected: ["  "] }));
+  assert.ok(!validAnswers(form, { ...no, times_corrected: ["x".repeat(201)] }));
 });
 
 test("a form is submitted once as one structured selection", () => {

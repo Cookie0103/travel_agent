@@ -60,16 +60,15 @@ function TimesGroup({
   answers: FormAnswers;
   disabled: boolean;
   answered: boolean;
-  set: (patch: FormAnswers) => void;
+  set: (patch: Record<string, string[] | undefined>) => void;
 }) {
   const id = useId();
-  const shown = group.shown ?? [];
   const fixed = `${group.key}_corrected`;
   const state = answers[group.key]?.[0];
   return (
     <fieldset disabled={disabled} className="space-y-3">
       <legend className="mb-2 text-sm font-medium">{group.label}</legend>
-      {shown.map((text, index) => (
+      {(group.shown ?? []).map((text, index) => (
         <p className="text-sm whitespace-pre-wrap" key={index}>
           {text}
         </p>
@@ -84,10 +83,14 @@ function TimesGroup({
                 variant={state === v ? "default" : "outline"}
                 aria-pressed={state === v}
                 onClick={() =>
-                  set({
-                    [group.key]: [v],
-                    [fixed]: v === "no" ? (answers[fixed] ?? shown) : [],
-                  })
+                  set(
+                    state === v
+                      ? { [group.key]: undefined, [fixed]: undefined }
+                      : {
+                          [group.key]: [v],
+                          [fixed]: v === "no" ? [""] : undefined,
+                        },
+                  )
                 }
               >
                 {v === "yes" ? "是" : "不是"}
@@ -96,31 +99,17 @@ function TimesGroup({
           </div>
           {state === "no" && (
             <div className="space-y-2">
-              {(answers[fixed] ?? shown).map((correction, index) => (
-                <div className="space-y-2" key={index}>
-                  <label htmlFor={`${id}-${index}`} className="text-sm">
-                    请修改安排{shown.length > 1 ? ` ${index + 1}` : ""}
-                    中的日期和时间
-                  </label>
-                  <textarea
-                    id={`${id}-${index}`}
-                    className="min-h-24 w-full rounded-lg border border-border bg-bg p-3 text-sm"
-                    maxLength={200}
-                    value={correction}
-                    required
-                    onChange={(event) =>
-                      set({
-                        [fixed]: (answers[fixed] ?? shown).map((t, i) =>
-                          i === index ? event.target.value : t,
-                        ),
-                      })
-                    }
-                  />
-                </div>
-              ))}
-              <p className="small muted">
-                只修改需要更正的部分，其余安排请保留。
-              </p>
+              <label htmlFor={id} className="text-sm">
+                请写出正确的抵达／离开日期和时间
+              </label>
+              <textarea
+                id={id}
+                className="min-h-24 w-full rounded-lg border border-border bg-bg p-3 text-sm"
+                maxLength={200}
+                placeholder="例如：10月20日10点到，10月22日晚上9点走"
+                value={answers[fixed]?.[0] ?? ""}
+                onChange={(event) => set({ [fixed]: [event.target.value] })}
+              />
             </div>
           )}
         </>
@@ -147,8 +136,14 @@ export function ChoiceForm({
       groups.filter((g) => g.selected?.length).map((g) => [g.key, g.selected!]),
     ),
   );
-  const set = (patch: FormAnswers) =>
-    setAnswers((old) => ({ ...old, ...patch }));
+  const set = (patch: Record<string, string[] | undefined>) =>
+    setAnswers((old) => {
+      const next: FormAnswers = { ...old };
+      for (const [key, value] of Object.entries(patch))
+        if (value) next[key] = value;
+        else delete next[key];
+      return next;
+    });
   const ready = validAnswers(card, answers);
   return (
     <form
@@ -191,7 +186,9 @@ export function ChoiceForm({
           </Button>
           {!ready && (
             <p className="small muted">
-              完成所有必填项后一起提交；也可以在对话框里补充。
+              {answers.times?.[0] === "no"
+                ? "请写出正确的抵达／离开时间后提交。"
+                : "选好上面的选项就能提交；也可以在对话框里补充。"}
             </p>
           )}
         </>

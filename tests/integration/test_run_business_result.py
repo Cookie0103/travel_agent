@@ -153,7 +153,8 @@ def test_stage_without_presentation_uses_actual_report_and_confirmation(
         )
         await asyncio.gather(*tuple(service.tasks.values()))
         current = await service.get(context.user_id, run.run_id)
-        assert current.presentations == ()
+        # 无冲突的草稿由服务端自动展示；冲突草稿留给模型说明，不自动展示。
+        assert len(current.presentations) == (0 if closed else 1)
         result = getattr(current, "business_result", None)
         assert result is not None and result.kind == "draft_staged"
         assert result.validation_status == ("conflict" if closed else "partial")

@@ -725,7 +725,7 @@ export interface components {
         ErrorCode: "validation" | "blocked" | "unavailable" | "timeout" | "rate_limited" | "provider_error" | "conflict" | "cancelled";
         /**
          * FormGroup
-         * @description kind=times只由服务端按已有时间条件生成：shown为原文，答案yes/no，no时逐条更正。
+         * @description kind=times只由服务端按已有时间条件生成：shown为原文，答案yes/no，no时给自由文本更正。
          */
         FormGroup: {
             /** Key */
@@ -739,7 +739,7 @@ export interface components {
             multi: boolean;
             /**
              * Required
-             * @default true
+             * @default false
              */
             required: boolean;
             /**

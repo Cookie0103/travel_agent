@@ -2600,7 +2600,7 @@
           "required": {
             "type": "boolean",
             "title": "Required",
-            "default": true
+            "default": false
           },
           "options": {
             "items": {
@@ -2648,7 +2648,7 @@
           "label"
         ],
         "title": "FormGroup",
-        "description": "kind=times只由服务端按已有时间条件生成：shown为原文，答案yes/no，no时逐条更正。"
+        "description": "kind=times只由服务端按已有时间条件生成：shown为原文，答案yes/no，no时给自由文本更正。"
       },
       "FormOption": {
         "properties": {
