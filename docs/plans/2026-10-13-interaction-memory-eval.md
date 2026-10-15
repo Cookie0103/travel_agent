@@ -369,6 +369,7 @@
 | S03 | done | 用户批准Claude提速03计划：默认stage内置校验、HUMAN 4次校验/24次模型HTTP、工具不限；专项181/check390与独立审查通过；两次真实36.766s/82.149s，未稳定达到50s；最终1904passed/1skip/4deselect352.02s；本次本地提交见Git，不push |
 | S04 | done | 用户2026-10-14授权配置并推送TeamoRouter，最终模型Haiku 5.5、美元每日10；本次提交见Git；77专项、391文件检查、1918全量通过(354.17s)、三模型原生SDK离线3通过，无P1/P2；实际Claude效果由用户线上手测，见P31 |
 | S05 | done | 用户2026-10-15要求中文规则置于system prompt开头；角色规格前置并共享，保留用户明确切换语言与专有名称原文；58专项和391文件检查通过，本次提交见Git，不调用付费模型 |
+| S06 | done | 用户要求同步本地配置：.env已安全写入TeamoRouter key/地址/Haiku/启用/10USD，默认仍DeepSeek；.env.example列当前非秘密配置且key为空/默认关闭；dotenv+真实设置校验通过，.env仍Git忽略，仅提交示例与记录 |
 
 ## 5. 边界与不变量
 
@@ -388,6 +389,12 @@
 - 交付时向用户报告：分支、SHA、各关卡数字、未完成项与恢复点，以及「需要用户本人做」的事项（D7 标注、是否部署）。
 
 ## 7. 每日进展
+
+### 2026-10-15 本地模型配置同步
+- 计划：S06，补齐此前只写Railway、未同步本地的Claude配置。
+- 完成：本地.env安全写入，示例更新为当前网关/模型/10USD；配置解析和授权检查通过，没有发模型请求。
+- 未完成及原因：本地运行进程需重新启动以读取.env，由用户按需使用。
+- 下一步：只提交非秘密示例和本记录；真实key留在Git忽略的.env与Railway变量中。
 
 ### 2026-10-15 中文提示优先级
 - 计划：S05，中文默认规则移到system prompt开头。
@@ -731,6 +738,12 @@
 - check391文件、3平台严格类型、3分层与10文档入口通过。仅提示词调整，未追加全量/真实模型评测；没有调用Claude/DeepSeek或更改预算。
 - 独立只读审查gateway_review无P1/P2；核对首段、唯一语言规则、完整共享角色与业务原文，未运行模型。
 - S04部署补充：线上GET /api/models已显示Claude available=true，/api/health返回ok；这仅证明配置与服务可用，不是模型真实效果验收。
+
+### P-33 S06 本地配置遗漏（VERIFIED）
+- 用户发现看不到本地配置；dotenv读取确认.env缺少Anthropic key/地址/模型/开关，USD为0；示例有变量但仍旧Haiku、地址空。此前Railway配置已完成，本地同步遗漏。
+- 从Railway变量通过内存读取key并用dotenv.set_key写本地.env，不打印/不写命令参数；非秘密配置为TeamoRouter根地址、claude-haiku-5-5、启用1、10USD。补LLM_PROVIDER=deepseek，避免默认开发命令转入Claude；不改其他供应商配置。
+- 示例同样列出当前地址/模型/10USD，真实key为空，授权开关默认0；密钥和示例日预算不自动授权。本地load_runtime_settings/check_authorization及示例解析直接验证通过，git check-ignore确认.env不提交。
+- 配置文件修改无新增产品逻辑/测试，无Claude或DeepSeek请求；真实key只在本地被忽略文件与Railway秘密变量中。
 
 ## 9. 验证与交付
 
