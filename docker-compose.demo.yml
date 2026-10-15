@@ -1,0 +1,75 @@
+services:
+  postgres:
+    image: postgres:17
+    environment:
+      POSTGRES_USER: travel_demo
+      POSTGRES_PASSWORD: ${DEMO_DB_PASSWORD:?Run dev stack-up to create private demo settings}
+      POSTGRES_DB: travel_demo
+    ports:
+      - "127.0.0.1:5544:5432"
+    volumes:
+      - demo_postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travel_demo -d travel_demo"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+  bootstrap:
+    image: travel-agent-demo-backend
+    build:
+      context: .
+      dockerfile: docker/backend.Dockerfile
+    environment: &business-env
+      DATABASE_URL: postgresql+psycopg://travel_demo:${DEMO_DB_PASSWORD}@postgres:5432/travel_demo
+      DEMO_MODE: "true"
+      MOCK_SUPPLIER_URL: http://mock_supplier:8001
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: ["python", "-m", "scripts.bootstrap_demo"]
+  api:
+    image: travel-agent-demo-backend
+    environment: *business-env
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8100:8000"
+    volumes:
+      - demo_runtime:/app/.cache
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+  mock_supplier:
+    image: travel-agent-demo-backend
+    environment: *business-env
+    depends_on:
+      bootstrap:
+        condition: service_completed_successfully
+    command: ["python", "-m", "mock_supplier.server", "--host", "0.0.0.0"]
+    ports:
+      - "127.0.0.1:8101:8001"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8001/openapi.json', timeout=3)"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+  web:
+    build:
+      context: .
+      dockerfile: docker/web.Dockerfile
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:3100:3000"
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))"]
+      interval: 5s
+      timeout: 4s
+      retries: 20
+volumes:
+  demo_postgres:
+  demo_runtime:

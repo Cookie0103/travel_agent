@@ -1,0 +1,38 @@
+{
+  "date": "2026-10-03",
+  "scope": "M1.8 workbench; fixed offline scripts with actual API and PostgreSQL; no paid model calls",
+  "base_commit": "e40c259",
+  "checks": {
+    "python": "326 passed, 2 live deselected;38.14s",
+    "static": "145 files strict types/ruff/format,3 import contracts,10 document maps",
+    "frontend": "TypeScript,Next ESLint,Prettier,6 native Node tests,Next production build passed",
+    "remote_ci": "configured;not remotely executed"
+  },
+  "browser_scenarios": [
+    "create demo identity and save conditions revision1",
+    "compare 3 canonical fictional hotel offers",
+    "stage 6 visits and display partial validation",
+    "confirm formal V1",
+    "modify only second-day afternoon:1 diff and preserve hotel",
+    "confirm V2,lock fourth item producing V3",
+    "attempt locked change:failed and formal V3 remains",
+    "reload restores formal plan and lock state",
+    "change budget after draft:old revision blocked confirmation",
+    "regenerate under revision2:confirmation enabled;confirm and reload formal V1",
+    "live message with explicit checkbox while API live disabled:403 visible, no paid request"
+  ],
+  "responsive": {
+    "mobile": "390x844; stacked conditions/workspace",
+    "desktop": "default viewport;2 columns"
+  },
+  "screenshots": [
+    "m18-workbench-mobile.jpg",
+    "m18-workbench-desktop.jpg"
+  ],
+  "limitations": [
+    "offline presets do not measure model planning quality",
+    "browser lost-response injection not performed; pure client retry/recovery tests and real PostgreSQL idempotency tests cover components;M2 process/network failure experiment remains",
+    "full multilingual usability and production authentication not claimed",
+    "remote CI and future milestones remain incomplete"
+  ]
+}

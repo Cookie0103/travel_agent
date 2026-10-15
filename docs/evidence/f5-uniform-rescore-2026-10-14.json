@@ -1,0 +1,34 @@
+{
+  "date": "2026-10-14",
+  "evidence": "VERIFIED",
+  "scope": "F5统一重算全部旧轨迹；没有新模型调用；不是当前修复源码的模型验收",
+  "root": ".cache/batch-2026-10-14/f5-reviewed",
+  "raw_f0_hashes": ".cache/batch-2026-10-14/f0-original-hashes.json",
+  "source_events": "各summary记录F5首次读取前补充冻结的SDK事件hash及时间，重算后复核；不冒称F0已冻结这些SDK文件",
+  "results": [
+    {"suite": "e7", "n": 24, "original_passed": 19, "previous_passed": 19, "v3_passed": 16,
+     "unknown_claim_n": 2, "unknown_reoffer_n": 0, "sdk_files": 35,
+     "raw_sha256": "652e7ae7bca39085a234a112847c569fe0d697138cae2c40860efa9ee8e7f3e7"},
+    {"suite": "pace", "n": 3, "original_passed": 3, "previous_passed": null, "v3_passed": 3,
+     "unknown_claim_n": 0, "sdk_files": 0,
+     "raw_sha256": "0f84838f1c7074b0b9bf3a2f6c65bc4468382e94f9b428fa4d71428087b841a1"},
+    {"suite": "e5", "n": 24, "original_passed": 24, "previous_passed": null, "v3_passed": 20,
+     "unknown_claim_n": 0, "sdk_files": 24,
+     "raw_sha256": "316b7e526feb7138c3745e25e61363c60245d4ab8570ff5551efa1f8fb0db1cc"}
+  ],
+  "status_changes": [
+    {"case_id": "v2-user-budget-accept", "trial": 3, "old": "passed", "new": "failed", "checks": ["claim_consistency"]},
+    {"case_id": "v2-user-budget-reject", "trial": 1, "old": "passed", "new": "failed", "checks": ["no_reoffer_after_decline"]},
+    {"case_id": "v2-user-memory-cross", "trial": 1, "old": "failed", "new": "passed", "checks": ["recall"]},
+    {"case_id": "v2-user-three-segments", "trial": 2, "old": "passed", "new": "failed", "checks": ["saved_items_cover_segments", "claim_consistency"]},
+    {"case_id": "v2-user-three-segments", "trial": 3, "old": "passed", "new": "failed", "checks": ["saved_items_cover_segments"]},
+    {"case_id": "v2-400", "trial": 1, "old": "passed", "new": "failed", "checks": ["claim_consistency"]},
+    {"case_id": "v2-budget-none", "trial": 1, "old": "passed", "new": "failed", "checks": ["claim_consistency"]},
+    {"case_id": "v2-400", "trial": 2, "old": "passed", "new": "failed", "checks": ["claim_consistency"]},
+    {"case_id": "v2-budget-none", "trial": 3, "old": "passed", "new": "failed", "checks": ["claim_consistency"]}
+  ],
+  "limitations": ["说法探针仅确定性词面粗检，未人工校准", "saved_three仅酒店段数；新增日期探针覆盖11月3日至6日并核对三段日期", "未知检查不判成通过或失败，独立计数；总规则分不能代表所有语义已确认", "首次旧目录v3试算保留，最终统一审阅版以root为准"],
+  "new_http_attempts": 0,
+  "new_cost_cny": "0",
+  "cloud_upload": false
+}

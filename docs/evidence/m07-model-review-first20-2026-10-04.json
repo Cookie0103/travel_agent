@@ -1,0 +1,106 @@
+{
+  "version": "m07-model-review-first20-v1",
+  "selection": "original first20-v1 unchanged; content then persona once; no replacement/retry",
+  "input_sha256": "77b119c64c8a00663f54a8aa2cf70d730d95108b3ada7288b342603004851dde",
+  "human_ratings": 0,
+  "paired": 0,
+  "groups": {
+    "content": {
+      "n": 20,
+      "http_attempts": 20,
+      "cost_cny": "0.035082",
+      "statuses": {
+        "scored": 19,
+        "judge_error": 1,
+        "runtime_error": 0,
+        "not_run": 0
+      },
+      "calibration": {
+        "status": "pending",
+        "dimensions": {
+          "relevance": {
+            "status": "pending",
+            "samples": 20,
+            "paired": 0,
+            "judge_errors": 1,
+            "judge_models": [
+              "deepseek-flash"
+            ],
+            "within_one_rate": null,
+            "exact_rate": null
+          },
+          "explanation": {
+            "status": "pending",
+            "samples": 20,
+            "paired": 0,
+            "judge_errors": 1,
+            "judge_models": [
+              "deepseek-flash"
+            ],
+            "within_one_rate": null,
+            "exact_rate": null
+          },
+          "tradeoffs": {
+            "status": "pending",
+            "samples": 20,
+            "paired": 0,
+            "judge_errors": 1,
+            "judge_models": [
+              "deepseek-flash"
+            ],
+            "within_one_rate": null,
+            "exact_rate": null
+          }
+        },
+        "limitations": "内容模型分不证明事实准确；真人三维配对分别校准"
+      },
+      "file_sha256": {
+        "manifest.json": "5fd76667f3c59fb6f2e9e4f107f70d152d15a0d2182ad119aa6b2035bb1885f0",
+        "attempts.jsonl": "b1831a92057be7a655e650a4412fb791e86672a51c154d89a7729f19397436eb",
+        "results.jsonl": "c9a0342d9f6325cc72fec8a3976057866bd10d85b59b5b8c66da0b1f8dfae125",
+        "samples.jsonl": "218c0e970ea79d983acb3f2cd2a7d2c531ad737c5a8975c40b2e564de02ee2bc"
+      }
+    },
+    "persona": {
+      "n": 20,
+      "http_attempts": 20,
+      "cost_cny": "0.037730",
+      "statuses": {
+        "scored": 20,
+        "judge_error": 0,
+        "runtime_error": 0,
+        "not_run": 0
+      },
+      "calibration": {
+        "status": "pending",
+        "samples": 20,
+        "paired": 0,
+        "judge_errors": 0,
+        "judge_models": [
+          "deepseek-flash"
+        ],
+        "within_one_rate": null,
+        "exact_rate": null
+      },
+      "file_sha256": {
+        "manifest.json": "c1a775a2caa18fa24731b43b0f2930295ee44d3df7346f3f7aed8ad79e3d3361",
+        "attempts.jsonl": "c6c6db236b204c08d2f1937af780bf4bbb004698b7d0e4e8ed881578f75d9322",
+        "results.jsonl": "9508e561a2e17d74888ad3dc9d5d33634d23a02f4a96af8f437417bcfd307706",
+        "samples.jsonl": "b8c564703186ec2b66bd9e9b8ee1d45dcc9b1b2de915f0188b33045d044ebb31"
+      }
+    }
+  },
+  "failed_content_case": {
+    "case_id": "test-hotel-policy",
+    "error": "missing_required_reason",
+    "http_attempts": 1,
+    "retry": false
+  },
+  "limitations": [
+    "First20 selection is not full40 or a representative quality estimate",
+    "Model scores do not verify travel facts and do not replace human scores",
+    "19 valid content scores; original missing reason is retained, not assigned a score",
+    "No frozen test/rubric changes or paid retries",
+    "Both groups use existing DeepSeek/Claude Agent SDK temp0 zero tools; no Claude provider call"
+  ]
+}

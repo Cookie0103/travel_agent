@@ -1,0 +1,15 @@
+repos:
+  - repo: local
+    hooks:
+      - id: project-check
+        name: dev check
+        entry: uv run python scripts/dev.py check
+        language: system
+        pass_filenames: false
+        always_run: true
+      - id: project-test
+        name: dev test (offline)
+        entry: uv run python scripts/dev.py test
+        language: system
+        pass_filenames: false
+        always_run: true

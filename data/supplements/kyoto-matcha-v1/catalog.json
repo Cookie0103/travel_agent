@@ -1,0 +1,56 @@
+[
+  {
+    "place_id": "osm:node/4775546783",
+    "osm_id": "node/4775546783",
+    "city": "京都",
+    "name": "茶寮都路里",
+    "aliases": [
+      "Gion Tsujiri",
+      "茶寮都路里"
+    ],
+    "latitude": 35.0037031,
+    "longitude": 135.7744753,
+    "coordinate_kind": "node",
+    "category": "cafe",
+    "indoor": null,
+    "opening_hours": null,
+    "source": {
+      "provider": "osm",
+      "source_ref": "https://www.openstreetmap.org/node/4775546783",
+      "content_version": "7d166a1a8bdef308bc15e0f9bb091fcf407ef3acc74d8486167974bb21fe06fb:curation-v1",
+      "retrieved_at": "2026-10-03T22:41:05.991888Z",
+      "license": "ODbL-1.0",
+      "license_url": "https://opendatacommons.org/licenses/odbl/1-0/",
+      "attribution": "© OpenStreetMap contributors",
+      "data_mode": "snapshot"
+    },
+    "field_sources": {
+      "name": "https://www.openstreetmap.org/node/4775546783",
+      "aliases": "https://www.openstreetmap.org/node/4775546783",
+      "coordinates": "https://www.openstreetmap.org/node/4775546783",
+      "category": "https://www.openstreetmap.org/node/4775546783",
+      "indoor": "https://www.openstreetmap.org/node/4775546783",
+      "opening_hours": "https://www.openstreetmap.org/node/4775546783"
+    }
+  },
+  {
+    "article_id": "wv:5352679:kyoto-matcha-curation-v1",
+    "city": "京都",
+    "title": "京都东山 · 茶寮都路里与抹茶甜品",
+    "text": "茶寮都路里位于京都祇园，英文Wikivoyage京都东山条目介绍了这家店的抹茶（matcha）巴菲和绿茶口味甜品。地点名称及坐标见对应OpenStreetMap对象。两条OSM节点位置相近，可能重复或对应不同楼层；本补充包只保留已核对的茶寮地点，不把未经核对的节点算作另一家甜品店。攻略中的营业时段和历史价格不能作为实时保证；本次OSM营业时段与店铺官方页面也不一致，因此结构化营业时间保持未知，当前价格、是否全部室内和排队时长也未知。旅行安排前应核对店铺当天营业及菜单，不应把历史价格当作预算内已确认报价。",
+    "category": "food",
+    "mentioned_places": [
+      "osm:node/4775546783"
+    ],
+    "source": {
+      "provider": "wikivoyage",
+      "source_ref": "https://en.wikivoyage.org/w/index.php?oldid=5352679",
+      "content_version": "5352679:curation-v1",
+      "retrieved_at": "2026-10-03T22:41:00.763327Z",
+      "license": "CC-BY-SA-4.0",
+      "license_url": "https://creativecommons.org/licenses/by-sa/4.0/",
+      "attribution": "© Wikivoyage contributors（Kyoto/Higashiyama条目，作者见来源页历史）；中文节选改写，保留CC BY-SA 4.0",
+      "data_mode": "snapshot"
+    }
+  }
+]

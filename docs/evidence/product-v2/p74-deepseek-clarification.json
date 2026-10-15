@@ -1,0 +1,61 @@
+{
+  "kind": "real DeepSeek with business providers disabled",
+  "first": {
+    "status": "completed",
+    "code": null,
+    "tools": [
+      {
+        "tool": "update_conversation_state",
+        "code": null
+      }
+    ],
+    "pending_tasks": [
+      "hotel_comparison"
+    ],
+    "awaiting_field": null,
+    "missing_fields": [
+      "hotel_search_location"
+    ],
+    "city_unchanged": true,
+    "no_default_location": true,
+    "nights": 1,
+    "lodging_budget_unknown": true,
+    "google_enabled": false,
+    "rakuten_enabled": false
+  },
+  "second": {
+    "status": "completed",
+    "code": null,
+    "tools": [
+      {
+        "tool": "update_travel_request",
+        "code": null
+      },
+      {
+        "tool": "update_conversation_state",
+        "code": "conflict"
+      },
+      {
+        "tool": "search_hotel_offers",
+        "code": "unavailable"
+      },
+      {
+        "tool": "update_conversation_state",
+        "code": null
+      }
+    ],
+    "pending_tasks": [
+      "hotel_comparison"
+    ],
+    "awaiting_field": null,
+    "missing_fields": [],
+    "city_unchanged": true,
+    "specified_location": true,
+    "nights": 1,
+    "lodging_budget_unknown": true,
+    "google_enabled": false,
+    "rakuten_enabled": false
+  },
+  "limits": "existing default profile and daily budget; no changed call caps",
+  "interpretation": "clarification and short-answer field mapping verified; supplier quotes and full itinerary not verified"
+}

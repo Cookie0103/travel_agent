@@ -1,0 +1,1086 @@
+{
+  "scope": "VERIFIED local offline synthetic Chrome + PostgreSQL; no model/provider/production calls; fixture extraction is finite, SDK model extraction not live-verified",
+  "relative_date": "2026-10-08 JST: 下周末 means next calendar week 2026-10-17..18; actual dates echoed",
+  "snapshots": {
+    "first": {
+      "revision": 1,
+      "conditions": {
+        "city": "札幌",
+        "rooms": null,
+        "adults": 2,
+        "budget": "80000",
+        "currency": "JPY",
+        "end_date": "2026-10-18",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": null,
+        "child_ages": [
+          5
+        ],
+        "start_date": "2026-10-17",
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "field_sources": {
+          "city": "conversation",
+          "adults": "conversation",
+          "budget": "conversation",
+          "end_date": "conversation",
+          "child_ages": "conversation",
+          "start_date": "conversation"
+        },
+        "lodging_budget": null,
+        "source_revision": 1
+      },
+      "relation": {
+        "status": "unknown",
+        "total_lower": null,
+        "total_upper": null,
+        "currency": null,
+        "message": "住宿预算未知；不会按全程预算自动分配。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+      "evidence_kinds": [],
+      "field_sources": {
+        "city": "conversation",
+        "start_date": "conversation",
+        "end_date": "conversation",
+        "timezone": "none",
+        "adults": "conversation",
+        "child_ages": "conversation",
+        "rooms": "none",
+        "budget": "conversation",
+        "currency": "none",
+        "lodging_budget": "none",
+        "transport": "none",
+        "departure_time": "none",
+        "interests": "none",
+        "hard_constraints": "none",
+        "soft_constraints": "none"
+      },
+      "soft_constraints": [],
+      "session_id": "2c98dda6-a6ec-4bc5-bbbf-ec3d14d18a1e"
+    },
+    "manual": {
+      "revision": 2,
+      "conditions": {
+        "city": "札幌",
+        "rooms": null,
+        "adults": 4,
+        "budget": "80000",
+        "currency": "JPY",
+        "end_date": "2026-10-18",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": null,
+        "child_ages": [
+          5
+        ],
+        "start_date": "2026-10-17",
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "field_sources": {
+          "city": "conversation",
+          "adults": "user_form",
+          "budget": "conversation",
+          "end_date": "conversation",
+          "child_ages": "conversation",
+          "start_date": "conversation"
+        },
+        "lodging_budget": null,
+        "source_revision": 2
+      },
+      "relation": {
+        "status": "unknown",
+        "total_lower": null,
+        "total_upper": null,
+        "currency": null,
+        "message": "住宿预算未知；不会按全程预算自动分配。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+      "evidence_kinds": [],
+      "field_sources": {
+        "city": "conversation",
+        "start_date": "conversation",
+        "end_date": "conversation",
+        "timezone": "none",
+        "adults": "user_form",
+        "child_ages": "conversation",
+        "rooms": "none",
+        "budget": "conversation",
+        "currency": "none",
+        "lodging_budget": "none",
+        "transport": "none",
+        "departure_time": "none",
+        "interests": "none",
+        "hard_constraints": "none",
+        "soft_constraints": "none"
+      },
+      "soft_constraints": [],
+      "session_id": "2c98dda6-a6ec-4bc5-bbbf-ec3d14d18a1e"
+    },
+    "vague": {
+      "revision": 2,
+      "conditions": {
+        "city": "札幌",
+        "rooms": null,
+        "adults": 4,
+        "budget": "80000",
+        "currency": "JPY",
+        "end_date": "2026-10-18",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": null,
+        "child_ages": [
+          5
+        ],
+        "start_date": "2026-10-17",
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "field_sources": {
+          "city": "conversation",
+          "adults": "user_form",
+          "budget": "conversation",
+          "end_date": "conversation",
+          "child_ages": "conversation",
+          "start_date": "conversation"
+        },
+        "lodging_budget": null,
+        "source_revision": 2
+      },
+      "relation": {
+        "status": "unknown",
+        "total_lower": null,
+        "total_upper": null,
+        "currency": null,
+        "message": "住宿预算未知；不会按全程预算自动分配。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+      "evidence_kinds": [],
+      "field_sources": {
+        "city": "conversation",
+        "start_date": "conversation",
+        "end_date": "conversation",
+        "timezone": "none",
+        "adults": "user_form",
+        "child_ages": "conversation",
+        "rooms": "none",
+        "budget": "conversation",
+        "currency": "none",
+        "lodging_budget": "none",
+        "transport": "none",
+        "departure_time": "none",
+        "interests": "none",
+        "hard_constraints": "none",
+        "soft_constraints": "none"
+      },
+      "soft_constraints": [],
+      "session_id": "2c98dda6-a6ec-4bc5-bbbf-ec3d14d18a1e"
+    },
+    "explicit": {
+      "revision": 3,
+      "conditions": {
+        "city": "札幌",
+        "rooms": null,
+        "adults": 3,
+        "budget": "80000",
+        "currency": "JPY",
+        "end_date": "2026-10-18",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": null,
+        "child_ages": [
+          5
+        ],
+        "start_date": "2026-10-17",
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "field_sources": {
+          "city": "conversation",
+          "adults": "conversation",
+          "budget": "conversation",
+          "end_date": "conversation",
+          "child_ages": "conversation",
+          "start_date": "conversation"
+        },
+        "lodging_budget": null,
+        "source_revision": 3
+      },
+      "relation": {
+        "status": "unknown",
+        "total_lower": null,
+        "total_upper": null,
+        "currency": null,
+        "message": "住宿预算未知；不会按全程预算自动分配。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+      "evidence_kinds": [],
+      "field_sources": {
+        "city": "conversation",
+        "start_date": "conversation",
+        "end_date": "conversation",
+        "timezone": "none",
+        "adults": "conversation",
+        "child_ages": "conversation",
+        "rooms": "none",
+        "budget": "conversation",
+        "currency": "none",
+        "lodging_budget": "none",
+        "transport": "none",
+        "departure_time": "none",
+        "interests": "none",
+        "hard_constraints": "none",
+        "soft_constraints": "none"
+      },
+      "soft_constraints": [],
+      "session_id": "2c98dda6-a6ec-4bc5-bbbf-ec3d14d18a1e"
+    },
+    "negative": {
+      "revision": 3,
+      "conditions": {
+        "city": "札幌",
+        "rooms": null,
+        "adults": 3,
+        "budget": "80000",
+        "currency": "JPY",
+        "end_date": "2026-10-18",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": null,
+        "child_ages": [
+          5
+        ],
+        "start_date": "2026-10-17",
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "field_sources": {
+          "city": "conversation",
+          "adults": "conversation",
+          "budget": "conversation",
+          "end_date": "conversation",
+          "child_ages": "conversation",
+          "start_date": "conversation"
+        },
+        "lodging_budget": null,
+        "source_revision": 3
+      },
+      "relation": {
+        "status": "unknown",
+        "total_lower": null,
+        "total_upper": null,
+        "currency": null,
+        "message": "住宿预算未知；不会按全程预算自动分配。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+      "evidence_kinds": [],
+      "field_sources": {
+        "city": "conversation",
+        "start_date": "conversation",
+        "end_date": "conversation",
+        "timezone": "none",
+        "adults": "conversation",
+        "child_ages": "conversation",
+        "rooms": "none",
+        "budget": "conversation",
+        "currency": "none",
+        "lodging_budget": "none",
+        "transport": "none",
+        "departure_time": "none",
+        "interests": "none",
+        "hard_constraints": "none",
+        "soft_constraints": "none"
+      },
+      "soft_constraints": [],
+      "session_id": "2c98dda6-a6ec-4bc5-bbbf-ec3d14d18a1e"
+    },
+    "budget-pace": {
+      "revision": 4,
+      "conditions": {
+        "city": "札幌",
+        "rooms": 1,
+        "adults": 3,
+        "budget": "60000",
+        "currency": "JPY",
+        "end_date": "2026-10-18",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": null,
+        "child_ages": [
+          5
+        ],
+        "start_date": "2026-10-17",
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": [
+          "节奏：慢节奏"
+        ]
+      },
+      "request_details": {
+        "field_sources": {
+          "city": "conversation",
+          "rooms": "conversation",
+          "adults": "conversation",
+          "budget": "conversation",
+          "end_date": "conversation",
+          "child_ages": "conversation",
+          "start_date": "conversation",
+          "lodging_budget": "conversation",
+          "soft_constraints": "conversation"
+        },
+        "lodging_budget": {
+          "basis": "per_room_night",
+          "amount": {
+            "lower": "20000",
+            "upper": "30000"
+          },
+          "currency": "JPY"
+        },
+        "source_revision": 4
+      },
+      "relation": {
+        "status": "within",
+        "total_lower": "20000",
+        "total_upper": "30000",
+        "currency": "JPY",
+        "message": "住宿预算上限未超过全程预算；其他旅行费用仍需核实。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+      "run_results": [
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        }
+      ],
+      "evidence_kinds": [],
+      "field_sources": {
+        "city": "conversation",
+        "start_date": "conversation",
+        "end_date": "conversation",
+        "timezone": "none",
+        "adults": "conversation",
+        "child_ages": "conversation",
+        "rooms": "conversation",
+        "budget": "conversation",
+        "currency": "none",
+        "lodging_budget": "conversation",
+        "transport": "none",
+        "departure_time": "none",
+        "interests": "none",
+        "hard_constraints": "none",
+        "soft_constraints": "conversation"
+      },
+      "soft_constraints": [
+        "节奏：慢节奏"
+      ],
+      "session_id": "2c98dda6-a6ec-4bc5-bbbf-ec3d14d18a1e"
+    },
+    "room-only": {
+      "revision": 1,
+      "conditions": {
+        "city": null,
+        "rooms": 1,
+        "adults": null,
+        "budget": null,
+        "currency": "JPY",
+        "end_date": null,
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": null,
+        "child_ages": null,
+        "start_date": null,
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "field_sources": {
+          "rooms": "conversation"
+        },
+        "lodging_budget": null,
+        "source_revision": 1
+      },
+      "relation": {
+        "status": "unknown",
+        "total_lower": null,
+        "total_upper": null,
+        "currency": null,
+        "message": "住宿预算未知；不会按全程预算自动分配。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+      "run_results": [
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        }
+      ],
+      "evidence_kinds": [],
+      "field_sources": {
+        "city": "none",
+        "start_date": "none",
+        "end_date": "none",
+        "timezone": "none",
+        "adults": "none",
+        "child_ages": "none",
+        "rooms": "conversation",
+        "budget": "none",
+        "currency": "none",
+        "lodging_budget": "none",
+        "transport": "none",
+        "departure_time": "none",
+        "interests": "none",
+        "hard_constraints": "none",
+        "soft_constraints": "none"
+      },
+      "soft_constraints": [],
+      "session_id": "334ec0c8-da40-4457-8ba8-55628b8b71a2"
+    },
+    "positive": {
+      "revision": 2,
+      "conditions": {
+        "city": "札幌",
+        "rooms": 1,
+        "adults": null,
+        "budget": null,
+        "currency": "JPY",
+        "end_date": null,
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": null,
+        "child_ages": null,
+        "start_date": null,
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": []
+      },
+      "request_details": {
+        "field_sources": {
+          "city": "conversation",
+          "rooms": "conversation"
+        },
+        "lodging_budget": null,
+        "source_revision": 2
+      },
+      "relation": {
+        "status": "unknown",
+        "total_lower": null,
+        "total_upper": null,
+        "currency": null,
+        "message": "住宿预算未知；不会按全程预算自动分配。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+      "run_results": [
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        }
+      ],
+      "evidence_kinds": [],
+      "field_sources": {
+        "city": "conversation",
+        "start_date": "none",
+        "end_date": "none",
+        "timezone": "none",
+        "adults": "none",
+        "child_ages": "none",
+        "rooms": "conversation",
+        "budget": "none",
+        "currency": "none",
+        "lodging_budget": "none",
+        "transport": "none",
+        "departure_time": "none",
+        "interests": "none",
+        "hard_constraints": "none",
+        "soft_constraints": "none"
+      },
+      "soft_constraints": [],
+      "session_id": "334ec0c8-da40-4457-8ba8-55628b8b71a2"
+    },
+    "foreign-trip": {
+      "revision": 4,
+      "conditions": {
+        "city": "札幌",
+        "rooms": 1,
+        "adults": 3,
+        "budget": "60000",
+        "currency": "JPY",
+        "end_date": "2026-10-18",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": null,
+        "child_ages": [
+          5
+        ],
+        "start_date": "2026-10-17",
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": [
+          "节奏：慢节奏"
+        ]
+      },
+      "request_details": {
+        "field_sources": {
+          "city": "conversation",
+          "rooms": "conversation",
+          "adults": "conversation",
+          "budget": "conversation",
+          "end_date": "conversation",
+          "child_ages": "conversation",
+          "start_date": "conversation",
+          "lodging_budget": "conversation",
+          "soft_constraints": "conversation"
+        },
+        "lodging_budget": {
+          "basis": "per_room_night",
+          "amount": {
+            "lower": "20000",
+            "upper": "30000"
+          },
+          "currency": "JPY"
+        },
+        "source_revision": 4
+      },
+      "relation": {
+        "status": "within",
+        "total_lower": "20000",
+        "total_upper": "30000",
+        "currency": "JPY",
+        "message": "住宿预算上限未超过全程预算；其他旅行费用仍需核实。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+      "run_results": [
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "text",
+            "completed"
+          ]
+        }
+      ],
+      "evidence_kinds": [],
+      "field_sources": {
+        "city": "conversation",
+        "start_date": "conversation",
+        "end_date": "conversation",
+        "timezone": "none",
+        "adults": "conversation",
+        "child_ages": "conversation",
+        "rooms": "conversation",
+        "budget": "conversation",
+        "currency": "none",
+        "lodging_budget": "conversation",
+        "transport": "none",
+        "departure_time": "none",
+        "interests": "none",
+        "hard_constraints": "none",
+        "soft_constraints": "conversation"
+      },
+      "soft_constraints": [
+        "节奏：慢节奏"
+      ],
+      "session_id": "2c98dda6-a6ec-4bc5-bbbf-ec3d14d18a1e"
+    },
+    "foreign-lodging": {
+      "revision": 5,
+      "conditions": {
+        "city": "札幌",
+        "rooms": 1,
+        "adults": 3,
+        "budget": "60000",
+        "currency": "JPY",
+        "end_date": "2026-10-18",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": null,
+        "child_ages": [
+          5
+        ],
+        "start_date": "2026-10-17",
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": [
+          "节奏：慢节奏"
+        ]
+      },
+      "request_details": {
+        "field_sources": {
+          "city": "conversation",
+          "rooms": "conversation",
+          "adults": "conversation",
+          "budget": "conversation",
+          "end_date": "conversation",
+          "child_ages": "conversation",
+          "start_date": "conversation",
+          "lodging_budget": "conversation",
+          "soft_constraints": "conversation"
+        },
+        "lodging_budget": {
+          "basis": "per_room_night",
+          "amount": {
+            "lower": "20000",
+            "upper": "20000"
+          },
+          "currency": "EUR"
+        },
+        "source_revision": 5
+      },
+      "relation": {
+        "status": "unknown",
+        "total_lower": "20000",
+        "total_upper": "20000",
+        "currency": "EUR",
+        "message": "全程预算未知或两个预算币种不同，无法判断；不估算、不换汇。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+      "run_results": [
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        }
+      ],
+      "evidence_kinds": [],
+      "field_sources": {
+        "city": "conversation",
+        "start_date": "conversation",
+        "end_date": "conversation",
+        "timezone": "none",
+        "adults": "conversation",
+        "child_ages": "conversation",
+        "rooms": "conversation",
+        "budget": "conversation",
+        "currency": "none",
+        "lodging_budget": "conversation",
+        "transport": "none",
+        "departure_time": "none",
+        "interests": "none",
+        "hard_constraints": "none",
+        "soft_constraints": "conversation"
+      },
+      "soft_constraints": [
+        "节奏：慢节奏"
+      ],
+      "session_id": "2c98dda6-a6ec-4bc5-bbbf-ec3d14d18a1e"
+    },
+    "final-restored": {
+      "revision": 6,
+      "conditions": {
+        "city": "札幌",
+        "rooms": 1,
+        "adults": 3,
+        "budget": "60000",
+        "currency": "JPY",
+        "end_date": "2026-10-18",
+        "timezone": "Asia/Tokyo",
+        "interests": [],
+        "transport": null,
+        "child_ages": [
+          5
+        ],
+        "start_date": "2026-10-17",
+        "departure_time": null,
+        "hard_constraints": [],
+        "soft_constraints": [
+          "节奏：慢节奏"
+        ]
+      },
+      "request_details": {
+        "field_sources": {
+          "city": "conversation",
+          "rooms": "conversation",
+          "adults": "conversation",
+          "budget": "conversation",
+          "end_date": "conversation",
+          "child_ages": "conversation",
+          "start_date": "conversation",
+          "lodging_budget": "conversation",
+          "soft_constraints": "conversation"
+        },
+        "lodging_budget": {
+          "basis": "per_room_night",
+          "amount": {
+            "lower": "20000",
+            "upper": "30000"
+          },
+          "currency": "JPY"
+        },
+        "source_revision": 6
+      },
+      "relation": {
+        "status": "within",
+        "total_lower": "20000",
+        "total_upper": "30000",
+        "currency": "JPY",
+        "message": "住宿预算上限未超过全程预算；其他旅行费用仍需核实。"
+      },
+      "original_version_rows": 1,
+      "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+      "run_results": [
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        },
+        {
+          "status": "completed",
+          "error_code": null,
+          "event_kinds": [
+            "started",
+            "tool_started",
+            "tool_finished",
+            "text",
+            "completed"
+          ]
+        }
+      ],
+      "evidence_kinds": [],
+      "field_sources": {
+        "city": "conversation",
+        "start_date": "conversation",
+        "end_date": "conversation",
+        "timezone": "none",
+        "adults": "conversation",
+        "child_ages": "conversation",
+        "rooms": "conversation",
+        "budget": "conversation",
+        "currency": "none",
+        "lodging_budget": "conversation",
+        "transport": "none",
+        "departure_time": "none",
+        "interests": "none",
+        "hard_constraints": "none",
+        "soft_constraints": "conversation"
+      },
+      "soft_constraints": [
+        "节奏：慢节奏"
+      ],
+      "session_id": "2c98dda6-a6ec-4bc5-bbbf-ec3d14d18a1e"
+    }
+  },
+  "ui": {
+    "gate-red": {
+      "compareEnabled": false,
+      "formGate": 1
+    },
+    "gate-green": {
+      "compareEnabled": true,
+      "formGate": 0
+    },
+    "unknown-form": {
+      "rooms": "",
+      "pace": "",
+      "lodging": "",
+      "conversationTags": 6
+    },
+    "trip-red": {
+      "selectedLabel": "未设置目的地",
+      "rightCityShown": 1
+    },
+    "trip-green": {
+      "label": "札幌",
+      "reloadedAfterConversation": false
+    },
+    "pace-summary-red": {
+      "visiblePace": 0
+    },
+    "pace-summary-green": {
+      "pace": 1
+    },
+    "room-summary-red": {
+      "roomValue": 0,
+      "empty": 1
+    },
+    "room-summary-green": {
+      "roomValue": 1,
+      "empty": 0
+    }
+  }
+}
