@@ -32,6 +32,7 @@
 | 你想了解什么 | 去哪里看 | 什么时候写 |
 | --- | --- | --- |
 | 当前做到哪里、如何恢复 | [当前批次计划](plans/2026-10-13-interaction-memory-eval.md) | 持续更新，唯一实时进度入口 |
+| 为什么慢、冲突修复与表单改造、读过哪些论文 | [计划](plans/2026-10-15-speed-repair-and-form.md)、[论文调研](proposals/2026-10-15-planning-repair-research.md) | 2026-10-15 起 |
 | 完整功能如何学习 | [review/](review/) | 按里程碑汇总，最终集中学习 |
 | 一整批完成了哪些任务 | [review/batch/](review/batch/) | 每批结束时一份总结 |
 | 什么问题让工作停下了 | [blocked/](blocked/README.md) | 遇到阻塞才记录，不是每次测试一份 |
