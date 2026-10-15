@@ -148,6 +148,10 @@ F12共22个真实SDK试验（15计划、7诊断/修复回归），账本新增25
 
 最终实测：77专项通过；391文件格式/lint/三平台严格类型、3分层和10入口全部通过；全量1918passed/1skip/4live deselect，354.17秒；新增Haiku原生SDK参数用例另由三模型专项3passed/13.90秒覆盖。只读审查无P1/P2；没有改旧测试预期，真实Claude/DeepSeek调用均0。拟提交内容密钥扫描无真实key。
 
+### S05 中文默认规则前置（2026-10-15）
+
+`dev test --path tests/test_persona.py --path tests/test_stop_nudge.py --path tests/test_evidence_ttl.py`：初次拆语言段破坏共享原文断言1失败/57通过；完整规格前置后58通过。直接调用travel_prompt核对中文是首段、只出现一次、角色原文完整共享。`dev check`391文件/三平台/三分层/10入口通过，日志`.cache/teamorouter-setup/s05-check-final.log`。不运行真实模型或整套效果评测，状态见S05/P32。
+
 
 ### S03 提速小修（2026-10-14，仅本地提交）
 

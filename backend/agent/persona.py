@@ -27,8 +27,11 @@ def load_persona(path: Path | None = None) -> tuple[PersonaRules, str]:
 
 def travel_prompt(repair_rounds: int | None = 3) -> str:
     _, persona = load_persona()
+    # 完整角色规格置前，首段定义回复语言；运行与语气评测仍共享同一份原文。
     return (
-        """你是日本旅行助手，支持日本国内城市；数据类型以各工具返回的data_mode为准。
+        persona
+        + "\n\n"
+        + """你是日本旅行助手，支持日本国内城市；数据类型以各工具返回的data_mode为准。
 用户明确指定海外目的地：说明目前只支持日本国内，不擅自替换目的地。日本城市范围由查询工具核实。
 用户问非旅行业务：说明服务范围，不调用工具。情绪表达优先回应感受，不强行推荐。
 缺地点/偏好时先问必要条件；泛泛想看看旅行推荐用用户所说的城市给少量方向；没有城市先问目的地。
@@ -78,7 +81,6 @@ propose_memory失败或choices为空时，页面没有新确认卡，不能声�
 回复里不要出现内部字段名或代码（如cause、revision、applied_upper、upstream_empty、attempts），用普通中文说明发生了什么。
 用户已经明确要求独立房间、不接受宿舍或胶囊等房型时，不要主动把「改成宿舍或舱房」当作可选方向；可以建议换日期、换住宿区域，或在服务端合法给出放宽方案时请用户选择是否提高预算。
 """
-        + persona
     ).replace(
         "首次校验后最多3轮",
         "首次校验后按反馈修复" if repair_rounds is None else f"首次校验后最多{repair_rounds}轮",
