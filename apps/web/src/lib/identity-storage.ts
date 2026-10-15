@@ -1,7 +1,6 @@
 /** Persist only the active identity; unresolved messages belong to this tab and trip. */
 import type { Identity } from "./api";
-import { validDetailsAnswer } from "./choices.ts";
-import type { components } from "./api-types";
+import { isAnswerMap, type FormSelection } from "./choices.ts";
 
 type Storage = Pick<
   globalThis.Storage,
@@ -41,18 +40,16 @@ function pending(value: unknown): Identity["pending_message"] {
       !text(chosen.option_id) ||
       !/^[a-z][a-z0-9_-]{0,39}$/.test(chosen.option_id) ||
       Object.keys(chosen).some(
-        (key) => !["choice_id", "option_id", "details"].includes(key),
+        (key) => !["choice_id", "option_id", "answers"].includes(key),
       ) ||
-      (chosen.details != null && !validDetailsAnswer(chosen.details))
+      (chosen.answers != null && !isAnswerMap(chosen.answers))
     )
       return undefined;
-    const choice: components["schemas"]["ChoiceSelection"] = {
+    const choice = {
       choice_id: chosen.choice_id,
       option_id: chosen.option_id,
-      ...(validDetailsAnswer(chosen.details)
-        ? { details: chosen.details }
-        : {}),
-    };
+      ...(chosen.answers ? { answers: chosen.answers } : {}),
+    } as FormSelection;
     selection = {
       expected_revision: value.expected_revision,
       selection: choice,

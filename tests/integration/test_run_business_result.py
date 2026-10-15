@@ -130,6 +130,7 @@ def test_interrupted_stage_result_is_unknown_even_after_an_earlier_result(
     runner.run(exercise())
 
 
+@pytest.mark.usefixtures("unrepaired")
 @pytest.mark.parametrize("closed", [False, True])
 def test_stage_without_presentation_uses_actual_report_and_confirmation(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], closed: bool

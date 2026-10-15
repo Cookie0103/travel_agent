@@ -17,7 +17,7 @@ from backend.domain.execution import RunContext
 from backend.domain.itinerary import ItineraryProposal, ProposedItem, RouteInput
 from backend.domain.plans import PlanDraft, SavedPlan, StageInput
 from backend.domain.travel_request import RequestPatch
-from backend.persistence import operations, plans
+from backend.persistence import plans
 from backend.persistence.models import (
     EvidenceRow,
     PlanDraftRow,
@@ -234,10 +234,11 @@ def test_three_city_stays_survive_confirm_restore_locks_and_item_27_patch(
 @pytest.mark.parametrize(
     "fault", ["missing", "scope", "quote", "unknown_quote", "duplicate", "duration"]
 )
-def test_segment_scope_conflicts_cannot_confirm_and_duplicate_places_cannot_stage(
+@pytest.mark.usefixtures("unrepaired")
+def test_segment_scope_conflicts_and_duplicate_places_stage_as_conflict_but_cannot_confirm(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], fault: str
 ) -> None:
-    """R06/R07/R08：真实PG拒绝漏住宿/重叠/错段报价，重复景点连暂存也拒绝。"""
+    """R06/R07/R08：漏住宿/重叠/错段报价与重复景点都暂存为冲突草稿，确认一律拒绝。"""
     runner, travel, context = travel_setup
 
     async def exercise() -> None:
@@ -284,12 +285,10 @@ def test_segment_scope_conflicts_cannot_confirm_and_duplicate_places_cannot_stag
         arguments = StageInput.model_validate(
             {"change": {"kind": "initial", "proposal": candidate.model_dump(mode="json")}}
         )
-        if fault == "duplicate":
-            with pytest.raises(ServiceError, match="重复景点"):
-                await service.stage(context, arguments)
-            return
         draft = await service.stage(context, arguments)
         assert draft.validation.status == "conflict"
+        if fault == "duplicate":
+            assert any(c.code == "repeated_place_warning" for c in draft.validation.checks)
         if fault == "duration":
             assert any(
                 c.code == "visit_duration_range" and c.status == "conflict"
@@ -383,7 +382,8 @@ def test_reads_new_plan_and_request_payload_without_writing_missing_quote_facts(
     runner.run(exercise())
 
 
-def test_reads_long_plans_and_drafts_but_rejects_duplicate_sightseeing(
+@pytest.mark.usefixtures("unrepaired")
+def test_reads_long_plans_and_drafts_but_duplicate_sightseeing_stays_a_conflict_draft(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
     """R07/R08：30项旧格式可读，锁定no-op保持payload；重复景点仍不能确认。"""
@@ -423,9 +423,11 @@ def test_reads_long_plans_and_drafts_but_rejects_duplicate_sightseeing(
             context.user_id, future.plan_id, LockInput(expected_version=1, locked_item_ids=())
         )
         assert locked == future
-        with pytest.raises(ServiceError) as staging:
-            await service.stage(context, patch_stage(future))
-        assert staging.value.code == "conflict" and "重复景点" in str(staging.value)
+        staged = await service.stage(context, patch_stage(future))  # 重复景点不再拒绝暂存
+        assert staged.validation.status == "conflict"
+        assert any(c.code == "repeated_place_warning" for c in staged.validation.checks)
+        with pytest.raises(ServiceError, match="硬冲突"):
+            await service.confirm(context.user_id, staged.draft_id)
         async with transaction(travel.database) as db:
             plan_row = await db.get(PlanRow, future.plan_id)
             draft_row = await db.get(PlanDraftRow, draft.draft_id)
@@ -606,7 +608,8 @@ async def initial_draft(
     )
 
 
-def test_repeated_sightseeing_cannot_stage_or_confirm_a_legacy_draft(
+@pytest.mark.usefixtures("unrepaired")
+def test_repeated_sightseeing_stages_as_conflict_but_cannot_confirm_a_legacy_draft(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
     """R06/R08：重复的旧提醒草稿也必须在确认时重新校验；拒绝不能生成正式版本。"""
@@ -631,11 +634,10 @@ def test_repeated_sightseeing_cannot_stage_or_confirm_a_legacy_draft(
         feedback = await PlanningService(travel).validate(context, candidate)
         assert feedback.status == "conflict"
         assert any(c.code == "repeated_place_warning" for c in feedback.checks)
-        with pytest.raises(ServiceError, match="重复景点"):
-            await service.stage(
-                context,
-                duplicate_args,
-            )
+        staged = await service.stage(context, duplicate_args)
+        assert staged.validation.status == "conflict"  # 暂存不拒绝，冲突如实随草稿
+        with pytest.raises(ServiceError, match="硬冲突"):
+            await service.confirm(context.user_id, staged.draft_id)
         async with transaction(travel.database) as db:
             row = await db.get(PlanDraftRow, valid.draft_id)
             assert row is not None
@@ -643,17 +645,14 @@ def test_repeated_sightseeing_cannot_stage_or_confirm_a_legacy_draft(
             row.payload = valid.model_copy(update={"content": duplicate_content}).model_dump(
                 mode="json"
             )
-            operations.save(
-                db, context.session_id, "stage_plan", operations.key(duplicate_args), row.payload
-            )
             drafts = await db.scalar(
                 select(func.count())
                 .select_from(PlanDraftRow)
                 .where(PlanDraftRow.plan_id == valid.plan_id)
             )
-            assert drafts == 1
-        with pytest.raises(ServiceError, match="重复景点"):
-            await service.stage(context, duplicate_args)  # 旧 operation 幂等回放也必须现算。
+            assert drafts == 2  # 正常草稿 + 上面暂存的冲突草稿
+        replay = await service.stage(context, duplicate_args)  # 幂等回放也现算校验
+        assert replay.draft_id == staged.draft_id and replay.validation.status == "conflict"
         with pytest.raises(ServiceError, match="硬冲突"):
             await service.confirm(context.user_id, valid.draft_id)
         assert await version_count(travel, valid.plan_id) == 0
@@ -766,6 +765,7 @@ def test_stage_does_not_save_and_parallel_confirm_returns_one_immutable_version(
 @pytest.mark.parametrize(
     "fault", ["expired", "revision", "evidence", "hard_conflict", "other_user"]
 )
+@pytest.mark.usefixtures("unrepaired")
 def test_invalid_confirmation_leaves_version_and_confirmation_marker_unchanged(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], fault: str
 ) -> None:
@@ -908,16 +908,23 @@ def test_four_validations_allow_staging_same_final_candidate_but_not_new_repair(
                 )
             }
         )
-        rejected = await executor.execute(
+        # 修复额度用完后新候选不再被拒：服务端暂存目前冲突最少的已校验候选，而不是没有草稿。
+        delivered = await executor.execute(
             context,
             "stage_plan_change",
             {"change": {"kind": "initial", "proposal": changed.model_dump(mode="json")}},
         )
-        assert rejected.code == "blocked"
+        assert delivered.code is None and executor.validations == 4
+        staged = await PlanService(travel).get_draft(
+            context.user_id, UUID(str(delivered.data["draft_id"]))
+        )
+        cards = staged["cards"]
+        assert isinstance(cards, list) and cards[0]["end"] == candidate.items[0].end.isoformat()
 
     runner.run(exercise())
 
 
+@pytest.mark.usefixtures("unrepaired")
 @pytest.mark.parametrize("path", ["validate_itinerary", "stage_plan_change"])
 def test_repair_cap_still_presents_conflicted_candidate_without_confirming(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], path: str
@@ -1129,5 +1136,101 @@ def test_large_partial_draft_still_presents_ids_cards_and_validation(
         assert presented.data["draft_id"] == staged.data["draft_id"] and presented.data["cards"]
         assert presented.data["cards_count"] == 24 and presented.data["changes_count"] == 24
         assert presented.data["changes_truncated"] is True and presented.data["validation"]
+
+    runner.run(exercise())
+
+
+async def staged_multi_city(
+    travel: TravelService, context: RunContext, *, count: int = 10, duplicate: bool = False
+) -> tuple[PlanService, ItineraryProposal, tuple[EvidenceRecord, ...]]:
+    example, candidate, records = multi_city_example(count)
+    changed = await travel.patch_request(
+        context,
+        RequestPatch.model_validate(
+            {
+                "expected_revision": 1,
+                "set": example.model_dump(exclude={"revision"}, exclude_none=True),
+            }
+        ),
+    )
+    candidate = candidate.model_copy(update={"expected_revision": changed.request.revision})
+    if duplicate:
+        repeated = candidate.items[2].model_copy(
+            update={"place_evidence_id": candidate.items[0].place_evidence_id}
+        )
+        candidate = candidate.model_copy(
+            update={"items": (*candidate.items[:2], repeated, *candidate.items[3:])}
+        )
+    await travel.record_evidence(context, records)
+    return PlanService(travel), candidate, records
+
+
+def initial_args(candidate: ItineraryProposal) -> StageInput:
+    return StageInput.model_validate(
+        {"change": {"kind": "initial", "proposal": candidate.model_dump(mode="json")}}
+    )
+
+
+def test_stage_repairs_a_repeated_place_server_side_and_discloses_the_drop(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """重复景点不再被拒或退回模型：服务端去掉后一次，草稿带repairs，并可确认。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        service, candidate, _ = await staged_multi_city(travel, context, duplicate=True)
+        draft = await service.stage(context, initial_args(candidate))
+        assert not any(c.code == "repeated_place_warning" for c in draft.validation.checks)
+        assert len(draft.content.items) == len(candidate.items) - 1
+        assert len(draft.repairs) == 1 and "已去掉" in draft.repairs[0]
+        assert draft.summary()["repairs"] == list(draft.repairs)
+        assert "repairs" in str(draft.summary()["guidance"])
+        shown = await service.get_draft(context.user_id, draft.draft_id)
+        assert shown["repairs"] == list(draft.repairs)
+        used = {item.place_evidence_id for item in draft.content.items}
+        assert used <= {item.place_evidence_id for item in candidate.items}  # 没有新增景点
+        assert (await service.confirm(context.user_id, draft.draft_id)).version == 1
+
+    runner.run(exercise())
+
+
+def test_hotel_swap_patch_keeps_every_stop_and_only_changes_the_stay(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """换酒店 = 只改住宿的patch：景点、顺序、时间与item_id原样保留，没有重排。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        service, candidate, records = await staged_multi_city(travel, context)
+        saved = await service.confirm(
+            context.user_id, (await service.stage(context, initial_args(candidate))).draft_id
+        )
+        first, second = saved.content.hotel_stays
+        other = next(r for r in records if r.evidence_id == first.hotel_evidence_id).model_copy(
+            update={"evidence_id": uuid4()}
+        )
+        await travel.record_evidence(context, [other])
+        swapped = first.model_copy(update={"hotel_evidence_id": other.evidence_id})
+        patch = StageInput.model_validate(
+            {
+                "change": {
+                    "kind": "patch",
+                    "plan_id": str(saved.plan_id),
+                    "patch": {
+                        "base_version": saved.version,
+                        "expected_revision": saved.request_revision,
+                        "operations": [],
+                        "hotel_stays": [
+                            swapped.model_dump(mode="json"),
+                            second.model_dump(mode="json"),
+                        ],
+                    },
+                }
+            }
+        )
+        draft = await service.stage(context, patch)
+        assert draft.hotel_changed and draft.changes == ()
+        assert draft.content.items == saved.content.items and draft.repairs == ()
+        assert draft.content.hotel_stays[0].hotel_evidence_id == other.evidence_id
 
     runner.run(exercise())

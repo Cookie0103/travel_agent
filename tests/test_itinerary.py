@@ -643,3 +643,43 @@ def test_hard_conflicts_stay_first_when_global_warnings_are_prioritized() -> Non
     assert isinstance(checks, list) and report.status == "conflict"
     assert all(c["status"] == "conflict" for c in checks[:8])
     assert any(c["code"] == "pace_warning" and c["status"] == "unknown" for c in checks[8:])
+
+
+def meal_report(*spans: tuple[str, str], day: str = "2026-11-04") -> ValidationReport:
+    records = tuple(
+        record(place().model_copy(update={"opening_hours": "24/7", "place_id": f"meal:{n}"}))
+        for n, _ in enumerate(spans)
+    )
+    proposal = ItineraryProposal(
+        expected_revision=1,
+        items=tuple(
+            item(evidence, f"{day}T{a}+09:00", f"{day}T{b}+09:00")
+            for evidence, (a, b) in zip(records, spans, strict=True)
+        ),
+    )
+    return validate_itinerary(request(), proposal, records, NOW)
+
+
+def test_meal_time_is_only_ever_unknown_and_never_a_conflict() -> None:
+    """用餐时间提示：午饭被活动占满只给unknown，绝不升级为conflict。"""
+    crowded = meal_report(("09:00", "13:00"), ("13:30", "17:00"))
+    meals = [c for c in crowded.checks if c.code == "meal_time"]
+    assert len(meals) == 1 and meals[0].status == "unknown" and "11-04午饭" in meals[0].message
+    assert not any(c.status == "conflict" for c in crowded.checks)
+    assert crowded.status == "partial"
+
+
+@pytest.mark.parametrize(
+    ("spans", "day", "missing"),
+    [
+        ((("09:00", "11:00"), ("14:00", "16:00")), "2026-11-04", None),  # 午饭有3小时空档
+        ((("07:00", "10:00"),), "2026-11-04", "早饭"),  # 首项太早，没有早饭的1小时
+        ((("09:00", "10:00"), ("17:00", "20:30")), "2026-11-04", "晚饭"),
+        ((("07:00", "13:00"), ("13:30", "20:30")), "2026-11-03", None),  # 首日放宽
+    ],
+)
+def test_meal_time_checks_breakfast_lunch_dinner_and_relaxes_first_and_last_days(
+    spans: tuple[tuple[str, str], ...], day: str, missing: str | None
+) -> None:
+    messages = [c.message for c in meal_report(*spans, day=day).checks if c.code == "meal_time"]
+    assert (not messages) if missing is None else (len(messages) == 1 and missing in messages[0])

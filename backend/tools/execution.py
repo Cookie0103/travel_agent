@@ -224,7 +224,7 @@ async def execute_observed(
                     },
                 },
             }
-    if safe_name == "present_travel_result" and result.code is None:
+    if safe_name in {"present_travel_result", "present_form"} and result.code is None:
         payload = result.payload()
     elif (
         safe_name == "update_conversation_state"

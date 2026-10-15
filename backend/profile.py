@@ -31,7 +31,7 @@ class Limits:
 
 DEFAULT = Limits(
     16, 12, 12, 90, 210, 220, 240.0, 2048,
-    {"geocode": 2, "places": 3, "routes": 12, "rakuten": 8, "weather": 1},
+    {"geocode": 2, "places": 3, "routes": 30, "rakuten": 8, "weather": 1},
     {"geocode": 50, "places": 25, "routes": 150, "rakuten": 150, "weather": 200},
 )  # fmt: skip
 RELAXED = Limits(

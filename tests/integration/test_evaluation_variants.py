@@ -101,6 +101,7 @@ def test_actual_sdk_advertises_variant_and_keeps_trip_and_preferences_unchanged(
     assert runner.run(travel.get_request(context)) == before
 
 
+@pytest.mark.usefixtures("unrepaired")
 def test_no_repairs_keeps_first_validation_and_final_stage_checks(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:

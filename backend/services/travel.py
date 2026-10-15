@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.adapters.live_data import LiveData
 from backend.domain.booking import Booking
+from backend.domain.choices import FORM_ROW_KINDS, TRANSPORT_PACE_GROUPS
 from backend.domain.conversation import (
     ConversationState,
     ConversationStateInput,
@@ -200,7 +201,7 @@ class TravelService:
                 select(ChoiceCardRow.id)
                 .where(
                     ChoiceCardRow.session_id == context.session_id,
-                    ChoiceCardRow.kind == "travel_details",
+                    ChoiceCardRow.kind.in_(FORM_ROW_KINDS),
                     ChoiceCardRow.answered_option_id.is_(None),
                     ChoiceCardRow.content["superseded"].as_boolean().is_not(True),
                 )
@@ -319,11 +320,15 @@ class TravelService:
             if update.confirm_details:
                 await ChoiceService(self).confirm_from_text(db, context, current)
             if update.cancel:
-                await ChoiceService(self).supersede_details(db, context)
+                await ChoiceService(self).supersede_forms(db, context)
             conversation.save_state(row, state)
             if update.awaiting_field in {"pace", "transport"}:
                 card = await ChoiceService(self).create_in_transaction(
-                    db, context, "travel_details", current.revision
+                    db,
+                    context,
+                    "form",
+                    current.revision,
+                    TRANSPORT_PACE_GROUPS,
                 )
                 view["choice"] = card.model_dump(mode="json")
             return view

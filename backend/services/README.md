@@ -21,4 +21,4 @@ patch/stage业务键与结果同事务，重复工具ID仍返回原结果；缓�
 RunService启动只读裁决旧执行；PG暂不可用保留安全503，恢复核对完成前禁止新执行。
 
 HistoryService只读旅行摘要与持久轮次；游标有界，来源归属由SQL约束，接口见ADR-014。
-ChoiceService的travel_details卡统一确认交通/节奏/已有时间，复用消息事务与CAS/幂等；旧卡兼容，见ADR-029。
+ChoiceService的form卡(模型经present_form出题)统一确认交通/节奏/已有时间/自拟题，复用消息事务与CAS/幂等；旧travel_details卡在读取边界兼容，见ADR-030(取代ADR-029)。

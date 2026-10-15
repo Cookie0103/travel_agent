@@ -1,6 +1,8 @@
 # ADR-029：交通、节奏与时间一次确认
 
-状态：accepted（2026-10-15，用户明确批准组合卡与统一确认）。
+状态：superseded by [ADR-030](030-generic-choice-form.md)（2026-10-15）；原决定保留作历史，旧travel_details卡与details答案仅在读取边界兼容。
+
+原状态：accepted（2026-10-15，用户明确批准组合卡与统一确认）。
 
 ## 决定
 

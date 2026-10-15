@@ -365,8 +365,8 @@ function TurnCards({
             busy={workspace.busy || workspace.restoring}
             sessionId={workspace.identity?.session_id}
             revision={workspace.request?.revision}
-            select={(optionId, details) =>
-              void workspace.selectChoice(card, optionId, mode, details)
+            select={(optionId, answers) =>
+              void workspace.selectChoice(card, optionId, mode, answers)
             }
           />
         );
@@ -380,7 +380,7 @@ function TurnCards({
           hold={workspace.holdOffer}
           choose={(card) =>
             send(
-              `我选择酒店「${card.hotel_name}」（evidence_id=${card.evidence_id}），请按它重排每天行程，每天结束于酒店。`,
+              `我选择酒店「${card.hotel_name}」（evidence_id=${card.evidence_id}），请保留已有景点和顺序，只按它调整首尾行程和时间。`,
               mode,
             )
           }

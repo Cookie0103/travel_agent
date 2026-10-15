@@ -14,7 +14,7 @@ def test_default_keeps_call_caps_with_bounded_planning_deadlines() -> None:
     assert (DEFAULT.worker_timeout, DEFAULT.process_timeout, DEFAULT.run_timeout) == (210, 220, 240)
     assert DEFAULT.max_output == 2048
     assert dict(DEFAULT.run_caps) == {
-        "geocode": 2, "places": 3, "routes": 12, "rakuten": 8, "weather": 1,
+        "geocode": 2, "places": 3, "routes": 30, "rakuten": 8, "weather": 1,
     }  # fmt: skip
     assert dict(DEFAULT.daily_defaults) == {
         "geocode": 50, "places": 25, "routes": 150, "rakuten": 150, "weather": 200,
@@ -45,7 +45,7 @@ def test_relaxed_is_larger_and_timeouts_stay_ordered(tmp_path: Path) -> None:
 
 def test_external_caps_follow_profile_and_explicit_env_wins() -> None:
     database = cast(Any, None)
-    assert ApiUsage(database, {}).run_caps["routes"] == 12
+    assert ApiUsage(database, {}).run_caps["routes"] == 30
     relaxed = ApiUsage(database, {"TRAVEL_PROFILE": "relaxed", "GOOGLE_ROUTES_DAILY_CAP": "7"})
     assert relaxed.run_caps["routes"] == 40
     assert relaxed.daily["routes"] == 7 and relaxed.daily["places"] == 150

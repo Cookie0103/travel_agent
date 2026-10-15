@@ -82,8 +82,18 @@ def test_native_sdk_roundtrips_server_owned_pace_card(
             {"expected_revision": 1, "goals": ["itinerary"], "awaiting_field": "pace"},
         ),
         (
-            sdk_tool_name("present_travel_result"),
-            {"component": "choice", "kind": "travel_details", "expected_revision": 1},
+            sdk_tool_name("present_form"),
+            {
+                "expected_revision": 1,
+                "groups": [
+                    {
+                        "key": "transport",
+                        "label": "交通方式",
+                        "options": [{"option_id": "x", "label": "模型自拟"}],
+                    },
+                    {"key": "pace", "label": "旅行节奏"},
+                ],
+            },
         ),
     )
     report, guard = run_database_worker(
@@ -100,12 +110,13 @@ def test_native_sdk_roundtrips_server_owned_pace_card(
     ]
     assert len(choices) == 2 and choices[0]["choice_id"] == choices[1]["choice_id"]
     assert [option["label"] for option in choices[0]["options"]] == ["确认并继续"]
-    assert [option["label"] for option in choices[0]["details"]["pace_options"]] == [
+    groups = {group["key"]: group for group in choices[0]["form"]["groups"]}
+    assert [option["label"] for option in groups["pace"]["options"]] == [
         "标准",
         "特种兵",
         "比较轻松",
     ]
-    assert [option["label"] for option in choices[0]["details"]["transport_options"]] == [
+    assert [option["label"] for option in groups["transport"]["options"]] == [
         "步行",
         "公共交通（公交、地铁为主）",
         "打车",

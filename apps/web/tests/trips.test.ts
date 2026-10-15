@@ -34,26 +34,23 @@ const pending = {
   mode: "offline" as const,
 };
 
-test("unacknowledged combined confirmation restores the same complete body and deduplication id", () => {
+test("a form submission restores intact and a malformed answer map is dropped", () => {
   const local = new MemoryStorage(),
     tab = new MemoryStorage();
-  const submitted = messageInput(undefined, "确认安排", "offline", {
+  const submitted = messageInput(undefined, "确认", "offline", {
     expected_revision: 3,
     selection: {
       choice_id: "card",
       option_id: "confirm",
-      details: {
-        transport: "transit",
-        pace: "标准",
-        times_correct: false,
-        corrected_times: ["10/20 10:00抵达", "10/22 21:00离开"],
-      },
+      answers: { transport: ["walk"], times: ["no"], times_corrected: ["a"] },
     },
-  });
+  } as never);
   persistIdentity(local, tab, { ...first, pending_message: submitted });
-  const restored = restoreIdentity(local, tab)?.pending_message;
-  assert.deepEqual(restored, submitted);
-  assert.equal(messageInput(restored, submitted.text, "offline"), restored);
+  assert.deepEqual(restoreIdentity(local, tab)?.pending_message, submitted);
+  const bad = JSON.parse(JSON.stringify(submitted));
+  bad.selection.answers.transport = "walk";
+  persistIdentity(local, tab, { ...first, pending_message: bad });
+  assert.equal(restoreIdentity(local, tab)?.pending_message, undefined);
 });
 
 test("segment choices survive refresh and retry without charging a new message", () => {

@@ -145,15 +145,23 @@ class PlanDraft(BaseModel):
     hotel_changed: bool
     validation: ValidationReport
     expires_at: AwareDatetime
+    repairs: tuple[str, ...] = Field(default=(), exclude_if=lambda value: not value)
 
     def summary(self) -> dict[str, object]:
+        guidance = "仅暂存草稿，未保存；用户从确认API保存前会再次校验"
+        if self.validation.status == "conflict":
+            guidance += (
+                "。草稿仍含未解决硬冲突：不能确认保存，请present_travel_result展示并如实说明"
+            )
+        if self.repairs:
+            guidance += "。repairs是服务端自动做的改动（含去掉的景点），回复里必须逐条写明"
         return {
             **self.model_dump(mode="json", exclude={"content", "changes", "validation"}),
             "validation": self.validation.feedback(),
             "changes": [change.model_dump(mode="json") for change in self.changes[:6]],
             "change_count": len(self.changes),
             "changes_truncated": len(self.changes) > 6,
-            "guidance": "仅暂存草稿，未保存；用户从确认API保存前会再次校验",
+            "guidance": guidance,
         }
 
 

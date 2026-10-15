@@ -27,7 +27,8 @@ NEXT_STEPS: dict[Task, str] = {
     "itinerary": (
         "行程：直接使用本轮已有地点；候选数量不足或须替换闭馆/重复景点时才补搜不同主题，已有足够候选不再搜索。"
         "依次调用estimate_routes批量估算相邻地点路段 -> stage_plan_change暂存并内置校验"
-        "（若报告冲突，只修正所指项目后再次暂存；额度已用完则展示最近的合法草稿与剩余问题） -> "
+        "（若报告冲突，只修正所指项目后再次暂存；"
+        "额度用完则直接暂存（服务端用冲突最少的候选）并展示，说明剩余问题） -> "
         "present_travel_result(component=itinerary, draft_id=暂存返回的draft_id)展示"
     ),
     "hotel_comparison": (
@@ -87,7 +88,7 @@ class DatabaseTools:
                 return ToolResult(
                     {},
                     code="validation",
-                    suggestion="请等待用户在出行安排卡统一确认交通、节奏与时间后继续，不提前规划。",
+                    suggestion="请等待用户在表单卡统一确认后继续，不提前规划。",
                     detail=("conversation_incomplete",),
                 )
             if state.get("requires_hotel_selection"):

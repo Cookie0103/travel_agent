@@ -1,10 +1,9 @@
 "use client";
 import type { Choice } from "@/lib/api";
-import { choiceDisabled } from "@/lib/choices";
+import { choiceDisabled, formOf, type FormAnswers } from "@/lib/choices";
 import { Button } from "./ui/button";
 import { useClock } from "./results";
-import type { DetailsAnswer } from "@/lib/choices";
-import { TravelDetailsCard } from "./travel-details-card";
+import { ChoiceForm } from "./choice-form";
 
 export function ChoiceCard({
   card,
@@ -17,7 +16,7 @@ export function ChoiceCard({
   busy: boolean;
   sessionId?: string;
   revision?: number;
-  select: (optionId: string, details?: DetailsAnswer) => void;
+  select: (optionId: string, answers?: FormAnswers) => void;
 }) {
   const now = useClock();
   const disabled = choiceDisabled(card, busy, sessionId, revision, now);
@@ -25,21 +24,15 @@ export function ChoiceCard({
     card.stale ||
     card.expected_revision !== revision ||
     !!(card.expires_at && now > 0 && Date.parse(card.expires_at) <= now);
-  if (card.kind === "travel_details" && card.details)
+  if (formOf(card))
     return (
-      <TravelDetailsCard
+      <ChoiceForm
         key={`${card.choice_id}:${card.answered_option_id ?? "pending"}`}
         card={card}
         disabled={disabled}
         stale={stale}
-        confirm={(details) => select("confirm", details)}
+        confirm={(answers) => select("confirm", answers)}
       />
-    );
-  if (card.kind === "travel_details")
-    return (
-      <p role="status" className="small muted">
-        正在读取出行安排…
-      </p>
     );
   return (
     <section

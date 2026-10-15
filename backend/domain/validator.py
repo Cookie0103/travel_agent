@@ -1,6 +1,6 @@
 """纯代码校验行程；区分已满足、未知与硬冲突，给SDK具体修复反馈而不代写模型循环。"""
 
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Literal
 from uuid import UUID
@@ -73,6 +73,7 @@ def validate_itinerary(
         checks.extend(visit_checks(request, proposal, index, place))
         checks.extend(route_checks(request, proposal, index, evidence))
     checks.extend(sightseeing_checks(request, proposal, places))
+    checks.extend(meal_checks(request, proposal))
     known, estimated, costs = budget_checks(request, proposal, evidence, now)
     checks.extend(costs)
     if request.hard_constraints:
@@ -203,11 +204,60 @@ def sightseeing_checks(
                     "repeated_place_warning",
                     f"重复景点冲突：{repeated[0][1]}安排{len(repeated)}次（{dates}）。"
                     "保留一次，把其余游览替换为全行程未使用的景点；候选不足时补搜不同景点，"
-                    "不得改名称或换同地点的证据掩盖重复。替换后重新estimate_routes检查相邻路段，"
-                    "再validate_itinerary；无可用候选则说明未完成，不暂存或保存重复行程。",
+                    "不得改名称或换同地点的证据掩盖重复。替换后重新estimate_routes检查相邻路段；"
+                    "无可用候选则暂存并如实说明仍重复（服务端可能自动去掉后一次），不确认保存。",
                 )
             )
     return checks
+
+
+MEALS = (
+    ("早饭", time(7), time(8), 1),
+    ("午饭", time(12), time(14), 2),
+    ("晚饭", time(18), time(20), 2),
+)
+
+
+def meal_checks(request: TravelRequest, proposal: ItineraryProposal) -> list[ValidationCheck]:
+    """用餐时间只提示不阻断：早饭前1小时、午饭/晚饭各2小时空档；不查餐厅，首末日放宽。"""
+    days: dict[date, list[tuple[datetime, datetime]]] = {}
+    for item in proposal.items:
+        start, end = item.start.astimezone(KYOTO), item.end.astimezone(KYOTO)
+        days.setdefault(start.date(), []).append((start, end))
+    short: list[str] = []
+    for day, spans in days.items():
+        if day in (request.start_date, request.end_date):
+            continue
+        spans.sort()
+        for name, window_start, window_end, hours in MEALS:
+            low, high = (datetime.combine(day, t, KYOTO) for t in (window_start, window_end))
+            need = timedelta(hours=hours)
+            if name == "早饭":  # 07:00起算，首项开始前须留1小时
+                missing = spans[0][0] - low < need
+            else:
+                touched = any(start < high and end > low for start, end in spans)
+                edges = [
+                    datetime.combine(day, time(6), KYOTO),
+                    *(p for span in spans for p in span),
+                ]
+                edges.append(datetime.combine(day, time(23), KYOTO))
+                gaps = zip(edges[0::2], edges[1::2], strict=True)
+                missing = touched and not any(
+                    g1 - g0 >= need and g0 < high and g1 > low for g0, g1 in gaps
+                )
+            if missing:
+                short.append(f"{day:%m-%d}{name}")
+    if not short:
+        return []
+    return [
+        check(
+            "meals",
+            "unknown",
+            "meal_time",
+            f"用餐时间提示：{'、'.join(short[:4])}没有留出足够空档（早饭1小时、午饭2小时约12–14点、"
+            "晚饭2小时）；只需在时间上留白，不要搜索餐厅。",
+        )
+    ]
 
 
 def visit_checks(

@@ -259,3 +259,62 @@ def test_unlimited_validation_still_counts_repairs() -> None:
     for _ in range(55):
         unlimited._take_validation(cast(Any, object()))
     assert unlimited.validations == 55
+
+
+def report_with(*statuses: str) -> ValidationReport:
+    checks = tuple(
+        ValidationCheck(subject=f"item:{n}", status=cast(Any, s), code="x", message="m")
+        for n, s in enumerate(statuses)
+    )
+    return ValidationReport(
+        status="conflict", checks=checks, known_cost=Decimal(0), estimated_cost=Decimal(0)
+    )
+
+
+def test_repair_limit_does_not_stop_the_run_and_tells_the_model_to_stage_the_best_candidate() -> (
+    None
+):
+    """repair_limit是被拦截的调用但不置stopping_error：模型还得暂存并展示草稿。"""
+    context = RunContext(uuid4())
+    guarded = executor()
+    guarded.validations = 4
+    item = {
+        "place_evidence_id": str(uuid4()),
+        "start": "2026-11-03T10:00+09:00",
+        "end": "2026-11-03T11:00+09:00",
+    }
+    blocked = asyncio.run(
+        guarded.execute(context, "validate_itinerary", {"expected_revision": 1, "items": [item]})
+    )
+    assert blocked.code == "blocked" and "repair_limit" in blocked.detail
+    assert guarded.stopping_error is False
+    for needed in ("stage_plan_change", "present_travel_result", "repairs", "不要请用户缩小范围"):
+        assert needed in blocked.suggestion
+    # 同一调用被重复拒绝（repeat_blocked）也不终止运行
+    again = asyncio.run(
+        guarded.execute(context, "validate_itinerary", {"expected_revision": 1, "items": [item]})
+    )
+    assert again.detail[0] == "repeat_blocked" and guarded.stopping_error is False
+
+
+def test_staging_after_the_repair_cap_is_never_refused_but_single_pass_eval_still_is() -> None:
+    capped = executor()
+    capped.validations = 4
+    capped._take_validation(cast(Any, object()), staging=True)  # 不抛，也不增加轮次
+    assert capped.validations == 4
+    single = executor(max_validations=1)
+    single.validations = 1  # 单因素评测只许首次校验：暂存也不放行
+    with pytest.raises(ServiceError) as caught:
+        single._take_validation(cast(Any, object()), staging=True)
+    assert caught.value.reason == "repair_limit"
+
+
+def test_executor_remembers_the_fewest_conflict_candidate() -> None:
+    tools = executor()
+    worse, better, tie = cast(Any, "worse"), cast(Any, "better"), cast(Any, "tie")
+    tools._remember(worse, report_with("conflict", "conflict", "unknown"))
+    tools._remember(better, report_with("conflict", "verified"))
+    tools._remember(tie, report_with("conflict"))  # 冲突数相同不覆盖先到者
+    assert tools.best is not None and tools.best[0] == better
+    tools._remember(worse, report_with("verified", "unknown"))
+    assert tools.best[0] == worse

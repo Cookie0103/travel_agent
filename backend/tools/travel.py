@@ -17,7 +17,7 @@ from backend.adapters.external_api import REQUEST_DEADLINE
 from backend.adapters.live_data import LiveData
 from backend.adapters.open_meteo import forecast
 from backend.domain.booking import HoldHotelInput
-from backend.domain.choices import ChoiceKind
+from backend.domain.choices import ChoiceKind, FormInput
 from backend.domain.condition_labels import update_message
 from backend.domain.conversation import ConversationStateInput
 from backend.domain.execution import RunContext, ToolReason
@@ -26,7 +26,7 @@ from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
 from backend.domain.memory import VALUE_GUIDE, MemoryProposal
 from backend.domain.opening_hours import KYOTO
-from backend.domain.plans import StageInput
+from backend.domain.plans import InitialStage, StageInput
 from backend.domain.room_choices import room_choices_view
 from backend.domain.travel_request import (
     HOTEL_FIELD_LABELS,
@@ -232,6 +232,15 @@ DEFINITIONS = (
         kind="presentation",
         max_result_chars=PRESENTATION_RESULT_LIMIT,
     ),
+    ToolDefinition(
+        "present_form",
+        "向用户一次问1至4个封闭选择题（key、label、multi、required、2至6个options），"
+        "用户答完所有必填题后统一提交。key=transport(交通)与pace(节奏)的选项由服务端固定，"
+        "你给的选项会被替换，答案写入对应类型字段；其他题的答案只以“题目：选项”写入约束文本。"
+        "已有抵达/离开时间时服务端自动追加时间确认题。提问后等待用户提交，不提前规划。",
+        FormInput.model_json_schema(),
+        kind="presentation",
+    ),
 )
 SCHEMAS: dict[str, type[BaseModel]] = {
     "propose_memory": MemoryProposal,
@@ -246,6 +255,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "search_hotel_offers": HotelSearchInput,
     "refresh_hotel_offer": RefreshOfferInput,
     "present_travel_result": PresentationInput,
+    "present_form": FormInput,
     "estimate_routes": RouteInput,
     "validate_itinerary": ItineraryProposal,
     "stage_plan_change": StageInput,
@@ -307,6 +317,10 @@ def report_detail(report: ValidationReport) -> tuple[str, ...]:
     )
 
 
+def conflict_count(report: ValidationReport) -> int:
+    return sum(c.status == "conflict" for c in report.checks)
+
+
 def call_key(name: str, arguments: dict[str, object]) -> tuple[str, str]:
     return name, json.dumps(arguments, sort_keys=True, ensure_ascii=False, default=str)
 
@@ -364,6 +378,8 @@ class TravelToolExecutor:
         self.validations = 0
         self.max_validations = max_validations
         self.last_validation: ItineraryProposal | None = None
+        # 冲突最少的已校验候选；修复次数用完或暂存被拒时交出它
+        self.best: tuple[ItineraryProposal, ValidationReport] | None = None
         self.loaded_skills: set[str] = set()
         # 第一版全部串行（读并发上限1），避免为尚不存在的并行收益实现读写锁。
         self.lock = asyncio.Lock()
@@ -434,6 +450,7 @@ class TravelToolExecutor:
                 )
             if (
                 name != "get_weather_forecast"
+                and "repair_limit" not in result.detail  # 修复上限不终止运行：还要暂存并展示
                 and not (result.external and result.external.provisional)
                 and (
                     result.code
@@ -606,6 +623,11 @@ class TravelToolExecutor:
                 context, parsed.kind, parsed.expected_revision
             )
             return ToolResult({"component": "choice", **card.model_dump(mode="json")})
+        if isinstance(parsed, FormInput):
+            card = await ChoiceService(self.travel).create(
+                context, "form", parsed.expected_revision, parsed.groups
+            )
+            return ToolResult({"component": "choice", **card.model_dump(mode="json")})
         if isinstance(parsed, ConversationStateInput):
             return ToolResult(await self.travel.update_conversation_state(context, parsed))
         if isinstance(parsed, WeatherInput):
@@ -635,11 +657,19 @@ class TravelToolExecutor:
                 warnings=("仅模拟暂留，不是订单；只允许用户在页面独立确认预订",),
             )
         if isinstance(parsed, StageInput):
+            if (
+                self.repairs_exhausted
+                and self.best is not None
+                and isinstance(parsed.change, InitialStage)
+                and self.best[0].expected_revision == parsed.change.proposal.expected_revision
+            ):  # 修复次数已用完：暂存目前冲突最少的候选，而不是被拒后无草稿
+                parsed = StageInput(change=InitialStage(kind="initial", proposal=self.best[0]))
             draft = await self.plans.stage(
                 context,
                 parsed,
                 before_validate=lambda proposal: self._take_validation(proposal, staging=True),
             )
+            self._remember(draft.content.proposal(draft.request_revision), draft.validation)
             return ToolResult(
                 draft.summary(),
                 detail=report_detail(draft.validation),
@@ -656,9 +686,15 @@ class TravelToolExecutor:
             data = await self.plans.get_draft(
                 context.user_id, parsed.draft_id, session_id=context.session_id
             )
+            validation = data.get("validation")
+            unresolved = isinstance(validation, dict) and validation.get("status") == "conflict"
             return bounded_plan(
                 ToolResult(
-                    data, warnings=("草稿尚未确认，unknown仍未核实；仅用户确认API能正式保存",)
+                    data,
+                    warnings=(
+                        "草稿尚未确认，unknown仍未核实；仅用户确认API能正式保存",
+                        *(("草稿仍含未解决硬冲突，回复须如实说明，用户不能确认保存",) * unresolved),
+                    ),
                 )
             )
         if isinstance(parsed, RouteInput):
@@ -688,6 +724,7 @@ class TravelToolExecutor:
             self._take_validation(parsed)
             report = await self.planning.validate(context, parsed)
             self.last_validation = parsed
+            self._remember(parsed, report)
             return ToolResult(
                 {
                     **report.feedback(),
@@ -750,11 +787,26 @@ class TravelToolExecutor:
             result = await self.catalog.get(context, collection, parsed.entity_id)
         return catalog_result(result, summary=isinstance(parsed, ContentSearchInput))
 
+    @property
+    def repairs_exhausted(self) -> bool:
+        """修复轮次用完且允许修复（单因素评测只许首次校验，仍照旧拒绝）。"""
+        return (
+            self.max_validations is not None
+            and self.max_validations > 1
+            and self.validations >= self.max_validations
+        )
+
+    def _remember(self, proposal: ItineraryProposal, report: ValidationReport) -> None:
+        if self.best is None or conflict_count(report) < conflict_count(self.best[1]):
+            self.best = (proposal, report)
+
     def _take_validation(self, proposal: ItineraryProposal, *, staging: bool = False) -> None:
         # 不变量：最后已校验候选仍可暂存并重新检查，不增加修复次数。
         if staging and proposal == self.last_validation:
             self.last_validation = None
             return
+        if staging and self.repairs_exhausted:
+            return  # 暂存永不因修复上限被拒；超出的部分由服务端本地修复，残余冲突如实展示
         if self.max_validations is not None and self.validations >= self.max_validations:
             message = (
                 "本次评测仅允许首次校验，不再修复；请说明仍存冲突或未知"
@@ -762,12 +814,11 @@ class TravelToolExecutor:
                 else f"首次校验和{self.max_validations - 1}轮修复已用完，请说明仍存冲突或未知"
             )
             message += (
-                "。校验次数已用完，不要再调用validate_itinerary。"
-                "若已有draft_id，立即present_travel_result展示最近的草稿；"
-                "否则用最近一次成功校验的完全相同候选调用stage_plan_change"
-                "（不增加修复次数），然后present_travel_result。"
-                "如实说明仍存的冲突或未知，不确认保存；"
-                "无合法候选或暂存被拒时说明未完成，不绕过证据/重复景点检查。"
+                "。不要再调用validate_itinerary，也不要请用户缩小范围。"
+                "立即调用stage_plan_change暂存（服务端会暂存冲突最少的候选并自动局部修复，"
+                "不增加修复次数；已有draft_id则直接用它），再present_travel_result展示。"
+                "回复必须如实写明：服务端自动去掉或调整的项目（草稿repairs）、"
+                "仍存的冲突与未知；不确认保存。"
             )
             raise ServiceError(429, "blocked", message, "repair_limit")
         self.validations += 1

@@ -1,7 +1,7 @@
 /** Application state and recovery; only explicit user actions can submit or confirm. */
 "use client";
 import type { Choice, MessageSelection } from "./api";
-import { choiceMessage, detailsSummary, type DetailsAnswer } from "./choices";
+import { choiceMessage, answersSummary, type FormAnswers } from "./choices";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   api,
@@ -699,7 +699,7 @@ export function useWorkspace({
     card: Choice,
     optionId: string,
     mode: Mode,
-    details?: DetailsAnswer,
+    answers?: FormAnswers,
   ) {
     if (
       !identity ||
@@ -712,9 +712,9 @@ export function useWorkspace({
     if (!option) return false;
     const started = generation.current;
     const accepted = await send(
-      details ? detailsSummary(card, details) : `用户选择：${option.label}`,
+      answers ? answersSummary(card, answers) : `用户选择：${option.label}`,
       mode,
-      choiceMessage(card, optionId, details),
+      choiceMessage(card, optionId, answers),
     );
     if (generation.current !== started) return false;
     try {

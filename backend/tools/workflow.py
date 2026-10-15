@@ -47,7 +47,9 @@ class OrderedTools:
             if self.context is not None and self.context != context:
                 return ToolResult({}, code="blocked", suggestion="固定流程仅属于当前执行")
             self.context = context
-            setup = name == "load_skill" or (name == "update_travel_request" and self.position < 0)
+            setup = name in {"load_skill", "present_form"} or (
+                name == "update_travel_request" and self.position < 0
+            )
             index = next((i for i, step in enumerate(self.steps) if name in step), None)
             if not setup and (index is None or index not in {self.position, self.position + 1}):
                 return ToolResult(

@@ -5,11 +5,12 @@ from uuid import uuid4
 
 import pytest
 
-from backend.domain.choices import ChoiceCard
+from backend.domain.choices import TRANSPORT_PACE_GROUPS, ChoiceCard
 from backend.domain.conversation import ConversationStateInput
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.travel_request import RequestPatch, pace_of
 from backend.persistence import runs
+from backend.persistence.models import ChoiceCardRow
 from backend.providers.claude_agent.database_tools import DatabaseTools
 from backend.services.choices import ChoiceService
 from backend.services.common import ServiceError, transaction
@@ -53,7 +54,7 @@ def test_cancelling_the_task_retires_its_unanswered_details_card(
             ),
         )
         card = await ChoiceService(travel).create(
-            active, "travel_details", changed.request.revision
+            active, "form", changed.request.revision, TRANSPORT_PACE_GROUPS
         )
         await travel.update_conversation_state(
             active, ConversationStateInput(expected_revision=changed.request.revision, cancel=True)
@@ -108,9 +109,9 @@ def test_combined_card_stops_automatic_planning_until_explicit_confirmation(
         tools = DatabaseTools(asyncio.get_running_loop(), travel.database)
         assert await tools.continuation_reason(active, 1) is not None
         card = await ChoiceService(travel).create(
-            active, "travel_details", changed.request.revision
+            active, "form", changed.request.revision, TRANSPORT_PACE_GROUPS
         )
-        assert card.details and not card.details.time_constraints
+        assert card.form and all(group.kind != "times" for group in card.form.groups)
         assert await tools.continuation_reason(active, 1) is None
         with pytest.raises(ServiceError):
             await travel.update_conversation_state(
@@ -181,11 +182,11 @@ def test_combined_details_are_saved_once_with_the_message_and_restored(
                 db, context.user_id, context.session_id, uuid4(), "规划旅行", "offline"
             )
             source = RunContext(context.user_id, context.session_id, row.id)
-        card = await ChoiceService(travel).create(source, "travel_details", 2)
-        assert card.kind == "travel_details"
-        assert card.details and card.details.transport == "transit"
-        assert card.details.pace is None
-        assert card.details.time_constraints == ("2026-11-10 09:00抵达；2026-11-12 22:00离开",)
+        card = await ChoiceService(travel).create(source, "form", 2, TRANSPORT_PACE_GROUPS)
+        assert card.kind == "form" and card.form
+        groups = {group.key: group for group in card.form.groups}
+        assert groups["transport"].selected == ("transit",) and groups["pace"].selected == ()
+        assert groups["times"].shown == ("2026-11-10 09:00抵达；2026-11-12 22:00离开",)
         assert (await travel.get_request(context)).revision == 2
         async with transaction(travel.database) as db:
             await runs.finish(db, source, RuntimeOutcome(text="请一次确认"))
@@ -197,13 +198,15 @@ def test_combined_details_are_saved_once_with_the_message_and_restored(
                 "selection": {
                     "choice_id": str(card.choice_id),
                     "option_id": "confirm",
-                    "details": {
-                        "transport": "taxi",
-                        "pace": "慢节奏",
-                        "times_correct": correct,
-                        "corrected_times": None
-                        if correct
-                        else ["2026-11-10 10:00抵达；2026-11-12 21:00离开"],
+                    "answers": {
+                        "transport": ["taxi"],
+                        "pace": ["relaxed"],
+                        "times": ["yes" if correct else "no"],
+                        **(
+                            {}
+                            if correct
+                            else {"times_corrected": ["2026-11-10 10:00抵达；2026-11-12 21:00离开"]}
+                        ),
                     },
                 },
             }
@@ -227,14 +230,16 @@ def test_combined_details_are_saved_once_with_the_message_and_restored(
             context.user_id, context.session_id, card.choice_id
         )
         assert restored.answered_option_id == "confirm"
-        assert restored.details and restored.details.transport == "taxi"
-        assert restored.details.time_constraints == (expected,)
+        assert restored.form
+        restored_groups = {group.key: group for group in restored.form.groups}
+        assert restored_groups["transport"].selected == ("taxi",)
+        assert restored_groups["times"].shown == (expected,)
         replay_after_restart = await RunService(travel.database).submit(
             context.user_id, context.session_id, message
         )
         assert replay_after_restart.run_id == first.run_id
         tampered = message.model_dump(mode="json")
-        tampered["selection"]["details"]["transport"] = "walk"
+        tampered["selection"]["answers"]["transport"] = ["walk"]
         with pytest.raises(ServiceError) as changed_replay:
             await service.submit(
                 context.user_id, context.session_id, MessageInput.model_validate(tampered)
@@ -246,7 +251,16 @@ def test_combined_details_are_saved_once_with_the_message_and_restored(
 
 
 @pytest.mark.parametrize(
-    "failure", ["incomplete", "time_unanswered", "empty_correction", "stale", "owner"]
+    "failure",
+    [
+        "incomplete",
+        "time_unanswered",
+        "empty_correction",
+        "unknown_option",
+        "two_for_single",
+        "stale",
+        "owner",
+    ],
 )
 def test_invalid_combined_details_do_not_write_a_message_or_change_conditions(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], failure: str
@@ -270,7 +284,7 @@ def test_invalid_combined_details_do_not_write_a_message_or_change_conditions(
                 db, context.user_id, context.session_id, uuid4(), "规划旅行", "offline"
             )
             source = RunContext(context.user_id, context.session_id, row.id)
-        card = await ChoiceService(travel).create(source, "travel_details", 2)
+        card = await ChoiceService(travel).create(source, "form", 2, TRANSPORT_PACE_GROUPS)
         async with transaction(travel.database) as db:
             await runs.finish(db, source, RuntimeOutcome(text="请选择"))
         if failure == "stale":
@@ -281,13 +295,21 @@ def test_invalid_combined_details_do_not_write_a_message_or_change_conditions(
                 ),
             )
         before = await travel.get_request(context)
-        details: dict[str, object] = {"transport": "walk", "pace": "标准", "times_correct": True}
+        answers: dict[str, list[str]] = {
+            "transport": ["walk"],
+            "pace": ["standard"],
+            "times": ["yes"],
+        }
         if failure == "incomplete":
-            del details["transport"]
+            del answers["transport"]
         if failure == "time_unanswered":
-            del details["times_correct"]
+            del answers["times"]
         if failure == "empty_correction":
-            details.update(times_correct=False, corrected_times=["   "])
+            answers.update(times=["no"], times_corrected=["   "])
+        if failure == "unknown_option":
+            answers["pace"] = ["invented"]
+        if failure == "two_for_single":
+            answers["transport"] = ["walk", "taxi"]
         client_id = uuid4()
         service = RunService(travel.database)
         with pytest.raises((ValueError, ServiceError)):
@@ -302,7 +324,7 @@ def test_invalid_combined_details_do_not_write_a_message_or_change_conditions(
                         "selection": {
                             "choice_id": str(card.choice_id),
                             "option_id": "confirm",
-                            "details": details,
+                            "answers": answers,
                         },
                     }
                 ),
@@ -372,8 +394,14 @@ def test_awaiting_pace_automatically_emits_card_and_explicit_presentation_reuses
         assert isinstance(data, dict) and data["component"] == "choice"
         repeated = await executor.execute(
             context,
-            "present_travel_result",
-            {"component": "choice", "kind": "travel_details", "expected_revision": 1},
+            "present_form",
+            {
+                "expected_revision": 1,
+                "groups": [
+                    {"key": "transport", "label": "交通方式"},
+                    {"key": "pace", "label": "旅行节奏"},
+                ],
+            },
         )
         assert repeated.code is None and repeated.data["choice_id"] == data["choice_id"]
         assert (await travel.get_request(context)).revision == 1
@@ -547,5 +575,128 @@ def test_explicit_card_can_change_existing_hard_and_soft_pace(
         assert updated.hard_constraints == (*request.hard_constraints, "节奏：特种兵")
         assert updated.soft_constraints == ("甜点",)
         await service.close()
+
+    runner.run(exercise())
+
+
+CONFIRM = {"option_id": "confirm", "label": "确认并继续", "value": "confirm"}
+
+
+async def run_context(travel: TravelService, original: RunContext, text: str) -> RunContext:
+    async with transaction(travel.database) as db:
+        row = await runs.create(db, original.user_id, original.session_id, uuid4(), text, "offline")
+        return RunContext(original.user_id, original.session_id, row.id)
+
+
+def test_extra_group_answers_land_only_in_constraint_text_and_replace_on_reask(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    runner, travel, original = travel_setup
+    group = {
+        "key": "companion",
+        "label": "同行者",
+        "options": [{"option_id": "a", "label": "带孩子"}, {"option_id": "b", "label": "朋友"}],
+    }
+
+    async def ask(answer: str, revision: int) -> None:
+        source = await run_context(travel, original, "追问")
+        result = await TravelToolExecutor(travel).execute(
+            source,
+            "present_form",
+            {"expected_revision": revision, "groups": [group, {"key": "pace", "label": "节奏"}]},
+        )
+        assert result.code is None
+        async with transaction(travel.database) as db:
+            await runs.finish(db, source, RuntimeOutcome(text="请选择"))
+        service = RunService(travel.database)
+        await service.submit(
+            original.user_id,
+            original.session_id,
+            MessageInput.model_validate(
+                {
+                    "client_message_id": str(uuid4()),
+                    "text": "确认",
+                    "expected_revision": revision,
+                    "selection": {
+                        "choice_id": str(result.data["choice_id"]),
+                        "option_id": "confirm",
+                        "answers": {"companion": [answer], "pace": ["standard"]},
+                    },
+                }
+            ),
+        )
+        await asyncio.gather(*service.tasks.values())
+        await service.close()
+
+    async def exercise() -> None:
+        before = await travel.get_request(original)
+        await ask("a", before.revision)
+        first = await travel.get_request(original)
+        assert "同行者：带孩子" in first.hard_constraints and first.transport == before.transport
+        await ask("b", first.revision)
+        second = await travel.get_request(original)
+        assert [t for t in second.hard_constraints if t.startswith("同行者")] == ["同行者：朋友"]
+
+    runner.run(exercise())
+
+
+def test_legacy_card_row_and_details_payload_still_gate_and_confirm(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    runner, travel, original = travel_setup
+
+    async def exercise() -> None:
+        source = await run_context(travel, original, "旧版发卡")
+        legacy_id = uuid4()
+        async with transaction(travel.database) as db:
+            db.add(
+                ChoiceCardRow(
+                    id=legacy_id,
+                    session_id=source.session_id,
+                    source_run_id=source.run_id,
+                    kind="travel_details",
+                    expected_revision=1,
+                    content={
+                        "question": "确认一下出行安排",
+                        "options": [CONFIRM],
+                        "details": {
+                            "transport_options": [],
+                            "pace_options": [],
+                            "transport": None,
+                            "pace": None,
+                            "time_constraints": [],
+                        },
+                    },
+                )
+            )
+            await runs.finish(db, source, RuntimeOutcome(text="请确认"))
+        assert (await travel.business_context(original)).get("awaiting_travel_details")
+        tools = DatabaseTools(asyncio.get_running_loop(), travel.database)
+        blocked = await tools.execute(original, "stage_plan_change", {})
+        assert blocked.code == "validation" and blocked.detail == ("conversation_incomplete",)
+        card = await ChoiceService(travel).get(original.user_id, original.session_id, legacy_id)
+        assert card.kind == "form" and card.form and len(card.form.groups) == 2
+        service = RunService(travel.database)
+        await service.submit(
+            original.user_id,
+            original.session_id,
+            MessageInput.model_validate(
+                {
+                    "client_message_id": str(uuid4()),
+                    "text": "确认",
+                    "expected_revision": 1,
+                    "selection": {
+                        "choice_id": str(legacy_id),
+                        "option_id": "confirm",
+                        "details": {"transport": "walk", "pace": "标准", "times_correct": None},
+                    },
+                }
+            ),
+        )
+        await asyncio.gather(*service.tasks.values())
+        await service.close()
+        result = await travel.get_request(original)
+        assert result.transport == "walk" and pace_of(result) == "标准"
+        assert not (await travel.business_context(original)).get("awaiting_travel_details")
 
     runner.run(exercise())

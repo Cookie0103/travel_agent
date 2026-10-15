@@ -1,5 +1,6 @@
 """服务端选择卡生成/恢复；确认在现有消息事务中调用，不另开写入事务。"""
 
+import json
 from datetime import UTC, datetime
 from decimal import ROUND_CEILING, Decimal
 from uuid import UUID
@@ -8,20 +9,24 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.choices import (
-    ChoiceCard as ChoiceCard,
-)
-from backend.domain.choices import (
+    FORM_ROW_KINDS,
     ChoiceKind,
     ChoiceOption,
     ChoiceSelection,
+    FormGroupInput,
+    answered_form,
+    build_form,
+    form_patch,
+    legacy_form,
     pace_options,
     pace_patch,
-    travel_details,
-    travel_details_patch,
+)
+from backend.domain.choices import (
+    ChoiceCard as ChoiceCard,
 )
 from backend.domain.execution import RunContext
 from backend.domain.hotel_recovery import HotelSearchDiagnostics
-from backend.domain.travel_request import RequestPatch, TravelRequest
+from backend.domain.travel_request import RequestPatch, TravelRequest, pace_of
 from backend.persistence import memory, sessions
 from backend.persistence import travel as requests
 from backend.persistence.models import ChoiceCardRow
@@ -35,9 +40,15 @@ class ChoiceService:
     def __init__(self, travel: TravelService) -> None:
         self.travel = travel
 
-    async def create(self, context: RunContext, kind: ChoiceKind, revision: int) -> ChoiceCard:
+    async def create(
+        self,
+        context: RunContext,
+        kind: ChoiceKind,
+        revision: int,
+        groups: tuple[FormGroupInput, ...] | None = None,
+    ) -> ChoiceCard:
         async with transaction(self.travel.database) as db:
-            return await self.create_in_transaction(db, context, kind, revision)
+            return await self.create_in_transaction(db, context, kind, revision, groups)
 
     async def create_in_transaction(
         self,
@@ -45,6 +56,7 @@ class ChoiceService:
         context: RunContext,
         kind: ChoiceKind,
         revision: int,
+        groups: tuple[FormGroupInput, ...] | None = None,
     ) -> ChoiceCard:
         row = await requests.owned_request(db, context)
         if row is None:
@@ -52,7 +64,8 @@ class ChoiceService:
         request = request_from_row(row)
         require_revision(request, revision)
         await conversation.require_current_run(db, context)
-        existing = await db.scalar(
+        shown = build_form(request, groups) if groups else None
+        existing = await db.scalars(
             select(ChoiceCardRow)
             .where(
                 ChoiceCardRow.session_id == context.session_id,
@@ -61,25 +74,25 @@ class ChoiceService:
                 ChoiceCardRow.kind == kind,
             )
             .order_by(ChoiceCardRow.created_at.desc())
-            .limit(1)
         )
-        if existing is not None:
-            return await choice_view(db, context.user_id, existing, request.revision)
-        if kind not in {"pace", "travel_details"}:
+        for old in existing:  # 同轮同版本同题目重复展示复用原卡，题目不同则新建并取代旧卡
+            if shown is None or card_from_row(old, revision).form == shown:
+                return await choice_view(db, context.user_id, old, request.revision)
+        if kind not in {"pace", "form"} or (kind == "form") != (groups is not None):
             raise ServiceError(422, "validation", "当前没有此类型的待确认选择")
         card = ChoiceCard(
             kind=kind,
             session_id=context.session_id,
             source_run_id=context.run_id,
             expected_revision=revision,
-            question="确认一下出行安排" if kind == "travel_details" else "你希望以什么节奏旅行？",
+            question="请确认以下信息，再继续规划" if shown else "你希望以什么节奏旅行？",
             options=(ChoiceOption(option_id="confirm", label="确认并继续", value="confirm"),)
-            if kind == "travel_details"
+            if shown
             else pace_options(),
-            details=travel_details(request) if kind == "travel_details" else None,
+            form=shown,
         )
-        if kind == "travel_details":
-            await self.supersede_details(db, context)
+        if shown:
+            await self.supersede_forms(db, context)
         db.add(
             ChoiceCardRow(
                 id=card.choice_id,
@@ -91,23 +104,15 @@ class ChoiceService:
                 content={
                     "question": card.question,
                     "options": [option.model_dump(mode="json") for option in card.options],
-                    **({"details": card.details.model_dump(mode="json")} if card.details else {}),
+                    **({"form": shown.model_dump(mode="json")} if shown else {}),
                 },
             )
         )
         await db.flush()
         return card
 
-    async def supersede_details(self, db: AsyncSession, context: RunContext) -> None:
-        previous_cards = await db.scalars(
-            select(ChoiceCardRow).where(
-                ChoiceCardRow.session_id == context.session_id,
-                ChoiceCardRow.kind == "travel_details",
-                ChoiceCardRow.answered_option_id.is_(None),
-                ChoiceCardRow.content["superseded"].as_boolean().is_not(True),
-            )
-        )
-        for previous in previous_cards:
+    async def supersede_forms(self, db: AsyncSession, context: RunContext) -> None:
+        for previous in await open_forms(db, context):
             previous.content = {**previous.content, "superseded": True}
 
     async def get(self, user_id: UUID, session_id: UUID, choice_id: UUID) -> ChoiceCard:
@@ -121,25 +126,19 @@ class ChoiceService:
     async def confirm_from_text(
         self, db: AsyncSession, context: RunContext, request: TravelRequest
     ) -> None:
-        shown = travel_details(request)
-        if shown.transport is None or shown.pace is None:
-            raise ServiceError(422, "validation", "请先记录用户明确的交通与旅行节奏")
-        card = await db.scalar(
-            select(ChoiceCardRow)
-            .where(
-                ChoiceCardRow.session_id == context.session_id,
-                ChoiceCardRow.kind == "travel_details",
-                ChoiceCardRow.answered_option_id.is_(None),
-                ChoiceCardRow.content["superseded"].as_boolean().is_not(True),
-            )
-            .with_for_update()
-        )
-        if card is None or card.source_run_id == context.run_id:
+        cards = await open_forms(db, context, lock=True)
+        if not cards or cards[0].source_run_id == context.run_id:
             raise ServiceError(
                 422, "validation", "请等待用户回答上一轮的出行安排确认，不得代用户确认"
             )
-        card.content = {**card.content, "details": shown.model_dump(mode="json")}
-        card.answered_option_id, card.answered_run_id = "confirm", context.run_id
+        form = card_from_row(cards[0], request.revision).form
+        assert form is not None
+        keys = {group.key for group in form.groups}
+        if ("transport" in keys and request.transport is None) or (
+            "pace" in keys and pace_of(request) is None
+        ):
+            raise ServiceError(422, "validation", "请先记录用户明确的交通与旅行节奏")
+        cards[0].answered_option_id, cards[0].answered_run_id = "confirm", context.run_id
 
     async def propose_budget(
         self,
@@ -247,8 +246,8 @@ class ChoiceService:
         ):
             raise ServiceError(409, "conflict", "选择卡已过期或条件已变化")
         option = selected_option(card, selection.option_id)
-        if card.kind != "travel_details" and selection.details is not None:
-            raise ServiceError(422, "validation", "普通选择不能混填旅行条件")
+        if card.kind not in FORM_ROW_KINDS and selection.answers is not None:
+            raise ServiceError(422, "validation", "普通选择不能混填表单答案")
         if card.kind == "budget_relaxation":
             if option.option_id == "accept":
                 if request.lodging_budget is None:
@@ -263,20 +262,18 @@ class ChoiceService:
                     ),
                     source="user_form",
                 )
-        elif card.kind == "travel_details":
-            shown = card_from_row(card, revision).details
-            if shown is None or selection.details is None:
-                raise ServiceError(422, "validation", "请选好交通和旅行节奏后统一确认")
+        elif card.kind in FORM_ROW_KINDS:
+            form = card_from_row(card, revision).form
+            if form is None or selection.answers is None:
+                raise ServiceError(422, "validation", "请回答完必填题目后统一确认")
             try:
-                patch = travel_details_patch(request, shown, selection.details)
+                patch = form_patch(request, form, selection.answers)
             except ValueError as error:
                 raise ServiceError(422, "validation", str(error)) from None
-            updated = await self.travel.patch_request_in_transaction(
-                db, context, patch, source="user_form"
-            )
+            await self.travel.patch_request_in_transaction(db, context, patch, source="user_form")
             card.content = {
                 **card.content,
-                "details": travel_details(updated.request).model_dump(mode="json"),
+                "form": answered_form(form, selection.answers).model_dump(mode="json"),
             }
         elif card.kind == "pace":
             await self.travel.patch_request_in_transaction(
@@ -308,16 +305,30 @@ async def owned_card(
     return row
 
 
+async def open_forms(
+    db: AsyncSession, context: RunContext, *, lock: bool = False
+) -> list[ChoiceCardRow]:
+    query = select(ChoiceCardRow).where(
+        ChoiceCardRow.session_id == context.session_id,
+        ChoiceCardRow.kind.in_(FORM_ROW_KINDS),
+        ChoiceCardRow.answered_option_id.is_(None),
+        ChoiceCardRow.content["superseded"].as_boolean().is_not(True),
+    )
+    return list(await db.scalars(query.with_for_update() if lock else query))
+
+
 def card_from_row(row: ChoiceCardRow, revision: int) -> ChoiceCard:
+    legacy = row.content.get("details")  # 读取边界：旧travel_details卡归一为表单
     card = ChoiceCard.model_validate(
         {
             **{
                 key: value
                 for key, value in row.content.items()
-                if key in {"question", "options", "expires_at", "details"}
+                if key in {"question", "options", "expires_at", "form"}
             },
+            **({"form": legacy_form(legacy)} if isinstance(legacy, dict) else {}),
             "choice_id": row.id,
-            "kind": row.kind,
+            "kind": "form" if row.kind in FORM_ROW_KINDS else row.kind,
             "session_id": row.session_id,
             "source_run_id": row.source_run_id,
             "expected_revision": row.expected_revision,
@@ -345,13 +356,12 @@ def selected_option(row: ChoiceCardRow, option_id: str) -> ChoiceOption:
 def selection_prompt(
     row: ChoiceCardRow, option: ChoiceOption, selection: ChoiceSelection | None = None
 ) -> str:
-    if row.kind == "travel_details":
-        if selection is None or selection.details is None:
-            raise ServiceError(422, "validation", "请选好交通和旅行节奏后统一确认")
-        answer = selection.details
+    if row.kind in FORM_ROW_KINDS:
+        if selection is None or selection.answers is None:
+            raise ServiceError(422, "validation", "请回答完必填题目后统一确认")
+        answers = json.dumps(selection.answers, ensure_ascii=False, sort_keys=True)
         return (
-            f"用户统一确认出行安排：{answer.model_dump_json()}。"
-            "交通、节奏及时间更正已在服务端原子记录，以当前request为准；"
+            f"用户统一确认：{answers}。答案已在服务端原子记录，以当前request为准；"
             "不重复追问已确认项，其他必填条件齐全后继续原任务。"
         )
     if row.kind == "memory_confirm":

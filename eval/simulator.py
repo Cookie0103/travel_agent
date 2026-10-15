@@ -20,7 +20,7 @@ from sqlalchemy import select
 from backend.adapters.evaluation_faults import EvaluationFault, validate_fault
 from backend.adapters.tracing import cloud_exporter, push_scores
 from backend.agent.runtime import EventSink
-from backend.domain.choices import ChoiceSelection, TravelDetailsAnswer
+from backend.domain.choices import FORM_ROW_KINDS, Answers, ChoiceSelection
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.itinerary import HotelStay
 from backend.domain.travel_request import RequestPatch, pace_of
@@ -32,7 +32,7 @@ from backend.persistence.temporary import temporary_database
 from backend.providers.claude_agent.application import GuardedRuntime
 from backend.providers.claude_agent.live import runtime_budget
 from backend.providers.claude_agent.settings import load_runtime_settings
-from backend.services.choices import ChoiceService
+from backend.services.choices import ChoiceService, card_from_row
 from backend.services.common import ServiceError, transaction
 from backend.services.memory import MemoryService
 from backend.services.plans import PlanService
@@ -65,7 +65,7 @@ class UserAction(BaseModel):
     text: str = Field(min_length=1, max_length=4000)
     choice_id: UUID | None = None
     option_id: str | None = None
-    details: TravelDetailsAnswer | None = None
+    answers: Answers | None = None
     hotel_stays: tuple[HotelStay, ...] | None = Field(default=None, min_length=1, max_length=6)
     draft_id: UUID | None = None
 
@@ -83,8 +83,8 @@ class UserAction(BaseModel):
         }
         if actual != expected:
             raise ValueError("动作字段不匹配")
-        if self.details is not None and self.kind != "choice":
-            raise ValueError("组合条件只用于选择动作")
+        if self.answers is not None and self.kind != "choice":
+            raise ValueError("表单答案只用于选择动作")
         return self
 
 
@@ -225,6 +225,15 @@ async def page(business: DatabaseEvaluation, context: RunContext) -> dict[str, o
     }
 
 
+def pace_chosen(row: ChoiceCardRow) -> bool:
+    if row.kind == "pace":
+        return row.answered_option_id == "relaxed"
+    form = card_from_row(row, row.expected_revision).form
+    return form is not None and any(
+        group.key == "pace" and group.selected == ("relaxed",) for group in form.groups
+    )
+
+
 async def trial(
     business: DatabaseEvaluation,
     scenario: Scenario,
@@ -324,7 +333,7 @@ async def trial(
                     )
                     raise ValueError("模拟用户选择无效")
                 selection = ChoiceSelection(
-                    choice_id=action.choice_id, option_id=action.option_id, details=action.details
+                    choice_id=action.choice_id, option_id=action.option_id, answers=action.answers
                 )
             failure_reason = "invalid_simulator_output"
             message = MessageInput(
@@ -456,21 +465,15 @@ async def trial(
         checks["hotel_delivery"] = hotel_delivered(tuple(events))
         checks["pace"] = pace_of(request) == "慢节奏"
         async with transaction(business.sessions.database) as db:
-            chosen = await db.scalar(
-                select(ChoiceCardRow.id).where(
+            rows = await db.scalars(
+                select(ChoiceCardRow).where(
                     ChoiceCardRow.session_id == context.session_id,
-                    (
-                        (ChoiceCardRow.kind == "pace")
-                        & (ChoiceCardRow.answered_option_id == "relaxed")
-                    )
-                    | (
-                        (ChoiceCardRow.kind == "travel_details")
-                        & (ChoiceCardRow.answered_option_id == "confirm")
-                        & (ChoiceCardRow.content["details"]["pace"].astext == "慢节奏")
-                    ),
+                    ChoiceCardRow.kind.in_(("pace", *FORM_ROW_KINDS)),
+                    ChoiceCardRow.answered_option_id.is_not(None),
                 )
             )
-        checks["pace_clicked"] = chosen is not None
+            clicked = any(pace_chosen(row) for row in rows)
+        checks["pace_clicked"] = clicked
     elif case_id in {"v2-user-memory-cross", "v2-user-memory-trip"}:
         checks["new_session"] = context.session_id != first_session
         key = "pace" if case_id.endswith("cross") else "companion_pattern"
