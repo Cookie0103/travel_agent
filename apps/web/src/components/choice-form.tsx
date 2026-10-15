@@ -66,6 +66,8 @@ function TimesGroup({
   const id = useId();
   const fixed = `${group.key}_corrected`;
   const state = answers[group.key]?.[0];
+  const joined = (group.shown ?? []).join("；");
+  const original = joined.length <= 200 ? joined : "";
   return (
     <fieldset disabled={disabled} className="space-y-3">
       <legend className="mb-2 text-sm font-medium">{group.label}</legend>
@@ -89,7 +91,7 @@ function TimesGroup({
                       ? { [group.key]: undefined, [fixed]: undefined }
                       : {
                           [group.key]: [v],
-                          [fixed]: v === "no" ? [""] : undefined,
+                          [fixed]: v === "no" ? [original] : undefined,
                         },
                   )
                 }
@@ -107,7 +109,7 @@ function TimesGroup({
                 id={id}
                 className="min-h-24 w-full rounded-lg border border-border bg-bg p-3 text-sm"
                 maxLength={200}
-                placeholder="例如：10月20日10点到，10月22日晚上9点走"
+                placeholder="只修改需要更正的部分，其余安排请保留"
                 value={answers[fixed]?.[0] ?? ""}
                 onChange={(event) => set({ [fixed]: [event.target.value] })}
               />
