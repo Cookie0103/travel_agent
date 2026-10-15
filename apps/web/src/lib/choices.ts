@@ -74,23 +74,45 @@ export function choiceDisabled(
   );
 }
 
+export type Pick = { card: Choice; optionId: string };
+
 export function choiceMessage(
   card: Choice,
   optionId: string,
   answers?: FormAnswers,
+  also: Pick[] = [],
 ): Extract<MessageSelection, { selection: unknown }> {
   if (!card.choice_id) throw new Error("选择卡缺少编号");
   if (!card.options.some((o) => o.option_id === optionId))
     throw new Error("选项不属于此选择卡");
+  if (
+    also.some(
+      (p) =>
+        !p.card.choice_id ||
+        p.card.kind !== "memory_confirm" ||
+        !p.card.options.some((o) => o.option_id === p.optionId),
+    ) ||
+    (also.length && card.kind !== "memory_confirm")
+  )
+    throw new Error("只能把同一轮的记忆确认卡一起提交");
   if (formOf(card)) {
     if (!answers || !validAnswers(card, answers))
       throw new Error("请完成所有必填项，并确认或更正时间。");
   } else if (answers) throw new Error("普通选择不能混填表单答案");
-  const selection: FormSelection = {
+  // `also` is optional on input; the generated type reflects the output shape.
+  const selection = {
     choice_id: card.choice_id,
     option_id: optionId,
     ...(answers ? { answers } : {}),
-  };
+    ...(also.length
+      ? {
+          also: also.map((p) => ({
+            choice_id: p.card.choice_id!,
+            option_id: p.optionId,
+          })),
+        }
+      : {}),
+  } as FormSelection;
   return { expected_revision: card.expected_revision, selection };
 }
 

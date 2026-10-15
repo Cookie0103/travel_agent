@@ -40,8 +40,20 @@ function pending(value: unknown): Identity["pending_message"] {
       !text(chosen.option_id) ||
       !/^[a-z][a-z0-9_-]{0,39}$/.test(chosen.option_id) ||
       Object.keys(chosen).some(
-        (key) => !["choice_id", "option_id", "answers"].includes(key),
+        (key) => !["choice_id", "option_id", "answers", "also"].includes(key),
       ) ||
+      (chosen.also != null &&
+        !(
+          Array.isArray(chosen.also) &&
+          chosen.also.length <= 5 &&
+          chosen.also.every(
+            (p) =>
+              record(p) &&
+              text(p.choice_id) &&
+              text(p.option_id) &&
+              /^[a-z][a-z0-9_-]{0,39}$/.test(p.option_id),
+          )
+        )) ||
       (chosen.answers != null && !isAnswerMap(chosen.answers))
     )
       return undefined;
@@ -49,6 +61,7 @@ function pending(value: unknown): Identity["pending_message"] {
       choice_id: chosen.choice_id,
       option_id: chosen.option_id,
       ...(chosen.answers ? { answers: chosen.answers } : {}),
+      ...(chosen.also ? { also: chosen.also } : {}),
     } as FormSelection;
     selection = {
       expected_revision: value.expected_revision,

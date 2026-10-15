@@ -1,7 +1,12 @@
 /** Application state and recovery; only explicit user actions can submit or confirm. */
 "use client";
 import type { Choice, MessageSelection } from "./api";
-import { choiceMessage, answersSummary, type FormAnswers } from "./choices";
+import {
+  choiceMessage,
+  answersSummary,
+  type FormAnswers,
+  type Pick,
+} from "./choices";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   api,
@@ -700,6 +705,7 @@ export function useWorkspace({
     optionId: string,
     mode: Mode,
     answers?: FormAnswers,
+    also: Pick[] = [],
   ) {
     if (
       !identity ||
@@ -711,21 +717,38 @@ export function useWorkspace({
     const option = card.options.find((option) => option.option_id === optionId);
     if (!option) return false;
     const started = generation.current;
+    const chosen = [{ card, optionId }, ...also];
     const accepted = await send(
-      answers ? answersSummary(card, answers) : `用户选择：${option.label}`,
+      also.length
+        ? `统一确认：${chosen
+            .map(
+              (p) =>
+                `${p.card.question} ${p.card.options.find((o) => o.option_id === p.optionId)?.label}`,
+            )
+            .join("；")}`
+        : answers
+          ? answersSummary(card, answers)
+          : `用户选择：${option.label}`,
       mode,
-      choiceMessage(card, optionId, answers),
+      choiceMessage(card, optionId, answers, also),
     );
     if (generation.current !== started) return false;
     try {
-      const updated = await api<Choice>(
-        `/sessions/${identity.session_id}/choices/${card.choice_id}`,
-        identity.token,
+      const refreshed = await Promise.all(
+        chosen.map((p) =>
+          api<Choice>(
+            `/sessions/${identity.session_id}/choices/${p.card.choice_id}`,
+            identity.token,
+          ),
+        ),
       );
       if (generation.current === started)
         setChoiceCards((old) => [
-          ...old.filter((existing) => existing.choice_id !== updated.choice_id),
-          updated,
+          ...old.filter(
+            (existing) =>
+              !refreshed.some((r) => r.choice_id === existing.choice_id),
+          ),
+          ...refreshed,
         ]);
     } catch (failure) {
       if (generation.current === started) fail(failure);

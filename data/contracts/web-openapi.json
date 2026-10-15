@@ -2468,6 +2468,29 @@
         ],
         "title": "ChoiceOption"
       },
+      "ChoicePick": {
+        "properties": {
+          "choice_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Choice Id"
+          },
+          "option_id": {
+            "type": "string",
+            "maxLength": 40,
+            "minLength": 1,
+            "pattern": "^[a-z][a-z0-9_-]*$",
+            "title": "Option Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "choice_id",
+          "option_id"
+        ],
+        "title": "ChoicePick"
+      },
       "ChoiceSelection": {
         "properties": {
           "choice_id": {
@@ -2501,6 +2524,15 @@
               }
             ],
             "title": "Answers"
+          },
+          "also": {
+            "items": {
+              "$ref": "#/components/schemas/ChoicePick"
+            },
+            "type": "array",
+            "maxItems": 5,
+            "title": "Also",
+            "default": []
           }
         },
         "additionalProperties": false,

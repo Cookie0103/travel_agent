@@ -366,7 +366,8 @@ def selection_prompt(
         )
     if row.kind == "memory_confirm":
         return (
-            f"用户选择记忆：{option.label}。以服务端memory事实为准，继续当前任务；"
+            f"用户选择记忆「{row.content.get('question', '')}」：{option.label}。"
+            "以服务端memory事实为准，继续当前任务；"
             "不能重新提出这条记忆或自动修改旅行条件。"
         )
     return (

@@ -94,3 +94,53 @@ test("an answered source card is rehydrated when the latest reply has no choice"
     0,
   );
 });
+
+const memory = (id: string, question: string): Choice => ({
+  ...card,
+  choice_id: id,
+  kind: "memory_confirm",
+  question,
+  options: [
+    { option_id: "remember", label: "记住", value: "remember" },
+    { option_id: "reject", label: "不要记", value: "reject" },
+  ],
+});
+
+test("a round's memory cards are submitted together in one selection", () => {
+  const [a, b, c] = [
+    memory("a", "节奏"),
+    memory("b", "交通"),
+    memory("c", "兴趣"),
+  ];
+  const body = choiceMessage(a, "remember", undefined, [
+    { card: b, optionId: "reject" },
+    { card: c, optionId: "remember" },
+  ]);
+  assert.deepEqual(body.selection, {
+    choice_id: "a",
+    option_id: "remember",
+    also: [
+      { choice_id: "b", option_id: "reject" },
+      { choice_id: "c", option_id: "remember" },
+    ],
+  });
+  assert.deepEqual(choiceMessage(a, "reject").selection, {
+    choice_id: "a",
+    option_id: "reject",
+  });
+});
+
+test("only memory cards can be batched and options must belong to the card", () => {
+  const b = memory("b", "交通");
+  assert.throws(() =>
+    choiceMessage(card, "standard", undefined, [
+      { card: b, optionId: "reject" },
+    ]),
+  );
+  assert.throws(() =>
+    choiceMessage(b, "reject", undefined, [{ card, optionId: "standard" }]),
+  );
+  assert.throws(() =>
+    choiceMessage(b, "reject", undefined, [{ card: b, optionId: "nope" }]),
+  );
+});

@@ -90,11 +90,19 @@ class FormInput(BaseModel):
         return self
 
 
-class ChoiceSelection(BaseModel):
-    model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
+class ChoicePick(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
     choice_id: UUID
     option_id: str = Field(min_length=1, max_length=40, pattern=r"^[a-z][a-z0-9_-]*$")
+
+
+class ChoiceSelection(ChoicePick):
+    model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
     answers: Answers | None = Field(default=None, exclude_if=lambda value: value is None)
+    # 同一轮的其他记忆确认卡：一次提交统一记录，只允许记忆卡。
+    also: tuple[ChoicePick, ...] = Field(
+        default=(), max_length=5, exclude_if=lambda value: not value
+    )
 
     @model_validator(mode="before")
     @classmethod

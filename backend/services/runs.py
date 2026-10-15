@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.adapters.tracing import TraceMetadata, current_trace_id, write_trace
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import Agent, Runtime
-from backend.domain.choices import ChoiceSelection
+from backend.domain.choices import ChoicePick, ChoiceSelection
 from backend.domain.execution import (
     BusinessResult,
     RunContext,
@@ -32,7 +32,7 @@ from backend.domain.itinerary import HotelStay
 from backend.persistence import runs, sessions
 from backend.persistence import travel as requests
 from backend.persistence.database import Database
-from backend.persistence.models import TaskRunRow
+from backend.persistence.models import ChoiceCardRow, TaskRunRow
 from backend.profile import current, profile_name
 from backend.providers.claude_agent.application import GuardedRuntime
 from backend.services.choices import ChoiceService, owned_card, selected_option, selection_prompt
@@ -180,21 +180,28 @@ class RunService:
         async with transaction(self.database) as db:
             if await sessions.get_session(db, user_id, session_id, lock=True) is None:
                 raise ServiceError(404, "blocked", "会话不存在")
-            choice = None
+            picks: list[tuple[ChoiceCardRow, ChoicePick]] = []
             if message.selection is not None:
-                choice = await owned_card(db, user_id, session_id, message.selection.choice_id)
-                option = selected_option(choice, message.selection.option_id)
-                prompt += "\n" + selection_prompt(choice, option, message.selection)
+                for pick in (message.selection, *message.selection.also):
+                    picks.append((await owned_card(db, user_id, session_id, pick.choice_id), pick))
+                if len(picks) > 1 and (
+                    len({row.id for row, _ in picks}) != len(picks)
+                    or any(row.kind != "memory_confirm" for row, _ in picks)
+                ):
+                    raise ServiceError(422, "validation", "一次只能统一提交不同的记忆确认卡")
+                prompt += "".join(
+                    "\n"
+                    + selection_prompt(row, selected_option(row, pick.option_id), message.selection)
+                    for row, pick in picks
+                )
             previous = await runs.by_message(db, session_id, message.client_message_id)
             if previous is not None:
-                choice_mismatch = False
-                if choice is not None:
-                    assert message.selection is not None
-                    choice_mismatch = (
-                        choice.answered_run_id != previous.id
-                        or choice.expected_revision != message.expected_revision
-                        or choice.answered_option_id != message.selection.option_id
-                    )
+                choice_mismatch = any(
+                    row.answered_run_id != previous.id
+                    or row.expected_revision != message.expected_revision
+                    or row.answered_option_id != pick.option_id
+                    for row, pick in picks
+                )
                 if (previous.prompt, previous.mode) != (prompt, message.mode) or choice_mismatch:
                     raise ServiceError(409, "conflict", "同一消息ID不能对应不同内容或模式")
                 return await recorded_view(db, previous)
@@ -218,13 +225,15 @@ class RunService:
                 user_text=message.text,
                 trace_id=current_trace_id(),
             )
-            if choice is not None and message.selection is not None:
-                assert message.expected_revision is not None
+            for row_choice, pick in picks:
+                assert message.expected_revision is not None and message.selection is not None
                 await ChoiceService(TravelService(self.database)).accept(
                     db,
                     RunContext(user_id, session_id, row.id),
-                    choice,
-                    message.selection,
+                    row_choice,
+                    message.selection
+                    if pick is message.selection
+                    else ChoiceSelection(choice_id=pick.choice_id, option_id=pick.option_id),
                     message.expected_revision,
                 )
             if request_row is not None:

@@ -223,3 +223,24 @@ test("old API identifies unsupported history instead of pretending it is an empt
     globalThis.fetch = original;
   }
 });
+
+test("a batched memory confirmation restores intact; a malformed batch is dropped", () => {
+  const local = new MemoryStorage(),
+    tab = new MemoryStorage();
+  const batch = messageInput(undefined, "统一确认", "offline", {
+    expected_revision: 2,
+    selection: {
+      choice_id: "a",
+      option_id: "remember",
+      also: [{ choice_id: "b", option_id: "reject" }],
+    } as never,
+  });
+  persistIdentity(local, tab, { ...first, pending_message: batch });
+  assert.deepEqual(restoreIdentity(local, tab)?.pending_message, batch);
+  const bad = {
+    ...batch,
+    selection: { ...batch.selection, also: [{ choice_id: 1 }] },
+  };
+  persistIdentity(local, tab, { ...first, pending_message: bad as never });
+  assert.equal(restoreIdentity(local, tab)?.pending_message, undefined);
+});

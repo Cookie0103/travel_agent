@@ -130,6 +130,58 @@ def test_memory_quote_rejects_tool_poison_and_accepts_only_after_structured_clic
     runner.run(exercise())
 
 
+def test_all_memory_cards_of_a_round_are_confirmed_in_one_message(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    runner, travel, original = travel_setup
+
+    async def exercise() -> None:
+        memory = MemoryService(travel.database)
+        _, cards = await proposal(
+            travel,
+            original,
+            "我喜欢特种兵，常用公共交通",
+            [
+                {"op": "ADD", "key": "pace", "value": "特种兵", "quote": "我喜欢特种兵"},
+                {"op": "ADD", "key": "transport", "value": "transit", "quote": "常用公共交通"},
+            ],
+        )
+        first, second = (str(card["choice_id"]) for card in cards)
+
+        def body(also: list[dict[str, str]], mid: UUID) -> MessageInput:
+            return MessageInput.model_validate(
+                {
+                    "client_message_id": str(mid),
+                    "text": "统一确认记忆",
+                    "expected_revision": 1,
+                    "selection": {"choice_id": first, "option_id": "remember", "also": also},
+                }
+            )
+
+        service = RunService(travel.database)
+        bad = [{"choice_id": first, "option_id": "reject"}]  # 重复同一张卡
+        with pytest.raises(ServiceError) as error:
+            await service.submit(original.user_id, original.session_id, body(bad, uuid4()))
+        assert error.value.status == 422 and await memory.snapshot(original) == []
+        picks = [{"choice_id": second, "option_id": "reject"}]
+        mid = uuid4()
+        run = await service.submit(original.user_id, original.session_id, body(picks, mid))
+        again = await service.submit(original.user_id, original.session_id, body(picks, mid))
+        assert again.run_id == run.run_id  # 同一消息幂等重放
+        with pytest.raises(ServiceError) as conflict:  # 同一消息ID换了选择
+            await service.submit(
+                original.user_id,
+                original.session_id,
+                body([{"choice_id": second, "option_id": "remember"}], mid),
+            )
+        assert conflict.value.status == 409
+        await asyncio.gather(*tuple(service.tasks.values()))
+        assert {fact["key"] for fact in await memory.snapshot(original)} == {"pace"}
+        await service.close()
+
+    runner.run(exercise())
+
+
 def test_memory_api_owner_history_and_delete(client: TestClient) -> None:
     owner, other = login(client), login(client)
     assert client.get("/memory").status_code == 401

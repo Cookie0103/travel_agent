@@ -17,6 +17,7 @@ import { Markdown } from "./markdown";
 import { Loading, Skeleton } from "./ui/loading";
 import { Button } from "./ui/button";
 import { ChoiceCard } from "./choice-card";
+import { MemoryChoices } from "./memory-choices";
 import {
   runLabel,
   stageGuidance,
@@ -339,6 +340,15 @@ function TurnCards({
     ? workspace.plan
     : undefined;
   const hotels = hotelsForRun(run, workspace.hotels, workspace.hotelOrigin);
+  const resolvedChoices = (references.choices ?? []).map(
+    (original) =>
+      workspace.choiceCards.find(
+        (card) => card.choice_id === original.choice_id,
+      ) ?? original,
+  );
+  const memoryChoices = resolvedChoices.filter(
+    (card) => card.kind === "memory_confirm",
+  );
   const disabled =
     !latest ||
     workspace.busy ||
@@ -353,12 +363,9 @@ function TurnCards({
   };
   return (
     <>
-      {(references.choices ?? []).map((original) => {
-        const card =
-          workspace.choiceCards.find(
-            (card) => card.choice_id === original.choice_id,
-          ) ?? original;
-        return (
+      {resolvedChoices
+        .filter((card) => card.kind !== "memory_confirm")
+        .map((card) => (
           <ChoiceCard
             key={card.choice_id}
             card={card}
@@ -369,8 +376,24 @@ function TurnCards({
               void workspace.selectChoice(card, optionId, mode, answers)
             }
           />
-        );
-      })}
+        ))}
+      {memoryChoices.length > 0 && (
+        <MemoryChoices
+          cards={memoryChoices}
+          busy={workspace.busy || workspace.restoring}
+          sessionId={workspace.identity?.session_id}
+          revision={workspace.request?.revision}
+          submit={([first, ...rest]) =>
+            void workspace.selectChoice(
+              first.card,
+              first.optionId,
+              mode,
+              undefined,
+              rest,
+            )
+          }
+        />
+      )}
       {hotels && (
         <HotelResults
           key={`${run.run_id}:${workspace.request?.revision}`}

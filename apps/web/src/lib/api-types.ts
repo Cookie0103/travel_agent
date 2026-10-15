@@ -683,6 +683,16 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** ChoicePick */
+        ChoicePick: {
+            /**
+             * Choice Id
+             * Format: uuid
+             */
+            choice_id: string;
+            /** Option Id */
+            option_id: string;
+        };
         /** ChoiceSelection */
         ChoiceSelection: {
             /**
@@ -696,6 +706,11 @@ export interface components {
             answers?: {
                 [key: string]: string[];
             } | null;
+            /**
+             * Also
+             * @default []
+             */
+            also: components["schemas"]["ChoicePick"][];
         };
         DataMode: ("fixture" | "snapshot") | components["schemas"]["ProviderDataMode"];
         /** DemoIdentity */
