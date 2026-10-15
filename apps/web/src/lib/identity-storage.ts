@@ -1,5 +1,7 @@
 /** Persist only the active identity; unresolved messages belong to this tab and trip. */
 import type { Identity } from "./api";
+import { validDetailsAnswer } from "./choices.ts";
+import type { components } from "./api-types";
 
 type Storage = Pick<
   globalThis.Storage,
@@ -27,7 +29,35 @@ function pending(value: unknown): Identity["pending_message"] {
   )
     return undefined;
   let selection = {};
-  if (
+  if (value.selection !== undefined) {
+    const chosen = value.selection;
+    if (
+      value.hotel_stays !== undefined ||
+      typeof value.expected_revision !== "number" ||
+      !Number.isInteger(value.expected_revision) ||
+      value.expected_revision < 0 ||
+      !record(chosen) ||
+      !text(chosen.choice_id) ||
+      !text(chosen.option_id) ||
+      !/^[a-z][a-z0-9_-]{0,39}$/.test(chosen.option_id) ||
+      Object.keys(chosen).some(
+        (key) => !["choice_id", "option_id", "details"].includes(key),
+      ) ||
+      (chosen.details != null && !validDetailsAnswer(chosen.details))
+    )
+      return undefined;
+    const choice: components["schemas"]["ChoiceSelection"] = {
+      choice_id: chosen.choice_id,
+      option_id: chosen.option_id,
+      ...(validDetailsAnswer(chosen.details)
+        ? { details: chosen.details }
+        : {}),
+    };
+    selection = {
+      expected_revision: value.expected_revision,
+      selection: choice,
+    };
+  } else if (
     value.hotel_stays !== undefined ||
     value.expected_revision !== undefined
   ) {

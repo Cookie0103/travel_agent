@@ -47,12 +47,17 @@ class ConversationStateInput(BaseModel):
     goals: tuple[Task, ...] | None = Field(default=None, min_length=1, max_length=2)
     awaiting_field: Question | None = None
     cancel: bool = Field(default=False, strict=True)
+    confirm_details: bool = Field(
+        default=False,
+        strict=True,
+        description="仅用户本轮明确确认交通、节奏与已提议时间，或明确更正并确认后设true；先更新条件，不能把含糊的继续当作确认",
+    )
 
     @model_validator(mode="after")
     def valid_state(self) -> Self:
         if self.goals and len(set(self.goals)) != len(self.goals):
             raise ValueError("任务不可重复")
-        if self.cancel and (self.goals or self.awaiting_field):
+        if self.cancel and (self.goals or self.awaiting_field or self.confirm_details):
             raise ValueError("取消时不能同时记录新任务或追问")
         return self
 

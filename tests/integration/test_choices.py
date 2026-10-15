@@ -10,6 +10,7 @@ from backend.domain.conversation import ConversationStateInput
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.travel_request import RequestPatch, pace_of
 from backend.persistence import runs
+from backend.providers.claude_agent.database_tools import DatabaseTools
 from backend.services.choices import ChoiceService
 from backend.services.common import ServiceError, transaction
 from backend.services.runs import MessageInput, RunService
@@ -19,6 +20,300 @@ from backend.tools.travel import DEFINITIONS, TravelToolExecutor
 from tests.integration.test_travel import travel_setup as travel_setup
 
 pytestmark = pytest.mark.integration
+
+
+def test_cancelling_the_task_retires_its_unanswered_details_card(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        changed = await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": {
+                        "transport": "transit",
+                        "lodging_budget_unlimited": True,
+                        "hard_constraints": ["节奏：标准"],
+                    },
+                }
+            ),
+        )
+        async with transaction(travel.database) as db:
+            row = await runs.create(
+                db, context.user_id, context.session_id, uuid4(), "先确认", "offline"
+            )
+            active = RunContext(context.user_id, context.session_id, row.id)
+        await travel.update_conversation_state(
+            active,
+            ConversationStateInput(
+                expected_revision=changed.request.revision, goals=("itinerary",)
+            ),
+        )
+        card = await ChoiceService(travel).create(
+            active, "travel_details", changed.request.revision
+        )
+        await travel.update_conversation_state(
+            active, ConversationStateInput(expected_revision=changed.request.revision, cancel=True)
+        )
+        assert not (await travel.business_context(active)).get("awaiting_travel_details")
+        restored = await ChoiceService(travel).get(
+            context.user_id, context.session_id, card.choice_id
+        )
+        assert restored.stale and restored.answered_option_id is None
+        await travel.update_conversation_state(
+            active,
+            ConversationStateInput(
+                expected_revision=changed.request.revision, goals=("itinerary",)
+            ),
+        )
+        tools = DatabaseTools(asyncio.get_running_loop(), travel.database)
+        assert await tools.continuation_reason(active, 1) is not None
+
+    runner.run(exercise())
+
+
+def test_combined_card_stops_automatic_planning_until_explicit_confirmation(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        changed = await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": {
+                        "transport": "transit",
+                        "lodging_budget_unlimited": True,
+                        "hard_constraints": ["节奏：标准"],
+                    },
+                }
+            ),
+        )
+        async with transaction(travel.database) as db:
+            row = await runs.create(
+                db, context.user_id, context.session_id, uuid4(), "确认后规划", "offline"
+            )
+            active = RunContext(context.user_id, context.session_id, row.id)
+        await travel.update_conversation_state(
+            active,
+            ConversationStateInput(
+                expected_revision=changed.request.revision, goals=("itinerary",)
+            ),
+        )
+        tools = DatabaseTools(asyncio.get_running_loop(), travel.database)
+        assert await tools.continuation_reason(active, 1) is not None
+        card = await ChoiceService(travel).create(
+            active, "travel_details", changed.request.revision
+        )
+        assert card.details and not card.details.time_constraints
+        assert await tools.continuation_reason(active, 1) is None
+        with pytest.raises(ServiceError):
+            await travel.update_conversation_state(
+                active,
+                ConversationStateInput(
+                    expected_revision=changed.request.revision, confirm_details=True
+                ),
+            )
+        unrelated = await travel.patch_request(
+            active,
+            RequestPatch.model_validate(
+                {"expected_revision": changed.request.revision, "set": {"interests": ["甜点"]}}
+            ),
+        )
+        assert await tools.continuation_reason(active, 1) is None
+        for name in ("estimate_routes", "validate_itinerary", "stage_plan_change"):
+            result = await tools.execute(active, name, {})
+            assert result.code == "validation" and result.detail == ("conversation_incomplete",)
+        assert tools.executor.calls == 0
+        async with transaction(travel.database) as db:
+            await runs.finish(db, active, RuntimeOutcome(text="请选择"))
+            row = await runs.create(
+                db,
+                context.user_id,
+                context.session_id,
+                uuid4(),
+                "交通公共交通，节奏标准，继续",
+                "offline",
+            )
+            next_turn = RunContext(context.user_id, context.session_id, row.id)
+        # 无关的新消息不绕过确认；明确文字回答经现有状态工具确认后可继续。
+        assert await tools.continuation_reason(next_turn, 1) is None
+        await travel.update_conversation_state(
+            next_turn,
+            ConversationStateInput(
+                expected_revision=unrelated.request.revision, confirm_details=True
+            ),
+        )
+        assert await tools.continuation_reason(next_turn, 1) is not None
+
+    runner.run(exercise())
+
+
+@pytest.mark.parametrize("correct", [True, False])
+def test_combined_details_are_saved_once_with_the_message_and_restored(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext], correct: bool
+) -> None:
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": {
+                        "transport": "transit",
+                        "hard_constraints": [
+                            "住宿：无要求",
+                            "2026-11-10 09:00抵达；2026-11-12 22:00离开",
+                        ],
+                    },
+                }
+            ),
+        )
+        async with transaction(travel.database) as db:
+            row = await runs.create(
+                db, context.user_id, context.session_id, uuid4(), "规划旅行", "offline"
+            )
+            source = RunContext(context.user_id, context.session_id, row.id)
+        card = await ChoiceService(travel).create(source, "travel_details", 2)
+        assert card.kind == "travel_details"
+        assert card.details and card.details.transport == "transit"
+        assert card.details.pace is None
+        assert card.details.time_constraints == ("2026-11-10 09:00抵达；2026-11-12 22:00离开",)
+        assert (await travel.get_request(context)).revision == 2
+        async with transaction(travel.database) as db:
+            await runs.finish(db, source, RuntimeOutcome(text="请一次确认"))
+        message = MessageInput.model_validate(
+            {
+                "client_message_id": str(uuid4()),
+                "text": "确认交通、节奏与时间",
+                "expected_revision": 2,
+                "selection": {
+                    "choice_id": str(card.choice_id),
+                    "option_id": "confirm",
+                    "details": {
+                        "transport": "taxi",
+                        "pace": "慢节奏",
+                        "times_correct": correct,
+                        "corrected_times": None
+                        if correct
+                        else ["2026-11-10 10:00抵达；2026-11-12 21:00离开"],
+                    },
+                },
+            }
+        )
+        service = RunService(travel.database)
+        first, replay = await asyncio.gather(
+            service.submit(context.user_id, context.session_id, message),
+            service.submit(context.user_id, context.session_id, message),
+        )
+        assert first.run_id == replay.run_id
+        await asyncio.gather(*tuple(service.tasks.values()))
+        result = await travel.get_request(context)
+        assert result.revision == 3 and result.transport == "taxi" and pace_of(result) == "慢节奏"
+        expected = (
+            "2026-11-10 09:00抵达；2026-11-12 22:00离开"
+            if correct
+            else "2026-11-10 10:00抵达；2026-11-12 21:00离开"
+        )
+        assert set(result.hard_constraints) == {"住宿：无要求", "节奏：慢节奏", expected}
+        restored = await ChoiceService(TravelService(travel.database)).get(
+            context.user_id, context.session_id, card.choice_id
+        )
+        assert restored.answered_option_id == "confirm"
+        assert restored.details and restored.details.transport == "taxi"
+        assert restored.details.time_constraints == (expected,)
+        replay_after_restart = await RunService(travel.database).submit(
+            context.user_id, context.session_id, message
+        )
+        assert replay_after_restart.run_id == first.run_id
+        tampered = message.model_dump(mode="json")
+        tampered["selection"]["details"]["transport"] = "walk"
+        with pytest.raises(ServiceError) as changed_replay:
+            await service.submit(
+                context.user_id, context.session_id, MessageInput.model_validate(tampered)
+            )
+        assert changed_replay.value.status == 409
+        await service.close()
+
+    runner.run(exercise())
+
+
+@pytest.mark.parametrize(
+    "failure", ["incomplete", "time_unanswered", "empty_correction", "stale", "owner"]
+)
+def test_invalid_combined_details_do_not_write_a_message_or_change_conditions(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext], failure: str
+) -> None:
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": {
+                        "hard_constraints": ["2026-11-10 09:00抵达；2026-11-12 22:00离开"],
+                    },
+                }
+            ),
+        )
+        async with transaction(travel.database) as db:
+            row = await runs.create(
+                db, context.user_id, context.session_id, uuid4(), "规划旅行", "offline"
+            )
+            source = RunContext(context.user_id, context.session_id, row.id)
+        card = await ChoiceService(travel).create(source, "travel_details", 2)
+        async with transaction(travel.database) as db:
+            await runs.finish(db, source, RuntimeOutcome(text="请选择"))
+        if failure == "stale":
+            await travel.patch_request(
+                context,
+                RequestPatch.model_validate(
+                    {"expected_revision": 2, "set": {"interests": ["甜点"]}}
+                ),
+            )
+        before = await travel.get_request(context)
+        details: dict[str, object] = {"transport": "walk", "pace": "标准", "times_correct": True}
+        if failure == "incomplete":
+            del details["transport"]
+        if failure == "time_unanswered":
+            del details["times_correct"]
+        if failure == "empty_correction":
+            details.update(times_correct=False, corrected_times=["   "])
+        client_id = uuid4()
+        service = RunService(travel.database)
+        with pytest.raises((ValueError, ServiceError)):
+            await service.submit(
+                uuid4() if failure == "owner" else context.user_id,
+                context.session_id,
+                MessageInput.model_validate(
+                    {
+                        "client_message_id": str(client_id),
+                        "text": "确认",
+                        "expected_revision": 2,
+                        "selection": {
+                            "choice_id": str(card.choice_id),
+                            "option_id": "confirm",
+                            "details": details,
+                        },
+                    }
+                ),
+            )
+        assert await travel.get_request(context) == before
+        async with transaction(travel.database) as db:
+            assert await runs.by_message(db, context.session_id, client_id) is None
+        assert not service.tasks
+        await service.close()
+
+    runner.run(exercise())
 
 
 def test_direct_pace_request_without_itinerary_task_creates_card_without_changing_conditions(
@@ -78,7 +373,7 @@ def test_awaiting_pace_automatically_emits_card_and_explicit_presentation_reuses
         repeated = await executor.execute(
             context,
             "present_travel_result",
-            {"component": "choice", "kind": "pace", "expected_revision": 1},
+            {"component": "choice", "kind": "travel_details", "expected_revision": 1},
         )
         assert repeated.code is None and repeated.data["choice_id"] == data["choice_id"]
         assert (await travel.get_request(context)).revision == 1

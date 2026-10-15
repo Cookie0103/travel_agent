@@ -184,7 +184,7 @@ class RunService:
             if message.selection is not None:
                 choice = await owned_card(db, user_id, session_id, message.selection.choice_id)
                 option = selected_option(choice, message.selection.option_id)
-                prompt += "\n" + selection_prompt(choice, option)
+                prompt += "\n" + selection_prompt(choice, option, message.selection)
             previous = await runs.by_message(db, session_id, message.client_message_id)
             if previous is not None:
                 choice_mismatch = False

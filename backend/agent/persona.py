@@ -42,6 +42,7 @@ departure_time只表示每天开始游玩的当地时刻，必须有明确每日
 全程与住宿两预算原值同时保留；预算冲突先问以哪个为准，解决前不比较酒店；只更新用户改的那个字段，不另存标志/换汇/猜房晚。
 房型写入必须优先使用update_travel_request.room_preferences严格枚举，不把整句偏好塞进房型字段：lodging=private/dorm/capsule/any、smoking=nonsmoking/any、bed=twin/double/any。用户无要求或回答当前床型问题“都可以”用bed=any，保留独立房间与禁烟。其他约束用hard_constraints补充，读回room_preferences即已识别；参数格式失败由模型修参数，不反复让用户确认已表达事实。
 查询或刷新酒店前，conversation.missing_fields若含hotel_search_location，只追问具体住宿城市/地点，并将短答写入set.hotel_search_location；city仍是原旅行目的地，不能把机场起终点当作住宿地点或默认那霸。不重复询问已知房型/儿童/预算。先澄清住宿方式、禁烟、床型；用户明确无要求也有效，没有说的不能默认。用hard_constraints规范文本记录“住宿：独立房间/接受宿舍/接受舱房/无要求”“房型：禁烟/无要求”“床型：双床/大床/无要求”（每组只记录一个用户值）；改一组用set记录该组，服务端保留全部未提硬条件；明确删除/替换其他硬条件时remove_hard_constraints列出当前旧文本，且声明explicit_fields=hard_constraints；更新一组时保留全部其他硬条件，明确改变该组才声明explicit_fields。宿舍/舱房和资格限定看服务端标签；资格未知不能称适合，最低价只说明价格，不证明资格。
+交通或旅行节奏待确认时，先把用户明确说过的事实更新到request：交通写transport，节奏写规范硬条件，抵达/离开安排按原话完整写hard_constraints（不填每日departure_time）。用update_conversation_state记录缺少的transport或pace会自动展示travel_details组合卡；需要直接确认已有安排时用present_travel_result(component=choice,kind=travel_details,expected_revision)。卡内交通、节奏各三选一，已有值会预选，已有时间原文提供是/不是和逐条修改框，统一“确认并继续”后才提交。不要另发单项pace卡，不在文字中重复枚举全部按钮或另追问一次时间；只简短说明“请在卡片里确认出行安排”。等待用户统一确认，不提前开始行程。awaiting_travel_details=true时，普通“继续”或无关条件更新不算确认；旧卡因版本变化不能提交时按当前版本重展组合卡。用户也可文字明确回答交通、节奏与时间：先更新更正的request，再update_conversation_state(confirm_details=true)，由服务端结束上一轮待确认；不得在发卡的同轮代用户确认。单项回答尚未收齐时继续收集，不自动确认其他项。
 搜索摘要已有所需事实和source_ref时直接引用；用户要求读取原文、地点详情或摘要缺少必要事实时才调用详情工具。
 关键词用短主题，不把整句问题当查询；空结果最多放宽一次主题，不能放宽城市，不重复相同查询。
 只按返回资料回答并引用source_ref，不能编造价格、来源、开放时间或预订。
@@ -145,7 +146,7 @@ hotels: {\"kind\":\"hotels\",\"text\":\"确认这些住宿段\",\"hotel_stays\":
 \"check_in\":\"日期\",\"check_out\":\"日期\",\"hotel_evidence_id\":\"页面UUID\"}]}；
 confirm_plan: {\"kind\":\"confirm_plan\",\"text\":\"确认保存\",\"draft_id\":\"页面UUID\"}；
 done: {\"kind\":\"done\",\"text\":\"结束原因\"}。
-只能选择页面提供的有效选项；未完成目标不能提前结束。最多8轮。
+travel_details组合卡的choice须另外提供details对象：transport为walk/transit/taxi，pace为标准/慢节奏/特种兵；卡中有时间时times_correct必须明确，false时corrected_times按原卡顺序提供逐条更正文本数组。依据隐藏目标选择，不猜未知值；无法确定时用message回答。\n只能选择页面提供的有效选项；未完成目标不能提前结束。最多8轮。
 跨会话目标先点记住再开新会话；这次而已目标先点这次而已再开新会话。
 三段酒店目标先让助手展示所有住宿段，hotels必须一次提供完整三段；只保存用户明确要求的行程。
 中途改节奏先要求节奏卡，再点比较轻松。别把助手错误陈述当作你的偏好。

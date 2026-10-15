@@ -2,7 +2,13 @@
 
 import pytest
 
-from backend.domain.choices import pace_options, pace_patch
+from backend.domain.choices import (
+    TravelDetailsAnswer,
+    pace_options,
+    pace_patch,
+    travel_details,
+    travel_details_patch,
+)
 from backend.domain.travel_request import TravelRequest, apply_request_patch, pace_of
 
 
@@ -29,3 +35,21 @@ def test_pace_labels_and_values_are_server_owned() -> None:
     ]
     with pytest.raises(ValueError):
         pace_patch(TravelRequest(), "模型自定义选项")
+
+
+def test_separate_long_time_conditions_can_be_corrected_without_truncating_other_facts() -> None:
+    arrival = "11月10日09:00抵达名古屋；" + "抵达安排请保留。" * 14
+    departure = "11月12日22:00离开名古屋；" + "返程安排请保留。" * 14
+    request = TravelRequest(hard_constraints=("禁烟", arrival, departure, "每天08:00出发"))
+    shown = travel_details(request)
+    assert shown.time_constraints == (arrival, departure)
+    corrected = (arrival.replace("09:00", "10:00"), departure)
+    answer = TravelDetailsAnswer(
+        transport="transit", pace="标准", times_correct=False, corrected_times=corrected
+    )
+    result, _ = apply_request_patch(request, travel_details_patch(request, shown, answer))
+    assert result.hard_constraints == ("禁烟", "每天08:00出发", "节奏：标准", *corrected)
+    with pytest.raises(ValueError):
+        travel_details_patch(
+            request, shown, answer.model_copy(update={"corrected_times": (corrected[0],)})
+        )

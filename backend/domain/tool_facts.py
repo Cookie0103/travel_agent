@@ -9,7 +9,7 @@ from backend.domain.choices import ChoiceKind
 from backend.domain.memory import MemoryKey, MemoryScope
 
 ChoiceOptionId = Literal[
-    "standard", "intensive", "relaxed", "accept", "keep", "remember", "trip", "reject"
+    "standard", "intensive", "relaxed", "accept", "keep", "remember", "trip", "reject", "confirm"
 ]
 
 

@@ -83,7 +83,7 @@ def test_native_sdk_roundtrips_server_owned_pace_card(
         ),
         (
             sdk_tool_name("present_travel_result"),
-            {"component": "choice", "kind": "pace", "expected_revision": 1},
+            {"component": "choice", "kind": "travel_details", "expected_revision": 1},
         ),
     )
     report, guard = run_database_worker(
@@ -99,4 +99,14 @@ def test_native_sdk_roundtrips_server_owned_pace_card(
         if isinstance(event, dict) and event.get("kind") == "presentation"
     ]
     assert len(choices) == 2 and choices[0]["choice_id"] == choices[1]["choice_id"]
-    assert [option["label"] for option in choices[0]["options"]] == ["标准", "特种兵", "比较轻松"]
+    assert [option["label"] for option in choices[0]["options"]] == ["确认并继续"]
+    assert [option["label"] for option in choices[0]["details"]["pace_options"]] == [
+        "标准",
+        "特种兵",
+        "比较轻松",
+    ]
+    assert [option["label"] for option in choices[0]["details"]["transport_options"]] == [
+        "步行",
+        "公共交通（公交、地铁为主）",
+        "打车",
+    ]

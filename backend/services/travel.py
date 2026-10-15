@@ -196,6 +196,16 @@ class TravelService:
                 live_hotels=self.live is not None,
             )
             selected = conversation.selected_hotel_stays(request_row, context, current.revision)
+            waiting_details = await db.scalar(
+                select(ChoiceCardRow.id)
+                .where(
+                    ChoiceCardRow.session_id == context.session_id,
+                    ChoiceCardRow.kind == "travel_details",
+                    ChoiceCardRow.answered_option_id.is_(None),
+                    ChoiceCardRow.content["superseded"].as_boolean().is_not(True),
+                )
+                .limit(1)
+            )
             pending_tasks = dialogue["pending_tasks"]
             assert isinstance(pending_tasks, list)
             needs_selection = (
@@ -208,6 +218,7 @@ class TravelService:
             )
             return {
                 "observed_at": observed_at.isoformat(),
+                **({"awaiting_travel_details": True} if waiting_details is not None else {}),
                 **(
                     {"selected_hotel_stays": [s.model_dump(mode="json") for s in selected]}
                     if selected
@@ -262,6 +273,8 @@ class TravelService:
     async def update_conversation_state(
         self, context: RunContext, update: ConversationStateInput
     ) -> dict[str, object]:
+        from backend.services.choices import ChoiceService
+
         async with transaction(self.database) as db:
             row = await travel.owned_request(db, context)
             current = request_from_row(row)
@@ -303,12 +316,14 @@ class TravelService:
                     "该条件已记录或不是必填项，请继续已授权任务，不重复追问",
                     "conversation_question_unnecessary",
                 )
+            if update.confirm_details:
+                await ChoiceService(self).confirm_from_text(db, context, current)
+            if update.cancel:
+                await ChoiceService(self).supersede_details(db, context)
             conversation.save_state(row, state)
-            if update.awaiting_field == "pace":
-                from backend.services.choices import ChoiceService
-
+            if update.awaiting_field in {"pace", "transport"}:
                 card = await ChoiceService(self).create_in_transaction(
-                    db, context, "pace", current.revision
+                    db, context, "travel_details", current.revision
                 )
                 view["choice"] = card.model_dump(mode="json")
             return view

@@ -651,6 +651,7 @@ export interface components {
             question: string;
             /** Options */
             options: components["schemas"]["ChoiceOption"][];
+            details?: components["schemas"]["TravelDetails"] | null;
             /**
              * Created At
              * Format: date-time
@@ -667,7 +668,7 @@ export interface components {
             stale: boolean;
         };
         /** @enum {string} */
-        ChoiceKind: "pace" | "budget_relaxation" | "memory_confirm";
+        ChoiceKind: "pace" | "travel_details" | "budget_relaxation" | "memory_confirm";
         /** ChoiceOption */
         ChoiceOption: {
             /** Option Id */
@@ -686,6 +687,7 @@ export interface components {
             choice_id: string;
             /** Option Id */
             option_id: string;
+            details?: components["schemas"]["TravelDetailsAnswer"] | null;
         };
         DataMode: ("fixture" | "snapshot") | components["schemas"]["ProviderDataMode"];
         /** DemoIdentity */
@@ -1769,6 +1771,42 @@ export interface components {
              */
             soft_constraints: string[];
         };
+        /**
+         * TravelDetails
+         * @description 卡片只展示服务端已有事实；时间保留原条件全文，不推断未知日期/时刻。
+         */
+        TravelDetails: {
+            /** Transport Options */
+            transport_options: components["schemas"]["ChoiceOption"][];
+            /** Pace Options */
+            pace_options: components["schemas"]["ChoiceOption"][];
+            /** Transport */
+            transport?: ("walk" | "transit" | "taxi") | null;
+            /** Pace */
+            pace?: ("标准" | "慢节奏" | "特种兵") | null;
+            /**
+             * Time Constraints
+             * @default []
+             */
+            time_constraints: string[];
+        };
+        /** TravelDetailsAnswer */
+        TravelDetailsAnswer: {
+            /**
+             * Transport
+             * @enum {string}
+             */
+            transport: "walk" | "transit" | "taxi";
+            /**
+             * Pace
+             * @enum {string}
+             */
+            pace: "标准" | "慢节奏" | "特种兵";
+            /** Times Correct */
+            times_correct?: boolean | null;
+            /** Corrected Times */
+            corrected_times?: string[] | null;
+        };
         /** TravelRequest */
         TravelRequest: {
             /** City */
@@ -2573,7 +2611,7 @@ export interface components {
             version: number | null;
         };
         /** @enum {string} */
-        UiChoiceKind: "pace" | "budget_relaxation" | "memory_confirm";
+        UiChoiceKind: "pace" | "travel_details" | "budget_relaxation" | "memory_confirm";
         /** @enum {string} */
         UiErrorCode: "validation" | "blocked" | "unavailable" | "timeout" | "rate_limited" | "provider_error" | "conflict" | "cancelled";
         /** @enum {string} */
@@ -2694,7 +2732,7 @@ export interface components {
              * Option Id
              * @default null
              */
-            option_id: ("standard" | "intensive" | "relaxed" | "accept" | "keep" | "remember" | "trip" | "reject") | null;
+            option_id: ("standard" | "intensive" | "relaxed" | "accept" | "keep" | "remember" | "trip" | "reject" | "confirm") | null;
         };
         /** @enum {string} */
         UiToolReason: "tool_call_cap" | "repair_limit" | "repeat_blocked" | "result_too_long" | "unregistered_tool" | "context_reuse" | "evidence_missing" | "offer_unknown_id" | "not_found" | "live_hold_disabled" | "plan_exists" | "patch_invalid" | "revision_stale" | "lodging_budget_conflict" | "hotel_search_location_required" | "hotel_missing_fields" | "hotel_room_preferences_missing" | "hotel_external_validation" | "hotel_external_unavailable" | "hotel_api_unconfigured" | "hotel_selection_required" | "schema" | "other" | "conversation_incomplete" | "conversation_state_unavailable" | "max_turns" | "request_limit" | "request_too_large" | "budget_limit" | "local_guard";

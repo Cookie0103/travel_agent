@@ -371,6 +371,7 @@
 | S05 | done | 用户2026-10-15要求中文规则置于system prompt开头；角色规格前置并共享，保留用户明确切换语言与专有名称原文；58专项和391文件检查通过，本次提交见Git，不调用付费模型 |
 | S06 | done | 用户要求同步本地配置：.env已安全写入TeamoRouter key/地址/Haiku/启用/10USD，默认仍DeepSeek；.env.example列当前非秘密配置且key为空/默认关闭；dotenv+真实设置校验通过，.env仍Git忽略，仅提交示例与记录 |
 | S07 | done | 用户2026-10-15要求恢复Railway持续blocked；内核互斥2RED→53专项绿、392静态/只读审查通过；全量1920passed/1旧时钟敏感用例失败(隔离重跑通过)，完整保留，不称全量绿；提交见Git，部署锁可用性以live_lock_ready核对，见P34/ADR028；无付费模型调用 |
+| S08 | done | 用户仅批准组合确认；1931全量通过(357.60s，新增cancel收集前)+最终18PG/原生SDK通过、工作台7通过；web145/构建/check392、Chrome原子提交/刷新及只读审查通过；本次提交见Git，次数上限不改，无付费模型调用，见P35/ADR029 |
 
 ## 5. 边界与不变量
 
@@ -390,6 +391,12 @@
 - 交付时向用户报告：分支、SHA、各关卡数字、未完成项与恢复点，以及「需要用户本人做」的事项（D7 标注、是否部署）。
 
 ## 7. 每日进展
+
+### 2026-10-15 组合出行确认
+- 计划：S08，仅修改交通/节奏/时间收集交互。
+- 完成：组合卡原子保存、已有值预选、时间是/不是逐条编辑、跨轮等待/文字确认、取消清理、完整outbox恢复；本次提交见Git。
+- 验证：1931全量通过/18最终PG与原生SDK/7工作台/web145与生产构建/check392；Chrome核对只选按钮不写库、统一确认仅一轮/revision+1、刷新恢复；独立审查无剩余P1/P2。
+- 下一步：push当前分支触发既有Railway部署；真实模型措辞与新卡生成由用户线上验收，本轮不调用付费模型。
 
 ### 2026-10-15 线上持续blocked恢复
 - 计划：S07，确认旧容器停止后修复残留文件造成的互斥阻断。
@@ -460,6 +467,18 @@
 - 下一步：db-up、check、test、web-check，开始 T1。
 
 ## 8. 问题解决记录
+
+### P-35 S08 交通、节奏与时间统一确认
+- 现象：旧节奏卡点击立即启动模型，交通仍未选；时间确认还需打字回复。
+- 核实（REASONED）：use-workspace.selectChoice每次直接send；ChoiceSelection只能选单个option；pace卡与消息同事务写入，已有revision/归属/幂等可复用。
+- 用户决定：交通与节奏各三个按钮；已有值预选；已有抵达/离开安排显示是/不是，否时编辑原文；统一“确认并继续”。仅做本项，不调整HUMAN上限。
+- 方案：新增travel_details卡，复用选择卡存储与消息事务；时间沿用现有hard_constraints，不引入另一套时间字段或推测未知事实；只替换卡中完整展示且由用户明确更正的原条件，保留其余条件。
+- 实现：travel_details卡复用ChoiceService/RunService消息事务；新卡替代与cancel共用supersede_details；明确文字回答经update_conversation_state.confirm_details完成，服务端禁止发卡同轮代确认。旧pace/预算/记忆协议兼容，模型提示新确认使用组合卡。
+- 测试：7条组合PG先红→通过；前端统一提交和outbox恢复分别先红→145项全绿；跨轮/无关更新、取消清理分别先红后绿。最终PG/原生SDK18passed(8.23s)，check392/三平台类型/三层契约/10地图通过；全量1931passed/1skip/4deselect(357.60s，收集在新增cancel回归前)，最终cancel已纳入18专项。
+- 审查：两项P2（跨轮等待、长时间条件合并截断）与一次复核P2（取消后旧卡仍阻挡）均修复，最终无剩余P1/P2；不引入表单引擎/依赖/第二runtime。
+- Chrome VERIFIED：本地合成卡的标准节奏预选；仅改节奏/交通/更正仍run_count=1/revision=1；统一确认后run_count=2/revision=2、transit/特种兵/更正抵达时间全部持久；刷新恢复已确认卡。私有回执与截图在.cache/combined-browser-receipt.json及combined-confirmation.png，不提交用户会话内容。
+- 过程问题保留：混合指定集成/单元路径时，workbench的postgres_url夹具未加载，37passed/7setup errors；单独执行workbench后7passed，不改产品代码或断言掩盖。S07记录的导入时钟过期夹具在本轮改为调用时now，仍5分钟TTL，原断言不变；本次全量及独立7工作台通过。
+- 结果与边界：没有放宽校验、次数、费用；没有调用付费Claude/DeepSeek或外部旅行API。按钮与PG/SDK离线路径已核实，真实模型是否遵守新卡提示留给用户线上验收，不将离线测试当模型效果。
 
 ### P-05 T2：单层恢复与旧断言冲突（已验证）
 - 现象/根因：VERIFIED，原request_json一次请求失败即抛出，所有ExternalDataError归unavailable；stopping_error不复位；UI activity与failedReason直接采用code。旧测试还明确断言429/503不重试。

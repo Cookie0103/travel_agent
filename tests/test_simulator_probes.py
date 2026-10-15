@@ -6,8 +6,26 @@ from uuid import uuid4
 import pytest
 
 from backend.domain.plans import SavedPlan
-from eval.simulator import recalled
+from eval.simulator import UserAction, recalled
 from eval.simulator_metrics import no_reoffer_after_decline, saved_items_cover_segments
+
+
+def test_simulator_can_submit_combined_details_but_cannot_attach_them_to_other_actions() -> None:
+    payload = {
+        "kind": "choice",
+        "text": "一起确认",
+        "choice_id": str(uuid4()),
+        "option_id": "confirm",
+        "details": {"transport": "transit", "pace": "标准", "times_correct": True},
+    }
+    action = UserAction.model_validate(payload)
+    assert (
+        action.details and action.details.transport == "transit" and action.details.pace == "标准"
+    )
+    with pytest.raises(ValueError):
+        UserAction.model_validate(
+            {"kind": "message", "text": "继续", "details": payload["details"]}
+        )
 
 
 @pytest.mark.parametrize(

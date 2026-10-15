@@ -83,6 +83,13 @@ class DatabaseTools:
             state = await asyncio.wrap_future(
                 asyncio.run_coroutine_threadsafe(self.travel.business_context(context), self.loop)
             )
+            if state.get("awaiting_travel_details"):
+                return ToolResult(
+                    {},
+                    code="validation",
+                    suggestion="请等待用户在出行安排卡统一确认交通、节奏与时间后继续，不提前规划。",
+                    detail=("conversation_incomplete",),
+                )
             if state.get("requires_hotel_selection"):
                 return ToolResult(
                     {},
@@ -145,7 +152,7 @@ class DatabaseTools:
         ready = dialogue["ready_tasks"]
         if not ready:
             return None
-        if state.get("awaiting_hotel_selection"):
+        if state.get("awaiting_hotel_selection") or state.get("awaiting_travel_details"):
             return None
         if state.get("requires_hotel_selection"):
             return (

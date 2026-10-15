@@ -2350,8 +2350,18 @@
             },
             "type": "array",
             "maxItems": 3,
-            "minItems": 2,
+            "minItems": 1,
             "title": "Options"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TravelDetails"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "created_at": {
             "type": "string",
@@ -2403,6 +2413,7 @@
         "type": "string",
         "enum": [
           "pace",
+          "travel_details",
           "budget_relaxation",
           "memory_confirm"
         ]
@@ -2451,6 +2462,16 @@
             "minLength": 1,
             "pattern": "^[a-z][a-z0-9_-]*$",
             "title": "Option Id"
+          },
+          "details": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/TravelDetailsAnswer"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -5619,6 +5640,133 @@
         "type": "object",
         "title": "TravelConditions"
       },
+      "TravelDetails": {
+        "properties": {
+          "transport_options": {
+            "items": {
+              "$ref": "#/components/schemas/ChoiceOption"
+            },
+            "type": "array",
+            "title": "Transport Options"
+          },
+          "pace_options": {
+            "items": {
+              "$ref": "#/components/schemas/ChoiceOption"
+            },
+            "type": "array",
+            "title": "Pace Options"
+          },
+          "transport": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "walk",
+                  "transit",
+                  "taxi"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Transport"
+          },
+          "pace": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "标准",
+                  "慢节奏",
+                  "特种兵"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pace"
+          },
+          "time_constraints": {
+            "items": {
+              "type": "string",
+              "maxLength": 200,
+              "minLength": 1
+            },
+            "type": "array",
+            "maxItems": 20,
+            "title": "Time Constraints",
+            "default": []
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "transport_options",
+          "pace_options"
+        ],
+        "title": "TravelDetails",
+        "description": "卡片只展示服务端已有事实；时间保留原条件全文，不推断未知日期/时刻。"
+      },
+      "TravelDetailsAnswer": {
+        "properties": {
+          "transport": {
+            "type": "string",
+            "enum": [
+              "walk",
+              "transit",
+              "taxi"
+            ],
+            "title": "Transport"
+          },
+          "pace": {
+            "type": "string",
+            "enum": [
+              "标准",
+              "慢节奏",
+              "特种兵"
+            ],
+            "title": "Pace"
+          },
+          "times_correct": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Times Correct"
+          },
+          "corrected_times": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string",
+                  "maxLength": 200,
+                  "minLength": 1
+                },
+                "type": "array",
+                "maxItems": 20,
+                "minItems": 1
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Corrected Times"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "transport",
+          "pace"
+        ],
+        "title": "TravelDetailsAnswer"
+      },
       "TravelRequest": {
         "properties": {
           "city": {
@@ -7607,6 +7755,7 @@
       "UiChoiceKind": {
         "enum": [
           "pace",
+          "travel_details",
           "budget_relaxation",
           "memory_confirm"
         ],
@@ -7952,7 +8101,8 @@
                   "keep",
                   "remember",
                   "trip",
-                  "reject"
+                  "reject",
+                  "confirm"
                 ],
                 "type": "string"
               },

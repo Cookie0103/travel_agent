@@ -365,8 +365,8 @@ function TurnCards({
             busy={workspace.busy || workspace.restoring}
             sessionId={workspace.identity?.session_id}
             revision={workspace.request?.revision}
-            select={(optionId) =>
-              void workspace.selectChoice(card, optionId, mode)
+            select={(optionId, details) =>
+              void workspace.selectChoice(card, optionId, mode, details)
             }
           />
         );

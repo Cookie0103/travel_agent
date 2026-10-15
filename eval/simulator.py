@@ -20,7 +20,7 @@ from sqlalchemy import select
 from backend.adapters.evaluation_faults import EvaluationFault, validate_fault
 from backend.adapters.tracing import cloud_exporter, push_scores
 from backend.agent.runtime import EventSink
-from backend.domain.choices import ChoiceSelection
+from backend.domain.choices import ChoiceSelection, TravelDetailsAnswer
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.itinerary import HotelStay
 from backend.domain.travel_request import RequestPatch, pace_of
@@ -65,6 +65,7 @@ class UserAction(BaseModel):
     text: str = Field(min_length=1, max_length=4000)
     choice_id: UUID | None = None
     option_id: str | None = None
+    details: TravelDetailsAnswer | None = None
     hotel_stays: tuple[HotelStay, ...] | None = Field(default=None, min_length=1, max_length=6)
     draft_id: UUID | None = None
 
@@ -82,6 +83,8 @@ class UserAction(BaseModel):
         }
         if actual != expected:
             raise ValueError("动作字段不匹配")
+        if self.details is not None and self.kind != "choice":
+            raise ValueError("组合条件只用于选择动作")
         return self
 
 
@@ -320,7 +323,9 @@ async def trial(
                         else "unknown_option"
                     )
                     raise ValueError("模拟用户选择无效")
-                selection = ChoiceSelection(choice_id=action.choice_id, option_id=action.option_id)
+                selection = ChoiceSelection(
+                    choice_id=action.choice_id, option_id=action.option_id, details=action.details
+                )
             failure_reason = "invalid_simulator_output"
             message = MessageInput(
                 client_message_id=uuid4(),
@@ -454,8 +459,15 @@ async def trial(
             chosen = await db.scalar(
                 select(ChoiceCardRow.id).where(
                     ChoiceCardRow.session_id == context.session_id,
-                    ChoiceCardRow.kind == "pace",
-                    ChoiceCardRow.answered_option_id == "relaxed",
+                    (
+                        (ChoiceCardRow.kind == "pace")
+                        & (ChoiceCardRow.answered_option_id == "relaxed")
+                    )
+                    | (
+                        (ChoiceCardRow.kind == "travel_details")
+                        & (ChoiceCardRow.answered_option_id == "confirm")
+                        & (ChoiceCardRow.content["details"]["pace"].astext == "慢节奏")
+                    ),
                 )
             )
         checks["pace_clicked"] = chosen is not None

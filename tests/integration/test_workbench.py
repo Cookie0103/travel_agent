@@ -3,6 +3,7 @@
 import asyncio
 import json
 from dataclasses import replace
+from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -310,12 +311,19 @@ def test_demo_rejects_ambiguous_second_afternoon_hidden_by_card_truncation(
         resolved = await travel.resolve_evidence(
             context, (UUID(first.evidence_ids[0]), UUID(second.evidence_ids[0]))
         )
+        # 使用夹具时的时钟；全量SDK回归可能已超过导入模块后五分钟。
+        now = datetime.now(UTC)
         unique = tuple(
             record(
                 Place.model_validate(resolved[0 if index < 7 else 1].value).model_copy(
                     update={"place_id": f"fixture:truncated-place-{index}"}
                 ),
                 current,
+            ).model_copy(
+                update={
+                    "retrieved_at": now - timedelta(seconds=1),
+                    "valid_until": now + timedelta(minutes=5),
+                }
             )
             for index in range(9)
         )

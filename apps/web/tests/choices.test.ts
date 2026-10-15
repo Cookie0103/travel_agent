@@ -59,6 +59,52 @@ test("busy, answered, stale and expired cards cannot submit", () => {
   assert.throws(() => choiceMessage(card, "invented"));
 });
 
+test("combined confirmation sends both groups and the explicit time answer together", () => {
+  const combined: Choice = {
+    ...card,
+    kind: "travel_details",
+    options: [{ option_id: "confirm", label: "确认并继续", value: "confirm" }],
+    details: {
+      transport_options: [
+        { option_id: "transit", label: "公共交通", value: "transit" },
+      ],
+      pace_options: card.options,
+      transport: null,
+      pace: null,
+      time_constraints: ["10/20 09:00抵达，10/22 22:00离开"],
+    },
+  };
+  assert.throws(() => choiceMessage(combined, "confirm"));
+  const details = {
+    transport: "transit" as const,
+    pace: "标准" as const,
+    times_correct: false,
+    corrected_times: ["10/20 10:00抵达，10/22 21:00离开"],
+  };
+  const selection = choiceMessage(combined, "confirm", details);
+  assert.deepEqual(selection.selection, {
+    choice_id: "c",
+    option_id: "confirm",
+    details,
+  });
+  const body = messageInput(undefined, "统一确认", "offline", selection);
+  assert.equal(messageInput(body, body.text, "offline", selection), body);
+  assert.throws(() =>
+    messageInput(
+      body,
+      body.text,
+      "offline",
+      choiceMessage(combined, "confirm", { ...details, transport: "taxi" }),
+    ),
+  );
+  assert.throws(() =>
+    choiceMessage(combined, "confirm", { ...details, corrected_times: ["  "] }),
+  );
+  assert.throws(() =>
+    choiceMessage(combined, "confirm", { ...details, times_correct: null }),
+  );
+});
+
 test("an answered source card is rehydrated when the latest reply has no choice", () => {
   const source: Run = {
     run_id: "r",

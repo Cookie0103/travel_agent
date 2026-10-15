@@ -3,6 +3,8 @@ import type { Choice } from "@/lib/api";
 import { choiceDisabled } from "@/lib/choices";
 import { Button } from "./ui/button";
 import { useClock } from "./results";
+import type { DetailsAnswer } from "@/lib/choices";
+import { TravelDetailsCard } from "./travel-details-card";
 
 export function ChoiceCard({
   card,
@@ -15,7 +17,7 @@ export function ChoiceCard({
   busy: boolean;
   sessionId?: string;
   revision?: number;
-  select: (optionId: string) => void;
+  select: (optionId: string, details?: DetailsAnswer) => void;
 }) {
   const now = useClock();
   const disabled = choiceDisabled(card, busy, sessionId, revision, now);
@@ -23,6 +25,22 @@ export function ChoiceCard({
     card.stale ||
     card.expected_revision !== revision ||
     !!(card.expires_at && now > 0 && Date.parse(card.expires_at) <= now);
+  if (card.kind === "travel_details" && card.details)
+    return (
+      <TravelDetailsCard
+        key={`${card.choice_id}:${card.answered_option_id ?? "pending"}`}
+        card={card}
+        disabled={disabled}
+        stale={stale}
+        confirm={(details) => select("confirm", details)}
+      />
+    );
+  if (card.kind === "travel_details")
+    return (
+      <p role="status" className="small muted">
+        正在读取出行安排…
+      </p>
+    );
   return (
     <section
       className="space-y-3 rounded-xl border border-border bg-bg-subtle p-4"

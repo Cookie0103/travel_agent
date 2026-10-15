@@ -1,7 +1,7 @@
 /** Application state and recovery; only explicit user actions can submit or confirm. */
 "use client";
 import type { Choice, MessageSelection } from "./api";
-import { choiceMessage } from "./choices";
+import { choiceMessage, detailsSummary, type DetailsAnswer } from "./choices";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   api,
@@ -695,7 +695,12 @@ export function useWorkspace({
       return false;
     }
   }
-  async function selectChoice(card: Choice, optionId: string, mode: Mode) {
+  async function selectChoice(
+    card: Choice,
+    optionId: string,
+    mode: Mode,
+    details?: DetailsAnswer,
+  ) {
     if (
       !identity ||
       card.session_id !== identity.session_id ||
@@ -707,9 +712,9 @@ export function useWorkspace({
     if (!option) return false;
     const started = generation.current;
     const accepted = await send(
-      `用户选择：${option.label}`,
+      details ? detailsSummary(card, details) : `用户选择：${option.label}`,
       mode,
-      choiceMessage(card, optionId),
+      choiceMessage(card, optionId, details),
     );
     if (generation.current !== started) return false;
     try {
