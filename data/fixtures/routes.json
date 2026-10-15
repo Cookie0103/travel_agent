@@ -1,0 +1,10 @@
+[
+  {"endpoints": ["osm:way/57111281", "osm:way/314446153"], "transport": "walk", "minutes": 25, "fare_per_person": "0"},
+  {"endpoints": ["osm:way/57111281", "osm:way/314446153"], "transport": "transit", "minutes": 20, "fare_per_person": "230"},
+  {"endpoints": ["osm:way/314446153", "osm:way/554879249"], "transport": "walk", "minutes": 30, "fare_per_person": "0"},
+  {"endpoints": ["osm:way/314446153", "osm:way/554879249"], "transport": "transit", "minutes": 25, "fare_per_person": "230"},
+  {"endpoints": ["osm:way/57111281", "osm:way/554879249"], "transport": "walk", "minutes": 40, "fare_per_person": "0"},
+  {"endpoints": ["osm:way/57111281", "osm:way/554879249"], "transport": "transit", "minutes": 30, "fare_per_person": "230"},
+  {"endpoints": ["osm:way/290375264", "osm:way/57111281"], "transport": "walk", "minutes": 65, "fare_per_person": "0"},
+  {"endpoints": ["osm:way/290375264", "osm:way/57111281"], "transport": "transit", "minutes": 40, "fare_per_person": "460"}
+]

@@ -1,0 +1,113 @@
+{
+  "status": "VERIFIED",
+  "title": "未核实的分诊线索",
+  "counts": {
+    "与事件一致": 0,
+    "不一致": 5,
+    "无法判断": 5
+  },
+  "root_cause_accuracy": null,
+  "source_sha256": {
+    ".cache/triage/6ca4a9d050c14b1f86dbdc719cfbc53f/results.jsonl": "93877a933ea00ed8f0f130cfd4ef196dfd12ebcc7d016bb7124d2f29b1ecbd9d",
+    ".cache/triage/6ca4a9d050c14b1f86dbdc719cfbc53f/model-triage.jsonl": "1889a1e9356b1f30ebc7d08fb5f1c31901c2526514e036f1fb91ed2be49bd86f",
+    ".cache/triage/6ca4a9d050c14b1f86dbdc719cfbc53f/manifest.json": "f04522c6b43e38638c5239c249852bcfb28d1901a1952049fdb72e79f681af12"
+  },
+  "source_hash_note": "three additional read-time hashes, not F0 originals; all 55 F0 hashes verified unchanged",
+  "rows": [
+    {
+      "case_id": "v2-mem-trip-solo",
+      "trial": 1,
+      "reference": {
+        "first_step": 0,
+        "label": "wrong_tool"
+      },
+      "consistency": "不一致"
+    },
+    {
+      "case_id": "v2-mem-trip-dietary",
+      "trial": 1,
+      "reference": {
+        "first_step": 0,
+        "label": "wrong_tool"
+      },
+      "consistency": "不一致"
+    },
+    {
+      "case_id": "v2-mem-negation-early",
+      "trial": 1,
+      "reference": {
+        "first_step": 0,
+        "label": "wrong_tool"
+      },
+      "consistency": "不一致"
+    },
+    {
+      "case_id": "v2-mem-negation-walk",
+      "trial": 1,
+      "reference": {
+        "first_step": 0,
+        "label": "wrong_tool"
+      },
+      "consistency": "不一致"
+    },
+    {
+      "case_id": "v2-mem-update-invalidate",
+      "trial": 1,
+      "reference": {
+        "first_step": 0,
+        "label": "wrong_tool"
+      },
+      "consistency": "不一致"
+    },
+    {
+      "case_id": "v2-user-budget-reject",
+      "trial": 3,
+      "reference": {
+        "first_step": 5,
+        "label": "premature_confirmation"
+      },
+      "consistency": "无法判断"
+    },
+    {
+      "case_id": "v2-user-pace",
+      "trial": 1,
+      "reference": {
+        "first_step": 8,
+        "label": "ignored_tool_error"
+      },
+      "consistency": "无法判断"
+    },
+    {
+      "case_id": "v2-user-pace",
+      "trial": 2,
+      "reference": {
+        "first_step": 8,
+        "label": "ignored_tool_error"
+      },
+      "consistency": "无法判断"
+    },
+    {
+      "case_id": "v2-user-memory-cross",
+      "trial": 1,
+      "reference": {
+        "first_step": null,
+        "label": "unknown"
+      },
+      "consistency": "无法判断"
+    },
+    {
+      "case_id": "v2-user-three-segments",
+      "trial": 1,
+      "reference": {
+        "first_step": 26,
+        "label": "ignored_tool_error"
+      },
+      "consistency": "无法判断"
+    }
+  ],
+  "model_calls": 0,
+  "cloud_uploads": 0,
+  "unit_passed": 32,
+  "check_files": 391,
+  "review": "no remaining P1/P2"
+}

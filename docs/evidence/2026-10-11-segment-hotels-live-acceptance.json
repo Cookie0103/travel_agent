@@ -1,0 +1,182 @@
+{
+  "day": "2026-10-11",
+  "model_spent_cny": "11.041656",
+  "model_daily_cny": "15.00",
+  "supplier_calls": {
+    "rakuten": 55,
+    "routes": 82,
+    "places": 104,
+    "geocode": 2
+  },
+  "scope": "Synthetic local Chrome acceptance; no booking or private user conversation",
+  "profile": "relaxed",
+  "hotel_ui": {
+    "overnight_rows": 3,
+    "candidates_per_row": [
+      3,
+      3,
+      3
+    ],
+    "two_selected_planning_enabled": false,
+    "three_selected_planning_enabled": true,
+    "rakuten_urls": [
+      "https://travel.rakuten.co.jp/yado/osaka/shi.html",
+      "https://travel.rakuten.co.jp/yado/kyoto/shi.html",
+      "https://travel.rakuten.co.jp/yado/nara/nara.html"
+    ]
+  },
+  "chrome_saved_and_refreshed_version": 2,
+  "limitations": [
+    "Unqueried intercity timetables, durations and fares remain unknown",
+    "Google route durations/fares unavailable in current evidence remain unknown",
+    "Visit fees and meals lack complete evidence; whole-trip budget satisfaction remains unknown",
+    "One hotel opening-hours field and free-text conditions remain unknown"
+  ],
+  "legacy": {
+    "session_id": "fe27928d-fa31-417e-b969-3ea4bff5ce19",
+    "read_version": 2,
+    "lock_saved_refreshed_version": 3,
+    "expired_quote_time_change": "rejected with evidence_stale; validation unchanged"
+  },
+  "completion": "Acceptance completed: three selected hotels, four structured days, V2 saved and restored in Chrome and PostgreSQL; partial factual validation with zero conflicts, unknown facts preserved",
+  "initial_saved_v1": {
+    "plan_id": "2c3d4f79-aab7-4546-86e4-5f7cfec18c89",
+    "version": 1,
+    "item_count": 6,
+    "days": [
+      "2026-11-03",
+      "2026-11-04",
+      "2026-11-05"
+    ],
+    "hotel_stays": [
+      {
+        "check_in": "2026-11-03",
+        "check_out": "2026-11-04",
+        "hotel_evidence_id": "6cff1a1c-d6a8-4349-b338-cdfbfe6c193d"
+      },
+      {
+        "check_in": "2026-11-04",
+        "check_out": "2026-11-05",
+        "hotel_evidence_id": "1879124f-be62-4178-b65a-cbd7c4a21be5"
+      },
+      {
+        "check_in": "2026-11-05",
+        "check_out": "2026-11-06",
+        "hotel_evidence_id": "e6088db4-7747-478a-89ce-85aa74f57d9b"
+      }
+    ]
+  },
+  "initial_model": {
+    "http_requests": 10,
+    "tool_calls": 15,
+    "validation_rounds": [
+      [
+        "report:partial",
+        "counts:v14/u11/c0",
+        "visit_duration_range:unknown@d1i1 start=13:30 end=16:30",
+        "route_duration:unknown",
+        "route_duration:unknown",
+        "opening_hours:unknown",
+        "route_duration:unknown",
+        "repair_round:1"
+      ],
+      [
+        "report:conflict",
+        "counts:v14/u8/c2",
+        "route_departure:conflict@d1i2 dep=17:00 pe=16:00 ns=16:00",
+        "route_departure:conflict@d2i2 dep=16:00 pe=15:30 ns=15:30",
+        "opening_hours:unknown",
+        "route_duration:unknown",
+        "other_costs:unknown",
+        "repair_round:2"
+      ],
+      [
+        "report:partial",
+        "counts:v14/u10/c0",
+        "route_duration:unknown",
+        "route_duration:unknown",
+        "opening_hours:unknown",
+        "route_duration:unknown",
+        "other_costs:unknown",
+        "repair_round:3"
+      ]
+    ],
+    "worker_status": "success",
+    "correction_rounds": 2
+  },
+  "initial_planning_run": {
+    "id": "c359ff6d-33a0-42cc-a5c8-b49241140eaa",
+    "session_id": "d22601e3-4ca0-4bd2-a0d2-d3ffe0647fd3",
+    "status": "completed",
+    "error_code": null
+  },
+  "places_daily_cap": 110,
+  "quota_authorization": "User approved 110 replacing 100; prior 90 calls and CNY15 budget retained",
+  "saved": {
+    "plan_id": "2c3d4f79-aab7-4546-86e4-5f7cfec18c89",
+    "version": 2,
+    "item_count": 7,
+    "days": [
+      "2026-11-03",
+      "2026-11-04",
+      "2026-11-05",
+      "2026-11-06"
+    ],
+    "hotel_stays": [
+      {
+        "check_in": "2026-11-03",
+        "check_out": "2026-11-04",
+        "hotel_evidence_id": "71c345d9-40ae-4489-ae30-0d40068e96df",
+        "hotel_id": "181403",
+        "hotel_unchanged": true,
+        "conditions_unchanged": true,
+        "data_mode": "live"
+      },
+      {
+        "check_in": "2026-11-04",
+        "check_out": "2026-11-05",
+        "hotel_evidence_id": "836cc42b-a89c-42ff-a2ef-927d23498219",
+        "hotel_id": "178586",
+        "hotel_unchanged": true,
+        "conditions_unchanged": true,
+        "data_mode": "live"
+      },
+      {
+        "check_in": "2026-11-05",
+        "check_out": "2026-11-06",
+        "hotel_evidence_id": "4e788ee5-8ccb-42cb-867c-12fa684474ef",
+        "hotel_id": "76939",
+        "hotel_unchanged": true,
+        "conditions_unchanged": true,
+        "data_mode": "live"
+      }
+    ],
+    "request_revision": 2,
+    "global_city": "大阪",
+    "original_six_items_unchanged": true,
+    "return_day_first_route": null
+  },
+  "continuation": {
+    "run_id": "57d5ba76-a038-4176-be82-4ab812b988f1",
+    "status": "completed",
+    "error_code": null,
+    "http_requests": 8,
+    "tool_calls": 10,
+    "validation_rounds": [
+      [
+        "report:partial",
+        "counts:v16/u10/c0",
+        "route_duration:unknown",
+        "route_duration:unknown",
+        "opening_hours:unknown",
+        "route_duration:unknown",
+        "other_costs:unknown",
+        "repair_round:1"
+      ]
+    ],
+    "correction_rounds": 0,
+    "places_additional_calls": 14,
+    "model_additional_cny": "0.389412"
+  },
+  "chrome_restored_placeholders": 0
+}

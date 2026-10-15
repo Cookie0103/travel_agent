@@ -1,0 +1,325 @@
+/** Explicit preference editor; saved values are references, current trip conditions take priority. */
+"use client";
+import { Button } from "./ui/button";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { api, type Identity } from "@/lib/api";
+import type { components } from "@/lib/api-types";
+import {
+  type MemoryFact,
+  memoryLabels,
+  memoryValue,
+  memorySources,
+  memoryStatuses,
+} from "@/lib/memory";
+
+type Preferences = components["schemas"]["Preferences"];
+type UserProfile = components["schemas"]["UserProfileView"];
+const lines = (text: string) =>
+  text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+export function PreferencePanel({
+  identity,
+  onError,
+  refreshKey,
+  onChanged,
+}: {
+  identity: Identity;
+  onError: (error: unknown) => void;
+  refreshKey?: string;
+  onChanged: () => void;
+}) {
+  const [saved, setSaved] = useState<Preferences>();
+  const [facts, setFacts] = useState<MemoryFact[]>([]);
+  const [profile, setProfile] = useState<UserProfile>();
+  const [interests, setInterests] = useState("");
+  const [constraints, setConstraints] = useState("");
+  const [transport, setTransport] = useState<Preferences["transport"]>(null);
+  const [busy, setBusy] = useState(true);
+  const [status, setStatus] = useState("");
+  const generation = useRef(0);
+
+  const display = useCallback((value: Preferences) => {
+    setSaved(value);
+    setInterests((value.interests ?? []).join("\n"));
+    setConstraints((value.soft_constraints ?? []).join("\n"));
+    setTransport(value.transport ?? null);
+  }, []);
+
+  const load = useCallback(async () => {
+    const started = generation.current;
+    try {
+      const [value, rows, summary] = await Promise.all([
+        api<Preferences>("/preferences", identity.token),
+        api<MemoryFact[]>("/memory?include_history=true", identity.token),
+        api<UserProfile>("/profile-summary", identity.token),
+      ]);
+      if (generation.current === started) {
+        display(value);
+        setFacts(rows);
+        setProfile(summary);
+      }
+    } catch (error) {
+      if (generation.current === started) onError(error);
+    } finally {
+      if (generation.current === started) setBusy(false);
+    }
+  }, [identity.token, onError, display]);
+
+  useEffect(() => {
+    ++generation.current;
+    // load 的全部 setState 都在 await 之后，规则无法跨 async 边界识别，实为误报。
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void load();
+    return () => {
+      generation.current += 1;
+    };
+  }, [load, refreshKey]);
+
+  async function change(clear: boolean) {
+    if (!saved || busy) return;
+    const started = ++generation.current;
+    setBusy(true);
+    setStatus("");
+    try {
+      const value = await api<Preferences>(
+        "/preferences",
+        identity.token,
+        clear ? "DELETE" : "PATCH",
+        {
+          expected_revision: saved.revision,
+          ...(!clear
+            ? {
+                set: {
+                  interests: lines(interests),
+                  soft_constraints: lines(constraints),
+                  transport,
+                },
+              }
+            : {}),
+        },
+      );
+      if (generation.current !== started) return;
+      display(value);
+      setProfile(undefined);
+      const [rows, summary] = await Promise.all([
+        api<MemoryFact[]>("/memory?include_history=true", identity.token),
+        api<UserProfile>("/profile-summary", identity.token),
+      ]);
+      if (generation.current !== started) return;
+      setFacts(rows);
+      setProfile(summary);
+      onChanged();
+      setStatus(clear ? "偏好已清除。" : "偏好已保存。");
+    } catch (error) {
+      if (generation.current === started) onError(error);
+    } finally {
+      if (generation.current === started) setBusy(false);
+    }
+  }
+
+  async function updateProfile() {
+    if (!saved || busy || !profile?.can_update) return;
+    const started = ++generation.current;
+    setBusy(true);
+    try {
+      const summary = await api<UserProfile>(
+        "/profile-summary",
+        identity.token,
+        "POST",
+        { expected_revision: saved.revision },
+      );
+      if (generation.current !== started) return;
+      setProfile(summary);
+      setStatus(summary.text ? "画像已更新" : "还没有已确认的长期偏好");
+      onChanged();
+    } catch (error) {
+      if (generation.current === started) onError(error);
+    } finally {
+      if (generation.current === started) setBusy(false);
+    }
+  }
+
+  async function forget(fact: MemoryFact) {
+    if (!saved || busy) return;
+    const started = ++generation.current;
+    setBusy(true);
+    setStatus("");
+    try {
+      const value = await api<Preferences>(
+        `/memory/${fact.fact_id}`,
+        identity.token,
+        "DELETE",
+        { expected_revision: saved.revision },
+      );
+      if (generation.current !== started) return;
+      display(value);
+      setProfile(undefined);
+      const [rows, summary] = await Promise.all([
+        api<MemoryFact[]>("/memory?include_history=true", identity.token),
+        api<UserProfile>("/profile-summary", identity.token),
+      ]);
+      if (generation.current !== started) return;
+      setFacts(rows);
+      setProfile(summary);
+      onChanged();
+      setStatus("这条偏好已删除。");
+    } catch (error) {
+      if (generation.current === started) onError(error);
+    } finally {
+      if (generation.current === started) setBusy(false);
+    }
+  }
+
+  function factRow(fact: MemoryFact) {
+    return (
+      <li key={fact.fact_id}>
+        <p>
+          <strong>
+            {memoryLabels[fact.key]}：{memoryValue(fact)}
+          </strong>{" "}
+          · {memoryStatuses[fact.status]} ·{" "}
+          {fact.scope === "trip" ? "这次旅行" : "长期"}
+        </p>
+        <p className="muted small">
+          {memorySources[fact.source]}
+          {fact.valid_from
+            ? ` · 生效于 ${new Date(fact.valid_from).toLocaleString()}`
+            : ""}
+          {fact.invalidated_at
+            ? ` · 失效于 ${new Date(fact.invalidated_at).toLocaleString()}`
+            : ""}
+        </p>
+        {fact.evidence_quote && (
+          <p className="muted small">原话：{fact.evidence_quote}</p>
+        )}
+        {fact.superseded_by && <p className="muted small">已由新版本取代。</p>}
+        {fact.status !== "deleted" && (
+          <Button
+            variant="outline"
+            disabled={busy || !saved}
+            type="button"
+            onClick={() => void forget(fact)}
+            aria-label={`删除${memoryLabels[fact.key]}：${memoryValue(fact)}`}
+          >
+            删除
+          </Button>
+        )}
+      </li>
+    );
+  }
+  const currentFacts = facts.filter(
+    (fact) =>
+      (fact.status === "active" || fact.status === "proposed") &&
+      (fact.scope === "long_term" || fact.session_id === identity.session_id),
+  );
+  const history = facts.filter((fact) => !currentFacts.includes(fact));
+
+  return (
+    <section className="preference-panel conversation">
+      <div className="section-heading">
+        <h2>长期偏好</h2>
+        <span className="tag">版本 {saved?.revision ?? "—"}</span>
+      </div>
+      <p className="muted small">
+        你填写的偏好和在对话中逐条确认的偏好会保存。本次旅行条件优先。
+      </p>
+      <ul aria-label="已保存与待确认的偏好">{currentFacts.map(factRow)}</ul>
+      {history.length > 0 && (
+        <details>
+          <summary>查看历史版本（{history.length}）</summary>
+          <ul>{history.map(factRow)}</ul>
+        </details>
+      )}
+      <form
+        onSubmit={(event) => {
+          event.preventDefault();
+          void change(false);
+        }}
+      >
+        <label>
+          兴趣（每行一项）
+          <textarea
+            aria-label="长期兴趣"
+            value={interests}
+            disabled={!saved || busy}
+            onChange={(event) => setInterests(event.target.value)}
+            rows={2}
+          />
+        </label>
+        <label>
+          其他偏好（每行一项）
+          <textarea
+            aria-label="其他长期偏好"
+            value={constraints}
+            disabled={!saved || busy}
+            onChange={(event) => setConstraints(event.target.value)}
+            rows={2}
+          />
+        </label>
+        <label>
+          偏好交通
+          <select
+            aria-label="偏好交通"
+            value={transport ?? ""}
+            disabled={!saved || busy}
+            onChange={(event) =>
+              setTransport(
+                (event.target.value as Preferences["transport"]) || null,
+              )
+            }
+          >
+            <option value="">无偏好</option>
+            <option value="walk">步行</option>
+            <option value="transit">公共交通</option>
+            <option value="taxi">出租车</option>
+          </select>
+        </label>
+        <Button variant="outline" type="submit" disabled={!saved || busy}>
+          保存偏好
+        </Button>
+        <Button
+          variant="outline"
+          type="button"
+          disabled={!saved || busy}
+          onClick={() => void change(true)}
+        >
+          清除偏好
+        </Button>
+        <Button
+          variant="outline"
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            setBusy(true);
+            setStatus("");
+            void load();
+          }}
+        >
+          读取最新偏好
+        </Button>
+        <Button
+          variant="outline"
+          type="button"
+          disabled={!saved || busy || !profile?.can_update}
+          onClick={() => void updateProfile()}
+        >
+          更新我的画像
+        </Button>
+        {profile?.text && (
+          <p className="small">
+            {profile.text.replace(/\s*\[fact:[0-9a-f-]+\]/gi, "")}
+            <span className="muted">（依据已确认的长期偏好）</span>
+          </p>
+        )}
+        {status && (
+          <p role="status" className="muted small">
+            {status}
+          </p>
+        )}
+      </form>
+    </section>
+  );
+}

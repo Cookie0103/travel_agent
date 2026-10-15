@@ -1,0 +1,74 @@
+{
+  "local_synthetic_runs": [
+    {
+      "kind": "draft_generation",
+      "status": "completed",
+      "presentation_kinds": [
+        "draft_reference"
+      ],
+      "last_sequence": 16
+    },
+    {
+      "kind": "plain_query",
+      "status": "completed",
+      "presentation_kinds": [],
+      "last_sequence": 7
+    },
+    {
+      "kind": "draft_generation",
+      "status": "completed",
+      "presentation_kinds": [
+        "draft_reference"
+      ],
+      "last_sequence": 16
+    },
+    {
+      "kind": "draft_generation",
+      "status": "completed",
+      "presentation_kinds": [
+        "draft_reference"
+      ],
+      "last_sequence": 16
+    }
+  ],
+  "original_kyoto_current_version": 1,
+  "original_kyoto_version_rows": 1,
+  "original_kyoto_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+  "new_trip_confirmed_version": 1,
+  "plain_query_has_no_draft_reference": true,
+  "foreign_sse_read_attempts": 0,
+  "live_calls": 0,
+  "before_dom": [
+    {
+      "turn": "draft_generation",
+      "draft_badge": false
+    },
+    {
+      "turn": "plain_query",
+      "draft_badge": true
+    }
+  ],
+  "after_dom": [
+    {
+      "turn": "draft_generation",
+      "plan_reference_cards": 1
+    },
+    {
+      "turn": "plain_query",
+      "plan_reference_cards": 0
+    }
+  ],
+  "injected_sse": {
+    "foreign_sequence": 999,
+    "foreign_context": "other trip and run",
+    "actual_current_tools_visible": 6,
+    "foreign_draft_reads": 0
+  },
+  "delayed_restore": {
+    "seconds": 18,
+    "first_tab": "Kyoto confirmed V1 restored",
+    "second_tab_selected_before_read_return": "Sapporo",
+    "second_tab_selected_after_return_and_reload": "Sapporo"
+  },
+  "limits": "Synthetic offline UI; helper cursor tests are separate from actual hook SSE probe. Original production lost-save root remains unknown; 45s initial delay exceeded local Next proxy timeout and did not establish successful hydration."
+}

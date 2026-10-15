@@ -1,0 +1,42 @@
+{
+  "evidence": "VERIFIED",
+  "environment": "local_postgresql_and_chrome",
+  "provider": "deepseek",
+  "generated_at": "2026-10-13T15:26:51.853379+00:00",
+  "turns": [
+    {
+      "run_tag": "896193d9",
+      "status": "completed",
+      "mode": "deepseek",
+      "answer_utf8_bytes": 1322,
+      "answer_sha256": "d1825f85043537b83d539a7cefb7786b738ff2636b97b9cf224b980b38eb11bd"
+    },
+    {
+      "run_tag": "4eeef33e",
+      "status": "completed",
+      "mode": "deepseek",
+      "answer_utf8_bytes": 653,
+      "answer_sha256": "6b5fe8a620e68f11157a85d340473a7ac2a1a1026b8c5398613904c4f2958ebc"
+    }
+  ],
+  "browser": {
+    "same_text_after_refresh": true,
+    "same_text_in_new_tab": true,
+    "same_text_after_api_restart": true,
+    "visible_answer_characters": [
+      440,
+      214
+    ]
+  },
+  "model": {
+    "baseline_requests": 649,
+    "requests_after_restart": 651,
+    "batch_accounted_cny": "0.051644"
+  },
+  "suppliers_today": {
+    "places": 7
+  },
+  "bookings_for_test_session": 0,
+  "formal_plans_for_test_session": 0,
+  "suppliers_note": "Places 7次发生在15:18:54初始打开旧本地正式行程按需补详情；本次新会话在15:20:17后开始，两轮模型无工具，刷新/新标签/API重启无新增调用。"
+}

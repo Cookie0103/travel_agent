@@ -1,0 +1,678 @@
+{
+  "date": "2026-10-09",
+  "model_provider": "deepseek",
+  "model_response": "real",
+  "business_data": "synthetic_user_and_offline_fixtures",
+  "sdk_history": "pointer_invalidated_for_each_synthetic_round",
+  "production_calls": 0,
+  "real_business_supplier_calls": 0,
+  "formal_confirmation_calls": 0,
+  "scope": "bounded_clarification_state_and_execution; not proof of all itinerary completions",
+  "runs": [
+    {
+      "phase": "aliases_only",
+      "round": 1,
+      "runtime_status": "completed",
+      "error_code": null,
+      "tool_results": [
+        {
+          "tool": "update_travel_request",
+          "code": null
+        },
+        {
+          "tool": "update_conversation_state",
+          "code": null
+        },
+        {
+          "tool": "get_weather_forecast",
+          "code": "unavailable"
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_hotel_offers",
+          "code": "validation"
+        }
+      ],
+      "tool_counts": {
+        "update_travel_request": 1,
+        "update_conversation_state": 1,
+        "get_weather_forecast": 1,
+        "search_places": 1,
+        "search_hotel_offers": 1
+      },
+      "conversation": {
+        "pending_tasks": [
+          "hotel_comparison",
+          "itinerary"
+        ],
+        "awaiting_field": "bed",
+        "missing_fields": [
+          "lodging",
+          "bed"
+        ],
+        "ready_tasks": [
+          "itinerary"
+        ],
+        "nights": 1,
+        "lodging_budget_optional": true
+      }
+    },
+    {
+      "phase": "aliases_only",
+      "round": 2,
+      "runtime_status": "completed",
+      "error_code": null,
+      "tool_results": [
+        {
+          "tool": "update_travel_request",
+          "code": "validation"
+        },
+        {
+          "tool": "update_travel_request",
+          "code": null
+        },
+        {
+          "tool": "search_hotel_offers",
+          "code": "validation"
+        },
+        {
+          "tool": "get_weather_forecast",
+          "code": "unavailable"
+        },
+        {
+          "tool": "update_conversation_state",
+          "code": null
+        }
+      ],
+      "tool_counts": {
+        "update_travel_request": 2,
+        "search_hotel_offers": 1,
+        "get_weather_forecast": 1,
+        "update_conversation_state": 1
+      },
+      "conversation": {
+        "pending_tasks": [
+          "hotel_comparison",
+          "itinerary"
+        ],
+        "awaiting_field": "lodging",
+        "missing_fields": [
+          "lodging"
+        ],
+        "ready_tasks": [
+          "itinerary"
+        ],
+        "nights": 1,
+        "lodging_budget_optional": true
+      }
+    },
+    {
+      "phase": "typed_room",
+      "round": 1,
+      "runtime_status": "completed",
+      "error_code": null,
+      "tool_results": [
+        {
+          "tool": "update_travel_request",
+          "code": null
+        },
+        {
+          "tool": "update_conversation_state",
+          "code": "conflict"
+        },
+        {
+          "tool": "update_conversation_state",
+          "code": null
+        }
+      ],
+      "tool_counts": {
+        "update_travel_request": 1,
+        "update_conversation_state": 2
+      },
+      "conversation": {
+        "pending_tasks": [
+          "hotel_comparison",
+          "itinerary"
+        ],
+        "awaiting_field": "bed",
+        "missing_fields": [
+          "bed"
+        ],
+        "ready_tasks": [
+          "itinerary"
+        ],
+        "nights": 1,
+        "lodging_budget_optional": true
+      }
+    },
+    {
+      "phase": "typed_room",
+      "round": 2,
+      "runtime_status": "completed",
+      "error_code": null,
+      "tool_results": [
+        {
+          "tool": "update_travel_request",
+          "code": null
+        },
+        {
+          "tool": "search_hotel_offers",
+          "code": null
+        },
+        {
+          "tool": "get_weather_forecast",
+          "code": "unavailable"
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": "blocked"
+        }
+      ],
+      "tool_counts": {
+        "update_travel_request": 1,
+        "search_hotel_offers": 1,
+        "get_weather_forecast": 1,
+        "search_places": 14
+      },
+      "conversation": {
+        "pending_tasks": [
+          "hotel_comparison",
+          "itinerary"
+        ],
+        "awaiting_field": null,
+        "missing_fields": [],
+        "ready_tasks": [
+          "hotel_comparison",
+          "itinerary"
+        ],
+        "nights": 1,
+        "lodging_budget_optional": true
+      }
+    },
+    {
+      "phase": "hotel_first",
+      "round": 1,
+      "runtime_status": "completed",
+      "error_code": null,
+      "tool_results": [
+        {
+          "tool": "update_travel_request",
+          "code": null
+        },
+        {
+          "tool": "update_conversation_state",
+          "code": null
+        }
+      ],
+      "tool_counts": {
+        "update_travel_request": 1,
+        "update_conversation_state": 1
+      },
+      "conversation": {
+        "pending_tasks": [
+          "hotel_comparison",
+          "itinerary"
+        ],
+        "awaiting_field": "bed",
+        "missing_fields": [
+          "bed"
+        ],
+        "ready_tasks": [
+          "itinerary"
+        ],
+        "nights": 1,
+        "lodging_budget_optional": true
+      }
+    },
+    {
+      "phase": "hotel_first",
+      "round": 2,
+      "runtime_status": "failed",
+      "error_code": "blocked",
+      "tool_results": [
+        {
+          "tool": "update_travel_request",
+          "code": "validation"
+        },
+        {
+          "tool": "update_travel_request",
+          "code": "validation"
+        },
+        {
+          "tool": "update_travel_request",
+          "code": null
+        },
+        {
+          "tool": "search_hotel_offers",
+          "code": null
+        },
+        {
+          "tool": "get_weather_forecast",
+          "code": "unavailable"
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "present_travel_result",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "estimate_routes",
+          "code": "validation"
+        },
+        {
+          "tool": "estimate_routes",
+          "code": null
+        },
+        {
+          "tool": "validate_itinerary",
+          "code": null
+        },
+        {
+          "tool": "validate_itinerary",
+          "code": null
+        },
+        {
+          "tool": "stage_plan_change",
+          "code": null
+        },
+        {
+          "tool": "present_travel_result",
+          "code": "blocked"
+        }
+      ],
+      "tool_counts": {
+        "update_travel_request": 3,
+        "search_hotel_offers": 1,
+        "get_weather_forecast": 1,
+        "search_places": 5,
+        "present_travel_result": 2,
+        "estimate_routes": 2,
+        "validate_itinerary": 2,
+        "stage_plan_change": 1
+      },
+      "conversation": {
+        "pending_tasks": [
+          "itinerary"
+        ],
+        "awaiting_field": null,
+        "missing_fields": [],
+        "ready_tasks": [
+          "itinerary"
+        ],
+        "nights": 1,
+        "lodging_budget_optional": true
+      }
+    },
+    {
+      "phase": "parameter_feedback",
+      "round": 1,
+      "runtime_status": "completed",
+      "error_code": null,
+      "tool_results": [
+        {
+          "tool": "update_travel_request",
+          "code": null
+        },
+        {
+          "tool": "update_conversation_state",
+          "code": null
+        }
+      ],
+      "tool_counts": {
+        "update_travel_request": 1,
+        "update_conversation_state": 1
+      },
+      "conversation": {
+        "pending_tasks": [
+          "hotel_comparison",
+          "itinerary"
+        ],
+        "awaiting_field": "bed",
+        "missing_fields": [
+          "bed"
+        ],
+        "ready_tasks": [
+          "itinerary"
+        ],
+        "nights": 1,
+        "lodging_budget_optional": true
+      }
+    },
+    {
+      "phase": "parameter_feedback",
+      "round": 2,
+      "runtime_status": "failed",
+      "error_code": "blocked",
+      "tool_results": [
+        {
+          "tool": "update_travel_request",
+          "code": null
+        },
+        {
+          "tool": "update_conversation_state",
+          "code": "conflict"
+        },
+        {
+          "tool": "update_conversation_state",
+          "code": null
+        },
+        {
+          "tool": "search_hotel_offers",
+          "code": null
+        },
+        {
+          "tool": "present_travel_result",
+          "code": null
+        },
+        {
+          "tool": "get_weather_forecast",
+          "code": "unavailable"
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "estimate_routes",
+          "code": "validation"
+        },
+        {
+          "tool": "estimate_routes",
+          "code": "validation"
+        },
+        {
+          "tool": "estimate_routes",
+          "code": null
+        },
+        {
+          "tool": "estimate_routes",
+          "code": "validation"
+        },
+        {
+          "tool": "estimate_routes",
+          "code": null
+        },
+        {
+          "tool": "estimate_routes",
+          "code": null
+        },
+        {
+          "tool": "estimate_routes",
+          "code": "validation"
+        }
+      ],
+      "tool_counts": {
+        "update_travel_request": 1,
+        "update_conversation_state": 2,
+        "search_hotel_offers": 1,
+        "present_travel_result": 1,
+        "get_weather_forecast": 1,
+        "search_places": 3,
+        "estimate_routes": 7
+      },
+      "conversation": {
+        "pending_tasks": [
+          "itinerary"
+        ],
+        "awaiting_field": null,
+        "missing_fields": [],
+        "ready_tasks": [
+          "itinerary"
+        ],
+        "nights": 1,
+        "lodging_budget_optional": true
+      }
+    },
+    {
+      "phase": "continue_after_limit",
+      "round": 1,
+      "runtime_status": "failed",
+      "error_code": "blocked",
+      "tool_results": [
+        {
+          "tool": "update_conversation_state",
+          "code": "validation"
+        },
+        {
+          "tool": "search_hotel_offers",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "present_travel_result",
+          "code": null
+        },
+        {
+          "tool": "get_weather_forecast",
+          "code": "unavailable"
+        },
+        {
+          "tool": "estimate_routes",
+          "code": "validation"
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "estimate_routes",
+          "code": "validation"
+        },
+        {
+          "tool": "estimate_routes",
+          "code": null
+        },
+        {
+          "tool": "validate_itinerary",
+          "code": "blocked"
+        },
+        {
+          "tool": "validate_itinerary",
+          "code": "blocked"
+        },
+        {
+          "tool": "validate_itinerary",
+          "code": "blocked"
+        },
+        {
+          "tool": "validate_itinerary",
+          "code": "blocked"
+        },
+        {
+          "tool": "validate_itinerary",
+          "code": "blocked"
+        }
+      ],
+      "tool_counts": {
+        "update_conversation_state": 1,
+        "search_hotel_offers": 1,
+        "search_places": 2,
+        "present_travel_result": 1,
+        "get_weather_forecast": 1,
+        "estimate_routes": 3,
+        "validate_itinerary": 5
+      },
+      "conversation": {
+        "pending_tasks": [
+          "itinerary"
+        ],
+        "awaiting_field": null,
+        "missing_fields": [],
+        "ready_tasks": [
+          "itinerary"
+        ],
+        "nights": 1,
+        "lodging_budget_optional": true
+      }
+    },
+    {
+      "phase": "draft_resume_hint",
+      "round": 1,
+      "runtime_status": "failed",
+      "error_code": "blocked",
+      "tool_results": [
+        {
+          "tool": "present_travel_result",
+          "code": "conflict"
+        },
+        {
+          "tool": "search_hotel_offers",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "get_weather_forecast",
+          "code": "unavailable"
+        },
+        {
+          "tool": "present_travel_result",
+          "code": null
+        },
+        {
+          "tool": "estimate_routes",
+          "code": "validation"
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "search_places",
+          "code": null
+        },
+        {
+          "tool": "estimate_routes",
+          "code": null
+        },
+        {
+          "tool": "validate_itinerary",
+          "code": null
+        },
+        {
+          "tool": "estimate_routes",
+          "code": null
+        },
+        {
+          "tool": "validate_itinerary",
+          "code": null
+        },
+        {
+          "tool": "estimate_routes",
+          "code": null
+        },
+        {
+          "tool": "validate_itinerary",
+          "code": null
+        }
+      ],
+      "tool_counts": {
+        "present_travel_result": 2,
+        "search_hotel_offers": 1,
+        "search_places": 3,
+        "get_weather_forecast": 1,
+        "estimate_routes": 4,
+        "validate_itinerary": 3
+      },
+      "conversation": {
+        "pending_tasks": [
+          "itinerary"
+        ],
+        "awaiting_field": null,
+        "missing_fields": [],
+        "ready_tasks": [
+          "itinerary"
+        ],
+        "nights": 1,
+        "lodging_budget_optional": true
+      }
+    }
+  ]
+}

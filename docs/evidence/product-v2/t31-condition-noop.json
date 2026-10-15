@@ -1,0 +1,80 @@
+{
+  "scope": "VERIFIED Chrome/default offline API/real local PostgreSQL; synthetic fixtures only",
+  "red_before": {
+    "revision": 1,
+    "soft_constraints": [],
+    "child_ages": [],
+    "version": 1,
+    "version_rows": 1,
+    "payload_sha256": "d2545bd688ccc0d6e7e91c0d1f0de7115b49a060a517580635544229ed15505d",
+    "patch_calls": 0
+  },
+  "red_after": {
+    "revision": 2,
+    "soft_constraints": [
+      "节奏：标准"
+    ],
+    "child_ages": [],
+    "version": 1,
+    "version_rows": 1,
+    "payload_sha256": "d2545bd688ccc0d6e7e91c0d1f0de7115b49a060a517580635544229ed15505d",
+    "patch_calls": 1
+  },
+  "green_before": {
+    "revision": 2,
+    "soft_constraints": [
+      "节奏：标准"
+    ],
+    "child_ages": [],
+    "version": 1,
+    "version_rows": 1,
+    "payload_sha256": "d2545bd688ccc0d6e7e91c0d1f0de7115b49a060a517580635544229ed15505d",
+    "patch_calls": 1
+  },
+  "green_after": {
+    "revision": 2,
+    "soft_constraints": [
+      "节奏：标准"
+    ],
+    "child_ages": [],
+    "version": 1,
+    "version_rows": 1,
+    "payload_sha256": "d2545bd688ccc0d6e7e91c0d1f0de7115b49a060a517580635544229ed15505d",
+    "patch_calls": 1
+  },
+  "empty_after": {
+    "revision": 0,
+    "child_ages": null,
+    "unknown_fields_preserved": true,
+    "patch_calls": 1
+  },
+  "hotel_panels_before": 1,
+  "hotel_panels_after": 1,
+  "hold_buttons_after": 3,
+  "green_equivalent_counts": [
+    "2.0",
+    "01"
+  ],
+  "green_equivalent_budget": "50000.00",
+  "bounds_probe": {
+    "values": [
+      "0.50",
+      "09:00:30"
+    ],
+    "red_valid": [
+      false,
+      false
+    ],
+    "green_valid": [
+      true,
+      true
+    ],
+    "submitted": false
+  },
+  "limitations": [
+    "One explicit offline compare message created a new run before card-preservation check; no extra PATCH from no-op saves.",
+    "Empty UI still has offline onboarding gate; removal belongs to T3.7.",
+    "Children explicit unknown/none/infant selection belongs to T3.2.",
+    "Original production save-loss root remains unknown."
+  ]
+}

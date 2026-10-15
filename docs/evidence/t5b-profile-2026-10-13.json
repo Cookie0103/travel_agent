@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-14",
+  "scope": "Chrome synthetic profile acceptance, local PostgreSQL only",
+  "trace_id": "6262ca8c7ce9e1f5ab5095de00f61a78",
+  "http_attempts": 1,
+  "cost_cny": "0.001100",
+  "identity": {
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "sdk_version": "0.2.163",
+    "cli_version": "2.1.295"
+  },
+  "checks": {
+    "explicit_generate_click": true,
+    "one_confirmed_manual_fact_only": true,
+    "citation_hidden_in_ui": true,
+    "single_fact_delete_removed_profile_without_refresh": true,
+    "reload_check": true,
+    "stored_profile_body_erased": true,
+    "stored_citation_ids_erased": true
+  },
+  "screenshots": [
+    "t5b-profile-generated.jpg",
+    "t5b-profile-forgotten.jpg",
+    "t5b-profile-after-refresh.jpg"
+  ],
+  "real_travel_supplier_calls": 0,
+  "real_orders": 0,
+  "railway_changed": false
+}

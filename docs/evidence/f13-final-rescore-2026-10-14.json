@@ -1,0 +1,796 @@
+{
+  "date": "2026-10-14",
+  "status": "VERIFIED",
+  "source_code_commit": "4270583",
+  "claims_version": "claims-v5-local-denial",
+  "originals_unchanged": 55,
+  "sets": [
+    {
+      "group": "e7",
+      "n": 24,
+      "original_passed": 19,
+      "previous_passed": 19,
+      "passed": 16,
+      "unknown_claim_n": 2,
+      "scorer_version": "interaction-v5-local-denial",
+      "original_sha256": "652e7ae7bca39085a234a112847c569fe0d697138cae2c40860efa9ee8e7f3e7",
+      "new_results_sha256": "332d578749f13aafce999d68429308643a17dfb446209cfc58a74043be14470e",
+      "new_manifest_sha256": "88f2f3996e5f09617d540e7fec90f67b1f1156d0989559ce0da10a565bb33578",
+      "changed_checks": [
+        {
+          "case_id": "v2-user-budget-accept",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-budget-accept",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-budget-accept",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": false
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-budget-reject",
+          "trial": 1,
+          "checks": {
+            "no_reoffer_after_decline": {
+              "old": null,
+              "new": false
+            },
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-budget-reject",
+          "trial": 2,
+          "checks": {
+            "no_reoffer_after_decline": {
+              "old": null,
+              "new": true
+            },
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-budget-reject",
+          "trial": 3,
+          "checks": {
+            "no_reoffer_after_decline": {
+              "old": null,
+              "new": false
+            },
+            "claim_consistency": {
+              "old": null,
+              "new": false
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-clarify",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-clarify",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-clarify",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-pace",
+          "trial": 1,
+          "checks": {
+            "hotel_delivery": {
+              "old": null,
+              "new": true
+            },
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-pace",
+          "trial": 2,
+          "checks": {
+            "hotel_delivery": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-pace",
+          "trial": 3,
+          "checks": {
+            "hotel_delivery": {
+              "old": null,
+              "new": true
+            },
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-memory-cross",
+          "trial": 1,
+          "checks": {
+            "recall": {
+              "old": false,
+              "new": true
+            },
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-memory-cross",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-memory-cross",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-memory-trip",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-memory-trip",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-memory-trip",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-three-segments",
+          "trial": 1,
+          "checks": {
+            "saved_items_cover_segments": {
+              "old": null,
+              "new": false
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-three-segments",
+          "trial": 2,
+          "checks": {
+            "saved_items_cover_segments": {
+              "old": null,
+              "new": false
+            },
+            "claim_consistency": {
+              "old": null,
+              "new": false
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-three-segments",
+          "trial": 3,
+          "checks": {
+            "saved_items_cover_segments": {
+              "old": null,
+              "new": false
+            },
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-429",
+          "trial": 1,
+          "checks": {
+            "hotel_delivery": {
+              "old": null,
+              "new": true
+            },
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-429",
+          "trial": 2,
+          "checks": {
+            "hotel_delivery": {
+              "old": null,
+              "new": true
+            },
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-429",
+          "trial": 3,
+          "checks": {
+            "hotel_delivery": {
+              "old": null,
+              "new": true
+            },
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        }
+      ],
+      "source_events": 35,
+      "source_frozen_at": "2026-10-14T08:46:55.495760+00:00",
+      "source_note": "supplemental SDK events frozen before read and verified after rescore, not original F0 files",
+      "same_checks_as_F5": true
+    },
+    {
+      "group": "pace",
+      "n": 3,
+      "original_passed": 3,
+      "previous_passed": null,
+      "passed": 3,
+      "unknown_claim_n": 0,
+      "scorer_version": "interaction-v5-local-denial",
+      "original_sha256": "0f84838f1c7074b0b9bf3a2f6c65bc4468382e94f9b428fa4d71428087b841a1",
+      "new_results_sha256": "15e853283a6811d0f37e6e0f7535d5e8720652c86da96d62d186ce7d8b097680",
+      "new_manifest_sha256": "9ca61b864d39ab86390b47f4688340c37667aff9d09057a0f1be72d3eecbd7ae",
+      "changed_checks": [
+        {
+          "case_id": "v2-user-pace",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-pace",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-user-pace",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        }
+      ],
+      "source_events": 0,
+      "source_frozen_at": "2026-10-14T08:46:55.509638+00:00",
+      "source_note": "supplemental SDK events frozen before read and verified after rescore, not original F0 files",
+      "same_checks_as_F5": true
+    },
+    {
+      "group": "e5",
+      "n": 24,
+      "original_passed": 24,
+      "previous_passed": null,
+      "passed": 20,
+      "unknown_claim_n": 0,
+      "scorer_version": "interaction-v5-local-denial",
+      "original_sha256": "316b7e526feb7138c3745e25e61363c60245d4ab8570ff5551efa1f8fb0db1cc",
+      "new_results_sha256": "998e0aec9f36185995d7761ed46d8b5284444bdf9a02ddc5c2048741f4639fb9",
+      "new_manifest_sha256": "eeb761cdbf4b71439462443294ae18b446f65212d9fe03cc9c42a7f5fe269714",
+      "changed_checks": [
+        {
+          "case_id": "v2-429-ok",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-timeout-ok",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-429-twice",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-400",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": false
+            }
+          }
+        },
+        {
+          "case_id": "v2-empty",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-coverage",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-budget-double",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-budget-none",
+          "trial": 1,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": false
+            }
+          }
+        },
+        {
+          "case_id": "v2-429-ok",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-timeout-ok",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-429-twice",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-400",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": false
+            }
+          }
+        },
+        {
+          "case_id": "v2-empty",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-coverage",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-budget-double",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-budget-none",
+          "trial": 2,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-429-ok",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-timeout-ok",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-429-twice",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-400",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-empty",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-coverage",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-budget-double",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-budget-none",
+          "trial": 3,
+          "checks": {
+            "claim_consistency": {
+              "old": null,
+              "new": false
+            }
+          }
+        }
+      ],
+      "source_events": 24,
+      "source_frozen_at": "2026-10-14T08:46:55.559591+00:00",
+      "source_note": "supplemental SDK events frozen before read and verified after rescore, not original F0 files",
+      "same_checks_as_F5": true
+    },
+    {
+      "group": "e6-original",
+      "n": 20,
+      "original_passed": 15,
+      "passed": 20,
+      "scorer_version": "memory-v3-normalized-polarity",
+      "gold_sha256": {
+        "v2_memory.jsonl": "b6246f20bde7b739dce23544563147b3e408095fe3eca39613a7313fadf98aff"
+      },
+      "changed_checks": [
+        {
+          "case_id": "v2-mem-trip-solo",
+          "trial": 1,
+          "checks": {
+            "no_unnecessary_tools": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-trip-dietary",
+          "trial": 1,
+          "checks": {
+            "memory_exact": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-negation-early",
+          "trial": 1,
+          "checks": {
+            "memory_exact": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-negation-walk",
+          "trial": 1,
+          "checks": {
+            "memory_exact": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-update-invalidate",
+          "trial": 1,
+          "checks": {
+            "no_unnecessary_tools": {
+              "old": false,
+              "new": true
+            }
+          }
+        }
+      ],
+      "artifact_sha256": "0a826b8f8d2d7cecf8948870ad72ce43771fd08c8646e8f86ae1d79396371589",
+      "note": "unchanged F6 grader; no repeat model, sets not pooled; legacy three isolation probes not retroactively four"
+    },
+    {
+      "group": "e6-focused",
+      "n": 15,
+      "original_passed": 5,
+      "passed": 15,
+      "scorer_version": "memory-v3-normalized-polarity",
+      "gold_sha256": {
+        "v2_memory.jsonl": "b6246f20bde7b739dce23544563147b3e408095fe3eca39613a7313fadf98aff"
+      },
+      "changed_checks": [
+        {
+          "case_id": "v2-mem-trip-dietary",
+          "trial": 1,
+          "checks": {
+            "memory_exact": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-negation-early",
+          "trial": 1,
+          "checks": {
+            "memory_exact": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-negation-walk",
+          "trial": 1,
+          "checks": {
+            "memory_exact": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-trip-dietary",
+          "trial": 2,
+          "checks": {
+            "memory_exact": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-negation-early",
+          "trial": 2,
+          "checks": {
+            "memory_exact": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-negation-walk",
+          "trial": 2,
+          "checks": {
+            "memory_exact": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-update-invalidate",
+          "trial": 2,
+          "checks": {
+            "no_unnecessary_tools": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-trip-dietary",
+          "trial": 3,
+          "checks": {
+            "memory_exact": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-negation-early",
+          "trial": 3,
+          "checks": {
+            "memory_exact": {
+              "old": false,
+              "new": true
+            }
+          }
+        },
+        {
+          "case_id": "v2-mem-negation-walk",
+          "trial": 3,
+          "checks": {
+            "memory_exact": {
+              "old": false,
+              "new": true
+            }
+          }
+        }
+      ],
+      "artifact_sha256": "61301936f075c0caa36965da6b1ea66e49578018864cb5da905422a96c996f7a",
+      "note": "unchanged F6 grader; no repeat model, sets not pooled; legacy three isolation probes not retroactively four"
+    }
+  ],
+  "scope": "all 51 old interaction and 35 old memory records uniformly, separate groups; no model/triage/judge rerun, originals and older rescoring preserved"
+}

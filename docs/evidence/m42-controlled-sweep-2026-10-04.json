@@ -1,0 +1,2344 @@
+{
+  "scope": "finite same-source configuration measurements of previously seen original test cases",
+  "status": "partial",
+  "code_commit": "fa9930beed460ec1f2bfa994045ccd1e53d7d181",
+  "source_files": 169,
+  "source_hash_map_sha256": "2cc59d699cb39866ffffc7228fd5cce29f210557aa04735a3ac265f63e002cff",
+  "planned_groups": [
+    "full",
+    "no_tools",
+    "baseline_b2",
+    "fixed_itinerary",
+    "no_skills",
+    "no_preferences",
+    "no_repairs",
+    "no_compaction"
+  ],
+  "completed_groups": 4,
+  "original_cases": 40,
+  "independent_repetitions": 3,
+  "max_http_per_run": 12,
+  "known_test": true,
+  "human_pairs": 0,
+  "goal_complete": false,
+  "groups": [
+    {
+      "group": "full",
+      "run_id": "20261004T014804Z-9fb38f8d",
+      "code_commit": "fa9930beed460ec1f2bfa994045ccd1e53d7d181",
+      "source_files": 169,
+      "source_hashes_unchanged": true,
+      "records": 120,
+      "passed": 97,
+      "errors": 0,
+      "not_run": 0,
+      "http_attempts": {
+        "total": 406,
+        "measured_subtotal": 406,
+        "unknown_n": 0
+      },
+      "currency_upper_bound": {
+        "CNY": {
+          "n": 120,
+          "measured_n": 120,
+          "unknown_n": 0,
+          "total": "9.331554",
+          "measured_subtotal": "9.331554",
+          "distribution": {
+            "measured_n": 120,
+            "p50": 0.047384,
+            "p95": 0.24814,
+            "method": "nearest-rank"
+          }
+        }
+      },
+      "business_metrics": {
+        "version": 1,
+        "records": 120,
+        "missing_observation_n": 0,
+        "constraints": {
+          "applicable_n": 33,
+          "observed_applicable_n": 33,
+          "validated_candidate_n": 26,
+          "states": {
+            "complete": 0,
+            "partial": 26,
+            "conflict": 0,
+            "no_candidate": 7,
+            "unavailable": 0
+          },
+          "check_counts": {
+            "verified": 217,
+            "unknown": 221,
+            "conflict": 0
+          },
+          "candidate_coverage": 0.7878787878787878,
+          "observed_hard_constraint_pass_rate": 0.0,
+          "hard_constraint_pass_rate": null,
+          "observed_candidate_no_conflict_rate": 1.0,
+          "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+        },
+        "booking": {
+          "applicable_n": 18,
+          "observed_applicable_n": 18,
+          "measured_n": 18,
+          "correct_n": 18,
+          "incorrect_n": 0,
+          "unavailable_n": 0,
+          "correctness_rate": 1.0,
+          "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+        },
+        "recovery": {
+          "completion_rate": null,
+          "measured_n": 0,
+          "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+        }
+      },
+      "safety": {
+        "no_unconfirmed_plan_save": {
+          "passed": 120,
+          "failed_or_missing": 0
+        },
+        "no_new_supplier_order": {
+          "passed": 120,
+          "failed_or_missing": 0
+        },
+        "no_implicit_preference_write": {
+          "passed": 120,
+          "failed_or_missing": 0
+        }
+      },
+      "files_sha256": {
+        "manifest.json": "d2fdde62e11aaf9addabddb01597f26058183bd5efc5e1ad888743eb9f8a44d3",
+        "attempts.jsonl": "d7446acabf848e79d8ecdbb62a42964762ff481f47a4011bc946d5891b2aeb0b",
+        "results.jsonl": "01f3e5f6da1463b81a1c0571a578ca05c0de3a1699d56187a3a23e2b271536ba",
+        "summary.json": "55be4b136b4fc627e1e4ce6ecb9180b01ebf6606080b2b242f67e006b2875a74"
+      },
+      "measurement": {
+        "expected": 120,
+        "evaluated": 120,
+        "passed": 97,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.8083333333333333,
+        "per_repeat": [
+          {
+            "repeat": 1,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 31,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.775
+          },
+          {
+            "repeat": 2,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 33,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.825
+          },
+          {
+            "repeat": 3,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 33,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.825
+          }
+        ],
+        "rule_rate_range": {
+          "min": 0.775,
+          "max": 0.825
+        },
+        "latency_seconds": {
+          "measured_n": 120,
+          "p50": 8.43,
+          "p95": 28.109,
+          "method": "nearest-rank"
+        },
+        "latency_unknown_n": 0,
+        "first_progress_seconds": {
+          "measured_n": 98,
+          "p50": 3.410711,
+          "p95": 5.427758,
+          "method": "nearest-rank"
+        },
+        "first_progress_unknown_n": 22,
+        "tool_call_accuracy": {
+          "total": 385,
+          "correct": 0,
+          "incorrect": 4,
+          "unknown": 381,
+          "measured_subtotal": {
+            "total": 385,
+            "correct": 0,
+            "incorrect": 4,
+            "unknown": 381
+          },
+          "unknown_cases": 0,
+          "accuracy": null,
+          "scope": "all started calls; unknown semantic parameters remain unscored"
+        },
+        "original_currency_cost": {
+          "CNY": {
+            "n": 120,
+            "measured_n": 120,
+            "unknown_n": 0,
+            "total": "9.331554",
+            "measured_subtotal": "9.331554",
+            "distribution": {
+              "measured_n": 120,
+              "p50": 0.047384,
+              "p95": 0.24814,
+              "method": "nearest-rank"
+            }
+          }
+        },
+        "currency_unknown_n": 0,
+        "runtime_identities": [
+          {
+            "provider": "deepseek",
+            "model": "deepseek-flash",
+            "sdk_version": "0.2.163",
+            "cli_version": "2.1.114"
+          }
+        ],
+        "http_attempts": {
+          "total": 406,
+          "measured_subtotal": 406,
+          "unknown_n": 0
+        },
+        "tokens": {
+          "measured_n": 120,
+          "unknown_n": 0,
+          "totals": {
+            "input_tokens": 1128961,
+            "cache_read_input_tokens": 2795520,
+            "cache_creation_input_tokens": 0,
+            "output_tokens": 185324
+          }
+        },
+        "semantic_fact_quality": null,
+        "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+        "business_metrics": {
+          "version": 1,
+          "records": 120,
+          "missing_observation_n": 0,
+          "constraints": {
+            "applicable_n": 33,
+            "observed_applicable_n": 33,
+            "validated_candidate_n": 26,
+            "states": {
+              "complete": 0,
+              "partial": 26,
+              "conflict": 0,
+              "no_candidate": 7,
+              "unavailable": 0
+            },
+            "check_counts": {
+              "verified": 217,
+              "unknown": 221,
+              "conflict": 0
+            },
+            "candidate_coverage": 0.7878787878787878,
+            "observed_hard_constraint_pass_rate": 0.0,
+            "hard_constraint_pass_rate": null,
+            "observed_candidate_no_conflict_rate": 1.0,
+            "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+          },
+          "booking": {
+            "applicable_n": 18,
+            "observed_applicable_n": 18,
+            "measured_n": 18,
+            "correct_n": 18,
+            "incorrect_n": 0,
+            "unavailable_n": 0,
+            "correctness_rate": 1.0,
+            "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+          },
+          "recovery": {
+            "completion_rate": null,
+            "measured_n": 0,
+            "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+          }
+        },
+        "planned_pass_rate": 0.8083333333333333
+      },
+      "workflow": "autonomous",
+      "variant": "full",
+      "schema_sha256": "2faec053706d0e8fce4ee0dce8a3b7be3b6b2c2d69dda45994ae3e8872b34e8a",
+      "catalog_sha256": "ea7c82155f0a79cb520487cd247a5ba81947a730171998bccbd747f88b01a65e",
+      "repeat_passed": [
+        31,
+        33,
+        33
+      ],
+      "observed_mechanisms": {
+        "sdk_reports": 120,
+        "tool_started_counts": {
+          "estimate_routes": 16,
+          "get_article": 3,
+          "get_place_facts": 88,
+          "get_saved_plan": 21,
+          "hold_hotel": 22,
+          "load_skill": 19,
+          "present_travel_result": 43,
+          "refresh_hotel_offer": 21,
+          "search_content": 21,
+          "search_hotel_offers": 25,
+          "search_places": 53,
+          "stage_plan_change": 26,
+          "update_travel_request": 3,
+          "validate_itinerary": 24
+        },
+        "observed_context_compactions": 0,
+        "ordered_report_hashes_sha256": "c733325ed4f1b2e0df3322e97ed8625cc20301649b41b37674d7730a31eb292a",
+        "interpretation": "Configuration changes do not prove mechanism activation or causal improvement."
+      }
+    },
+    {
+      "group": "no_tools",
+      "run_id": "20261004T021127Z-f74278d0",
+      "code_commit": "fa9930beed460ec1f2bfa994045ccd1e53d7d181",
+      "source_files": 169,
+      "source_hashes_unchanged": true,
+      "records": 120,
+      "passed": 18,
+      "errors": 0,
+      "not_run": 0,
+      "http_attempts": {
+        "total": 120,
+        "measured_subtotal": 120,
+        "unknown_n": 0
+      },
+      "currency_upper_bound": {
+        "CNY": {
+          "n": 120,
+          "measured_n": 120,
+          "unknown_n": 0,
+          "total": "0.698930",
+          "measured_subtotal": "0.698930",
+          "distribution": {
+            "measured_n": 120,
+            "p50": 0.005648,
+            "p95": 0.00838,
+            "method": "nearest-rank"
+          }
+        }
+      },
+      "business_metrics": {
+        "version": 1,
+        "records": 120,
+        "missing_observation_n": 0,
+        "constraints": {
+          "applicable_n": 33,
+          "observed_applicable_n": 33,
+          "validated_candidate_n": 0,
+          "states": {
+            "complete": 0,
+            "partial": 0,
+            "conflict": 0,
+            "no_candidate": 33,
+            "unavailable": 0
+          },
+          "check_counts": {
+            "verified": null,
+            "unknown": null,
+            "conflict": null
+          },
+          "candidate_coverage": 0.0,
+          "observed_hard_constraint_pass_rate": null,
+          "hard_constraint_pass_rate": null,
+          "observed_candidate_no_conflict_rate": null,
+          "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+        },
+        "booking": {
+          "applicable_n": 18,
+          "observed_applicable_n": 18,
+          "measured_n": 18,
+          "correct_n": 3,
+          "incorrect_n": 15,
+          "unavailable_n": 0,
+          "correctness_rate": 0.16666666666666666,
+          "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+        },
+        "recovery": {
+          "completion_rate": null,
+          "measured_n": 0,
+          "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+        }
+      },
+      "safety": {
+        "no_unconfirmed_plan_save": {
+          "passed": 120,
+          "failed_or_missing": 0
+        },
+        "no_new_supplier_order": {
+          "passed": 120,
+          "failed_or_missing": 0
+        },
+        "no_implicit_preference_write": {
+          "passed": 120,
+          "failed_or_missing": 0
+        }
+      },
+      "files_sha256": {
+        "manifest.json": "3df7e53e3e9b2ad686ec463d41b4ad0b858b31b0834fc25a8114dda42bdeb0d8",
+        "attempts.jsonl": "f1abd0d66523971fe70f072efaa1fbb878783a78025244e6912bf68bbc29ab89",
+        "results.jsonl": "d2eb14314fa54696474273124d49b08b8437084ce343618e6a6ff69375258bfe",
+        "summary.json": "0d7720e7040b1e82dcac9905524dc4d5d6618b00027e2a311b0dd5895b8f9145"
+      },
+      "measurement": {
+        "expected": 120,
+        "evaluated": 120,
+        "passed": 18,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.15,
+        "per_repeat": [
+          {
+            "repeat": 1,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 6,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.15
+          },
+          {
+            "repeat": 2,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 6,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.15
+          },
+          {
+            "repeat": 3,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 6,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.15
+          }
+        ],
+        "rule_rate_range": {
+          "min": 0.15,
+          "max": 0.15
+        },
+        "latency_seconds": {
+          "measured_n": 120,
+          "p50": 5.25,
+          "p95": 6.875,
+          "method": "nearest-rank"
+        },
+        "latency_unknown_n": 0,
+        "first_progress_seconds": {
+          "measured_n": 0,
+          "p50": null,
+          "p95": null,
+          "method": "nearest-rank"
+        },
+        "first_progress_unknown_n": 120,
+        "tool_call_accuracy": {
+          "total": 0,
+          "correct": 0,
+          "incorrect": 0,
+          "unknown": 0,
+          "measured_subtotal": {
+            "total": 0,
+            "correct": 0,
+            "incorrect": 0,
+            "unknown": 0
+          },
+          "unknown_cases": 0,
+          "accuracy": null,
+          "scope": "all started calls; unknown semantic parameters remain unscored"
+        },
+        "original_currency_cost": {
+          "CNY": {
+            "n": 120,
+            "measured_n": 120,
+            "unknown_n": 0,
+            "total": "0.698930",
+            "measured_subtotal": "0.698930",
+            "distribution": {
+              "measured_n": 120,
+              "p50": 0.005648,
+              "p95": 0.00838,
+              "method": "nearest-rank"
+            }
+          }
+        },
+        "currency_unknown_n": 0,
+        "runtime_identities": [
+          {
+            "provider": "deepseek",
+            "model": "deepseek-flash",
+            "sdk_version": "0.2.163",
+            "cli_version": "2.1.114"
+          }
+        ],
+        "http_attempts": {
+          "total": 120,
+          "measured_subtotal": 120,
+          "unknown_n": 0
+        },
+        "tokens": {
+          "measured_n": 120,
+          "unknown_n": 0,
+          "totals": {
+            "input_tokens": 113589,
+            "cache_read_input_tokens": 0,
+            "cache_creation_input_tokens": 0,
+            "output_tokens": 58969
+          }
+        },
+        "semantic_fact_quality": null,
+        "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+        "business_metrics": {
+          "version": 1,
+          "records": 120,
+          "missing_observation_n": 0,
+          "constraints": {
+            "applicable_n": 33,
+            "observed_applicable_n": 33,
+            "validated_candidate_n": 0,
+            "states": {
+              "complete": 0,
+              "partial": 0,
+              "conflict": 0,
+              "no_candidate": 33,
+              "unavailable": 0
+            },
+            "check_counts": {
+              "verified": null,
+              "unknown": null,
+              "conflict": null
+            },
+            "candidate_coverage": 0.0,
+            "observed_hard_constraint_pass_rate": null,
+            "hard_constraint_pass_rate": null,
+            "observed_candidate_no_conflict_rate": null,
+            "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+          },
+          "booking": {
+            "applicable_n": 18,
+            "observed_applicable_n": 18,
+            "measured_n": 18,
+            "correct_n": 3,
+            "incorrect_n": 15,
+            "unavailable_n": 0,
+            "correctness_rate": 0.16666666666666666,
+            "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+          },
+          "recovery": {
+            "completion_rate": null,
+            "measured_n": 0,
+            "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+          }
+        },
+        "planned_pass_rate": 0.15
+      },
+      "workflow": "autonomous",
+      "variant": "no_tools",
+      "schema_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "catalog_sha256": "ea7c82155f0a79cb520487cd247a5ba81947a730171998bccbd747f88b01a65e",
+      "repeat_passed": [
+        6,
+        6,
+        6
+      ],
+      "observed_mechanisms": {
+        "sdk_reports": 120,
+        "tool_started_counts": {},
+        "observed_context_compactions": 0,
+        "ordered_report_hashes_sha256": "7e740296a21905a1ac98a86d595e5ad8d50e899e1fa143acf6aad5e659f89679",
+        "interpretation": "Configuration changes do not prove mechanism activation or causal improvement."
+      }
+    },
+    {
+      "group": "baseline_b2",
+      "run_id": "20261004T022218Z-6fd633ec",
+      "code_commit": "fa9930beed460ec1f2bfa994045ccd1e53d7d181",
+      "source_files": 169,
+      "source_hashes_unchanged": true,
+      "records": 120,
+      "passed": 103,
+      "errors": 0,
+      "not_run": 0,
+      "http_attempts": {
+        "total": 426,
+        "measured_subtotal": 426,
+        "unknown_n": 0
+      },
+      "currency_upper_bound": {
+        "CNY": {
+          "n": 120,
+          "measured_n": 120,
+          "unknown_n": 0,
+          "total": "10.080832",
+          "measured_subtotal": "10.080832",
+          "distribution": {
+            "measured_n": 120,
+            "p50": 0.047942,
+            "p95": 0.260114,
+            "method": "nearest-rank"
+          }
+        }
+      },
+      "business_metrics": {
+        "version": 1,
+        "records": 120,
+        "missing_observation_n": 0,
+        "constraints": {
+          "applicable_n": 33,
+          "observed_applicable_n": 33,
+          "validated_candidate_n": 27,
+          "states": {
+            "complete": 0,
+            "partial": 27,
+            "conflict": 0,
+            "no_candidate": 6,
+            "unavailable": 0
+          },
+          "check_counts": {
+            "verified": 233,
+            "unknown": 223,
+            "conflict": 0
+          },
+          "candidate_coverage": 0.8181818181818182,
+          "observed_hard_constraint_pass_rate": 0.0,
+          "hard_constraint_pass_rate": null,
+          "observed_candidate_no_conflict_rate": 1.0,
+          "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+        },
+        "booking": {
+          "applicable_n": 18,
+          "observed_applicable_n": 18,
+          "measured_n": 18,
+          "correct_n": 18,
+          "incorrect_n": 0,
+          "unavailable_n": 0,
+          "correctness_rate": 1.0,
+          "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+        },
+        "recovery": {
+          "completion_rate": null,
+          "measured_n": 0,
+          "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+        }
+      },
+      "safety": {
+        "no_unconfirmed_plan_save": {
+          "passed": 120,
+          "failed_or_missing": 0
+        },
+        "no_new_supplier_order": {
+          "passed": 120,
+          "failed_or_missing": 0
+        },
+        "no_implicit_preference_write": {
+          "passed": 120,
+          "failed_or_missing": 0
+        }
+      },
+      "files_sha256": {
+        "manifest.json": "63a86220563c7ff02dd7bb16c09e730848de0d8efe9bbffd6eeb0a15a8b41430",
+        "attempts.jsonl": "f0609c7dcdc3cb4381d96f406422863726b2fe627c1d0da419551686b8c84493",
+        "results.jsonl": "98b8944c29cdf7b77cf1419c5edcc31d1a482413ec38fff94af5e7faecd4c387",
+        "summary.json": "2764da0412247dba3190be46a1f09ce6a226af3f0662f47430a7b579cb2042b0"
+      },
+      "measurement": {
+        "expected": 120,
+        "evaluated": 120,
+        "passed": 103,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.8583333333333333,
+        "per_repeat": [
+          {
+            "repeat": 1,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 33,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.825
+          },
+          {
+            "repeat": 2,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 35,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.875
+          },
+          {
+            "repeat": 3,
+            "expected": 40,
+            "evaluated": 40,
+            "passed": 35,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.875
+          }
+        ],
+        "rule_rate_range": {
+          "min": 0.825,
+          "max": 0.875
+        },
+        "latency_seconds": {
+          "measured_n": 120,
+          "p50": 8.575,
+          "p95": 29.399,
+          "method": "nearest-rank"
+        },
+        "latency_unknown_n": 0,
+        "first_progress_seconds": {
+          "measured_n": 96,
+          "p50": 3.354878,
+          "p95": 4.947006,
+          "method": "nearest-rank"
+        },
+        "first_progress_unknown_n": 24,
+        "tool_call_accuracy": {
+          "total": 401,
+          "correct": 0,
+          "incorrect": 2,
+          "unknown": 399,
+          "measured_subtotal": {
+            "total": 401,
+            "correct": 0,
+            "incorrect": 2,
+            "unknown": 399
+          },
+          "unknown_cases": 0,
+          "accuracy": null,
+          "scope": "all started calls; unknown semantic parameters remain unscored"
+        },
+        "original_currency_cost": {
+          "CNY": {
+            "n": 120,
+            "measured_n": 120,
+            "unknown_n": 0,
+            "total": "10.080832",
+            "measured_subtotal": "10.080832",
+            "distribution": {
+              "measured_n": 120,
+              "p50": 0.047942,
+              "p95": 0.260114,
+              "method": "nearest-rank"
+            }
+          }
+        },
+        "currency_unknown_n": 0,
+        "runtime_identities": [
+          {
+            "provider": "deepseek",
+            "model": "deepseek-flash",
+            "sdk_version": "0.2.163",
+            "cli_version": "2.1.114"
+          }
+        ],
+        "http_attempts": {
+          "total": 426,
+          "measured_subtotal": 426,
+          "unknown_n": 0
+        },
+        "tokens": {
+          "measured_n": 120,
+          "unknown_n": 0,
+          "totals": {
+            "input_tokens": 1151828,
+            "cache_read_input_tokens": 3103872,
+            "cache_creation_input_tokens": 0,
+            "output_tokens": 196179
+          }
+        },
+        "semantic_fact_quality": null,
+        "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+        "business_metrics": {
+          "version": 1,
+          "records": 120,
+          "missing_observation_n": 0,
+          "constraints": {
+            "applicable_n": 33,
+            "observed_applicable_n": 33,
+            "validated_candidate_n": 27,
+            "states": {
+              "complete": 0,
+              "partial": 27,
+              "conflict": 0,
+              "no_candidate": 6,
+              "unavailable": 0
+            },
+            "check_counts": {
+              "verified": 233,
+              "unknown": 223,
+              "conflict": 0
+            },
+            "candidate_coverage": 0.8181818181818182,
+            "observed_hard_constraint_pass_rate": 0.0,
+            "hard_constraint_pass_rate": null,
+            "observed_candidate_no_conflict_rate": 1.0,
+            "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+          },
+          "booking": {
+            "applicable_n": 18,
+            "observed_applicable_n": 18,
+            "measured_n": 18,
+            "correct_n": 18,
+            "incorrect_n": 0,
+            "unavailable_n": 0,
+            "correctness_rate": 1.0,
+            "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+          },
+          "recovery": {
+            "completion_rate": null,
+            "measured_n": 0,
+            "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+          }
+        },
+        "planned_pass_rate": 0.8583333333333333
+      },
+      "workflow": "autonomous",
+      "variant": "baseline_b2",
+      "schema_sha256": "2faec053706d0e8fce4ee0dce8a3b7be3b6b2c2d69dda45994ae3e8872b34e8a",
+      "catalog_sha256": "ea7c82155f0a79cb520487cd247a5ba81947a730171998bccbd747f88b01a65e",
+      "repeat_passed": [
+        33,
+        35,
+        35
+      ],
+      "observed_mechanisms": {
+        "sdk_reports": 120,
+        "tool_started_counts": {
+          "estimate_routes": 21,
+          "get_article": 3,
+          "get_place_facts": 90,
+          "get_saved_plan": 21,
+          "hold_hotel": 21,
+          "load_skill": 18,
+          "present_travel_result": 47,
+          "refresh_hotel_offer": 21,
+          "search_content": 22,
+          "search_hotel_offers": 30,
+          "search_places": 53,
+          "stage_plan_change": 27,
+          "update_travel_request": 2,
+          "validate_itinerary": 25
+        },
+        "observed_context_compactions": 0,
+        "ordered_report_hashes_sha256": "916dd70b1addea1a832cf5fd633488efb6088b73fc8cc0f5d5481e0b7ba175a0",
+        "interpretation": "Configuration changes do not prove mechanism activation or causal improvement."
+      }
+    },
+    {
+      "group": "fixed_itinerary",
+      "run_id": "20261004T032552Z-57afca79",
+      "code_commit": "fa9930beed460ec1f2bfa994045ccd1e53d7d181",
+      "source_files": 169,
+      "source_hashes_unchanged": true,
+      "records": 120,
+      "passed": 38,
+      "errors": 34,
+      "not_run": 0,
+      "http_attempts": {
+        "total": 829,
+        "measured_subtotal": 829,
+        "unknown_n": 0
+      },
+      "currency_upper_bound": {
+        "CNY": {
+          "n": 120,
+          "measured_n": 120,
+          "unknown_n": 0,
+          "total": "23.589810",
+          "measured_subtotal": "23.589810",
+          "distribution": {
+            "measured_n": 120,
+            "p50": 0.224978,
+            "p95": 0.454626,
+            "method": "nearest-rank"
+          }
+        }
+      },
+      "business_metrics": {
+        "version": 1,
+        "records": 120,
+        "missing_observation_n": 0,
+        "constraints": {
+          "applicable_n": 33,
+          "observed_applicable_n": 33,
+          "validated_candidate_n": 15,
+          "states": {
+            "complete": 0,
+            "partial": 15,
+            "conflict": 0,
+            "no_candidate": 18,
+            "unavailable": 0
+          },
+          "check_counts": {
+            "verified": 81,
+            "unknown": 153,
+            "conflict": 0
+          },
+          "candidate_coverage": 0.45454545454545453,
+          "observed_hard_constraint_pass_rate": 0.0,
+          "hard_constraint_pass_rate": null,
+          "observed_candidate_no_conflict_rate": 1.0,
+          "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+        },
+        "booking": {
+          "applicable_n": 18,
+          "observed_applicable_n": 18,
+          "measured_n": 18,
+          "correct_n": 3,
+          "incorrect_n": 15,
+          "unavailable_n": 0,
+          "correctness_rate": 0.16666666666666666,
+          "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+        },
+        "recovery": {
+          "completion_rate": null,
+          "measured_n": 0,
+          "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+        }
+      },
+      "safety": {
+        "no_unconfirmed_plan_save": {
+          "passed": 120,
+          "failed_or_missing": 0
+        },
+        "no_new_supplier_order": {
+          "passed": 120,
+          "failed_or_missing": 0
+        },
+        "no_implicit_preference_write": {
+          "passed": 120,
+          "failed_or_missing": 0
+        }
+      },
+      "files_sha256": {
+        "manifest.json": "ead403a9d7c45e49fdcd5c7ffbd721f1577af3bd8625fbde78e29479c2a3afcf",
+        "attempts.jsonl": "d7e02c3e00873f6bf524a2b0779a2188b231f5067322a277bbee825fbcd1f646",
+        "results.jsonl": "2f8526a634591f47f6b78ba28005c093845b8f61e21fc17505eeadbe90fecf3b",
+        "summary.json": "7b63b38389890280391d48035eb6fe34a9e4c819983e2efd677ca783f3e2a02c"
+      },
+      "recovery": {
+        "original_run": "20261004T030120Z-3ca3b17f",
+        "original_replayed": 0,
+        "original_database_rows": 63,
+        "resumed_database_rows": 57,
+        "original_files_sha256": {
+          "manifest.json": "0409f82ad2103789d851718c2ffa200c21c4997aac118f867734b7d970d58a8e",
+          "results.jsonl": "18dd9f3531b40af222db122219faf4e58879a131fef46bce3b7e6924da171731",
+          "attempts.jsonl": "b33c0f58af4f387ad5fb7559c716213159959cad7186f749e352f6e32c990da3",
+          "summary.json": "7c96382203467a875c941761f35573c86b310489cffc31739b9cff32562ba5e4"
+        },
+        "original_files_unchanged": true,
+        "inherited_recovery": {
+          "status": "stopped_requires_diagnosis",
+          "run_id": "20261004T030120Z-3ca3b17f",
+          "original_run": "20261004T025819Z-cb950b1d",
+          "original_replayed": 0,
+          "original_files_sha256": {
+            "manifest.json": "5dcfae1869503d73bd27900ce13f2ff354728d4780074a568e6b9c583b80270e",
+            "results.jsonl": "3be185f548f876b41a498d4a7fb9585204f28d1c9894761933fa79fad0684b42",
+            "attempts.jsonl": "bf10c57fe32fc333d38c7951d8535857a0b545ae5a01afd500a5550651d756f5",
+            "summary.json": "4be8a72c7c8c9f8b7ad8511cd2efab60485852d6e847ef4f63447a3710dd3ea6"
+          },
+          "inherited_recovery": {
+            "status": "stopped_requires_diagnosis",
+            "run_id": "20261004T025819Z-cb950b1d",
+            "original_run": "20261004T024702Z-500fecdb",
+            "original_replayed": 0,
+            "original_files_sha256": {
+              "manifest.json": "8ebb237a696489e0267549dd0e12a6c25f018a17149cc2e3a997d1c2ba8a28c1",
+              "results.jsonl": "306d81f1eba86bc23a4d5683db7a97f62fdf5bd1b74e3c82a852a9aca53d7ed0",
+              "attempts.jsonl": "67c1b03487b3a4d61865fcbdaeee99b35e81d4ab8cd4c970e4f090e9096f42a8",
+              "summary.json": "b701dbf0f91a06ee19761e929d48aff46a873f39669d9ac2ffe5081c65f91368"
+            },
+            "max_http_per_run": 12,
+            "human_pairs": 0,
+            "goal_complete": false,
+            "original_database_rows": 13,
+            "resumed_database_rows": 1,
+            "recorded": 120,
+            "local_cap_errors": 2,
+            "stopped_on_other_error": true,
+            "original_files_unchanged": true,
+            "summary_counts": {
+              "passed": 12,
+              "errors": 2,
+              "not_run": 106
+            }
+          },
+          "max_http_per_run": 12,
+          "human_pairs": 0,
+          "goal_complete": false,
+          "original_database_rows": 14,
+          "resumed_database_rows": 49,
+          "recorded": 120,
+          "local_cap_errors": 17,
+          "stopped_on_other_error": true,
+          "original_files_unchanged": true,
+          "summary_counts": {
+            "passed": 25,
+            "errors": 17,
+            "not_run": 57
+          }
+        }
+      },
+      "measurement": {
+        "expected": 120,
+        "evaluated": 86,
+        "passed": 38,
+        "errors": 34,
+        "not_run": 0,
+        "rule_pass_rate": 0.4418604651162791,
+        "per_repeat": [
+          {
+            "repeat": 1,
+            "expected": 40,
+            "evaluated": 27,
+            "passed": 14,
+            "errors": 13,
+            "not_run": 0,
+            "rule_pass_rate": 0.5185185185185185
+          },
+          {
+            "repeat": 2,
+            "expected": 40,
+            "evaluated": 29,
+            "passed": 12,
+            "errors": 11,
+            "not_run": 0,
+            "rule_pass_rate": 0.41379310344827586
+          },
+          {
+            "repeat": 3,
+            "expected": 40,
+            "evaluated": 30,
+            "passed": 12,
+            "errors": 10,
+            "not_run": 0,
+            "rule_pass_rate": 0.4
+          }
+        ],
+        "rule_rate_range": {
+          "min": 0.4,
+          "max": 0.5185185185185185
+        },
+        "latency_seconds": {
+          "measured_n": 120,
+          "p50": 25.861,
+          "p95": 54.366,
+          "method": "nearest-rank"
+        },
+        "latency_unknown_n": 0,
+        "first_progress_seconds": {
+          "measured_n": 97,
+          "p50": 3.360171,
+          "p95": 6.462544,
+          "method": "nearest-rank"
+        },
+        "first_progress_unknown_n": 23,
+        "tool_call_accuracy": {
+          "total": 865,
+          "correct": 0,
+          "incorrect": 3,
+          "unknown": 862,
+          "measured_subtotal": {
+            "total": 865,
+            "correct": 0,
+            "incorrect": 3,
+            "unknown": 862
+          },
+          "unknown_cases": 0,
+          "accuracy": null,
+          "scope": "all started calls; unknown semantic parameters remain unscored"
+        },
+        "original_currency_cost": {
+          "CNY": {
+            "n": 120,
+            "measured_n": 120,
+            "unknown_n": 0,
+            "total": "23.589810",
+            "measured_subtotal": "23.589810",
+            "distribution": {
+              "measured_n": 120,
+              "p50": 0.224978,
+              "p95": 0.454626,
+              "method": "nearest-rank"
+            }
+          }
+        },
+        "currency_unknown_n": 0,
+        "runtime_identities": [
+          {
+            "provider": "deepseek",
+            "model": "deepseek-flash",
+            "sdk_version": "0.2.163",
+            "cli_version": "2.1.114"
+          }
+        ],
+        "http_attempts": {
+          "total": 829,
+          "measured_subtotal": 829,
+          "unknown_n": 0
+        },
+        "tokens": {
+          "measured_n": 120,
+          "unknown_n": 0,
+          "totals": {
+            "input_tokens": 1329485,
+            "cache_read_input_tokens": 8557696,
+            "cache_creation_input_tokens": 0,
+            "output_tokens": 476931
+          }
+        },
+        "semantic_fact_quality": null,
+        "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+        "business_metrics": {
+          "version": 1,
+          "records": 120,
+          "missing_observation_n": 0,
+          "constraints": {
+            "applicable_n": 33,
+            "observed_applicable_n": 33,
+            "validated_candidate_n": 15,
+            "states": {
+              "complete": 0,
+              "partial": 15,
+              "conflict": 0,
+              "no_candidate": 18,
+              "unavailable": 0
+            },
+            "check_counts": {
+              "verified": 81,
+              "unknown": 153,
+              "conflict": 0
+            },
+            "candidate_coverage": 0.45454545454545453,
+            "observed_hard_constraint_pass_rate": 0.0,
+            "hard_constraint_pass_rate": null,
+            "observed_candidate_no_conflict_rate": 1.0,
+            "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+          },
+          "booking": {
+            "applicable_n": 18,
+            "observed_applicable_n": 18,
+            "measured_n": 18,
+            "correct_n": 3,
+            "incorrect_n": 15,
+            "unavailable_n": 0,
+            "correctness_rate": 0.16666666666666666,
+            "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+          },
+          "recovery": {
+            "completion_rate": null,
+            "measured_n": 0,
+            "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+          }
+        },
+        "planned_pass_rate": 0.31666666666666665
+      },
+      "workflow": "itinerary",
+      "variant": "full",
+      "schema_sha256": "2faec053706d0e8fce4ee0dce8a3b7be3b6b2c2d69dda45994ae3e8872b34e8a",
+      "catalog_sha256": "ea7c82155f0a79cb520487cd247a5ba81947a730171998bccbd747f88b01a65e",
+      "repeat_passed": [
+        14,
+        12,
+        12
+      ],
+      "observed_mechanisms": {
+        "sdk_reports": 120,
+        "tool_started_counts": {
+          "estimate_routes": 90,
+          "get_article": 4,
+          "get_place_facts": 133,
+          "get_saved_plan": 66,
+          "hold_hotel": 34,
+          "load_skill": 32,
+          "present_travel_result": 68,
+          "refresh_hotel_offer": 72,
+          "search_content": 41,
+          "search_hotel_offers": 103,
+          "search_places": 112,
+          "stage_plan_change": 35,
+          "update_travel_request": 5,
+          "validate_itinerary": 70
+        },
+        "observed_context_compactions": 0,
+        "ordered_report_hashes_sha256": "3631383b49673a759fc9d43b9e93eb30773a800c33c7fd9d6f857d2ec1352e88",
+        "interpretation": "Configuration changes do not prove mechanism activation or causal improvement."
+      }
+    }
+  ],
+  "semantic_preparation": {
+    "packets": 120,
+    "business_calls": 385,
+    "bound_arguments": 246,
+    "unbound_arguments": 139,
+    "sdk_tool_uses": 388,
+    "human_pairs": 0,
+    "expected_annotations": 0,
+    "binding_is_correctness": false,
+    "new_model_http": 0
+  },
+  "paired_comparisons": {
+    "no_tools": {
+      "scope": "paired rule/configuration measurements; not semantic or human quality",
+      "runtime_identity_complete": true,
+      "source_hash_map_sha256": "2cc59d699cb39866ffffc7228fd5cce29f210557aa04735a3ac265f63e002cff",
+      "declared_configuration_changes": [
+        "evaluation_variant",
+        "comparison_group",
+        "sdk_resume_enabled",
+        "schema_sha256",
+        "skills"
+      ],
+      "groups": {
+        "a": {
+          "variant": "full",
+          "workflow": "autonomous",
+          "comparison_group": "B3",
+          "files_sha256": {
+            "manifest.json": "d2fdde62e11aaf9addabddb01597f26058183bd5efc5e1ad888743eb9f8a44d3",
+            "results.jsonl": "01f3e5f6da1463b81a1c0571a578ca05c0de3a1699d56187a3a23e2b271536ba",
+            "attempts.jsonl": "d7446acabf848e79d8ecdbb62a42964762ff481f47a4011bc946d5891b2aeb0b",
+            "summary.json": "55be4b136b4fc627e1e4ce6ecb9180b01ebf6606080b2b242f67e006b2875a74"
+          },
+          "measurement": {
+            "expected": 120,
+            "evaluated": 120,
+            "passed": 97,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.8083333333333333,
+            "per_repeat": [
+              {
+                "repeat": 1,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 31,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.775
+              },
+              {
+                "repeat": 2,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 33,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.825
+              },
+              {
+                "repeat": 3,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 33,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.825
+              }
+            ],
+            "rule_rate_range": {
+              "min": 0.775,
+              "max": 0.825
+            },
+            "latency_seconds": {
+              "measured_n": 120,
+              "p50": 8.43,
+              "p95": 28.109,
+              "method": "nearest-rank"
+            },
+            "latency_unknown_n": 0,
+            "first_progress_seconds": {
+              "measured_n": 98,
+              "p50": 3.410711,
+              "p95": 5.427758,
+              "method": "nearest-rank"
+            },
+            "first_progress_unknown_n": 22,
+            "tool_call_accuracy": {
+              "total": 385,
+              "correct": 0,
+              "incorrect": 4,
+              "unknown": 381,
+              "measured_subtotal": {
+                "total": 385,
+                "correct": 0,
+                "incorrect": 4,
+                "unknown": 381
+              },
+              "unknown_cases": 0,
+              "accuracy": null,
+              "scope": "all started calls; unknown semantic parameters remain unscored"
+            },
+            "original_currency_cost": {
+              "CNY": {
+                "n": 120,
+                "measured_n": 120,
+                "unknown_n": 0,
+                "total": "9.331554",
+                "measured_subtotal": "9.331554",
+                "distribution": {
+                  "measured_n": 120,
+                  "p50": 0.047384,
+                  "p95": 0.24814,
+                  "method": "nearest-rank"
+                }
+              }
+            },
+            "currency_unknown_n": 0,
+            "runtime_identities": [
+              {
+                "provider": "deepseek",
+                "model": "deepseek-flash",
+                "sdk_version": "0.2.163",
+                "cli_version": "2.1.114"
+              }
+            ],
+            "http_attempts": {
+              "total": 406,
+              "measured_subtotal": 406,
+              "unknown_n": 0
+            },
+            "tokens": {
+              "measured_n": 120,
+              "unknown_n": 0,
+              "totals": {
+                "input_tokens": 1128961,
+                "cache_read_input_tokens": 2795520,
+                "cache_creation_input_tokens": 0,
+                "output_tokens": 185324
+              }
+            },
+            "semantic_fact_quality": null,
+            "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+            "business_metrics": {
+              "version": 1,
+              "records": 120,
+              "missing_observation_n": 0,
+              "constraints": {
+                "applicable_n": 33,
+                "observed_applicable_n": 33,
+                "validated_candidate_n": 26,
+                "states": {
+                  "complete": 0,
+                  "partial": 26,
+                  "conflict": 0,
+                  "no_candidate": 7,
+                  "unavailable": 0
+                },
+                "check_counts": {
+                  "verified": 217,
+                  "unknown": 221,
+                  "conflict": 0
+                },
+                "candidate_coverage": 0.7878787878787878,
+                "observed_hard_constraint_pass_rate": 0.0,
+                "hard_constraint_pass_rate": null,
+                "observed_candidate_no_conflict_rate": 1.0,
+                "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+              },
+              "booking": {
+                "applicable_n": 18,
+                "observed_applicable_n": 18,
+                "measured_n": 18,
+                "correct_n": 18,
+                "incorrect_n": 0,
+                "unavailable_n": 0,
+                "correctness_rate": 1.0,
+                "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+              },
+              "recovery": {
+                "completion_rate": null,
+                "measured_n": 0,
+                "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+              }
+            },
+            "planned_pass_rate": 0.8083333333333333
+          }
+        },
+        "b": {
+          "variant": "no_tools",
+          "workflow": "autonomous",
+          "comparison_group": "B0",
+          "files_sha256": {
+            "manifest.json": "3df7e53e3e9b2ad686ec463d41b4ad0b858b31b0834fc25a8114dda42bdeb0d8",
+            "results.jsonl": "d2eb14314fa54696474273124d49b08b8437084ce343618e6a6ff69375258bfe",
+            "attempts.jsonl": "f1abd0d66523971fe70f072efaa1fbb878783a78025244e6912bf68bbc29ab89",
+            "summary.json": "0d7720e7040b1e82dcac9905524dc4d5d6618b00027e2a311b0dd5895b8f9145"
+          },
+          "measurement": {
+            "expected": 120,
+            "evaluated": 120,
+            "passed": 18,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.15,
+            "per_repeat": [
+              {
+                "repeat": 1,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 6,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.15
+              },
+              {
+                "repeat": 2,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 6,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.15
+              },
+              {
+                "repeat": 3,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 6,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.15
+              }
+            ],
+            "rule_rate_range": {
+              "min": 0.15,
+              "max": 0.15
+            },
+            "latency_seconds": {
+              "measured_n": 120,
+              "p50": 5.25,
+              "p95": 6.875,
+              "method": "nearest-rank"
+            },
+            "latency_unknown_n": 0,
+            "first_progress_seconds": {
+              "measured_n": 0,
+              "p50": null,
+              "p95": null,
+              "method": "nearest-rank"
+            },
+            "first_progress_unknown_n": 120,
+            "tool_call_accuracy": {
+              "total": 0,
+              "correct": 0,
+              "incorrect": 0,
+              "unknown": 0,
+              "measured_subtotal": {
+                "total": 0,
+                "correct": 0,
+                "incorrect": 0,
+                "unknown": 0
+              },
+              "unknown_cases": 0,
+              "accuracy": null,
+              "scope": "all started calls; unknown semantic parameters remain unscored"
+            },
+            "original_currency_cost": {
+              "CNY": {
+                "n": 120,
+                "measured_n": 120,
+                "unknown_n": 0,
+                "total": "0.698930",
+                "measured_subtotal": "0.698930",
+                "distribution": {
+                  "measured_n": 120,
+                  "p50": 0.005648,
+                  "p95": 0.00838,
+                  "method": "nearest-rank"
+                }
+              }
+            },
+            "currency_unknown_n": 0,
+            "runtime_identities": [
+              {
+                "provider": "deepseek",
+                "model": "deepseek-flash",
+                "sdk_version": "0.2.163",
+                "cli_version": "2.1.114"
+              }
+            ],
+            "http_attempts": {
+              "total": 120,
+              "measured_subtotal": 120,
+              "unknown_n": 0
+            },
+            "tokens": {
+              "measured_n": 120,
+              "unknown_n": 0,
+              "totals": {
+                "input_tokens": 113589,
+                "cache_read_input_tokens": 0,
+                "cache_creation_input_tokens": 0,
+                "output_tokens": 58969
+              }
+            },
+            "semantic_fact_quality": null,
+            "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+            "business_metrics": {
+              "version": 1,
+              "records": 120,
+              "missing_observation_n": 0,
+              "constraints": {
+                "applicable_n": 33,
+                "observed_applicable_n": 33,
+                "validated_candidate_n": 0,
+                "states": {
+                  "complete": 0,
+                  "partial": 0,
+                  "conflict": 0,
+                  "no_candidate": 33,
+                  "unavailable": 0
+                },
+                "check_counts": {
+                  "verified": null,
+                  "unknown": null,
+                  "conflict": null
+                },
+                "candidate_coverage": 0.0,
+                "observed_hard_constraint_pass_rate": null,
+                "hard_constraint_pass_rate": null,
+                "observed_candidate_no_conflict_rate": null,
+                "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+              },
+              "booking": {
+                "applicable_n": 18,
+                "observed_applicable_n": 18,
+                "measured_n": 18,
+                "correct_n": 3,
+                "incorrect_n": 15,
+                "unavailable_n": 0,
+                "correctness_rate": 0.16666666666666666,
+                "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+              },
+              "recovery": {
+                "completion_rate": null,
+                "measured_n": 0,
+                "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+              }
+            },
+            "planned_pass_rate": 0.15
+          }
+        }
+      },
+      "paired": {
+        "planned_n": 120,
+        "outcomes": {
+          "passed->failed": 82,
+          "passed->passed": 15,
+          "failed->passed": 3,
+          "failed->failed": 20
+        },
+        "rule_pass_delta_b_minus_a": -0.6583333333333333,
+        "latency_delta_b_minus_a_seconds": {
+          "measured_n": 120,
+          "p50": -3.178,
+          "p95": 0.566,
+          "method": "nearest-rank"
+        },
+        "original_currency_cost_delta_b_minus_a": {
+          "CNY": {
+            "total": "-8.632624",
+            "measured_subtotal": "-8.632624",
+            "planned_n": 120,
+            "unknown_n": 0,
+            "measured_n": 120,
+            "p50": -0.042014,
+            "p95": -0.00916,
+            "method": "nearest-rank"
+          }
+        },
+        "cost_unpaired_or_unknown_n": 0
+      },
+      "limitations": [
+        "All original failure/error/not_run rows retained in planned denominator",
+        "Missing identity/semantic answers remain unknown; no causal quality claim",
+        "B2 combines two switches; B0 also disables resume capability; fresh sessions do not use old checkpoints",
+        "Different currencies are not converted or compared; cost is conservative accounting"
+      ]
+    },
+    "baseline_b2": {
+      "scope": "paired rule/configuration measurements; not semantic or human quality",
+      "runtime_identity_complete": true,
+      "source_hash_map_sha256": "2cc59d699cb39866ffffc7228fd5cce29f210557aa04735a3ac265f63e002cff",
+      "declared_configuration_changes": [
+        "evaluation_variant",
+        "comparison_group",
+        "automatic_compaction",
+        "sdk_resume_enabled"
+      ],
+      "groups": {
+        "a": {
+          "variant": "full",
+          "workflow": "autonomous",
+          "comparison_group": "B3",
+          "files_sha256": {
+            "manifest.json": "d2fdde62e11aaf9addabddb01597f26058183bd5efc5e1ad888743eb9f8a44d3",
+            "results.jsonl": "01f3e5f6da1463b81a1c0571a578ca05c0de3a1699d56187a3a23e2b271536ba",
+            "attempts.jsonl": "d7446acabf848e79d8ecdbb62a42964762ff481f47a4011bc946d5891b2aeb0b",
+            "summary.json": "55be4b136b4fc627e1e4ce6ecb9180b01ebf6606080b2b242f67e006b2875a74"
+          },
+          "measurement": {
+            "expected": 120,
+            "evaluated": 120,
+            "passed": 97,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.8083333333333333,
+            "per_repeat": [
+              {
+                "repeat": 1,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 31,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.775
+              },
+              {
+                "repeat": 2,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 33,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.825
+              },
+              {
+                "repeat": 3,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 33,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.825
+              }
+            ],
+            "rule_rate_range": {
+              "min": 0.775,
+              "max": 0.825
+            },
+            "latency_seconds": {
+              "measured_n": 120,
+              "p50": 8.43,
+              "p95": 28.109,
+              "method": "nearest-rank"
+            },
+            "latency_unknown_n": 0,
+            "first_progress_seconds": {
+              "measured_n": 98,
+              "p50": 3.410711,
+              "p95": 5.427758,
+              "method": "nearest-rank"
+            },
+            "first_progress_unknown_n": 22,
+            "tool_call_accuracy": {
+              "total": 385,
+              "correct": 0,
+              "incorrect": 4,
+              "unknown": 381,
+              "measured_subtotal": {
+                "total": 385,
+                "correct": 0,
+                "incorrect": 4,
+                "unknown": 381
+              },
+              "unknown_cases": 0,
+              "accuracy": null,
+              "scope": "all started calls; unknown semantic parameters remain unscored"
+            },
+            "original_currency_cost": {
+              "CNY": {
+                "n": 120,
+                "measured_n": 120,
+                "unknown_n": 0,
+                "total": "9.331554",
+                "measured_subtotal": "9.331554",
+                "distribution": {
+                  "measured_n": 120,
+                  "p50": 0.047384,
+                  "p95": 0.24814,
+                  "method": "nearest-rank"
+                }
+              }
+            },
+            "currency_unknown_n": 0,
+            "runtime_identities": [
+              {
+                "provider": "deepseek",
+                "model": "deepseek-flash",
+                "sdk_version": "0.2.163",
+                "cli_version": "2.1.114"
+              }
+            ],
+            "http_attempts": {
+              "total": 406,
+              "measured_subtotal": 406,
+              "unknown_n": 0
+            },
+            "tokens": {
+              "measured_n": 120,
+              "unknown_n": 0,
+              "totals": {
+                "input_tokens": 1128961,
+                "cache_read_input_tokens": 2795520,
+                "cache_creation_input_tokens": 0,
+                "output_tokens": 185324
+              }
+            },
+            "semantic_fact_quality": null,
+            "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+            "business_metrics": {
+              "version": 1,
+              "records": 120,
+              "missing_observation_n": 0,
+              "constraints": {
+                "applicable_n": 33,
+                "observed_applicable_n": 33,
+                "validated_candidate_n": 26,
+                "states": {
+                  "complete": 0,
+                  "partial": 26,
+                  "conflict": 0,
+                  "no_candidate": 7,
+                  "unavailable": 0
+                },
+                "check_counts": {
+                  "verified": 217,
+                  "unknown": 221,
+                  "conflict": 0
+                },
+                "candidate_coverage": 0.7878787878787878,
+                "observed_hard_constraint_pass_rate": 0.0,
+                "hard_constraint_pass_rate": null,
+                "observed_candidate_no_conflict_rate": 1.0,
+                "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+              },
+              "booking": {
+                "applicable_n": 18,
+                "observed_applicable_n": 18,
+                "measured_n": 18,
+                "correct_n": 18,
+                "incorrect_n": 0,
+                "unavailable_n": 0,
+                "correctness_rate": 1.0,
+                "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+              },
+              "recovery": {
+                "completion_rate": null,
+                "measured_n": 0,
+                "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+              }
+            },
+            "planned_pass_rate": 0.8083333333333333
+          }
+        },
+        "b": {
+          "variant": "baseline_b2",
+          "workflow": "autonomous",
+          "comparison_group": "B2",
+          "files_sha256": {
+            "manifest.json": "63a86220563c7ff02dd7bb16c09e730848de0d8efe9bbffd6eeb0a15a8b41430",
+            "results.jsonl": "98b8944c29cdf7b77cf1419c5edcc31d1a482413ec38fff94af5e7faecd4c387",
+            "attempts.jsonl": "f0609c7dcdc3cb4381d96f406422863726b2fe627c1d0da419551686b8c84493",
+            "summary.json": "2764da0412247dba3190be46a1f09ce6a226af3f0662f47430a7b579cb2042b0"
+          },
+          "measurement": {
+            "expected": 120,
+            "evaluated": 120,
+            "passed": 103,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.8583333333333333,
+            "per_repeat": [
+              {
+                "repeat": 1,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 33,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.825
+              },
+              {
+                "repeat": 2,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 35,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.875
+              },
+              {
+                "repeat": 3,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 35,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.875
+              }
+            ],
+            "rule_rate_range": {
+              "min": 0.825,
+              "max": 0.875
+            },
+            "latency_seconds": {
+              "measured_n": 120,
+              "p50": 8.575,
+              "p95": 29.399,
+              "method": "nearest-rank"
+            },
+            "latency_unknown_n": 0,
+            "first_progress_seconds": {
+              "measured_n": 96,
+              "p50": 3.354878,
+              "p95": 4.947006,
+              "method": "nearest-rank"
+            },
+            "first_progress_unknown_n": 24,
+            "tool_call_accuracy": {
+              "total": 401,
+              "correct": 0,
+              "incorrect": 2,
+              "unknown": 399,
+              "measured_subtotal": {
+                "total": 401,
+                "correct": 0,
+                "incorrect": 2,
+                "unknown": 399
+              },
+              "unknown_cases": 0,
+              "accuracy": null,
+              "scope": "all started calls; unknown semantic parameters remain unscored"
+            },
+            "original_currency_cost": {
+              "CNY": {
+                "n": 120,
+                "measured_n": 120,
+                "unknown_n": 0,
+                "total": "10.080832",
+                "measured_subtotal": "10.080832",
+                "distribution": {
+                  "measured_n": 120,
+                  "p50": 0.047942,
+                  "p95": 0.260114,
+                  "method": "nearest-rank"
+                }
+              }
+            },
+            "currency_unknown_n": 0,
+            "runtime_identities": [
+              {
+                "provider": "deepseek",
+                "model": "deepseek-flash",
+                "sdk_version": "0.2.163",
+                "cli_version": "2.1.114"
+              }
+            ],
+            "http_attempts": {
+              "total": 426,
+              "measured_subtotal": 426,
+              "unknown_n": 0
+            },
+            "tokens": {
+              "measured_n": 120,
+              "unknown_n": 0,
+              "totals": {
+                "input_tokens": 1151828,
+                "cache_read_input_tokens": 3103872,
+                "cache_creation_input_tokens": 0,
+                "output_tokens": 196179
+              }
+            },
+            "semantic_fact_quality": null,
+            "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+            "business_metrics": {
+              "version": 1,
+              "records": 120,
+              "missing_observation_n": 0,
+              "constraints": {
+                "applicable_n": 33,
+                "observed_applicable_n": 33,
+                "validated_candidate_n": 27,
+                "states": {
+                  "complete": 0,
+                  "partial": 27,
+                  "conflict": 0,
+                  "no_candidate": 6,
+                  "unavailable": 0
+                },
+                "check_counts": {
+                  "verified": 233,
+                  "unknown": 223,
+                  "conflict": 0
+                },
+                "candidate_coverage": 0.8181818181818182,
+                "observed_hard_constraint_pass_rate": 0.0,
+                "hard_constraint_pass_rate": null,
+                "observed_candidate_no_conflict_rate": 1.0,
+                "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+              },
+              "booking": {
+                "applicable_n": 18,
+                "observed_applicable_n": 18,
+                "measured_n": 18,
+                "correct_n": 18,
+                "incorrect_n": 0,
+                "unavailable_n": 0,
+                "correctness_rate": 1.0,
+                "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+              },
+              "recovery": {
+                "completion_rate": null,
+                "measured_n": 0,
+                "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+              }
+            },
+            "planned_pass_rate": 0.8583333333333333
+          }
+        }
+      },
+      "paired": {
+        "planned_n": 120,
+        "outcomes": {
+          "passed->passed": 91,
+          "passed->failed": 6,
+          "failed->passed": 12,
+          "failed->failed": 11
+        },
+        "rule_pass_delta_b_minus_a": 0.05,
+        "latency_delta_b_minus_a_seconds": {
+          "measured_n": 120,
+          "p50": 0.087,
+          "p95": 9.345,
+          "method": "nearest-rank"
+        },
+        "original_currency_cost_delta_b_minus_a": {
+          "CNY": {
+            "total": "0.749278",
+            "measured_subtotal": "0.749278",
+            "planned_n": 120,
+            "unknown_n": 0,
+            "measured_n": 120,
+            "p50": -0.000278,
+            "p95": 0.060334,
+            "method": "nearest-rank"
+          }
+        },
+        "cost_unpaired_or_unknown_n": 0
+      },
+      "limitations": [
+        "All original failure/error/not_run rows retained in planned denominator",
+        "Missing identity/semantic answers remain unknown; no causal quality claim",
+        "B2 combines two switches; B0 also disables resume capability; fresh sessions do not use old checkpoints",
+        "Different currencies are not converted or compared; cost is conservative accounting"
+      ]
+    },
+    "fixed_itinerary": {
+      "scope": "paired rule/configuration measurements; not semantic or human quality",
+      "runtime_identity_complete": true,
+      "source_hash_map_sha256": "2cc59d699cb39866ffffc7228fd5cce29f210557aa04735a3ac265f63e002cff",
+      "declared_configuration_changes": [
+        "workflow",
+        "comparison_group"
+      ],
+      "groups": {
+        "a": {
+          "variant": "full",
+          "workflow": "autonomous",
+          "comparison_group": "B3",
+          "files_sha256": {
+            "manifest.json": "d2fdde62e11aaf9addabddb01597f26058183bd5efc5e1ad888743eb9f8a44d3",
+            "results.jsonl": "01f3e5f6da1463b81a1c0571a578ca05c0de3a1699d56187a3a23e2b271536ba",
+            "attempts.jsonl": "d7446acabf848e79d8ecdbb62a42964762ff481f47a4011bc946d5891b2aeb0b",
+            "summary.json": "55be4b136b4fc627e1e4ce6ecb9180b01ebf6606080b2b242f67e006b2875a74"
+          },
+          "measurement": {
+            "expected": 120,
+            "evaluated": 120,
+            "passed": 97,
+            "errors": 0,
+            "not_run": 0,
+            "rule_pass_rate": 0.8083333333333333,
+            "per_repeat": [
+              {
+                "repeat": 1,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 31,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.775
+              },
+              {
+                "repeat": 2,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 33,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.825
+              },
+              {
+                "repeat": 3,
+                "expected": 40,
+                "evaluated": 40,
+                "passed": 33,
+                "errors": 0,
+                "not_run": 0,
+                "rule_pass_rate": 0.825
+              }
+            ],
+            "rule_rate_range": {
+              "min": 0.775,
+              "max": 0.825
+            },
+            "latency_seconds": {
+              "measured_n": 120,
+              "p50": 8.43,
+              "p95": 28.109,
+              "method": "nearest-rank"
+            },
+            "latency_unknown_n": 0,
+            "first_progress_seconds": {
+              "measured_n": 98,
+              "p50": 3.410711,
+              "p95": 5.427758,
+              "method": "nearest-rank"
+            },
+            "first_progress_unknown_n": 22,
+            "tool_call_accuracy": {
+              "total": 385,
+              "correct": 0,
+              "incorrect": 4,
+              "unknown": 381,
+              "measured_subtotal": {
+                "total": 385,
+                "correct": 0,
+                "incorrect": 4,
+                "unknown": 381
+              },
+              "unknown_cases": 0,
+              "accuracy": null,
+              "scope": "all started calls; unknown semantic parameters remain unscored"
+            },
+            "original_currency_cost": {
+              "CNY": {
+                "n": 120,
+                "measured_n": 120,
+                "unknown_n": 0,
+                "total": "9.331554",
+                "measured_subtotal": "9.331554",
+                "distribution": {
+                  "measured_n": 120,
+                  "p50": 0.047384,
+                  "p95": 0.24814,
+                  "method": "nearest-rank"
+                }
+              }
+            },
+            "currency_unknown_n": 0,
+            "runtime_identities": [
+              {
+                "provider": "deepseek",
+                "model": "deepseek-flash",
+                "sdk_version": "0.2.163",
+                "cli_version": "2.1.114"
+              }
+            ],
+            "http_attempts": {
+              "total": 406,
+              "measured_subtotal": 406,
+              "unknown_n": 0
+            },
+            "tokens": {
+              "measured_n": 120,
+              "unknown_n": 0,
+              "totals": {
+                "input_tokens": 1128961,
+                "cache_read_input_tokens": 2795520,
+                "cache_creation_input_tokens": 0,
+                "output_tokens": 185324
+              }
+            },
+            "semantic_fact_quality": null,
+            "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+            "business_metrics": {
+              "version": 1,
+              "records": 120,
+              "missing_observation_n": 0,
+              "constraints": {
+                "applicable_n": 33,
+                "observed_applicable_n": 33,
+                "validated_candidate_n": 26,
+                "states": {
+                  "complete": 0,
+                  "partial": 26,
+                  "conflict": 0,
+                  "no_candidate": 7,
+                  "unavailable": 0
+                },
+                "check_counts": {
+                  "verified": 217,
+                  "unknown": 221,
+                  "conflict": 0
+                },
+                "candidate_coverage": 0.7878787878787878,
+                "observed_hard_constraint_pass_rate": 0.0,
+                "hard_constraint_pass_rate": null,
+                "observed_candidate_no_conflict_rate": 1.0,
+                "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+              },
+              "booking": {
+                "applicable_n": 18,
+                "observed_applicable_n": 18,
+                "measured_n": 18,
+                "correct_n": 18,
+                "incorrect_n": 0,
+                "unavailable_n": 0,
+                "correctness_rate": 1.0,
+                "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+              },
+              "recovery": {
+                "completion_rate": null,
+                "measured_n": 0,
+                "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+              }
+            },
+            "planned_pass_rate": 0.8083333333333333
+          }
+        },
+        "b": {
+          "variant": "full",
+          "workflow": "itinerary",
+          "comparison_group": "B1",
+          "files_sha256": {
+            "manifest.json": "ead403a9d7c45e49fdcd5c7ffbd721f1577af3bd8625fbde78e29479c2a3afcf",
+            "results.jsonl": "2f8526a634591f47f6b78ba28005c093845b8f61e21fc17505eeadbe90fecf3b",
+            "attempts.jsonl": "d7e02c3e00873f6bf524a2b0779a2188b231f5067322a277bbee825fbcd1f646",
+            "summary.json": "7b63b38389890280391d48035eb6fe34a9e4c819983e2efd677ca783f3e2a02c"
+          },
+          "measurement": {
+            "expected": 120,
+            "evaluated": 86,
+            "passed": 38,
+            "errors": 34,
+            "not_run": 0,
+            "rule_pass_rate": 0.4418604651162791,
+            "per_repeat": [
+              {
+                "repeat": 1,
+                "expected": 40,
+                "evaluated": 27,
+                "passed": 14,
+                "errors": 13,
+                "not_run": 0,
+                "rule_pass_rate": 0.5185185185185185
+              },
+              {
+                "repeat": 2,
+                "expected": 40,
+                "evaluated": 29,
+                "passed": 12,
+                "errors": 11,
+                "not_run": 0,
+                "rule_pass_rate": 0.41379310344827586
+              },
+              {
+                "repeat": 3,
+                "expected": 40,
+                "evaluated": 30,
+                "passed": 12,
+                "errors": 10,
+                "not_run": 0,
+                "rule_pass_rate": 0.4
+              }
+            ],
+            "rule_rate_range": {
+              "min": 0.4,
+              "max": 0.5185185185185185
+            },
+            "latency_seconds": {
+              "measured_n": 120,
+              "p50": 25.861,
+              "p95": 54.366,
+              "method": "nearest-rank"
+            },
+            "latency_unknown_n": 0,
+            "first_progress_seconds": {
+              "measured_n": 97,
+              "p50": 3.360171,
+              "p95": 6.462544,
+              "method": "nearest-rank"
+            },
+            "first_progress_unknown_n": 23,
+            "tool_call_accuracy": {
+              "total": 865,
+              "correct": 0,
+              "incorrect": 3,
+              "unknown": 862,
+              "measured_subtotal": {
+                "total": 865,
+                "correct": 0,
+                "incorrect": 3,
+                "unknown": 862
+              },
+              "unknown_cases": 0,
+              "accuracy": null,
+              "scope": "all started calls; unknown semantic parameters remain unscored"
+            },
+            "original_currency_cost": {
+              "CNY": {
+                "n": 120,
+                "measured_n": 120,
+                "unknown_n": 0,
+                "total": "23.589810",
+                "measured_subtotal": "23.589810",
+                "distribution": {
+                  "measured_n": 120,
+                  "p50": 0.224978,
+                  "p95": 0.454626,
+                  "method": "nearest-rank"
+                }
+              }
+            },
+            "currency_unknown_n": 0,
+            "runtime_identities": [
+              {
+                "provider": "deepseek",
+                "model": "deepseek-flash",
+                "sdk_version": "0.2.163",
+                "cli_version": "2.1.114"
+              }
+            ],
+            "http_attempts": {
+              "total": 829,
+              "measured_subtotal": 829,
+              "unknown_n": 0
+            },
+            "tokens": {
+              "measured_n": 120,
+              "unknown_n": 0,
+              "totals": {
+                "input_tokens": 1329485,
+                "cache_read_input_tokens": 8557696,
+                "cache_creation_input_tokens": 0,
+                "output_tokens": 476931
+              }
+            },
+            "semantic_fact_quality": null,
+            "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+            "business_metrics": {
+              "version": 1,
+              "records": 120,
+              "missing_observation_n": 0,
+              "constraints": {
+                "applicable_n": 33,
+                "observed_applicable_n": 33,
+                "validated_candidate_n": 15,
+                "states": {
+                  "complete": 0,
+                  "partial": 15,
+                  "conflict": 0,
+                  "no_candidate": 18,
+                  "unavailable": 0
+                },
+                "check_counts": {
+                  "verified": 81,
+                  "unknown": 153,
+                  "conflict": 0
+                },
+                "candidate_coverage": 0.45454545454545453,
+                "observed_hard_constraint_pass_rate": 0.0,
+                "hard_constraint_pass_rate": null,
+                "observed_candidate_no_conflict_rate": 1.0,
+                "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+              },
+              "booking": {
+                "applicable_n": 18,
+                "observed_applicable_n": 18,
+                "measured_n": 18,
+                "correct_n": 3,
+                "incorrect_n": 15,
+                "unavailable_n": 0,
+                "correctness_rate": 0.16666666666666666,
+                "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+              },
+              "recovery": {
+                "completion_rate": null,
+                "measured_n": 0,
+                "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+              }
+            },
+            "planned_pass_rate": 0.31666666666666665
+          }
+        }
+      },
+      "paired": {
+        "planned_n": 120,
+        "outcomes": {
+          "passed->passed": 32,
+          "failed->passed": 6,
+          "passed->error": 28,
+          "failed->failed": 11,
+          "passed->failed": 37,
+          "failed->error": 6
+        },
+        "rule_pass_delta_b_minus_a": -0.49166666666666664,
+        "latency_delta_b_minus_a_seconds": {
+          "measured_n": 120,
+          "p50": 5.412,
+          "p95": 39.215,
+          "method": "nearest-rank"
+        },
+        "original_currency_cost_delta_b_minus_a": {
+          "CNY": {
+            "total": "14.258256",
+            "measured_subtotal": "14.258256",
+            "planned_n": 120,
+            "unknown_n": 0,
+            "measured_n": 120,
+            "p50": 0.050946,
+            "p95": 0.306356,
+            "method": "nearest-rank"
+          }
+        },
+        "cost_unpaired_or_unknown_n": 0
+      },
+      "limitations": [
+        "All original failure/error/not_run rows retained in planned denominator",
+        "Missing identity/semantic answers remain unknown; no causal quality claim",
+        "B2 combines two switches; B0 also disables resume capability; fresh sessions do not use old checkpoints",
+        "Different currencies are not converted or compared; cost is conservative accounting"
+      ]
+    }
+  },
+  "limitations": [
+    "Rule/configuration measurements are not semantic accuracy or human quality.",
+    "All charges are conservative all-input peak-price upper bounds, not vendor bills.",
+    "The fixed itinerary workflow is not universally applicable; original failures are retained.",
+    "No historical 183 result is paired with this changed source.",
+    "Expired held-booking defect was found outside this frozen suite; isolated fix awaits main application.",
+    "Partial constraints, unknown parameters and absent recovery observations remain explicit."
+  ]
+}

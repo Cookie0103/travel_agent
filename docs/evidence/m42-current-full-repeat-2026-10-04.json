@@ -1,0 +1,214 @@
+{
+  "scope": "Current-version known frozen test measurement, full/B3; rule structure is not semantic model quality",
+  "code_commit": "183fdd355dfaaa7b1334c9ae1095ad461190aada",
+  "worktree_dirty_at_start": false,
+  "selected_cases": 40,
+  "repetitions": 3,
+  "records": 120,
+  "passed": 92,
+  "failed": 28,
+  "error": 0,
+  "not_run": 0,
+  "files_sha256": {
+    "manifest.json": "38d75e89fca05ebfdff8f9b7b4b1ae535616fedfb98f7133782f1d906704120e",
+    "attempts.jsonl": "878a32f34ca95458a01810223bf03731ee87ade9483131fccb89b6de9ea685da",
+    "results.jsonl": "9071c497919271f3584003dc732d919655f9ecc44e61cae086d696c2a40dd5a6",
+    "summary.json": "ea01971fb77c890146fe2a1a7eff480b00191fbe786bb46608c945e8624ac2c4"
+  },
+  "source_file_count": 169,
+  "source_hash_changes": [],
+  "schema_sha256": "928e37c52c591cf6960657537e53932efa9bb9d9e57dfb14f2bbd2bf734f6b35",
+  "data_version": "kyoto-snapshot-v1+hotel-fixture-v1+routes-fixture-v1",
+  "catalog_sha256": "821a20b6553d93a9b1cd764c9fd6877425e853c3c62b9047ceea68c9b3baff06",
+  "frozen_suite_sha256": "5a433b621c43f62d17f98c6902d8e889b31c451fe02aa67145b5c142aa97558b",
+  "max_http_per_run": 12,
+  "evaluation_variant": "full",
+  "comparison_group": "B3",
+  "strict_original_batch_validation": "eval.compare.load_batch passed: order, complete set/repeats, independent contexts, metrics/config/summary verified",
+  "failed_check_counts": {
+    "booking_held": 2,
+    "has_results": 10,
+    "no_unnecessary_tools": 1,
+    "one_item_patch": 2,
+    "plan_draft": 5,
+    "response_rule": 3,
+    "second_afternoon_shift": 2,
+    "tool_selection": 15,
+    "tool_success": 6
+  },
+  "safety_checks": {
+    "no_unconfirmed_plan_save": {
+      "passed": 120,
+      "failed": 0
+    },
+    "no_new_supplier_order": {
+      "passed": 120,
+      "failed": 0
+    },
+    "no_implicit_preference_write": {
+      "passed": 120,
+      "failed": 0
+    }
+  },
+  "measurements": {
+    "per_repeat": [
+      {
+        "repeat": 1,
+        "expected": 40,
+        "evaluated": 40,
+        "passed": 29,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.725
+      },
+      {
+        "repeat": 2,
+        "expected": 40,
+        "evaluated": 40,
+        "passed": 31,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.775
+      },
+      {
+        "repeat": 3,
+        "expected": 40,
+        "evaluated": 40,
+        "passed": 32,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.8
+      }
+    ],
+    "rule_rate_range": {
+      "min": 0.725,
+      "max": 0.8
+    },
+    "latency_seconds": {
+      "measured_n": 120,
+      "p50": 7.599,
+      "p95": 30.191,
+      "method": "nearest-rank"
+    },
+    "first_progress_seconds": {
+      "measured_n": 94,
+      "p50": 3.207113,
+      "p95": 4.496073,
+      "method": "nearest-rank"
+    },
+    "first_progress_unknown_n": 26,
+    "tool_call_accuracy": {
+      "total": 387,
+      "correct": 0,
+      "incorrect": 1,
+      "unknown": 386,
+      "measured_subtotal": {
+        "total": 387,
+        "correct": 0,
+        "incorrect": 1,
+        "unknown": 386
+      },
+      "unknown_cases": 0,
+      "accuracy": null,
+      "scope": "all started calls; unknown semantic parameters remain unscored"
+    },
+    "original_currency_cost": {
+      "CNY": {
+        "n": 120,
+        "measured_n": 120,
+        "unknown_n": 0,
+        "total": "9.533012",
+        "measured_subtotal": "9.533012",
+        "distribution": {
+          "measured_n": 120,
+          "p50": 0.04567,
+          "p95": 0.281226,
+          "method": "nearest-rank"
+        }
+      }
+    },
+    "runtime_identities": [
+      {
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "sdk_version": "0.2.163",
+        "cli_version": "2.1.114"
+      }
+    ],
+    "http_attempts": {
+      "total": 412,
+      "measured_subtotal": 412,
+      "unknown_n": 0
+    },
+    "tokens": {
+      "measured_n": 120,
+      "unknown_n": 0,
+      "totals": {
+        "input_tokens": 1113582,
+        "cache_read_input_tokens": 2925056,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 181967
+      }
+    },
+    "business_metrics": {
+      "version": 1,
+      "records": 120,
+      "missing_observation_n": 0,
+      "constraints": {
+        "applicable_n": 33,
+        "observed_applicable_n": 33,
+        "validated_candidate_n": 26,
+        "states": {
+          "complete": 0,
+          "partial": 26,
+          "conflict": 0,
+          "no_candidate": 7,
+          "unavailable": 0
+        },
+        "check_counts": {
+          "verified": 217,
+          "unknown": 207,
+          "conflict": 0
+        },
+        "candidate_coverage": 0.7878787878787878,
+        "observed_hard_constraint_pass_rate": 0.0,
+        "hard_constraint_pass_rate": null,
+        "observed_candidate_no_conflict_rate": 1.0,
+        "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+      },
+      "booking": {
+        "applicable_n": 18,
+        "observed_applicable_n": 18,
+        "measured_n": 18,
+        "correct_n": 16,
+        "incorrect_n": 2,
+        "unavailable_n": 0,
+        "correctness_rate": 0.8888888888888888,
+        "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+      },
+      "recovery": {
+        "completion_rate": null,
+        "measured_n": 0,
+        "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+      }
+    }
+  },
+  "human_rated_pairs": 0,
+  "semantic_fact_quality": null,
+  "limitations": [
+    "Original test was already seen; prompt clarification used legacy dev failures. This is not an unseen or blinded model test.",
+    "Historical full94/120 and B0 17/120 remain unchanged. Sources differ: no strict same-version pairing, causal gain or retrospective threshold claim.",
+    "All 28 failures retained; no test expectation weakened, no failed case rerun outside the predefined three independent repetitions.",
+    "Partial and absent candidates are not complete hard-constraint success; total rate remains null when candidate coverage is incomplete.",
+    "Parameter/fact semantics and human calibration remain incomplete; structural completion does not establish business quality.",
+    "Real Claude is deferred by user; USD usage0. Current B2/B1/single-factor comparisons await sufficient daily budget and identical source/data/schema."
+  ],
+  "verification": {
+    "normal_code_save": "183fdd355dfaaa7b1334c9ae1095ad461190aada original check/test hooks Passed, ordinary push exact SHA",
+    "remote_ci": {
+      "37163720648": "success",
+      "37163717405": "success"
+    },
+    "independent_evidence_review": "quality_review readonly: no P1/P2; four artifact SHA, 169 source hashes, 120 records/repeats, Decimal cost and safety checks matched; Case selection wording clarified, not a global permission violation"
+  }
+}

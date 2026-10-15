@@ -1,0 +1,20 @@
+{
+  "status": "VERIFIED",
+  "title": "未校准参考分",
+  "task_pass_gate": false,
+  "default_threshold": 3,
+  "configurable_range": [
+    1,
+    5
+  ],
+  "old_judge_scores": "read only",
+  "new_model_calls": 0,
+  "specialist_tests": 54,
+  "native_offline_sdk_tests": 6,
+  "neighbor_tests": 24,
+  "source_projection_tests": 13,
+  "check_files": 390,
+  "multi_turn": "current answer run only; missing or ambiguous remains unknown",
+  "review": "no remaining P1/P2",
+  "check_status": "passed all three strict platforms, 3 layer contracts, 10 documentation entries after explicit test type narrowing"
+}

@@ -1,0 +1,95 @@
+{
+  "date": "2026-10-03",
+  "status": "success",
+  "identity": {
+    "provider": "deepseek",
+    "model": "deepseek-flash",
+    "sdk_version": "0.2.163",
+    "cli_version": "2.1.114"
+  },
+  "http_attempts": 3,
+  "requests": [
+    {
+      "model": "deepseek-flash",
+      "stop_reason": "tool_use",
+      "events": [
+        "content_block_delta",
+        "content_block_start",
+        "content_block_stop",
+        "message_delta",
+        "message_start",
+        "message_stop"
+      ],
+      "input_tokens": 927,
+      "cache_read_input_tokens": 0,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 177,
+      "usage_cost_upper_cny": "0.00327",
+      "reserved_cny": "2.113536"
+    },
+    {
+      "model": "deepseek-flash",
+      "stop_reason": "tool_use",
+      "events": [
+        "content_block_delta",
+        "content_block_start",
+        "content_block_stop",
+        "message_delta",
+        "message_start",
+        "message_stop"
+      ],
+      "input_tokens": 814,
+      "cache_read_input_tokens": 1024,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 166,
+      "usage_cost_upper_cny": "0.005004",
+      "reserved_cny": "2.113536"
+    },
+    {
+      "model": "deepseek-flash",
+      "stop_reason": "end_turn",
+      "events": [
+        "content_block_delta",
+        "content_block_start",
+        "content_block_stop",
+        "message_delta",
+        "message_start",
+        "message_stop"
+      ],
+      "input_tokens": 1213,
+      "cache_read_input_tokens": 1920,
+      "cache_creation_input_tokens": 0,
+      "output_tokens": 397,
+      "usage_cost_upper_cny": "0.009442",
+      "reserved_cny": "2.113536"
+    }
+  ],
+  "grant_attempts": 5,
+  "grant_accounted_cny": "0.020670",
+  "tools": [
+    {
+      "name": "search_places",
+      "code": null
+    },
+    {
+      "name": "search_content",
+      "code": null
+    },
+    {
+      "name": "search_content",
+      "code": null
+    },
+    {
+      "name": "search_content",
+      "code": null
+    }
+  ],
+  "guard_failures": [],
+  "answer_checks": {
+    "fixture_label": true,
+    "place_source": true,
+    "article_source": true,
+    "unknown_hours": true
+  },
+  "scope": "真实 Claude Agent SDK + DeepSeek 查询本地人工测试数据；不代表现实旅行事实或规划能力验收"
+}
