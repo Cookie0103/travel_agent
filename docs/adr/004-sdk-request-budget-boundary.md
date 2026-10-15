@@ -16,4 +16,6 @@ SDK 的轮次限制无法覆盖隐藏的 HTTP 重试。采用仅监听回环地�
 
 来源：[SDK Python 选项](https://code.claude.com/docs/en/agent-sdk/python)、[CLI 环境变量](https://code.claude.com/docs/en/env-vars)、[DeepSeek 人民币价表](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)。
 
+2026-10-15：原互斥实现的标记文件可能在部署杀进程后残留。由[ADR-028](028-live-process-lock.md)替代存在性判断，使用句柄绑定的内核文件锁；不unlink稳定锁文件、不清空账本，退出后可重新获取，活跃运行仍排他。
+
 2026-10-03本机真实CLI核查：设置常规retry=0仍会在max_tokens后进行四次SDK内建输出续请求，不能宣称彻底关闭所有辅助请求。所有续请求仍经Guard实际HTTP计数和累计/每日预占；失败不由应用自动重跑。已知max_turns最终结果保留tool_use，失败分类按终止原因优先。DB完整8工具+回答在6轮必断，故该模式12SDK轮；普通搜索6、实际HTTP12/工具16/三修复及授权不变，证据见M3集中记录。

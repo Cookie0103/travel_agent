@@ -1,7 +1,9 @@
 """实测前持久计次和占用保守费用；失败及中断不退回次数或费用。"""
 
+import errno
 import json
 import os
+import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
@@ -10,6 +12,12 @@ from decimal import Decimal
 from pathlib import Path
 
 from backend.limits import Currency, ProbeError, read_budget
+from backend.trace_log import trace
+
+if sys.platform == "win32":
+    import msvcrt
+else:
+    import fcntl
 
 
 @dataclass(frozen=True)
@@ -24,17 +32,32 @@ class Entry:
 
 @contextmanager
 def exclusive(path: Path) -> Iterator[None]:
-    """整次流程互斥；异常终止遗留锁时拒绝盲目恢复。"""
+    """内核持有互斥直到句柄关闭/进程退出；磁盘标记不代表仍有活跃执行。"""
     path.parent.mkdir(parents=True, exist_ok=True)
-    try:
-        with path.open("x", encoding="utf-8") as handle:
-            handle.write("M0.2 running\n")
-    except FileExistsError:
-        raise ProbeError("blocked", "探针正在运行或上次中断尚待核对账本") from None
-    try:
-        yield
-    finally:
-        path.unlink()
+    # 不变量：不unlink，否则等待者与新请求可能分别锁住旧/新inode而同时进入。
+    with path.open("a+b") as handle:
+        try:
+            if sys.platform == "win32":
+                if handle.seek(0, os.SEEK_END) == 0:
+                    handle.write(b"\0")
+                    handle.flush()
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_NBLCK, 1)
+            else:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except OSError as error:
+            if error.errno in {errno.EACCES, errno.EAGAIN}:
+                trace("live_lock_rejected", reason="busy")
+                raise ProbeError("blocked", "已有执行正在运行，请等待其结束") from None
+            raise ProbeError("unavailable", "无法获取执行锁，未发起模型调用") from None
+        try:
+            yield
+        finally:
+            if sys.platform == "win32":
+                handle.seek(0)
+                msvcrt.locking(handle.fileno(), msvcrt.LK_UNLCK, 1)
+            else:
+                fcntl.flock(handle.fileno(), fcntl.LOCK_UN)
 
 
 def read_jsonl(path: Path) -> list[object]:

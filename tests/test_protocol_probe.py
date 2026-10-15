@@ -115,4 +115,6 @@ def test_concurrent_flow_lock_blocks_second_run_and_releases_after_error(tmp_pat
                 with exclusive(path):
                     pytest.fail("concurrent lock was acquired")
             raise RuntimeError("synthetic interruption")
-    assert not path.exists()
+    # 是否仍被占用取决于内核锁；稳定文件须保留，后续执行应能重新进入。
+    with exclusive(path):
+        pass

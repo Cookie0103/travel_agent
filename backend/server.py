@@ -11,7 +11,9 @@ import uvicorn
 from dotenv import load_dotenv
 
 from backend.api.app import create_app
+from backend.limits import ProbeError
 from backend.profile import current, profile_name
+from backend.providers.claude_agent.ledger import exclusive
 from backend.services import runs
 from backend.tools.travel import LIVE_TOOL_TIMEOUT
 from backend.trace_log import enable_stdout, trace
@@ -64,6 +66,12 @@ if __name__ == "__main__":
         os.environ["TRAVEL_PROFILE"] = "relaxed"
     enable_stdout()  # Railway只收集stdout
     log_boot()
+    if arguments.live:
+        try:
+            with exclusive(Path(__file__).resolve().parents[1] / ".cache/model-budget/active.lock"):
+                trace("live_lock_ready")  # 只核对锁可获取；不预占费用、不调用模型
+        except (OSError, ProbeError):
+            trace("live_lock_unavailable")  # 活跃旧实例仍持锁时保持互斥，不让诊断阻止服务启动
     uvicorn.run(
         create_app(live_enabled=arguments.live, trace_cloud=arguments.trace_cloud),
         host=arguments.host,

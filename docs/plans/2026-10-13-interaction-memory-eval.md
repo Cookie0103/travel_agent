@@ -370,6 +370,7 @@
 | S04 | done | 用户2026-10-14授权配置并推送TeamoRouter，最终模型Haiku 5.5、美元每日10；本次提交见Git；77专项、391文件检查、1918全量通过(354.17s)、三模型原生SDK离线3通过，无P1/P2；实际Claude效果由用户线上手测，见P31 |
 | S05 | done | 用户2026-10-15要求中文规则置于system prompt开头；角色规格前置并共享，保留用户明确切换语言与专有名称原文；58专项和391文件检查通过，本次提交见Git，不调用付费模型 |
 | S06 | done | 用户要求同步本地配置：.env已安全写入TeamoRouter key/地址/Haiku/启用/10USD，默认仍DeepSeek；.env.example列当前非秘密配置且key为空/默认关闭；dotenv+真实设置校验通过，.env仍Git忽略，仅提交示例与记录 |
+| S07 | done | 用户2026-10-15要求恢复Railway持续blocked；内核互斥2RED→53专项绿、392静态/只读审查通过；全量1920passed/1旧时钟敏感用例失败(隔离重跑通过)，完整保留，不称全量绿；提交见Git，部署锁可用性以live_lock_ready核对，见P34/ADR028；无付费模型调用 |
 
 ## 5. 边界与不变量
 
@@ -389,6 +390,12 @@
 - 交付时向用户报告：分支、SHA、各关卡数字、未完成项与恢复点，以及「需要用户本人做」的事项（D7 标注、是否部署）。
 
 ## 7. 每日进展
+
+### 2026-10-15 线上持续blocked恢复
+- 计划：S07，确认旧容器停止后修复残留文件造成的互斥阻断。
+- 完成：真实子进程kill复现2RED→GREEN；53专项、392文件静态与独立只读审查通过。账本/对话不清理，无付费模型请求。
+- 未完成及原因：全量1920通过/1旧测试fixture过期失败（369.41秒），同用例隔离1通过；已定位导入时NOW+5分钟不足完整集耗时，不扩大本次紧急恢复范围或放松业务TTL。线上模型效果仍需用户手测。
+- 下一步：提交/push恢复代码，核对新部署live_lock_ready与健康；用户需要发新消息，旧失败记录不自动重跑。
 
 ### 2026-10-15 本地模型配置同步
 - 计划：S06，补齐此前只写Railway、未同步本地的Claude配置。
@@ -744,6 +751,15 @@
 - 从Railway变量通过内存读取key并用dotenv.set_key写本地.env，不打印/不写命令参数；非秘密配置为TeamoRouter根地址、claude-haiku-5-5、启用1、10USD。补LLM_PROVIDER=deepseek，避免默认开发命令转入Claude；不改其他供应商配置。
 - 示例同样列出当前地址/模型/10USD，真实key为空，授权开关默认0；密钥和示例日预算不自动授权。本地load_runtime_settings/check_authorization及示例解析直接验证通过，git check-ignore确认.env不提交。
 - 配置文件修改无新增产品逻辑/测试，无Claude或DeepSeek请求；真实key只在本地被忽略文件与Railway秘密变量中。
+
+### P-34 S07 部署中断后持续blocked（修复中）
+- 线上元数据：旧6cab部署的Claude a0c64978于09:04:13开始，09:04:42首字节超时，09:04:55开始关闭，09:05:06停止，无运行终态；随后48e1e4c4/1e5af5ac/5e1dce82为DeepSeek，3–12ms内blocked/live_unavailable，无worker/model请求。当前e02db27部署SUCCESS，/health正常，模型菜单/密钥存在性/预算配置均正常。
+- 根因REASONED：旧exclusive用持久卷active.lock存在性判占用，只在finally删。旧容器停止后标记可能残留。SSH读取被缺本机SSH key阻止，未创建/注册任何新key，不能声称直接读过线上文件。
+- 本地VERIFIED：旧标记无主、子进程持锁后被kill两条测试均RED；修复为内核非阻塞锁后两条GREEN，活跃进程仍排他，账本字节未变；原协议/费用/trace合计53专项通过(1.92s)。旧测试仅把“文件不存在”换为“错误后可以再次取得锁”，保留并发拒绝断言。
+- 方案：[ADR-028](../adr/028-live-process-lock.md)，复用exclusive、不加依赖，POSIX flock/Windows字节锁，不unlink稳定文件。首次迁移已确认旧容器停止，当前旧部署新增请求均在worker前失败。启动核对只发live_lock_ready元数据、不花费模型额度。
+- 全量：1920passed/1failed/1skip/4live deselect，369.41秒；失败为test_workbench::test_demo_rejects_ambiguous_second_afternoon_hidden_by_card_truncation。该测试与e02db27逐字一致，导入test_itinerary.record用模块NOW+5分钟造证据，全套超过6分钟导致录入时过期，业务正确拒绝；隔离重跑1passed/6deselected，1.19秒。与锁无共享逻辑，未修改此测试或TTL；保留失败日志，不称全量绿色。
+- 本次优先恢复线上：53锁/协议/费用/trace专项与392静态通过、独立审查无P1/P2；不因已定位的旧时间fixture另跑六分钟全集，日志.cache/lock-recovery/full-test.log与workbench-isolated.log。费用账本/对话不清零，不重放中断请求。
+- 静态392文件、win32/linux/darwin严格类型、3分层和10文档入口通过；gateway_review独立只读无P1/P2，另复跑19协议/崩溃恢复专项通过，无线上操作或模型调用。
 
 ## 9. 验证与交付
 

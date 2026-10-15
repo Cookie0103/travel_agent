@@ -152,6 +152,14 @@ F12共22个真实SDK试验（15计划、7诊断/修复回归），账本新增25
 
 `dev test --path tests/test_persona.py --path tests/test_stop_nudge.py --path tests/test_evidence_ttl.py`：初次拆语言段破坏共享原文断言1失败/57通过；完整规格前置后58通过。直接调用travel_prompt核对中文是首段、只出现一次、角色原文完整共享。`dev check`391文件/三平台/三分层/10入口通过，日志`.cache/teamorouter-setup/s05-check-final.log`。不运行真实模型或整套效果评测，状态见S05/P32。
 
+### S07 部署中断残留锁（2026-10-15）
+
+线上只读调查：`railway deployment list --service api --json`确认旧容器REMOVED、当前SUCCESS；`railway logs <旧部署ID> --service api --lines 220 --json`只抽取TRACE元数据及关停事件，不保存对话/响应正文或密钥。旧轮次09:04开始、09:05容器停止，后续运行3–12ms blocked/live_unavailable、无worker；/health正常。SSH缺本机key未进入服务端，未生成/注册新key。此为强证据推断，未直接读线上锁文件。
+
+离线`dev test --path tests/test_live_lock.py`两条RED，复现旧标记和kill持锁进程后的持续拒绝；内核锁修复后与协议/预算/trace合计53passed/1.92秒。`dev check`392文件/三平台/3层/10入口通过；全量日志`.cache/lock-recovery/full-test.log`，状态见S07/P34。新启动打印live_lock_ready可证明该持久卷锁能取得并正常释放，不请求模型/供应商、不改账本。对话回复是否成功由用户手测；不要通过删除锁文件或清零账本回退。
+
+全量实际1920通过、1失败、1skip、4live deselect（369.41秒）。失败test_workbench::test_demo_rejects_ambiguous_second_afternoon_hidden_by_card_truncation在record_evidence被正确拒绝：测试引用模块导入时NOW+5分钟，整集超过6分钟。源码与e02db27相同；单独`dev test --path tests/integration/test_workbench.py --keyword test_demo_rejects_ambiguous_second_afternoon_hidden_by_card_truncation`为1passed/6deselected（1.19秒），日志workbench-isolated.log。不掩盖全量失败，不修改业务TTL/旧断言，不扩大紧急恢复范围。
+
 
 ### S03 提速小修（2026-10-14，仅本地提交）
 
