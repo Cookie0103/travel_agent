@@ -46,6 +46,16 @@ export function validAnswers(card: Choice, answers: FormAnswers): boolean {
   });
 }
 
+/** Submit-time cleanup: "not correct" with no text typed counts as the time question unanswered. */
+export function cleanAnswers(answers: FormAnswers): FormAnswers {
+  const next = { ...answers };
+  if (next.times?.[0] === "no" && !next.times_corrected?.[0]?.trim()) {
+    delete next.times;
+    delete next.times_corrected;
+  }
+  return next;
+}
+
 export function choiceDisabled(
   card: Choice,
   busy: boolean,

@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 import type { Choice } from "@/lib/api";
 import {
+  cleanAnswers,
   formOf,
   validAnswers,
   type FormAnswers,
@@ -144,14 +145,20 @@ export function ChoiceForm({
         else delete next[key];
       return next;
     });
-  const ready = validAnswers(card, answers);
+  const [note, setNote] = useState("");
+  const submit = () => {
+    const clean = cleanAnswers(answers);
+    if (!validAnswers(card, clean)) return setNote("请至少选择一项再提交。");
+    setNote("");
+    confirm(clean);
+  };
   return (
     <form
       aria-label={card.question}
       className="space-y-5 rounded-xl border border-border bg-bg-subtle p-4"
       onSubmit={(event) => {
         event.preventDefault();
-        if (!disabled && ready) confirm(answers);
+        if (!disabled) submit();
       }}
     >
       <p className="font-medium">{card.question}</p>
@@ -181,14 +188,12 @@ export function ChoiceForm({
         <p className="small muted">条件已变化，请按当前条件重新确认。</p>
       ) : (
         <>
-          <Button type="submit" disabled={disabled || !ready}>
+          <Button type="submit" disabled={disabled}>
             确认并继续
           </Button>
-          {!ready && (
+          {(note || disabled) && (
             <p className="small muted">
-              {answers.times?.[0] === "no"
-                ? "请写出正确的抵达／离开时间后提交。"
-                : "选好上面的选项就能提交；也可以在对话框里补充。"}
+              {note || "正在处理上一条消息，稍后即可提交。"}
             </p>
           )}
         </>

@@ -7,6 +7,7 @@ import {
   choiceDisabled,
   choiceMessage,
   validAnswers,
+  cleanAnswers,
 } from "../src/lib/choices.ts";
 
 const base = {
@@ -127,4 +128,16 @@ test("the hotel selection message keeps the plan and only adjusts the ends", () 
   const source = readFileSync("src/components/conversation.tsx", "utf8");
   assert.match(source, /请保留已有景点和顺序，只按它调整首尾行程和时间/);
   assert.doesNotMatch(source, /每天结束于酒店/);
+});
+
+test("a 'not correct' time with no text typed is dropped at submit", () => {
+  const empty = { transport: ["walk"], times: ["no"], times_corrected: [" "] };
+  assert.deepEqual(cleanAnswers(empty), { transport: ["walk"] });
+  assert.ok(validAnswers(form, cleanAnswers(empty)));
+  const typed = { ...empty, times_corrected: ["10点到"] };
+  assert.deepEqual(cleanAnswers(typed), typed);
+  assert.ok(
+    !validAnswers(form, cleanAnswers({ times: ["no"] })),
+    "nothing left",
+  );
 });
