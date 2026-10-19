@@ -2,12 +2,14 @@
 
 import json
 from collections.abc import Sequence
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.preferences import PreferenceValues
+from backend.domain.travel_request import Transport
 from backend.persistence.models import MemoryFactRow
 
 
@@ -36,6 +38,19 @@ async def active(
             .order_by(MemoryFactRow.ordinal, MemoryFactRow.created_at, MemoryFactRow.id)
         )
     )
+
+
+async def transport_default(
+    db: AsyncSession, user_id: UUID, session_id: UUID | None
+) -> tuple[Transport, str] | None:
+    """已确认的交通偏好(值, scope)：本会话trip优先于长期；只在request未写交通时作默认。"""
+    rows = [
+        row
+        for row in await active(db, user_id, session_id)
+        if row.key == "transport" and row.value in {"walk", "transit", "taxi"}
+    ]
+    rows.sort(key=lambda row: row.scope == "trip")  # 稳定排序：trip排最后，取最后一个
+    return (cast(Transport, rows[-1].value), rows[-1].scope) if rows else None
 
 
 async def projection(db: AsyncSession, user_id: UUID) -> PreferenceValues:

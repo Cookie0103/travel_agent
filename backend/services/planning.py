@@ -15,7 +15,7 @@ from backend.domain.validator import (
     HOTEL_EXPIRED_REASON,
     validate_itinerary,
 )
-from backend.persistence import plans
+from backend.persistence import memory, plans
 from backend.persistence import travel as requests
 from backend.profile import current
 from backend.providers.routes_fixture import RouteRate, estimate, load_routes
@@ -47,7 +47,15 @@ class PlanningService:
         self, context: RunContext, arguments: RouteInput
     ) -> tuple[EvidenceRecord, ...]:
         request = await self.current(context, arguments.expected_revision)
-        if request.transport is None:
+        async with transaction(self.travel.database) as db:
+            default = await memory.transport_default(db, context.user_id, context.session_id)
+        # 本次没写交通时用已确认的交通偏好估算；证据conditions仍按原request(不冒充本次用户所说)。
+        routing = (
+            request
+            if request.transport is not None or default is None
+            else request.model_copy(update={"transport": default[0]})
+        )
+        if routing.transport is None:
             raise ServiceError(
                 422,
                 "validation",
@@ -94,14 +102,14 @@ class PlanningService:
                             if record.evidence_id == leg.to_evidence_id
                         )
                     ),
-                    request.transport,
+                    routing.transport,
                     leg.departure,
                     (request.adults or 1) + len(request.child_ages or ()),
                 )
                 if live and live.google
                 else estimate(
                     rates,
-                    request,
+                    routing,
                     places[leg.from_evidence_id],
                     places[leg.to_evidence_id],
                     leg.departure,
@@ -158,7 +166,14 @@ async def validate_proposal(
     records = tuple(resolved)
     records = await hydrate_records(records, live)
     try:
-        return validate_itinerary(request, proposal, records, datetime.now(UTC))
+        default = await memory.transport_default(db, context.user_id, context.session_id)
+        return validate_itinerary(
+            request,
+            proposal,
+            records,
+            datetime.now(UTC),
+            transport_default=default[0] if default else None,
+        )
     except ValueError as error:
         # 校验器的ValueError是固定中文文案(无插值)，可整体作reason；pydantic错误含输入值，只记类名。
         reason = str(error) if type(error) is ValueError else "evidence_model_invalid"

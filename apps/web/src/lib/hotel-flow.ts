@@ -1,7 +1,7 @@
 /** Pure rules for the choose-hotel-then-plan flow: server selection state, skip, empty results. */
 import type { components } from "./api-types";
 import type { Hotels } from "./api";
-import { segmentHotelRows } from "./hotel-groups.ts";
+import { segmentHotelRows, type HotelSelection } from "./hotel-groups.ts";
 
 export type HotelSelectionView = components["schemas"]["HotelSelectionView"];
 type Rows = ReturnType<typeof segmentHotelRows>;
@@ -115,4 +115,69 @@ export function selectionProgress(
     }
   }
   return { count, total: rows.length, names };
+}
+
+export const RECLICK_REASON = "请再点一次该酒店的“选用此酒店”";
+
+/**
+ * Submit payload for the plan button over the merged selection. A local click wins (its card
+ * must be current); otherwise the server-recorded pick is used by evidence id with the
+ * segment's own dates, so chat/assignment picks count without a local click. Returns a
+ * reason when a segment has a server pick that cannot form a valid stay.
+ */
+export function hotelPlanSelection(
+  rows: Rows,
+  local: Record<string, string>,
+  view: HotelSelectionView | undefined,
+  revision: number | undefined,
+  now: number,
+): { selection?: HotelSelection & { text: string }; reason?: string } {
+  if (!rows.length || revision === undefined) return {};
+  const picked: { evidence_id: string; hotel_name: string }[] = [];
+  let reason: string | undefined;
+  for (const row of rows) {
+    const mine = local[row.check_in]
+      ? row.cards.find((c) => c.evidence_id === local[row.check_in])
+      : undefined;
+    if (mine) {
+      const expires = Date.parse(mine.expires_at);
+      if (
+        mine.request_revision !== revision ||
+        !Number.isFinite(expires) ||
+        expires <= now
+      )
+        return {};
+      picked.push(mine);
+      continue;
+    }
+    const server = view?.segments.find(
+      (s) => s.check_in === row.check_in && s.check_out === row.check_out,
+    )?.selected;
+    if (!server) return {};
+    if (!server.evidence_id || !server.hotel_name) {
+      reason = RECLICK_REASON;
+      continue;
+    }
+    picked.push(server);
+  }
+  if (reason) return { reason };
+  return {
+    selection: {
+      expected_revision: revision,
+      hotel_stays: rows.map((row, i) => ({
+        check_in: row.check_in,
+        check_out: row.check_out,
+        hotel_evidence_id: picked[i].evidence_id,
+      })),
+      text:
+        "我已选齐各住宿段酒店，请保留已确认条件，按这些酒店统一规划每天行程：\n" +
+        rows
+          .map(
+            (row, i) =>
+              `${row.city} ${row.check_in}→${row.check_out}：${picked[i].hotel_name}`,
+          )
+          .join("\n") +
+        "\n每晚回到当晚所选酒店；先安排时间与交通缓冲，再按相邻项目结束时间查询路线，校验通过后展示草稿供我确认保存。",
+    },
+  };
 }

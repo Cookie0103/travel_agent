@@ -19,6 +19,7 @@ from backend.domain.itinerary import (
 from backend.domain.opening_hours import TOKYO, opening_state
 from backend.domain.plans import stays_of
 from backend.domain.travel_request import (
+    Transport,
     TravelRequest,
     cities_on,
     lodging_budget_relation,
@@ -52,7 +53,10 @@ def validate_itinerary(
     proposal: ItineraryProposal,
     records: tuple[EvidenceRecord, ...],
     now: datetime,
+    *,
+    transport_default: Transport | None = None,
 ) -> ValidationReport:
+    """transport_default：request未写交通时，已确认的交通偏好作为路段应有的交通方式。"""
     evidence = {record.evidence_id: record for record in records}
     if proposal.expected_revision != request.revision:
         raise ValueError("行程条件版本已变化")
@@ -71,7 +75,9 @@ def validate_itinerary(
             raise ValueError("地点证据实体不一致")
         places.append(place)
         checks.extend(visit_checks(request, proposal, index, place))
-        checks.extend(route_checks(request, proposal, index, evidence))
+        checks.extend(
+            route_checks(request, proposal, index, evidence, request.transport or transport_default)
+        )
     checks.extend(sightseeing_checks(request, proposal, places))
     checks.extend(meal_checks(request, proposal))
     known, estimated, costs = budget_checks(request, proposal, evidence, now)
@@ -371,6 +377,7 @@ def route_checks(
     proposal: ItineraryProposal,
     index: int,
     evidence: dict[UUID, EvidenceRecord],
+    transport: Transport | None,
 ) -> list[ValidationCheck]:
     item = proposal.items[index]
     subject = f"route:{index - 1}->{index}"
@@ -411,7 +418,7 @@ def route_checks(
     if (
         route.from_place_id,
         route.to_place_id,
-    ) != endpoints or route.transport != request.transport:
+    ) != endpoints or route.transport != transport:
         return [
             traced(
                 check(

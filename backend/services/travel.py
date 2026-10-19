@@ -43,6 +43,7 @@ from backend.domain.travel_request import (
     tokyo_today,
 )
 from backend.persistence import bookings, operations, plans, runs, sessions, travel
+from backend.persistence import memory as memory_store
 from backend.persistence.database import Database
 from backend.persistence.models import ChoiceCardRow, TravelRequestRow
 from backend.services import conversation
@@ -367,7 +368,14 @@ class TravelService:
                     ),
                 )
             )
-            view = conversation_view(state, current, live_hotels=self.live is not None)
+            view = conversation_view(
+                state,
+                current,
+                live_hotels=self.live is not None,
+                transport_default=await memory_store.transport_default(
+                    db, context.user_id, context.session_id
+                ),
+            )
             missing = view["missing_fields"]
             assert isinstance(missing, list)
             if update.awaiting_field and update.awaiting_field not in missing:

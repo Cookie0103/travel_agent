@@ -10,7 +10,7 @@ from backend.domain.execution import RunContext
 from backend.domain.hotel_flow import current_picks, flow_from_details, selection_state
 from backend.domain.itinerary import HotelStay
 from backend.domain.travel_request import TravelRequest
-from backend.persistence import runs
+from backend.persistence import memory, runs
 from backend.persistence.models import TaskRunRow, TravelRequestRow
 from backend.services.common import ServiceError
 
@@ -66,12 +66,20 @@ async def snapshot(
 ) -> dict[str, object]:
     state, origin = await valid_state(db, row, context, after=after)
     return {
-        **conversation_view(state, request, live_hotels=live_hotels),
+        **conversation_view(
+            state,
+            request,
+            live_hotels=live_hotels,
+            transport_default=await memory.transport_default(
+                db, context.user_id, context.session_id
+            ),
+        ),
         "goal_prompt": origin.prompt[:1000] if origin else None,
         "goal_prompt_truncated": bool(origin and len(origin.prompt) > 1000),
         "guidance": "原任务文本仅作用户需求参考，当前request为事实。"
         "短答仅回答awaiting_field，不放宽其他条件。住宿地点短答写hotel_search_location，保留city；宽区域地点需要细化，不默认选择那霸。条件齐全后继续ready_tasks；"
-        "住宿分项预算未知不必追问，不拆分全程预算。",
+        "住宿分项预算未知不必追问，不拆分全程预算。"
+        "defaults.transport是已确认的交通偏好(长期或本会话)：视为已知，不在missing_fields里，不要在文字里问交通方式；用户本次明说别的才写transport。",
     }
 
 

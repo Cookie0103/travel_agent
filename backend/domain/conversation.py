@@ -6,6 +6,7 @@ from uuid import UUID
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from backend.domain.travel_request import (
+    Transport,
     TravelRequest,
     hotel_search_location_required,
     lodging_budget_relation,
@@ -61,7 +62,11 @@ class ConversationStateInput(BaseModel):
 
 
 def task_missing(
-    request: TravelRequest, task: Task, *, live_hotels: bool = False
+    request: TravelRequest,
+    task: Task,
+    *,
+    live_hotels: bool = False,
+    transport_default: Transport | None = None,
 ) -> tuple[str, ...]:
     required = ("city", "start_date", "end_date", "adults", "child_ages")
     fields = [key for key in required if getattr(request, key) is None]
@@ -73,7 +78,8 @@ def task_missing(
         if request.rooms is None:
             fields.append("rooms")
         # 房型偏好（住宿方式/禁烟/床型）是可选偏好：未说按“无要求”，不再阻塞查询。
-    elif request.transport is None:
+    elif request.transport is None and transport_default is None:
+        # 已确认的长期（或本会话trip）交通偏好视为已知：不列缺项，由服务端按默认使用。
         fields.append("transport")
     if (
         task == "itinerary"
@@ -88,24 +94,47 @@ def task_missing(
     return tuple(fields)
 
 
+TRANSPORT_LABELS = {"walk": "步行", "transit": "公共交通", "taxi": "出租车"}
+
+
 def conversation_view(
-    state: ConversationState, request: TravelRequest, *, live_hotels: bool = False
+    state: ConversationState,
+    request: TravelRequest,
+    *,
+    live_hotels: bool = False,
+    transport_default: tuple[Transport, str] | None = None,
 ) -> dict[str, object]:
+    """transport_default=(值, 来源scope)：request没有交通时才生效，不写入request。"""
+    default = transport_default[0] if transport_default and request.transport is None else None
     missing = list(
         dict.fromkeys(
             key
             for task in state.pending_tasks
-            for key in task_missing(request, task, live_hotels=live_hotels)
+            for key in task_missing(
+                request, task, live_hotels=live_hotels, transport_default=default
+            )
         )
     )
+    defaults = (
+        {
+            "transport": {
+                "value": default,
+                "label": TRANSPORT_LABELS[default],
+                "source": transport_default[1],
+            }
+        }
+        if default and transport_default
+        else None
+    )
     return {
+        **({"defaults": defaults} if defaults else {}),
         "pending_tasks": list(state.pending_tasks),
         "awaiting_field": state.awaiting_field if state.awaiting_field in missing else None,
         "missing_fields": missing,
         "ready_tasks": [
             task
             for task in state.pending_tasks
-            if not task_missing(request, task, live_hotels=live_hotels)
+            if not task_missing(request, task, live_hotels=live_hotels, transport_default=default)
         ],
         "nights": (request.end_date - request.start_date).days
         if request.start_date and request.end_date

@@ -1,6 +1,8 @@
 """用户可见文本：不含围栏标签，不含英文内部字段名。"""
 
 import asyncio
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -29,10 +31,17 @@ def test_model_facing_fence_is_unchanged() -> None:
     assert fence("京都") == f"<{LABEL}>京都</{LABEL}>"
 
 
-def test_route_missing_transport_message_is_chinese() -> None:
-    travel = SimpleNamespace(
-        read_request=lambda ctx: _request(),
-    )
+def test_route_missing_transport_message_is_chinese(monkeypatch: pytest.MonkeyPatch) -> None:
+    @asynccontextmanager
+    async def no_db(_: object) -> AsyncIterator[None]:
+        yield None
+
+    async def no_default(*_: object) -> None:
+        return None
+
+    monkeypatch.setattr("backend.services.planning.transaction", no_db)
+    monkeypatch.setattr("backend.services.planning.memory.transport_default", no_default)
+    travel = SimpleNamespace(read_request=lambda ctx: _request(), database=None)
     service = PlanningService(travel)  # type: ignore[arg-type]
     arguments = RouteInput.model_validate(
         {
@@ -47,7 +56,7 @@ def test_route_missing_transport_message_is_chinese() -> None:
         }
     )
     with pytest.raises(ServiceError) as caught:
-        asyncio.run(service.routes(None, arguments))  # type: ignore[arg-type]
+        asyncio.run(service.routes(SimpleNamespace(user_id=None, session_id=None), arguments))  # type: ignore[arg-type]
     message = str(caught.value)
     assert "missing_fields" not in message and "transport" not in message
     assert "交通" in message

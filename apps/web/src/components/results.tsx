@@ -19,12 +19,12 @@ import {
   hotelGroups,
   selectedHotelOffer,
   segmentHotelRows,
-  segmentHotelSelection,
   type HotelSelection,
 } from "@/lib/hotel-groups";
 import {
   effectiveChoices,
   selectionProgress,
+  hotelPlanSelection,
   emptyHotelNotice,
   type HotelSelectionView,
 } from "@/lib/hotel-flow";
@@ -493,7 +493,13 @@ function SegmentHotelResults({
   const [local, setLocal] = useState<Record<string, string>>({});
   const rows = segmentHotelRows(hotels);
   const choices = effectiveChoices(rows, local, selectionView);
-  const selected = segmentHotelSelection(rows, choices, revision, now);
+  const { selection: selected, reason } = hotelPlanSelection(
+    rows,
+    local,
+    selectionView,
+    revision,
+    now,
+  );
   const progress = selectionProgress(rows, local, selectionView);
   const count = progress.count;
   return (
@@ -557,6 +563,7 @@ function SegmentHotelResults({
         </Button>
         <SkipHotels skip={skip} disabled={disabled} />
       </div>
+      {reason && !disabled ? <p className="muted small">{reason}</p> : null}
     </section>
   );
 }
