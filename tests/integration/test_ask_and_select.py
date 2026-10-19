@@ -250,6 +250,78 @@ def test_gate_creates_the_card_when_core_conditions_become_complete_later(
     runner.run(exercise())
 
 
+def test_unknown_children_still_issue_the_card_whatever_awaiting_field_the_model_chose(
+    travel_setup: Setup,
+) -> None:
+    """真实回归：模型把awaiting_field设成child_ages并在文字里问儿童，旧逻辑因child_ages未知不发卡。"""
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        run = await run_of(travel, context)
+        request = await travel.read_request(run)
+        await travel.patch_request(
+            run,
+            RequestPatch.model_validate(
+                {"expected_revision": request.revision, "clear": ["child_ages"]}
+            ),
+        )
+        request = await travel.read_request(run)
+        assert request.child_ages is None
+        view = await travel.update_conversation_state(
+            run,
+            ConversationStateInput.model_validate(
+                {
+                    "expected_revision": request.revision,
+                    "goals": ["hotel_comparison", "itinerary"],
+                    "awaiting_field": "child_ages",
+                }
+            ),
+        )
+        card = choice_card(view)
+        assert card.form and card.form.groups[0].key == "children"
+        assert view["trip_ask_card"] == "issued" and view["awaiting_field"] is None
+        assert "已向用户展示" in str(view["message"])
+        # 同一会话再记录一次状态：卡仍未答，不重复发，结果如实说“已有待答卡”
+        again = await travel.update_conversation_state(
+            run,
+            ConversationStateInput.model_validate(
+                {"expected_revision": request.revision, "awaiting_field": "child_ages"}
+            ),
+        )
+        assert "choice" not in again and again["trip_ask_card"] == "pending"
+        await finish(travel, run)
+        service = RunService(
+            travel.database, runtime_factory=lambda _: WaitingRuntime(RuntimeOutcome(text="x"))
+        )
+        submitted = await service.submit(
+            context.user_id,
+            context.session_id,
+            submit_message(request, card, "confirm", children_text=["5岁、8岁"]),
+        )
+        after = await travel.read_request(context)
+        assert after.child_ages == (5, 8)
+        active = RunContext(context.user_id, context.session_id, submitted.run_id)
+        assert await ChoiceService(travel).ensure_trip_ask(active) == (None, False)
+        await service.cancel(context.user_id, submitted.run_id)
+        await asyncio.gather(*tuple(service.tasks.values()))
+        await service.close()
+
+    runner.run(exercise())
+
+
+def test_state_result_says_no_card_when_nothing_is_left_to_ask(travel_setup: Setup) -> None:
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        run = await run_of(travel, context)
+        await known(travel, run)
+        view = await goals(travel, run, "hotel_comparison")
+        assert "choice" not in view and view["trip_ask_card"] == "none"
+        assert "没有" in str(view["message"])
+
+    runner.run(exercise())
+
+
 def test_changed_conditions_reissue_only_the_remaining_groups_and_retire_the_old_card(
     travel_setup: Setup,
 ) -> None:

@@ -2377,7 +2377,7 @@
               "$ref": "#/components/schemas/FormGroup"
             },
             "type": "array",
-            "maxItems": 10,
+            "maxItems": 11,
             "minItems": 1,
             "title": "Groups"
           }

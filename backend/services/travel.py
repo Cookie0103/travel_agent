@@ -116,6 +116,22 @@ def condition_sources(row: TravelRequestRow) -> dict[str, ConditionSource]:
     }
 
 
+TRIP_ASK_MESSAGES = {
+    "issued": (
+        "服务端已向用户展示合并选择卡（只含仍未定的项，含同行儿童等）。"
+        "你只说一句请在卡片里一次确认，然后停下；不要在文字里问卡片覆盖的内容。"
+    ),
+    "pending": (
+        "合并选择卡此前已展示且用户尚未提交。只提示在卡片里确认，"
+        "不要重复发卡，也不要在文字里问卡片覆盖的内容。"
+    ),
+    "none": (
+        "本次没有展示任何选择卡（核心条件未齐，或没有仍未定的项）。"
+        "不得声称卡片存在或让用户去卡片里填写；缺必要信息只按missing_fields在对话里追问。"
+    ),
+}
+
+
 class TravelService:
     def __init__(
         self,
@@ -372,8 +388,17 @@ class TravelService:
                 )
                 if card is not None:
                     view["awaiting_trip_details"] = True
+                    covered = {group.key for group in card.form.groups} if card.form else set()
+                    if state.awaiting_field == "child_ages" and "children" in covered:
+                        # 卡里已问儿童：不留下会让模型在文字里再问一遍的待答字段。
+                        state = state.model_copy(update={"awaiting_field": None})
+                        conversation.save_state(row, state)
+                        view["awaiting_field"] = None
                 if created and card is not None:
                     view["choice"] = card.model_dump(mode="json")
+                outcome = "none" if card is None else "issued" if created else "pending"
+                view["trip_ask_card"] = outcome
+                view["message"] = TRIP_ASK_MESSAGES[outcome]
             return view
 
     async def complete_conversation_task(

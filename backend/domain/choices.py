@@ -82,11 +82,11 @@ class FormGroup(FormGroupInput):
 
 class ChoiceForm(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    # purpose=trip_ask：服务端生成的合并选择卡(至多10题，全部可不答)；其余表单仍至多5题。
+    # purpose=trip_ask：服务端生成的合并选择卡(至多11题，全部可不答)；其余表单仍至多5题。
     purpose: Literal["trip_ask"] | None = Field(
         default=None, exclude_if=lambda value: value is None
     )
-    groups: tuple[FormGroup, ...] = Field(min_length=1, max_length=10)
+    groups: tuple[FormGroup, ...] = Field(min_length=1, max_length=11)
 
     @model_validator(mode="after")
     def unique_keys(self) -> "ChoiceForm":
@@ -362,6 +362,13 @@ def _options(*pairs: tuple[str, str]) -> tuple[FormOption, ...]:
 
 # key -> (题目, 选项, 文本类型或None, 提示)；顺序即用户给定的提问顺序。
 TRIP_ASK_SPECS: dict[str, tuple[str, tuple[FormOption, ...], str | None, str]] = {
+    # 儿童年龄是酒店报价的必填条件：未知时在卡里问(没有儿童=[]；有儿童必须在文字框填年龄)。
+    "children": (
+        "同行儿童",
+        _options(("none", "没有儿童"), ("has", "有儿童")),
+        "text",
+        "有儿童请填年龄，如 5岁、8岁",
+    ),
     "pace": (
         "旅行节奏",
         _options(("relaxed", "轻松"), ("standard", "标准"), ("intensive", "特种兵")) + (ANY,),
@@ -491,6 +498,7 @@ def trip_ask_form(
     hotels = bool({"itinerary", "hotel_comparison"} & set(tasks))
     room = recognized_room_choices(request.hard_constraints)
     unknown = {
+        "children": request.child_ages is None,
         "pace": itinerary and pace_of(request) is None,
         "wake": itinerary and not _has_prefix(request, PREFIXES["wake"][0]),
         "evening": itinerary and not _has_prefix(request, PREFIXES["evening"][0]),
@@ -534,6 +542,17 @@ def _without_room_group(values: tuple[str, ...], key: str) -> tuple[str, ...]:
     return tuple(t for t in values if not (recognized_room_choices((t,)) & ROOM_CHOICES[key]))
 
 
+_AGE = re.compile(r"(\d{1,2})\s*(?:岁|歲|周岁|y|yo)?", re.IGNORECASE)
+
+
+def child_ages_from_text(text: str) -> tuple[int, ...]:
+    """“5岁、8岁”->(5, 8)；只收0至17的整数，识别不出或越界就拒绝，绝不猜。"""
+    ages = tuple(int(n) for n in _AGE.findall(text))
+    if not ages or len(ages) > 8 or any(age > 17 for age in ages):
+        raise ValueError("儿童年龄需为0至17的数字，如 5岁、8岁")
+    return ages
+
+
 def trip_ask_patch(
     request: TravelRequest, form: ChoiceForm, answers: dict[str, tuple[str, ...]]
 ) -> RequestPatch:
@@ -557,7 +576,14 @@ def trip_ask_patch(
             if ids:
                 raise ValueError(f"「{group.label}」的选项与文字只能二选一")
         choice = ids[0] if ids else ""
-        if key in CHOICE_VALUES and choice:  # 房型三组：无要求也是用户明确回答的规范值
+        if key == "children":
+            if choice == "has":
+                raise ValueError("有儿童请在文字框填写年龄，如 5岁、8岁")
+            if choice == "none":
+                typed["child_ages"] = ()
+            elif value:
+                typed["child_ages"] = child_ages_from_text(value)
+        elif key in CHOICE_VALUES and choice:  # 房型三组：无要求也是用户明确回答的规范值
             hard = (*_without_room_group(hard, key), CHOICE_VALUES[key][choice])
         elif choice == "any" or not (choice or value):
             if choice == "any" and key == "transport":

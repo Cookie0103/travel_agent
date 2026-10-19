@@ -45,7 +45,8 @@ from backend.services.travel import TravelService, request_from_row, require_rev
 MEMORY_MERGE_EXTENSION_POINT = "after_draft_staged"
 # 已确认的记忆键中，可替代合并选择卡里 节奏/交通/起床/晚上结束 四组的键。
 MEMORY_ASK_KEYS = frozenset(LONG_TERM_ELIGIBLE)
-CORE_FIELDS = ("city", "start_date", "end_date", "adults", "child_ages", "rooms")
+# 发卡的前提只要城市/日期/人数/房间；儿童年龄未知由卡里的“同行儿童”组来问，不能挡住发卡。
+CORE_FIELDS = ("city", "start_date", "end_date", "adults", "rooms")
 ASK_QUESTION = "请一次确认以下信息，再继续"
 
 

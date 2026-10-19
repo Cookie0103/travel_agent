@@ -13,6 +13,7 @@ STRUCTURED_KEYS = frozenset(
     {"id", "status", "evidence_status", "data_mode", "coordinate_kind", "provider", "license"}
     | {"op", "kind", "component", "currency", "transport", "confidence", "fare_scope", "code"}
     | {"subject", "cause", "choice_card", "goals", "awaiting_field", "lodging", "smoking", "bed"}
+    | {"trip_ask_card"}
     | {"field_sources", "pending_tasks", "ready_tasks", "missing_fields"}
 )
 STRUCTURED_SUFFIXES = (
@@ -28,7 +29,7 @@ SERVER_OWNED_TOOLS = frozenset({"load_skill"})
 ENUM_KEYS = frozenset(
     {"status", "evidence_status", "data_mode", "coordinate_kind", "provider", "license"}
     | {"op", "kind", "component", "currency", "transport", "confidence", "fare_scope", "cause"}
-    | {"choice_card", "lodging", "smoking", "bed"}
+    | {"choice_card", "lodging", "smoking", "bed", "trip_ask_card"}
 )
 URL_KEYS = frozenset({"url", "source_ref"})
 _TOKEN = re.compile(r"[A-Za-z0-9_.:/+\-]{1,64}")

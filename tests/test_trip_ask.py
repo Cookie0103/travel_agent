@@ -251,3 +251,53 @@ def test_hotel_assign_card_shapes() -> None:
     )
     with pytest.raises(ValidationError):  # 普通卡不得带assign
         ChoiceCard.model_validate({**base, "kind": "pace", "options": options, "assign": assign})
+
+
+# ---- 同行儿童：child_ages未知时合并卡里问，不再靠文字追问 ----
+
+UNKNOWN_CHILDREN = TRIP.model_copy(update={"child_ages": None})
+
+
+def test_unknown_children_adds_a_children_group_with_free_text_ages() -> None:
+    form = asked(UNKNOWN_CHILDREN)
+    assert form is not None
+    group = form.groups[0]
+    assert group.key == "children" and group.label == "同行儿童"
+    assert [(o.option_id, o.label) for o in group.options] == [
+        ("none", "没有儿童"),
+        ("has", "有儿童"),
+    ]
+    assert group.allow_text and group.text_kind == "text" and not group.required
+    assert keys(form)[1:] == ALL  # 其余组顺序不变
+    assert "children" not in keys(asked())  # child_ages=()已知=无儿童：不问
+
+
+def test_children_answers_populate_child_ages_only_when_stated() -> None:
+    form = asked(UNKNOWN_CHILDREN)
+    assert form is not None
+    none, _ = apply_request_patch(
+        UNKNOWN_CHILDREN, form_patch(UNKNOWN_CHILDREN, form, {"children": ("none",)})
+    )
+    assert none.child_ages == ()
+    ages, _ = apply_request_patch(
+        UNKNOWN_CHILDREN, form_patch(UNKNOWN_CHILDREN, form, {"children_text": ("5岁、8岁",)})
+    )
+    assert ages.child_ages == (5, 8)
+    skipped, changed = apply_request_patch(UNKNOWN_CHILDREN, form_patch(UNKNOWN_CHILDREN, form, {}))
+    assert skipped.child_ages is None and not changed  # 未答保持未知，不当作无儿童
+
+
+@pytest.mark.parametrize(
+    "answers",
+    [
+        {"children": ("has",)},  # 有儿童必须填年龄
+        {"children_text": ("很小",)},  # 没有可识别的年龄
+        {"children_text": ("20岁",)},  # 超过儿童年龄上限
+        {"children": ("none",), "children_text": ("5岁",)},  # 二选一
+    ],
+)
+def test_invalid_children_answers_are_rejected(answers: dict[str, tuple[str, ...]]) -> None:
+    form = asked(UNKNOWN_CHILDREN)
+    assert form is not None
+    with pytest.raises(ValueError):
+        form_patch(UNKNOWN_CHILDREN, form, answers)
