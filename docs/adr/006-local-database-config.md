@@ -13,3 +13,6 @@ Windows下psycopg async需要SelectorEventLoop，服务启动入口显式配置�
 依据：[SQLAlchemy并发会话](https://docs.sqlalchemy.org/en/21/orm/extensions/asyncio.html#using-asyncsession-with-concurrent-tasks)、[psycopg Windows说明](https://www.psycopg.org/psycopg3/docs/advanced/async.html)。
 
 备选：手写.env解析会重复已成熟库；明文token/任意user_id演示登录会破坏用户隔离；全局改asyncio policy会影响SDK子进程能力。因此均不采用。
+
+
+> 2026-10-19 更正：代码实际默认有效期为 30 天（`DEMO_TOKEN_DAYS` 可配 1–365），上文的 24 小时与实现不符；本机自用保持 30 天，公网部署请显式设为 1。

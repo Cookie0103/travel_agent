@@ -235,3 +235,18 @@ def test_unimplemented_evaluation_fails_without_starting_a_process(
     with patch.object(dev, "run_command") as run:
         assert dev.main(args) == 1
     run.assert_not_called()
+
+
+def test_pinned_cli_is_read_from_env_file_without_overriding_the_environment(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (tmp_path / ".env").write_text("TRAVEL_CLAUDE_CLI=/pinned/claude.exe\nOTHER=1\n", "utf-8")
+    monkeypatch.setattr(dev, "ROOT", tmp_path)
+    monkeypatch.setenv("TRAVEL_CLAUDE_CLI", "")  # 让 monkeypatch 负责收尾还原
+    monkeypatch.delenv("TRAVEL_CLAUDE_CLI")
+    dev.pinned_cli()
+    assert os.environ["TRAVEL_CLAUDE_CLI"] == "/pinned/claude.exe"
+    assert "OTHER" not in os.environ
+    monkeypatch.setenv("TRAVEL_CLAUDE_CLI", "/explicit")
+    dev.pinned_cli()
+    assert os.environ["TRAVEL_CLAUDE_CLI"] == "/explicit"

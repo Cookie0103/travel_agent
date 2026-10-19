@@ -71,6 +71,15 @@ def test_path(value: str) -> str:
     return path.relative_to(ROOT).as_posix()
 
 
+def pinned_cli() -> None:
+    """测试用 .env 里固定的已验证 CLI（只读这一个键，PATH 上的新版本不在白名单）。"""
+    from dotenv import dotenv_values
+
+    value = dotenv_values(ROOT / ".env").get("TRAVEL_CLAUDE_CLI")
+    if value and "TRAVEL_CLAUDE_CLI" not in os.environ:
+        os.environ["TRAVEL_CLAUDE_CLI"] = value
+
+
 def run_tests(paths: Sequence[str] = (), keyword: str | None = None) -> int:
     """每次测试使用新目录，避免用户终端与沙箱复用彼此无权限的 pytest 文件。"""
     parent = ROOT / ".cache" / "pytest-runs"
@@ -80,6 +89,7 @@ def run_tests(paths: Sequence[str] = (), keyword: str | None = None) -> int:
     except OSError:
         print("unavailable: 无法创建测试临时目录，请检查项目目录写权限。", file=sys.stderr)
         return 1
+    pinned_cli()
     previous = os.environ.get("PYTEST_DEBUG_TEMPROOT")
     os.environ["PYTEST_DEBUG_TEMPROOT"] = str(run_root)
     try:
