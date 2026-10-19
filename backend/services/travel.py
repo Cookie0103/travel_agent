@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.adapters.live_data import LiveData
 from backend.domain.booking import Booking
-from backend.domain.choices import FORM_ROW_KINDS, TRANSPORT_PACE_GROUPS
+from backend.domain.choices import TRANSPORT_PACE_GROUPS
 from backend.domain.conversation import (
     ConversationState,
     ConversationStateInput,
@@ -222,7 +222,7 @@ class TravelService:
                 select(ChoiceCardRow.id)
                 .where(
                     ChoiceCardRow.session_id == context.session_id,
-                    ChoiceCardRow.kind.in_(FORM_ROW_KINDS),
+                    ChoiceCardRow.kind == "form",
                     ChoiceCardRow.answered_option_id.is_(None),
                     ChoiceCardRow.content["superseded"].as_boolean().is_not(True),
                 )

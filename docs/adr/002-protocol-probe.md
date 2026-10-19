@@ -15,3 +15,5 @@
 - 离线边界测试使用 anthropic 已安装的 httpx2.MockTransport；这是测试替身，不发网络请求，也不另引入网络库依赖。
 
 来源：[DeepSeek 兼容接口](https://api-docs.deepseek.com/zh-cn/guides/anthropic_api/)、[人民币价目](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)、[SDK](https://github.com/anthropics/anthropic-sdk-python)。
+
+> 2026-10-19 注：`anthropic` 依赖已移除，上文对它的使用为历史决定；`httpx2` 现经 `mcp` 间接提供。

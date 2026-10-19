@@ -17,13 +17,15 @@ from sqlalchemy import URL, Connection, create_engine, inspect, text
 from sqlalchemy.exc import IntegrityError
 
 from backend.domain.booking import BookingStatus
-from backend.domain.choices import FORM_ROW_KINDS, ChoiceKind
+from backend.domain.choices import ChoiceKind
 from backend.domain.evidence import EvidenceKind
 from backend.domain.execution import EventKind
 from backend.domain.memory import MemoryScope, MemorySource, MemoryStatus
 from backend.persistence import runs
 from backend.persistence.database import ROOT
+from backend.persistence.models import ChoiceCardRow
 from backend.persistence.temporary import isolated_url, temporary_database
+from backend.services.choices import card_from_row
 from backend.services.runs import MessageInput
 
 pytestmark = pytest.mark.integration
@@ -50,8 +52,7 @@ EXPECTED = {
     # "live"：早期MessageInput.mode取值，旧库行仍在（git历史），故保留在允许集合。
     ("task_runs", "ck_task_runs_mode"): set(get_args(MessageInput.model_fields["mode"].annotation))
     | {"live"},
-    # travel_details：库里仍存的旧卡种类，读取边界归一（FORM_ROW_KINDS）。
-    ("choice_cards", "ck_choice_cards_kind"): values(ChoiceKind) | set(FORM_ROW_KINDS),
+    ("choice_cards", "ck_choice_cards_kind"): values(ChoiceKind),
     ("evidence", "ck_evidence_kind"): values(EvidenceKind),
     ("user_memory_facts", "ck_user_memory_facts_scope"): values(MemoryScope),
     ("user_memory_facts", "ck_user_memory_facts_status"): values(MemoryStatus),
@@ -290,3 +291,93 @@ def test_task_runs_session_created_index_exists(postgres_url: URL) -> None:
         finally:
             engine.dispose()
         assert indexes.get("ix_task_runs_session_id_created_at") == ["session_id", "created_at"]
+
+
+LEGACY_CONFIRM = {"option_id": "confirm", "label": "确认并继续", "value": "确认"}
+
+
+def test_0023_converts_legacy_travel_details_cards_to_form_cards(postgres_url: URL) -> None:
+    """0022状态下的travel_details旧卡升级后是普通form卡，经当前代码读出预选与时间原文。"""
+    legacy = {
+        "question": "确认一下出行安排",
+        "options": [LEGACY_CONFIRM],
+        "details": {
+            "transport_options": [],
+            "pace_options": [],
+            "transport": "taxi",
+            "pace": "慢节奏",
+            "time_constraints": ["11月10日10:00抵达"],
+        },
+    }
+    with database_at(postgres_url, "0022") as db:
+        seed(db)
+        session, run = db.execute(text("SELECT session_id, id FROM task_runs LIMIT 1")).one()
+        ids = {name: uuid4() for name in ("full", "empty", "answered")}
+        for name, content, answered in (
+            ("full", legacy, None),
+            ("empty", {"question": "q", "options": [LEGACY_CONFIRM], "details": {}}, None),
+            ("answered", legacy, "confirm"),
+        ):
+            db.execute(
+                text(
+                    "INSERT INTO choice_cards(id,session_id,source_run_id,kind,expected_revision,"
+                    "content,answered_option_id) VALUES (:i,:s,:r,'travel_details',1,"
+                    "CAST(:c AS jsonb),:a)"
+                ),
+                {
+                    "i": ids[name],
+                    "s": session,
+                    "r": run,
+                    "c": json.dumps(content, ensure_ascii=False),
+                    "a": answered,
+                },
+            )
+        upgrade(db)
+        assert db.scalar(text("SELECT count(*) FROM choice_cards WHERE kind='travel_details'")) == 0
+        assert allowed(db, "choice_cards", "ck_choice_cards_kind") == values(ChoiceKind)
+        with pytest.raises(IntegrityError, match="ck_choice_cards_kind"):
+            with db.begin_nested():
+                db.execute(
+                    text(
+                        "INSERT INTO choice_cards(id,session_id,source_run_id,kind,"
+                        "expected_revision,content) VALUES (:i,:s,:r,'travel_details',1,'{}')"
+                    ),
+                    {"i": uuid4(), "s": session, "r": run},
+                )
+        rows = {
+            name: db.execute(
+                text(
+                    "SELECT id,session_id,source_run_id,kind,expected_revision,content,"
+                    "answered_option_id,created_at FROM choice_cards WHERE id=:i"
+                ),
+                {"i": i},
+            ).one()
+            for name, i in ids.items()
+        }
+        for row in rows.values():
+            assert row.kind == "form" and "details" not in row.content
+        full = card_from_row(ChoiceCardRow(**rows["full"]._mapping), 1)
+        assert full.kind == "form" and full.form is not None and not full.stale
+        by_key = {group.key: group for group in full.form.groups}
+        assert list(by_key) == ["transport", "pace", "times"]
+        assert by_key["transport"].selected == ("taxi",) and by_key["pace"].selected == ("relaxed",)
+        assert by_key["times"].shown == ("11月10日10:00抵达",)
+        empty = card_from_row(ChoiceCardRow(**rows["empty"]._mapping), 1)
+        assert empty.form is not None
+        assert [g.key for g in empty.form.groups] == ["transport", "pace"]
+        assert all(g.selected == () for g in empty.form.groups)
+        assert card_from_row(ChoiceCardRow(**rows["answered"]._mapping), 1).answered_option_id == (
+            "confirm"
+        )
+
+
+def test_0023_downgrade_reallows_travel_details_and_upgrades_again(postgres_url: URL) -> None:
+    with database_at(postgres_url, "head") as db:
+        config = Config(str(ROOT / "backend/persistence/alembic.ini"))
+        config.attributes["connection"] = db
+        command.downgrade(config, "0022")
+        assert allowed(db, "choice_cards", "ck_choice_cards_kind") == values(ChoiceKind) | {
+            "travel_details"
+        }
+        command.upgrade(config, "head")
+        assert allowed(db, "choice_cards", "ck_choice_cards_kind") == values(ChoiceKind)

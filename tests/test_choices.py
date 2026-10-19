@@ -14,7 +14,6 @@ from backend.domain.choices import (
     answered_form,
     build_form,
     form_patch,
-    legacy_form,
     pace_options,
     pace_patch,
 )
@@ -200,30 +199,10 @@ def test_answered_form_records_selection_and_corrected_times() -> None:
     assert by_key["times"].shown == ("11月10日10:00抵达",) and by_key["times"].selected == ("no",)
 
 
-def test_legacy_details_selection_and_card_content_are_read_as_form() -> None:
-    legacy = {
-        "transport": "taxi",
-        "pace": "慢节奏",
-        "times_correct": False,
-        "corrected_times": ["10:00抵达"],
-    }
-    selection = ChoiceSelection.model_validate(
-        {"choice_id": str(uuid4()), "option_id": "confirm", "details": legacy}
-    )
-    assert selection.answers == {
-        "transport": ("taxi",),
-        "pace": ("relaxed",),
-        "times": ("no",),
-        "times_corrected": ("10:00抵达",),
-    }
-    assert "details" not in selection.model_dump(mode="json")
-    form = legacy_form({"transport": "transit", "pace": None, "time_constraints": ["10:00抵达"]})
-    by_key = {group.key: group for group in form.groups}
-    assert by_key["transport"].selected == ("transit",) and by_key["pace"].selected == ()
-    assert by_key["times"].shown == ("10:00抵达",)
-    with pytest.raises(ValidationError):  # 旧payload缺交通同样被拒
+def test_legacy_details_selection_is_rejected() -> None:
+    with pytest.raises(ValidationError):
         ChoiceSelection.model_validate(
-            {"choice_id": str(uuid4()), "option_id": "confirm", "details": {"pace": "标准"}}
+            {"choice_id": str(uuid4()), "option_id": "confirm", "details": {"transport": "taxi"}}
         )
 
 

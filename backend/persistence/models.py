@@ -21,7 +21,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 from backend.domain.booking import BookingStatus
-from backend.domain.choices import FORM_ROW_KINDS, ChoiceKind
+from backend.domain.choices import ChoiceKind
 from backend.domain.evidence import EvidenceKind
 from backend.domain.execution import EventKind
 from backend.domain.memory import MemoryScope, MemorySource, MemoryStatus
@@ -47,8 +47,7 @@ RUN_STATUSES = RUN_ACTIVE + tuple(
 )
 # 同services.runs.MessageInput.mode；"live"是早期版本写过的历史取值，旧库行仍在，须允许。
 RUN_MODES = ("offline", "deepseek", "claude", "live")
-# 当前种类 + 数据库里仍存着的旧"travel_details"卡（读取边界归一，见domain.choices.FORM_ROW_KINDS）。
-CHOICE_KINDS = tuple(dict.fromkeys(literals(ChoiceKind) + FORM_ROW_KINDS))
+CHOICE_KINDS = literals(ChoiceKind)
 CATALOG_KINDS = ("places", "articles")  # 同persistence.catalog.import_catalog写入的kind
 
 

@@ -20,7 +20,7 @@ from sqlalchemy import select
 from backend.adapters.evaluation_faults import EvaluationFault, validate_fault
 from backend.adapters.tracing import cloud_exporter, push_scores
 from backend.agent.runtime import EventSink
-from backend.domain.choices import FORM_ROW_KINDS, Answers, ChoiceSelection
+from backend.domain.choices import Answers, ChoiceSelection
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.itinerary import HotelStay
 from backend.domain.travel_request import RequestPatch, pace_of
@@ -468,7 +468,7 @@ async def trial(
             rows = await db.scalars(
                 select(ChoiceCardRow).where(
                     ChoiceCardRow.session_id == context.session_id,
-                    ChoiceCardRow.kind.in_(("pace", *FORM_ROW_KINDS)),
+                    ChoiceCardRow.kind.in_(("pace", "form")),
                     ChoiceCardRow.answered_option_id.is_not(None),
                 )
             )

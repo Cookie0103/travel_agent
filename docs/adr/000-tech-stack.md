@@ -35,3 +35,5 @@ LangChain / LangGraph（本次选用 Claude Agent SDK，见 ADR-003）、Redis�
 
 ## 何时重新决策
 某一项在实现中被证明不可用，或需要的能力只能靠新依赖获得时：写新 ADR，标记本 ADR 对应行为 superseded。
+
+> 2026-10-19 注：`anthropic` 包已从依赖中移除（项目内无任何导入，探针已不在运行时使用）；本表该行为历史决定。`mcp`、`starlette` 已在 pyproject 显式声明。

@@ -9,7 +9,9 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.choices import (
-    FORM_ROW_KINDS,
+    ChoiceCard as ChoiceCard,
+)
+from backend.domain.choices import (
     ChoiceKind,
     ChoiceOption,
     ChoiceSelection,
@@ -17,12 +19,8 @@ from backend.domain.choices import (
     answered_form,
     build_form,
     form_patch,
-    legacy_form,
     pace_options,
     pace_patch,
-)
-from backend.domain.choices import (
-    ChoiceCard as ChoiceCard,
 )
 from backend.domain.execution import RunContext
 from backend.domain.hotel_recovery import HotelSearchDiagnostics
@@ -246,7 +244,7 @@ class ChoiceService:
         ):
             raise ServiceError(409, "conflict", "选择卡已过期或条件已变化")
         option = selected_option(card, selection.option_id)
-        if card.kind not in FORM_ROW_KINDS and selection.answers is not None:
+        if card.kind != "form" and selection.answers is not None:
             raise ServiceError(422, "validation", "普通选择不能混填表单答案")
         if card.kind == "budget_relaxation":
             if option.option_id == "accept":
@@ -262,7 +260,7 @@ class ChoiceService:
                     ),
                     source="user_form",
                 )
-        elif card.kind in FORM_ROW_KINDS:
+        elif card.kind == "form":
             form = card_from_row(card, revision).form
             if form is None or selection.answers is None:
                 raise ServiceError(422, "validation", "请回答完必填题目后统一确认")
@@ -310,7 +308,7 @@ async def open_forms(
 ) -> list[ChoiceCardRow]:
     query = select(ChoiceCardRow).where(
         ChoiceCardRow.session_id == context.session_id,
-        ChoiceCardRow.kind.in_(FORM_ROW_KINDS),
+        ChoiceCardRow.kind == "form",
         ChoiceCardRow.answered_option_id.is_(None),
         ChoiceCardRow.content["superseded"].as_boolean().is_not(True),
     )
@@ -318,7 +316,6 @@ async def open_forms(
 
 
 def card_from_row(row: ChoiceCardRow, revision: int) -> ChoiceCard:
-    legacy = row.content.get("details")  # 读取边界：旧travel_details卡归一为表单
     card = ChoiceCard.model_validate(
         {
             **{
@@ -326,9 +323,8 @@ def card_from_row(row: ChoiceCardRow, revision: int) -> ChoiceCard:
                 for key, value in row.content.items()
                 if key in {"question", "options", "expires_at", "form"}
             },
-            **({"form": legacy_form(legacy)} if isinstance(legacy, dict) else {}),
             "choice_id": row.id,
-            "kind": "form" if row.kind in FORM_ROW_KINDS else row.kind,
+            "kind": row.kind,
             "session_id": row.session_id,
             "source_run_id": row.source_run_id,
             "expected_revision": row.expected_revision,
@@ -356,7 +352,7 @@ def selected_option(row: ChoiceCardRow, option_id: str) -> ChoiceOption:
 def selection_prompt(
     row: ChoiceCardRow, option: ChoiceOption, selection: ChoiceSelection | None = None
 ) -> str:
-    if row.kind in FORM_ROW_KINDS:
+    if row.kind == "form":
         if selection is None or selection.answers is None:
             raise ServiceError(422, "validation", "请回答完必填题目后统一确认")
         answers = json.dumps(selection.answers, ensure_ascii=False, sort_keys=True)

@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from typing import Annotated, Literal
 from uuid import UUID, uuid4
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, TypeAdapter, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from backend.domain.travel_request import (
     PACE_ALIASES,
@@ -16,7 +16,6 @@ from backend.domain.travel_request import (
 )
 
 type ChoiceKind = Literal["pace", "form", "budget_relaxation", "memory_confirm"]
-FORM_ROW_KINDS = ("form", "travel_details")  # 数据库旧卡仍存为travel_details，仅在读取边界归一
 KEY = r"^[a-z][a-z0-9_]*$"
 Answers = Annotated[dict[str, tuple[Text, ...]], Field(max_length=6)]
 
@@ -103,27 +102,6 @@ class ChoiceSelection(ChoicePick):
     also: tuple[ChoicePick, ...] = Field(
         default=(), max_length=5, exclude_if=lambda value: not value
     )
-
-    @model_validator(mode="before")
-    @classmethod
-    def legacy_details(cls, data: object) -> object:
-        # 读取边界：旧标签页待发队列里的details(交通、节奏值、时间是否正确)转为answers。
-        if not isinstance(data, dict) or "details" not in data:
-            return data
-        old = {**data}
-        details = old.pop("details")
-        if isinstance(details, dict):
-            pace = {option.value: option.option_id for option in pace_options()}
-            answers: dict[str, object] = {
-                "transport": [details.get("transport")],
-                "pace": [pace.get(str(details.get("pace")))],
-            }
-            if details.get("times_correct") is not None:
-                answers["times"] = ["yes" if details["times_correct"] else "no"]
-            if details.get("corrected_times") is not None:
-                answers["times_corrected"] = details["corrected_times"]
-            old.setdefault("answers", answers)
-        return old
 
 
 class ChoiceCard(BaseModel):
@@ -246,20 +224,6 @@ def make_form(
 def build_form(request: TravelRequest, groups: tuple[FormGroupInput, ...]) -> ChoiceForm:
     pace = next((o.option_id for o in pace_options() if o.value == pace_of(request)), None)
     return make_form(groups, {"transport": request.transport, "pace": pace}, shown_times(request))
-
-
-def legacy_form(details: dict[str, object]) -> ChoiceForm:
-    """读取边界：旧travel_details卡的内容(交通/节奏预选、时间原文)转为表单。"""
-    pace = next((o.option_id for o in pace_options() if o.value == details.get("pace")), None)
-    times = TypeAdapter(tuple[Text, ...]).validate_python(details.get("time_constraints", ()))
-    return make_form(
-        TRANSPORT_PACE_GROUPS,
-        {
-            "transport": str(details["transport"]) if details.get("transport") else None,
-            "pace": pace,
-        },
-        times,
-    )
 
 
 def answered_form(form: ChoiceForm, answers: dict[str, tuple[str, ...]]) -> ChoiceForm:

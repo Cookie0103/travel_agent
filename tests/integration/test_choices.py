@@ -10,7 +10,6 @@ from backend.domain.conversation import ConversationStateInput
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.travel_request import RequestPatch, pace_of
 from backend.persistence import runs
-from backend.persistence.models import ChoiceCardRow
 from backend.providers.claude_agent.database_tools import DatabaseTools
 from backend.services.choices import ChoiceService
 from backend.services.common import ServiceError, transaction
@@ -635,67 +634,5 @@ def test_extra_group_answers_land_only_in_constraint_text_and_replace_on_reask(
         await ask("b", first.revision)
         second = await travel.get_request(original)
         assert [t for t in second.hard_constraints if t.startswith("同行者")] == ["同行者：朋友"]
-
-    runner.run(exercise())
-
-
-def test_legacy_card_row_and_details_payload_still_gate_and_confirm(
-    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
-) -> None:
-    runner, travel, original = travel_setup
-
-    async def exercise() -> None:
-        source = await run_context(travel, original, "旧版发卡")
-        legacy_id = uuid4()
-        async with transaction(travel.database) as db:
-            db.add(
-                ChoiceCardRow(
-                    id=legacy_id,
-                    session_id=source.session_id,
-                    source_run_id=source.run_id,
-                    kind="travel_details",
-                    expected_revision=1,
-                    content={
-                        "question": "确认一下出行安排",
-                        "options": [CONFIRM],
-                        "details": {
-                            "transport_options": [],
-                            "pace_options": [],
-                            "transport": None,
-                            "pace": None,
-                            "time_constraints": [],
-                        },
-                    },
-                )
-            )
-            await runs.finish(db, source, RuntimeOutcome(text="请确认"))
-        assert (await travel.business_context(original)).get("awaiting_travel_details")
-        tools = DatabaseTools(asyncio.get_running_loop(), travel.database)
-        blocked = await tools.execute(original, "stage_plan_change", {})
-        assert blocked.code == "validation" and blocked.detail == ("conversation_incomplete",)
-        card = await ChoiceService(travel).get(original.user_id, original.session_id, legacy_id)
-        assert card.kind == "form" and card.form and len(card.form.groups) == 2
-        service = RunService(travel.database)
-        await service.submit(
-            original.user_id,
-            original.session_id,
-            MessageInput.model_validate(
-                {
-                    "client_message_id": str(uuid4()),
-                    "text": "确认",
-                    "expected_revision": 1,
-                    "selection": {
-                        "choice_id": str(legacy_id),
-                        "option_id": "confirm",
-                        "details": {"transport": "walk", "pace": "标准", "times_correct": None},
-                    },
-                }
-            ),
-        )
-        await asyncio.gather(*service.tasks.values())
-        await service.close()
-        result = await travel.get_request(original)
-        assert result.transport == "walk" and pace_of(result) == "标准"
-        assert not (await travel.business_context(original)).get("awaiting_travel_details")
 
     runner.run(exercise())
