@@ -68,3 +68,33 @@
 - 模型仍可能口头说“已设好”而不写入 transport；服务端兜底为只问这一题。若要进一步，需“用户原话→transport”的服务端受限词表解析，与 explicit_fields 来源守卫要同时设计（待决）。
 - 默认“无要求”意味着首轮结果不按禁烟/大床排序；已由 persona 提示用户可后补。
 - 真实 DeepSeek 行为未复测（离线约束）；部署后请用同一句话复跑，期望：直接搜酒店，最多一张只含缺失项的卡。
+
+## 第二轮：真模型复测后
+
+### P-3 [P1] 助手在酒店结果后停下来问三个问题，没有暂存行程草稿
+- 现象：用同一句话在已部署应用复测（DeepSeek）。比第一轮好：没有选择卡，直接查了酒店并展示 2 个报价。但文字回复停住并向用户提问：(a) “接受这两家酒店（都超预算）还是改日期/区域？”；(b) “节奏要标准/特种兵/慢节奏？”；(c) “11/20 几点到京都、11/21 几点离开？”。没有暂存草稿。用户立场：宽松，超预算无所谓（“超就超了”），小错误/默认值可以，不要唠叨。
+- 假设与排除：
+  - ✗ 酒店选择门槛：`requires_hotel_selection` / `awaiting_hotel_selection` 只在 `current.segments`（多城市）时出现，本例是单城市，不触发。
+  - ✗ 到达/离开时间有服务端必填项：`task_missing` 里没有时间字段；时间题只在已写入 hard_constraints 的时间才由服务端自动追加，用户没说过时间，所以 (c) 完全是模型自己问的。
+  - ✓ (b) 有服务端硬门槛：`task_missing` 对 itinerary 无条件加入 `pace`（`pace_of(request) is None`），于是 `ready_tasks` 不含 itinerary，`continuation_reason` 返回 None，运行不再被催着继续；persona 第 55 行还写着“节奏未说明时留空，在对话里追问”。
+  - ✓ (a)/(c) 属 prompt：没有任何一句话告诉模型“超预算不是门槛”“时间未知就按全天规划”“同一轮要出草稿”；素材里“展示后请用户选”只针对多城市，模型把它泛化到单城市。
+- 根因：VERIFIED。(b) 服务端把可选偏好建模成必填缺项 + persona 明文要求追问；(a)(c) 缺少 persona 约束，模型自行保守。
+- 方案：
+  - 采用 A（服务端）：`task_missing` 不再把 `pace` 并入 itinerary 缺项。节奏未说按“标准”默认；默认只出现在回复里的假设说明，不写入 request（因此不会进 `explicit_fields`、不是用户事实）。校验器本来对未知节奏就按每日上限 5 个（=标准上限）且无下限，行为已与“标准默认”兼容，不改。
+  - 采用 B（prompt）：persona 新增“宽松流程”段：城市/日期/人数/房间已知就同一轮完成 查酒店→展示→规划→`stage_plan_change` 暂存；超预算只写一句“超出约 X%”、价格升序，不是门槛；单城市不要求用户先接受/选酒店（用价格最低且最贴近预算的一家并写明，事后可用只改酒店的 patch 换；多城市仍按原规则让用户选）；节奏未说不追问不发卡、按标准并注明假设；首末日抵达/离开时间视为未知，首末日按全天安排并注明，不编造时间、不写入 hard_constraints；至多在草稿暂存后附一句简短可选追问。同时改掉第 55 行“留空并追问”，第 45 行的“交通或节奏缺失才发卡”改为只对交通；`hotel-comparison.md` 技能加一句超预算不阻塞。
+  - 不采用：服务端把默认 `节奏：标准` 写进 request（会被当成用户条件，违反 explicit_fields 来源守卫，且 `pace_of` 会把它当已确认）。
+  - 不采用：服务端自动挑一家酒店并写入选择（单城市本来没有选择门槛，prompt 规定即可，避免新增服务端状态）。
+  - 不采用：删除 `pace` 作为 `awaiting_field` 的合法枚举值（枚举保留给旧数据；不再缺失时服务端本来就拒绝记录为追问 `conversation_question_unnecessary`）。
+- 实现：`backend/domain/conversation.py`（去掉 pace 缺项及未用的 `pace_of` 导入）；`backend/agent/fixture_conditions.py`（离线 `missing_question` 不再问节奏）；`backend/agent/persona.py`（四处，含新“宽松流程”段）；`backend/tools/skills/hotel-comparison.md`。
+- 不变量保持：模型工具集未动，仍不能确认/保存/预订；围栏、`explicit_fields` 守卫、证据/unknown 语义未动（时间未知保持未知，不编造）；仍可由 `present_form` 展示节奏题（此时 `confirm_from_text` 仍要求先记录用户的节奏），只是不再强制。
+- 测试（红→绿）：
+  - `tests/test_pacing_rules.py::test_unstated_pace_never_blocks_itinerary_and_is_not_recorded_as_user_fact`：红（`'pace' not in ('pace',)`）→ 绿；同时断言 `pace_of` 仍为 None（默认没写进 request）、离线问题不再问节奏。
+  - `tests/test_persona.py::test_prompt_keeps_lenient_one_turn_flow_rules`：新增 prompt 内容测试（本文件原本就有 prompt 文本断言）。
+- 改动的既有测试及理由：
+  1. `tests/test_persona.py::test_trip_pace_is_asked_for_without_defaulting_unspoken_user_facts` → `test_unspoken_pace_is_assumed_standard_but_never_recorded_as_user_fact`：原断言 prompt 含“节奏未说明时留空”（要求追问），与新立场相反；改为断言新文案，并保留“不把标准写成用户事实”的原意。
+  2. `tests/test_fixture_conditions.py::test_other_soft_preferences_do_not_make_unspoken_pace_known`：原断言离线问题含“节奏”；改为断言 `pace_of` 仍为 None（“少走路”不能推断节奏，原意保留）且不再追问节奏。
+  3. `tests/integration/test_choices.py`：`test_awaiting_pace_automatically_emits_card…` 改名 `…awaiting_transport…`，`source_card` 辅助函数：用 `awaiting_field="pace"` 作为“缺失字段”，现在 pace 不缺，服务端会 422；改用同样缺失的 `transport`。该测试里的显式 `present_form` 复用同一张卡，groups 改为只含 transport（自动卡现在只含仍缺的题）。断言结构（自动发 1 张卡、显式展示复用同 choice_id、revision 不变）保持。
+  4. `tests/integration/test_memory_continuation.py`：同样把 `awaiting_field` 的占位字段从 `pace` 换成 `transport`（记忆键 `pace` 的断言不动）；目的是验证追问字段在多轮保留，与具体字段无关。
+  5. `tests/integration/test_sdk_choices.py::test_native_sdk_roundtrips_server_owned_pace_card`：脚本里的 `awaiting_field=pace` 改为 `transport`（pace 不再缺失会 422）；自动卡现在只含交通，故由“两次展示同一张卡”改为“第一张只含 transport，第二张（显式 present_form）含 transport+pace 且选项由服务端固定”，选项标签断言原样保留在第二张上。
+- 验证：`dev check`、相关 pytest、全量 `dev test`（结果见下）。无付费模型调用，仅离线 fixture。prompt 修改的真实效果必须再用 DeepSeek 复跑同一句话确认，期望：酒店展示后同一轮出草稿，回复含“超预算 / 节奏按标准 / 抵达离开时间未知”的假设说明，最多一句草稿之后的可选追问。
+- 遗留：prompt 无法保证模型一定遵守；若仍停下，再考虑 `continuation_reason` 在“酒店已展示、itinerary 待办未完成”时由服务端催一次（现有机制已对 ready_tasks 催促，pace 解除后应能触发）。默认“标准”只体现在回复里，不会出现在草稿的条件区；首末日时间未知时的全天安排依赖模型说明。

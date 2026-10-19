@@ -79,7 +79,7 @@ def test_native_sdk_roundtrips_server_owned_pace_card(
     calls = (
         (
             sdk_tool_name("update_conversation_state"),
-            {"expected_revision": 1, "goals": ["itinerary"], "awaiting_field": "pace"},
+            {"expected_revision": 1, "goals": ["itinerary"], "awaiting_field": "transport"},
         ),
         (
             sdk_tool_name("present_form"),
@@ -108,9 +108,11 @@ def test_native_sdk_roundtrips_server_owned_pace_card(
         for event in events
         if isinstance(event, dict) and event.get("kind") == "presentation"
     ]
-    assert len(choices) == 2 and choices[0]["choice_id"] == choices[1]["choice_id"]
-    assert [option["label"] for option in choices[0]["options"]] == ["确认并继续"]
-    groups = {group["key"]: group for group in choices[0]["form"]["groups"]}
+    # 节奏不再是缺项：自动卡只含仍缺的交通；显式表单才同时含交通与节奏（均由服务端固定选项）。
+    assert len(choices) == 2
+    assert [group["key"] for group in choices[0]["form"]["groups"]] == ["transport"]
+    assert [option["label"] for option in choices[1]["options"]] == ["确认并继续"]
+    groups = {group["key"]: group for group in choices[1]["form"]["groups"]}
     assert [option["label"] for option in groups["pace"]["options"]] == [
         "标准",
         "特种兵",

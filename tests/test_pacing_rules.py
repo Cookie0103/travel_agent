@@ -149,3 +149,13 @@ def test_explicit_pace_change_replaces_known_hard_pace_and_keeps_other_hard_fact
     assert "不能登山" in updated.hard_constraints
     assert patch["remove_hard_constraints"] == ["轻松"]
     assert patch["explicit_fields"] == ["hard_constraints", "soft_constraints"]
+
+
+def test_unstated_pace_never_blocks_itinerary_and_is_not_recorded_as_user_fact() -> None:
+    """未说节奏按标准默认：不进缺项、不发问；默认不会被写成用户事实。"""
+    current = request().model_copy(
+        update={"hard_constraints": (), "soft_constraints": (), "lodging_budget_unlimited": True}
+    )
+    assert pace_of(current) is None
+    assert "pace" not in task_missing(current, "itinerary")
+    assert "你想要" not in missing_question(current)

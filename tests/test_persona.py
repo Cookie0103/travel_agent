@@ -72,10 +72,11 @@ def test_calibration_computes_real_pairs_without_filling_missing_scores() -> Non
         calibration([samples[0], samples[0]])
 
 
-def test_trip_pace_is_asked_for_without_defaulting_unspoken_user_facts() -> None:
+def test_unspoken_pace_is_assumed_standard_but_never_recorded_as_user_fact() -> None:
     prompt = travel_prompt()
     assert "未说明节奏按标准" not in prompt
-    assert "节奏未说明时留空" in prompt
+    assert "节奏未说明时不追问、不发卡、不写入request" in prompt
+    assert "不把它写成用户事实或explicit_fields" in prompt
 
 
 def test_chinese_explanations_preserve_original_proper_names() -> None:
@@ -115,3 +116,11 @@ def test_patch_tool_explains_front_insert_order_to_avoid_reversed_days() -> None
     description = schema["$defs"]["AddItem"]["properties"]["after_item_id"].get("description", "")
     assert "首部" in description and "逆序" in description
     assert "同一" in description and "执行顺序" in description
+
+
+def test_prompt_keeps_lenient_one_turn_flow_rules() -> None:
+    prompt = travel_prompt()
+    phrases = ("同一轮完成", "超出住宿预算", "节奏未说", "抵达/离开时间未知", "不把它写成用户事实")
+    for phrase in phrases:
+        assert phrase in prompt
+    assert "节奏未说明时留空" not in prompt

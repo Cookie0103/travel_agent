@@ -9,7 +9,6 @@ from backend.domain.travel_request import (
     TravelRequest,
     hotel_search_location_required,
     lodging_budget_relation,
-    pace_of,
     trip_segments,
 )
 
@@ -85,8 +84,7 @@ def task_missing(
         fields.append("lodging_budget")
     if lodging_budget_relation(request).status == "conflict":
         fields.append("budget_conflict")
-    if task == "itinerary" and pace_of(request) is None:
-        fields.append("pace")
+    # 节奏是可选偏好：未说按“标准”默认（只在回复里说明假设，不写成用户事实），不阻塞规划。
     return tuple(fields)
 
 

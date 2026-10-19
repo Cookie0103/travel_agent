@@ -110,6 +110,7 @@ def test_any_explicit_foreign_trip_budget_in_the_sentence_requires_clarification
 
 def test_other_soft_preferences_do_not_make_unspoken_pace_known() -> None:
     from backend.agent.fixture_conditions import missing_question
+    from backend.domain.travel_request import pace_of
 
     request = TravelRequest.model_validate(
         {
@@ -122,7 +123,8 @@ def test_other_soft_preferences_do_not_make_unspoken_pace_known() -> None:
             "soft_constraints": ["少走路"],
         }
     )
-    assert "节奏" in missing_question(request)
+    # 节奏仍未知（不从“少走路”推断），但不再因此追问：默认标准。
+    assert pace_of(request) is None and "节奏" not in missing_question(request)
 
 
 @pytest.mark.parametrize(

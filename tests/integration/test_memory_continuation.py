@@ -72,7 +72,7 @@ def test_memory_confirmation_keeps_tasks_but_does_not_restore_old_goal_text(
             {
                 "expected_revision": 1,
                 "goals": ["hotel_comparison", "itinerary"],
-                "awaiting_field": "pace",
+                "awaiting_field": "transport",
             },
         )
         assert result.code is None
@@ -88,7 +88,7 @@ def test_memory_confirmation_keeps_tasks_but_does_not_restore_old_goal_text(
         state = (await travel.business_context(original))["conversation"]
         assert isinstance(state, dict)
         assert state["pending_tasks"] == ["hotel_comparison", "itinerary"]
-        assert state["awaiting_field"] == "pace"
+        assert state["awaiting_field"] == "transport"
         assert state["goal_prompt"] is None
         # 下一轮追问与重复原目标，都必须保留已确认的安全待办证明。
         async with transaction(travel.database) as db:
@@ -100,13 +100,13 @@ def test_memory_confirmation_keeps_tasks_but_does_not_restore_old_goal_text(
             result = await TravelToolExecutor(travel).execute(
                 followup,
                 "update_conversation_state",
-                {"expected_revision": 1, "goals": goals, "awaiting_field": "pace"},
+                {"expected_revision": 1, "goals": goals, "awaiting_field": "transport"},
             )
             assert result.code is None
             state = (await travel.business_context(followup))["conversation"]
             assert isinstance(state, dict)
             assert state["pending_tasks"] == ["hotel_comparison", "itinerary"]
-            assert state["awaiting_field"] == "pace"
+            assert state["awaiting_field"] == "transport"
             assert state["goal_prompt"] is None
         await PreferenceService(travel.database).change(
             original.user_id, PreferenceVersion(expected_revision=1)

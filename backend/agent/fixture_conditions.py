@@ -283,8 +283,6 @@ def missing_question(request: TravelRequest, *, task: Task | None = None) -> str
     missing = [labels[k] for k in request.hotel_requirements() if k in labels]
     if missing:
         return "请在对话里补充：" + "、".join(missing) + "。"
-    if pace_of(request) is None:
-        return "旅行条件已记录。你想要标准、慢节奏还是特种兵节奏？"
     if question := room_preferences_question(request):
         return question
     return "旅行条件已记录。接下来想比较酒店，还是生成行程？"

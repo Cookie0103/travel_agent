@@ -364,7 +364,7 @@ def test_direct_pace_request_without_itinerary_task_creates_card_without_changin
     runner.run(exercise())
 
 
-def test_awaiting_pace_automatically_emits_card_and_explicit_presentation_reuses_it(
+def test_awaiting_transport_automatically_emits_card_and_explicit_presentation_reuses_it(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
     runner, travel, original = travel_setup
@@ -381,7 +381,7 @@ def test_awaiting_pace_automatically_emits_card_and_explicit_presentation_reuses
             executor,
             context,
             "update_conversation_state",
-            {"expected_revision": 1, "goals": ["itinerary"], "awaiting_field": "pace"},
+            {"expected_revision": 1, "goals": ["itinerary"], "awaiting_field": "transport"},
             events.append,
             definition=next(d for d in DEFINITIONS if d.name == "update_conversation_state"),
         )
@@ -395,10 +395,7 @@ def test_awaiting_pace_automatically_emits_card_and_explicit_presentation_reuses
             "present_form",
             {
                 "expected_revision": 1,
-                "groups": [
-                    {"key": "transport", "label": "交通方式"},
-                    {"key": "pace", "label": "旅行节奏"},
-                ],
+                "groups": [{"key": "transport", "label": "交通方式"}],
             },
         )
         assert repeated.code is None and repeated.data["choice_id"] == data["choice_id"]
@@ -415,7 +412,9 @@ async def source_card(travel: TravelService, original: RunContext) -> tuple[RunC
         context = RunContext(original.user_id, original.session_id, row.id)
     await travel.update_conversation_state(
         context,
-        ConversationStateInput(expected_revision=1, goals=("itinerary",), awaiting_field="pace"),
+        ConversationStateInput(
+            expected_revision=1, goals=("itinerary",), awaiting_field="transport"
+        ),
     )
     card = await ChoiceService(travel).create(context, "pace", 1)
     async with transaction(travel.database) as db:
