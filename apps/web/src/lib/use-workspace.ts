@@ -48,7 +48,7 @@ import {
 } from "./identity-storage";
 import { mergeHistory, mergeRun } from "./history";
 import { followRun, isRunActive } from "./run-stream";
-import { classifyError, type ErrorKind } from "./error-actions";
+import { errorKindFor, type ErrorKind } from "./error-actions";
 import type { Mode } from "./models";
 import type { ConditionPatch } from "./condition-patch";
 
@@ -133,11 +133,7 @@ export function useWorkspace({
         setRestoring(false);
         setError("身份已失效，请重新创建演示会话。");
       } else {
-        const kind = classifyError(failure);
-        setError(
-          message(failure),
-          streamFailure && kind === "other" ? "stream" : kind,
-        );
+        setError(message(failure), errorKindFor(failure, streamFailure));
       }
     },
     [setError],

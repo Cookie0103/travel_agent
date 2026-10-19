@@ -140,7 +140,7 @@
 - (c) 供应商 429/非 409 的 4xx 把报价标 `failed`：**未改**，`test_eval_state.py:303` 注明是有意的业务终态；若改成 429 不烧报价，利是可直接重试，弊是要改评测口径。列入待决 D4。
 - (d) HTTP 与工具路径对 live/synthetic 报价状态码不一致：统一为 `403 blocked`（策略性拒绝）；**改动的既有测试** `test_hotel_links.py:107`、`test_synthetic_data.py:86` 的 `422` 改 `403`。
 - (e) 预订按 JSON 时间戳**字符串**排序：根因 VERIFIED（微秒为 0 时序列化为 `...:00Z`，字符串降序会排在 `...:00.5Z` 之前，解释了偶发的 `rows[0]==held` 失败）；`order_by` 改为 `cast(payload["history"][0]["at"].astext, DateTime(timezone=True)).desc(), id`；`test_session_order_uses_real_time_not_timestamp_text` 确定性构造 12:00:00 与 12:00:00.5。
-- (f) 前端币种符号写死 `¥`：`moneyLabel(amount, currency)` 用 `Intl.NumberFormat`，JPY 显示 `JP¥45,000`（有意变化）；币种代码非法时回退；`availability.test.ts` 10/10。
+- (f) 前端币种符号写死 `¥`：`moneyLabel(amount, currency)` 用 `Intl.NumberFormat`，JPY 显示 `45,000 JPY`（有意变化；后又由 `JP¥` 改为“金额 + 币种代码”）；币种代码非法时回退；`availability.test.ts` 10/10。
 
 #### P-B4 [P2] 并发确认的中间状态　状态：done
 - 现象：见审计报告 §5 的更正。0.4 秒延迟的 `supplier.order` + 3 个并发 `confirm`，修复前 `['booked','unknown','unknown']`。
@@ -390,7 +390,7 @@
 - **P2 处理（主任务）**：本机 Turbopack 的 CSS 子进程起不来是已知问题（此前文档只对 `web-check` 说过），但开发服务器命令没有对应选项。`scripts/dev.py` 的 `web` 子命令新增 `--webpack`（`dev web --webpack` → `pnpm dev --webpack`），与 `web-check --webpack` 对称；`dev` 相关测试 31 个通过。
 
 #### P-R6b [P2] 前端体验修复（R6）　状态：done（视觉与交互未在浏览器里复验）
-- **P4 金额格式**：`moneyLabel(amount, currency)` 现在接受 null，null 显示“未知”（不会显示成 0 或空）；酒店卡总价/基础/税/费/套餐下拉/`budget_excess`、行程面板总预算统一用它，币种取卡片自带的 `currency`；`formatYen` 已删。税费未知语义保持（总价 null 仍显示“总价未知”）。**显示变化**：zh-CN 下 JPY 显示为“JP¥”，全站统一，与之前的“¥”略有差异。
+- **P4 金额格式**：`moneyLabel(amount, currency)` 现在接受 null，null 显示“未知”（不会显示成 0 或空）；酒店卡总价/基础/税/费/套餐下拉/`budget_excess`、行程面板总预算统一用它，币种取卡片自带的 `currency`；`formatYen` 已删。税费未知语义保持（总价 null 仍显示“总价未知”）。**显示变化**：全站统一显示为“45,000 JPY”（金额 + 币种代码，不再用 ¥/JP¥ 符号）。
 - **P5 禁用按钮原因**：新增纯函数 `hotelHoldBlockReason({expired, totalKnown, revisionMatches})`，按优先级返回“报价已过期 / 基于旧条件 / 总价未知”，在按钮下方显示小字并用 `aria-describedby` 关联。
 - **P6/P7 错误条按钮**：新增 `src/lib/error-actions.ts`（`ErrorKind = stream | conflict | validation | run | other`，`classifyError` 按状态码分类，`errorActions` 决定按钮集合）；“重新连接进度”只给 stream 类错误且 Run 仍在运行或取消中时显示；校验类 422 不再显示“读取最新条件与行程”；重连读到终态时清掉 stream 类错误。遗留：状态接线靠类型检查，没有 hook/UI 层自动化测试。
 - **P8 笼统提示**：`errorExplanation` 新增 `detail` 参数，仅在 code 为 validation 且无更具体封闭原因码时使用，形如“校验未通过：固定演示仅覆盖京都二至三日游。”；过滤条件：含中文、≤60 字、不含换行/`=`/`://`，否则退回原笼统文案（不泄露英文内部 code）。
@@ -400,6 +400,8 @@
 - **P14 跳到主内容**：`layout.tsx` 最前面加 `.skip-link`（获得焦点时才可见），三处 `<main>` 加 `id="main-content"` 与 `tabIndex={-1}`。
 - 测试：纯函数部分都先红后绿，前端测试从 149 增到 **185 个**（新增 `error-actions`、`scroll`、`nav-links` 三个测试文件，追加 `availability`、`error-explanation`）；`web-check` 全过。
 - 未验证：所有视觉与交互行为（滚动、跳到主内容、禁用原因小字样式、导航高亮、金额新格式在行程面板的实际显示）都没有在真实浏览器里复验。
+- **复验（2026-10-19，真 Chrome，离线，临时库，已清理）**：通过——跳到主内容（聚焦才可见，回车后焦点落在 `#main-content`）、导航 `/articles` 与文章详情页都有 `aria-current="page"`、行程面板与酒店卡金额统一为“30,000 JPY”式、发送后自动滚到底、读者在上方时内容增长不拽回、历史酒店卡的禁用按钮有说明。**发现并修复**：(1) 新一轮开始时的平滑滚动会在结果卡片（酒店比较）后到时被误判成“读者上翻”，之后不再跟随；改为瞬时滚动；(2) 历史卡片/处理中导致的“暂留”禁用没有原因（`hotelHoldBlockReason` 只覆盖过期、旧条件、总价未知），新增 `inactiveHotelReason`；(3) `moneyLabel('')`/非数字现按未知处理；`budgetExcessLabel` 避免负数出现“+-”；`revision` 未载入时不再说“旧条件”；流式来源的 409/422 仍归 stream 类（`errorKindFor`），可重新连接。前端测试 190 个。**未能验证**：流中断后的“重新连接进度”条（离线 Run 不足 0.5 秒，未人为拖慢）、422 校验条不显示“读取最新”、窄屏。浏览器里渲染帧被节流，ResizeObserver/scroll 事件需要截图触发帧，自动化测滚动时要注意。
+- **留给产品决策（未改）**：离线“更新条件”回复里带着 `<untrusted_text>` 围栏标签原样显示给用户；失败的 Run 在对话里直接显示英文 `missing_fields: transport`（P8 只处理了错误条）；行程面板“住宿预算：3000–9000 JPY”仍是另一套格式；酒店 `data_mode` 与按钮文案里的“暂留模拟房间”在 `!latest` 时无法操作，用户需向上翻到最新一轮才能暂留。
 
 #### P-R5b [回归，主任务修复] R5 收紧标识符上限误围栏 content_version　状态：done
 - 现象：完整测试中 `test_catalog_supplement::test_actual_sdk_matches_original_two_search_tool_contract_on_curated_sources` 失败——`source.content_version`（`<sha256>:curation-v1`，76 字符）被 R5 把标识符值上限收紧到 64 后包进了围栏。
@@ -435,3 +437,13 @@
 - **所有改动都在工作区，没有提交**（140 多个文件改动 + 50 多个新增）。提交前请按需审阅；行尾 CRLF 会在提交时由 `.gitattributes` 规范化。
 - 未应用到开发库 `travel_agent` 的迁移：**0022**（9 条 CHECK + 1 个索引）。升级前建议先在副本上跑一遍；若开发库里有非法旧值，迁移会中止并点名表列。
 - 仍需用户决定的事项见 §2；可清理代码见 [可清理代码核查](../review/audits/2026-10-18-cleanup-candidates.md)。
+
+### 0022 迁移副本演练结果（2026-10-19）
+
+- 开发库 `travel_agent` 实际停在 **0012**（不是 0021），`db-migrate` 会一次应用 0013–0022。
+- 在临时副本上（已删除）升级到 0021 后，9 条 CHECK 对应列的非法值均为 0 行（task_runs 23 行、bookings 1 行）；0022 升级、降级到 0021、再升级均成功，9 条约束与索引齐全。
+- 开发库未被改动，仍为 0012。
+
+### 2026-10-19 决定：酒店报价不再收紧（有意保持现状）
+
+R2 复核发现 `hotel_offer` 的证据条件不含 `hard_constraints` / `lodging_budget`：先搜酒店再改这两项，旧报价仍可被暂留，最终变为 `expired`（`conditions_changed_during_hold`），不会 `held`、不会下单，仅在模拟供应商侧留一个自行过期的 hold。用户决定**不加** `require_revision`（会增加“已过期/条件已变”类提示）；`tests/integration/test_lock_free_read_callers.py::test_offer_found_before_hard_constraint_change_cannot_be_held_as_current` 固定现状。

@@ -6,9 +6,8 @@ import os
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
-from dataclasses import asdict, dataclass
-from datetime import UTC, datetime
-from decimal import Decimal
+from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from backend.limits import Currency, ProbeError, read_budget
@@ -107,28 +106,3 @@ class Ledger:
         except (ValueError, TypeError, ProbeError):
             raise ProbeError("blocked", "账本损坏，禁止清空后自动重跑") from None
         return entries
-
-    def append(self, entry: Entry) -> None:
-        append_line(self.path, asdict(entry))
-
-    def start_flow(self, now: datetime) -> None:
-        entries = self.entries()
-        if any(entry.kind == "success" for entry in entries):
-            raise ProbeError("blocked", "已成功实测，避免重复花费")
-        if sum(entry.kind == "flow" for entry in entries) >= 2:
-            raise ProbeError("blocked", "本批已到两次流程上限")
-        self.append(Entry("flow", now.astimezone(UTC).date().isoformat(), "CNY"))
-
-    def charge(self, currency: Currency, amount: Decimal, limit: Decimal, now: datetime) -> None:
-        entries = self.entries()
-        day = now.astimezone(UTC).date().isoformat()
-        if sum(entry.kind == "attempt" for entry in entries) >= 4:
-            raise ProbeError("blocked", "本批已到四次请求上限")
-        spent = sum(
-            (Decimal(e.charge) for e in entries if e.day == day and e.currency == currency),
-            Decimal("0"),
-        )
-        if not amount.is_finite() or amount <= 0 or not limit.is_finite() or spent + amount > limit:
-            raise ProbeError("blocked", "本币种预算不足")
-        # 不变量：先落盘再请求；超时、进程中断也不会把本次视为零消耗。
-        self.append(Entry("attempt", day, currency, str(amount)))

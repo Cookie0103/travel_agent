@@ -258,3 +258,22 @@ def test_offline_demo_asks_before_tools_and_completes_after_answer(
         assert [event.kind for event in events] == ["text"]
 
     runner.run(exercise())
+
+
+def test_offline_update_reply_shows_no_fence_tags_to_user(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        prompt = "目的地改成大阪"
+        events: list[RuntimeEvent] = []
+        turn = await start_turn(travel, context, prompt)
+        result = await FixtureRuntime(TravelToolExecutor(travel)).execute(
+            turn, prompt, None, events.append, asyncio.Event()
+        )
+        assert result.code is None and "大阪" in result.text
+        assert "untrusted_text" not in result.text
+        assert all("untrusted_text" not in (e.text or "") for e in events if e.kind == "text")
+
+    runner.run(exercise())

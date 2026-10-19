@@ -6,7 +6,7 @@ import { Conditions } from "./conditions";
 import { PlanResults } from "./results";
 import { Bookings } from "./bookings";
 import { PreferencePanel } from "./preferences";
-import { moneyLabel, partyLabel } from "@/lib/availability";
+import { moneyLabel, moneyRangeLabel, partyLabel } from "@/lib/availability";
 import { sourceRows } from "@/lib/condition-source";
 import { currentPace } from "@/lib/pace";
 
@@ -130,9 +130,14 @@ export function TripPanel({
           )}
           {!editing && request.lodging_budget && (
             <p>
-              住宿预算：{request.lodging_budget.amount.lower ?? "下限未填"}–
-              {request.lodging_budget.amount.upper ?? "上限未填"}{" "}
-              {request.lodging_budget.currency} ·{" "}
+              住宿预算：
+              {moneyRangeLabel(
+                request.lodging_budget.amount.lower,
+                request.lodging_budget.amount.upper,
+                request.lodging_budget.currency,
+                { lower: "下限未填", upper: "上限未填" },
+              )}{" "}
+              ·{" "}
               {request.lodging_budget.basis === "per_room_night"
                 ? "每房每晚"
                 : "住宿总额"}

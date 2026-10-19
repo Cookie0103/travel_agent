@@ -2,7 +2,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { ApiError } from "../src/lib/api.ts";
-import { classifyError, errorActions } from "../src/lib/error-actions.ts";
+import {
+  classifyError,
+  errorActions,
+  errorKindFor,
+} from "../src/lib/error-actions.ts";
 
 test("classifyError separates revision conflicts, validation and other failures", () => {
   assert.equal(classifyError(new ApiError("x", 409, "conflict")), "conflict");
@@ -23,4 +27,11 @@ test("refreshing latest state is hidden for validation errors only", () => {
   assert.equal(errorActions("validation", true).refresh, false);
   for (const kind of ["conflict", "stream", "other", "run"] as const)
     assert.equal(errorActions(kind, false).refresh, true);
+});
+
+test("stream-originated failures stay stream-kind even for 409/422, so reconnect is offered", () => {
+  for (const status of [409, 422, 503])
+    assert.equal(errorKindFor(new ApiError("x", status), true), "stream");
+  assert.equal(errorKindFor(new ApiError("x", 409), false), "conflict");
+  assert.equal(errorKindFor(new Error("n"), false), "other");
 });

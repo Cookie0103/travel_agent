@@ -10,6 +10,7 @@ import {
   partyLabel,
   moneyLabel,
   hotelHoldBlockReason,
+  budgetExcessLabel,
 } from "@/lib/availability";
 import { sourceHref, type Hotels, type Plan } from "@/lib/api";
 import { canHoldHotel, sourceLabel } from "@/lib/data-mode";
@@ -168,10 +169,10 @@ function Hotel({
         {card.lodging_exceeds_lodging_budget === true && (
           <p className="warning">报价超过住宿预算上限</p>
         )}
-        {card.budget_excess && (
+        {budgetExcessLabel(card.budget_excess, card.currency) && (
           <p className="warning">
-            超出原每间每晚预算 +{moneyLabel(card.budget_excess, card.currency)}
-            （+
+            超出原每间每晚预算{" "}
+            {budgetExcessLabel(card.budget_excess, card.currency)}（+
             {card.budget_excess_percent}%）
           </p>
         )}
@@ -334,6 +335,8 @@ type HotelResultsProps = {
   chooseSegments?: (selection: HotelSelection & { text: string }) => void;
   hotels: Hotels;
   disabled: boolean;
+  /** Why actions are disabled by the card's place in the conversation (history / busy). */
+  inactiveReason?: string | null;
   revision?: number;
   hold: (offerId: string, revision: number) => Promise<void>;
   selectingSegment?: boolean;
@@ -342,6 +345,7 @@ type HotelResultsProps = {
 export function HotelResults({
   hotels,
   disabled,
+  inactiveReason,
   revision,
   hold,
   choose,
@@ -356,6 +360,7 @@ export function HotelResults({
       <SegmentHotelResults
         hotels={hotels}
         disabled={disabled}
+        inactiveReason={inactiveReason}
         revision={revision}
         hold={hold}
         chooseSegments={chooseSegments}
@@ -399,6 +404,7 @@ export function HotelResults({
             key={group.hotel_id}
             offers={group.offers}
             disabled={disabled}
+            inactiveReason={inactiveReason}
             revision={revision}
             hold={hold}
             choose={choose}
@@ -432,6 +438,7 @@ export function HotelResults({
 function SegmentHotelResults({
   hotels,
   disabled,
+  inactiveReason,
   revision,
   hold,
   chooseSegments,
@@ -473,6 +480,7 @@ function SegmentHotelResults({
                 more_url_scope: row.more_url_scope,
               }}
               disabled={disabled}
+              inactiveReason={inactiveReason}
               revision={revision}
               hold={hold}
               compact
@@ -505,6 +513,7 @@ function SegmentHotelResults({
 function HotelPackage({
   offers,
   disabled,
+  inactiveReason,
   revision,
   hold,
   choose,
@@ -515,6 +524,7 @@ function HotelPackage({
 }: {
   offers: Hotels["cards"];
   disabled: boolean;
+  inactiveReason?: string | null;
   revision?: number;
   hold: (offerId: string, revision: number) => Promise<void>;
   choose?: (card: Hotels["cards"][number]) => void;
@@ -530,11 +540,14 @@ function HotelPackage({
   const expired = now > 0 && Date.parse(card.expires_at) <= now;
   const blockId = `block-${card.offer_id}`;
   const holdable = canHoldHotel(card.data_mode, selectingSegment);
-  const blockReason = hotelHoldBlockReason({
-    expired,
-    totalKnown: card.total !== null || !holdable,
-    revisionMatches: revision === card.request_revision,
-  });
+  const blockReason =
+    inactiveReason ??
+    hotelHoldBlockReason({
+      expired,
+      totalKnown: card.total !== null || !holdable,
+      revisionMatches:
+        revision === undefined ? null : revision === card.request_revision,
+    });
   return (
     <Hotel
       card={card}
@@ -644,8 +657,8 @@ export function PlanResults({
           : plan.validation.status === "partial"
             ? "部分可校验；仍有未知项"
             : "已通过当前范围校验"}{" "}
-        · 已知 {plan.validation.known_cost} / 估算{" "}
-        {plan.validation.estimated_cost} JPY
+        · 已知 {moneyLabel(plan.validation.known_cost, "JPY")} / 估算{" "}
+        {moneyLabel(plan.validation.estimated_cost, "JPY")}
       </p>
       {refreshNotice && (
         <p role="alert" className={plan.draft_id ? "error" : "warning"}>

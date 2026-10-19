@@ -123,7 +123,7 @@ uv run python -m data.import_catalog
 uv run python -m backend.server
 ```
 
-API 在 http://127.0.0.1:8000/docs 展示接口；/health 检查数据库。
+API 在 http://127.0.0.1:8000/docs 展示接口；/health 只检查进程存活，迁移与数据库就绪看 /health/ready。
 本地 .env 的 DEMO_MODE=true 启用 POST /demo/login，返回一次性展示的演示令牌；后续 /sessions 请求带 Authorization: Bearer <token>。
 演示身份用于本机开发，不是生产登录。令牌仅保存摘要，24 小时过期；不能指定他人的 user_id 登录。
 Windows 服务入口使用兼容 psycopg 的事件循环。数据库迁移在 backend/persistence/migrations，当前包含身份、会话、目录、旅行条件、Evidence和TaskRun/事件。

@@ -1,6 +1,6 @@
 """离线验证 M0.2 的配置、持久次数限制、费用隔离和工具配对。"""
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from decimal import Decimal
 from pathlib import Path
 
@@ -13,7 +13,7 @@ from backend.limits import (
     price_for,
     read_budget,
 )
-from backend.providers.claude_agent.ledger import Entry, Ledger, exclusive
+from backend.providers.claude_agent.ledger import Ledger, exclusive
 
 NOW = datetime(2026, 10, 3, tzinfo=UTC)
 SETTINGS = Settings("fake-key-for-tests", "deepseek-flash", Decimal("5"), Decimal("0"))
@@ -70,40 +70,11 @@ def test_missing_key_is_rejected() -> None:
         load_settings({})
 
 
-def test_restart_and_new_day_do_not_reset_batch_request_count(tmp_path: Path) -> None:
-    path = tmp_path / "ledger.jsonl"
-    for _ in range(4):
-        Ledger(path).charge("CNY", Decimal("0.05"), Decimal("1"), NOW)
-    with pytest.raises(ProbeError, match="四次"):
-        Ledger(path).charge("CNY", Decimal("0.05"), Decimal("1"), NOW + timedelta(days=1))
-    assert len(Ledger(path).entries()) == 4
-
-
-def test_currency_budgets_cannot_borrow_from_each_other(tmp_path: Path) -> None:
-    ledger = Ledger(tmp_path / "ledger.jsonl")
-    ledger.charge("USD", Decimal("1"), Decimal("1"), NOW)
-    ledger.charge("CNY", Decimal("0.05"), Decimal("0.05"), NOW)
-    with pytest.raises(ProbeError, match="预算不足"):
-        ledger.charge("CNY", Decimal("0.05"), Decimal("0.05"), NOW)
-    assert len(ledger.entries()) == 2
-
-
-def test_success_or_two_flows_prevents_paid_repetition(tmp_path: Path) -> None:
-    ledger = Ledger(tmp_path / "ledger.jsonl")
-    ledger.start_flow(NOW)
-    ledger.start_flow(NOW)
-    with pytest.raises(ProbeError, match="两次"):
-        ledger.start_flow(NOW)
-    ledger.append(Entry("success", "2026-10-03", "CNY"))
-    with pytest.raises(ProbeError, match="已成功"):
-        ledger.start_flow(NOW)
-
-
 def test_corrupt_ledger_blocks_instead_of_resetting(tmp_path: Path) -> None:
     path = tmp_path / "ledger.jsonl"
     path.write_text('{"partial":', encoding="utf-8")
     with pytest.raises(ProbeError, match="损坏"):
-        Ledger(path).charge("CNY", Decimal("0.05"), Decimal("5"), NOW)
+        Ledger(path).entries()
     assert path.read_text(encoding="utf-8") == '{"partial":'
 
 

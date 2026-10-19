@@ -9,9 +9,16 @@ import pytest
 from backend.limits import Currency, ProbeError
 from backend.providers.claude_agent.budget import GRANT, LIMITS, Budget
 from backend.providers.claude_agent.budget import Entry as BudgetEntry
-from backend.providers.claude_agent.ledger import Entry, Ledger
 
 NOW = datetime(2026, 10, 3, 12, tzinfo=UTC)
+
+
+def _write_old_attempt(path: Path) -> None:
+    """旧探针账本格式；生产只读不写，故测试直接落盘。"""
+    path.write_text(
+        '{"kind": "attempt", "day": "2026-10-03", "currency": "CNY", "charge": "0.10"}\n',
+        encoding="utf-8",
+    )
 
 
 @pytest.fixture
@@ -22,7 +29,7 @@ def bounded_grant(monkeypatch: pytest.MonkeyPatch) -> None:
 
 def test_old_spend_counts_for_daily_but_not_new_grant(tmp_path: Path) -> None:
     old = tmp_path / "old.jsonl"
-    Ledger(old).append(Entry("attempt", "2026-10-03", "CNY", "0.10"))
+    _write_old_attempt(old)
     budget = Budget(tmp_path / "new.jsonl", old, Decimal("0.15"))
     budget.reserve(Decimal("0.04"), NOW)
     with pytest.raises(ProbeError, match="今日"):
@@ -118,7 +125,7 @@ def test_daily_only_grant_preserves_history_and_allows_more_than_old_request_cap
 
 def test_human_daily_ceiling_cannot_be_raised_by_configuration_or_restart(tmp_path: Path) -> None:
     path, legacy = tmp_path / "current", tmp_path / "legacy"
-    Ledger(legacy).append(Entry("attempt", "2026-10-03", "CNY", "0.10"))
+    _write_old_attempt(legacy)
     budget = Budget(path, legacy, Decimal(100))
     request_id = budget.reserve(Decimal("14.80"), NOW)
     before = path.read_bytes()
@@ -143,26 +150,6 @@ def test_lower_configured_budget_and_usd_zero_grant_are_preserved(tmp_path: Path
     assert not budget.path.exists() and not usd.path.exists()
 
 
-def test_today_exception_retains_ledger_and_expires_at_utc_midnight(tmp_path: Path) -> None:
-    """用户今日追加授权不重置账本，也不能通过重启延长到明天。"""
-    path, legacy = tmp_path / "current", tmp_path / "legacy"
-    today = NOW + timedelta(days=1)
-    budget = Budget(path, legacy, Decimal(15))
-    first = budget.reserve(Decimal(16), today)
-    budget.settle(first, Decimal(16))
-    before = path.read_bytes()
-    resumed = Budget(path, legacy, Decimal(15))
-    assert resumed.daily_limit(today) is None
-    resumed.reserve(Decimal(16), today)
-    assert path.read_bytes().startswith(before)
-    assert resumed.totals() == (2, Decimal(32))
-    tomorrow = today + timedelta(days=1)
-    assert resumed.daily_limit(tomorrow) == Decimal(15)
-    with pytest.raises(ProbeError, match="今日"):
-        resumed.reserve(Decimal("15.01"), tomorrow)
-    assert resumed.totals() == (2, Decimal(32))
-
-
 @pytest.mark.parametrize("currency", ["CNY", "USD"])
 def test_today_exception_keeps_disabled_budget_and_usd_blocked(
     tmp_path: Path, currency: Currency
@@ -172,13 +159,6 @@ def test_today_exception_keeps_disabled_budget_and_usd_blocked(
     with pytest.raises(ProbeError):
         budget.reserve(Decimal(1), today)
     assert not budget.path.exists()
-
-
-def test_today_exception_uses_utc_day_and_preserves_lower_limits_afterward(tmp_path: Path) -> None:
-    budget = Budget(tmp_path / "current", tmp_path / "legacy", Decimal(1))
-    local_midnight = datetime.fromisoformat("2026-10-05T00:00:00+09:00")
-    assert budget.daily_limit(local_midnight) is None
-    assert budget.daily_limit(datetime(2026, 10, 5, tzinfo=UTC)) == Decimal(1)
 
 
 def test_unsettled_counts_full_reservation_settled_counts_usage(tmp_path: Path) -> None:

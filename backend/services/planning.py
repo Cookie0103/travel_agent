@@ -48,7 +48,10 @@ class PlanningService:
         request = await self.current(context, arguments.expected_revision)
         if request.transport is None:
             raise ServiceError(
-                422, "validation", "missing_fields: transport", "route_missing_transport"
+                422,
+                "validation",
+                "缺少交通方式：请先确认步行、公共交通或出租车，再查询路线",
+                "route_missing_transport",
             )
         ids = tuple(
             dict.fromkeys(

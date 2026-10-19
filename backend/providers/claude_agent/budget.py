@@ -16,8 +16,6 @@ from backend.trace_log import trace
 GRANT = "2026-10-03-travel-autonomous"
 # 用户新授权只限制每日15CNY；None表示没有累计上限，不用伪造大数。
 DAILY_CNY_AUTHORIZATION = Decimal("15.00")
-# 用户明确仅今日暂停日限；原账本和其他日期的限制不变。
-UNCAPPED_CNY_DAY = "2026-10-04"
 LIMITS: dict[Currency, tuple[Decimal | None, int | None]] = {
     "CNY": (None, None),
     "USD": (Decimal(0), 0),
@@ -67,8 +65,6 @@ class Budget:
         """None仅表示获准日期无日限；零配置仍在预占前拒绝。"""
         if self.currency == "CNY":
             if not current().daily_cny_cap:  # HUMAN档：以供应商账户余额为准，不设每日上限
-                return None
-            if now.astimezone(UTC).date().isoformat() == UNCAPPED_CNY_DAY:
                 return None
             return min(self.daily, DAILY_CNY_AUTHORIZATION)
         return self.daily

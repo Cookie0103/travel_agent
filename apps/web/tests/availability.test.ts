@@ -9,7 +9,10 @@ import {
   planRefreshNotice,
   hotelQuoteNeedsRefresh,
   moneyLabel,
+  moneyRangeLabel,
   hotelHoldBlockReason,
+  budgetExcessLabel,
+  inactiveHotelReason,
 } from "../src/lib/availability.ts";
 import type { Plan, Hotels, Booking } from "../src/lib/api";
 
@@ -190,9 +193,8 @@ test("booking money is formatted by its own currency instead of a hard-coded yen
   const jpy = moneyLabel("45000.00", "JPY");
   const usd = moneyLabel("120.50", "USD");
   assert.match(jpy, /45,000/);
-  assert.match(jpy, /JP¥|JPY/);
-  assert.match(usd, /120\.50/);
-  assert.match(usd, /US\$|USD/);
+  assert.equal(jpy, "45,000 JPY");
+  assert.equal(usd, "120.50 USD");
   assert.ok(!usd.includes("¥"));
   assert.equal(moneyLabel("10", "NOPE"), "10 NOPE");
 });
@@ -214,5 +216,53 @@ test("hotelHoldBlockReason explains why holding is disabled, in priority order",
   assert.match(
     hotelHoldBlockReason({ ...base, revisionMatches: false })!,
     /旧条件|条件/,
+  );
+});
+
+test("moneyRangeLabel uses the same format and marks missing bounds", () => {
+  const missing = { lower: "下限未填", upper: "上限未填" };
+  assert.equal(
+    moneyRangeLabel("3000", "9000", "JPY", missing),
+    "3,000–9,000 JPY",
+  );
+  assert.equal(
+    moneyRangeLabel(null, "9000", "JPY", missing),
+    "下限未填–9,000 JPY",
+  );
+});
+
+test("moneyLabel treats blank or non-numeric amounts as unknown, never 0 or NaN", () => {
+  for (const bad of ["", "  ", "abc", "NaN", "Infinity"])
+    assert.equal(moneyLabel(bad, "JPY"), "未知");
+  assert.notEqual(moneyLabel("0", "JPY"), "未知");
+});
+
+test("budgetExcessLabel only renders a positive excess, never '+-'", () => {
+  assert.equal(budgetExcessLabel("1200", "JPY"), "+1,200 JPY");
+  for (const bad of ["-300", "0", "", null, undefined, "abc"])
+    assert.equal(budgetExcessLabel(bad, "JPY"), null);
+});
+
+test("hotelHoldBlockReason does not blame old conditions when the revision is not loaded", () => {
+  const base = { expired: false, totalKnown: true };
+  const reason = hotelHoldBlockReason({ ...base, revisionMatches: null });
+  assert.ok(reason);
+  assert.doesNotMatch(reason!, /旧条件/);
+});
+
+test("inactiveHotelReason explains why an older or busy conversation turn cannot act", () => {
+  assert.equal(inactiveHotelReason({ latest: true, busy: false }), null);
+  assert.match(
+    inactiveHotelReason({ latest: false, busy: false })!,
+    /历史|最新/,
+  );
+  assert.match(
+    inactiveHotelReason({ latest: true, busy: true })!,
+    /处理中|稍候/,
+  );
+  // history wins: a stale card stays stale even while another run is busy
+  assert.match(
+    inactiveHotelReason({ latest: false, busy: true })!,
+    /历史|最新/,
   );
 });

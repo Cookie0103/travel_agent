@@ -73,6 +73,15 @@ def fence(text: str) -> str:
     return f"<{LABEL}>{sanitize(text)}</{LABEL}>"
 
 
+_FENCE_TAG = re.compile(rf"</?{LABEL}>")
+
+
+def unfence(text: str) -> str:
+    """用户可见边界：去掉本模块生成的围栏标签、保留内容。只用于展示给用户的文本，
+    不得用于模型可见的工具结果（那里围栏是安全边界）。"""
+    return _FENCE_TAG.sub("", text)
+
+
 def _server_text(text: str) -> str:
     """服务端文案：保持可读（不做NFKC），但去掉不可见/控制字符与可破坏围栏的标记；
     构造处已围栏的动态片段（由 fence() 生成的完整围栏）原样保留。"""

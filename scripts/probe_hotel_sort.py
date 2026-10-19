@@ -5,7 +5,7 @@ import asyncio
 import json
 import os
 from collections import Counter
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 import httpx
@@ -13,10 +13,26 @@ from dotenv import load_dotenv
 
 from backend.adapters.external_api import ApiUsage
 from backend.adapters.rakuten import Rakuten
-from backend.domain.external_data import ExternalDataError
+from backend.domain.external_data import ExternalDataError, GeoPoint
+from backend.domain.travel_request import TravelRequest
 from backend.persistence.database import Database, configuration, database_url
 from scripts.dev import ROOT
-from scripts.probe_hotel_coverage import POINTS, trip
+
+KYOTO = GeoPoint(name="京都", latitude=35.0116, longitude=135.7681)
+
+
+def trip(city: str, day: str, *, nights: int = 1) -> TravelRequest:
+    start = date.fromisoformat(day)
+    return TravelRequest(
+        city=city,
+        start_date=start,
+        end_date=start + timedelta(days=nights),
+        adults=1,
+        child_ages=(),
+        rooms=1,
+        revision=1,
+        hard_constraints=("住宿：独立房间", "房型：禁烟", "床型：无要求"),
+    )
 
 
 async def exercise() -> int:
@@ -53,9 +69,7 @@ async def exercise() -> int:
             for sort in ("standard", "+roomCharge"):
                 if usage.used.get("rakuten", 0) >= 2:
                     break
-                items, count = await provider.query(
-                    request, request.start_date, POINTS["kyoto"], sort=sort
-                )
+                items, count = await provider.query(request, request.start_date, KYOTO, sort=sort)
                 room_prices: dict[int, Decimal] = {}
                 raw_prices: dict[int, Decimal] = {}
                 for item in items:

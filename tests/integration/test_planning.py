@@ -147,7 +147,7 @@ def test_routes_require_confirmed_transport_and_publish_current_party_estimates(
             ],
         }
         missing = await executor.execute(context, "estimate_routes", args)
-        assert missing.code == "validation" and "transport" in missing.suggestion
+        assert missing.code == "validation" and "交通方式" in missing.suggestion
         await travel.patch_request(
             context,
             RequestPatch.model_validate({"expected_revision": 1, "set": {"transport": "transit"}}),

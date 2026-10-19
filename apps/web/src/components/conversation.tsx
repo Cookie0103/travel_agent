@@ -20,6 +20,7 @@ import { Button } from "./ui/button";
 import { ChoiceCard } from "./choice-card";
 import { MemoryChoices } from "./memory-choices";
 import { isNearBottom } from "@/lib/scroll";
+import { inactiveHotelReason } from "@/lib/availability";
 import {
   runLabel,
   stageGuidance,
@@ -52,7 +53,7 @@ function currentStep(workspace: Workspace): string | undefined {
   return open ? toolLabel(open.tool_name) : undefined;
 }
 
-/** Keep the nearest scroll parent pinned to the end while the reader is already there; a new turn always jumps down. */
+/** Keep the nearest scroll parent pinned to the end while the reader is already there; a new turn always jumps down (instantly). */
 function useStickyBottom(turnKey: string | undefined) {
   const content = useRef<HTMLDivElement>(null);
   const sticky = useRef(true);
@@ -63,16 +64,10 @@ function useStickyBottom(turnKey: string | undefined) {
     const onScroll = () => {
       sticky.current = isNearBottom(scroller);
     };
-    const toEnd = (smooth: boolean) =>
-      scroller.scrollTo({
-        top: scroller.scrollHeight,
-        behavior:
-          smooth && !matchMedia("(prefers-reduced-motion: reduce)").matches
-            ? "smooth"
-            : "auto",
-      });
+    const toEnd = () =>
+      scroller.scrollTo({ top: scroller.scrollHeight, behavior: "auto" });
     const observer = new ResizeObserver(() => {
-      if (sticky.current) toEnd(false);
+      if (sticky.current) toEnd();
     });
     scroller.addEventListener("scroll", onScroll, { passive: true });
     observer.observe(node);
@@ -85,12 +80,9 @@ function useStickyBottom(turnKey: string | undefined) {
     if (!turnKey) return;
     sticky.current = true;
     const scroller = content.current?.closest<HTMLElement>(".chat-scroll");
-    scroller?.scrollTo({
-      top: scroller.scrollHeight,
-      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
-        ? "auto"
-        : "smooth",
-    });
+    // Instant, not smooth: a smooth animation toward the old height fires scroll events
+    // that look like "reader scrolled up" while the new turn's content is still growing.
+    scroller?.scrollTo({ top: scroller.scrollHeight, behavior: "auto" });
   }, [turnKey]);
   return content;
 }
@@ -447,6 +439,13 @@ function TurnCards({
           key={`${run.run_id}:${workspace.request?.revision}`}
           hotels={hotels}
           disabled={disabled}
+          inactiveReason={inactiveHotelReason({
+            latest: !!latest,
+            busy:
+              workspace.busy ||
+              workspace.restoring ||
+              ["running", "cancelling"].includes(run.status),
+          })}
           revision={workspace.request?.revision}
           hold={workspace.holdOffer}
           choose={(card) =>

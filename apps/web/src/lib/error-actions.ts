@@ -11,6 +11,14 @@ export function classifyError(failure: unknown): ErrorKind {
   return "other";
 }
 
+/** A failure raised while following the event stream is a stream error whatever its status code. */
+export function errorKindFor(
+  failure: unknown,
+  streamFailure: boolean,
+): ErrorKind {
+  return streamFailure ? "stream" : classifyError(failure);
+}
+
 export function errorActions(kind: ErrorKind, runActive: boolean) {
   return {
     refresh: kind !== "validation",

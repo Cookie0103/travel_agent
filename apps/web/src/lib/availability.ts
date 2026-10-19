@@ -22,24 +22,72 @@ export function moneyLabel(
   amount: string | null | undefined,
   currency: string,
 ): string {
-  if (amount == null) return "未知";
+  if (
+    amount == null ||
+    amount.trim() === "" ||
+    !Number.isFinite(Number(amount))
+  )
+    return "未知";
   try {
-    return new Intl.NumberFormat("zh-CN", {
+    // "30,000 JPY": grouped number plus ISO code, using the currency's own decimal places.
+    const digits = new Intl.NumberFormat("en-US", {
       style: "currency",
       currency,
+    }).resolvedOptions().minimumFractionDigits;
+    const number = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: digits,
+      maximumFractionDigits: digits,
     }).format(Number(amount));
+    return `${number} ${currency}`;
   } catch {
     return `${amount} ${currency}`;
   }
+}
+
+/** "3,000–9,000 JPY"; a missing bound is shown as the given placeholder. */
+export function moneyRangeLabel(
+  lower: string | null | undefined,
+  upper: string | null | undefined,
+  currency: string,
+  missing: { lower: string; upper: string },
+): string {
+  const part = (value: string | null | undefined, fallback: string) =>
+    moneyLabel(value, currency).replace(` ${currency}`, "") === "未知"
+      ? fallback
+      : moneyLabel(value, currency).replace(` ${currency}`, "");
+  return `${part(lower, missing.lower)}–${part(upper, missing.upper)} ${currency}`;
+}
+
+/** "+1,200 JPY" for a positive excess only; zero, negative or unparseable amounts render nothing. */
+export function budgetExcessLabel(
+  amount: string | null | undefined,
+  currency: string,
+): string | null {
+  if (amount == null || amount.trim() === "" || !(Number(amount) > 0))
+    return null;
+  return `+${moneyLabel(amount, currency)}`;
+}
+
+/** Reason hotel actions are unavailable because of where the card sits, not because of the offer itself. */
+export function inactiveHotelReason(state: {
+  latest: boolean;
+  busy: boolean;
+}): string | null {
+  if (!state.latest) return "这是历史对话中的结果，请在最新一轮结果里操作。";
+  if (state.busy) return "正在处理中，请稍候。";
+  return null;
 }
 
 /** Visible reason a hotel offer cannot be held/selected right now; null when it can. */
 export function hotelHoldBlockReason(state: {
   expired: boolean;
   totalKnown: boolean;
-  revisionMatches: boolean;
+  /** null: the current conditions revision is not loaded yet. */
+  revisionMatches: boolean | null;
 }): string | null {
   if (state.expired) return "报价已过期，请重新比较酒店获取新报价。";
+  if (state.revisionMatches === null)
+    return "当前条件版本尚未载入，请稍候或刷新后再操作。";
   if (!state.revisionMatches)
     return "此报价基于旧条件，请重新比较酒店后再操作。";
   if (!state.totalKnown) return "总价未知，无法暂留。";

@@ -19,6 +19,7 @@ from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, 
 from backend.domain.travel_request import TravelRequest
 from backend.tools.contracts import ToolExecutor
 from backend.tools.execution import execute_observed
+from backend.tools.fencing import unfence
 from backend.tools.search import DEFINITIONS
 from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
 from backend.tools.travel import TravelToolExecutor
@@ -108,6 +109,7 @@ class FixtureRuntime:
                         text += "\n" + str(relation["message"])
                     else:
                         text += "\n" + missing_question(request, task=task)
+                text = unfence(text)  # 围栏只保护模型；用户可见回复去掉标签
                 emit(RuntimeEvent(context, "text", text=text))
                 return RuntimeOutcome(text, sdk_session_id or str(uuid4()))
             # 查询样例可用明确城市；其他未识别表达追问，不注入京都默认值。
