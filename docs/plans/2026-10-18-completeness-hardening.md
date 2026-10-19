@@ -425,7 +425,7 @@
 
 ### 最终结果
 
-- **最后一次完整 `dev test`（含 P-R5b 修复、房间数校验、`dev web --webpack` 之后）：2267 通过 / 5 失败 / 1 跳过 / 4 deselected，349 秒。** 5 个失败全是**既有问题**，不是本批次造成：`test_evaluation_variants` 4 个（本机 CLI 2.1.302 不在白名单，返回 `blocked/auto_compaction_capability`）、`test_travel_sdk_offline[anthropic-claude-haiku-5-5]` 1 个（`provider_error/invalid_assistant_message`，原因未查清；在未修改的 HEAD `13e3c20` 上同样失败）。
+- **最后一次完整 `dev test`（含 P-R5b 修复、房间数校验、`dev web --webpack` 之后）：2267 通过 / 5 失败 / 1 跳过 / 4 deselected，349 秒。** 5 个失败全是**既有问题**，不是本批次造成：`test_evaluation_variants` 4 个（本机 CLI 2.1.302 不在白名单，返回 `blocked/auto_compaction_capability`）、`test_travel_sdk_offline[anthropic-claude-haiku-5-5]` 1 个（`provider_error/invalid_assistant_message`；**原因已查清（2026-10-19）**：本机 CLI 2.1.303 对 Haiku 5.5 发 `thinking={'type':'adaptive'}`，`request.py` 的 `_normalize_haiku` 只放行 `disabled` 而拒绝，与另 4 个同属 CLI 版本漂移，修复属 D5 范畴（改守卫/白名单），未改；在未修改的 HEAD `13e3c20` 上同样失败）。
 - `dev check`：通过（见上）。`dev web-check`：185 个测试通过、生产构建通过。
 - 与批次开始时对比：集成 447 通过 / 8 失败 → 全量 2267 通过 / 5 失败（失败从 8 降到 5，其中 4 个 Windows 事件循环平台缺陷已修，剩下的是 CLI 版本与一个未查清的模型变体）。
 - 数据库：开发库 `travel_agent` 未改动；本批次各 Agent 建的临时库都已清理，只留下一个批次之前的评测遗留库 `travel_agent_eval_3234…`（未删，内容不明）。
