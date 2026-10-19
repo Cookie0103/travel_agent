@@ -19,7 +19,7 @@
 
 ## 真实验证
 
-已通过一次真实 SDK → DeepSeek → 合成工具 → 最终回答。命令：`uv run --env-file .env python -m pytest -m live tests/live/test_agent_sdk_integration.py -v`，1 passed（4.16 秒）；旧 pytest 缓存目录权限产生一个非功能警告，未因此重跑付费测试。
+已通过一次真实 SDK → DeepSeek → 合成工具 → 最终回答（该探针与 live 测试已删除），1 passed（4.16 秒）；旧 pytest 缓存目录权限产生一个非功能警告，未因此重跑付费测试。
 
 | HTTP 请求 | 输入 token | 缓存输入 token | 输出 token | 高峰价保守 CNY 估计 |
 | --- | ---: | ---: | ---: | ---: |

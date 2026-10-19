@@ -158,7 +158,7 @@ F10记忆引用边界：仅可信本轮run.user_text；NFKC去空白后至少4�
 - **硬门禁**：R01–R17、R19 全部通过；跨用户读取、旧结果覆盖、重复订单、重复行程写入必须为 0。
 - 模型成功率和成本的阈值，在 M0 baseline 之后、开始优化之前定下来并写明理由，不预先填写「提升 X%」。
 
-拟建命令（尚未实现）：
+拟建命令（尚未实现；配置文件目录未建）：
 
 ```text
 python -m eval.run --config eval/configs/baseline.yaml --split dev
