@@ -109,6 +109,7 @@
 
 | 批次文件 | 一句话目标 | 状态 | 面试案例 / 证据 |
 | --- | --- | --- | --- |
+| [2026-10-19-review](2026-10-19-review.md) | **日后查看先读这份**：10-18/19 的完整性加固、清理、“问清楚再选酒店”新流程的结论、验证结果、遗留与恢复现场 | 本批收尾（2026-10-19） | [session-log](2026-10-19-session-log.md) |
 | [2026-10-19-session-log](2026-10-19-session-log.md) | 加固收尾：复核修复、清理第二批、迁移 0023、Railway 切分支与真模型（DeepSeek）验证、问得更少的流程 | 实施中；分支 `batch/2026-10-19-architecture-hardening` | [追问流程](2026-10-19-ask-less-flow.md) |
 | [2026-10-18-completeness-hardening](2026-10-18-completeness-hardening.md) | 对抗性审查后修复真实缺陷（live 额度、数据库约束、Windows 事件循环等），并整理文档与测试总览 | doing | [审计报告](../review/audits/2026-10-18-completeness-audit.md)、[测试总览](../testing/README.md) |
 | [2026-10-15-speed-repair-and-form](2026-10-15-speed-repair-and-form.md) | 提速、保证交付（冲突草稿也能暂存）、局部修复、通用表单取代写死的组合卡 | 实施中；本地已提交，真实模型速度仅线上首测 1 次（57.4 s/12 请求），未做 2 次验收 | [ADR-030](../adr/030-generic-choice-form.md)、[论文调研](../proposals/2026-10-15-planning-repair-research.md) |
