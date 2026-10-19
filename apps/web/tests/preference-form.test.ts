@@ -1,12 +1,7 @@
-/** C5: unsaved edits survive refreshes; facts are grouped by what they actually apply to. */
+/** Facts are grouped by what they actually apply to. */
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import {
-  factGroups,
-  factStatus,
-  isDirty,
-  preferenceLines,
-} from "../src/lib/preference-form.ts";
+import { factGroups, factStatus } from "../src/lib/preference-form.ts";
 import type { MemoryFact } from "../src/lib/memory.ts";
 
 const fact = (patch: Partial<MemoryFact>) =>
@@ -20,16 +15,6 @@ const fact = (patch: Partial<MemoryFact>) =>
     source: "manual",
     ...patch,
   }) as MemoryFact;
-
-test("lines trims and drops blanks; dirty compares against saved values", () => {
-  assert.deepEqual(preferenceLines(" 寺庙 \n\n 美食\n"), ["寺庙", "美食"]);
-  const saved = { interests: ["寺庙"], soft_constraints: [], transport: null };
-  const form = { interests: "寺庙", constraints: "", transport: null };
-  assert.equal(isDirty(saved, form), false);
-  assert.equal(isDirty(saved, { ...form, interests: "寺庙\n夜景" }), true);
-  assert.equal(isDirty(saved, { ...form, transport: "walk" }), true);
-  assert.equal(isDirty(undefined, form), false);
-});
 
 test("other sessions' trip facts are neither current nor history, and never labelled active", () => {
   const mine = fact({ fact_id: "a", scope: "trip", session_id: "s1" });

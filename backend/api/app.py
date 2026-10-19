@@ -21,7 +21,6 @@ from backend.services.memory import MemoryFactView, MemoryService
 from backend.services.models import ModelOption, model_options
 from backend.services.plans import LockInput, PlanService, SavedPlan
 from backend.services.preferences import (
-    PreferencePatch,
     Preferences,
     PreferenceService,
     PreferenceVersion,
@@ -40,7 +39,6 @@ from backend.services.travel import (
     RunContext,
     TravelService,
 )
-from backend.services.user_profile import UserProfileService, UserProfileView
 from backend.services.views import HotelSelectionView, PlanView, RequestView
 
 
@@ -61,7 +59,6 @@ def create_app(
     bookings = booking_service or BookingService(travel)
     preferences = PreferenceService(sessions.database)
     memory = MemoryService(sessions.database)
-    profile = UserProfileService(sessions.database, live_enabled=runs.live_enabled)
     catalog = CatalogService(travel)
     hotel_selection = HotelSelectionService(travel)
     history = HistoryService(sessions.database)
@@ -122,18 +119,6 @@ def create_app(
     async def get_preferences(user_id: Annotated[UUID, Depends(identity)]) -> Preferences:
         return await preferences.get(user_id)
 
-    @app.patch("/preferences")
-    async def patch_preferences(
-        body: PreferencePatch, user_id: Annotated[UUID, Depends(identity)]
-    ) -> Preferences:
-        return await preferences.change(user_id, body)
-
-    @app.delete("/preferences")
-    async def delete_preferences(
-        body: PreferenceVersion, user_id: Annotated[UUID, Depends(identity)]
-    ) -> Preferences:
-        return await preferences.change(user_id, body)
-
     @app.get("/memory")
     async def memory_facts(
         user_id: Annotated[UUID, Depends(identity)], include_history: bool = False
@@ -151,16 +136,6 @@ def create_app(
         fact_id: UUID, body: PreferenceVersion, user_id: Annotated[UUID, Depends(identity)]
     ) -> Preferences:
         return await memory.delete(user_id, fact_id, body)
-
-    @app.get("/profile-summary")
-    async def get_profile(user_id: Annotated[UUID, Depends(identity)]) -> UserProfileView:
-        return await profile.get(user_id)
-
-    @app.post("/profile-summary")
-    async def update_profile(
-        body: PreferenceVersion, user_id: Annotated[UUID, Depends(identity)]
-    ) -> UserProfileView:
-        return await profile.generate(user_id, body)
 
     @app.get("/health")
     async def health() -> dict[str, str]:

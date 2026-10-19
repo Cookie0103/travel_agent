@@ -60,3 +60,59 @@ export function emptyHotelNotice(hotels: Hotels) {
     href,
   };
 }
+
+/** Most recent turn that carries a hotel presentation (not merely the latest turn). */
+export function lastHotelRunId<T extends { run_id: string }>(
+  turns: T[],
+  hasHotels: (turn: T) => boolean,
+): string | undefined {
+  for (let i = turns.length - 1; i >= 0; i--)
+    if (hasHotels(turns[i])) return turns[i].run_id;
+  return undefined;
+}
+
+/**
+ * Whether this turn's hotel controls are actionable. The latest turn always was; an earlier
+ * turn is live only if it is the last hotel turn, the server still awaits a selection and
+ * the card revision is current. Everything else is history.
+ */
+export function hotelSelectionLive(s: {
+  runId: string;
+  lastHotelRunId: string | undefined;
+  latestRunId: string | undefined;
+  revision: number | undefined;
+  cardRevision: number | undefined;
+  view: HotelSelectionView | undefined;
+}): boolean {
+  if (s.runId === s.latestRunId) return true;
+  return (
+    s.runId === s.lastHotelRunId &&
+    s.view?.state === "awaiting" &&
+    s.revision !== undefined &&
+    s.revision === s.cardRevision
+  );
+}
+
+/** "已选 N/M 段" and per-segment names from the server, merged with unsent local clicks. */
+export function selectionProgress(
+  rows: Rows,
+  local: Record<string, string>,
+  view: HotelSelectionView | undefined,
+) {
+  const names: Record<string, string> = {};
+  let count = 0;
+  for (const row of rows) {
+    const mine = local[row.check_in]
+      ? row.cards.find((c) => c.evidence_id === local[row.check_in])
+      : undefined;
+    const server = view?.segments.find(
+      (s) => s.check_in === row.check_in && s.check_out === row.check_out,
+    )?.selected;
+    const name = mine?.hotel_name ?? server?.hotel_name;
+    if (name) {
+      names[row.check_in] = name;
+      count += 1;
+    }
+  }
+  return { count, total: rows.length, names };
+}

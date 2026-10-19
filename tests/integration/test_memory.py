@@ -7,7 +7,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy import select
+from sqlalchemy import URL, select
 
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeOutcome
@@ -21,11 +21,13 @@ from backend.services.history import HistoryService
 from backend.services.memory import MemoryService
 from backend.services.preferences import PreferenceService
 from backend.services.runs import MessageInput, RunService
+from backend.services.sessions import DemoLogin, SessionService
 from backend.services.travel import TravelService
 from tests.fakes import FakeRuntime
 from tests.integration.test_sessions import client as client
 from tests.integration.test_sessions import login
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.runner import selector_runner
 
 pytestmark = pytest.mark.integration
 
@@ -182,15 +184,27 @@ def test_all_memory_cards_of_a_round_are_confirmed_in_one_message(
     runner.run(exercise())
 
 
-def test_memory_api_owner_history_and_delete(client: TestClient) -> None:
-    owner, other = login(client), login(client)
+def test_memory_api_owner_history_and_delete(client: TestClient, postgres_url: URL) -> None:
+    other = login(client)
     assert client.get("/memory").status_code == 401
-    assert client.get("/memory", headers=owner).json() == []
-    client.patch(
-        "/preferences",
-        headers=owner,
-        json={"expected_revision": 0, "set": {"interests": ["茶道"], "transport": "transit"}},
-    )
+    with selector_runner() as runner:
+        accounts = SessionService(postgres_url, demo_enabled=True)
+        identity = runner.run(accounts.create_demo_user(DemoLogin()))
+        owner = {"Authorization": "Bearer " + identity.token}
+        assert client.get("/memory", headers=owner).json() == []
+        # 手动偏好编辑的HTTP入口已移除；用服务层种子等价的manual事实。
+        runner.run(
+            PreferenceService(accounts.database).change(
+                identity.user_id,
+                PreferencePatch.model_validate(
+                    {
+                        "expected_revision": 0,
+                        "set": {"interests": ["茶道"], "transport": "transit"},
+                    }
+                ),
+            )
+        )
+        runner.run(accounts.close())
     facts = client.get("/memory", headers=owner).json()
     assert {f["key"] for f in facts} == {"interest", "transport"}
     assert all(f["source"] == "manual" and f["valid_from"] for f in facts)

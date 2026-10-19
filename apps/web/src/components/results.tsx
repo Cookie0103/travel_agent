@@ -24,6 +24,7 @@ import {
 } from "@/lib/hotel-groups";
 import {
   effectiveChoices,
+  selectionProgress,
   emptyHotelNotice,
   type HotelSelectionView,
 } from "@/lib/hotel-flow";
@@ -493,9 +494,8 @@ function SegmentHotelResults({
   const rows = segmentHotelRows(hotels);
   const choices = effectiveChoices(rows, local, selectionView);
   const selected = segmentHotelSelection(rows, choices, revision, now);
-  const count = rows.filter((row) =>
-    row.cards.some((card) => card.evidence_id === choices[row.check_in]),
-  ).length;
+  const progress = selectionProgress(rows, local, selectionView);
+  const count = progress.count;
   return (
     <section className={`results-section${compact ? " is-compact" : ""}`}>
       <h2>按住宿段选择酒店</h2>
@@ -503,16 +503,14 @@ function SegmentHotelResults({
         每段选一家，选齐后统一规划。仅选择行程住宿，不会订房。
       </p>
       {rows.map((row) => {
-        const picked = row.cards.find(
-          (card) => card.evidence_id === choices[row.check_in],
-        );
+        const pickedName = progress.names[row.check_in];
         return (
           <div key={row.check_in} className="segment-hotel-row">
             <h3>
               {row.city} · {row.check_in} → {row.check_out}
             </h3>
             <p className="small">
-              {picked ? `已选择：${picked.hotel_name}` : "请选择本段入住酒店"}
+              {pickedName ? `已选择：${pickedName}` : "请选择本段入住酒店"}
             </p>
             <HotelResults
               hotels={{

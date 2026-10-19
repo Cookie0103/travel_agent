@@ -433,28 +433,6 @@
     padding: 8px 0 0;
   }
 
-  /* Preferences form: stacked fields, wrapped button row */
-  .preference-panel form {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 12px 12px;
-    margin-top: 12px;
-  }
-  .preference-panel form > label,
-  .preference-panel form > p {
-    flex: 0 0 100%;
-    margin: 0;
-  }
-  .preference-panel label select,
-  .preference-panel label textarea {
-    display: block;
-    margin-top: 8px;
-  }
-  .preference-panel select {
-    padding: 8px 12px;
-    min-width: 160px;
-  }
-
   /* Cards */
   .results-section {
     padding: 12px 0;

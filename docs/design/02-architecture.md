@@ -188,7 +188,7 @@ quoted ──hold──▶ held ──用户点确认──▶ confirmed ──�
 | `POST /plan-drafts/{id}/confirm` | 确认保存行程（§6.2） |
 | `POST /bookings/{id}/confirm` | 用户确认预订（§6.3） |
 | `GET /bookings/{id}` | 查预订状态 |
-| `GET/PATCH/DELETE /preferences` | 查看、修改、删除长期偏好（B 档） |
+| `GET /preferences` | 查看长期偏好投影（B 档；2026-10-19起不再提供PATCH/DELETE，修改走记忆确认与单条遗忘） |
 | `GET /memory`、`GET/DELETE /memory/{id}` | 本人事实、历史墓碑与单条遗忘；确认走服务端选择卡消息事务 |
 
 所有接口和工具都检查当前用户是否拥有该资源。测试中至少用两个用户验证互相看不到对方数据。

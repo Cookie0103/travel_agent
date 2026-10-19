@@ -4,7 +4,11 @@ import { useEffect, useRef } from "react";
 import type { Workspace } from "./workbench";
 import { toolLabel } from "./tool-names";
 import type { MessageSelection } from "@/lib/api";
-import { skipHotelsMessage } from "@/lib/hotel-flow";
+import {
+  hotelSelectionLive,
+  lastHotelRunId,
+  skipHotelsMessage,
+} from "@/lib/hotel-flow";
 import { HotelResults, planDays } from "./results";
 import type { Run } from "@/lib/api";
 import {
@@ -129,6 +133,14 @@ export function Conversation({
   const currentPrompt = workspace.history.find(
     (row) => row.run_id === run?.run_id,
   )?.prompt;
+  const turns = [
+    ...workspace.history.filter((row) => row.run_id !== run?.run_id),
+    ...(run ? [run] : []),
+  ];
+  const hotelRunId = lastHotelRunId(turns, (turn) => {
+    const found = hotelsForRun(turn, workspace.hotels, workspace.hotelOrigin);
+    return !!found && (found.cards.length > 0 || !!found.segments?.length);
+  });
   const stream = useStickyBottom(
     workspace.identity?.pending_message?.client_message_id ?? run?.run_id,
   );
@@ -214,6 +226,7 @@ export function Conversation({
                   workspace={workspace}
                   run={row}
                   latest={false}
+                  hotelRunId={hotelRunId}
                   mode={mode}
                   send={send}
                   openPanel={openPanel}
@@ -273,6 +286,7 @@ export function Conversation({
               workspace={workspace}
               run={run}
               latest
+              hotelRunId={hotelRunId}
               mode={mode}
               send={send}
               openPanel={openPanel}
@@ -365,6 +379,7 @@ function TurnCards({
   workspace,
   run,
   latest,
+  hotelRunId,
   mode,
   send,
   openPanel,
@@ -372,6 +387,7 @@ function TurnCards({
   workspace: Workspace;
   run: Run;
   latest: boolean;
+  hotelRunId: string | undefined;
   mode: Mode;
   send: (text: string, mode: Mode, selection?: MessageSelection) => void;
   openPanel: () => void;
@@ -390,8 +406,16 @@ function TurnCards({
   const memoryChoices = resolvedChoices.filter(
     (card) => card.kind === "memory_confirm",
   );
+  const hotelLive = hotelSelectionLive({
+    runId: run.run_id,
+    lastHotelRunId: hotelRunId,
+    latestRunId: latest ? run.run_id : undefined,
+    revision: workspace.request?.revision,
+    cardRevision: hotels?.cards[0]?.request_revision,
+    view: workspace.hotelSelection,
+  });
   const disabled =
-    !latest ||
+    !hotelLive ||
     workspace.busy ||
     workspace.restoring ||
     ["running", "cancelling"].includes(run.status);
@@ -441,7 +465,7 @@ function TurnCards({
           hotels={hotels}
           disabled={disabled}
           inactiveReason={inactiveHotelReason({
-            latest: !!latest,
+            latest: hotelLive,
             busy:
               workspace.busy ||
               workspace.restoring ||
@@ -456,9 +480,9 @@ function TurnCards({
             )
           }
           chooseSegments={(selection) => send(selection.text, mode, selection)}
-          selectionView={workspace.hotelSelection}
+          selectionView={hotelLive ? workspace.hotelSelection : undefined}
           skip={
-            latest &&
+            hotelLive &&
             workspace.hotelSelection?.can_skip &&
             workspace.request?.revision !== undefined
               ? () => {

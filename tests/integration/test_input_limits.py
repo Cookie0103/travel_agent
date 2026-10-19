@@ -7,11 +7,13 @@ from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 from sqlalchemy import URL, create_engine, text
 
 from backend.api.app import create_app
 from backend.domain.choices import TRANSPORT_PACE_GROUPS
 from backend.domain.execution import RunContext
+from backend.domain.preferences import PreferencePatch
 from backend.domain.travel_request import RequestPatch
 from backend.persistence import runs
 from backend.services.choices import ChoiceService
@@ -48,12 +50,9 @@ def env(
 
 def test_nul_in_preferences_and_request_is_422(env) -> None:  # type: ignore[no-untyped-def]
     _, _, client, headers, session_id = env
-    bad = client.patch(
-        "/preferences",
-        headers=headers,
-        json={"expected_revision": 0, "set": {"interests": ["a\u0000b"]}},
-    )
-    assert bad.status_code == 422
+    # PATCH /preferences 已移除；偏好补丁模型仍须拒绝NUL。
+    with pytest.raises(ValidationError):
+        PreferencePatch.model_validate({"expected_revision": 0, "set": {"interests": ["a\u0000b"]}})
     for field in ("soft_constraints", "hard_constraints", "interests"):
         response = client.patch(
             f"/sessions/{session_id}/request",
@@ -61,12 +60,7 @@ def test_nul_in_preferences_and_request_is_422(env) -> None:  # type: ignore[no-
             json={"expected_revision": 0, "set": {field: ["a\u0000b"]}},
         )
         assert response.status_code == 422, field
-    ok = client.patch(
-        "/preferences",
-        headers=headers,
-        json={"expected_revision": 0, "set": {"interests": ["寺庙"]}},
-    )
-    assert ok.status_code == 200
+    assert client.request("PATCH", "/preferences", headers=headers, json={}).status_code == 405
 
 
 def test_nul_in_message_is_422_not_503(env) -> None:  # type: ignore[no-untyped-def]

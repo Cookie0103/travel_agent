@@ -24,7 +24,7 @@ from backend.domain.hotel_flow import (
 )
 from backend.domain.hotels import HotelOffer
 from backend.domain.itinerary import HotelStay
-from backend.domain.rakuten_links import match_hotel_name, rakuten_hotel_numbers
+from backend.domain.rakuten_links import match_hotel_names, rakuten_hotel_numbers
 from backend.domain.travel_request import TravelRequest, TripSegment, same_city
 from backend.persistence import travel as requests
 from backend.persistence.models import ChoiceCardRow, TravelRequestRow
@@ -258,13 +258,22 @@ class HotelSelectionService:
             targets = [Target(number) for number in rakuten_hotel_numbers(text)]
             if not targets:
                 names = sorted({s.offer.hotel_name for s in shown})
-                index = match_hotel_name(text, names)
-                if index is None:
+                hits = match_hotel_names(text, names)
+                if len(hits) > 1:
+                    listed = "、".join(names[i] for i in hits)
+                    return {
+                        "status": "ambiguous",
+                        "candidates": [names[i] for i in hits],
+                        "message": f"用户的话同时对得上多家已展示的候选：{listed}。"
+                        "请列出这几家，问用户是哪一家，不要猜测。",
+                    }
+                if not hits:
                     return {
                         "status": "need_link",
                         "message": "没能在已展示的候选里对上这家酒店。请让用户把乐天链接贴过来，"
                         "不要猜测，也不要自行搜索关键词。",
                     }
+                index = hits[0]
                 found = next(s for s in shown if s.offer.hotel_name == names[index])
                 targets = [Target(found.offer.hotel_id, found.offer.hotel_name)]
         todo = [t for t in targets if t.hotel_id not in picked]

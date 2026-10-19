@@ -9,3 +9,7 @@ user_profile_summaries保存正文、引用、生成时间及偏好版本。任�
 默认非live API拒绝生成，GET不调用模型。前端不显示内部UUID，将来源说明为已确认长期偏好。服务端SDK结构化入口由provider提供，评测只重导出这一函数，避免复制模型调用/计费/身份校验代码。
 
 加法迁移0021可回退删除派生摘要表，事实仍保留。实际PG/Chrome/模型证据从当前批次读取；未通过最终验收前不标完成。
+
+## 2026-10-19 注记：移除网页入口与HTTP端点
+
+网页偏好面板的手动编辑区与画像文字块已移除（见[计划](../plans/2026-10-19-remove-profile-and-endpoints.md)），`GET/POST /profile-summary`与`PATCH/DELETE /preferences`随之删除。因此上文“用户点击‘更新我的画像’”的触发方式不再存在：生产路径中没有任何入口生成新画像。`UserProfileService.generate`、`profile`评审角色与摘要表按“不删列/表”的决定暂保留为休眠代码；已存在且仍有效的摘要仍由`business_context`作为低优先级快照注入，任何事实变更会作废它。是否彻底移除生成代码与注入，待后续决定。以上历史条文不改写。

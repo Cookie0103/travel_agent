@@ -6,6 +6,7 @@ from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from pydantic import ValidationError
 from sqlalchemy import select
 
 from backend.domain.catalog import Article
@@ -28,26 +29,24 @@ pytestmark = pytest.mark.integration
 
 
 def test_first_empty_delete_blocks_stale_edits_and_repeated_delete_is_idempotent(
-    client: TestClient,
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
-    owner = login(client)
-    deleted = client.request("DELETE", "/preferences", headers=owner, json={"expected_revision": 0})
-    assert deleted.status_code == 200
-    assert deleted.json() == Preferences(revision=1).model_dump(mode="json")
-    assert (
-        client.patch(
-            "/preferences",
-            headers=owner,
-            json={"expected_revision": 0, "set": {"interests": ["滞留旧编辑"]}},
-        ).status_code
-        == 409
-    )
-    assert (
-        client.request(
-            "DELETE", "/preferences", headers=owner, json={"expected_revision": 1}
-        ).json()
-        == deleted.json()
-    )
+    runner, travel, context = travel_setup
+    service = PreferenceService(travel.database)
+    deleted = runner.run(service.change(context.user_id, PreferenceVersion(expected_revision=0)))
+    assert deleted == Preferences(revision=1)
+    with pytest.raises(ServiceError) as stale:
+        runner.run(
+            service.change(
+                context.user_id,
+                PreferencePatch.model_validate(
+                    {"expected_revision": 0, "set": {"interests": ["滞留旧编辑"]}}
+                ),
+            )
+        )
+    assert stale.value.status == 409
+    again = runner.run(service.change(context.user_id, PreferenceVersion(expected_revision=1)))
+    assert again == deleted
 
 
 def test_preference_change_cuts_old_recall_but_keeps_user_history_and_new_dialogue(
@@ -88,58 +87,49 @@ def test_preference_change_cuts_old_recall_but_keeps_user_history_and_new_dialog
     runner.run(exercise())
 
 
-def test_api_preferences_are_owned_partial_versioned_and_delete_keeps_tombstone(
+def test_api_get_preferences_is_owned_and_removed_write_routes_are_gone(
     client: TestClient,
 ) -> None:
     owner, other = login(client), login(client)
     assert client.get("/preferences").status_code == 401
-    assert client.get("/preferences", headers=owner).json()["revision"] == 0
-    first = client.patch(
-        "/preferences",
-        headers=owner,
-        json={
-            "expected_revision": 0,
-            "set": {"interests": ["茶道"], "transport": "transit"},
-        },
-    )
-    assert first.status_code == 200 and first.json()["revision"] == 1
+    assert client.get("/preferences", headers=owner).json() == Preferences().model_dump(mode="json")
     assert client.get("/preferences", headers=other).json() == Preferences().model_dump(mode="json")
-    second = client.patch(
-        "/preferences",
-        headers=owner,
-        json={
-            "expected_revision": 1,
-            "set": {"soft_constraints": ["少步行"]},
-        },
-    )
-    assert second.json()["interests"] == ["茶道"] and second.json()["transport"] == "transit"
-    assert second.json()["revision"] == 2
-    assert (
-        client.request(
-            "DELETE", "/preferences", headers=owner, json={"expected_revision": 1}
-        ).status_code
-        == 409
-    )
-    deleted = client.request("DELETE", "/preferences", headers=owner, json={"expected_revision": 2})
-    assert deleted.json() == Preferences(revision=3).model_dump(mode="json")
-    assert (
-        client.request(
-            "DELETE", "/preferences", headers=owner, json={"expected_revision": 3}
-        ).json()
-        == deleted.json()
-    )
-    assert (
-        client.patch(
-            "/preferences",
-            headers=owner,
-            json={
-                "expected_revision": 2,
-                "set": {"interests": ["旧请求不能复活"]},
-            },
-        ).status_code
-        == 409
-    )
-    assert client.get("/preferences", headers=owner).json() == deleted.json()
+    for method in ("PATCH", "DELETE"):
+        assert client.request(method, "/preferences", headers=owner, json={}).status_code == 405
+    for method in ("GET", "POST"):
+        assert client.request(method, "/profile-summary", headers=owner).status_code == 404
+
+
+def test_service_partial_versioned_change_and_delete_keeps_tombstone(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    runner, travel, context = travel_setup
+    service = PreferenceService(travel.database)
+    uid = context.user_id
+
+    def patch(revision: int, values: dict[str, object]) -> Preferences:
+        return runner.run(
+            service.change(
+                uid,
+                PreferencePatch.model_validate({"expected_revision": revision, "set": values}),
+            )
+        )
+
+    first = patch(0, {"interests": ["茶道"], "transport": "transit"})
+    assert first.revision == 1
+    second = patch(1, {"soft_constraints": ["少步行"]})
+    assert second.interests == ("茶道",) and second.transport == "transit"
+    assert second.revision == 2
+    with pytest.raises(ServiceError) as conflict:
+        runner.run(service.change(uid, PreferenceVersion(expected_revision=1)))
+    assert conflict.value.status == 409
+    deleted = runner.run(service.change(uid, PreferenceVersion(expected_revision=2)))
+    assert deleted == Preferences(revision=3)
+    assert runner.run(service.change(uid, PreferenceVersion(expected_revision=3))) == deleted
+    with pytest.raises(ServiceError) as stale:
+        patch(2, {"interests": ["旧请求不能复活"]})
+    assert stale.value.status == 409
+    assert runner.run(service.get(uid)) == deleted
 
 
 @pytest.mark.parametrize(
@@ -153,12 +143,9 @@ def test_api_preferences_are_owned_partial_versioned_and_delete_keeps_tombstone(
         {"expected_revision": 0, "set": {}, "user_id": str(uuid4())},
     ],
 )
-def test_invalid_preference_input_does_not_change_values(
-    client: TestClient, body: dict[str, object]
-) -> None:
-    owner = login(client)
-    assert client.patch("/preferences", headers=owner, json=body).status_code == 422
-    assert client.get("/preferences", headers=owner).json() == Preferences().model_dump(mode="json")
+def test_invalid_preference_input_is_rejected_by_model(body: dict[str, object]) -> None:
+    with pytest.raises(ValidationError):
+        PreferencePatch.model_validate(body)
 
 
 def test_concurrent_preference_edits_only_one_wins_and_tools_cannot_restore_deleted_values(

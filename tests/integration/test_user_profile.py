@@ -8,7 +8,6 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
-from fastapi.testclient import TestClient
 
 from backend.domain.execution import RunContext
 from backend.domain.preferences import PreferencePatch, PreferenceVersion
@@ -18,30 +17,9 @@ from backend.services.memory import MemoryService
 from backend.services.preferences import PreferenceService
 from backend.services.travel import TravelService
 from backend.services.user_profile import UserProfileService
-from tests.integration.test_sessions import client as client
-from tests.integration.test_sessions import login
 from tests.integration.test_travel import travel_setup as travel_setup
 
 pytestmark = pytest.mark.integration
-
-
-def test_profile_api_is_owner_scoped_and_disabled_generation_does_not_charge(
-    client: TestClient,
-) -> None:
-    headers = login(client)
-    assert client.get("/health").status_code == 200
-    assert client.get("/profile-summary").status_code == 401
-    response = client.get("/profile-summary", headers=headers)
-    assert response.status_code == 200 and response.json()["text"] is None
-    assert response.json()["can_update"] is False
-    assert (
-        client.post(
-            "/profile-summary",
-            headers=headers,
-            json={"expected_revision": 0},
-        ).status_code
-        == 403
-    )
 
 
 def test_profile_uses_only_active_long_term_facts_and_delete_erases_derivative(

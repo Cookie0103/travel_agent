@@ -32,12 +32,10 @@ export interface paths {
         get: operations["get_preferences_preferences_get"];
         put?: never;
         post?: never;
-        /** Delete Preferences */
-        delete: operations["delete_preferences_preferences_delete"];
+        delete?: never;
         options?: never;
         head?: never;
-        /** Patch Preferences */
-        patch: operations["patch_preferences_preferences_patch"];
+        patch?: never;
         trace?: never;
     };
     "/memory": {
@@ -70,24 +68,6 @@ export interface paths {
         post?: never;
         /** Delete Memory Fact */
         delete: operations["delete_memory_fact_memory__fact_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/profile-summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Profile */
-        get: operations["get_profile_profile_summary_get"];
-        put?: never;
-        /** Update Profile */
-        post: operations["update_profile_profile_summary_post"];
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -1579,27 +1559,6 @@ export interface components {
              */
             version_changed: boolean;
         };
-        /** PreferencePatch */
-        PreferencePatch: {
-            /** Expected Revision */
-            expected_revision: number;
-            set: components["schemas"]["PreferenceValues"];
-        };
-        /** PreferenceValues */
-        PreferenceValues: {
-            /**
-             * Interests
-             * @default []
-             */
-            interests: string[];
-            /**
-             * Soft Constraints
-             * @default []
-             */
-            soft_constraints: string[];
-            /** Transport */
-            transport?: ("walk" | "transit" | "taxi") | null;
-        };
         /** PreferenceVersion */
         PreferenceVersion: {
             /** Expected Revision */
@@ -2059,23 +2018,6 @@ export interface components {
             depart: string;
             /** Hotel Search Location */
             hotel_search_location?: string | null;
-        };
-        /** UserProfileView */
-        UserProfileView: {
-            /** Text */
-            text?: string | null;
-            /**
-             * Cited Fact Ids
-             * @default []
-             */
-            cited_fact_ids: string[];
-            /** Created At */
-            created_at?: string | null;
-            /**
-             * Can Update
-             * @default false
-             */
-            can_update: boolean;
         };
         /** ValidationCheck */
         ValidationCheck: {
@@ -3043,76 +2985,6 @@ export interface operations {
             };
         };
     };
-    delete_preferences_preferences_delete: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PreferenceVersion"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Preferences"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patch_preferences_preferences_patch: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PreferencePatch"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["Preferences"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     memory_facts_memory_get: {
         parameters: {
             query?: {
@@ -3203,72 +3075,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["Preferences"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_profile_summary_get: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserProfileView"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_profile_profile_summary_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                authorization?: string | null;
-            };
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PreferenceVersion"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserProfileView"];
                 };
             };
             /** @description Validation Error */

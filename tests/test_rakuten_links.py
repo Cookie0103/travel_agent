@@ -2,7 +2,7 @@
 
 import pytest
 
-from backend.domain.rakuten_links import match_hotel_name, rakuten_hotel_numbers
+from backend.domain.rakuten_links import match_hotel_names, rakuten_hotel_numbers
 
 
 @pytest.mark.parametrize(
@@ -48,18 +48,53 @@ def test_at_most_three_numbers_are_taken() -> None:
 
 
 NAMES = ("ホテルグランヴィア京都", "京都駅前ホテル", "リーガロイヤルホテル大阪")
+REAL = (
+    "天然温泉 浪華の湯 ドーミーイン大阪谷町",
+    "アパホテル〈大阪肥後橋駅前タワー〉",
+    "アパホテル〈京都駅堀川通〉",
+    "アパホテル〈京都駅前〉",
+)
+
+
+def hits(text: str, names: tuple[str, ...] = REAL) -> list[int]:
+    return match_hotel_names(text, names)
 
 
 def test_name_match_is_normalized_and_must_be_unique() -> None:
-    assert match_hotel_name("就住グランヴィア京都吧", NAMES) == 0
-    assert match_hotel_name("ホテル グランヴィア 京都", NAMES) == 0
-    assert match_hotel_name("リーガロイヤルホテル大阪", NAMES) == 2
-    assert match_hotel_name("我想住个好酒店", NAMES) is None
-    assert match_hotel_name("京都", NAMES) is None  # 太短，不猜
-    assert match_hotel_name("ホテル", NAMES) is None  # 多家都含
+    assert hits("就住グランヴィア京都吧", NAMES) == [0]
+    assert hits("ホテル グランヴィア 京都", NAMES) == [0]
+    assert hits("リーガロイヤルホテル大阪", NAMES) == [2]
+    assert hits("我想住个好酒店", NAMES) == []
+    assert hits("京都", NAMES) == []  # 太短，不猜
+    assert hits("ホテル", NAMES) == []  # 泛词
 
 
-def test_ambiguous_names_do_not_match() -> None:
-    same = ("ホテルグランヴィア京都", "ホテルグランヴィア京都別館")
-    assert match_hotel_name("ホテルグランヴィア京都", same) == 0  # 完整名字优先
-    assert match_hotel_name("グランヴィア京", same) is None
+def test_distinctive_fragment_picks_the_one_hotel() -> None:
+    assert hits("我看乐天上的浪華の湯这家不错，就住这家吧。") == [0]
+    assert hits("住ドーミーイン吧") == [0]
+    assert hits("大阪谷町那家") == [0]
+    assert hits("就住堀川通那家") == [2]
+    assert hits("肥後橋") == [1]
+
+
+def test_brackets_and_width_variants_match_full_name() -> None:
+    assert hits("アパホテル<京都駅堀川通>") == [2]
+    assert hits("ｱﾊﾟﾎﾃﾙ(京都駅堀川通)") == [2]
+    assert hits("アパホテル〈京都駅前〉") == [3]  # 完整名优先，不与堀川通那家混淆
+    assert hits("天然温泉浪華の湯ドーミーイン大阪谷町") == [0]
+
+
+def test_generic_fragments_never_match() -> None:
+    for text in ("ホテル", "アパ", "アパホテル", "京都", "大阪", "駅前", "タワー", "inn", "hotel"):
+        assert hits(text) == [], text
+    assert hits("アパホテル") == []
+    assert hits("大阪のホテルがいい") == []
+
+
+def test_shared_fragment_is_ambiguous() -> None:
+    assert hits("京都駅の方がいい") == []  # 京都+駅 都是泛词
+    twin = (*REAL, "ドーミーイン京都駅前")
+    assert hits("ドーミーインがいい", twin) == [0, 4]
+    shared = ("ホテルグランヴィア京都", "ホテルグランヴィア京都別館")
+    assert hits("ホテルグランヴィア京都", shared) == [0]  # 完整名字优先
+    assert hits("グランヴィア京", shared) == [0, 1]
