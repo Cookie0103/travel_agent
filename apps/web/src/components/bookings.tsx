@@ -3,8 +3,9 @@
 import { Button } from "./ui/button";
 import type { Booking } from "@/lib/api";
 import { SourceRef, useClock } from "./results";
+import { formatTokyo } from "@/lib/format-time";
 import { errorExplanation } from "@/lib/error-explanation";
-import { bookingCanConfirm, partyLabel } from "@/lib/availability";
+import { bookingCanConfirm, moneyLabel, partyLabel } from "@/lib/availability";
 
 const labels: Record<Booking["status"], string> = {
   quoted: "暂留结果待核对",
@@ -46,7 +47,7 @@ export function Bookings({
               {labels[booking.status]}
             </strong>
             <p>
-              ¥ {booking.total} {booking.offer.currency} ·{" "}
+              {moneyLabel(booking.total, booking.offer.currency)} ·{" "}
               {booking.offer.room_type}
             </p>
             <p>
@@ -68,12 +69,7 @@ export function Bookings({
               </p>
             </details>
             {booking.expires_at && (
-              <p>
-                暂留到期{" "}
-                {new Date(booking.expires_at).toLocaleString("zh-CN", {
-                  timeZone: "Asia/Tokyo",
-                })}
-              </p>
+              <p>暂留到期 {formatTokyo(booking.expires_at)}</p>
             )}
             {stale && (
               <p className="warning">

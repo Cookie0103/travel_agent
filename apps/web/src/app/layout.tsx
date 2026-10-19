@@ -12,6 +12,9 @@ export default function RootLayout({
   return (
     <html lang="zh-CN">
       <body>
+        <a className="skip-link" href="#main-content">
+          跳到主内容
+        </a>
         <SiteNav />
         {children}
       </body>

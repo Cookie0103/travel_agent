@@ -16,7 +16,8 @@ export const runFailureMessage = (
   code: string | null | undefined,
   reason?: string | null,
   external?: AppEvent["external"],
-): string => `执行未完成：${errorExplanation(code, reason, external)}`;
+  detail?: string | null,
+): string => `执行未完成：${errorExplanation(code, reason, external, detail)}`;
 
 /** A completed reply is not proof of staging, validation or a formal commit. */
 export function runLabel(run: Run): string {
@@ -84,6 +85,6 @@ export function stageGuidance(run: Run) {
 /** Partial answer text does not replace a trustworthy failure category. */
 export function runErrorMessage(run: Run): string | undefined {
   return run.error_code && !stageGuidance(run)
-    ? runFailureMessage(run.error_code)
+    ? runFailureMessage(run.error_code, null, undefined, run.answer)
     : undefined;
 }

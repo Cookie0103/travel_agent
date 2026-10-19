@@ -2,7 +2,7 @@
 
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import DateTime, cast, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.persistence.models import BookingRow
@@ -35,6 +35,10 @@ async def for_session(db: AsyncSession, user_id: UUID, session_id: UUID) -> list
                 BookingRow.user_id == user_id,
             )
             # 恢复入口返回全部预订，不能按随机UUID截断并隐藏活动记录。
-            .order_by(BookingRow.payload["history"][0]["at"].astext.desc(), BookingRow.id)
+            # 按真实时间排序：微秒为0时JSON文本缺少小数部分，文本序不等于时间序。
+            .order_by(
+                cast(BookingRow.payload["history"][0]["at"].astext, DateTime(timezone=True)).desc(),
+                BookingRow.id,
+            )
         )
     )

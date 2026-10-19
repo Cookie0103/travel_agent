@@ -1,7 +1,7 @@
 /** Tiny, dependency-free Markdown subset for model answers; output is data, never HTML. */
 import { sourceHref } from "./api.ts";
 
-export type Block =
+type Block =
   | { type: "p" | "ul" | "ol"; items: string[] }
   | {
       type: "table";

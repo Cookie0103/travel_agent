@@ -47,7 +47,7 @@ async def demo_command(
         return result
 
     try:
-        request = await executor.travel.get_request(context)
+        request = await executor.travel.read_request(context)
         if prompt in COMMANDS[:2] and (
             request.hotel_requirements() or room_preferences_question(request)
         ):

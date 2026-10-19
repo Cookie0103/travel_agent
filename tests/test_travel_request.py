@@ -10,6 +10,7 @@ from backend.domain import travel_request as conditions
 from backend.domain.evidence import EvidenceKind, EvidenceRecord, evidence_conditions
 from backend.domain.travel_request import (
     RequestConflict,
+    RequestLimitError,
     RequestPatch,
     TravelRequest,
     apply_request_patch,
@@ -412,3 +413,107 @@ def test_route_and_offer_evidence_survive_unrelated_edits_but_not_their_own_cond
         assert not route.applicable(changed, now), field
     assert offer.applicable(base.model_copy(update={"transport": "taxi"}), now)  # 报价与交通无关
     assert not route.applicable(base, now + timedelta(minutes=5))
+
+
+TODAY = date(2026, 10, 18)
+
+
+def _apply(fields: dict[str, object], current: TravelRequest | None = None) -> TravelRequest:
+    base = current or TravelRequest()
+    patch = RequestPatch.model_validate({"expected_revision": base.revision, "set": fields})
+    return apply_request_patch(base, patch, today=TODAY)[0]
+
+
+def test_text_fields_reject_nul_before_reaching_database() -> None:
+    """C2：NUL无法存入PG文本/JSON，领域层统一拒绝(HTTP 422)，不再变成503。"""
+    for fields in (
+        {"city": "京\u0000都"},
+        {"hotel_search_location": "a\u0000b"},
+        {"interests": ["a\u0000b"]},
+        {"hard_constraints": ["x\u0000"]},
+        {"soft_constraints": ["\u0000"]},
+        {
+            "segments": [
+                {"city": "大阪", "arrive": "2026-11-03", "depart": "2026-11-05"},
+                {"city": "京\u0000都", "arrive": "2026-11-05", "depart": "2026-11-07"},
+            ]
+        },
+    ):
+        with pytest.raises(ValidationError, match="空字符"):
+            RequestPatch.model_validate({"expected_revision": 0, "set": fields})
+
+
+@pytest.mark.parametrize(
+    ("fields", "message"),
+    [
+        ({"start_date": "1900-01-01", "end_date": "1900-01-03"}, "日期"),
+        ({"start_date": "9999-12-30", "end_date": "9999-12-31"}, "日期"),
+        ({"start_date": "2026-11-01", "end_date": "2026-12-02"}, "30晚"),
+        ({"start_date": "2026-10-17", "end_date": "2026-10-20"}, "不能早于今天"),
+        ({"start_date": "2026-11-01", "end_date": "9999-12-31"}, "30晚|日期"),
+    ],
+)
+def test_trip_dates_and_length_are_bounded(fields: dict[str, object], message: str) -> None:
+    """日期窗口为今天…今天+3年，最长30晚(含)；信息可读。"""
+    with pytest.raises(RequestLimitError, match=message):
+        _apply(fields)
+
+
+def test_trip_bounds_accept_edges_and_current_fixtures() -> None:
+    """恰30晚、窗口端点、今天当天均通过；昨天和窗口之外被拒。"""
+    assert _apply({"start_date": "2026-11-01", "end_date": "2026-12-01"}).end_date
+    assert _apply({"start_date": "2026-10-18", "end_date": "2026-10-19"}).start_date  # 今天
+    assert _apply({"start_date": "2029-10-17", "end_date": "2029-10-18"}).end_date
+    with pytest.raises(RequestLimitError, match="不能早于今天"):
+        _apply({"start_date": "2026-10-17", "end_date": "2026-10-19"})
+    with pytest.raises(RequestLimitError):
+        _apply({"start_date": "2029-10-18", "end_date": "2029-10-19"})
+
+
+def test_segment_dates_are_bounded_too() -> None:
+    with pytest.raises(RequestLimitError, match="日期"):
+        _apply(
+            {
+                "segments": [
+                    {"city": "大阪", "arrive": "2026-11-03", "depart": "2026-11-05"},
+                    {"city": "京都", "arrive": "2026-11-05", "depart": "9999-12-31"},
+                ]
+            }
+        )
+
+
+@pytest.mark.parametrize(
+    ("fields", "ok"),
+    [
+        ({"adults": 2, "child_ages": [], "rooms": 5}, False),
+        ({"adults": 2, "child_ages": [5], "rooms": 3}, True),
+        ({"adults": 2, "child_ages": [5], "rooms": 4}, False),
+        ({"adults": 1, "child_ages": [], "rooms": 1}, True),
+        ({"adults": 1, "child_ages": [], "rooms": 2}, False),
+        # 表单只填成人和房间、儿童年龄为空值时按没有儿童算（浏览器验收发现 1 成人 3 房被放过）
+        ({"adults": 1, "rooms": 3}, False),
+        ({"adults": 2, "rooms": 2}, True),
+        ({"rooms": 6}, True),  # 人数未齐时不能判断，不提前拒绝
+    ],
+)
+def test_rooms_cannot_exceed_travellers(fields: dict[str, object], ok: bool) -> None:
+    """C3：房间数不超过成人+儿童人数。"""
+    if ok:
+        assert _apply(fields).rooms == fields["rooms"]
+    else:
+        with pytest.raises(RequestLimitError, match="房间"):
+            _apply(fields)
+
+
+def test_limits_only_check_changed_aspects_so_legacy_rows_stay_editable() -> None:
+    """C3：只在人数/房间/日期相关字段变化时校验，历史越界行仍可改兴趣。"""
+    legacy = TravelRequest(
+        adults=2,
+        child_ages=(),
+        rooms=5,
+        start_date=date(1999, 1, 1),
+        end_date=date(1999, 3, 1),
+    )
+    assert _apply({"interests": ["寺庙"]}, legacy).interests == ("寺庙",)
+    with pytest.raises(RequestLimitError):
+        _apply({"adults": 1}, legacy)

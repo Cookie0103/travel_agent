@@ -156,10 +156,18 @@ def test_api_actual_sdk_usage_reaches_committed_trace_and_otlp(
         endpoint: str,
         token: str,
         model: str,
+        *,
+        live: bool = False,
     ) -> dict[str, str]:
         # 临时目录只放私有账本/会话，worker仍从本仓库载入真实实现。
         return worker_environment(
-            source, directory, Path(__file__).resolve().parents[2], endpoint, token, model
+            source,
+            directory,
+            Path(__file__).resolve().parents[2],
+            endpoint,
+            token,
+            model,
+            live=live,
         )
 
     monkeypatch.setattr(live, "worker_environment", environment)

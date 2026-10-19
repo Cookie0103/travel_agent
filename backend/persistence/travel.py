@@ -26,6 +26,15 @@ async def owned_request(db: AsyncSession, context: RunContext) -> TravelRequestR
     return await db.get(TravelRequestRow, context.session_id)
 
 
+async def read_request(db: AsyncSession, context: RunContext) -> TravelRequestRow | None:
+    """只读：不锁会话、不建行；会话存在但尚无条件行时返回未入库的空行。"""
+    if await get_session(db, context.user_id, context.session_id) is None:
+        return None
+    return await db.get(TravelRequestRow, context.session_id) or TravelRequestRow(
+        session_id=context.session_id, revision=0, conditions={}
+    )
+
+
 async def update_request(
     db: AsyncSession,
     row: TravelRequestRow,

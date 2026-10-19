@@ -18,7 +18,7 @@ export function SavedTrip() {
     nextCursor: workspace.tripCursor,
   });
   return (
-    <main className="page">
+    <main className="page" id="main-content" tabIndex={-1}>
       <h1>我的行程</h1>
       <p className="notice">
         只读取当前演示身份已经确认的正式版本。刷新不会重新生成、修改行程或创建订单。
@@ -49,6 +49,7 @@ export function SavedTrip() {
                 <strong>
                   {trip.city || "未设置目的地"} · V{trip.current_version}
                 </strong>
+                <p className="muted small">锁定或修改都会生成新版本</p>
                 {trip.start_date && (
                   <p>
                     {trip.start_date}

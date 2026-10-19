@@ -117,9 +117,9 @@ class ChoiceService:
 
     async def get(self, user_id: UUID, session_id: UUID, choice_id: UUID) -> ChoiceCard:
         async with transaction(self.travel.database) as db:
-            row = await owned_card(db, user_id, session_id, choice_id)
+            row = await owned_card(db, user_id, session_id, choice_id, lock=False)
             request = request_from_row(
-                await requests.owned_request(db, RunContext(user_id, session_id))
+                await requests.read_request(db, RunContext(user_id, session_id))
             )
             return await choice_view(db, user_id, row, request.revision)
 
@@ -291,15 +291,15 @@ class ChoiceService:
 
 
 async def owned_card(
-    db: AsyncSession, user_id: UUID, session_id: UUID, choice_id: UUID
+    db: AsyncSession, user_id: UUID, session_id: UUID, choice_id: UUID, *, lock: bool = True
 ) -> ChoiceCardRow:
-    if await sessions.get_session(db, user_id, session_id, lock=True) is None:
+    """写路径默认锁会话与卡片；只读展示传lock=False，不与提交争锁。"""
+    if await sessions.get_session(db, user_id, session_id, lock=lock) is None:
         raise ServiceError(404, "blocked", "会话不存在")
-    row = await db.scalar(
-        select(ChoiceCardRow)
-        .where(ChoiceCardRow.id == choice_id, ChoiceCardRow.session_id == session_id)
-        .with_for_update()
+    statement = select(ChoiceCardRow).where(
+        ChoiceCardRow.id == choice_id, ChoiceCardRow.session_id == session_id
     )
+    row = await db.scalar(statement.with_for_update() if lock else statement)
     if row is None:
         raise ServiceError(404, "blocked", "选择卡不存在")
     return row

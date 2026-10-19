@@ -13,6 +13,7 @@ from backend.services.travel import TravelService
 from backend.tools.contracts import ToolResult
 from backend.tools.execution import execute_observed
 from backend.tools.travel import DEFINITIONS
+from tests.errors import assert_error
 from tests.fakes import FakeRuntime
 from tests.integration.test_plans import initial_draft, version_count
 from tests.integration.test_travel import travel_setup as travel_setup
@@ -160,8 +161,9 @@ def test_stage_without_presentation_uses_actual_report_and_confirmation(
         assert result.validation_status == ("conflict" if closed else "partial")
         assert result.draft_id == draft.draft_id and await version_count(travel, draft.plan_id) == 0
         if closed:
-            with pytest.raises(ServiceError):
+            with pytest.raises(ServiceError) as failed:
                 await PlanService(travel).confirm(context.user_id, draft.draft_id)
+            assert_error(failed, 409, "conflict")
             assert await version_count(travel, draft.plan_id) == 0
         else:
             saved = await PlanService(travel).confirm(context.user_id, draft.draft_id)

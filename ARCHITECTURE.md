@@ -25,6 +25,6 @@
 三个状态源：SDK私有会话用于模型上下文；应用事件用于展示；数据库领域对象用于业务判断。
 SDK文件与数据库事务不是同一原子操作；恢复验收见[可靠性](docs/RELIABILITY.md)。
 
-分层通过`dev check`中的import-linter保护；类型/规则依据见[工程标准](docs/execution/standards.md)。
+分层由`dev check`中的11条import-linter契约保护（只管直接导入）；已有违规逐条登记在[分层债务](docs/execution/layering-debt.md)，新增违规会让检查变红；类型/规则依据见[工程标准](docs/execution/standards.md)。
 数据库用例的事务/归属测试在tests/integration，默认真实本地PostgreSQL；模型默认离线。
 跨层或新依赖变更先查已有入口和[ADR](docs/adr/)，避免复制第二套运行机制。

@@ -2,6 +2,7 @@
 
 import asyncio
 import json
+import time
 from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
@@ -137,5 +138,49 @@ def test_forget_during_profile_generation_cannot_restore_body(
         assert (await service.get(context.user_id)).text is None
         async with transaction(travel.database) as db:
             assert await db.get(UserProfileSummaryRow, context.user_id) is None
+
+    runner.run(exercise())
+
+
+def test_same_revision_generation_is_single_flight_and_reuses_valid_result(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext], monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """C6：同一revision的并发/重复POST只调一次模型；引用校验不放宽。"""
+    runner, travel, context = travel_setup
+    from backend.providers.claude_agent import structured
+
+    async def exercise() -> None:
+        await PreferenceService(travel.database).change(
+            context.user_id,
+            PreferencePatch.model_validate(
+                {"expected_revision": 0, "set": {"interests": ["寺庙"]}}
+            ),
+        )
+        own = (await MemoryService(travel.database).facts(context.user_id))[0]
+        calls: list[str] = []
+
+        def synthetic(kind: str, payload: object, root: Path) -> tuple[str, dict[str, object]]:
+            calls.append(kind)
+            time.sleep(0.3)  # 在线程里等待，让并发请求有机会重叠
+            return json.dumps({"sentences": [f"喜欢寺庙 [fact:{own.fact_id}]"]}), {}
+
+        monkeypatch.setattr(structured, "structured_call", synthetic)
+        service = UserProfileService(travel.database, live_enabled=True)
+        version = PreferenceVersion(expected_revision=1)
+        views = await asyncio.gather(
+            *(service.generate(context.user_id, version) for _ in range(3))
+        )
+        assert len(calls) == 1
+        assert {view.text for view in views} == {f"喜欢寺庙 [fact:{own.fact_id}]"}
+        again = await service.generate(context.user_id, version)
+        assert len(calls) == 1 and again.text == views[0].text
+        await PreferenceService(travel.database).change(
+            context.user_id,
+            PreferencePatch.model_validate(
+                {"expected_revision": 1, "set": {"interests": ["寺庙", "美食"]}}
+            ),
+        )
+        assert (await service.get(context.user_id)).text is None  # 版本变化后不复用
+        assert not service._inflight  # noqa: SLF001
 
     runner.run(exercise())

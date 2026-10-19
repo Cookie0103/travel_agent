@@ -35,6 +35,7 @@ from mock_supplier.app import create_app
 from tests.integration.http_helper import serve_http
 from tests.integration.test_bookings import select_offer
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.integration.user_turn import start_turn
 
 pytestmark = pytest.mark.integration
 
@@ -55,6 +56,7 @@ def test_single_injected_root_is_located_from_actual_tool_and_database_facts(
     cause: Cause,
 ) -> None:
     runner, travel, context = travel_setup
+    context = runner.run(start_turn(travel, context, "我们3个人"))
     events: list[RuntimeEvent] = [RuntimeEvent(context, "started")]
     attempts: list[SupplierAttempt] = []
 
@@ -191,6 +193,7 @@ def test_normal_actual_tool_and_database_control_has_no_failure_cause(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
     runner, travel, context = travel_setup
+    context = runner.run(start_turn(travel, context, "我们3个人"))
     events: list[RuntimeEvent] = [RuntimeEvent(context, "started")]
 
     async def exercise() -> None:

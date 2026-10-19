@@ -105,7 +105,8 @@ def main() -> int:
     parser.add_argument("--live", action="store_true")
     if not parser.parse_args().live:
         return 2
-    return asyncio.run(exercise())
+    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+        return runner.run(exercise())
 
 
 if __name__ == "__main__":

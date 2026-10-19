@@ -11,7 +11,7 @@
 | [docs/operations/](../operations/) | 原始过程：执行的命令与真实输出摘要、失败尝试细节、部署/回退操作 | 任务状态（只链接回批次计划） |
 | [docs/adr/](../adr/) | 新增接口/字段/依赖/契约等实质取舍：背景、选项、决定、后果 | 样式类小修 |
 | [docs/review/cases/](../review/cases/) | 面试案例：按 STAR 写成可以讲的故事 + 深挖问答 + 证据链接 | 未完成的推测（标“候选”） |
-| [docs/execution/](../execution/) | 通用工作流、工程标准、验证规则；`travel-agent.md` 为 2026-10-08 之前的历史执行记录 | 新批次的状态 |
+| [docs/execution/](../execution/) | 通用工作流、工程标准、验证规则；`travel-agent.md` 已移入 [docs/archive/execution/](../archive/execution/travel-agent.md)（2026-10-08 之前的历史执行记录） | 新批次的状态 |
 | [docs/evidence/](../evidence/) | 脱敏证据文件（JSON、截图） | token、密钥、私人对话原文 |
 
 **单一事实规则**：任务状态只在当前批次计划里改。别处需要时写链接，不复制完成清单。设计变更改 design/ 或批次计划的“设计”节；不在 operations 里“顺便”改设计。
@@ -102,3 +102,22 @@
 - 在两个地方维护同一份状态；把旧历史记录的结论改写成新结论（历史只追加更正说明）。
 - 用“没报错”“模型说完成了”当验收；为通过测试而改断言或跳过检查。
 - 提交 token、密钥、私人对话原文、无关账号截图。
+
+## 批次索引
+
+按时间倒序。**新批次开始时在表头插入一行**（并按 §2 更新 [AGENTS.md](../../AGENTS.md) 与 [docs/README.md](../README.md) 的“当前批次”链接）。状态只是索引用的概括，权威状态在各批次文件；“案例/证据”列只放已存在的文件。
+
+| 批次文件 | 一句话目标 | 状态 | 面试案例 / 证据 |
+| --- | --- | --- | --- |
+| [2026-10-18-completeness-hardening](2026-10-18-completeness-hardening.md) | 对抗性审查后修复真实缺陷（live 额度、数据库约束、Windows 事件循环等），并整理文档与测试总览 | doing | [审计报告](../review/audits/2026-10-18-completeness-audit.md)、[测试总览](../testing/README.md) |
+| [2026-10-15-speed-repair-and-form](2026-10-15-speed-repair-and-form.md) | 提速、保证交付（冲突草稿也能暂存）、局部修复、通用表单取代写死的组合卡 | 实施中；本地已提交，真实模型速度仅线上首测 1 次（57.4 s/12 请求），未做 2 次验收 | [ADR-030](../adr/030-generic-choice-form.md)、[论文调研](../proposals/2026-10-15-planning-repair-research.md) |
+| [2026-10-13-interaction-memory-eval](2026-10-13-interaction-memory-eval.md) | 回答不丢、外部故障自愈、酒店预算先自救、确认记忆，并用 V2 评测与 Langfuse 关联证明 | 2026-10-14 修复批次最终验收；用户 24 行人工标注与 κ 未完成；之后追加了 10-15 的补丁 | [面试案例](../review/cases/2026-10-13-interaction-memory-eval.md)、[操作手册](../operations/interaction-memory-eval.md)、[evidence/t*、f*](../evidence/README.md) |
+| [2026-10-11-segment-hotel-selection](2026-10-11-segment-hotel-selection.md) | 多城市按住宿段逐段选酒店后统一规划；人工使用不再被单轮次数截断 | done（H1–H4） | [ADR-019](../adr/019-segment-hotel-selection.md)、[evidence/2026-10-11-*](../evidence/README.md) |
+| [2026-10-10-multi-city-pacing](2026-10-10-multi-city-pacing.md) | 多城市行程、住宿预算分项、节奏密度、停留时长 | done（T0–T5；10-11 本轮交付） | [ADR-015](../adr/015-lodging-budget-and-condition-source.md)、[evidence/2026-10-10-*](../evidence/README.md) |
+| [2026-10-08-product-v2](2026-10-08-product-v2.md) | Product V2 修复：保存丢失、条件版本、酒店覆盖、前端迁移、真实验收 | 2026-10-10 带已知限制结项（系统自动排行程另批） | [面试案例](../review/cases/2026-10-08-product-v2.md)、[操作记录](../operations/product-v2.md)、[evidence/product-v2/](../evidence/README.md) |
+| [archive/execution/travel-agent](../archive/execution/travel-agent.md) | 2026-10-08 之前的 M0–M4 长程执行计划 | 已归档（历史） | [archive 索引](../archive/README.md) |
+
+## 相关索引
+
+- [问题与修复索引](problems.md)：全部 P-条目的编号、标题、状态。
+- [测试总览](../testing/README.md)、[ADR 索引](../adr/README.md)、[操作记录](../operations/README.md)、[证据索引](../evidence/README.md)。

@@ -41,5 +41,5 @@ def test_v2_eval_creates_owned_run_and_checks_predeclared_state(
             assert row["checks"]["expected_state"] is True
             assert "process_metrics" in row
 
-    with asyncio.Runner() as runner:
+    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
         runner.run(exercise())

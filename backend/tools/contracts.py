@@ -1,7 +1,8 @@
 """工具契约的唯一来源；MCP 只注册此定义，业务执行入口不依赖 SDK。"""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal, Protocol
+from uuid import UUID
 
 from pydantic import ValidationError
 
@@ -84,6 +85,42 @@ class ToolResult:
         if self.external is not None:
             payload["external"] = self.external.model_dump(mode="json")
         return payload
+
+
+WRITE_KINDS = frozenset({"state", "draft", "side_effect"})  # 会提交业务写入的工具类别
+_KEEP_KEYS = frozenset({"status", "version", "expires_at", "changed_fields", "skipped_fields"})
+COMMITTED_NOTE = (
+    "操作已提交成功，但完整结果未能返回，仅给出标识与版本；不要重复调用同一操作，"
+    "据此向用户说明并让其在页面查看。"
+)
+
+
+def _identifiers(value: object, key: str = "") -> object:
+    if isinstance(value, dict):
+        kept = {k: r for k, v in value.items() if (r := _identifiers(v, str(k))) is not None}
+        return kept or None
+    if isinstance(value, list | tuple):
+        items = [r for v in value if (r := _identifiers(v, key)) is not None]
+        return items or None
+    if key.endswith(("_id", "_ids", "_revision")) or key in _KEEP_KEYS:
+        if isinstance(value, UUID):
+            return str(value)
+        return value if isinstance(value, str | int) else None
+    return None
+
+
+def committed_confirmation(result: ToolResult) -> ToolResult:
+    """写工具已提交而结果无法完整展示：只留标识/版本，附不得重试的提示；失败结果不伪装成功。"""
+    if result.code is not None:
+        return ToolResult({}, code=result.code, suggestion=result.suggestion, detail=result.detail)
+    data = _identifiers(result.data)
+    return replace(
+        result,
+        data=data if isinstance(data, dict) else {},
+        empty=False,
+        warnings=(*result.warnings, COMMITTED_NOTE),
+        suggestion="",
+    )
 
 
 class ToolExecutor(Protocol):

@@ -1,93 +1,52 @@
-# 文档目录：先看哪一份
+# 文档入口：按用途找
 
-当前采用 Claude Agent SDK 路线并进入长程自主开发。**只需看 [当前批次计划](plans/2026-10-13-interaction-memory-eval.md)** 就能知道当前进度、决定、证据与下一步；阶段性材料无需逐项批准。
-想知道各个代码目录放什么，先看 [项目首页](../README.md)。
+三百多个文件按“用途”分目录。**先看下面“现在在哪”，再用“我想知道…”表跳转**；历史材料在 [archive/](archive/README.md)，不是现状。代码目录说明见[项目首页](../README.md)，模块依赖见 [ARCHITECTURE](../ARCHITECTURE.md)。
 
-## 工程地图与约定（按任务读取）
+## 现在在哪、怎么恢复
 
-- [ARCHITECTURE](../ARCHITECTURE.md)：模块入口、依赖方向与状态来源。
-- [DESIGN](DESIGN.md)：设计实施与简洁复用；业务设计继续链接plan。
-- [FRONTEND](guides/FRONTEND.md)：界面状态、金额、SSE、失败恢复及浏览器验收。
-- [RELIABILITY](RELIABILITY.md)、[SECURITY](SECURITY.md)：关键不变量与故障测试位置。
-- [验收测试矩阵](execution/verification.md)：功能/正常与异常路径/跨模块证据/剩余缺口。
-- [评测指南](guides/evaluation.md)：运行、对照、私有事实标注和校准口径。
-- [QUALITY_SCORE](guides/QUALITY_SCORE.md)：按能力标证据与缺口，不用主观总分包装完成度。
+1. **最新批次**：[2026-10-18 完整性加固](plans/2026-10-18-completeness-hardening.md)（审计 + 修复 + 文档整理，分支 `batch/2026-10-15/latency-optimization`）。上一批 [10-15 提速与通用表单](plans/2026-10-15-speed-repair-and-form.md)、基座批次 [10-13 交互、记忆与评测](plans/2026-10-13-interaction-memory-eval.md)（[AGENTS.md](../AGENTS.md) 的稳定入口）。全部批次见[批次索引](plans/README.md#批次索引)。
+2. 批次计划是**唯一实时进度**：任务表（状态+证据）、每日进展、问题解决记录（P-条目）。别处只链接，不复制状态。
+3. 恢复步骤：`git status` → 读最新批次的“每日进展”和未完成任务 → [工作流](execution/workflow.md)、[工程标准](execution/standards.md) → 按任务读 [design/](design/README.md) 与相关 [ADR](adr/README.md)。
+4. 记录规则（什么时候写什么、P-条目与案例模板）：[plans/README](plans/README.md)，所有执行者共用，不另立。
 
-`dev check`会检查入口长度与这些地图的仓库链接；不扫描历史/缓存，不发起网络请求。
+## 我想知道…→去哪看
+
+| 我想知道… | 去哪看 | 什么时候写 |
+| --- | --- | --- |
+| 开发计划、某批次做了什么、状态 | [plans/README 批次索引](plans/README.md#批次索引) | 批次开始建文件，任务状态只在批次内改 |
+| 测试怎么跑、分哪几层、CI 做什么、环境相关失败 | [testing/README](testing/README.md) | 新增测试层/环境问题时 |
+| 测试计划与验收矩阵（需求→证据→缺口） | [execution/verification.md](execution/verification.md)、[评测指南](guides/evaluation.md)、[QUALITY_SCORE](guides/QUALITY_SCORE.md) | 能力有新证据时 |
+| 开发中发现的问题、怎么解决的、试过哪些方法 | [问题与修复索引](plans/problems.md) → 批次计划 §8 | 复现/放弃做法/commit 后即时写 |
+| 审计与对抗性审查发现 | [review/audits/](review/audits/) | 每次审查一份 |
+| 为什么选这个技术/方案（取舍） | [adr/README](adr/README.md)；待你审阅的临时选择 [decisions-pending](adr/decisions-pending.md) | 引入依赖/契约/实质取舍时 |
+| 产品与架构设计、任务依赖 | [design/README](design/README.md)、[DESIGN](DESIGN.md)；任务规格 [M0](tasks/M0.md)、[M1](tasks/M1.md)、[M2](tasks/M2.md)、[M3](tasks/M3.md)、[M4](tasks/M4.md) | 设计变更先改 design |
+| 可靠性与安全不变量 | [RELIABILITY](RELIABILITY.md)、[SECURITY](SECURITY.md) | 不变量变化时 |
+| 前端约定与浏览器验收 | [guides/FRONTEND](guides/FRONTEND.md) | 前端变更时 |
+| 怎么运行、部署、评测、导出线上对话 | [operations/README](operations/README.md) | 边做边记命令与输出 |
+| 证据（JSON、截图）在哪 | [evidence/README](evidence/README.md) | 每次验收留脱敏证据 |
+| 集中学习、面试案例、演示 | [review/README](review/README.md)、[cases/](review/cases/) | 批次内 P-条目全 done 后成案例 |
+| 阻塞（缺凭据/授权/环境） | [blocked/README](blocked/README.md) | 真实阻塞才记 |
+| 上游参考与协议实测 | [guides/reuse](guides/reuse.md)、[protocols/](protocols/protocol-agent-sdk.md)（[DeepSeek](protocols/protocol-deepseek.md)） | 阅读上游/做协议实测后 |
+| 提案与调研 | [PRODUCT-V2-PLAN](proposals/PRODUCT-V2-PLAN.md)、[论文调研](proposals/2026-10-15-planning-repair-research.md) | 动手前的方案 |
+| 已被取代的历史（旧执行计划、M0 日志…） | [archive/README](archive/README.md) | 只迁入，不改写 |
 
 ## 目录一览
 
-根目录只放 README 与三份核心约定（DESIGN、RELIABILITY、SECURITY），其余按用途归档：
+```text
+docs/
+  plans/       批次计划、记录规则、批次索引、问题索引   <- 日常最常用
+  testing/     测试总览
+  adr/         技术决策      design/  长期设计      tasks/  里程碑规格
+  execution/   工作流、工程标准、验收矩阵            guides/ 开发指南
+  operations/  操作手册与原始过程      evidence/  脱敏证据
+  review/      集中学习、案例、审计     blocked/  阻塞    protocols/ proposals/
+  archive/     历史归档（只读）
+  DESIGN.md  RELIABILITY.md  SECURITY.md
+```
 
-| 目录 | 放什么 |
-| --- | --- |
-| [guides/](guides/) | 开发指南：[FRONTEND](guides/FRONTEND.md)、[QUALITY_SCORE](guides/QUALITY_SCORE.md)、[evaluation](guides/evaluation.md)、[reuse](guides/reuse.md) |
-| [proposals/](proposals/) | [产品 V2 实现与验收范围](proposals/PRODUCT-V2-PLAN.md)；[前端方案](proposals/FRONTEND-REDESIGN.md)和[后端调查](proposals/BACKEND-CHANGE-INVESTIGATION.md)保留为历史背景 |
-| [protocols/](protocols/) | 模型接入协议实测：[Claude Agent SDK](protocols/protocol-agent-sdk.md)、[DeepSeek](protocols/protocol-deepseek.md) |
-| [adr/](adr/) | 技术决策记录，含[待审阅决定](adr/decisions-pending.md) |
-| [execution/](execution/)、[tasks/](tasks/) | 执行计划与各里程碑任务规格 |
-| [review/](review/)、[evidence/](evidence/) | 里程碑集中记录、脱敏证据 |
-| [operations/](operations/)、[blocked/](blocked/README.md) | 执行记录与阻塞记录 |
+## 持续记录（给后续执行者）
 
-| 你想了解什么 | 去哪里看 | 什么时候写 |
-| --- | --- | --- |
-| 当前做到哪里、如何恢复 | [当前批次计划](plans/2026-10-13-interaction-memory-eval.md) | 持续更新，唯一实时进度入口 |
-| 为什么慢、冲突修复与表单改造、读过哪些论文 | [计划](plans/2026-10-15-speed-repair-and-form.md)、[论文调研](proposals/2026-10-15-planning-repair-research.md) | 2026-10-15 起 |
-| 完整功能如何学习 | [review/](review/) | 按里程碑汇总，最终集中学习 |
-| 一整批完成了哪些任务 | [review/batch/](review/batch/) | 每批结束时一份总结 |
-| 什么问题让工作停下了 | [blocked/](blocked/README.md) | 遇到阻塞才记录，不是每次测试一份 |
-| 实际执行过哪些步骤，如何恢复 | [operations/](operations/) | 边做边记录；JSONL 保存命令与输出 |
-| 每个任务应当交付什么 | [tasks/M0.md](tasks/M0.md) | 实施规格；不是完成报告 |
-| 为什么选择某个工具 | [adr/](adr/) | 技术决策发生时记录 |
-| 哪些选择等你审阅 | [decisions-pending.md](adr/decisions-pending.md) | 有可回退的临时选择时记录 |
-| 参考了哪些上游思路 | [reuse.md](guides/reuse.md) | 阅读上游后记录，不能当作本项目能力 |
-
-## 本次可直接打开的记录
-
-- [V2 验收记录](operations/product-v2.md)：真实 Google / 乐天 / Open-Meteo / DeepSeek、四城规划、日历导入和剩余范围；当前进度仍只维护在执行计划。
-
-- [源码学习索引](review/learning.md)、[三段可重放演示](review/demos.md)、[项目表述审计稿](review/resume-draft.md)：集中学习入口，分别标注 SDK、真实业务服务和离线脚本的证据边界。
-
-- [M4 交付规格](tasks/M4.md)、[M4 集中记录](review/M4.md)：容器启动、离线业务与重启证据；冻结评测和外部缺口分别记录。
-- [当前版本三轮脱敏证据](evidence/m42-current-full-repeat-2026-10-04.json)：92/120规则通过、28失败保留；26规划候选全部partial，语义/真人校准尚未完成。
-- [首次真实40test×3脱敏证据](evidence/m42-model-repeat-2026-10-03.json)：94/120规则通过及原失败/费用/时延，不当事实准确率或人工校准。
-- [M2 可靠执行规格](tasks/M2.md)、[M2 集中记录](review/M2.md)。
-- [M3 上下文与对照规格](tasks/M3.md)、[M3 集中记录](review/M3.md)：偏好、外部只读MCP与评测；未测能力不计完成。
-- [M1 业务集中记录](review/M1.md)、[基础 API 真实 HTTP 证据](evidence/m11-api-smoke-2026-10-03.json)、[M1 规格](tasks/M1.md)。
-- [M0 集中审查记录](review/M0.md)、[SDK 真实接入结果](protocols/protocol-agent-sdk.md)、[旅行工具真实查询证据](evidence/travel-query-2026-10-03.json)。
-- [本地 Trace 与云导出决策](adr/005-observability-export.md)、[Langfuse 页面验收缺口](blocked/langfuse.md)。
-- 本批设计：[受限重试](adr/020-external-error-retry.md)、[选择卡](adr/021-server-owned-choice-cards.md)、[酒店恢复](adr/022-hotel-budget-recovery.md)、[观测关联](adr/023-observability-linkage.md)、[确认记忆](adr/024-confirmed-memory-facts.md)、[派生画像](adr/025-derived-user-profile.md)；[评测参考摘要](adr/026-evaluation-reference-metadata.md)；[只读导出与操作](operations/interaction-memory-eval.md)、[面试案例](review/cases/2026-10-13-interaction-memory-eval.md)。
-- [初始真实评测](evidence/m06-baseline-2026-10-03.json)、[范围坏例回归](evidence/m07-scope-regression-2026-10-03.json)、[角色校准待办](blocked/persona-calibration.md)。
-
-- 2026-10-03：[长程工作流](execution/workflow.md)、[工程标准](execution/standards.md)、[操作日志](operations/2026-10-03-autonomous.md)。已取消逐任务人工关卡，保留自动验证与独立审查。
-
-- 2026-10-03：[SDK 路线说明](review/M0-sdk-route.md)、[ADR-003](adr/003-claude-agent-sdk-runtime.md)、[新版 M0 规格](tasks/M0.md)、[操作与恢复记录](operations/2026-10-03-agent-sdk-docs.md)。用户确认由 SDK 承担 runtime，自写业务与 tools；旧实测不算 SDK 验收。
-
-以下按发生时保留，历史的“尚未开始”或旧设计不能覆盖上面的当前路线：
-
-- 2026-10-03：[M0.2 阅读说明](review/M0.2.md)、[协议验证矩阵](protocols/protocol-deepseek.md)、[执行记录](operations/2026-10-03-m02-protocol.md)。离线 70 项通过，两次真实请求跑通最小往返；完整关卡尚未完成。
-- 2026-10-03：[人民币 / 美元两条预算线路](operations/2026-10-03-budget-currencies.md)。用户要求的配置调整；当时尚未实现费用拦截；后续旧探针已有保护，新 SDK 路线仍须独立验证。
-- 2026-10-03：[M0.2 配置准备与少量调用限制](operations/2026-10-03-m02-preparation.md)。仅记录准备要求，尚未开始真实模型调用。
-- 2026-10-03：[报错修复和 Docker/PostgreSQL 核对](operations/2026-10-03-development-errors.md)、[修复批次总结](review/batch/2026-10-03-m0-repair.md)。工程检查与 37 个离线测试通过。
-- 2026-10-03：[目录整理操作记录](operations/2026-10-03-directory-cleanup.md)。
-- 2026-10-02：[M0.1 批次总结](review/batch/2026-10-02-m0-core.md)、[未完成原因](blocked/2026-10-02-m0-core.md)、[详细操作记录](operations/2026-10-02-m0-core.md)。
-
-设计目标与任务顺序仍以 [docs/design/](design/README.md) 为准。这里解释实际做过什么，不会把目录占位写成已经实现的功能。
-
-- [M4真实零工具三轮对照](evidence/m42-no-tools-repeat-2026-10-03.json)：同版本40×3，原规则失败保留。
-
-- [M4完整配对统计](evidence/m42-paired-comparison-2026-10-03.json)：绑定两组原文件，错误/未知不刷掉。
-
-- [本轮有限同版本验收测量](evidence/m42-controlled-sweep-2026-10-04.json)：fa9930b原40test×3，完整组97/120规则通过；余下实验已停止，partial与语义/真人unknown保留。本轮交付范围与最终结果见 [PROJECT_STATUS](../PROJECT_STATUS.md)，不重复每日运行。
-
-## 当前批次（2026-10-11 起）
-
-- [批次计划与记录规则](plans/README.md)：目录职责、状态标注、开发中何时记录什么、面试案例模板。
-- [2026-10-11 分段选酒店与规划失败收尾](plans/2026-10-11-segment-hotel-selection.md)：范围、任务表与**唯一状态**、每日进展、问题解决记录。
-- [上一批次 Product V2](plans/2026-10-08-product-v2.md)：历史实施与验收记录。
-- [命令与原始过程](operations/product-v2.md#2026-10-08-调查与修复准备)、[面试案例](review/cases/2026-10-08-product-v2.md)。
-- 长期设计已从 `plan/` 迁到 [docs/design/](design/README.md)（英文文件名，正文中文）。
-
-- [交互与记忆操作](operations/interaction-memory-eval.md)：本地验证与 Railway 私有对话的只读导出。
-- [TeamoRouter Haiku接入边界](adr/027-teamorouter-haiku.md)：固定网关、美元授权开关和保守费用。
-- [执行锁与部署中断恢复](adr/028-live-process-lock.md)：内核互斥、旧标记迁移与费用保留。
+- 一类信息只放一个地方：状态→批次计划；命令与原始输出→operations；取舍→ADR；证据→evidence；面试故事→review/cases。
+- 新增文件后在对应子目录 README（或本页表格）补一行，保证 [`dev check`](../scripts/check_docs.py) 的入口链接可达；本页与 AGENTS.md、ARCHITECTURE.md 保持短小（AGENTS/ARCHITECTURE ≤100 行由检查强制）。
+- 新批次：新建 `plans/<日期>-<主题>.md`，在[批次索引](plans/README.md#批次索引)插入一行，并更新 AGENTS.md 与本页“现在在哪”的链接。
+- 历史记录只追加更正说明，不改写；过时的整份材料用 `git mv` 迁入 archive 并修链接。

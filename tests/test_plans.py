@@ -350,6 +350,22 @@ def test_add_and_remove_assign_id_and_preserve_remaining_items() -> None:
     assert apply_plan_patch(current, clear).hotel_evidence_id is None
 
 
+def test_pure_reordering_shows_up_in_the_diff_but_identical_order_does_not() -> None:
+    current = saved()
+    first, second = current.content.items
+    assert differences(current.content, current.content) == ()
+    swapped = current.content.model_copy(update={"items": (second, first)})
+    changes = differences(current.content, swapped)
+    assert len(changes) == 1 and changes[0].op == "update"  # 值未变，仅顺序变，也要出现
+    assert changes[0].before == changes[0].after
+    assert changes[0].item_id in {first.item_id, second.item_id}
+    inserted = initial_content(
+        ItineraryProposal(expected_revision=1, items=(item(record(place())),))
+    )
+    grown = current.content.model_copy(update={"items": (inserted.items[0], first, second)})
+    assert [c.op for c in differences(current.content, grown)] == ["add"]  # 插入不算其余项被移动
+
+
 @pytest.mark.parametrize("fault", ["locked", "missing", "anchor", "version"])
 def test_invalid_patch_cannot_change_current_plan(fault: str) -> None:
     current = saved()
@@ -382,8 +398,10 @@ def test_invalid_patch_cannot_change_current_plan(fault: str) -> None:
     if fault == "version":
         change = change.model_copy(update={"base_version": 2})
     before = current.model_dump(mode="json")
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError) as failed:
         apply_plan_patch(current, change)
+    # 锁定与“不存在/无效”是两种可区分的失败，调用方据此给出不同指引
+    assert isinstance(failed.value, plan_models.PatchItemLocked) is (fault == "locked")
     assert current.model_dump(mode="json") == before
 
 

@@ -158,7 +158,7 @@ def run_live(
             guard.temperature = 0
         with serve(guard) as endpoint:
             env = worker_environment(
-                os.environ, directory, root, endpoint, guard.token, settings.model
+                os.environ, directory, root, endpoint, guard.token, settings.model, live=real_data
             )
             env.update({FILE_ENV: str(trace_path), RUN_ENV: run[:8]})
             version = run_process([str(cli), "--version"], directory, env, timeout=10)

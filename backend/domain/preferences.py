@@ -1,6 +1,6 @@
 """用户明确编辑的长期偏好；低优先级参考，不自动改写本次旅行条件。"""
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from backend.domain.travel_request import Text, Transport
 
@@ -23,3 +23,11 @@ class PreferenceVersion(BaseModel):
 
 class PreferencePatch(PreferenceVersion):
     set_fields: PreferenceValues = Field(alias="set")
+
+    @model_validator(mode="after")
+    def no_duplicates(self) -> "PreferencePatch":
+        # 与对话确认路径一致：同一偏好不能重复保存。
+        for values in (self.set_fields.interests, self.set_fields.soft_constraints):
+            if len(set(values)) != len(values):
+                raise ValueError("偏好不能重复保存")
+        return self

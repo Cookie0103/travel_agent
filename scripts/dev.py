@@ -146,7 +146,8 @@ def web(command: str, *, webpack: bool = False) -> int:
         "web": [["run", "dev"]],
     }
     for action in actions[command]:
-        if webpack and action == ["run", "build"]:
+        # 本机 Turbopack 的 CSS 子进程可能起不来（首页500/build失败），显式改用 Webpack。
+        if webpack and action in (["run", "build"], ["run", "dev"]):
             action = [*action, "--webpack"]
         result = run_command(
             [pnpm, *action], cwd=ROOT / "apps" / "web", timeout=None if command == "web" else 300
@@ -167,11 +168,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         "format",
         "db-up",
         "db-migrate",
+        "doctor",
         "supplier",
         "web-setup",
         "web-generate",
         "web-format",
-        "web",
         "stack-up",
         "stack-status",
         "stack-down",
@@ -179,6 +180,10 @@ def main(argv: Sequence[str] | None = None) -> int:
         commands.add_parser(name)
     web_check = commands.add_parser("web-check")
     web_check.add_argument("--webpack", action="store_true")
+    web_dev = commands.add_parser("web")
+    web_dev.add_argument(
+        "--webpack", action="store_true", help="开发服务器改用 Webpack（Turbopack 起不来时）"
+    )
     tests = commands.add_parser("test")
     tests.add_argument("--path", action="append", type=test_path, default=[])
     tests.add_argument("--keyword", help="只筛选测试名，live 门禁保持不变")
@@ -397,6 +402,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.trace_cloud:
                 command.append("--trace-cloud")
             return run_command(command, timeout=None)
+        case "doctor":
+            return run_command([python, "-m", "scripts.doctor"])
         case "supplier":
             return run_command([python, "-m", "mock_supplier.server"], timeout=None)
         case "web" | "web-setup" | "web-check" | "web-generate" | "web-format":

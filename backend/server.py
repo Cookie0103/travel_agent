@@ -5,7 +5,9 @@ import asyncio
 import io
 import os
 import sys
+from collections.abc import Mapping
 from pathlib import Path
+from typing import Any
 
 import uvicorn
 from dotenv import load_dotenv
@@ -21,6 +23,15 @@ from backend.trace_log import enable_stdout, trace
 
 def loop_factory() -> asyncio.AbstractEventLoop:
     return asyncio.SelectorEventLoop()
+
+
+def proxy_options(environment: Mapping[str, str]) -> dict[str, Any]:
+    """代理头默认关闭（uvicorn默认会信任本机来源的X-Forwarded-For，可被伪造）；
+    仅当显式设置 FORWARDED_ALLOW_IPS（受信代理地址，逗号分隔）才开启，且只信任这些来源。"""
+    trusted = environment.get("FORWARDED_ALLOW_IPS", "").strip()
+    if not trusted:
+        return {"proxy_headers": False}
+    return {"proxy_headers": True, "forwarded_allow_ips": trusted}
 
 
 def log_boot() -> None:
@@ -77,4 +88,5 @@ if __name__ == "__main__":
         host=arguments.host,
         port=8000,
         loop="backend.server:loop_factory",
+        **proxy_options(os.environ),
     )

@@ -18,6 +18,9 @@ from backend.persistence.models import MemoryFactRow, UserRow
 from backend.persistence.user_profile import invalidate as invalidate_profile
 from backend.services.common import ServiceError, transaction
 
+# 与对话确认路径(MemoryOperation.value)一致；已有的更长历史值不改动时仍可保留。
+MANUAL_VALUE_LIMIT = 80
+
 __all__ = ["PreferencePatch", "Preferences", "PreferenceVersion", "PreferenceService"]
 
 
@@ -103,25 +106,43 @@ class PreferenceService:
                     ):
                         if field not in fields:
                             continue
+                        parts = (
+                            ([values.transport] if values.transport else [])
+                            if field == "transport"
+                            else list(getattr(values, field))
+                        )
+                        # 按值比较：未改动的事实保持原行(来源、原话、时间)，只作废被移除的值。
+                        kept: dict[str, int] = {}
                         for fact in await db.scalars(
-                            select(MemoryFactRow).where(
+                            select(MemoryFactRow)
+                            .where(
                                 MemoryFactRow.user_id == user_id,
                                 MemoryFactRow.scope == "long_term",
                                 MemoryFactRow.key == key,
                                 MemoryFactRow.status.in_(("active", "proposed")),
                             )
+                            .order_by(MemoryFactRow.ordinal, MemoryFactRow.created_at)
                         ):
+                            if (
+                                fact.status == "active"
+                                and isinstance(fact.value, str)
+                                and fact.value in parts
+                            ):
+                                if fact.value not in kept:
+                                    kept[fact.value] = fact.ordinal = parts.index(fact.value)
+                                    continue
                             if fact.status == "proposed":
                                 fact.status, fact.value, fact.evidence_quote = "deleted", None, ""
                             else:
                                 fact.status = "superseded"
                             fact.invalidated_at = now
-                        parts = (
-                            ([values.transport] if values.transport else [])
-                            if field == "transport"
-                            else getattr(values, field)
-                        )
                         for ordinal, value in enumerate(parts):
+                            if value in kept:
+                                continue
+                            if len(value) > MANUAL_VALUE_LIMIT:
+                                raise ServiceError(
+                                    422, "validation", f"新增偏好最多{MANUAL_VALUE_LIMIT}字"
+                                )
                             db.add(
                                 MemoryFactRow(
                                     user_id=user_id,

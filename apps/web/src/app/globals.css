@@ -68,6 +68,23 @@
   }
 
   /* Top bar */
+  .skip-link {
+    position: absolute;
+    left: 8px;
+    top: -100px;
+    z-index: 30;
+    padding: 8px 16px;
+    background: var(--bg);
+    color: var(--text);
+    border: 2px solid var(--primary);
+    border-radius: 6px;
+  }
+  main:focus-visible {
+    outline: none;
+  }
+  .skip-link:focus {
+    top: 8px;
+  }
   .site-nav {
     position: sticky;
     top: 0;

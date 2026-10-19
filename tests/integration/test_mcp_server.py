@@ -19,6 +19,7 @@ from backend.persistence.catalog import import_catalog
 from backend.services.common import transaction
 from backend.services.sessions import DemoIdentity, DemoLogin, SessionService
 from backend.services.travel import TravelService
+from backend.tools.fencing import fence_payload
 from backend.tools.travel import TravelToolExecutor
 from data.import_catalog import load_snapshot
 
@@ -92,10 +93,16 @@ def test_mcp_http_lists_shared_readonly_contract_and_calls_match_direct_tools(
                     remote_entries = remote_data[collection]
                     assert isinstance(remote_entries, list)
                     # 两次真实查询生成各自Evidence UUID；事实、状态和来源仍逐字段比较。
+                    # 对外返回与进程内模型路径一样围栏第三方文本，故与围栏后的直接结果比较。
+                    fenced = fence_payload({"data": {collection: entries}}, name)["data"]
+                    assert isinstance(fenced, dict)
                     assert [
                         {k: v for k, v in row.items() if k != "evidence_id"}
                         for row in remote_entries
-                    ] == [{k: v for k, v in row.items() if k != "evidence_id"} for row in entries]
+                    ] == [
+                        {k: v for k, v in row.items() if k != "evidence_id"}
+                        for row in fenced[collection]
+                    ]
                     evidence_ids = remote["evidence_ids"]
                     assert isinstance(evidence_ids, list) and evidence_ids
                     records = await TravelService(sessions.database).resolve_evidence(

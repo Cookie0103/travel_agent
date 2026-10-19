@@ -11,6 +11,9 @@ if (
 }
 const config: NextConfig = {
   output: "standalone",
+  // rewrites 代理默认 30s 无响应就断开（socket hang up）；放宽到 2 分钟，
+  // 慢读取不再被代理截断。SSE 另有 5s 心跳，断线由前端按游标重连兜底。
+  experimental: { proxyTimeout: 120_000 },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${apiOrigin}/:path*` }];
   },

@@ -12,6 +12,7 @@ from backend.services.travel import TravelService
 from backend.tools.travel import DEFINITIONS, SCHEMAS, TravelToolExecutor
 from data.import_catalog import load_snapshot
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.integration.user_turn import start_turn
 
 pytestmark = pytest.mark.integration
 
@@ -127,6 +128,7 @@ def test_tool_calls_are_serialized_and_failures_count_toward_limit(
 ) -> None:
     """R01/R04：同轮写操作排他；并行提出的同revision更新不能交错覆盖。"""
     runner, service, context = travel_setup
+    context = runner.run(start_turn(service, context, "3个人或者4个人"))
 
     async def exercise() -> None:
         executor = TravelToolExecutor(service, max_calls=3)

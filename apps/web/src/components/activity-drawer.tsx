@@ -19,7 +19,7 @@ type Entry =
   | { type: "compacted"; key: string }
   | { type: "presentation"; key: string };
 
-export function activityEntries(events: AppEvent[]): Entry[] {
+function activityEntries(events: AppEvent[]): Entry[] {
   const entries: Entry[] = [];
   const open = new Map<string, Extract<Entry, { type: "tool" }>>();
   for (const event of [...events].sort((a, b) => a.sequence - b.sequence)) {
@@ -66,7 +66,7 @@ export function activityEntries(events: AppEvent[]): Entry[] {
   return entries;
 }
 
-export const toolCallCount = (events: AppEvent[]) =>
+const toolCallCount = (events: AppEvent[]) =>
   events.filter((event) => event.kind === "tool_started").length;
 
 export function RunSteps({ events }: { events: AppEvent[] }) {

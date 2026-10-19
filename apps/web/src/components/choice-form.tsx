@@ -11,7 +11,7 @@ import {
 } from "@/lib/choices";
 import { Button } from "./ui/button";
 
-export function ChoiceGroup({
+function ChoiceGroup({
   group,
   value,
   disabled,

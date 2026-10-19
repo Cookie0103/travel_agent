@@ -104,7 +104,7 @@ def test_link_sidecar_survives_reopen_old_writer_and_rollback(
                     offer_id=HotelOffer.model_validate(record.value).offer_id,
                 ),
             )
-        assert failed.value.status == 422 and failed.value.code == "blocked"
+        assert failed.value.status == 403 and failed.value.code == "blocked"
         assert "实时酒店" in str(failed.value)
         old = (await hotels.search(context, 1, limit=1))[0]
         old_card = (await hotels.present(context, 1, (old.evidence_id,)))["cards"]

@@ -2,7 +2,7 @@
 
 from collections.abc import Callable, Sequence
 from datetime import UTC, datetime, timedelta
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -21,6 +21,7 @@ from backend.domain.itinerary import (
 )
 from backend.domain.plans import (
     InitialStage,
+    PatchItemLocked,
     PlanContent,
     PlanDraft,
     StageInput,
@@ -49,6 +50,8 @@ from backend.services.travel import (
     resolve_records,
 )
 from backend.services.views import PlanView
+
+VERSION_CHANGED = "plan_version_changed"  # 版本变化(含仅锁定变化)统一的稳定标签
 
 
 class PlanInput(BaseModel):
@@ -182,15 +185,14 @@ class PlanService:
             )
             operation_key = operations.key(arguments)
             cached = await operations.result(db, context.session_id, "stage_plan", operation_key)
-            if cached is not None:
-                saved = PlanDraft.model_validate(cached)
+            replay = PlanDraft.model_validate(cached) if cached is not None else None
+            if replay is not None and datetime.now(UTC) < replay.expires_at:
+                saved = replay
                 require_revision(request, saved.request_revision)
                 current_plan = await plans.for_session(db, context)
                 if current_plan is None or current_plan.current_version != saved.base_version:
-                    raise ServiceError(409, "conflict", "正式行程版本已变化，请重新读取")
-                if datetime.now(UTC) >= saved.expires_at:
                     raise ServiceError(
-                        409, "conflict", "原草稿已过期，请重新查询后生成", "draft_expired"
+                        409, "conflict", "正式行程版本已变化，请重新读取", VERSION_CHANGED
                     )
                 proposal = saved.content.proposal(request.revision)
                 if explicit_clear:
@@ -204,6 +206,8 @@ class PlanService:
                     )
                 report = await validate_proposal(db, context, request, proposal, self.travel.live)
                 return saved.model_copy(update={"validation": report}), True
+            # 缓存草稿已过期：按同样参数重新生成新草稿(旧草稿保持过期)；若证据也过期，
+            # 下面的校验会以evidence_stale与重新查询指引拒绝。
             row = await plans.for_session(db, context)
             previous = await plans.version(db, row) if row else None
             if isinstance(change, InitialStage):
@@ -213,23 +217,23 @@ class PlanService:
                         409, "conflict", "已有正式行程，请读取后使用局部patch", "plan_exists"
                     )
                 content = initial_content(change.proposal)
-                if row is None:
-                    row = PlanRow(
-                        user_id=context.user_id, session_id=context.session_id, current_version=0
-                    )
-                    db.add(row)
-                    await db.flush()
             else:
                 require_revision(request, change.patch.expected_revision)
                 if row is None or row.id != change.plan_id or previous is None:
                     raise ServiceError(404, "blocked", "正式行程不存在或不属于当前会话")
                 if previous.version != change.patch.base_version:
-                    raise ServiceError(409, "conflict", "正式行程版本已变化，请重新读取")
+                    raise ServiceError(
+                        409, "conflict", "正式行程版本已变化，请重新读取", VERSION_CHANGED
+                    )
                 try:
                     content = apply_plan_patch(previous, change.patch)
+                except PatchItemLocked as locked:
+                    raise ServiceError(
+                        422, "validation", str(locked), "patch_item_locked"
+                    ) from None
                 except ValueError:
                     raise ServiceError(
-                        422, "validation", "patch引用不存在、锁定或无效的行程项", "patch_invalid"
+                        422, "validation", "patch引用了不存在或无效的行程项", "patch_invalid"
                     ) from None
             if fixed is not None:
                 content = fixed.content
@@ -249,8 +253,8 @@ class PlanService:
                 before_validate(proposal)
             report = await validate_proposal(db, context, request, proposal, self.travel.live)
             draft = PlanDraft(
-                plan_id=row.id,
-                base_version=row.current_version,
+                plan_id=row.id if row else uuid4(),
+                base_version=row.current_version if row else 0,
                 request_revision=request.revision,
                 content=content,
                 changes=differences(previous.content if previous else None, content),
@@ -269,10 +273,23 @@ class PlanService:
             )
             if fixed is None and report.status == "conflict":
                 return draft, False
+            if row is None:  # 首个草稿才建行程行：未落库的首轮冲突不留空行
+                row = PlanRow(
+                    id=draft.plan_id,
+                    user_id=context.user_id,
+                    session_id=context.session_id,
+                    current_version=0,
+                )
+                db.add(row)
+                await db.flush()
             await plans.add_draft(db, context, draft)
-            operations.save(
-                db, context.session_id, "stage_plan", operation_key, draft.model_dump(mode="json")
-            )
+            payload = draft.model_dump(mode="json")
+            if replay is None:
+                operations.save(db, context.session_id, "stage_plan", operation_key, payload)
+            else:
+                await operations.replace(
+                    db, context.session_id, "stage_plan", operation_key, payload
+                )
             return draft, True
 
     async def confirm(self, user_id: UUID, draft_id: UUID) -> SavedPlan:
@@ -294,10 +311,15 @@ class PlanService:
                 return saved
             draft = PlanDraft.model_validate(draft_row.payload)
             if datetime.now(UTC) >= draft.expires_at:
-                raise ServiceError(409, "conflict", "草稿已过期，请重新生成")
+                raise ServiceError(409, "conflict", "草稿已过期，请重新生成", "draft_expired")
             require_revision(request, draft.request_revision)
             if row.current_version != draft.base_version:
-                raise ServiceError(409, "conflict", "正式版本已变化，请重新生成patch")
+                raise ServiceError(
+                    409,
+                    "conflict",
+                    "正式版本已变化（例如刚修改了锁定），请重新生成patch",
+                    VERSION_CHANGED,
+                )
             report = await validate_proposal(
                 db, context, request, draft.content.proposal(request.revision), self.travel.live
             )
@@ -324,7 +346,7 @@ class PlanService:
             if row is None or (session_id is not None and row.session_id != session_id):
                 raise ServiceError(404, "blocked", "行程不存在")
             context = RunContext(user_id, row.session_id)
-            request = request_from_row(await requests.owned_request(db, context))
+            request = request_from_row(await requests.read_request(db, context))
             await db.refresh(row)
             saved = await plans.version(db, row)
             if saved is None:
@@ -353,7 +375,7 @@ class PlanService:
                 raise ServiceError(404, "blocked", "草稿不属于当前会话")
             draft = PlanDraft.model_validate(row.payload)
             context = RunContext(user_id, row.session_id)
-            request = request_from_row(await requests.owned_request(db, context))
+            request = request_from_row(await requests.read_request(db, context))
             await db.refresh(row)
             report = draft.validation
             parent = await plans.for_session(db, context)
@@ -365,7 +387,9 @@ class PlanService:
                     )
                 require_revision(request, draft.request_revision)
                 if version_changed:
-                    raise ServiceError(409, "conflict", "草稿基于旧正式版本，请重新生成patch")
+                    raise ServiceError(
+                        409, "conflict", "草稿基于旧正式版本，请重新生成patch", VERSION_CHANGED
+                    )
                 report = await validate_proposal(
                     db,
                     context,
@@ -392,7 +416,9 @@ class PlanService:
             await db.refresh(row)
             current = await plans.version(db, row)
             if current is None or current.version != arguments.expected_version:
-                raise ServiceError(409, "conflict", "正式行程版本已变化")
+                raise ServiceError(
+                    409, "conflict", "正式行程版本已变化，请重新读取后再锁定", VERSION_CHANGED
+                )
             ids = set(arguments.locked_item_ids)
             if len(ids) != len(arguments.locked_item_ids) or ids - {
                 item.item_id for item in current.content.items

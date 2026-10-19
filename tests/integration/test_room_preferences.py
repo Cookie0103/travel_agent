@@ -20,6 +20,7 @@ from backend.services.travel import TravelService
 from backend.services.views import HotelPresentation
 from backend.tools.travel import TravelToolExecutor
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.integration.user_turn import start_turn
 from tests.test_external_data import _CountingUsage
 
 pytestmark = pytest.mark.integration
@@ -80,11 +81,13 @@ def test_explicit_room_group_cannot_authorize_ordinary_mention_of_other_manual_g
             "hard_constraints"
         ] == "user_form"
         events: list[RuntimeEvent] = []
+        # 来源核对读执行记录里的用户原话；没有执行记录时所有声明都按未声明处理。
+        turn = await start_turn(travel, context, prompt)
         result = await FixtureRuntime(TravelToolExecutor(travel)).execute(
-            context, prompt, None, events.append, asyncio.Event()
+            turn, prompt, None, events.append, asyncio.Event()
         )
         assert result.code is None
-        assert (await travel.get_request(context)).hard_constraints == tuple(expected)
+        assert (await travel.get_request(turn)).hard_constraints == tuple(expected)
         assert "手动房型" in result.text
 
     runner.run(exercise())

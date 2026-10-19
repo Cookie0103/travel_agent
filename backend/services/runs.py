@@ -141,9 +141,14 @@ class RunService:
         )
         self.tasks: dict[UUID, asyncio.Task[None]] = {}
         self.cancelled: dict[UUID, asyncio.Event] = {}
-        self.persistence_failures: set[UUID] = set()
+        self.persistence_failures: dict[UUID, RunContext] = {}
         self.recovery_pending = False
         self.recovery_lock = asyncio.Lock()
+
+    async def _settle(self, db: AsyncSession, context: RunContext) -> None:
+        """启动恢复与在线恢复共用：锁会话后把仍在运行的旧执行裁决为终态。"""
+        await sessions.get_session(db, context.user_id, context.session_id, lock=True)
+        await runs.recover(db, context)
 
     async def initialize(self, *, only_pending: bool = False) -> None:
         """单API进程启动：释放中断执行，不自动重复任何付费或预订操作。"""
@@ -156,9 +161,7 @@ class RunService:
             try:
                 async with transaction(self.database) as db:
                     for row in await runs.interrupted(db):
-                        context = RunContext(row.user_id, row.session_id, row.id)
-                        await sessions.get_session(db, row.user_id, row.session_id, lock=True)
-                        await runs.recover(db, context)
+                        await self._settle(db, RunContext(row.user_id, row.session_id, row.id))
             except ServiceError as error:
                 if error.code != "unavailable":
                     raise
@@ -166,11 +169,28 @@ class RunService:
                 return
             self.recovery_pending = False
 
+    async def _recover_failed(self) -> None:
+        """在线恢复：落库失败的执行仅单独核对；库未恢复则保持待恢复标记并报503。"""
+        async with self.recovery_lock:
+            pending = dict(self.persistence_failures)
+            try:
+                async with transaction(self.database) as db:
+                    for context in pending.values():
+                        await self._settle(db, context)
+            except ServiceError as error:
+                if error.code != "unavailable":
+                    raise
+                raise ServiceError(503, "unavailable", "执行记录写入失败，需要恢复核对") from error
+            for run_id in pending:
+                self.persistence_failures.pop(run_id, None)
+
     async def _require_recovery(self) -> None:
         if self.recovery_pending:
             await self.initialize(only_pending=True)
             if self.recovery_pending:
                 raise ServiceError(503, "unavailable", "数据库恢复核对尚未完成")
+        if self.persistence_failures:
+            await self._recover_failed()
 
     async def submit(self, user_id: UUID, session_id: UUID, message: MessageInput) -> RunView:
         await self._require_recovery()
@@ -268,10 +288,15 @@ class RunService:
     async def get(self, user_id: UUID, run_id: UUID) -> RunView:
         await self._require_recovery()
         async with transaction(self.database) as db:
-            result = await recorded_view(db, await runs.owned(db, user_id, run_id))
-        if run_id in self.persistence_failures:
-            raise ServiceError(503, "unavailable", "执行记录写入失败，需要恢复核对")
-        return result
+            return await recorded_view(db, await runs.owned(db, user_id, run_id))
+
+    async def progress(self, user_id: UUID, run_id: UUID) -> tuple[bool, int]:
+        """SSE轮询用的轻量查询：只读一行，返回(是否仍在运行, 最新事件序号)。"""
+        await self._require_recovery()
+        async with transaction(self.database) as db:
+            row = await runs.owned(db, user_id, run_id)
+            result = view(row)
+            return result.status in runs.ACTIVE, result.last_sequence
 
     async def events(self, user_id: UUID, run_id: UUID, after: int) -> list[dict[str, object]]:
         await self._require_recovery()
@@ -408,7 +433,7 @@ class RunService:
                     )
                     await self._trace(context, identity, metadata)
             except Exception as error:
-                self.persistence_failures.add(context.run_id)
+                self.persistence_failures[context.run_id] = context
                 # 数据库错误正文可能含条件/连接信息，只保留异常类型与标准SQLSTATE定位。
                 kind, sqlstate = database_error_details(error)
                 LOGGER.error(

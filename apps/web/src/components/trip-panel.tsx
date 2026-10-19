@@ -3,10 +3,10 @@
 import { useState } from "react";
 import type { Workspace } from "./workbench";
 import { Conditions } from "./conditions";
-import { formatYen, PlanResults } from "./results";
+import { PlanResults } from "./results";
 import { Bookings } from "./bookings";
 import { PreferencePanel } from "./preferences";
-import { partyLabel } from "@/lib/availability";
+import { moneyLabel, partyLabel } from "@/lib/availability";
 import { sourceRows } from "@/lib/condition-source";
 import { currentPace } from "@/lib/pace";
 
@@ -31,6 +31,7 @@ export function TripPanel({
 }) {
   const { request, identity, plan } = workspace;
   const [editing, setEditing] = useState(false);
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
   const pace = currentPace(
     request?.soft_constraints ?? [],
     request?.hard_constraints ?? [],
@@ -88,7 +89,8 @@ export function TripPanel({
                       request.adults || request.child_ages != null
                         ? partyLabel(request)
                         : request.rooms && `${request.rooms} 间房`,
-                      request.budget && `¥${formatYen(request.budget)}`,
+                      request.budget &&
+                        moneyLabel(request.budget, request.currency),
                     ]
                       .filter(Boolean)
                       .join(" · ")}
@@ -203,10 +205,14 @@ export function TripPanel({
         hold={workspace.holdOffer}
         act={workspace.bookingAction}
       />
-      <details className="panel-block">
+      <details
+        className="panel-block"
+        onToggle={(event) => setPreferencesOpen(event.currentTarget.open)}
+      >
         <summary>长期偏好</summary>
         <PreferencePanel
           key={identity.session_id}
+          active={preferencesOpen}
           identity={identity}
           refreshKey={`${workspace.run?.run_id ?? ""}:${workspace.run?.status ?? ""}`}
           onError={workspace.fail}

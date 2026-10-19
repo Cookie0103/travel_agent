@@ -7,6 +7,7 @@ from typing import Annotated
 from uuid import UUID
 
 from fastapi import Depends, FastAPI, Header, Path, Query, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse, Response, StreamingResponse
 
 from backend.api.events import stream_events
@@ -24,6 +25,7 @@ from backend.services.preferences import (
     PreferenceService,
     PreferenceVersion,
 )
+from backend.services.rate_limit import RateLimited
 from backend.services.runs import MessageInput, RunService, RunView
 from backend.services.sessions import (
     DemoIdentity,
@@ -80,8 +82,35 @@ def create_app(
 
     @app.exception_handler(ServiceError)
     async def service_error(request: Request, error: ServiceError) -> JSONResponse:
+        # reason是固定英文标签(无用户文本)，供客户端区分同一code下的具体情形。
         return JSONResponse(
-            status_code=error.status, content={"code": error.code, "message": str(error)}
+            status_code=error.status,
+            content={
+                "code": error.code,
+                "message": str(error),
+                **({"reason": error.reason} if error.reason else {}),
+            },
+            headers={"Retry-After": str(error.retry_after)}
+            if isinstance(error, RateLimited)
+            else None,
+        )
+
+    @app.exception_handler(RequestValidationError)
+    async def invalid_request(request: Request, error: RequestValidationError) -> JSONResponse:
+        # 与ServiceError同形；只列字段名，不回显英文校验原文或输入值。
+        fields = dict.fromkeys(
+            next(part for part in reversed(item["loc"]) if isinstance(part, str))
+            for item in error.errors()
+            if len(item["loc"]) > 1
+        )
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": "validation",
+                "message": f"输入不符合条件（{'、'.join(fields)}），请检查后重试。"
+                if fields
+                else "输入不符合条件，请检查日期、人数和金额。",
+            },
         )
 
     async def identity(authorization: Annotated[str | None, Header()] = None) -> UUID:
@@ -136,6 +165,11 @@ def create_app(
         await sessions.health()
         return {"status": "ok"}
 
+    @app.get("/health/ready")
+    async def ready() -> dict[str, str]:
+        await sessions.ready()
+        return {"status": "ok"}
+
     @app.get("/articles")
     async def articles() -> tuple[Article, ...]:
         return await catalog.articles()
@@ -145,8 +179,8 @@ def create_app(
         return await catalog.article(article_id)
 
     @app.post("/demo/login", status_code=201)
-    async def demo_login(body: DemoLogin) -> DemoIdentity:
-        return await sessions.create_demo_user(body)
+    async def demo_login(body: DemoLogin, request: Request) -> DemoIdentity:
+        return await sessions.create_demo_user(body, request.client.host if request.client else "")
 
     @app.post("/sessions", status_code=201)
     async def new_session(user_id: Annotated[UUID, Depends(identity)]) -> SessionView:

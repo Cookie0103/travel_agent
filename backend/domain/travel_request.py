@@ -1,10 +1,18 @@
 """旅行条件与set/clear更新规则；服务在数据库锁内调用，模型不能绕过版本检查。"""
 
-from datetime import date, time
+from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Annotated, Literal, Self
+from zoneinfo import ZoneInfo
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import (
+    AfterValidator,
+    BaseModel,
+    ConfigDict,
+    Field,
+    field_validator,
+    model_validator,
+)
 
 from backend.domain.external_data import broad_region
 from backend.domain.room_choices import (
@@ -15,7 +23,18 @@ from backend.domain.room_choices import (
 )
 
 Age = Annotated[int, Field(strict=True, ge=0, le=17)]
-Text = Annotated[str, Field(min_length=1, max_length=200)]
+
+
+def reject_nul(value: str) -> str:
+    # PostgreSQL文本与JSONB都不能存NUL；在输入边界拒绝，避免到数据库才变成503。
+    if "\x00" in value:
+        raise ValueError("文本不能包含空字符")
+    return value
+
+
+NoNul = AfterValidator(reject_nul)
+Text = Annotated[str, Field(min_length=1, max_length=200), NoNul]
+Place = Annotated[str, Field(min_length=1, max_length=40), NoNul]
 Transport = Literal["walk", "transit", "taxi"]
 ConditionSource = Literal["conversation", "user_form", "none"]
 
@@ -57,11 +76,11 @@ class TripSegment(BaseModel):
     """一个城市的连续停留；住宿晚数由离开日期减到达日期得出。"""
 
     model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
-    city: str = Field(min_length=1, max_length=40)
+    city: Place
     arrive: date
     depart: date
-    hotel_search_location: str | None = Field(
-        default=None, min_length=1, max_length=40, exclude_if=lambda value: value is None
+    hotel_search_location: Place | None = Field(
+        default=None, exclude_if=lambda value: value is None
     )
 
     @model_validator(mode="after")
@@ -77,11 +96,9 @@ Segments = Annotated[tuple[TripSegment, ...] | None, Field(min_length=2, max_len
 class TravelConditions(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
 
-    city: str | None = Field(default=None, min_length=1, max_length=40)
-    hotel_search_location: str | None = Field(
+    city: Place | None = None
+    hotel_search_location: Place | None = Field(
         default=None,
-        min_length=1,
-        max_length=40,
         description="用户明确指定的住宿查询城市或地点，保留旅行city不变；省级范围须进一步细化",
     )
     start_date: date | None = None
@@ -208,6 +225,10 @@ class RequestConflict(ValueError):
     """由服务转换为conflict；不通过重试覆盖用户的新条件。"""
 
 
+class RequestLimitError(ValueError):
+    """日期/规模超出支持范围；消息面向用户，服务转换为422。"""
+
+
 class ConversationRequestPatch(RequestPatch):
     explicit_fields: tuple[str, ...] = Field(
         default=(),
@@ -253,8 +274,52 @@ class ConversationRequestPatch(RequestPatch):
         return self
 
 
+MAX_NIGHTS = 30
+FUTURE_YEARS = 3
+
+
+def tokyo_today() -> date:
+    return datetime.now(ZoneInfo("Asia/Tokyo")).date()
+
+
+def shift_years(day: date, years: int) -> date:
+    try:
+        return day.replace(year=day.year + years)
+    except ValueError:  # 2月29日 -> 目标年无此日
+        return day.replace(year=day.year + years, day=28)
+
+
+def check_limits(request: TravelRequest, changed: frozenset[str], today: date) -> None:
+    """日期窗口、行程长度、房间数的唯一入口；只检查本次变化的方面，历史越界行仍可编辑其他字段。"""
+    if changed & {"start_date", "end_date", "segments"}:
+        latest = shift_years(today, FUTURE_YEARS)
+        for day in (
+            *(d for d in (request.start_date, request.end_date) if d),
+            *(d for s in request.segments or () for d in (s.arrive, s.depart)),
+        ):
+            if day < today:
+                raise RequestLimitError(f"旅行日期不能早于今天（{today}），收到{day}")
+            if day > latest:
+                raise RequestLimitError(f"旅行日期不能晚于{latest}，收到{day}")
+        if (
+            request.start_date
+            and request.end_date
+            and (request.end_date - request.start_date).days > MAX_NIGHTS
+        ):
+            raise RequestLimitError(f"行程最长{MAX_NIGHTS}晚，请缩短日期范围")
+    if (
+        changed & {"adults", "child_ages", "rooms"}
+        and request.rooms is not None
+        and request.adults is not None
+    ):
+        # 儿童年龄未填时按没有儿童算：表单提交的成人1人+房间3间不应因“儿童未知”被放过。
+        travellers = request.adults + len(request.child_ages or ())
+        if request.rooms > travellers:
+            raise RequestLimitError(f"房间数{request.rooms}不能超过入住人数{travellers}")
+
+
 def apply_request_patch(
-    current: TravelRequest, patch: RequestPatch
+    current: TravelRequest, patch: RequestPatch, today: date | None = None
 ) -> tuple[TravelRequest, frozenset[str]]:
     if current.revision != patch.expected_revision:
         raise RequestConflict("旅行条件版本已变化，请读取最新条件")
@@ -281,6 +346,7 @@ def apply_request_patch(
         for name in TravelConditions.model_fields
         if getattr(current, name) != getattr(updated, name)
     )
+    check_limits(updated, changed, today or tokyo_today())
     return updated.model_copy(update={"revision": current.revision + bool(changed)}), changed
 
 

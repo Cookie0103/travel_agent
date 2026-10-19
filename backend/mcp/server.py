@@ -2,7 +2,10 @@
 
 import asyncio
 import json
-from collections.abc import AsyncIterator
+import math
+import os
+import time
+from collections.abc import AsyncIterator, Mapping
 from contextlib import asynccontextmanager
 from urllib.parse import urlsplit
 
@@ -19,17 +22,26 @@ from starlette.types import Receive, Scope, Send
 
 from backend.domain.execution import RunContext
 from backend.services.common import ServiceError
+from backend.services.rate_limit import Clock, TokenBucket, positive_int
 from backend.services.sessions import SessionService
 from backend.services.travel import TravelService
-from backend.tools.contracts import ToolResult
+from backend.tools.contracts import ToolDefinition, ToolResult
 from backend.tools.execution import execute_observed
+from backend.tools.fencing import fence_payload
 from backend.tools.travel import DEFINITIONS, TravelToolExecutor
 
-READ_ONLY = tuple(
-    definition
-    for definition in DEFINITIONS
-    if definition.name in {"search_content", "get_article", "search_places", "get_place_facts"}
-)
+# 对外暴露的工具白名单；新增工具默认不对外。写类(kind != "read")即使被误加进来也在导入时拒绝。
+EXTERNAL_TOOLS = ("search_content", "get_article", "search_places", "get_place_facts")
+
+
+def read_only_tools(names: tuple[str, ...]) -> tuple[ToolDefinition, ...]:
+    chosen = tuple(d for d in DEFINITIONS if d.name in names)
+    if len(chosen) != len(names) or any(d.kind != "read" for d in chosen):
+        raise RuntimeError("对外MCP只能暴露已登记且kind=read的工具")
+    return chosen
+
+
+READ_ONLY = read_only_tools(EXTERNAL_TOOLS)
 
 
 def loopback_origin(value: str) -> bool:
@@ -53,8 +65,13 @@ def loopback_origin(value: str) -> bool:
 class AuthenticatedEndpoint:
     """每个HTTP请求重新认证；无共享MCP会话身份，也不接收工具中的身份字段。"""
 
-    def __init__(self, sessions: SessionService, manager: StreamableHTTPSessionManager) -> None:
-        self.sessions, self.manager = sessions, manager
+    def __init__(
+        self,
+        sessions: SessionService,
+        manager: StreamableHTTPSessionManager,
+        limiter: TokenBucket,
+    ) -> None:
+        self.sessions, self.manager, self.limiter = sessions, manager, limiter
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send) -> None:
         request = Request(scope, receive)
@@ -75,12 +92,32 @@ class AuthenticatedEndpoint:
             )
             await response(scope, receive, send)
             return
+        # 每令牌(用户)的进程内令牌桶：每个HTTP请求都新建执行器，max_calls不起作用，由这里限流。
+        if wait := self.limiter.take(str(user_id)):
+            response = JSONResponse(
+                {"code": "rate_limited", "message": "请求过于频繁，请稍后再试"},
+                status_code=429,
+                headers={"Retry-After": str(max(1, math.ceil(wait)))},
+            )
+            await response(scope, receive, send)
+            return
         scope.setdefault("state", {})["travel_context"] = RunContext(user_id, session.session_id)
         await self.manager.handle_request(scope, receive, send)
 
 
-def create_app(sessions: SessionService | None = None) -> Starlette:
+def create_app(
+    sessions: SessionService | None = None,
+    *,
+    environment: Mapping[str, str] | None = None,
+    clock: Clock = time.monotonic,
+) -> Starlette:
     sessions = sessions or SessionService.from_environment()
+    config = os.environ if environment is None else environment
+    limiter = TokenBucket(
+        positive_int(config, "MCP_RATE_BURST", 60, 600),
+        positive_int(config, "MCP_RATE_PER_SECOND", 5, 100),
+        clock,
+    )
     travel = TravelService(sessions.database)
 
     async def list_tools(
@@ -112,14 +149,15 @@ def create_app(sessions: SessionService | None = None) -> Starlette:
             result = ToolResult({}, code="blocked")
         else:
             result = await execute_observed(
-                TravelToolExecutor(travel),
+                TravelToolExecutor(travel, max_calls=None),
                 run,
                 definition.name,
                 params.arguments or {},
                 lambda event: None,
                 definition=definition,
             )
-        payload = result.payload()
+        # 第三方文本与进程内模型路径同样围栏；对外调用方也是模型/Agent，不信任目录文本。
+        payload = fence_payload(result.payload(), definition.name if definition else None)
         return types.CallToolResult(
             content=[types.TextContent(type="text", text=json.dumps(payload, ensure_ascii=False))],
             structured_content=payload,
@@ -149,7 +187,7 @@ def create_app(sessions: SessionService | None = None) -> Starlette:
             await sessions.close()
 
     return Starlette(
-        routes=[Route("/mcp/{session_id:uuid}", AuthenticatedEndpoint(sessions, manager))],
+        routes=[Route("/mcp/{session_id:uuid}", AuthenticatedEndpoint(sessions, manager, limiter))],
         lifespan=lifespan,
     )
 

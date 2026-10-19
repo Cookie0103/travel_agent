@@ -1,12 +1,8 @@
-/** Top bar: brand and the two user-facing destinations; guides are reached from source links. */
+/** Top bar: brand and the user-facing destinations. */
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-
-const links = [
-  { href: "/", label: "对话" },
-  { href: "/plans", label: "我的行程" },
-];
+import { navLinks, isCurrentNav } from "@/lib/nav-links";
 
 export function SiteNav() {
   const pathname = usePathname();
@@ -15,11 +11,11 @@ export function SiteNav() {
       <Link href="/" className="brand">
         <span aria-hidden="true">◆</span> 旅程助手
       </Link>
-      {links.map((link) => (
+      {navLinks.map((link) => (
         <Link
           key={link.href}
           href={link.href}
-          aria-current={pathname === link.href ? "page" : undefined}
+          aria-current={isCurrentNav(link.href, pathname) ? "page" : undefined}
         >
           {link.label}
         </Link>

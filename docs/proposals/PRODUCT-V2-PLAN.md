@@ -1,8 +1,8 @@
 # 产品 V2：实现与验收范围
 
 > 更新：2026-10-04。本地核心功能已实现并真实跑通；Railway V2 发布、Claude API 和 V2 同轮 Cloud trace 实测仍未完成。
-> 本文收敛原实施提案，不再把历史任务当待办。实时进度只看 [执行计划](../execution/travel-agent.md)，实际运行证据只看 [V2 验收记录](../operations/product-v2.md)。
-> 原 [前端方案](FRONTEND-REDESIGN.md) 和 [后端调查](BACKEND-CHANGE-INVESTIGATION.md) 保留为背景，不再指导本轮开发。
+> 本文收敛原实施提案，不再把历史任务当待办。实时进度只看 [批次索引](../plans/README.md#批次索引)，实际运行证据只看 [V2 验收记录](../operations/product-v2.md)。
+> 原 [前端方案](../archive/proposals/FRONTEND-REDESIGN.md) 和 [后端调查](../archive/proposals/BACKEND-CHANGE-INVESTIGATION.md) 保留为背景，不再指导本轮开发。
 
 ## 1. 已交付的产品行为
 

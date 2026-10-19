@@ -93,7 +93,7 @@ def test_reason_is_persisted_and_legacy_event_without_it_still_loads(
     async def exercise() -> None:
         async with transaction(travel.database) as db:
             row = await runs.create(
-                db, context.user_id, context.session_id, uuid4(), "p", "fixture"
+                db, context.user_id, context.session_id, uuid4(), "p", "offline"
             )
             run = RunContext(context.user_id, context.session_id, row.id)
             await runs.append_event(

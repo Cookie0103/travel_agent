@@ -282,7 +282,7 @@ def test_final_answer_scrubs_ids_and_truncates_utf8_without_losing_finish(
     runner.run(exercise())
 
 
-def test_finish_failure_returns_503_and_restart_marks_partial(
+def test_finish_failure_recovers_online_to_partial_and_restart_is_idempotent(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -301,9 +301,10 @@ def test_finish_failure_returns_503_and_restart_marks_partial(
                 MessageInput(client_message_id=uuid4(), text="合成问题", mode="deepseek"),
             )
             await asyncio.gather(*tuple(service.tasks.values()))
-            with pytest.raises(ServiceError) as failure:
-                await service.get(context.user_id, run.run_id)
-            assert failure.value.status == 503
+            # 在线恢复（P-A1）：finish 失败后不再永久 503；get 经恢复路径把 Run 落成 partial，
+            # 且没有落库的模型回答不会被当成已保存内容展示。
+            online = await service.get(context.user_id, run.run_id)
+            assert online.status == "partial" and "不能冒称已保存" not in online.answer
         restarted = RunService(travel.database)
         await restarted.initialize()
         restored = await restarted.get(context.user_id, run.run_id)

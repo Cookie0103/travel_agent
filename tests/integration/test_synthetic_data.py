@@ -83,10 +83,13 @@ def test_eval_hotel_result_and_evidence_are_synthetic_without_losing_verified_to
                             expected_revision=revision, offer_id=UUID(str(offers[0]["offer_id"]))
                         ),
                     )
-                assert blocked.value.status == 422
+                assert blocked.value.status == 403
                 supplier.assert_not_called()
             async with business.travel.database.sessions() as db:
                 assert await db.scalar(select(func.count()).select_from(BookingRow)) == 0
 
-    with temporary_database(postgres_url, "eval") as url, asyncio.Runner() as runner:
+    with (
+        temporary_database(postgres_url, "eval") as url,
+        asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner,
+    ):
         runner.run(exercise(url))

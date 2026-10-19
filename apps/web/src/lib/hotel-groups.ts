@@ -21,7 +21,7 @@ export function selectedHotelOffer(
 }
 
 type Segment = NonNullable<Hotels["segments"]>[number];
-export type SegmentHotelRow = Segment & { cards: Card[] };
+type SegmentHotelRow = Segment & { cards: Card[] };
 export type HotelSelection = {
   expected_revision: number;
   hotel_stays: {

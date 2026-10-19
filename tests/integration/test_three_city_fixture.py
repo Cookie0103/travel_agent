@@ -161,5 +161,8 @@ def test_three_city_synthetic_inventory_supports_a_full_date_draft(postgres_url:
             finally:
                 await service.close()
 
-    with temporary_database(postgres_url, "eval") as url, asyncio.Runner() as runner:
+    with (
+        temporary_database(postgres_url, "eval") as url,
+        asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner,
+    ):
         runner.run(exercise(url))

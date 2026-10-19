@@ -8,6 +8,10 @@ from pathlib import Path
 from backend.limits import ProbeError
 from backend.profile import current
 
+LIVE_SECRETS = frozenset(
+    {"GOOGLE_MAPS_API_KEY", "RAKUTEN_APP_ID", "RAKUTEN_ACCESS_KEY", "RAKUTEN_AFFILIATE_ID"}
+)
+
 
 def find_cli(environment: Mapping[str, str]) -> Path:
     """明确选定可执行文件；不执行 npm/cmd 包装器。"""
@@ -22,9 +26,19 @@ def find_cli(environment: Mapping[str, str]) -> Path:
 
 
 def worker_environment(
-    source: Mapping[str, str], directory: Path, root: Path, endpoint: str, token: str, model: str
+    source: Mapping[str, str],
+    directory: Path,
+    root: Path,
+    endpoint: str,
+    token: str,
+    model: str,
+    *,
+    live: bool = False,
 ) -> dict[str, str]:
-    """白名单启动新进程，不通过修改父进程 os.environ 影响其他用户任务。"""
+    """白名单启动新进程，不通过修改父进程 os.environ 影响其他用户任务。
+
+    供应商密钥只给实时数据worker：工具在worker内执行，live=True时才需要Google/乐天凭据；
+    claude CLI子进程会继承它们，所以离线worker一律不给。"""
     names = {
         "SYSTEMROOT",
         "WINDIR",
@@ -37,10 +51,6 @@ def worker_environment(
         "LC_ALL",
         "SSL_CERT_FILE",
         "SSL_CERT_DIR",
-        "GOOGLE_MAPS_API_KEY",
-        "RAKUTEN_APP_ID",
-        "RAKUTEN_ACCESS_KEY",
-        "RAKUTEN_AFFILIATE_ID",
         "RAKUTEN_REFERER",
         "GOOGLE_GEOCODE_DAILY_CAP",
         "GOOGLE_PLACES_DAILY_CAP",
@@ -50,6 +60,8 @@ def worker_environment(
         "WEATHER_DAILY_CAP",
         "TRAVEL_PROFILE",
     }
+    if live:
+        names |= LIVE_SECRETS
     env = {k: v for k, v in source.items() if k.upper() in names}
     if os.name == "nt":
         bash = find_git_bash(source)

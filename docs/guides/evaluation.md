@@ -76,3 +76,17 @@ full→B0的120个配对：15两组通过、24两组失败、79完整组通过�
 
 
 下一版本完整模型测量预声明（启动前）：在本次API用量修复正常check/test/独立审查/commit/push全部通过后，仅当实际UTC日余额至少10CNY、未结0且无运行中的评测，开始原frozen travel-eval-v1 test40×3 full/B3、maxHTTP12/tools16/repair3，默认原166目录/原Case和初始状态/原顺序/独立身份，不使用抹茶补充包。此为已看过原test后的当前版本测量；提示改动依据legacy dev的纯查询/完整规划问题，不能声称未见集或倒填成功阈值，也不能与旧版本作为同源码比较。目的记录新增业务分项及当前实际行为，单次全组不挑失败重放、不根据新结果调test期待/源码。余额低于条件只保留待运行；错误/预算不足按原停止规则保留error/not_run；该测量不自动等于产品质量达标。后续同版本baseline_b2/B1仍各自需余额/适用范围声明、保持完整/未知分母，不自动用尽日预算。
+
+## V2 评测套件、模拟用户与 pass^k（入口）
+
+`eval.run --suite` 取值为 `legacy`（默认，历史 30 例）、`frozen`（冻结 40test，见上）、`v2`（`v2_interaction.jsonl`：交互/故障恢复机制）、`v2-memory`（`v2_memory.jsonl`：确认记忆）；v2 系列是未冻结的能力/机制开发集，不改变 frozen_v1。日常用封装命令（均默认离线，`--live` 才收费，`--trace-cloud` 必须与 `--live` 同用）：
+
+```text
+uv run python scripts/dev.py eval-v2 [--live] [--repeat 1..3] [--case-id ID]
+uv run python scripts/dev.py eval-memory [--live]
+uv run python scripts/dev.py eval-simulator [--live] [--repeat 1..3]   # 模拟用户评测，同一 SDK 与费用守卫
+```
+
+- **pass@1 / pass@k / pass^k**：`eval/report.py` 对每个用例的 k 次预声明独立试验计 `pass_at_1`、`pass_at_k`（任一次通过）、`pass_power_k`（即 pass^k，k 次全部通过）；错误/缺失试验保持 unknown，不进分母。
+- 分诊、重算分、校准、盲标、Langfuse 推送（`eval-triage`、`eval-*-rescore`、`eval-calibration`、`eval-human-sheet`、`eval-publish-v2`）与授权/预算注意事项，见 [operations/interaction-memory-eval.md](../operations/interaction-memory-eval.md#v2评测与恢复)，此处不复制。
+- 测试总览与环境要求：[testing/README](../testing/README.md)。

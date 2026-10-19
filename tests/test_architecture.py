@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -17,6 +18,8 @@ def lint_temporary_project(
 ) -> subprocess.CompletedProcess[str]:
     """复制配置而不复制实现，用小型导入图验证契约语义。"""
     config = (ROOT / "pyproject.toml").read_text(encoding="utf-8")
+    # 临时导入图是空模块，真实债务的 ignore_imports 在其中必然“无匹配”并使整次检查报错。
+    config = re.sub(r"ignore_imports\s*=\s*\[[^\]]*\]", "ignore_imports = []", config)
     (tmp_path / "pyproject.toml").write_text(config, encoding="utf-8")
     for package in ("backend", "mock_supplier", "data", "eval"):
         for source in (ROOT / package).rglob("__init__.py"):

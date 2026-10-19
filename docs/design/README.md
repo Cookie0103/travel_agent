@@ -1,6 +1,6 @@
 # 项目计划
 
-本目录定义 Claude Agent SDK 路线下的项目设计；任务与依赖见 [04 开发任务](04-roadmap.md)。实时状态只维护在当前[批次计划](../plans/README.md)（2026-10-08 前为[长程执行计划](../execution/travel-agent.md)），不在本目录重复记录。
+本目录定义 Claude Agent SDK 路线下的项目设计；任务与依赖见 [04 开发任务](04-roadmap.md)。实时状态只维护在当前[批次计划](../plans/README.md)（2026-10-08 前为[长程执行计划](../archive/execution/travel-agent.md)），不在本目录重复记录。
 
 ## 文档分工
 

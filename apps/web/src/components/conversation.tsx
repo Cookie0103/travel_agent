@@ -1,5 +1,6 @@
 /** Persisted conversation turns plus the latest run's streamed reply and current cards. */
 "use client";
+import { useEffect, useRef } from "react";
 import type { Workspace } from "./workbench";
 import { toolLabel } from "./tool-names";
 import type { HotelSelection } from "@/lib/hotel-groups";
@@ -18,6 +19,7 @@ import { Loading, Skeleton } from "./ui/loading";
 import { Button } from "./ui/button";
 import { ChoiceCard } from "./choice-card";
 import { MemoryChoices } from "./memory-choices";
+import { isNearBottom } from "@/lib/scroll";
 import {
   runLabel,
   stageGuidance,
@@ -48,6 +50,49 @@ function currentStep(workspace: Workspace): string | undefined {
     )
     .at(-1);
   return open ? toolLabel(open.tool_name) : undefined;
+}
+
+/** Keep the nearest scroll parent pinned to the end while the reader is already there; a new turn always jumps down. */
+function useStickyBottom(turnKey: string | undefined) {
+  const content = useRef<HTMLDivElement>(null);
+  const sticky = useRef(true);
+  useEffect(() => {
+    const node = content.current;
+    const scroller = node?.closest<HTMLElement>(".chat-scroll");
+    if (!node || !scroller) return;
+    const onScroll = () => {
+      sticky.current = isNearBottom(scroller);
+    };
+    const toEnd = (smooth: boolean) =>
+      scroller.scrollTo({
+        top: scroller.scrollHeight,
+        behavior:
+          smooth && !matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "smooth"
+            : "auto",
+      });
+    const observer = new ResizeObserver(() => {
+      if (sticky.current) toEnd(false);
+    });
+    scroller.addEventListener("scroll", onScroll, { passive: true });
+    observer.observe(node);
+    return () => {
+      scroller.removeEventListener("scroll", onScroll);
+      observer.disconnect();
+    };
+  }, []);
+  useEffect(() => {
+    if (!turnKey) return;
+    sticky.current = true;
+    const scroller = content.current?.closest<HTMLElement>(".chat-scroll");
+    scroller?.scrollTo({
+      top: scroller.scrollHeight,
+      behavior: matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+    });
+  }, [turnKey]);
+  return content;
 }
 
 export function Welcome({ workspace }: { workspace: Workspace }) {
@@ -91,8 +136,11 @@ export function Conversation({
   const currentPrompt = workspace.history.find(
     (row) => row.run_id === run?.run_id,
   )?.prompt;
+  const stream = useStickyBottom(
+    workspace.identity?.pending_message?.client_message_id ?? run?.run_id,
+  );
   return (
-    <div className="conversation-stream" aria-live="polite">
+    <div className="conversation-stream" aria-live="polite" ref={stream}>
       {workspace.restoring && <Loading>正在恢复对话历史…</Loading>}
       {workspace.historyError && <p role="alert">{workspace.historyError}</p>}
       {workspace.historyBefore && (

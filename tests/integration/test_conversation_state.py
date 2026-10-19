@@ -18,7 +18,7 @@ from backend.tools.contracts import PRESENTATION_RESULT_LIMIT
 from backend.tools.travel import TravelToolExecutor
 from tests.integration.test_travel import travel_setup as travel_setup
 
-pytestmark = pytest.mark.integration
+pytestmark = [pytest.mark.integration, pytest.mark.usefixtures("fixed_today")]
 
 
 async def create_run(travel: TravelService, context: RunContext, prompt: str) -> RunContext:
@@ -941,15 +941,16 @@ def test_hotel_location_source_cas_and_legacy_storage_remain_safe(
             ),
         )
         executor = TravelToolExecutor(travel)
+        turn = await create_run(travel, context, "住宿地点改成北谷")
         skipped = await executor.execute(
-            context,
+            turn,
             "update_travel_request",
             {"expected_revision": 2, "set": {"hotel_search_location": "北谷"}},
         )
         assert skipped.code is None and skipped.data["skipped_fields"] == ("hotel_search_location",)
         assert (await travel.get_request(context)) == saved.request
         explicit = await executor.execute(
-            context,
+            turn,
             "update_travel_request",
             {
                 "expected_revision": 2,

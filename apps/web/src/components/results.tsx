@@ -8,6 +8,8 @@ import {
   hotelQuoteNeedsRefresh,
   expiredHotels,
   partyLabel,
+  moneyLabel,
+  hotelHoldBlockReason,
 } from "@/lib/availability";
 import { sourceHref, type Hotels, type Plan } from "@/lib/api";
 import { canHoldHotel, sourceLabel } from "@/lib/data-mode";
@@ -23,8 +25,6 @@ import { hotelLinks } from "@/lib/hotel-links";
 import { moreTile, scrollButtons } from "@/lib/hotel-more";
 import { validationGroups, checkTargets } from "@/lib/validation-groups";
 import { CalendarButton } from "./calendar-button";
-export const formatYen = (value: string) =>
-  Number(value).toLocaleString("ja-JP");
 const rakutenCredit = `<!-- Rakuten Web Services Attribution Snippet FROM HERE -->
 <a href="https://developers.rakuten.com/" target="_blank">Supported by Rakuten Developers</a>
 <!-- Rakuten Web Services Attribution Snippet TO HERE -->`;
@@ -144,7 +144,9 @@ function Hotel({
       </div>
       <div className="hotel-bottom">
         <strong className="price">
-          {card.total === null ? "总价未知" : `¥ ${formatYen(card.total)}`}
+          {card.total === null
+            ? "总价未知"
+            : moneyLabel(card.total, card.currency)}
         </strong>
         {card.price_basis && (
           <p className="muted small hotel-basis">{card.price_basis}</p>
@@ -154,8 +156,9 @@ function Hotel({
             "含税和服务费，明细未知"
           ) : (
             <>
-              基础 {formatYen(card.base_amount)} · 税{" "}
-              {card.tax_amount ?? "未知"} · 费 {card.fee_amount ?? "未知"}
+              基础 {moneyLabel(card.base_amount, card.currency)} · 税{" "}
+              {moneyLabel(card.tax_amount, card.currency)} · 费{" "}
+              {moneyLabel(card.fee_amount, card.currency)}
             </>
           )}
         </p>
@@ -167,7 +170,8 @@ function Hotel({
         )}
         {card.budget_excess && (
           <p className="warning">
-            超出原每间每晚预算 +¥{formatYen(card.budget_excess)}（+
+            超出原每间每晚预算 +{moneyLabel(card.budget_excess, card.currency)}
+            （+
             {card.budget_excess_percent}%）
           </p>
         )}
@@ -524,6 +528,13 @@ function HotelPackage({
   const now = useClock();
   if (!card) return null;
   const expired = now > 0 && Date.parse(card.expires_at) <= now;
+  const blockId = `block-${card.offer_id}`;
+  const holdable = canHoldHotel(card.data_mode, selectingSegment);
+  const blockReason = hotelHoldBlockReason({
+    expired,
+    totalKnown: card.total !== null || !holdable,
+    revisionMatches: revision === card.request_revision,
+  });
   return (
     <Hotel
       card={card}
@@ -541,7 +552,7 @@ function HotelPackage({
                   {index + 1}. {offer.room_type} ·{" "}
                   {offer.total === null
                     ? "总价未知"
-                    : `¥ ${formatYen(offer.total)}`}
+                    : moneyLabel(offer.total, offer.currency)}
                 </option>
               ))}
             </select>
@@ -549,10 +560,7 @@ function HotelPackage({
         ) : undefined
       }
     >
-      {expired && (
-        <p className="warning">所选套餐报价已过期，请重新比较酒店。</p>
-      )}
-      {!canHoldHotel(card.data_mode, selectingSegment) ? (
+      {!holdable ? (
         <>
           {choose && (
             <Button
@@ -560,6 +568,7 @@ function HotelPackage({
               disabled={
                 disabled || expired || revision !== card.request_revision
               }
+              aria-describedby={blockReason ? blockId : undefined}
               onClick={() => choose(card)}
             >
               {selectedEvidenceId === card.evidence_id
@@ -577,10 +586,16 @@ function HotelPackage({
             card.total === null ||
             revision !== card.request_revision
           }
+          aria-describedby={blockReason ? blockId : undefined}
           onClick={() => void hold(card.offer_id, card.request_revision)}
         >
           暂留模拟房间
         </Button>
+      )}
+      {blockReason && (
+        <p className="muted small" id={blockId}>
+          {blockReason}
+        </p>
       )}
       {!expiredComparison && lowest.includes(card.offer_id) && (
         <p className="lowest">所列同口径报价中的最低价</p>

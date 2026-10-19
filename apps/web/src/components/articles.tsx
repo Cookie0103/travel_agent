@@ -6,14 +6,17 @@ import Link from "next/link";
 import { sourceHref } from "@/lib/api";
 import { Banner } from "./banner";
 import { useArticles } from "@/lib/use-articles";
+import { sourceNames } from "@/lib/articles";
+import { formatTokyo } from "@/lib/format-time";
 
 export function Articles({ articleId }: { articleId?: string }) {
   const guide = useArticles(articleId);
+  const names = sourceNames(guide.articles);
   return (
-    <main className="page">
+    <main className="page" id="main-content" tabIndex={-1}>
       <h1>来源资料</h1>
       <p className="notice">
-        攻略来自 Wikivoyage
+        攻略来自{names ? ` ${names} ` : ""}
         历史快照。文章是参考资料，营业时间、价格与当前条件仍需工具核验。
       </p>
       {articleId && <Link href="/articles">返回全部来源资料</Link>}
@@ -32,7 +35,7 @@ export function Articles({ articleId }: { articleId?: string }) {
       <div className="guide-grid">
         {guide.articles.map((article) => (
           <article className="guide-card" key={article.article_id}>
-            <span className="tag">京都 · 历史快照</span>
+            <span className="tag">{article.city} · 历史快照</span>
             <h2>{article.title}</h2>
             {articleId ? (
               <p className="guide-text">{article.text}</p>
@@ -45,7 +48,7 @@ export function Articles({ articleId }: { articleId?: string }) {
             <p className="muted small">
               {article.source.attribution} · {article.source.license}
               <br />
-              获取时间：{article.source.retrieved_at}
+              获取时间：{formatTokyo(article.source.retrieved_at)}
               <br />
               来源版本：{article.source.content_version.slice(0, 12)}
             </p>

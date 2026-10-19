@@ -1,6 +1,6 @@
 # V2 本地验收记录（2026-10-04）
 
-本页只汇总实际证据；当前恢复点在[执行计划](../execution/travel-agent.md)，实现范围在[产品V2](../proposals/PRODUCT-V2-PLAN.md)。没有恢复旧 evaluation。
+本页只汇总实际证据；当前恢复点在[批次索引](../plans/README.md#批次索引)，实现范围在[产品V2](../proposals/PRODUCT-V2-PLAN.md)。没有恢复旧 evaluation。
 
 ## 真实核心流程
 

@@ -77,6 +77,7 @@ def test_persistence_failure_exposes_only_type_sqlstate_and_requires_recovery(
         )
 
     monkeypatch.setattr(runs, "finish", fail)
+    monkeypatch.setattr(runs, "recover", fail)  # 数据库仍不可用：在线恢复也失败
 
     async def exercise() -> None:
         run = await service.submit(

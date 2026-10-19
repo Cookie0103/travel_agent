@@ -5,7 +5,7 @@ import re
 from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 
-from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.exc import DataError, SQLAlchemyError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.execution import ErrorCode
@@ -70,4 +70,9 @@ async def transaction(database: Database) -> AsyncIterator[AsyncSession]:
             sqlstate,
             database_failure_reason(error),
         )
+        if isinstance(error, DataError):
+            # 数据异常(如NUL、越界、非法文本)来自请求内容，不是数据库故障；约束冲突仍按503处理。
+            raise ServiceError(
+                422, "validation", "提交内容包含数据库无法保存的字符或取值"
+            ) from None
         raise ServiceError(503, "unavailable", "数据库暂不可用") from None

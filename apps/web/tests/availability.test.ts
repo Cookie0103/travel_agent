@@ -8,6 +8,8 @@ import {
   partyLabel,
   planRefreshNotice,
   hotelQuoteNeedsRefresh,
+  moneyLabel,
+  hotelHoldBlockReason,
 } from "../src/lib/availability.ts";
 import type { Plan, Hotels, Booking } from "../src/lib/api";
 
@@ -181,5 +183,36 @@ test("each segmented hotel remains subject to quote expiry and missing reference
   assert.equal(
     hotelQuoteNeedsRefresh({ ...plan, needs_refresh: ["b"] }, expires - 1),
     true,
+  );
+});
+
+test("booking money is formatted by its own currency instead of a hard-coded yen sign", () => {
+  const jpy = moneyLabel("45000.00", "JPY");
+  const usd = moneyLabel("120.50", "USD");
+  assert.match(jpy, /45,000/);
+  assert.match(jpy, /JP¥|JPY/);
+  assert.match(usd, /120\.50/);
+  assert.match(usd, /US\$|USD/);
+  assert.ok(!usd.includes("¥"));
+  assert.equal(moneyLabel("10", "NOPE"), "10 NOPE");
+});
+
+test("moneyLabel formats every amount the same way and keeps unknown amounts unknown", () => {
+  assert.equal(moneyLabel("22500", "JPY"), moneyLabel("22500.00", "JPY"));
+  assert.match(moneyLabel("22500", "JPY"), /22,500/);
+  assert.match(moneyLabel("2400", "JPY"), /2,400/);
+  assert.equal(moneyLabel(null, "JPY"), "未知");
+  assert.equal(moneyLabel(undefined, "JPY"), "未知");
+  assert.notEqual(moneyLabel("0", "JPY"), "未知");
+});
+
+test("hotelHoldBlockReason explains why holding is disabled, in priority order", () => {
+  const base = { expired: false, totalKnown: true, revisionMatches: true };
+  assert.equal(hotelHoldBlockReason(base), null);
+  assert.match(hotelHoldBlockReason({ ...base, expired: true })!, /过期/);
+  assert.match(hotelHoldBlockReason({ ...base, totalKnown: false })!, /总价/);
+  assert.match(
+    hotelHoldBlockReason({ ...base, revisionMatches: false })!,
+    /旧条件|条件/,
   );
 });

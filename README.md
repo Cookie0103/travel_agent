@@ -5,7 +5,7 @@
 目标技术栈：Python / FastAPI / PostgreSQL / Next.js；Claude Agent SDK 负责 runtime，自写旅行 tools 与业务规则；DeepSeek 兼容线路与 Claude 原生线路分别验证；MCP；OpenTelemetry + Langfuse。
 
 **核心 Demo 已通过最终代码的本地验证，可运行网页工作台、旅行工具和模拟预订。** 默认离线演示使用固定脚本与真实 PostgreSQL；真实模式使用 Claude Agent SDK，已有 DeepSeek 真实工具/规划证据。任意需求的完整规划效果、剩余研究对照和人工校准仍未完成；免费演示不能当模型能力证明。
-本轮发布范围与最终验收只看 [PROJECT_STATUS](PROJECT_STATUS.md)：仅修复既有到期问题并核对现有 Demo，AC01–AC07 全部通过后停止；未完成的研究评测不阻塞工程交付。历史记录从 [文档目录](docs/README.md) 进入，恢复记录见 [执行计划](docs/execution/travel-agent.md)。
+本轮发布范围与最终验收只看 [PROJECT_STATUS](PROJECT_STATUS.md)：仅修复既有到期问题并核对现有 Demo，AC01–AC07 全部通过后停止；未完成的研究评测不阻塞工程交付。历史记录从 [文档目录](docs/README.md) 进入，恢复记录见 [执行计划](docs/archive/execution/travel-agent.md)。
 
 CLI默认仍用人工 fixtures。数据库已导入 [Wikivoyage](https://en.wikivoyage.org/)（CC BY-SA 4.0）20段攻略与 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）146个地点对象；快照有历史和缺失信息，不能当实时事实。酒店与预订均为模拟。
 
@@ -107,7 +107,7 @@ uv run python scripts/dev.py stack-down
 `uv --env-file .env`加载配置；`LLM_PROVIDER`默认deepseek，也可显式anthropic。DeepSeek使用DEEPSEEK_MODEL；Claude使用ANTHROPIC_MODEL，当前仅核定固定claude-haiku-4-5-20251001。共用Claude Agent SDK、旅行工具与费用守卫；原币种报告和账本隔离，USD累计授权0金额/0次数会在SDK启动前拦截。真实SDK/CLI本地脚本已验证，Anthropic真实服务与最新Sonnet协议未验，不因填key/每日预算自动调用。
 旧Messages探针的最小实测与有限授权记录保留；不要删除.cache账本重复获得额度。当前SDK接入与业务验证见[SDK实测](docs/protocols/protocol-agent-sdk.md)，旧探针[实测矩阵](docs/protocols/protocol-deepseek.md)不能代替当前runtime验收。
 旧探针两请求授权已用完；本轮长程开发的 DeepSeek 整体额度见执行计划，同时遵守 .env 每日预算。SDK 美元估算不能代替人民币预算。新接入验收与费用边界见 [ADR-003](docs/adr/003-claude-agent-sdk-runtime.md)。
-历史批次限制见 [M0.2 准备记录](docs/operations/2026-10-03-m02-preparation.md)。
+历史批次限制见 [M0.2 准备记录](docs/archive/operations/2026-10-03-m02-preparation.md)。
 
 ## PostgreSQL 配置
 
@@ -139,10 +139,10 @@ check 不连接数据库；test 会检查真实事务和用户隔离。CI 已配
 
 从[源码学习索引](docs/review/learning.md)顺着入口理解关键模块，再按[三段演示](docs/review/demos.md)复现业务与失败恢复。真实模型规划和外部验收缺口仍以执行计划为准。
 
-- [SDK 路线调整与恢复点](docs/operations/2026-10-03-agent-sdk-docs.md)：本轮文档修改、核查和验证。
-- [修复与环境核对记录](docs/operations/2026-10-03-development-errors.md)：从这里判断现在的检查结果。
-- [M0.1 审阅材料](docs/review/M0.1.md)：阅读顺序、失败证据和理解问题。
-- [修复批次总结](docs/review/batch/2026-10-03-m0-repair.md)、[首次批次记录](docs/review/batch/2026-10-02-m0-core.md)。
+- [SDK 路线调整与恢复点](docs/archive/operations/2026-10-03-agent-sdk-docs.md)：本轮文档修改、核查和验证。
+- [修复与环境核对记录](docs/archive/operations/2026-10-03-development-errors.md)：从这里判断现在的检查结果。
+- [M0.1 审阅材料](docs/archive/review/M0.1.md)：阅读顺序、失败证据和理解问题。
+- [修复批次总结](docs/archive/review/batch/2026-10-03-m0-repair.md)、[首次批次记录](docs/archive/review/batch/2026-10-02-m0-core.md)。
 - [文档汇总](docs/README.md)、[阻塞记录汇总](docs/blocked/README.md)、[待审阅决定](docs/adr/decisions-pending.md)、[上游复用清单](docs/guides/reuse.md)。
 
 恢复前先检查 Git 状态；日志“开始”不代表成功。工程修复与旧探针增量已由 batch/2026-10-03-travel-autonomous 承接，按执行计划持续推进；旧批次和审阅记录保留作历史证据。

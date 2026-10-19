@@ -18,6 +18,9 @@ DOCUMENTS = (
     "docs/SECURITY.md",
     "docs/execution/workflow.md",
     "docs/execution/standards.md",
+    "docs/execution/layering-debt.md",
+    "docs/testing/README.md",
+    "docs/plans/README.md",
 )
 LINK = re.compile(r"(?<!!)\[[^\]\n]+\]\(([^)\n]+)\)")
 

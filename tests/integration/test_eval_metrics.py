@@ -10,6 +10,7 @@ from eval.cases import Case
 from eval.diagnostics import ArgumentFact
 from eval.metrics import tool_call_accuracy
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.integration.user_turn import start_turn
 
 
 def test_successful_database_patch_with_wrong_dates_does_not_get_accurate_call_credit(
@@ -17,6 +18,7 @@ def test_successful_database_patch_with_wrong_dates_does_not_get_accurate_call_c
 ) -> None:
     """R04/R17：验证真实参数/提交状态，不把成功返回当参数正确。"""
     runner, travel, context = travel_setup
+    context = runner.run(start_turn(travel, context, "改成11月10日到12日"))
     expected: dict[str, object] = {
         "expected_revision": 1,
         "explicit_fields": ["start_date", "end_date"],

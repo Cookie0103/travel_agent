@@ -5,6 +5,7 @@ import { useWorkspace } from "@/lib/use-workspace";
 import { ArticleReference } from "./articles";
 import { useModels } from "@/lib/models";
 import { Banner } from "./banner";
+import { errorActions } from "@/lib/error-actions";
 import { Composer, type Mode } from "./composer";
 import { Conversation, Welcome } from "./conversation";
 import { workspaceTab, type WorkspaceTab } from "@/lib/workspace-tabs";
@@ -16,7 +17,7 @@ export type Workspace = ReturnType<typeof useWorkspace>;
 export function Workbench({ articleId }: { articleId?: string }) {
   const workspace = useWorkspace();
   const [text, setText] = useState("");
-  const { mode, setMode, options } = useModels();
+  const { mode, setMode, options, error: modelsError } = useModels();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileTab, setMobileTab] = useState<WorkspaceTab>("chat");
   const viewId = useId();
@@ -27,6 +28,7 @@ export function Workbench({ articleId }: { articleId?: string }) {
     workspace.run && ["running", "cancelling"].includes(workspace.run.status)
   );
   const { identity } = workspace;
+  const actions = errorActions(workspace.errorKind, workspace.runActive);
   const newTrip = () =>
     void workspace.newTrip().then((changed) => {
       if (changed) setText("");
@@ -42,7 +44,7 @@ export function Workbench({ articleId }: { articleId?: string }) {
     workspace.bookings.some((booking) => booking.status === "held");
   const panelClass = `trip-panel${collapsed ? " is-collapsed" : ""}`;
   return (
-    <main className="chat-main">
+    <main className="chat-main" id="main-content" tabIndex={-1}>
       {!identity ? (
         <>
           {workspace.error && <Banner kind="error">{workspace.error}</Banner>}
@@ -147,13 +149,15 @@ export function Workbench({ articleId }: { articleId?: string }) {
               {workspace.error && (
                 <Banner kind="error">
                   {workspace.error}
-                  <button
-                    disabled={workspace.busy}
-                    onClick={() => void workspace.refresh()}
-                  >
-                    读取最新条件与行程
-                  </button>
-                  {workspace.run && (
+                  {actions.refresh && (
+                    <button
+                      disabled={workspace.busy}
+                      onClick={() => void workspace.refresh()}
+                    >
+                      读取最新条件与行程
+                    </button>
+                  )}
+                  {actions.reconnect && (
                     <button
                       disabled={workspace.busy}
                       onClick={() => void workspace.reconnect()}
@@ -200,6 +204,8 @@ export function Workbench({ articleId }: { articleId?: string }) {
               setText={setText}
               busy={workspace.busy || workspace.restoring}
               active={active}
+              stopping={workspace.run?.status === "cancelling"}
+              modelsError={modelsError}
               send={submit}
               cancel={() => void workspace.cancel()}
               articleId={articleId}

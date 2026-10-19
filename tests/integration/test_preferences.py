@@ -1,15 +1,18 @@
 """R14/R15：真实PG用户偏好、版本竞争、删除墓碑及攻略注入不能写入。"""
 
 import asyncio
-from uuid import uuid4
+from datetime import UTC, datetime
+from uuid import UUID, uuid4
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from backend.domain.catalog import Article
 from backend.domain.execution import RuntimeOutcome
 from backend.domain.preferences import PreferencePatch, Preferences, PreferenceVersion
 from backend.persistence.catalog import import_catalog
+from backend.persistence.models import MemoryFactRow
 from backend.services.common import ServiceError, transaction
 from backend.services.preferences import PreferenceService
 from backend.services.runs import MessageInput, RunService
@@ -206,5 +209,137 @@ def test_concurrent_preference_edits_only_one_wins_and_tools_cannot_restore_dele
         assert (await travel.get_request(context)).revision == 1
         with pytest.raises(ServiceError, match="用户不存在"):
             await service.get(uuid4())
+
+    runner.run(exercise())
+
+
+async def seed_dialogue_interests(travel: TravelService, user_id: UUID, values: list[str]) -> None:
+    now = datetime.now(UTC)
+    async with transaction(travel.database) as db:
+        for ordinal, value in enumerate(values):
+            db.add(
+                MemoryFactRow(
+                    user_id=user_id,
+                    key="interest",
+                    value=value,
+                    scope="long_term",
+                    status="active",
+                    source="user_utterance",
+                    ordinal=ordinal,
+                    valid_from=now,
+                    last_confirmed_at=now,
+                    evidence_quote="我很在意" + value,
+                )
+            )
+
+
+async def interest_rows(travel: TravelService, user_id: UUID) -> list[MemoryFactRow]:
+    async with transaction(travel.database) as db:
+        rows = await db.scalars(
+            select(MemoryFactRow)
+            .where(MemoryFactRow.user_id == user_id, MemoryFactRow.key == "interest")
+            .order_by(MemoryFactRow.created_at, MemoryFactRow.ordinal)
+        )
+        return list(rows)
+
+
+def test_patch_diffs_by_value_and_keeps_confirmed_dialogue_facts(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """C1：未改动的对话事实保持原行(id/来源/原话/时间)；只新增新值、只作废被移除值。"""
+    runner, travel, context = travel_setup
+    service = PreferenceService(travel.database)
+
+    async def exercise() -> None:
+        await seed_dialogue_interests(travel, context.user_id, ["寺庙", "美食"])
+        before = {row.value: row for row in await interest_rows(travel, context.user_id)}
+        current = await service.get(context.user_id)
+        updated = await service.change(
+            context.user_id,
+            PreferencePatch.model_validate(
+                {"expected_revision": current.revision, "set": {"interests": ["寺庙", "夜景"]}}
+            ),
+        )
+        assert updated.interests == ("寺庙", "夜景") and updated.revision == current.revision + 1
+        after = {
+            (row.value, row.status): row for row in await interest_rows(travel, context.user_id)
+        }
+        kept = after[("寺庙", "active")]
+        assert kept.id == before["寺庙"].id
+        assert (kept.source, kept.evidence_quote) == ("user_utterance", "我很在意寺庙")
+        assert kept.created_at == before["寺庙"].created_at
+        assert after[("美食", "superseded")].id == before["美食"].id
+        added = after[("夜景", "active")]
+        assert (added.source, added.evidence_quote) == ("manual", "")
+        assert len(after) == 3
+
+    runner.run(exercise())
+
+
+def test_patch_with_same_values_is_noop_and_reorder_keeps_rows(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """C1：值不变不升版本；仅换顺序保留原行。"""
+    runner, travel, context = travel_setup
+    service = PreferenceService(travel.database)
+
+    async def exercise() -> None:
+        await seed_dialogue_interests(travel, context.user_id, ["寺庙", "美食"])
+        before = {row.value: row.id for row in await interest_rows(travel, context.user_id)}
+        current = await service.get(context.user_id)
+        same = await service.change(
+            context.user_id,
+            PreferencePatch.model_validate(
+                {"expected_revision": current.revision, "set": {"interests": ["寺庙", "美食"]}}
+            ),
+        )
+        assert same.revision == current.revision
+        swapped = await service.change(
+            context.user_id,
+            PreferencePatch.model_validate(
+                {"expected_revision": same.revision, "set": {"interests": ["美食", "寺庙"]}}
+            ),
+        )
+        assert swapped.interests == ("美食", "寺庙") and swapped.revision == same.revision + 1
+        rows = await interest_rows(travel, context.user_id)
+        assert {row.value: row.id for row in rows if row.status == "active"} == before
+        assert len(rows) == 2
+
+    runner.run(exercise())
+
+
+def test_patch_rejects_duplicates_and_overlong_new_values_but_keeps_legacy_long_ones(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """C1：重复值422；新增手填值与对话事实同样限80字；历史长值不改动时仍可保存。"""
+    runner, travel, context = travel_setup
+    service = PreferenceService(travel.database)
+    with pytest.raises(ValueError, match="重复"):
+        PreferencePatch.model_validate(
+            {"expected_revision": 0, "set": {"interests": ["寺庙", "寺庙"]}}
+        )
+
+    async def exercise() -> None:
+        legacy = "长" * 150
+        await seed_dialogue_interests(travel, context.user_id, [legacy])
+        current = await service.get(context.user_id)
+        with pytest.raises(ServiceError) as caught:
+            await service.change(
+                context.user_id,
+                PreferencePatch.model_validate(
+                    {
+                        "expected_revision": current.revision,
+                        "set": {"interests": [legacy, "新" * 81]},
+                    }
+                ),
+            )
+        assert caught.value.status == 422
+        ok = await service.change(
+            context.user_id,
+            PreferencePatch.model_validate(
+                {"expected_revision": current.revision, "set": {"interests": [legacy, "夜景"]}}
+            ),
+        )
+        assert ok.interests == (legacy, "夜景")
 
     runner.run(exercise())

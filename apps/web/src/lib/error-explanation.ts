@@ -58,13 +58,32 @@ const reasons: Record<
   schema: "工具参数格式不正确",
 };
 
+/** Server-written Chinese validation reason (e.g. unsupported demo scope); anything else is not echoed. */
+function validationDetail(detail: string | null | undefined): string | null {
+  const text = detail?.trim();
+  return text &&
+    text.length <= 60 &&
+    /[\u4e00-\u9fff]/.test(text) &&
+    !/[\r\n=]|:\/\//.test(text)
+    ? text.replace(/[。.]$/, "")
+    : null;
+}
+
 export function errorExplanation(
   code: string | null | undefined,
   reason?: string | null,
   external?: AppEvent["external"],
+  detail?: string | null,
 ): string {
   if (external?.provisional) return "正在修正查询参数";
-  if (!external) return baseExplanation(code, reason);
+  if (!external) {
+    const base = baseExplanation(code, reason);
+    const specific = code === "validation" ? validationDetail(detail) : null;
+    // 仅当没有更具体的封闭原因码时，才用服务端给出的校验原因替换笼统提示。
+    return specific && base === explanations.validation
+      ? `校验未通过：${specific}。`
+      : base;
+  }
   const kinds = {
     rate_limited: "供应商请求过于频繁",
     timeout: "供应商响应超时",

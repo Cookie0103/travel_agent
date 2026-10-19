@@ -82,6 +82,10 @@ class Booking(BaseModel):
         """暂留时效在服务与上下文共用；已确认/未知订单必须走对账。"""
         return self.status == "held" and (self.expires_at is None or self.expires_at <= observed_at)
 
+    def quote_lapsed(self, observed_at: datetime) -> bool:
+        """未暂留的报价超过有效期后不再是可操作的活动预订。"""
+        return self.status == "quoted" and self.offer.expires_at <= observed_at
+
     def card(self) -> dict[str, object]:
         """工具只携带预订裁决信息，完整条件与历史留在用户API。"""
         return {
@@ -128,7 +132,10 @@ TRANSITIONS: dict[BookingStatus, frozenset[BookingStatus]] = {
 
 def transition(booking: Booking, status: BookingStatus, reason: str, **changes: object) -> Booking:
     if status == booking.status:
-        return booking
+        # 状态不变（如 unknown 再次对账）仍要保留新的错误码，但不重复写历史。
+        if all(getattr(booking, key) == item for key, item in changes.items()):
+            return booking
+        return Booking.model_validate({**booking.model_dump(), **changes})
     if status not in TRANSITIONS[booking.status]:
         raise ValueError("非法预订状态转移")
     return Booking.model_validate(

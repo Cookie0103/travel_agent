@@ -1,5 +1,6 @@
 """真实目录查询及证据发布；复用领域搜索，结果交给工具/MCP，不在线抓取。"""
 
+import copy
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
@@ -9,9 +10,13 @@ from backend.domain.evidence import EvidenceKind, EvidenceRecord, evidence_condi
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
 from backend.domain.travel_request import TravelRequest
-from backend.persistence.catalog import load_catalog
+from backend.persistence.catalog import catalog_stamp, load_catalog
 from backend.services.common import ServiceError, transaction
 from backend.services.travel import TravelService
+
+type CatalogData = dict[str, list[dict[str, object]]]
+# 进程内缓存：库URL -> (目录指纹, 数据)。每次调用只查一次指纹，内容变化(导入/清理)即重载。
+_CACHE: dict[str, tuple[tuple[int, int], CatalogData]] = {}
 
 
 @dataclass(frozen=True)
@@ -97,14 +102,20 @@ class CatalogService:
     async def _load(
         self, context: RunContext
     ) -> tuple[TravelRequest, dict[str, list[dict[str, object]]]]:
-        current = await self.travel.get_request(context)
+        current = await self.travel.read_request(context)
         return current, await self._catalog()
 
-    async def _catalog(self) -> dict[str, list[dict[str, object]]]:
+    async def _catalog(self) -> CatalogData:
+        key = self.travel.database.engine.url.render_as_string()
         async with transaction(self.travel.database) as db:
+            stamp = await catalog_stamp(db)
+            cached = _CACHE.get(key)
+            if cached is not None and cached[0] == stamp:
+                return cached[1]
             data = await load_catalog(db)
         if not any(data.values()):
             raise ServiceError(503, "unavailable", "目录尚未导入，请运行data.import_catalog")
+        _CACHE[key] = (stamp, data)
         return data
 
     async def _publish(
@@ -115,6 +126,7 @@ class CatalogService:
         rows: list[dict[str, object]],
     ) -> CatalogResult:
         kind: EvidenceKind = "place" if collection == "places" else "article"
+        rows = copy.deepcopy(rows)  # 目录数据被进程内缓存共享，结果不得别名到缓存
         records: list[EvidenceRecord] = []
         for row in rows:
             entry = Place.model_validate(row) if kind == "place" else Article.model_validate(row)

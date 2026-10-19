@@ -5,7 +5,7 @@
 
 ## 开始或恢复时
 
-1. **当前批次计划** [docs/plans/2026-10-13-interaction-memory-eval.md](docs/plans/2026-10-13-interaction-memory-eval.md)：范围、待决事项、任务状态、每日进展；按 [记录规则](docs/plans/README.md) 持续更新。上一批次见 [住宿段选择](docs/plans/2026-10-11-segment-hotel-selection.md)，此前见 [Product V2](docs/plans/2026-10-08-product-v2.md)，2026-10-08 前的历史见 [旧执行计划](docs/execution/travel-agent.md)。
+1. **当前批次计划** [docs/plans/2026-10-18-completeness-hardening.md](docs/plans/2026-10-18-completeness-hardening.md)：范围、待决事项、任务状态、每日进展、问题解决记录；按 [记录规则](docs/plans/README.md) 持续更新，全部批次见[批次索引](docs/plans/README.md#批次索引)。基座批次 [交互、记忆与评测](docs/plans/2026-10-13-interaction-memory-eval.md)，上一批次见 [住宿段选择](docs/plans/2026-10-11-segment-hotel-selection.md)，此前见 [Product V2](docs/plans/2026-10-08-product-v2.md)，2026-10-08 前的历史见 [旧执行计划](docs/archive/execution/travel-agent.md)。
 2. [设计地图](docs/design/README.md) → [任务定义与依赖](docs/design/04-roadmap.md)。
 3. [当前验收规格](docs/tasks/M4.md)及本次涉及的 02/03/05、ADR；按需读，不全仓灌入上下文。
 4. [工作流](docs/execution/workflow.md)、[工程标准](docs/execution/standards.md)；先核对 git status，不覆盖已有工作。

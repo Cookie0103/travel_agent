@@ -82,3 +82,12 @@ def save(
     db: AsyncSession, session_id: UUID, name: str, key: str, result: dict[str, object]
 ) -> None:
     db.add(BusinessOperationRow(session_id=session_id, name=name, key=key, payload=result))
+
+
+async def replace(
+    db: AsyncSession, session_id: UUID, name: str, key: str, result: dict[str, object]
+) -> None:
+    """同一业务键的缓存结果已过期时改写为新结果。"""
+    row = await db.get(BusinessOperationRow, (session_id, name, key))
+    assert row is not None
+    row.payload = result

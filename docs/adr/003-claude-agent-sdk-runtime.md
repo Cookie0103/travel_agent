@@ -28,7 +28,7 @@ M0.2 做 SDK 接入验证 → 自动验证/独立审查 → M0.3 固定适配边
 - SDK 会调用 Claude Code 进程，需要核实运行环境与版本；不是把现有 anthropic import 改名即可。
 - SDK session 与业务数据库不共享事务。幂等、版本冲突、确认、预订对账和恢复由我们实现，不能把 SDK 的 resume 或文件回滚当作数据库保证。
 - SDK 美元估算不代表 DeepSeek 人民币账单；max_turns 不保证 HTTP 请求次数。SDK 内部辅助调用/重试须纳入调用授权和预算，无法限制时拒绝 live。
-- 过去的两请求许可已使用完；后续长程开发获用户整体授权，具体供应商/次数/金额以 docs/execution/travel-agent.md 为准。保留 CNY / USD 独立账本，不借用余额。
+- 过去的两请求许可已使用完；后续长程开发获用户整体授权，具体供应商/次数/金额以 docs/archive/execution/travel-agent.md 为准。保留 CNY / USD 独立账本，不借用余额。
 
 ## 备选与取舍
 

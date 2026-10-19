@@ -18,6 +18,7 @@ from backend.domain.booking import (
 )
 from backend.domain.execution import RunContext
 from backend.domain.hotels import HotelOffer
+from backend.domain.travel_request import same_city
 from backend.persistence import bookings, travel
 from backend.persistence.models import BookingRow
 from backend.services.common import ServiceError, transaction
@@ -38,6 +39,38 @@ def value(row: BookingRow | None) -> Booking:
     return Booking.model_validate(row.payload)
 
 
+def reject_overlapping_stay(
+    rows: list[BookingRow], offer: HotelOffer, now: datetime, own_id: UUID | None = None
+) -> None:
+    """同会话同一住宿段不能有第二个有效预订；[入住,退房)半开，退房当天可订下一段。
+
+    offer.request已是该住宿段的城市和日期，所以同一酒店/同一段/重复搜索得到的新报价
+    都落在同一个区间重叠判断里；多城市行程的不同段日期不重叠，不受影响。
+    """
+    start, end = offer.request.start_date, offer.request.end_date
+    assert start and end
+    for row in rows:
+        other = value(row)
+        if (
+            other.booking_id == own_id
+            or other.status not in {"held", "confirmed", "unknown", "booked"}
+            or other.hold_expired(now)
+            or other.offer.request.start_date is None
+            or other.offer.request.end_date is None
+            or not same_city(other.offer.request.city or "", offer.request.city or "")
+        ):
+            continue
+        if other.offer.request.start_date < end and start < other.offer.request.end_date:
+            raise ServiceError(
+                409,
+                "conflict",
+                f"该住宿段已有{other.offer.hotel_name}的有效预订"
+                f"（{other.offer.request.start_date}至{other.offer.request.end_date}），日期重叠，"
+                "不能再暂留另一报价",
+                "duplicate_stay",
+            )
+
+
 class BookingService:
     def __init__(
         self, travel_service: TravelService, supplier: SupplierGateway | None = None
@@ -48,7 +81,13 @@ class BookingService:
     async def hold(self, context: RunContext, body: HoldHotelInput) -> Booking:
         known = (await HotelService(self.travel).known_quotes(context, (body.offer_id,)))[0]
         if known.data_mode in {"live", "synthetic"}:
-            raise ServiceError(422, "blocked", "实时酒店与合成评测报价只用于查询，不提供模拟暂留")
+            # 与工具路径(tools/travel.py)一致：策略禁止而非请求格式错误，用403。
+            raise ServiceError(
+                403,
+                "blocked",
+                "实时酒店与合成评测报价只用于查询，不提供模拟暂留",
+                "live_hold_disabled",
+            )
         async with transaction(self.travel.database) as db:
             request = request_from_row(await travel.owned_request(db, context))
             require_revision(request, body.expected_revision)
@@ -61,6 +100,12 @@ class BookingService:
                     previous.payload = result.model_dump(mode="json")
                 if result.status != "quoted":
                     return result
+                reject_overlapping_stay(
+                    await bookings.for_session(db, context.user_id, context.session_id),
+                    result.offer,
+                    datetime.now(UTC),
+                    result.booking_id,
+                )
             else:
                 record = (
                     await resolve_records(
@@ -78,6 +123,11 @@ class BookingService:
                     offer,
                     record.source_ref,
                     record.content_version,
+                )
+                reject_overlapping_stay(
+                    await bookings.for_session(db, context.user_id, context.session_id),
+                    result.offer,
+                    datetime.now(UTC),
                 )
                 db.add(
                     BookingRow(
@@ -101,7 +151,7 @@ class BookingService:
             return await self._update(
                 context.user_id, result.booking_id, "failed", "hold_rejected", error_code=error.code
             )
-        return await self._update(
+        outcome = await self._update(
             context.user_id,
             result.booking_id,
             "held",
@@ -109,6 +159,12 @@ class BookingService:
             hold_id=held.hold_id,
             expires_at=held.expires_at,
         )
+        if outcome.history[-1].reason == "duplicate_stay_lost":
+            # 供应商侧hold无释放接口，随expires_at自然失效；用户侧不呈现为held。
+            raise ServiceError(
+                409, "conflict", "该住宿段已被并发的另一预订占用，日期重叠", "duplicate_stay"
+            )
+        return outcome
 
     async def get(self, user_id: UUID, booking_id: UUID) -> Booking:
         async with transaction(self.travel.database) as db:
@@ -118,7 +174,7 @@ class BookingService:
         return result
 
     async def list(self, context: RunContext) -> tuple[Booking, ...]:
-        await self.travel.get_request(context)
+        await self.travel.read_request(context)  # 会话不存在则404；不锁、不建行
         async with transaction(self.travel.database) as db:
             ids = [
                 row.id
@@ -146,6 +202,19 @@ class BookingService:
                 return current
             if status == "held" and current.offer.request.revision != request.revision:
                 status, reason = "expired", "conditions_changed_during_hold"
+            elif status == "held":
+                # 供应商库存此刻才真正被占：在会话行锁内仲裁，先变held者胜，
+                # 并发的后到者失败（quoted互不占位，所以必须在这里而不是报价时检查）。
+                try:
+                    reject_overlapping_stay(
+                        await bookings.for_session(db, context.user_id, context.session_id),
+                        current.offer,
+                        datetime.now(UTC),
+                        current.booking_id,
+                    )
+                except ServiceError:
+                    status, reason = "failed", "duplicate_stay_lost"
+                    changes = {"error_code": "conflict"}
             updated = transition(current, status, reason, **changes)
             row.payload = updated.model_dump(mode="json")
             return updated
@@ -241,6 +310,15 @@ class BookingService:
                 order_id=result.order.order_id,
                 error_code=None,
             )
+        if (
+            current.status == "confirmed"
+            and not result.absence_final
+            and current.expires_at is not None
+            and current.expires_at > datetime.now(UTC)
+        ):
+            # 用户已确认、对账确认供应商无订单且hold仍有效：确认后下单前崩溃或另一调用
+            # 仍在途。同client_ref下单由供应商锁内幂等，补发不会产生第二张订单。
+            return await self._order(user_id, current)
         return await self._update(
             user_id,
             booking_id,

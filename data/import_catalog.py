@@ -176,12 +176,12 @@ def load_snapshot(folder: Path = SNAPSHOT) -> list[Place | Article]:
     ]
 
 
-async def main(folder: Path = SNAPSHOT) -> None:
+async def main(folder: Path = SNAPSHOT, prune: bool = False) -> None:
     entries = load_snapshot(folder)
     database = Database(database_url(configuration()))
     try:
         async with database.sessions.begin() as db:
-            count = await import_catalog(db, entries)
+            count = await import_catalog(db, entries, prune=prune)
         print(json.dumps({"status": "ok", "entries_processed": count, "data_mode": "snapshot"}))
     finally:
         await database.close()
@@ -190,6 +190,11 @@ async def main(folder: Path = SNAPSHOT) -> None:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--snapshot-dir", type=Path, default=SNAPSHOT)
+    parser.add_argument(
+        "--prune",
+        action="store_true",
+        help="把本快照当作完整目录，删除库中不在其中的条目；补充快照不要使用",
+    )
     arguments = parser.parse_args()
     with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
-        runner.run(main(arguments.snapshot_dir))
+        runner.run(main(arguments.snapshot_dir, arguments.prune))

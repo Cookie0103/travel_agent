@@ -32,8 +32,10 @@ from backend.services.plans import LockInput, PlanService
 from backend.services.sessions import DemoLogin, SessionService
 from backend.services.travel import TravelService
 from backend.tools.travel import DEFINITIONS, TravelToolExecutor
+from tests.errors import assert_error
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.integration.user_turn import start_turn
 from tests.test_multi_city_itinerary import multi_city_example
 
 pytestmark = pytest.mark.integration
@@ -47,8 +49,12 @@ def test_conversation_tool_updates_segments_and_unlimited_with_a_safe_receipt(
 
     async def exercise() -> None:
         example, _, _ = multi_city_example()
+        said = "，".join(
+            f"{s.city}{s.arrive.month}月{s.arrive.day}日到{s.depart.month}月{s.depart.day}日"
+            for s in example.segments or ()
+        )
         result = await TravelToolExecutor(travel).execute(
-            context,
+            await start_turn(travel, context, said + "，住宿预算不限"),
             "update_travel_request",
             {
                 "expected_revision": 1,
@@ -294,8 +300,9 @@ def test_segment_scope_conflicts_and_duplicate_places_stage_as_conflict_but_cann
                 c.code == "visit_duration_range" and c.status == "conflict"
                 for c in draft.validation.checks
             )
-        with pytest.raises(ServiceError, match="硬冲突"):
+        with pytest.raises(ServiceError, match="硬冲突") as failed:
             await service.confirm(context.user_id, draft.draft_id)
+        assert_error(failed, 409, "conflict")
         assert await version_count(travel, draft.plan_id) == 0
         async with transaction(travel.database) as db:
             row = await db.get(PlanDraftRow, draft.draft_id)
@@ -426,8 +433,9 @@ def test_reads_long_plans_and_drafts_but_duplicate_sightseeing_stays_a_conflict_
         staged = await service.stage(context, patch_stage(future))  # 重复景点不再拒绝暂存
         assert staged.validation.status == "conflict"
         assert any(c.code == "repeated_place_warning" for c in staged.validation.checks)
-        with pytest.raises(ServiceError, match="硬冲突"):
+        with pytest.raises(ServiceError, match="硬冲突") as failed:
             await service.confirm(context.user_id, staged.draft_id)
+        assert_error(failed, 409, "conflict")
         async with transaction(travel.database) as db:
             plan_row = await db.get(PlanRow, future.plan_id)
             draft_row = await db.get(PlanDraftRow, draft.draft_id)
@@ -636,8 +644,9 @@ def test_repeated_sightseeing_stages_as_conflict_but_cannot_confirm_a_legacy_dra
         assert any(c.code == "repeated_place_warning" for c in feedback.checks)
         staged = await service.stage(context, duplicate_args)
         assert staged.validation.status == "conflict"  # 暂存不拒绝，冲突如实随草稿
-        with pytest.raises(ServiceError, match="硬冲突"):
+        with pytest.raises(ServiceError, match="硬冲突") as failed:
             await service.confirm(context.user_id, staged.draft_id)
+        assert_error(failed, 409, "conflict")
         async with transaction(travel.database) as db:
             row = await db.get(PlanDraftRow, valid.draft_id)
             assert row is not None
@@ -653,8 +662,9 @@ def test_repeated_sightseeing_stages_as_conflict_but_cannot_confirm_a_legacy_dra
             assert drafts == 2  # 正常草稿 + 上面暂存的冲突草稿
         replay = await service.stage(context, duplicate_args)  # 幂等回放也现算校验
         assert replay.draft_id == staged.draft_id and replay.validation.status == "conflict"
-        with pytest.raises(ServiceError, match="硬冲突"):
+        with pytest.raises(ServiceError, match="硬冲突") as failed:
             await service.confirm(context.user_id, valid.draft_id)
+        assert_error(failed, 409, "conflict")
         assert await version_count(travel, valid.plan_id) == 0
         async with transaction(travel.database) as db:
             row = await db.get(PlanDraftRow, valid.draft_id)
@@ -733,8 +743,9 @@ def test_stage_does_not_save_and_parallel_confirm_returns_one_immutable_version(
         assert (
             draft.validation.status == "partial" and await version_count(travel, draft.plan_id) == 0
         )
-        with pytest.raises(ServiceError, match="尚无"):
+        with pytest.raises(ServiceError, match="尚无") as unsaved:
             await service.get(context.user_id, draft.plan_id)
+        assert_error(unsaved, 404, "blocked")
         first, repeated = await asyncio.gather(
             service.confirm(context.user_id, draft.draft_id),
             service.confirm(context.user_id, draft.draft_id),
@@ -756,15 +767,23 @@ def test_stage_does_not_save_and_parallel_confirm_returns_one_immutable_version(
             and replay.version == 1
             and await version_count(travel, draft.plan_id) == 2
         )
-        with pytest.raises(ServiceError, match="版本已变化"):
+        with pytest.raises(ServiceError, match="版本已变化") as stale:
             await service.stage(context, patch_stage(first))
+        assert_error(stale, 409, "conflict", "plan_version_changed")
 
     runner.run(exercise())
 
 
-@pytest.mark.parametrize(
-    "fault", ["expired", "revision", "evidence", "hard_conflict", "other_user"]
-)
+EXPECTED = {  # 每种失败的(状态, 类别, reason)，不允许互相顶替
+    "expired": (409, "conflict", "draft_expired"),
+    "revision": (409, "conflict", "revision_stale"),
+    "evidence": (409, "conflict", "evidence_stale:place"),
+    "hard_conflict": (409, "conflict", ""),
+    "other_user": (404, "blocked", ""),
+}
+
+
+@pytest.mark.parametrize("fault", list(EXPECTED))
 @pytest.mark.usefixtures("unrepaired")
 def test_invalid_confirmation_leaves_version_and_confirmation_marker_unchanged(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], fault: str
@@ -799,7 +818,7 @@ def test_invalid_confirmation_leaves_version_and_confirmation_marker_unchanged(
             user = uuid4()
         with pytest.raises(ServiceError) as failed:
             await service.confirm(user, draft.draft_id)
-        assert failed.value.code in {"conflict", "blocked"}
+        assert_error(failed, *EXPECTED[fault])
         assert await version_count(travel, draft.plan_id) == 0
         async with transaction(travel.database) as db:
             parent = await db.get(PlanRow, draft.plan_id)
@@ -822,33 +841,39 @@ def test_competing_drafts_lock_versions_and_user_owned_locks(
             await initial_draft(travel, context),
         )
         saved = await service.confirm(context.user_id, first.draft_id)
-        with pytest.raises(ServiceError, match="正式版本"):
+        with pytest.raises(ServiceError, match="正式版本") as superseded:
             await service.confirm(context.user_id, competing.draft_id)
+        assert_error(superseded, 409, "conflict", "plan_version_changed")
         assert (await service.get_draft(context.user_id, competing.draft_id))[
             "version_changed"
         ] is True
-        with pytest.raises(ServiceError, match="旧正式版本"):
+        with pytest.raises(ServiceError, match="旧正式版本") as outdated:
             await service.get_draft(
                 context.user_id, competing.draft_id, session_id=context.session_id
             )
+        assert_error(outdated, 409, "conflict", "plan_version_changed")
         locked = await service.locks(
             context.user_id,
             saved.plan_id,
             LockInput(expected_version=1, locked_item_ids=(saved.content.items[1].item_id,)),
         )
         assert locked.version == 2 and locked.content.items[1].locked
-        with pytest.raises(ServiceError, match="锁定"):
+        with pytest.raises(ServiceError, match="锁定") as on_locked:
             await service.stage(context, patch_stage(locked))
-        with pytest.raises(ServiceError):
+        assert_error(on_locked, 422, "validation", "patch_item_locked")
+        with pytest.raises(ServiceError) as unknown_item:
             await service.locks(
                 context.user_id,
                 saved.plan_id,
                 LockInput(expected_version=2, locked_item_ids=(uuid4(),)),
             )
-        with pytest.raises(ServiceError, match="不存在"):
+        assert_error(unknown_item, 422, "validation", "lock_invalid")
+        with pytest.raises(ServiceError, match="不存在") as other_plan:
             await service.get(uuid4(), saved.plan_id)
-        with pytest.raises(ServiceError, match="不存在"):
+        assert_error(other_plan, 404, "blocked")
+        with pytest.raises(ServiceError, match="不存在") as other_draft:
             await service.get_draft(uuid4(), first.draft_id)
+        assert_error(other_draft, 404, "blocked")
         await travel.patch_request(
             context, RequestPatch.model_validate({"expected_revision": 1, "set": {"rooms": 2}})
         )
@@ -984,7 +1009,7 @@ def test_repair_cap_still_presents_conflicted_candidate_without_confirming(
         assert "unknown" in {check["status"] for check in report["checks"]}
         with pytest.raises(ServiceError) as confirming:
             await PlanService(travel).confirm(context.user_id, draft_id)
-        assert confirming.value.code == "conflict"
+        assert_error(confirming, 409, "conflict")
         assert await version_count(travel, UUID(str(draft.data["plan_id"]))) == 0
 
     runner.run(exercise())

@@ -2,6 +2,7 @@
 
 只接受“硬冲突数严格下降且不出现新种类/数量的冲突”的改动，已访问集合防环，总尝试数有上限。
 不新增景点、不改日期范围、不放宽校验；去掉景点或换天必须写入disclosed，由回复如实说明。
+锁定项的时间与内容不动（修不动就保留冲突），只可能随前后项变化而重建路线引用，并披露。
 """
 
 import re
@@ -323,6 +324,14 @@ async def repair(
                 break
         if not progress:
             break
+    pinned = {item.item_id: item for item in content.items if item.locked}
+    # 锁定项的时间与内容从不被改；路线引用是派生数据，随前后项变化重建时必须披露。
+    disclosed += [
+        f"锁定项{label(item, facts)}时间与内容未动，仅更新了路线引用"
+        for item in best.content.items
+        if item.item_id in pinned
+        and item.route_evidence_id != pinned[item.item_id].route_evidence_id
+    ]
     return Repair(best.content, best.report, tuple(disclosed))
 
 

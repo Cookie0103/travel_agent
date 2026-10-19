@@ -82,10 +82,23 @@ def test_api_runtime_completes_six_http_hotel_flow_with_real_sdk_and_pg(
 
     # 隔离账本仍在tmp_path；被测实际worker加载项目代码，不把临时目录误作源码根。
     def environment(
-        source: dict[str, str], directory: Path, root: Path, endpoint: str, token: str, model: str
+        source: dict[str, str],
+        directory: Path,
+        root: Path,
+        endpoint: str,
+        token: str,
+        model: str,
+        *,
+        live: bool = False,
     ) -> dict[str, str]:
         return worker_environment(
-            source, directory, Path(__file__).resolve().parents[2], endpoint, token, model
+            source,
+            directory,
+            Path(__file__).resolve().parents[2],
+            endpoint,
+            token,
+            model,
+            live=live,
         )
 
     monkeypatch.setattr("backend.providers.claude_agent.live.worker_environment", environment)

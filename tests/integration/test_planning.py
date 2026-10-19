@@ -18,6 +18,7 @@ from backend.services.sessions import DemoLogin, SessionService
 from backend.services.travel import TravelService
 from backend.tools.travel import TravelToolExecutor
 from data.import_catalog import load_snapshot
+from tests.errors import assert_error
 from tests.integration.test_travel import travel_setup as travel_setup
 
 pytestmark = pytest.mark.integration
@@ -69,6 +70,7 @@ def test_unknown_and_entity_ids_are_actionable_without_accepting_or_leaking_evid
         foreign = RunContext(other.user_id, session.session_id)
         with pytest.raises(ServiceError) as failure:
             await travel.resolve_evidence(foreign, (alias,))
+        assert_error(failure, 404, "blocked", "evidence_missing")
         assert str(record.evidence_id) not in str(failure.value)
         assert str(failure.value) == "证据不存在或不属于当前会话"
         current = await travel.get_request(context)
@@ -83,6 +85,7 @@ def test_unknown_and_entity_ids_are_actionable_without_accepting_or_leaking_evid
         )
         with pytest.raises(ServiceError) as failure:
             await travel.resolve_evidence(foreign, (alias,))
+        assert_error(failure, 404, "blocked", "evidence_missing")
         assert str(alias) in str(failure.value)
         assert str(record.evidence_id) not in str(failure.value)
         await travel.patch_request(
@@ -90,6 +93,7 @@ def test_unknown_and_entity_ids_are_actionable_without_accepting_or_leaking_evid
         )
         with pytest.raises(ServiceError) as failure:
             await travel.resolve_evidence(context, (alias,))
+        assert_error(failure, 404, "blocked", "evidence_missing")
         assert str(record.evidence_id) not in str(failure.value)
         await sessions.database.close()
 

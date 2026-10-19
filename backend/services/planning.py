@@ -38,7 +38,7 @@ class PlanningService:
         self.travel = travel
 
     async def current(self, context: RunContext, revision: int) -> TravelRequest:
-        request = await self.travel.get_request(context)
+        request = await self.travel.read_request(context)
         require_revision(request, revision)
         return request
 

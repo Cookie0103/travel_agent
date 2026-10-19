@@ -3,7 +3,7 @@ import type { RequestState } from "./api";
 import type { components } from "./api-types";
 import { currentPace, mergePace, PACES, type Pace } from "./pace.ts";
 
-export type ConditionsForm = Record<
+type ConditionsForm = Record<
   | "city"
   | "start_date"
   | "end_date"

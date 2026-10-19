@@ -29,6 +29,7 @@ from backend.services.plans import PlanService
 from backend.services.runs import MessageInput, RunService
 from backend.services.travel import TravelService
 from backend.tools.travel import TravelToolExecutor
+from tests.errors import assert_error
 from tests.integration.test_conversation_state import create_run, finish
 from tests.integration.test_runs import WaitingRuntime
 from tests.integration.test_travel import travel_setup as travel_setup
@@ -301,8 +302,16 @@ def test_incomplete_or_invalid_hotel_selection_never_starts_run(
                     "valid_until": (datetime.now(UTC) - timedelta(seconds=1)).isoformat(),
                 }
         message = selection_message(request.revision - (bad == "revision"), stays)
-        with pytest.raises(ServiceError):
+        with pytest.raises(ServiceError) as failed:
             await service.submit(context.user_id, context.session_id, message)
+        expected = {
+            "missing": (422, "validation", ""),
+            "dates": (422, "validation", ""),
+            "unknown": (404, "blocked", "evidence_missing"),
+            "revision": (409, "conflict", "revision_stale"),
+            "expired": (409, "conflict", "evidence_stale:hotel_offer"),
+        }[bad]
+        assert_error(failed, *expected)
         assert not service.tasks
         assert await travel.get_request(context) == request
 

@@ -38,7 +38,8 @@ def main() -> int:
     parser.add_argument("--session", type=UUID)
     parser.add_argument("--out", required=True, help="新 JSON 文件路径，不覆盖已有文件")
     try:
-        asyncio.run(export(parser.parse_args()))
+        with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+            runner.run(export(parser.parse_args()))
     except (ValueError, OSError, ServiceError):
         print("导出失败：请核对连接、筛选条件及输出路径；已有文件未覆盖。", file=sys.stderr)
         return 1

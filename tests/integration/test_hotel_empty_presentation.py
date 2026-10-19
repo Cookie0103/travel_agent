@@ -15,6 +15,7 @@ from backend.services.travel import TravelService
 from backend.services.views import HotelPresentation
 from backend.tools.execution import execute_observed
 from backend.tools.travel import DEFINITIONS, TravelToolExecutor
+from tests.errors import assert_error
 from tests.integration.test_travel import travel_setup as travel_setup
 from tests.integration.test_workbench import run_demo
 
@@ -57,8 +58,9 @@ def test_three_hotel_states_survive_runservice_restart_and_owner_checks(
         restarted = RunService(travel.database)
         restored = await restarted.get(context.user_id, run.run_id)
         assert restored.presentations == run.presentations
-        with pytest.raises(ServiceError):
+        with pytest.raises(ServiceError) as failed:
             await restarted.get(uuid4(), run.run_id)
+        assert_error(failed, 404, "blocked")
         async with transaction(travel.database) as db:
             assert (
                 await db.scalar(

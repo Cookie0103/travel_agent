@@ -1,5 +1,6 @@
 """稳定行程项与局部patch规则；保留未改项，模型只暂存草稿，确认由业务事务完成。"""
 
+from difflib import SequenceMatcher
 from typing import Annotated, Literal, Self
 from uuid import UUID, uuid4
 
@@ -13,6 +14,10 @@ from backend.domain.itinerary import (
     ValidationReport,
 )
 from backend.domain.travel_request import TravelRequest
+
+
+class PatchItemLocked(ValueError):
+    """patch触及用户锁定项；与“引用不存在/无效”分开，便于给出不同的补救指引。"""
 
 
 class PlanItem(ProposedItem):
@@ -208,7 +213,7 @@ def apply_plan_patch(current: SavedPlan, patch: PlanPatch) -> PlanContent:
         if index == -1:
             raise ValueError("待修改item_id不存在")
         if items[index].locked:
-            raise ValueError("不能修改用户锁定的行程项，请先由用户解锁")
+            raise PatchItemLocked("不能修改用户锁定的行程项，请先由用户解锁")
         if isinstance(operation, RemoveItem):
             items.pop(index)
         else:
@@ -241,6 +246,17 @@ def stays_of(
 def differences(before: PlanContent | None, after: PlanContent) -> tuple[ItemDiff, ...]:
     old = {item.item_id: item for item in before.items} if before else {}
     new = {item.item_id: item for item in after.items}
+    # 两边都有的项若相对顺序变了(不含插入/删除造成的位移)，值没变也算一次update
+    kept_before = [id for id in old if id in new]
+    kept_after = [id for id in new if id in old]
+    in_place = {
+        kept_after[block.b + n]
+        for block in SequenceMatcher(
+            None, kept_before, kept_after, autojunk=False
+        ).get_matching_blocks()
+        for n in range(block.size)
+    }
+    moved = set(kept_after) - in_place
     return tuple(
         ItemDiff(
             item_id=id,
@@ -249,5 +265,5 @@ def differences(before: PlanContent | None, after: PlanContent) -> tuple[ItemDif
             after=new.get(id),
         )
         for id in dict.fromkeys((*old, *new))
-        if old.get(id) != new.get(id)
+        if old.get(id) != new.get(id) or id in moved
     )

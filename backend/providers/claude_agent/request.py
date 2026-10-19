@@ -10,7 +10,6 @@ from backend.profile import current
 
 MAX_BYTES = 128 * 1024
 DEEPSEEK_MAX_BYTES = 512 * 1024
-MAX_INPUT_TOKENS = 1_048_576
 TOOL_NAME = "mcp__probe__echo"
 # 预占输入token上界 = 请求体UTF-8字节数 * 5/4 + 固定开销。任何分词器每token至少1字节，
 # 转义后的多字节JSON文本字节数仍不小于token数；x1.25与固定1024覆盖上游把tools/system

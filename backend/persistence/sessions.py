@@ -1,16 +1,35 @@
 """用户和会话的数据库操作；所有会话读取都在 SQL 中约束 owner。"""
 
 from datetime import datetime
+from functools import cache
 from uuid import UUID
 
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy import select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.persistence.database import ROOT
 from backend.persistence.models import SessionRow, UserRow
 
 
 async def check_connection(db: AsyncSession) -> None:
     await db.execute(text("SELECT 1"))
+
+
+@cache
+def migration_head() -> str | None:
+    """代码里的 Alembic head；单 head 是迁移一致性测试保证的不变量。"""
+    config = Config(str(ROOT / "backend/persistence/alembic.ini"))
+    return ScriptDirectory.from_config(config).get_current_head()
+
+
+async def is_migrated(db: AsyncSession) -> bool:
+    """库内 alembic_version 是否等于脚本 head；未迁移的空库返回 False。"""
+    if await db.scalar(text("SELECT to_regclass('alembic_version')")) is None:
+        return False
+    versions = (await db.scalars(text("SELECT version_num FROM alembic_version"))).all()
+    return list(versions) == [migration_head()]
 
 
 async def get_user(db: AsyncSession, user_id: UUID, *, lock: bool = False) -> UserRow | None:

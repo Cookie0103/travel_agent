@@ -108,3 +108,36 @@ test("local stops explain the actual cause and keep provider, timeout and cancel
       assert.equal(errorExplanation(code, reason), errorExplanation(code));
   }
 });
+
+test("validation failures put a short Chinese server reason into the main message", () => {
+  assert.equal(
+    errorExplanation(
+      "validation",
+      "demo_failed",
+      undefined,
+      "固定演示仅覆盖京都二至三日游",
+    ),
+    "校验未通过：固定演示仅覆盖京都二至三日游。",
+  );
+});
+test("detail text is ignored for other codes and when it could leak internals", () => {
+  const generic = "校验未通过：条件或修改不符合要求，请核对相关信息。";
+  assert.equal(
+    errorExplanation("blocked", null, undefined, "固定演示仅覆盖京都"),
+    "操作受限：请检查操作前提或调用限制。",
+  );
+  for (const detail of [
+    "",
+    null,
+    undefined,
+    "request_id=private;token=abc",
+    "English only message",
+    "详见 https://internal.example/x",
+    "第一行\n第二行",
+    "长".repeat(200),
+  ])
+    assert.equal(
+      errorExplanation("validation", null, undefined, detail),
+      generic,
+    );
+});

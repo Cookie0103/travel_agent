@@ -79,6 +79,8 @@ export function Composer({
   setText,
   busy,
   active,
+  stopping,
+  modelsError,
   send,
   cancel,
   articleId,
@@ -90,6 +92,8 @@ export function Composer({
   setText: (value: string) => void;
   busy: boolean;
   active: boolean;
+  stopping: boolean;
+  modelsError: string;
   send: (text: string, mode: Mode) => void;
   cancel: () => void;
   articleId?: string;
@@ -152,11 +156,16 @@ export function Composer({
             disabled={busy}
           />
           <span className="composer-hint small muted">
-            {mode === "offline" && "固定演示 · 不调用模型"}
+            {modelsError || (mode === "offline" && "固定演示 · 不调用模型")}
           </span>
           {active ? (
-            <Button type="button" variant="outline" onClick={cancel}>
-              ■ 停止
+            <Button
+              type="button"
+              variant="outline"
+              disabled={stopping}
+              onClick={cancel}
+            >
+              {stopping ? "正在停止…" : "■ 停止"}
             </Button>
           ) : (
             <Button type="submit" disabled={busy || !text.trim()}>

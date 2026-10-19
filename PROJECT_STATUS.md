@@ -1,5 +1,7 @@
 # PROJECT_STATUS — 完成审计与冻结结束标准
 
+> **本文件为 2026-10-04 快照，最新状态见[批次索引](docs/plans/README.md#批次索引)。** 下文把 AC01/P0-1“到期 hold 重复返回及上下文问题尚未修入主代码”写成缺陷的段落是**当时的审计现场**，已被提交 `9db5702`（2026-10-04，`fix: expire stale hotel holds and freeze final release scope`）修复，顶部验收表中 AC01 的 PASS 为准；原文保留不改。2026-10-04 之后的批次（Product V2、多城市、交互与记忆、提速与表单、完整性加固）都不在本文件范围。
+
 **最终发布验收：F1/F2 完成，冻结 P0 剩余 0（2026-10-04）。** AC01–AC07 的代码、运行与远端 CI 证据如下；交付记录正常提交/push 后核对当前 HEAD/远端/CI，并立即停止开发。只完成 P0-1/2/3，没有恢复批量评测或新增功能。下文“当前/本次审计”状态为 13:20 的历史审计快照，不能当作仍需实现的任务。
 
 | 最终验收 | 状态 |
@@ -256,7 +258,7 @@ git status --short
 
 本地V2核心已实现：Google真实景点/路线、乐天酒店、Open-Meteo、DeepSeek经Claude Agent SDK、PG与前端结果展示，草稿确认、ICS和30天身份恢复。大阪已完整前端真实验收并重启读回；札幌、那霸、箱根实际完成草稿，部分酒店工具失败合理降级，独立那霸酒店探针成功。天气3小时共享PG缓存、乐天动态上限、手动探针/冒烟和合成结构样本已补齐；个人Google Calendar导入6/6成功。
 
-Google只保存允许ID/30天坐标，详情按需查询，用户已批准替代原七天缓存。真实次数/模型上界、失败边界、检查与剩余范围统一看[执行计划](docs/execution/travel-agent.md)及[V2验收记录](docs/operations/product-v2.md)。Railway V2发布、Claude与V2同轮Cloud实测未进行；本记录不覆盖上方历史交付/研究结论。
+Google只保存允许ID/30天坐标，详情按需查询，用户已批准替代原七天缓存。真实次数/模型上界、失败边界、检查与剩余范围统一看[执行计划](docs/archive/execution/travel-agent.md)及[V2验收记录](docs/operations/product-v2.md)。Railway V2发布、Claude与V2同轮Cloud实测未进行；本记录不覆盖上方历史交付/研究结论。
 
 ## 2026-10-10 结项说明与已知限制
 

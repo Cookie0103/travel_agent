@@ -35,7 +35,7 @@
 - live 命令第一次被自动审批拒绝，未启动进程；用户随后明确允许本次实测，再执行同一命令，1 passed in 2.73s。
 - 2026-10-03 12:06（Asia/Tokyo）：第一轮 input=355、output=81；第二轮 input=499、output=18；按最高时段/不享受缓存折扣估算费用上界共 0.002500 元人民币，非平台实际账单。
 - 本地账本：1 次流程、2 次请求、success；保守费用占用共 0.10 元，没有返还占用。成功标记阻止再次付费运行；没有调用美元线路。
-- [脱敏实测摘要](../operations/2026-10-03-m02-protocol.result.json) 为本次 .cache 摘要的公开副本，不包含完整回答或思考块。
+- [脱敏实测摘要](../archive/operations/2026-10-03-m02-protocol.result.json) 为本次 .cache 摘要的公开副本，不包含完整回答或思考块。
 - 原始模型推理不落盘；.cache/m02-protocol/ 保存仅含结构、用量与状态的摘要以及次数/费用账本。
 
 官方来源：[兼容接口](https://api-docs.deepseek.com/zh-cn/guides/anthropic_api/)、[人民币价格](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)。文档说明与本表的真实实测结果分开，不能互相代替。

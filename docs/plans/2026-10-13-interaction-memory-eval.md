@@ -32,7 +32,7 @@
 
 | ID | 问题 | 决定 |
 | --- | --- | --- |
-| D1 | 是否永久保存 AI 最终回答 | **已决定：保存。** 存入 PG 的 `task_runs.answer`：生产环境是 Railway 的 Postgres 服务（项目 `airy-wonder`，环境 `production`，镜像 postgres-ssl:18，数据卷 `postgres-volume` 500MB，VERIFIED 2026-10-13），本地开发是 PG17 容器。理由：这是模型生成的、用户本人私有的对话记录，不是 Places API 响应的缓存。卡片仍只存引用、按需补详情。修订 ADR-014，并在 `docs/execution/travel-agent.md` 追加更正。另需提供导出能力（T1 第 7 条）。 |
+| D1 | 是否永久保存 AI 最终回答 | **已决定：保存。** 存入 PG 的 `task_runs.answer`：生产环境是 Railway 的 Postgres 服务（项目 `airy-wonder`，环境 `production`，镜像 postgres-ssl:18，数据卷 `postgres-volume` 500MB，VERIFIED 2026-10-13），本地开发是 PG17 容器。理由：这是模型生成的、用户本人私有的对话记录，不是 Places API 响应的缓存。卡片仍只存引用、按需补详情。修订 ADR-014，并在 `docs/archive/execution/travel-agent.md` 追加更正。另需提供导出能力（T1 第 7 条）。 |
 | D2 | 放宽预算的档位 | **已决定：×1.5 → ×2 → ×3，按顺序判断，取第一个有候选的档；3 倍内仍没有，就如实告诉用户。** 实现说明：三档判断**不是三次新查询**。先用一次「同条件、按价格升序」的乐天查询（S1）拿到当前范围内最便宜的一批真实报价，再依次检查 ×1.5、×2、×3 这三档里有没有候选。整个过程每个住宿段最多 2 次乐天调用：S0 原查询，加 S1 升序重查。 |
 | D3 | 放宽后的酒店能否直接选进规划 | **不能**。必须先点「接受新上限」，修改条件后才可以选；点「保持原预算」则这些酒店只作参考展示。 |
 | D4 | 记忆写入是否必须经过用户确认 | **必须**：模型提出 → 卡片确认 → 生效。设置中可以开关「自动记住明确偏好」，默认关闭。 |
@@ -115,7 +115,7 @@
    - 历史接口读取时，计算引用中是否有已过期的报价，返回 `stale_refs: int`。
    - 前端在旧回答上显示「此回答中的 N 个报价已过期，可让我刷新」。这个功能是 Google 合规方案下的配套：文字保留，事实按需更新。
 5. 旧数据：只有占位文字的历史回答，前端显示「该轮回答在旧版本中未保存」，不伪造内容。
-6. 文档：修订 ADR-014；在 `docs/execution/travel-agent.md` 追加 2026-10-13 的更正说明（不改写原文）；同步 `docs/design/02-architecture.md` 中「三个状态源」一节。
+6. 文档：修订 ADR-014；在 `docs/archive/execution/travel-agent.md` 追加 2026-10-13 的更正说明（不改写原文）；同步 `docs/design/02-architecture.md` 中「三个状态源」一节。
 7. **导出到本地（D1 附带要求）**：
    - 新增只读脚本 `scripts/export_history.py`：
      - 参数：`--database-url`（默认读 `DATABASE_URL`）、`--user`（可选）、`--session`（可选）、`--out`（JSON 文件路径）。

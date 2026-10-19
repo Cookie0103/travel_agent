@@ -282,3 +282,115 @@ async def test_repair_never_increases_conflicts_and_stays_bounded(seed: int) -> 
     fixed, before = await scene.run(scene.content(*rows))
     assert len(codes(fixed.report)) <= len(codes(before))
     assert scene.validations <= 2 + MAX_OPS * 2
+
+
+def lock_all(content: PlanContent, *indexes: int) -> PlanContent:
+    return content.model_copy(
+        update={
+            "items": tuple(
+                i.model_copy(update={"locked": n in indexes}) for n, i in enumerate(content.items)
+            )
+        }
+    )
+
+
+@pytest.mark.parametrize(
+    ("hours", "start", "end", "code"),
+    [
+        ("Mo-Su 09:00-17:00", f"{D3}T18:00+09:00", f"{D3}T19:00+09:00", "opening_hours"),
+        ("We 09:00-17:00", f"{D3}T12:00+09:00", f"{D3}T13:00+09:00", "opening_hours"),
+        ("24/7", f"{D3}T10:00+09:00", f"{D3}T10:01+09:00", "visit_duration_range"),
+    ],
+    ids=["shift", "move-to-next-day", "clamp"],
+)
+async def test_a_locked_item_is_never_moved_or_resized_and_the_conflict_stays_reported(
+    hours: str, start: str, end: str, code: str
+) -> None:
+    """R07：锁定项不被shifts/moves/clamp改动；修不动就保留冲突，如实留在校验报告里。"""
+    scene = Scene()
+    other, target = scene.spot(1), scene.spot(2, hours)
+    content = lock_all(
+        scene.content(
+            item(other, f"{D3}T09:00+09:00", f"{D3}T10:00+09:00"), item(target, start, end)
+        ),
+        1,
+    )
+    fixed, before = await scene.run(content)
+    assert code in codes(before)
+    assert fixed.content == content and fixed.disclosed == ()
+    assert code in codes(fixed.report)
+
+
+async def test_unlocking_the_same_item_lets_the_repair_move_it() -> None:
+    """对照：与上面同一场景，仅差locked标志，说明不动的原因是锁而不是修复器无能。"""
+    scene = Scene()
+    other, target = scene.spot(1), scene.spot(2, "Mo-Su 09:00-17:00")
+    content = scene.content(
+        item(other, f"{D3}T09:00+09:00", f"{D3}T10:00+09:00"),
+        item(target, f"{D3}T18:00+09:00", f"{D3}T19:00+09:00"),
+    )
+    fixed, _ = await scene.run(content)
+    assert fixed.content.items[1].start != content.items[1].start and not codes(fixed.report)
+
+
+async def test_repair_rebuilds_a_locked_items_route_reference_only_and_discloses_it() -> None:
+    """锁定项的路线引用是派生数据：可重建，但时间/内容不变，且必须披露。"""
+    scene = Scene()
+    a, b = scene.spot(1), scene.spot(2)
+    early = scene.route(a, b, f"{D3}T10:00+09:00")  # 出发早于前一项结束：过期
+    content = lock_all(
+        scene.content(
+            item(a, f"{D3}T10:30+09:00", f"{D3}T11:00+09:00"),
+            item(b, f"{D3}T12:00+09:00", f"{D3}T13:00+09:00", early),
+        ),
+        1,
+    )
+    fixed, before = await scene.run(content)
+    assert "route_departure" in codes(before) and not codes(fixed.report)
+    locked = fixed.content.items[1]
+    assert locked.locked and locked.route_evidence_id != early.evidence_id
+    assert locked.model_copy(update={"route_evidence_id": early.evidence_id}) == content.items[1]
+    assert fixed.content.items[0] == content.items[0]
+    assert any("锁定" in note and "路线引用" in note for note in fixed.disclosed)
+
+
+async def test_dropping_an_item_before_a_locked_one_only_changes_the_locked_routes_reference() -> (
+    None
+):
+    scene = Scene()
+    a, b, c = scene.spot(1), scene.spot(2), scene.spot(3)
+    ab = scene.route(a, b, f"{D3}T10:30+09:00")
+    bc = scene.route(b, c, f"{D3}T13:30+09:00")
+    content = lock_all(
+        scene.content(
+            item(a, f"{D3}T09:30+09:00", f"{D3}T10:30+09:00"),
+            item(b, f"{D3}T11:00+09:00", f"{D3}T12:00+09:00", ab),
+            item(a, f"{D3}T12:30+09:00", f"{D3}T13:30+09:00"),  # 重复景点：被去掉
+            item(c, f"{D3}T14:30+09:00", f"{D3}T15:30+09:00", bc),
+        ),
+        3,
+    )
+    fixed, _ = await scene.run(content)
+    assert any("已去掉" in note for note in fixed.disclosed) and len(fixed.content.items) == 3
+    pinned, original = fixed.content.items[2], content.items[3]
+    assert pinned.item_id == original.item_id and pinned.locked
+    assert pinned.model_copy(update={"route_evidence_id": original.route_evidence_id}) == original
+    assert pinned.route_evidence_id != original.route_evidence_id
+    assert any("锁定" in note and "路线引用" in note for note in fixed.disclosed)
+
+
+async def test_repair_also_fixes_an_old_conflict_the_patch_did_not_touch_and_discloses_it() -> None:
+    """取舍：repair不知道patch范围；旧冲突项不修就无法确认，所以照修，但必须逐条披露，
+    且无冲突的其余项保持不变。"""
+    scene = Scene()
+    old, fine, new = scene.spot(1, "Mo-Su 09:00-17:00"), scene.spot(2), scene.spot(3)
+    content = scene.content(
+        item(old, f"{D3}T18:00+09:00", f"{D3}T19:00+09:00"),  # 早已存在的冲突，与本次改动无关
+        item(fine, f"{D4}T10:00+09:00", f"{D4}T11:00+09:00"),
+        item(new, f"{D4}T13:00+09:00", f"{D4}T14:00+09:00"),
+    )
+    fixed, _ = await scene.run(content)
+    assert not codes(fixed.report)
+    assert fixed.content.items[0].start != content.items[0].start
+    assert fixed.content.items[1:] == content.items[1:]
+    assert len(fixed.disclosed) == 1 and "景点1" in fixed.disclosed[0]

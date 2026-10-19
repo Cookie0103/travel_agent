@@ -31,7 +31,6 @@ from backend.domain.room_choices import room_choices_view
 from backend.domain.travel_request import (
     HOTEL_FIELD_LABELS,
     ConversationRequestPatch,
-    RequestPatch,
     lodging_budget_relation,
 )
 from backend.services.bookings import BookingService
@@ -46,11 +45,15 @@ from backend.services.travel import TravelService, require_revision
 from backend.tools.contracts import (
     PRESENTATION_RESULT_LIMIT,
     RESULT_LIMIT,
+    WRITE_KINDS,
     ToolDefinition,
     ToolResult,
+    committed_confirmation,
     validation_paths,
     with_repair_rounds,
 )
+from backend.tools.fencing import fence
+from backend.tools.grounding import grounded_fields
 from backend.tools.search import DEFINITIONS as SEARCH_DEFINITIONS
 from backend.tools.search import ContentSearchInput, PlaceSearchInput
 
@@ -528,7 +531,9 @@ class TravelToolExecutor:
                 segments = result.data["segments"]
                 if isinstance(segments, list):
                     result_limit *= len(segments)
-            if len(json.dumps(result.payload(), ensure_ascii=False)) > result_limit:
+            if len(json.dumps(result.payload(), ensure_ascii=False, default=str)) > result_limit:
+                if definition.kind in WRITE_KINDS and result.code is None:
+                    return committed_confirmation(result)  # 写入已提交，不能报成没发生
                 return ToolResult(
                     {},
                     code="blocked",
@@ -544,7 +549,13 @@ class TravelToolExecutor:
                         if parsed.component == "hotel_comparison"
                         else result.data.get("request_revision")
                     )
-                    assert isinstance(revision, int)
+                    if not isinstance(revision, int) or isinstance(revision, bool):
+                        raise ServiceError(
+                            503,
+                            "unavailable",
+                            "展示结果缺少条件版本",
+                            "presentation_revision_missing",
+                        )
                     await self.travel.complete_conversation_task(
                         context, parsed.component, revision
                     )
@@ -618,7 +629,8 @@ class TravelToolExecutor:
             choices = await MemoryService(self.travel.database).propose(context, parsed)
             return ToolResult({"choices": choices}, empty=not choices)
         if isinstance(parsed, PresentationInput) and parsed.component == "choice":
-            assert parsed.kind is not None and parsed.expected_revision is not None
+            if parsed.kind is None or parsed.expected_revision is None:
+                raise ServiceError(422, "validation", "选择卡需要kind与条件版本")
             card = await ChoiceService(self.travel).create(
                 context, parsed.kind, parsed.expected_revision
             )
@@ -631,7 +643,7 @@ class TravelToolExecutor:
         if isinstance(parsed, ConversationStateInput):
             return ToolResult(await self.travel.update_conversation_state(context, parsed))
         if isinstance(parsed, WeatherInput):
-            request = await self.travel.get_request(context)
+            request = await self.travel.read_request(context)
             require_revision(request, parsed.expected_revision)
             live = self.travel.live
             if not live:
@@ -736,14 +748,19 @@ class TravelToolExecutor:
             )
         if isinstance(parsed, HotelSearchInput | RefreshOfferInput | PresentationInput):
             return await self._hotel_result(context, parsed)
-        if isinstance(parsed, RequestPatch):
-            assert isinstance(parsed, ConversationRequestPatch)
-            update = await self.travel.patch_request(
-                context,
+        if isinstance(parsed, ConversationRequestPatch):
+            # explicit_fields由模型自填：新值须在本轮用户原话里有出处，否则按未声明处理。
+            grounded = grounded_fields(
                 parsed,
-                source="conversation",
-                explicit_fields=parsed.explicit_fields,
+                parsed.explicit_fields,
+                await self.travel.trusted_user_text(context),
+                await self.travel.read_request(context),
+                today=self.travel.today(),
             )
+            update = await self.travel.patch_request(
+                context, parsed, source="conversation", explicit_fields=grounded
+            )
+            unverified = sorted(set(parsed.explicit_fields) - set(grounded))
             return ToolResult(
                 {
                     "request_revision": update.request.revision,
@@ -757,12 +774,19 @@ class TravelToolExecutor:
                     "skipped_fields": update.skipped_fields,
                     "field_sources": update.field_sources,
                     "message": update_message(
-                        update.request, update.changed_fields, update.skipped_fields
+                        update.request, update.changed_fields, update.skipped_fields, quote=fence
                     ),
-                }
+                },
+                warnings=(
+                    "声明为用户明确修改但新值未出现在本轮用户原话中，按未声明处理，不覆盖手填值："
+                    + "、".join(unverified)
+                    + "；请先向用户确认。",
+                )
+                if unverified
+                else (),
             )
         if isinstance(parsed, SkillInput):
-            await self.travel.get_request(context)
+            await self.travel.read_request(context)
             if parsed.name in self.loaded_skills:
                 return ToolResult({"name": parsed.name, "already_loaded": True})
             text = with_repair_rounds(
@@ -782,7 +806,8 @@ class TravelToolExecutor:
         if isinstance(parsed, ContentSearchInput):
             result = await self.catalog.query(context, parsed)
         else:
-            assert isinstance(parsed, EntityInput)
+            if not isinstance(parsed, EntityInput):
+                raise ServiceError(422, "validation", "检查工具参数")
             collection = "places" if name == "get_place_facts" else "articles"
             result = await self.catalog.get(context, collection, parsed.entity_id)
         return catalog_result(result, summary=isinstance(parsed, ContentSearchInput))
@@ -836,10 +861,12 @@ class TravelToolExecutor:
             else ("虚构酒店与模拟价格，非实时库存；仅住宿成本，不代表全程预算满足",)
         )
         if isinstance(parsed, PresentationInput):
-            assert parsed.expected_revision is not None
+            if parsed.expected_revision is None:
+                raise ServiceError(422, "validation", "酒店卡片需要条件版本")
             data = await self.hotels.present(context, parsed.expected_revision, parsed.offer_ids)
             presented = data["cards"]
-            assert isinstance(presented, list)
+            if not isinstance(presented, list):
+                raise ServiceError(503, "unavailable", "酒店展示数据异常", "presented_not_list")
             # 可选展示字段为null时省略给工具/页面的重复键；报价身份/金额/资格信息保留。
             # 完整服务读回仍保留显式null，UI模型默认值兼容旧卡；不提高输出长度上限。
             data["cards"] = [
@@ -867,7 +894,7 @@ class TravelToolExecutor:
             )
         else:
             records = await self.hotels.refresh(context, parsed.expected_revision, parsed.offer_id)
-        request = await self.travel.get_request(context)
+        request = await self.travel.read_request(context)
         require_revision(request, parsed.expected_revision)
         metadata: dict[str, object] = {
             **({"relaxation": diagnosis.model_dump(mode="json")} if diagnosis else {}),
@@ -974,6 +1001,7 @@ def compact_plan_items(data: dict[str, object], offset: int) -> ToolResult:
             "item_id": card["item_id"],
             "day": datetime.fromisoformat(str(card["start"])).astimezone(KYOTO).date().isoformat(),
             "name": str(card["name"])[:80],
+            "locked": card["locked"],
         }
         for card in cards[offset : offset + 40]
     ]

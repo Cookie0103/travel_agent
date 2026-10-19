@@ -86,7 +86,7 @@ class FixtureRuntime:
                     emit,
                     definition=definition,
                 )
-                request = await self.executor.travel.get_request(context)
+                request = await self.executor.travel.read_request(context)
                 if result.code:
                     text = "离线演示未更新条件，请确认本次信息：" + (
                         result.suggestion or "条件格式无效。"

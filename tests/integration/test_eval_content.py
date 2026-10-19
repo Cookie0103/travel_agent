@@ -16,6 +16,7 @@ from backend.tools.travel import TravelToolExecutor
 from eval.content import AnswerRecord, Claim, ContentReview, Fact, assess_content
 from eval.database import database_evaluation, selector_runner
 from eval.run import run_cases
+from tests.errors import assert_error
 from tests.integration.test_database_eval import search_case
 from tests.integration.test_eval_state import REQUEST
 
@@ -174,8 +175,9 @@ def test_capture_keeps_only_owner_facts_and_preserves_invalidated_rows(postgres_
             assert all(
                 not g.record.applicable(stale.request, stale.observed_at) for g in stale.evidence
             )
-            with pytest.raises(ServiceError):
+            with pytest.raises(ServiceError) as failed:
                 await business.content_record(case, replace(first, user_id=other.user_id), "bad")
+            assert_error(failed, 404, "blocked")
 
     with selector_runner() as runner:
         runner.run(exercise())

@@ -56,3 +56,32 @@ def test_failed_import_transaction_does_not_leave_partial_data(postgres_url: URL
 
     with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
         runner.run(exercise())
+
+
+def test_prune_removes_entries_missing_from_new_snapshot(postgres_url: URL) -> None:
+    """C6：新快照里删掉的条目不再永久残留；默认(无prune)仍只做upsert。"""
+
+    async def exercise() -> None:
+        database = Database(postgres_url)
+        entries = load_snapshot()
+        stale = next(e for e in entries if isinstance(e, Place)).model_copy(
+            update={"place_id": "test:retired"}
+        )
+        try:
+            async with database.sessions.begin() as db:
+                await import_catalog(db, [*entries, stale])
+                await import_catalog(db, entries)
+            async with database.sessions.begin() as db:
+                ids = {str(row["place_id"]) for row in (await load_catalog(db))["places"]}
+            assert "test:retired" in ids
+            async with database.sessions.begin() as db:
+                await import_catalog(db, entries, prune=True)
+            async with database.sessions.begin() as db:
+                rows = await load_catalog(db)
+            assert "test:retired" not in {str(row["place_id"]) for row in rows["places"]}
+            assert sum(map(len, rows.values())) == len(entries)
+        finally:
+            await database.close()
+
+    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+        runner.run(exercise())

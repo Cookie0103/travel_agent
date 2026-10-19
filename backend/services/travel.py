@@ -1,9 +1,9 @@
 """旅行条件/证据用例；API与旅行工具共用所有者、版本、时效和事务规则。"""
 
 import os
-from collections.abc import Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, field
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 from uuid import UUID
 
 from pydantic import TypeAdapter, ValidationError
@@ -28,12 +28,14 @@ from backend.domain.travel_request import (
     ConditionSource,
     ConversationRequestPatch,
     RequestConflict,
+    RequestLimitError,
     RequestPatch,
     TravelConditions,
     TravelRequest,
     apply_request_patch,
     invalidated_kinds,
     legacy_request,
+    tokyo_today,
 )
 from backend.persistence import bookings, operations, plans, runs, sessions, travel
 from backend.persistence.database import Database
@@ -107,9 +109,15 @@ def condition_sources(row: TravelRequestRow) -> dict[str, ConditionSource]:
 
 
 class TravelService:
-    def __init__(self, database: Database, live: LiveData | None = None) -> None:
+    def __init__(
+        self,
+        database: Database,
+        live: LiveData | None = None,
+        today: Callable[[], date] = tokyo_today,
+    ) -> None:
         self.database = database
         self.live = live
+        self.today = today  # 日期窗口的时钟；测试注入固定日期
 
     @classmethod
     def from_environment(cls, database: Database, live_enabled: bool) -> "TravelService":
@@ -125,12 +133,24 @@ class TravelService:
             await self.live.close()
 
     async def get_request(self, context: RunContext) -> TravelRequest:
+        """写路径用：锁会话行并按需建行；纯读请用read_request。"""
         async with transaction(self.database) as db:
             return request_from_row(await travel.owned_request(db, context))
 
+    async def read_request(self, context: RunContext) -> TravelRequest:
+        """纯读：不锁会话、不建行，不与写入互相等待；读后不跟写的调用点用它。"""
+        async with transaction(self.database) as db:
+            return request_from_row(await travel.read_request(db, context))
+
+    async def trusted_user_text(self, context: RunContext) -> str:
+        """本轮可信用户原话(与propose_memory同源)；没有执行记录则为空。"""
+        async with transaction(self.database) as db:
+            run = await runs.owned(db, context.user_id, context.run_id)
+        return (run.user_text or "") if run else ""
+
     async def get_request_view(self, context: RunContext) -> RequestView:
         async with transaction(self.database) as db:
-            row = await travel.owned_request(db, context)
+            row = await travel.read_request(db, context)
             request = request_from_row(row)
             assert row is not None
             return RequestView.from_request(request, condition_sources(row))
@@ -187,6 +207,7 @@ class TravelService:
                 for booking in booking_values
                 if booking.status in {"quoted", "held", "confirmed", "unknown"}
                 and not booking.hold_expired(observed_at)
+                and not booking.quote_lapsed(observed_at)
             ]
             dialogue = await conversation.snapshot(
                 db,
@@ -498,9 +519,11 @@ class TravelService:
                 }
             )
         try:
-            updated, changed = apply_request_patch(current, accepted)
+            updated, changed = apply_request_patch(current, accepted, self.today())
         except RequestConflict as error:
             raise ServiceError(409, "conflict", str(error), "request_conflict") from None
+        except RequestLimitError as error:
+            raise ServiceError(422, "validation", str(error), "request_limit") from None
         except ValidationError:
             raise ServiceError(
                 422, "validation", "合并后的旅行条件无效", "request_merge_invalid"

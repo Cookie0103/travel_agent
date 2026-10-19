@@ -1,10 +1,13 @@
 """业务表映射；身份/会话与公开快照独立存储，不把SDK transcript当数据库。"""
 
+from collections.abc import Iterable
 from datetime import date, datetime
+from typing import Any, get_args
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     DateTime,
     ForeignKey,
     Index,
@@ -17,6 +20,37 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
+from backend.domain.booking import BookingStatus
+from backend.domain.choices import FORM_ROW_KINDS, ChoiceKind
+from backend.domain.evidence import EvidenceKind
+from backend.domain.execution import EventKind
+from backend.domain.memory import MemoryScope, MemorySource, MemoryStatus
+
+
+def literals(alias: Any) -> tuple[str, ...]:
+    """从domain的Literal定义取枚举值；CHECK与代码同源，迁移0022冻结当时的取值。"""
+    return tuple(get_args(getattr(alias, "__value__", alias)))
+
+
+def one_of(expression: str, allowed: Iterable[str], name: str) -> CheckConstraint:
+    listed = ", ".join(f"'{value}'" for value in allowed)
+    return CheckConstraint(f"{expression} IN ({listed})", name=name)
+
+
+# task_runs.status = 活动态 + 终态事件种类（finish把终态事件kind写进status，recover写partial）。
+RUN_ACTIVE = ("running", "cancelling")
+RUN_NON_TERMINAL_EVENTS = frozenset(
+    {"started", "text", "tool_started", "tool_finished", "presentation", "context_compacted"}
+)
+RUN_STATUSES = RUN_ACTIVE + tuple(
+    kind for kind in literals(EventKind) if kind not in RUN_NON_TERMINAL_EVENTS
+)
+# 同services.runs.MessageInput.mode；"live"是早期版本写过的历史取值，旧库行仍在，须允许。
+RUN_MODES = ("offline", "deepseek", "claude", "live")
+# 当前种类 + 数据库里仍存着的旧"travel_details"卡（读取边界归一，见domain.choices.FORM_ROW_KINDS）。
+CHOICE_KINDS = tuple(dict.fromkeys(literals(ChoiceKind) + FORM_ROW_KINDS))
+CATALOG_KINDS = ("places", "articles")  # 同persistence.catalog.import_catalog写入的kind
+
 
 class Base(DeclarativeBase):
     metadata = MetaData(
@@ -25,6 +59,7 @@ class Base(DeclarativeBase):
             "uq": "uq_%(table_name)s_%(column_0_name)s",
             "fk": "fk_%(table_name)s_%(column_0_name)s_%(referred_table_name)s",
             "pk": "pk_%(table_name)s",
+            "ck": "ck_%(table_name)s_%(constraint_name)s",
         }
     )
 
@@ -79,7 +114,12 @@ class SessionRow(Base):
 
 class MemoryFactRow(Base):
     __tablename__ = "user_memory_facts"
-    __table_args__ = (Index("ix_user_memory_facts_user_status_key", "user_id", "status", "key"),)
+    __table_args__ = (
+        Index("ix_user_memory_facts_user_status_key", "user_id", "status", "key"),
+        one_of("scope", literals(MemoryScope), "scope"),
+        one_of("status", literals(MemoryStatus), "status"),
+        one_of("source", literals(MemorySource), "source"),
+    )
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     key: Mapped[str] = mapped_column(String(30))
@@ -114,6 +154,7 @@ class CatalogRow(Base):
     """小规模只读目录；payload由Place/Article契约验证，保留来源与版本。"""
 
     __tablename__ = "catalog_entries"
+    __table_args__ = (one_of("kind", CATALOG_KINDS, "kind"),)
 
     id: Mapped[str] = mapped_column(String(100), primary_key=True)
     kind: Mapped[str] = mapped_column(String(10))
@@ -133,6 +174,7 @@ class TravelRequestRow(Base):
 
 class EvidenceRow(Base):
     __tablename__ = "evidence"
+    __table_args__ = (one_of("kind", literals(EvidenceKind), "kind"),)
 
     id: Mapped[UUID] = mapped_column(primary_key=True)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
@@ -146,7 +188,13 @@ class EvidenceRow(Base):
 
 class TaskRunRow(Base):
     __tablename__ = "task_runs"
-    __table_args__ = (UniqueConstraint("session_id", "client_message_id"),)
+    __table_args__ = (
+        UniqueConstraint("session_id", "client_message_id"),
+        # run_page按会话取最近N条（created_at倒序）与recent_completed共用。
+        Index("ix_task_runs_session_id_created_at", "session_id", "created_at"),
+        one_of("status", RUN_STATUSES, "status"),
+        one_of("mode", RUN_MODES, "mode"),
+    )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
@@ -174,7 +222,10 @@ class RunEventRow(Base):
 
 class ChoiceCardRow(Base):
     __tablename__ = "choice_cards"
-    __table_args__ = (UniqueConstraint("session_id", "id"),)
+    __table_args__ = (
+        UniqueConstraint("session_id", "id"),
+        one_of("kind", CHOICE_KINDS, "kind"),
+    )
 
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), index=True)
@@ -236,7 +287,11 @@ class SupplierOrderRow(Base):
 
 class BookingRow(Base):
     __tablename__ = "bookings"
-    __table_args__ = (UniqueConstraint("session_id", "evidence_id"),)
+    __table_args__ = (
+        UniqueConstraint("session_id", "evidence_id"),
+        # 预订状态存在payload JSONB里（见domain.booking.Booking.status）；约束不改写入路径。
+        one_of("(payload ->> 'status')", literals(BookingStatus), "status"),
+    )
     id: Mapped[UUID] = mapped_column(primary_key=True)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     session_id: Mapped[UUID] = mapped_column(ForeignKey("sessions.id"), index=True)

@@ -28,6 +28,22 @@ from backend.trace_log import trace
 # 行程需要连续约6-10次工具调用（路线、校验、暂存、展示）；一次提醒不够，
 # 但必须有界，否则模型空转会无限消耗调用额度。
 MAX_STOP_CORRECTIONS = 3
+# 已离线实测“关闭自动压缩”开关的 (SDK, CLI) 组合；新增必须先做独立核验（安全边界，勿放宽）。
+VERIFIED_COMPACTION_CONTROL = (
+    ("0.2.163", "2.1.114"),
+    ("0.2.163", "2.1.294"),
+    ("0.2.163", "2.1.295"),
+)
+
+
+def unverified_compaction_message(sdk_version: str, cli_version: str) -> str:
+    verified = ", ".join(f"SDK {sdk}/CLI {cli}" for sdk, cli in VERIFIED_COMPACTION_CONTROL)
+    return (
+        f"当前 SDK {sdk_version or '?'}/CLI {cli_version or '?'} 不在已验证列表 [{verified}]；"
+        "请安装 npm install --global @anthropic-ai/claude-code@2.1.295，"
+        "或运行 uv run python scripts/dev.py doctor 检查本机环境；"
+        "要把新版本加入列表须先独立离线核验关闭自动压缩的行为。"
+    )
 
 
 @dataclass(frozen=True)
@@ -94,13 +110,20 @@ class ClaudeRuntime:
         sdk_id: str | None,
         emit: EventSink,
     ) -> RuntimeOutcome:
-        if self.config.disable_auto_compaction and (
-            (self.identity.sdk_version, self.identity.cli_version)
-            not in {("0.2.163", "2.1.114"), ("0.2.163", "2.1.294"), ("0.2.163", "2.1.295")}
+        if (
+            self.config.disable_auto_compaction
+            and (self.identity.sdk_version, self.identity.cli_version)
+            not in VERIFIED_COMPACTION_CONTROL
         ):
             # 带工具get_context_usage会请求计数API；不放开费用守卫来逐轮探测。
             # 仅使用已实测的锁定版本/官方开关，未知版本须先独立离线核验。
-            return RuntimeOutcome(code="blocked", reason="auto_compaction_capability")
+            return RuntimeOutcome(
+                text=unverified_compaction_message(
+                    self.identity.sdk_version, self.identity.cli_version
+                ),
+                code="blocked",
+                reason="auto_compaction_capability",
+            )
         options = self.options(context, sdk_id, emit)
         try:
             async with asyncio.timeout(self.config.timeout_seconds):

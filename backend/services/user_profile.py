@@ -22,6 +22,8 @@ __all__ = ["UserProfileService", "UserProfileView"]
 class UserProfileService:
     def __init__(self, database: Database, *, live_enabled: bool = False) -> None:
         self.database, self.live_enabled = database, live_enabled
+        # 同一用户同一偏好版本只跑一次模型；进程内合并，跨进程仍由版本CAS保证不写入过期结果。
+        self._inflight: dict[tuple[UUID, int], asyncio.Task[UserProfileView]] = {}
 
     async def get(self, user_id: UUID) -> UserProfileView:
         async with transaction(self.database) as db:
@@ -54,16 +56,27 @@ class UserProfileService:
         )
 
     async def generate(self, user_id: UUID, version: PreferenceVersion) -> UserProfileView:
-        from backend.providers.claude_agent.structured import structured_call
-
         if not self.live_enabled:
             raise ServiceError(403, "blocked", "画像更新需要启用已授权的DeepSeek模式")
+        key = (user_id, version.expected_revision)
+        task = self._inflight.get(key)
+        if task is None:
+            task = self._inflight[key] = asyncio.ensure_future(self._generate(user_id, version))
+            task.add_done_callback(lambda _: self._inflight.pop(key, None))
+        return await asyncio.shield(task)
+
+    async def _generate(self, user_id: UUID, version: PreferenceVersion) -> UserProfileView:
+        from backend.providers.claude_agent.structured import structured_call
+
         async with transaction(self.database) as db:
             user = await sessions.get_user(db, user_id, lock=True)
             if user is None:
                 raise ServiceError(404, "blocked", "用户不存在")
             if user.preference_revision != version.expected_revision:
                 raise ServiceError(409, "conflict", "偏好已变化，请读取最新版本")
+            existing = await self.snapshot(db, user_id, can_update=True)
+            if existing.text:  # 同一版本已有通过引用核验的画像，事实未变，不再付费生成
+                return existing
             facts = await memory.active(db, user_id)
             # 不把其他会话的trip事实提升为用户级长期画像；与memory快照相同上限。
             data = memory.bounded_snapshot(facts)

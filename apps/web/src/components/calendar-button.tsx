@@ -1,6 +1,7 @@
 "use client";
 import { Button } from "./ui/button";
 import { useState } from "react";
+import { icsFilename } from "../lib/calendar-file";
 
 export function CalendarButton({
   planId,
@@ -24,11 +25,17 @@ export function CalendarButton({
       });
       if (!response.ok)
         throw new Error("日历下载失败，请检查会话并重新读取行程。");
-      url = URL.createObjectURL(await response.blob());
+      const blobUrl = URL.createObjectURL(await response.blob());
+      url = blobUrl;
       const link = document.createElement("a");
-      link.href = url;
-      link.download = "trip.ics";
+      link.href = blobUrl;
+      link.download = icsFilename(response.headers.get("Content-Disposition"));
+      document.body.appendChild(link);
       link.click();
+      link.remove();
+      // 下载由浏览器异步读取该地址，立即释放可能得到空文件；延后释放。
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 60_000);
+      url = undefined;
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "日历下载失败");
     } finally {

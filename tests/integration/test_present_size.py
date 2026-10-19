@@ -22,6 +22,7 @@ from backend.tools.travel import DEFINITIONS, TravelToolExecutor
 from tests.integration.test_travel import travel_setup as travel_setup
 from tests.test_external_data import _CountingUsage, fixture
 
+pytestmark = pytest.mark.usefixtures("fixed_today")
 HOTEL_0 = "rakuten_naha_hotel_pattern0_2026-10-11.json"
 AFFILIATE = "1a2b3c4d.5e6f7a8b.9c0d1e2f.3a4b5c6d"  # 乐天联盟ID形态；生成长联盟链接
 POINT = GeoPoint(name="那霸", latitude=26.2124, longitude=127.6809)

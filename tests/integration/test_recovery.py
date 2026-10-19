@@ -28,7 +28,6 @@ from backend.persistence.models import (
     BusinessOperationRow,
     EvidenceRow,
     PlanDraftRow,
-    SupplierHoldRow,
     SupplierOrderRow,
 )
 from backend.services.bookings import BookingService
@@ -331,31 +330,20 @@ def test_confirm_process_kill_on_both_sides_of_supplier_commit_queries_before_re
     async def exercise() -> None:
         restored = BookingService(travel, SupplierService(travel.database))
         assert (await restored.get(context.user_id, held.booking_id)).status == "confirmed"
-        expected = "booked" if order_committed else "unknown"
+        # 用户已确认且hold仍有效：无论崩溃发生在供应商提交前还是后，对账后都只有一张订单
+        # （提交前崩溃由同client_ref补发，不再等hold过期丢失用户意图）。
         result = await restored.confirm(context.user_id, held.booking_id)
-        assert result.status == expected
+        assert result.status == "booked" and result.order_id
         assert await restored.confirm(context.user_id, held.booking_id) == result
         async with transaction(travel.database) as db:
-            assert await db.scalar(
-                select(func.count())
-                .select_from(SupplierOrderRow)
-                .where(SupplierOrderRow.client_ref == held.client_ref)
-            ) == int(order_committed)
-            if not order_committed:
-                hold_row = await db.get(SupplierHoldRow, held.client_ref)
-                assert hold_row
-                hold_row.expires_at = datetime.now(UTC) - timedelta(seconds=1)
-        if not order_committed:
-            assert (await restored.reconcile(context.user_id, held.booking_id)).status == "failed"
-            async with transaction(travel.database) as db:
-                assert (
-                    await db.scalar(
-                        select(func.count())
-                        .select_from(SupplierOrderRow)
-                        .where(SupplierOrderRow.client_ref == held.client_ref)
-                    )
-                    == 0
+            assert (
+                await db.scalar(
+                    select(func.count())
+                    .select_from(SupplierOrderRow)
+                    .where(SupplierOrderRow.client_ref == held.client_ref)
                 )
+                == 1
+            )
 
     runner.run(exercise())
 

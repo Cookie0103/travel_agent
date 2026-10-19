@@ -1,6 +1,7 @@
 /** Explicit preference editor; saved values are references, current trip conditions take priority. */
 "use client";
 import { Button } from "./ui/button";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { api, type Identity } from "@/lib/api";
 import type { components } from "@/lib/api-types";
@@ -9,26 +10,29 @@ import {
   memoryLabels,
   memoryValue,
   memorySources,
-  memoryStatuses,
 } from "@/lib/memory";
+import { formatTokyo } from "@/lib/format-time";
+import {
+  factGroups,
+  factStatus,
+  isDirty,
+  preferenceLines as lines,
+} from "@/lib/preference-form";
 
 type Preferences = components["schemas"]["Preferences"];
 type UserProfile = components["schemas"]["UserProfileView"];
-const lines = (text: string) =>
-  text
-    .split("\n")
-    .map((line) => line.trim())
-    .filter(Boolean);
-
 export function PreferencePanel({
   identity,
   onError,
   refreshKey,
+  active = true,
   onChanged,
 }: {
   identity: Identity;
   onError: (error: unknown) => void;
   refreshKey?: string;
+  /** False while the surrounding <details> is collapsed: no background reloads. */
+  active?: boolean;
   onChanged: () => void;
 }) {
   const [saved, setSaved] = useState<Preferences>();
@@ -39,7 +43,13 @@ export function PreferencePanel({
   const [transport, setTransport] = useState<Preferences["transport"]>(null);
   const [busy, setBusy] = useState(true);
   const [status, setStatus] = useState("");
+  const [confirmClear, setConfirmClear] = useState(false);
   const generation = useRef(0);
+  const dirty = isDirty(saved, { interests, constraints, transport });
+  const dirtyRef = useRef(false);
+  useEffect(() => {
+    dirtyRef.current = dirty;
+  }, [dirty]);
 
   const display = useCallback((value: Preferences) => {
     setSaved(value);
@@ -48,27 +58,33 @@ export function PreferencePanel({
     setTransport(value.transport ?? null);
   }, []);
 
-  const load = useCallback(async () => {
-    const started = generation.current;
-    try {
-      const [value, rows, summary] = await Promise.all([
-        api<Preferences>("/preferences", identity.token),
-        api<MemoryFact[]>("/memory?include_history=true", identity.token),
-        api<UserProfile>("/profile-summary", identity.token),
-      ]);
-      if (generation.current === started) {
-        display(value);
-        setFacts(rows);
-        setProfile(summary);
+  // Background refreshes keep unsaved edits (and the revision they were based on);
+  // only the explicit "read latest" button overwrites the form.
+  const load = useCallback(
+    async (force = false) => {
+      const started = generation.current;
+      try {
+        const [value, rows, summary] = await Promise.all([
+          api<Preferences>("/preferences", identity.token),
+          api<MemoryFact[]>("/memory?include_history=true", identity.token),
+          api<UserProfile>("/profile-summary", identity.token),
+        ]);
+        if (generation.current === started) {
+          if (force || !dirtyRef.current) display(value);
+          setFacts(rows);
+          setProfile(summary);
+        }
+      } catch (error) {
+        if (generation.current === started) onError(error);
+      } finally {
+        if (generation.current === started) setBusy(false);
       }
-    } catch (error) {
-      if (generation.current === started) onError(error);
-    } finally {
-      if (generation.current === started) setBusy(false);
-    }
-  }, [identity.token, onError, display]);
+    },
+    [identity.token, onError, display],
+  );
 
   useEffect(() => {
+    if (!active) return;
     ++generation.current;
     // load 的全部 setState 都在 await 之后，规则无法跨 async 边界识别，实为误报。
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -76,7 +92,7 @@ export function PreferencePanel({
     return () => {
       generation.current += 1;
     };
-  }, [load, refreshKey]);
+  }, [load, refreshKey, active]);
 
   async function change(clear: boolean) {
     if (!saved || busy) return;
@@ -180,16 +196,14 @@ export function PreferencePanel({
           <strong>
             {memoryLabels[fact.key]}：{memoryValue(fact)}
           </strong>{" "}
-          · {memoryStatuses[fact.status]} ·{" "}
+          · {factStatus(fact, identity.session_id)} ·{" "}
           {fact.scope === "trip" ? "这次旅行" : "长期"}
         </p>
         <p className="muted small">
           {memorySources[fact.source]}
-          {fact.valid_from
-            ? ` · 生效于 ${new Date(fact.valid_from).toLocaleString()}`
-            : ""}
+          {fact.valid_from ? ` · 生效于 ${formatTokyo(fact.valid_from)}` : ""}
           {fact.invalidated_at
-            ? ` · 失效于 ${new Date(fact.invalidated_at).toLocaleString()}`
+            ? ` · 失效于 ${formatTokyo(fact.invalidated_at)}`
             : ""}
         </p>
         {fact.evidence_quote && (
@@ -210,12 +224,11 @@ export function PreferencePanel({
       </li>
     );
   }
-  const currentFacts = facts.filter(
-    (fact) =>
-      (fact.status === "active" || fact.status === "proposed") &&
-      (fact.scope === "long_term" || fact.session_id === identity.session_id),
-  );
-  const history = facts.filter((fact) => !currentFacts.includes(fact));
+  const {
+    current: currentFacts,
+    elsewhere,
+    history,
+  } = factGroups(facts, identity.session_id);
 
   return (
     <section className="preference-panel conversation">
@@ -227,6 +240,12 @@ export function PreferencePanel({
         你填写的偏好和在对话中逐条确认的偏好会保存。本次旅行条件优先。
       </p>
       <ul aria-label="已保存与待确认的偏好">{currentFacts.map(factRow)}</ul>
+      {elsewhere.length > 0 && (
+        <details>
+          <summary>其他旅行的临时偏好（{elsewhere.length}）</summary>
+          <ul>{elsewhere.map(factRow)}</ul>
+        </details>
+      )}
       {history.length > 0 && (
         <details>
           <summary>查看历史版本（{history.length}）</summary>
@@ -280,14 +299,33 @@ export function PreferencePanel({
         <Button variant="outline" type="submit" disabled={!saved || busy}>
           保存偏好
         </Button>
-        <Button
-          variant="outline"
-          type="button"
-          disabled={!saved || busy}
-          onClick={() => void change(true)}
-        >
-          清除偏好
-        </Button>
+        <Popover open={confirmClear} onOpenChange={setConfirmClear}>
+          <PopoverTrigger asChild>
+            <Button variant="outline" type="button" disabled={!saved || busy}>
+              清除偏好
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent>
+            <p>清除全部长期偏好和历史记录？此操作不能撤销。</p>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => {
+                setConfirmClear(false);
+                void change(true);
+              }}
+            >
+              确认清除
+            </Button>
+            <Button
+              variant="outline"
+              type="button"
+              onClick={() => setConfirmClear(false)}
+            >
+              取消
+            </Button>
+          </PopoverContent>
+        </Popover>
         <Button
           variant="outline"
           type="button"
@@ -295,7 +333,7 @@ export function PreferencePanel({
           onClick={() => {
             setBusy(true);
             setStatus("");
-            void load();
+            void load(true);
           }}
         >
           读取最新偏好

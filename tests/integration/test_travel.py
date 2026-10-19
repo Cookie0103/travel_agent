@@ -293,8 +293,13 @@ def test_forged_expired_foreign_or_wrong_scope_evidence_is_rejected(
             with pytest.raises(ServiceError) as error:
                 await service.resolve_evidence(foreign, [record.evidence_id])
             assert error.value.code == "blocked"
-        with pytest.raises(ServiceError):
+        with pytest.raises(ServiceError) as missing:
             await service.resolve_evidence(context, [record.evidence_id, uuid4()])
+        assert (missing.value.status, missing.value.code, missing.value.reason) == (
+            404,
+            "blocked",
+            "evidence_missing",
+        )
         wrong = evidence(current.model_copy(update={"adults": 5}))
         with pytest.raises(ServiceError) as error:
             await service.record_evidence(context, [wrong])

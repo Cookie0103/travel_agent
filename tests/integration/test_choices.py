@@ -18,6 +18,7 @@ from backend.services.runs import MessageInput, RunService
 from backend.services.travel import TravelService
 from backend.tools.execution import execute_observed
 from backend.tools.travel import DEFINITIONS, TravelToolExecutor
+from tests.errors import assert_error
 from tests.integration.test_travel import travel_setup as travel_setup
 
 pytestmark = pytest.mark.integration
@@ -113,13 +114,14 @@ def test_combined_card_stops_automatic_planning_until_explicit_confirmation(
         )
         assert card.form and all(group.kind != "times" for group in card.form.groups)
         assert await tools.continuation_reason(active, 1) is None
-        with pytest.raises(ServiceError):
+        with pytest.raises(ServiceError) as failed:
             await travel.update_conversation_state(
                 active,
                 ConversationStateInput(
                     expected_revision=changed.request.revision, confirm_details=True
                 ),
             )
+        assert_error(failed, 422, "validation")
         unrelated = await travel.patch_request(
             active,
             RequestPatch.model_validate(

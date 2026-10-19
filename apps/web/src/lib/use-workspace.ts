@@ -47,6 +47,8 @@ import {
   pendingFor,
 } from "./identity-storage";
 import { mergeHistory, mergeRun } from "./history";
+import { followRun, isRunActive } from "./run-stream";
+import { classifyError, type ErrorKind } from "./error-actions";
 import type { Mode } from "./models";
 import type { ConditionPatch } from "./condition-patch";
 
@@ -78,46 +80,68 @@ export function useWorkspace({
   const [planOrigin, setPlanOrigin] = useState<RunBinding>();
   const [hotelOrigin, setHotelOrigin] = useState<RunBinding>();
   const [bookings, setBookings] = useState<Booking[]>([]);
-  const [error, setError] = useState("");
+  const [errorState, setErrorState] = useState<{
+    message: string;
+    kind: ErrorKind;
+  }>({ message: "", kind: "other" });
+  const error = errorState.message;
+  const setError = useCallback(
+    (message: string, kind: ErrorKind = "other") =>
+      setErrorState({ message, kind }),
+    [],
+  );
   const [sendError, setSendError] = useState("");
   const [busy, setBusy] = useState(false);
   const [restoring, setRestoring] = useState(true);
   const stream = useRef<AbortController | null>(null);
+  const following = useRef(false); // 当前是否有连接在跟随运行直到终态
+  const loginUser = useRef<components["schemas"]["DemoIdentity"] | undefined>(
+    undefined,
+  );
   const cursor = useRef(0);
   const generation = useRef(0);
   const historyLoaded = useRef(false);
   const tripsLoaded = useRef(false);
   const owner = useRef<string | undefined>(undefined);
 
-  const fail = useCallback((failure: unknown) => {
-    if (failure instanceof ApiError && failure.status === 401) {
-      generation.current += 1;
-      stream.current?.abort();
-      cursor.current = 0;
-      forgetIdentity(localStorage, sessionStorage, owner.current);
-      owner.current = undefined;
-      setIdentity(undefined);
-      setRequest(undefined);
-      setRun(undefined);
-      setHistory([]);
-      setHistoryBefore(null);
-      historyLoaded.current = false;
-      tripsLoaded.current = false;
-      setTrips([]);
-      setTripCursor(null);
-      setEvents([]);
-      setHotels(undefined);
-      setChoiceCards([]);
-      setPlan(undefined);
-      setConfirmation(undefined);
-      setPlanOrigin(undefined);
-      setHotelOrigin(undefined);
-      setBookings([]);
-      setBusy(false);
-      setRestoring(false);
-      setError("身份已失效，请重新创建演示会话。");
-    } else setError(message(failure));
-  }, []);
+  const fail = useCallback(
+    (failure: unknown, streamFailure = false) => {
+      if (failure instanceof ApiError && failure.status === 401) {
+        generation.current += 1;
+        stream.current?.abort();
+        cursor.current = 0;
+        forgetIdentity(localStorage, sessionStorage, owner.current);
+        owner.current = undefined;
+        setIdentity(undefined);
+        setRequest(undefined);
+        setRun(undefined);
+        setHistory([]);
+        setHistoryBefore(null);
+        historyLoaded.current = false;
+        tripsLoaded.current = false;
+        setTrips([]);
+        setTripCursor(null);
+        setEvents([]);
+        setHotels(undefined);
+        setChoiceCards([]);
+        setPlan(undefined);
+        setConfirmation(undefined);
+        setPlanOrigin(undefined);
+        setHotelOrigin(undefined);
+        setBookings([]);
+        setBusy(false);
+        setRestoring(false);
+        setError("身份已失效，请重新创建演示会话。");
+      } else {
+        const kind = classifyError(failure);
+        setError(
+          message(failure),
+          streamFailure && kind === "other" ? "stream" : kind,
+        );
+      }
+    },
+    [setError],
+  );
 
   const remember = useCallback((value: Identity) => {
     persistIdentity(localStorage, sessionStorage, value);
@@ -182,58 +206,81 @@ export function useWorkspace({
       const active = () =>
         !controller.signal.aborted && generation.current === started;
       cursor.current = after;
+      following.current = true;
       // 早期出卡按事件顺序串行；失败静默，运行结束后的 hydrate 为准。
       let early = Promise.resolve();
       let failedReason: string | null = null; // 最近一次失败工具步骤或运行级失败事件的封闭原因码
       let failedTool: string | null = null;
       let failedExternal: AppEvent["external"] = null;
+      let latest: Run | undefined;
+      const receive = (event: AppEvent) => {
+        const binding = { session_id: current.session_id, run_id: runId };
+        if (
+          !belongsToRun(event, binding) ||
+          event.sequence <= cursor.current ||
+          !active()
+        )
+          return;
+        cursor.current = event.sequence;
+        if (
+          event.kind === "tool_finished" &&
+          event.code &&
+          !event.external?.provisional
+        ) {
+          failedReason = event.reason ?? null;
+          failedTool = event.tool_name;
+          failedExternal = event.external;
+        } else if (
+          event.kind === "tool_finished" &&
+          !event.code &&
+          event.tool_name === failedTool
+        ) {
+          failedReason = null;
+          failedTool = null;
+          failedExternal = null;
+        }
+        // 运行级失败事件在最后到达；其封闭原因码优先于此前的工具原因。
+        if (event.kind === "failed" && event.reason)
+          failedReason = event.reason;
+        if (event.kind === "failed") failedExternal = event.external;
+        setEvents((old) => [...old.slice(-79), event]);
+        if (isCardEvent(event))
+          early = early
+            .then(() => hydrate(event, current, active, binding))
+            .catch(() => undefined);
+      };
       try {
-        await readEvents(
-          runId,
-          current.token,
-          after,
-          controller.signal,
-          (event) => {
-            const binding = { session_id: current.session_id, run_id: runId };
-            if (
-              !belongsToRun(event, binding) ||
-              event.sequence <= cursor.current ||
-              !active()
-            )
-              return;
-            cursor.current = event.sequence;
-            if (
-              event.kind === "tool_finished" &&
-              event.code &&
-              !event.external?.provisional
-            ) {
-              failedReason = event.reason ?? null;
-              failedTool = event.tool_name;
-              failedExternal = event.external;
-            } else if (
-              event.kind === "tool_finished" &&
-              !event.code &&
-              event.tool_name === failedTool
-            ) {
-              failedReason = null;
-              failedTool = null;
-              failedExternal = null;
-            }
-            // 运行级失败事件在最后到达；其封闭原因码优先于此前的工具原因。
-            if (event.kind === "failed" && event.reason)
-              failedReason = event.reason;
-            if (event.kind === "failed") failedExternal = event.external;
-            setEvents((old) => [...old.slice(-79), event]);
-            if (isCardEvent(event))
-              early = early
-                .then(() => hydrate(event, current, active, binding))
-                .catch(() => undefined);
-          },
-        );
+        // 流 EOF 只说明连接结束：followRun 查 /runs 状态，未终态则带游标退避重连。
+        const outcome = await followRun({
+          read: (from) =>
+            readEvents(runId, current.token, from, controller.signal, receive),
+          cursor: () => cursor.current,
+          status: async () =>
+            (latest = await api<Run>(`/runs/${runId}`, current.token)),
+          wait: (ms) =>
+            new Promise((resolve) => {
+              const timer = setTimeout(resolve, ms);
+              controller.signal.addEventListener("abort", () => {
+                clearTimeout(timer);
+                resolve();
+              });
+            }),
+          active,
+        });
+        if (outcome === "exhausted" && active()) {
+          setError(
+            "进度连接多次中断，任务可能仍在后台执行。请点击“重新连接进度”继续查看，期间不要重复发送。",
+            "stream",
+          );
+          return;
+        }
         await early;
-        if (!active()) return;
-        const final = await api<Run>(`/runs/${runId}`, current.token);
-        if (!active()) return;
+        const final = latest;
+        if (outcome !== "terminal" || !final || !active()) return;
+        // 连接已读到终态：此前的进度连接类错误不再适用。
+        setErrorState((old) =>
+          old.kind === "stream" ? { message: "", kind: "other" } : old,
+        );
         if (
           !matchesRun(final, { session_id: current.session_id, run_id: runId })
         )
@@ -266,15 +313,22 @@ export function useWorkspace({
         setBookings(savedBookings);
         if (final.error_code && final.business_result?.kind !== "stage_failed")
           setError(
-            runFailureMessage(final.error_code, failedReason, failedExternal),
+            runFailureMessage(
+              final.error_code,
+              failedReason,
+              failedExternal,
+              final.answer,
+            ),
+            "run",
           );
       } catch (failure) {
-        if (active()) fail(failure);
+        if (active()) fail(failure, true);
       } finally {
+        if (stream.current === controller) following.current = false;
         if (active()) setBusy(false);
       }
     },
-    [hydrate, fail],
+    [hydrate, fail, setError],
   );
 
   const restoreConversation = useCallback(
@@ -460,16 +514,27 @@ export function useWorkspace({
     generation.current += 1;
     stream.current?.abort();
     await action(async (read, active) => {
-      const user = await read(
-        api<components["schemas"]["DemoIdentity"]>(
-          "/demo/login",
-          undefined,
-          "POST",
-          { display_name: "旅行者" },
-        ),
-      );
+      // 创建会话失败时保留已创建的用户，重试复用它，避免每次点击都留下孤儿用户。
+      const user =
+        loginUser.current ??
+        (loginUser.current = await read(
+          api<components["schemas"]["DemoIdentity"]>(
+            "/demo/login",
+            undefined,
+            "POST",
+            { display_name: "旅行者" },
+          ),
+        ));
       if (!active()) return;
-      const session = await read(createTrip(user.token));
+      let session;
+      try {
+        session = await read(createTrip(user.token));
+      } catch (failure) {
+        if (failure instanceof ApiError && failure.status === 401)
+          loginUser.current = undefined;
+        throw failure;
+      }
+      loginUser.current = undefined;
       if (!active()) return;
       const current = { ...user, session_id: session.session_id };
       remember(current);
@@ -561,6 +626,36 @@ export function useWorkspace({
       setTripCursor(page.next_cursor);
     });
   }
+  /** 条件版本冲突（409）：重读最新条件并提示，用户核对后再重试；其他错误原样抛出。 */
+  async function refreshOnConflict(
+    failure: unknown,
+    current: Identity,
+    read: ReturnType<typeof readWhile>,
+    active: () => boolean,
+  ) {
+    if (!(failure instanceof ApiError) || failure.status !== 409)
+      return failure;
+    try {
+      const state = await read(
+        api<RequestState>(
+          `/sessions/${current.session_id}/request`,
+          current.token,
+        ),
+      );
+      if (!active()) return failure;
+      setRequest(state);
+      setTrips((old) => updateTripSummary(old, current.session_id, state));
+      setHotels(undefined);
+      setChoiceCards([]);
+    } catch {
+      return failure;
+    }
+    return new ApiError(
+      `${failure.message}（已刷新为最新条件，请核对后重试）`,
+      failure.status,
+      failure.code,
+    );
+  }
   async function saveConditions(patch: ConditionPatch) {
     if (!identity || !request) return;
     if (
@@ -576,7 +671,9 @@ export function useWorkspace({
           "PATCH",
           { expected_revision: request.revision, ...patch },
         ),
-      );
+      ).catch(async (failure: unknown) => {
+        throw await refreshOnConflict(failure, identity, read, active);
+      });
       if (!active()) return;
       setRequest(result.request);
       setTrips((old) =>
@@ -694,8 +791,17 @@ export function useWorkspace({
       if (generation.current !== started) return false;
       if (failure instanceof ApiError && failure.status < 500)
         remember({ ...identity, pending_message: undefined });
-      fail(failure);
-      setSendError(message(failure));
+      // 带条件版本的选择（酒店/选择卡）遇到 409：刷新条件，让用户在最新版本上重选。
+      const reported = selection
+        ? await refreshOnConflict(
+            failure,
+            identity,
+            read,
+            () => generation.current === started,
+          )
+        : failure;
+      fail(reported);
+      setSendError(message(reported));
       setBusy(false);
       return false;
     }
@@ -929,13 +1035,24 @@ export function useWorkspace({
     });
   }
   async function cancel() {
-    if (identity && run) {
-      await action(async (read, active) => {
-        const cancelled = await read(
-          api<Run>(`/runs/${run.run_id}/cancel`, identity.token, "POST"),
-        );
-        if (active()) setRun(cancelled);
-      });
+    if (!identity || !run) return;
+    const started = generation.current;
+    try {
+      const cancelled = await api<Run>(
+        `/runs/${run.run_id}/cancel`,
+        identity.token,
+        "POST",
+      );
+      if (generation.current !== started) return;
+      setRun(cancelled);
+      // 取消只是请求：保持 busy 直到跟随连接读到终态，避免此时再发送得到 409。
+      // 没有连接在跟随（如已断线）时重新连接，由它读到终态并收尾。
+      if (!following.current) {
+        setBusy(true);
+        void connect(identity, cancelled.run_id, cursor.current);
+      }
+    } catch (failure) {
+      if (generation.current === started) fail(failure);
     }
   }
   return {
@@ -972,6 +1089,8 @@ export function useWorkspace({
     bookingAction,
     lock,
     reconnect,
+    errorKind: errorState.kind,
+    runActive: !!run && isRunActive(run.status),
     loadEarlier,
     viewRunPlan,
     refresh,

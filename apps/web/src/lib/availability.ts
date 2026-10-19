@@ -17,6 +17,35 @@ export function partyLabel(stay: Record<string, unknown>): string {
   return `${count(stay.adults, "成人")} · ${children} · ${count(stay.rooms, "间房")}`;
 }
 
+/** Backend amounts are decimal strings in the offer's own currency; never assume yen. Null stays "未知", never 0. */
+export function moneyLabel(
+  amount: string | null | undefined,
+  currency: string,
+): string {
+  if (amount == null) return "未知";
+  try {
+    return new Intl.NumberFormat("zh-CN", {
+      style: "currency",
+      currency,
+    }).format(Number(amount));
+  } catch {
+    return `${amount} ${currency}`;
+  }
+}
+
+/** Visible reason a hotel offer cannot be held/selected right now; null when it can. */
+export function hotelHoldBlockReason(state: {
+  expired: boolean;
+  totalKnown: boolean;
+  revisionMatches: boolean;
+}): string | null {
+  if (state.expired) return "报价已过期，请重新比较酒店获取新报价。";
+  if (!state.revisionMatches)
+    return "此报价基于旧条件，请重新比较酒店后再操作。";
+  if (!state.totalKnown) return "总价未知，无法暂留。";
+  return null;
+}
+
 export function planUnavailable(plan: Plan, now: number): boolean {
   return (
     plan.expired ||

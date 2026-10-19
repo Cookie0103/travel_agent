@@ -30,10 +30,46 @@ export type Identity = {
 
 export class ApiError extends Error {
   readonly status: number;
-  constructor(message: string, status: number) {
+  /** 后端 {code,message} 的封闭错误码；非业务错误（代理/网络）没有。 */
+  readonly code?: string;
+  constructor(message: string, status: number, code?: string) {
     super(message);
     this.status = status;
+    this.code = code;
   }
+}
+
+/** 后端 {code,message}；FastAPI 自带校验错误是 {detail:[{loc,msg}]}，只取字段名，不显示英文原文。 */
+function apiError(status: number, body: unknown, fallback?: string) {
+  const data = (body ?? {}) as {
+    code?: unknown;
+    message?: unknown;
+    detail?: unknown;
+  };
+  const code = typeof data.code === "string" ? data.code : undefined;
+  if (typeof data.message === "string" && data.message)
+    return new ApiError(data.message, status, code);
+  if (status === 422) {
+    const fields = Array.isArray(data.detail)
+      ? [
+          ...new Set(
+            data.detail.flatMap((item: { loc?: unknown }) =>
+              Array.isArray(item?.loc) && item.loc.length > 1
+                ? [String(item.loc.at(-1))]
+                : [],
+            ),
+          ),
+        ]
+      : [];
+    return new ApiError(
+      fields.length
+        ? `输入不符合条件（${fields.join("、")}），请检查后重试。`
+        : "输入不符合条件，请检查日期、人数和金额。",
+      status,
+      code,
+    );
+  }
+  return new ApiError(fallback ?? `请求失败（${status}）`, status, code);
 }
 
 export function sourceHref(value: string): string | undefined {
@@ -121,13 +157,13 @@ export async function confirmPlan(
     const explanation =
       "确认已成功，正式行程读取失败。请重新读取，无需再次保存。";
     if (failure instanceof ApiError)
-      throw new ApiError(explanation, failure.status);
+      throw new ApiError(explanation, failure.status, failure.code);
     throw new Error(explanation);
   }
 }
 
 export type TripSummary = components["schemas"]["SessionSummary"];
-export type TripPage = components["schemas"]["SessionPage"];
+type TripPage = components["schemas"]["SessionPage"];
 export function createTrip(token: string) {
   return api<components["schemas"]["SessionView"]>("/sessions", token, "POST");
 }
@@ -174,14 +210,7 @@ export async function api<T>(
     ...(body !== undefined ? { body: JSON.stringify(body) } : {}),
   });
   if (!response.ok) {
-    const error = await response.json().catch(() => null);
-    throw new ApiError(
-      error?.message ||
-        (response.status === 422
-          ? "输入不符合条件，请检查日期、人数和金额。"
-          : `请求失败（${response.status}）`),
-      response.status,
-    );
+    throw apiError(response.status, await response.json().catch(() => null));
   }
   return response.json() as Promise<T>;
 }
@@ -198,10 +227,10 @@ export async function readEvents(
     signal,
   });
   if (!response.ok) {
-    const detail = await response.json().catch(() => null);
-    throw new ApiError(
-      detail?.message || "进度连接失败，可以重新连接读取已保存事件。",
+    throw apiError(
       response.status,
+      await response.json().catch(() => null),
+      "进度连接失败，可以重新连接读取已保存事件。",
     );
   }
   if (!response.body)

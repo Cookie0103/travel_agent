@@ -1,5 +1,5 @@
 /** Pace lives in soft_constraints under a stable prefix so the model and server see it as plain text. */
-export const PACE_PREFIX = "节奏：";
+const PACE_PREFIX = "节奏：";
 export const PACES = ["标准", "特种兵", "慢节奏"] as const;
 export type Pace = (typeof PACES)[number];
 
