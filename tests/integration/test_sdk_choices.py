@@ -108,9 +108,19 @@ def test_native_sdk_roundtrips_server_owned_pace_card(
         for event in events
         if isinstance(event, dict) and event.get("kind") == "presentation"
     ]
-    # 节奏不再是缺项：自动卡只含仍缺的交通；显式表单才同时含交通与节奏（均由服务端固定选项）。
+    # 自动发的是合并选择卡（只含仍未定的组，房型偏好此会话已知故不出现）；
+    # 显式present_form表单才同时含交通与节奏（均由服务端固定选项）。
     assert len(choices) == 2
-    assert [group["key"] for group in choices[0]["form"]["groups"]] == ["transport"]
+    assert choices[0]["form"]["purpose"] == "trip_ask"
+    assert [group["key"] for group in choices[0]["form"]["groups"]] == [
+        "pace",
+        "wake",
+        "evening",
+        "arrival",
+        "departure",
+        "companion",
+        "transport",
+    ]
     assert [option["label"] for option in choices[1]["options"]] == ["确认并继续"]
     groups = {group["key"]: group for group in choices[1]["form"]["groups"]}
     assert [option["label"] for option in groups["pace"]["options"]] == [

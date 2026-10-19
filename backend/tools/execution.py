@@ -12,6 +12,7 @@ from backend.agent.runtime import EventSink
 from backend.domain.execution import BusinessResult, RunContext, RuntimeEvent, tool_reason
 from backend.domain.external_data import external_explanation
 from backend.domain.hotel_recovery import HotelSearchDiagnostics
+from backend.domain.rakuten_links import RAKUTEN_SEARCH_URL
 from backend.domain.tool_facts import argument_facts
 from backend.domain.travel_request import HOTEL_FIELD_LABELS
 from backend.tools.contracts import ToolDefinition, ToolExecutor, ToolResult
@@ -96,6 +97,7 @@ def empty_hotel_payload(result: ToolResult) -> dict[str, object]:
                 "lowest_offer_ids": [],
                 "scope": "本轮没有可展示的酒店报价，未进行价格比较。",
                 "reasons": [reason],
+                **({"search_url": RAKUTEN_SEARCH_URL} if result.code is None else {}),
             },
         },
         "evidence_ids": [],
@@ -200,6 +202,20 @@ async def execute_observed(
                             presentation={"status": "ok", "data": {"component": "choice", **card}},
                         )
                     )
+    # 服务端新建的卡：聊天选酒店的归段确认卡、闸门代发的合并选择卡。
+    if (
+        (safe_name == "select_hotel_from_chat" and result.code is None)
+        or "trip_details_required" in result.detail
+    ) and isinstance((new_card := result.data.get("choice")), dict):
+        emit(
+            RuntimeEvent(
+                context,
+                "presentation",
+                tool_name=name,
+                tool_call_id=call_id,
+                presentation={"status": "ok", "data": {"component": "choice", **new_card}},
+            )
+        )
     if safe_name == "search_hotel_offers" and result.code is None:
         budget_choice = result.data.get("choice")
         if isinstance(budget_choice, dict):
@@ -226,6 +242,7 @@ async def execute_observed(
                         "scope": "已核对的住宿报价；预算放宽须确认",
                         "budget_relation": None,
                         "reasons": [presentation_diagnosis.get("message", "")],
+                        "search_url": RAKUTEN_SEARCH_URL,
                     },
                 },
             }
@@ -291,6 +308,23 @@ async def execute_observed(
                 "presented": "草稿已由服务端展示，不要再调用present_travel_result，直接回复用户",
             },
         )
+    # 草稿之后的偏好记忆确认卡(服务端合并生成)：与草稿同一轮展示，页面一次确认。
+    if (
+        safe_name == "stage_plan_change"
+        and result.code is None
+        and isinstance(memory_cards := result.data.get("memory_choices"), list)
+    ):
+        for card in memory_cards:
+            if isinstance(card, dict):
+                emit(
+                    RuntimeEvent(
+                        context,
+                        "presentation",
+                        tool_name=name,
+                        tool_call_id=call_id,
+                        presentation={"status": "ok", "data": {"component": "choice", **card}},
+                    )
+                )
     return result
 
 

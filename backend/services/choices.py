@@ -3,15 +3,15 @@
 import json
 from datetime import UTC, datetime
 from decimal import ROUND_CEILING, Decimal
+from typing import cast
 from uuid import UUID
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.choices import (
-    ChoiceCard as ChoiceCard,
-)
-from backend.domain.choices import (
+    AssignInfo,
+    ChoiceForm,
     ChoiceKind,
     ChoiceOption,
     ChoiceSelection,
@@ -21,22 +21,327 @@ from backend.domain.choices import (
     form_patch,
     pace_options,
     pace_patch,
+    trip_ask_form,
+)
+from backend.domain.choices import (
+    ChoiceCard as ChoiceCard,
 )
 from backend.domain.execution import RunContext
 from backend.domain.hotel_recovery import HotelSearchDiagnostics
+from backend.domain.memory import LONG_TERM_ELIGIBLE
+from backend.domain.memory_merge import card_candidates
 from backend.domain.travel_request import RequestPatch, TravelRequest, pace_of
-from backend.persistence import memory, sessions
+from backend.persistence import memory, runs, sessions
 from backend.persistence import travel as requests
-from backend.persistence.models import ChoiceCardRow
+from backend.persistence.models import ChoiceCardRow, MemoryFactRow
 from backend.services import conversation
 from backend.services.common import ServiceError, transaction
-from backend.services.memory import MemoryService
+from backend.services.memory import MemoryService, erase, has_draft
 from backend.services.travel import TravelService, request_from_row, require_revision
+
+# 记忆合并确认卡(docs/plans/2026-10-19-memory-flow.md)：草稿暂存之后，由tools.travel的暂存分支调用
+# ChoiceService.merge_memory_cards，把本会话新增/变更的可长期偏好合成“一组”memory_confirm卡
+# (默认记住，页面一次确认，沿用ChoiceSelection.also)。逐条的propose_memory/memory_confirm路径不变。
+MEMORY_MERGE_EXTENSION_POINT = "after_draft_staged"
+# 已确认的记忆键中，可替代合并选择卡里 节奏/交通/起床/晚上结束 四组的键。
+MEMORY_ASK_KEYS = frozenset(LONG_TERM_ELIGIBLE)
+CORE_FIELDS = ("city", "start_date", "end_date", "adults", "child_ages", "rooms")
+ASK_QUESTION = "请一次确认以下信息，再继续"
 
 
 class ChoiceService:
     def __init__(self, travel: TravelService) -> None:
         self.travel = travel
+
+    async def ensure_trip_ask(self, context: RunContext) -> tuple[ChoiceCard | None, bool]:
+        async with transaction(self.travel.database) as db:
+            return await self.ensure_trip_ask_in_transaction(db, context)
+
+    async def ensure_trip_ask_in_transaction(
+        self, db: AsyncSession, context: RunContext
+    ) -> tuple[ChoiceCard | None, bool]:
+        """核心条件齐全后，把仍未定的行程信息合并成一张卡；返回(未答的卡, 是否本次新建)。
+
+        每个问题至多问一次：已答过的组不再出现；同一未答卡按当前条件复用；条件变化致过期则按剩余项重发。
+        """
+        row = await requests.owned_request(db, context)
+        if row is None:
+            raise ServiceError(404, "blocked", "会话不存在")
+        request = request_from_row(row)
+        if not conversation.stored_state(row).pending_tasks:
+            return None, False  # 没有已授权的待办：不发卡，也不要求执行记录(纯查询/评测流程)
+        cards = list(
+            await db.scalars(
+                select(ChoiceCardRow)
+                .where(
+                    ChoiceCardRow.session_id == context.session_id,
+                    ChoiceCardRow.kind == "form",
+                    ChoiceCardRow.content["purpose"].astext == "trip_ask",
+                )
+                .order_by(ChoiceCardRow.created_at.desc())
+            )
+        )
+        asked = {
+            group.key
+            for card in cards
+            if card.answered_option_id is not None
+            for group in ChoiceForm.model_validate(card.content["form"]).groups
+        }
+        open_card = next(
+            (c for c in cards if c.answered_option_id is None and not c.content.get("superseded")),
+            None,
+        )
+        form: ChoiceForm | None = None
+        if all(getattr(request, field) is not None for field in CORE_FIELDS):
+            known = frozenset(
+                fact.key
+                for fact in await memory.active(db, context.user_id, context.session_id)
+                if fact.key in MEMORY_ASK_KEYS
+            )
+            form = trip_ask_form(request, conversation.stored_state(row).pending_tasks, known)
+            if form is not None:
+                remaining = tuple(g for g in form.groups if g.key not in asked)
+                form = ChoiceForm(purpose="trip_ask", groups=remaining) if remaining else None
+        if form is None:
+            if open_card is not None:  # 条件已齐全/已知，旧的未答卡不应继续挡路
+                open_card.content = {**open_card.content, "superseded": True}
+            return None, False
+        if open_card is not None:
+            current = card_from_row(open_card, request.revision)
+            if not current.stale and current.form == form:
+                return current, False
+        await conversation.require_current_run(db, context)
+        await self.supersede_forms(db, context)
+        card = ChoiceCard(
+            kind="form",
+            session_id=context.session_id,
+            source_run_id=context.run_id,
+            expected_revision=request.revision,
+            question=ASK_QUESTION,
+            options=(ChoiceOption(option_id="confirm", label="确认并继续", value="confirm"),),
+            form=form,
+        )
+        db.add(
+            ChoiceCardRow(
+                id=card.choice_id,
+                session_id=card.session_id,
+                source_run_id=card.source_run_id,
+                kind=card.kind,
+                expected_revision=card.expected_revision,
+                created_at=card.created_at,
+                content={
+                    "question": card.question,
+                    "options": [option.model_dump(mode="json") for option in card.options],
+                    "form": form.model_dump(mode="json"),
+                    "purpose": "trip_ask",
+                },
+            )
+        )
+        await db.flush()
+        return card, True
+
+    async def merge_memory_cards(self, context: RunContext) -> list[dict[str, object]]:
+        async with transaction(self.travel.database) as db:
+            return await self.merge_memory_cards_in_transaction(db, context)
+
+    async def merge_memory_cards_in_transaction(
+        self, db: AsyncSession, context: RunContext
+    ) -> list[dict[str, object]]:
+        """草稿暂存之后，把本会话新增/变更的可长期偏好合成一组确认卡(默认“记住”)。
+
+        证据只有两类，都由服务端核对：用户在合并选择卡上已提交的答案，以及用户原话经
+        propose_memory校验后暂缓的提议。模型不构造这批卡，也不能确认。无草稿不发；同一轮至多一组；
+        已存在且不变/用户已拒绝/本卡答案已评估过的偏好不再提议。
+        """
+        row = await requests.owned_request(db, context)
+        if row is None or not await has_draft(db, context):
+            return []
+        await conversation.require_current_run(db, context)
+        run = await runs.owned(db, context.user_id, context.run_id)
+        user = await sessions.get_user(db, context.user_id, lock=True)
+        assert run and user
+        if user.memory_forgotten_at is not None and run.created_at < user.memory_forgotten_at:
+            return []
+        request = request_from_row(row)
+        service = MemoryService(self.travel.database)
+        issued = list(
+            await db.scalars(
+                select(ChoiceCardRow).where(
+                    ChoiceCardRow.session_id == context.session_id,
+                    ChoiceCardRow.kind == "memory_confirm",
+                    ChoiceCardRow.content["merged_run_id"].astext == str(context.run_id),
+                )
+            )
+        )
+        if issued:
+            return await service.views(db, context, issued, request.revision)
+        active = await memory.active(db, context.user_id, context.session_id)
+        eligible = MemoryFactRow.key.in_(LONG_TERM_ELIGIBLE)
+        rejected = list(
+            await db.scalars(
+                select(MemoryFactRow).where(
+                    MemoryFactRow.user_id == context.user_id,
+                    MemoryFactRow.status == "rejected",
+                    eligible,
+                )
+            )
+        )
+        pending = list(
+            await db.scalars(
+                select(MemoryFactRow).where(
+                    MemoryFactRow.user_id == context.user_id,
+                    MemoryFactRow.session_id == context.session_id,
+                    MemoryFactRow.status == "proposed",
+                    eligible,
+                )
+            )
+        )
+        deferred: dict[str, tuple[MemoryFactRow, ChoiceCardRow]] = {}
+        shown: set[str] = set()  # 已有展示中的待确认卡的键：不重复提议
+        for fact in pending:
+            hidden = await service.deferred_card(db, context, fact)
+            if hidden is None:
+                shown.add(fact.key)
+            else:
+                deferred[fact.key] = (fact, hidden)
+
+        def settled(key: str, value: object) -> bool:
+            return any(r.key == key and r.value == value for r in (*active, *rejected))
+
+        def long_term(key: str) -> list[MemoryFactRow]:
+            return [r for r in active if r.key == key and r.scope == "long_term"]
+
+        built: dict[str, tuple[MemoryFactRow, ChoiceCardRow]] = {}
+        for key, (fact, hidden) in deferred.items():
+            target_id = hidden.content.get("target_fact_id")
+            current = long_term(key)
+            if key in shown or settled(key, fact.value):
+                erase(fact)  # 已不变/已被拒绝：不打扰用户
+            elif target_id and not any(str(r.id) == target_id for r in current):
+                erase(fact)  # 要更新的目标已变化
+            else:
+                if not target_id and current:  # 暂缓期间出现了已确认值：改为更新它
+                    hidden.content = {
+                        **hidden.content,
+                        "operation": "UPDATE",
+                        "target_fact_id": str(current[0].id),
+                    }
+                built[key] = (fact, hidden)
+        answered = await db.scalars(
+            select(ChoiceCardRow)
+            .where(
+                ChoiceCardRow.session_id == context.session_id,
+                ChoiceCardRow.kind == "form",
+                ChoiceCardRow.content["purpose"].astext == "trip_ask",
+                ChoiceCardRow.answered_option_id.is_not(None),
+            )
+            .order_by(ChoiceCardRow.created_at.desc())
+        )
+        for source in answered:
+            form = ChoiceForm.model_validate(source.content["form"])
+            offered = set(cast(list[str], source.content.get("memory_offered") or []))
+            for candidate in card_candidates(form, request):
+                if candidate.key in offered:
+                    continue  # 这张卡的这个键评估过了：用户删除/拒绝后不反复提议
+                offered.add(candidate.key)
+                source.content = {**source.content, "memory_offered": sorted(offered)}
+                if candidate.key in built or candidate.key in shown:
+                    continue
+                if settled(candidate.key, candidate.value):
+                    continue
+                current = long_term(candidate.key)
+                fact = MemoryFactRow(
+                    user_id=context.user_id,
+                    key=candidate.key,
+                    value=candidate.value,
+                    scope="long_term",
+                    session_id=context.session_id,
+                    status="proposed",
+                    source="user_utterance",
+                    source_run_id=source.answered_run_id or context.run_id,
+                    evidence_quote=candidate.quote,
+                    ordinal=0,
+                )
+                db.add(fact)
+                await db.flush()
+                built[candidate.key] = (
+                    fact,
+                    service.add_card(
+                        db,
+                        context,
+                        fact,
+                        "UPDATE" if current else "ADD",
+                        current[0].id if current else None,
+                        request.revision,
+                        deferred=True,
+                    ),
+                )
+        rows: list[ChoiceCardRow] = []
+        for key in LONG_TERM_ELIGIBLE:
+            if key in built:
+                card_row = built[key][1]
+                card_row.content = {
+                    **{k: v for k, v in card_row.content.items() if k != "deferred"},
+                    "merged_run_id": str(context.run_id),
+                    "default_option_id": "remember",
+                }
+                rows.append(card_row)
+        await db.flush()
+        return await service.views(db, context, rows, request.revision) if rows else []
+
+    async def create_assign_card(
+        self,
+        db: AsyncSession,
+        context: RunContext,
+        revision: int,
+        info: AssignInfo,
+        extra: dict[str, object],
+    ) -> ChoiceCard:
+        """聊天里贴的酒店归段确认卡；同会话同时只保留一张未答的。"""
+        for old in await open_cards(db, context, "hotel_assign"):
+            old.content = {**old.content, "superseded": True}
+        options = (
+            (
+                ChoiceOption(option_id="deny", label="填写城市", value="deny"),
+                ChoiceOption(option_id="dismiss", label="先不选这家", value="dismiss"),
+            )
+            if info.needs_city
+            else (
+                ChoiceOption(option_id="confirm", label="确认", value="confirm"),
+                ChoiceOption(option_id="deny", label="否", value="deny"),
+            )
+        )
+        card = ChoiceCard(
+            kind="hotel_assign",
+            session_id=context.session_id,
+            source_run_id=context.run_id,
+            expected_revision=revision,
+            question=(
+                f"没能判断「{info.hotel_name}」属于哪个城市的住宿段，请告诉我是哪个城市"
+                if info.needs_city
+                else f"因为你没说，已自动归到{info.city}的住宿段，可以吗？"
+            ),
+            options=options,
+            assign=info,
+        )
+        db.add(
+            ChoiceCardRow(
+                id=card.choice_id,
+                session_id=card.session_id,
+                source_run_id=card.source_run_id,
+                kind=card.kind,
+                expected_revision=card.expected_revision,
+                created_at=card.created_at,
+                content={
+                    "question": card.question,
+                    "options": [option.model_dump(mode="json") for option in options],
+                    "assign": info.model_dump(mode="json"),
+                    **extra,
+                },
+            )
+        )
+        await db.flush()
+        return card
 
     async def create(
         self,
@@ -132,8 +437,9 @@ class ChoiceService:
         form = card_from_row(cards[0], request.revision).form
         assert form is not None
         keys = {group.key for group in form.groups}
-        if ("transport" in keys and request.transport is None) or (
-            "pace" in keys and pace_of(request) is None
+        if form.purpose != "trip_ask" and (
+            ("transport" in keys and request.transport is None)
+            or ("pace" in keys and pace_of(request) is None)
         ):
             raise ServiceError(422, "validation", "请先记录用户明确的交通与旅行节奏")
         cards[0].answered_option_id, cards[0].answered_run_id = "confirm", context.run_id
@@ -244,9 +550,13 @@ class ChoiceService:
         ):
             raise ServiceError(409, "conflict", "选择卡已过期或条件已变化")
         option = selected_option(card, selection.option_id)
-        if card.kind != "form" and selection.answers is not None:
+        if card.kind not in {"form", "hotel_assign"} and selection.answers is not None:
             raise ServiceError(422, "validation", "普通选择不能混填表单答案")
-        if card.kind == "budget_relaxation":
+        if card.kind == "hotel_assign":
+            from backend.services.hotel_selection import answer_assignment
+
+            await answer_assignment(db, context, card, option, selection, request)
+        elif card.kind == "budget_relaxation":
             if option.option_id == "accept":
                 if request.lodging_budget is None:
                     raise ServiceError(409, "conflict", "住宿预算已变化")
@@ -306,9 +616,15 @@ async def owned_card(
 async def open_forms(
     db: AsyncSession, context: RunContext, *, lock: bool = False
 ) -> list[ChoiceCardRow]:
+    return await open_cards(db, context, "form", lock=lock)
+
+
+async def open_cards(
+    db: AsyncSession, context: RunContext, kind: ChoiceKind, *, lock: bool = False
+) -> list[ChoiceCardRow]:
     query = select(ChoiceCardRow).where(
         ChoiceCardRow.session_id == context.session_id,
-        ChoiceCardRow.kind == "form",
+        ChoiceCardRow.kind == kind,
         ChoiceCardRow.answered_option_id.is_(None),
         ChoiceCardRow.content["superseded"].as_boolean().is_not(True),
     )
@@ -321,7 +637,7 @@ def card_from_row(row: ChoiceCardRow, revision: int) -> ChoiceCard:
             **{
                 key: value
                 for key, value in row.content.items()
-                if key in {"question", "options", "expires_at", "form"}
+                if key in {"question", "options", "expires_at", "form", "assign"}
             },
             "choice_id": row.id,
             "kind": row.kind,
@@ -355,11 +671,29 @@ def selection_prompt(
     if row.kind == "form":
         if selection is None or selection.answers is None:
             raise ServiceError(422, "validation", "请回答完必填题目后统一确认")
+        shown = row.content.get("form")
+        if isinstance(shown, dict) and shown.get("purpose") == "trip_ask":
+            return trip_ask_prompt(ChoiceForm.model_validate(shown), selection.answers)
         answers = json.dumps(selection.answers, ensure_ascii=False, sort_keys=True)
         return (
             f"用户统一确认：{answers}。答案已在服务端原子记录，以当前request为准；"
             "不重复追问已确认项，其他必填条件齐全后继续原任务。"
         )
+    if row.kind == "hotel_assign":
+        assign = row.content.get("assign")
+        city = assign.get("city") if isinstance(assign, dict) else None
+        if option.option_id == "confirm":
+            return (
+                f"用户确认把酒店归入{city}的住宿段，服务端已按选择校验并记录。"
+                "以服务端酒店选择状态为准：各住宿段选齐则继续规划，否则请用户选择尚未选的住宿段。"
+            )
+        if option.option_id == "deny":
+            typed = selection.answers.get("city", ()) if selection and selection.answers else ()
+            return (
+                f"用户说这家酒店应归入「{typed[0] if typed else ''}」的住宿段，答案已保存；"
+                "请立即调用select_hotel_from_chat完成归段，不要再追问城市。"
+            )
+        return "用户选择先不选这家酒店。不要自动替用户选择；可请用户另选或贴乐天链接。"
     if row.kind == "memory_confirm":
         return (
             f"用户选择记忆「{row.content.get('question', '')}」：{option.label}。"
@@ -404,3 +738,23 @@ async def choice_view(
         ):
             view = view.model_copy(update={"stale": True})
     return view
+
+
+def trip_ask_prompt(form: ChoiceForm, answers: dict[str, tuple[str, ...]]) -> str:
+    """合并卡提交后的运行提示：只列用户实际答的组(含不确定)，不带内部选项编号。"""
+    parts = []
+    for group in form.groups:
+        labels = {option.option_id: option.label for option in group.options}
+        typed = answers.get(f"{group.key}_text")
+        picked = [labels[i] for i in answers.get(group.key, ()) if i in labels]
+        if typed:
+            picked.append(typed[0].strip())
+        if picked:
+            parts.append(f"{group.label}：{'、'.join(picked)}")
+    return (
+        "用户已在合并卡确认出行信息（"
+        + ("；".join(parts) or "全部未选，等同不确定")
+        + "）。答案已在服务端原子记录，以当前request为准；“无要求/不确定”不是限制，"
+        "节奏不确定按标准假设，到达/离开时间不确定按全天安排。不要再问这些项。"
+        "继续原任务：先逐住宿段搜索酒店并展示全部候选，然后停下等用户选择，不自动选酒店。"
+    )

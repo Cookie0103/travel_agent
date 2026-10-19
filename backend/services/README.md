@@ -22,3 +22,4 @@ RunService启动只读裁决旧执行；PG暂不可用保留安全503，恢复�
 
 HistoryService只读旅行摘要与持久轮次；游标有界，来源归属由SQL约束，接口见ADR-014。
 ChoiceService的form卡(模型经present_form出题)统一确认交通/节奏/已有时间/自拟题，复用消息事务与CAS/幂等；旧travel_details卡在读取边界兼容，见ADR-030(取代ADR-029)。
+ChoiceService.ensure_trip_ask在核心条件齐全后发“一张”合并选择卡(form.purpose=trip_ask，只含仍未定的组，每组可不答)，卡未答时搜酒店/规划被服务端拒绝；HotelSelectionService让按钮、聊天(select_hotel_from_chat，酒店身份只从可信用户原话解析)与跳过共用validate_hotel_selection，状态存request_details.hotel_flow。设计与契约见docs/plans/2026-10-19-ask-and-select-flow.md。

@@ -174,6 +174,8 @@ class TravelRequest(TravelConditions):
     lodging_budget_unlimited: bool = Field(
         default=False, strict=True, exclude_if=lambda value: not value
     )
+    # 只读派生：用户已选择“先不选酒店，先排行程”；不属于TravelConditions，不能被patch设置。
+    lodging_skipped: bool = Field(default=False, strict=True, exclude_if=lambda value: not value)
 
     @model_validator(mode="after")
     def segment_globals_required(self) -> Self:
@@ -522,7 +524,13 @@ def legacy_request(request: TravelRequest) -> dict[str, object]:
     """旧版本可读取的快照，新增预算唯一持久位置为request_details。"""
     return request.model_dump(
         mode="json",
-        exclude={"lodging_budget", "hotel_search_location", "segments", "lodging_budget_unlimited"},
+        exclude={
+            "lodging_budget",
+            "hotel_search_location",
+            "segments",
+            "lodging_budget_unlimited",
+            "lodging_skipped",
+        },
     )
 
 

@@ -37,6 +37,7 @@ from backend.profile import current, profile_name
 from backend.providers.claude_agent.application import GuardedRuntime
 from backend.services.choices import ChoiceService, owned_card, selected_option, selection_prompt
 from backend.services.common import ServiceError, database_error_details, transaction
+from backend.services.hotel_selection import skip_hotels, write_picks
 from backend.services.hotels import validate_hotel_selection
 from backend.services.travel import TravelService, request_from_row, require_revision
 from backend.tools.contracts import ToolExecutor
@@ -55,18 +56,27 @@ class MessageInput(BaseModel):
     expected_revision: int | None = Field(default=None, strict=True, ge=0)
     hotel_stays: tuple[HotelStay, ...] | None = Field(default=None, min_length=1, max_length=6)
     selection: ChoiceSelection | None = None
+    # 用户选择“先不选酒店，先排行程”：服务端记录当前住宿段集合已跳过，解除选酒店闸门。
+    skip_hotels: bool | None = Field(default=None, strict=True)
 
     @model_validator(mode="after")
     def valid_selection(self) -> "MessageInput":
         if self.hotel_stays is not None and self.selection is not None:
             raise ValueError("酒店选择与选择卡不得混填")
-        if (self.hotel_stays is None and self.selection is None) != (
+        if self.skip_hotels and (self.hotel_stays is not None or self.selection is not None):
+            raise ValueError("跳过酒店不能与酒店选择或选择卡混填")
+        if (self.hotel_stays is None and self.selection is None and not self.skip_hotels) != (
             self.expected_revision is None
         ):
             raise ValueError("酒店选择必须同时提供条件版本与完整住宿段")
         return self
 
     def selected_prompt(self) -> str:
+        if self.skip_hotels:
+            return (
+                self.text + "\n用户选择先不选酒店，先排行程（服务端已记录）。规划时不带酒店，"
+                "住宿费用按未知处理并在回复里说明；不要再要求用户选酒店。"
+            )
         if self.hotel_stays is None:
             return self.text
         return (
@@ -228,13 +238,19 @@ class RunService:
             if await runs.active(db, session_id):
                 raise ServiceError(409, "conflict", "此会话已有执行，请先等待或取消")
             request_row = None
-            if message.hotel_stays is not None:
+            if message.hotel_stays is not None or message.skip_hotels:
                 check_context = RunContext(user_id, session_id)
                 request_row = await requests.owned_request(db, check_context)
                 request = request_from_row(request_row)
                 assert message.expected_revision is not None
                 require_revision(request, message.expected_revision)
-                await validate_hotel_selection(db, check_context, request, message.hotel_stays)
+                assert request_row is not None
+                if message.skip_hotels:
+                    skip_hotels(request_row, request)
+                    request_row = None
+                else:
+                    assert message.hotel_stays is not None
+                    await validate_hotel_selection(db, check_context, request, message.hotel_stays)
             row = await runs.create(
                 db,
                 user_id,
@@ -257,19 +273,14 @@ class RunService:
                     message.expected_revision,
                 )
             if request_row is not None:
-                request_row.request_details = {
-                    **(request_row.request_details or {}),
-                    "selected_hotels": {
-                        "run_id": str(row.id),
-                        "revision": message.expected_revision,
-                        "stays": [
-                            stay.model_dump(mode="json")
-                            for stay in sorted(
-                                message.hotel_stays or (), key=lambda stay: stay.check_in
-                            )
-                        ],
-                    },
-                }
+                assert message.hotel_stays is not None
+                write_picks(
+                    request_row,
+                    request_from_row(request_row),
+                    message.hotel_stays,
+                    "button",
+                    row.id,
+                )
             result = view(row)
         context = RunContext(user_id, session_id, result.run_id)
         trace(

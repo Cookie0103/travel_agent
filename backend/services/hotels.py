@@ -10,6 +10,7 @@ from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError, external_code
 from backend.domain.hotel_details import StoredHotelDetails
+from backend.domain.hotel_flow import lodging_segments
 from backend.domain.hotel_recovery import (
     HotelSearchDiagnostics,
     evaluate,
@@ -349,7 +350,11 @@ class HotelService:
             "component": "hotel_comparison",
             "cards": cards(records, request),
             **search_summary(records),
-            **({"segments": segment_presentations(records, request)} if request.segments else {}),
+            **(
+                {"segments": segment_presentations(records, request)}
+                if lodging_segments(request)
+                else {}
+            ),
             "comparison": {
                 **compare(offers, datetime.now(UTC)),
                 "budget_relation": lodging_budget_relation(request).model_dump(mode="json"),
@@ -471,15 +476,25 @@ def segment_presentations(
 
 
 async def validate_hotel_selection(
-    db: AsyncSession, context: RunContext, request: TravelRequest, stays: tuple[HotelStay, ...]
+    db: AsyncSession,
+    context: RunContext,
+    request: TravelRequest,
+    stays: tuple[HotelStay, ...],
+    *,
+    partial: bool = False,
 ) -> None:
-    """消息提交事务内检查完整覆盖；不信任客户端的城市/酒店名/价格。"""
-    segments = [s for s in trip_segments(request) if s.depart > s.arrive]
+    """按钮与聊天选酒店共用的唯一服务端校验；不信任客户端的城市/酒店名/价格。
+
+    完整模式要求每个住宿段（单城市就是一段）恰好一条；partial只要求每条都对应一个住宿段。
+    """
+    segments = list(lodging_segments(request))
     required = {(segment.arrive, segment.depart) for segment in segments}
+    given = {(stay.check_in, stay.check_out) for stay in stays}
     if (
-        not request.segments
-        or len(stays) != len(segments)
-        or {(stay.check_in, stay.check_out) for stay in stays} != required
+        not segments
+        or not stays
+        or len(given) != len(stays)
+        or (not given <= required if partial else given != required)
     ):
         raise ServiceError(422, "validation", "请为每个住宿段选择一家酒店后再规划")
     records = await resolve_records(

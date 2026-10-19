@@ -110,6 +110,9 @@ class Comparison(BaseModel):
     reasons: tuple[str, ...]
     lowest_offer_ids: tuple[UUID, ...]
     scope: str
+    search_url: str | None = Field(
+        default_factory=lambda: None, exclude_if=lambda value: value is None
+    )
 
 
 class HotelSegmentPresentation(BaseModel):
@@ -140,3 +143,24 @@ class HotelPresentation(BaseModel):
     relaxation: HotelSearchDiagnostics | None = Field(
         default_factory=lambda: None, exclude_if=lambda value: value is None
     )
+
+
+class HotelSelectionPick(BaseModel):
+    evidence_id: UUID
+    hotel_name: str
+    source: Literal["button", "chat", "assign_confirm"]
+
+
+class HotelSelectionSegment(BaseModel):
+    city: str
+    check_in: date
+    check_out: date
+    selected: HotelSelectionPick | None = None
+
+
+class HotelSelectionView(BaseModel):
+    """酒店面板状态：单城市也是一个住宿段；can_skip时面板显示“先不选酒店，先排行程”。"""
+
+    state: Literal["not_applicable", "awaiting", "complete", "skipped"]
+    segments: tuple[HotelSelectionSegment, ...]
+    can_skip: bool

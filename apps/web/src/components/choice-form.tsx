@@ -5,6 +5,10 @@ import type { Choice } from "@/lib/api";
 import {
   cleanAnswers,
   formOf,
+  setGroupOption,
+  setGroupText,
+  TEXT_MAX,
+  textKey,
   validAnswers,
   type FormAnswers,
   type FormGroup,
@@ -13,23 +17,19 @@ import { Button } from "./ui/button";
 
 function ChoiceGroup({
   group,
-  value,
+  answers,
   disabled,
-  onChange,
+  update,
 }: {
   group: FormGroup;
-  value: string[];
+  answers: FormAnswers;
   disabled: boolean;
-  onChange: (value: string[]) => void;
+  update: (next: FormAnswers) => void;
 }) {
-  const toggle = (id: string) =>
-    onChange(
-      value.includes(id)
-        ? value.filter((v) => v !== id)
-        : group.multi
-          ? [...value, id]
-          : [id],
-    );
+  const id = useId();
+  const value = answers[group.key] ?? [];
+  const text = answers[textKey(group.key)]?.[0] ?? "";
+  const hint = `${id}-hint`;
   return (
     <fieldset disabled={disabled} className="space-y-2">
       <legend className="mb-2 text-sm font-medium">{group.label}</legend>
@@ -40,12 +40,48 @@ function ChoiceGroup({
             type="button"
             variant={value.includes(option.option_id) ? "default" : "outline"}
             aria-pressed={value.includes(option.option_id)}
-            onClick={() => toggle(option.option_id)}
+            onClick={() =>
+              update(setGroupOption(answers, group, option.option_id))
+            }
           >
             {option.label}
           </Button>
         ))}
       </div>
+      {group.allow_text && (
+        <div className="flex flex-wrap items-center gap-2">
+          <label htmlFor={`${id}-text`} className="text-sm">
+            或自己填写
+          </label>
+          <input
+            id={`${id}-text`}
+            type="text"
+            className="min-w-40 rounded-lg border border-border bg-bg px-3 py-2 text-sm"
+            maxLength={TEXT_MAX}
+            placeholder={group.placeholder ?? ""}
+            aria-describedby={hint}
+            value={text}
+            onChange={(event) =>
+              update(setGroupText(answers, group, event.target.value))
+            }
+          />
+          {group.text_kind === "time" && (
+            <input
+              type="time"
+              aria-label={`${group.label}：选择时间`}
+              aria-describedby={hint}
+              className="rounded-lg border border-border bg-bg px-3 py-2 text-sm"
+              value={/^\d{2}:\d{2}$/.test(text) ? text : ""}
+              onChange={(event) =>
+                update(setGroupText(answers, group, event.target.value))
+              }
+            />
+          )}
+          <span id={hint} className="small muted">
+            选项和自己填写二选一，不填也可以。
+          </span>
+        </div>
+      )}
     </fieldset>
   );
 }
@@ -136,7 +172,10 @@ export function ChoiceForm({
   const answered = !!card.answered_option_id;
   const [answers, setAnswers] = useState<FormAnswers>(() =>
     Object.fromEntries(
-      groups.filter((g) => g.selected?.length).map((g) => [g.key, g.selected!]),
+      groups.flatMap((g) => [
+        ...(g.selected?.length ? [[g.key, g.selected]] : []),
+        ...(g.text ? [[textKey(g.key), [g.text]]] : []),
+      ]),
     ),
   );
   const set = (patch: Record<string, string[] | undefined>) =>
@@ -178,9 +217,9 @@ export function ChoiceForm({
           <ChoiceGroup
             key={group.key}
             group={group}
-            value={answers[group.key] ?? []}
+            answers={answers}
             disabled={disabled}
-            onChange={(value) => set({ [group.key]: value })}
+            update={setAnswers}
           />
         ),
       )}

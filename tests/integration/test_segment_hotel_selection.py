@@ -384,7 +384,20 @@ def test_initial_planning_waits_for_segment_selection_and_stop_hook_does_not_pus
                         "set": {
                             "lodging_budget_unlimited": True,
                             "transport": "transit",
-                            "soft_constraints": ["节奏：标准"],
+                            # 合并选择卡里的行程信息都已知，这里测试的是选酒店闸门本身
+                            "hard_constraints": [
+                                "住宿：无要求",
+                                "房型：无要求",
+                                "床型：无要求",
+                                "第一天抵达：10:00",
+                                "最后一天离开：18:00",
+                            ],
+                            "soft_constraints": [
+                                "节奏：标准",
+                                "平时起床：8:00",
+                                "晚上结束：22:00",
+                                "同行：朋友",
+                            ],
                         },
                     }
                 ),
@@ -437,8 +450,10 @@ def test_initial_planning_waits_for_segment_selection_and_stop_hook_does_not_pus
         assert not state["requires_hotel_selection"]
         chosen = state["selected_hotel_stays"]
         assert isinstance(chosen, list) and len(chosen) == 3
+        # 新语义：各段已选齐后（尚无正式行程），另一轮也按同一份已校验选择规划，不再要求重选；
+        # 正式行程保存后才回到“只认本轮选择”。
         other = await travel.business_context(context)
-        assert "selected_hotel_stays" not in other
+        assert other["selected_hotel_stays"] == chosen and not other["requires_hotel_selection"]
         await service.cancel(context.user_id, selected.run_id)
         await asyncio.gather(*tuple(service.tasks.values()))
         await service.close()

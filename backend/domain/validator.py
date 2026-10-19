@@ -560,12 +560,16 @@ def stay_costs(
     known = Decimal(0)
     for expected in segments:
         if not any((s.check_in, s.check_out) == (expected.arrive, expected.depart) for s in stays):
+            skipped = request.lodging_skipped  # 用户选择先不选酒店：住宿成本未知，不是冲突
             checks.append(
                 check(
                     "hotel:" + expected.arrive.isoformat(),
-                    "conflict",
-                    "hotel_stay_missing",
-                    f"缺少{expected.city} {expected.arrive}—{expected.depart}的住宿报价。",
+                    "unknown" if skipped else "conflict",
+                    "hotel_stay_skipped" if skipped else "hotel_stay_missing",
+                    f"{expected.city} {expected.arrive}—{expected.depart}的住宿尚未选择"
+                    "（用户选择先排行程），住宿费用未知。"
+                    if skipped
+                    else f"缺少{expected.city} {expected.arrive}—{expected.depart}的住宿报价。",
                 )
             )
     for index, stay in enumerate(stays):

@@ -3,7 +3,8 @@
 import { useEffect, useRef } from "react";
 import type { Workspace } from "./workbench";
 import { toolLabel } from "./tool-names";
-import type { HotelSelection } from "@/lib/hotel-groups";
+import type { MessageSelection } from "@/lib/api";
+import { skipHotelsMessage } from "@/lib/hotel-flow";
 import { HotelResults, planDays } from "./results";
 import type { Run } from "@/lib/api";
 import {
@@ -117,7 +118,7 @@ export function Conversation({
 }: {
   workspace: Workspace;
   mode: Mode;
-  send: (text: string, mode: Mode, selection?: HotelSelection) => void;
+  send: (text: string, mode: Mode, selection?: MessageSelection) => void;
   fill: (text: string) => void;
   newTrip: () => void;
   openPanel: () => void;
@@ -372,7 +373,7 @@ function TurnCards({
   run: Run;
   latest: boolean;
   mode: Mode;
-  send: (text: string, mode: Mode, selection?: HotelSelection) => void;
+  send: (text: string, mode: Mode, selection?: MessageSelection) => void;
   openPanel: () => void;
 }) {
   const references = runCards(run);
@@ -455,6 +456,17 @@ function TurnCards({
             )
           }
           chooseSegments={(selection) => send(selection.text, mode, selection)}
+          selectionView={workspace.hotelSelection}
+          skip={
+            latest &&
+            workspace.hotelSelection?.can_skip &&
+            workspace.request?.revision !== undefined
+              ? () => {
+                  const skip = skipHotelsMessage(workspace.request!.revision);
+                  send(skip.text, mode, skip);
+                }
+              : undefined
+          }
           compact
         />
       )}

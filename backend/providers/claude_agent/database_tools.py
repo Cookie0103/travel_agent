@@ -22,6 +22,8 @@ from backend.services.travel import TravelService
 from backend.tools.contracts import ToolResult
 from backend.tools.travel import TravelToolExecutor
 
+PLANNING_TOOLS = frozenset({"estimate_routes", "validate_itinerary", "stage_plan_change"})
+
 # 封闭词表：键来自Task；工具名与参数以backend/tools/travel.py为准。
 NEXT_STEPS: dict[Task, str] = {
     "itinerary": (
@@ -80,7 +82,21 @@ class DatabaseTools:
     async def execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
     ) -> ToolResult:
-        if name in {"estimate_routes", "validate_itinerary", "stage_plan_change"}:
+        if name in {"search_hotel_offers", *PLANNING_TOOLS}:
+            # 酒店偏好会影响搜索：合并选择卡未答时，搜索和规划都先不执行(卡由服务端代发)。
+            card, created = await asyncio.wrap_future(
+                asyncio.run_coroutine_threadsafe(self.travel.trip_ask(context), self.loop)
+            )
+            if card is not None:
+                return ToolResult(
+                    {"choice": card} if created else {},
+                    code="validation",
+                    suggestion="合并确认卡（出行信息和酒店偏好）已展示给用户，未提交前不能搜索酒店或规划。"
+                    "只用一句话说“请在卡片里一次确认”，然后停下等待；不要在文字里追问卡片已覆盖的内容，"
+                    "也不要再次调用本工具。",
+                    detail=("trip_details_required",),
+                )
+        if name in PLANNING_TOOLS:
             state = await asyncio.wrap_future(
                 asyncio.run_coroutine_threadsafe(self.travel.business_context(context), self.loop)
             )
@@ -95,7 +111,9 @@ class DatabaseTools:
                 return ToolResult(
                     {},
                     code="validation",
-                    suggestion="请先逐住宿段查询约3家酒店并present展示全部段，等待用户在页面选齐后再规划；不要估算路线或暂存。",
+                    suggestion="用户还没为每个住宿段选定酒店（单城市就是一段）。未展示候选就先逐段search_hotel_offers再"
+                    "present_travel_result展示全部候选，然后停下：用户可点页面按钮选、在聊天里贴乐天链接/说酒店名"
+                    "（你调用select_hotel_from_chat），或点“先不选酒店，先排行程”。不要自动选酒店，不要估算路线或暂存。",
                     detail=("hotel_selection_required",),
                 )
         return await asyncio.wrap_future(
@@ -156,9 +174,16 @@ class DatabaseTools:
         if state.get("awaiting_hotel_selection") or state.get("awaiting_travel_details"):
             return None
         if state.get("requires_hotel_selection"):
+            shown_request = state["request"]
+            multi = isinstance(shown_request, dict) and bool(shown_request.get("segments"))
             return (
-                "请先逐住宿段调用search_hotel_offers(limit=3, segment_arrive)，"
-                "再present_travel_result展示所有段的酒店，等待用户在页面每段选一家后再规划。"
+                (
+                    "请先逐住宿段调用search_hotel_offers(limit=3, segment_arrive)，"
+                    if multi
+                    else "请先调用search_hotel_offers(limit=5)，"
+                )
+                + "再present_travel_result展示全部候选，然后停下等待用户选酒店"
+                "（页面按钮、聊天里贴乐天链接/酒店名，或先不选酒店先排行程）；不要自动选酒店。"
             )
         steps = [NEXT_STEPS[task] for task in ready if task in NEXT_STEPS]
         return (

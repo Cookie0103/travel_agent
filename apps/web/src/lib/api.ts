@@ -16,7 +16,8 @@ export type MessageSelection =
   | {
       expected_revision: number;
       selection: components["schemas"]["ChoiceSelection"];
-    };
+    }
+  | { expected_revision: number; skip_hotels: true };
 export type AppEvent = components["schemas"]["UiRuntimeEvent"] & {
   sequence: number;
 };
@@ -80,11 +81,13 @@ export function messageInput(
           previous.expected_revision,
           previous.hotel_stays,
           previous.selection,
+          previous.skip_hotels,
         ]) !==
           JSON.stringify([
             selection.expected_revision,
             "hotel_stays" in selection ? selection.hotel_stays : undefined,
             "selection" in selection ? selection.selection : undefined,
+            "skip_hotels" in selection ? selection.skip_hotels : undefined,
           ])))
   )
     throw new Error(

@@ -31,6 +31,7 @@ PLAIN_OK = frozenset(
     | {"base_amount", "tax_amount", "fee_amount", "quoted_at", "cause", "choice_card"}
     | {"lodging", "smoking", "bed", "start_date", "end_date", "lowest_offer_ids", "component"}
     | {"skipped_fields", "changed_fields"}
+    | {"check_in", "check_out", "evidence_ids"}  # 单城市展示也带segments：ISO日期与UUID，已评审
     | SERVER_TEXT_KEYS
 )
 

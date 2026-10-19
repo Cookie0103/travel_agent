@@ -248,6 +248,23 @@ export interface paths {
         patch: operations["patch_travel_request_sessions__session_id__request_patch"];
         trace?: never;
     };
+    "/sessions/{session_id}/hotel-selection": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Hotel Selection */
+        get: operations["get_hotel_selection_sessions__session_id__hotel_selection_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/sessions/{session_id}/messages": {
         parameters: {
             query?: never;
@@ -532,6 +549,25 @@ export interface components {
             mentioned_places: string[];
             source: components["schemas"]["Source"];
         };
+        /**
+         * AssignInfo
+         * @description hotel_assign卡的内容：用户贴的酒店被归入哪个住宿段；needs_city时服务端判不出城市。
+         */
+        AssignInfo: {
+            /** Hotel Name */
+            hotel_name: string;
+            /** City */
+            city?: string | null;
+            /** Check In */
+            check_in?: string | null;
+            /** Check Out */
+            check_out?: string | null;
+            /**
+             * Needs City
+             * @default false
+             */
+            needs_city: boolean;
+        };
         /** Booking */
         Booking: {
             /**
@@ -669,6 +705,7 @@ export interface components {
             /** Options */
             options: components["schemas"]["ChoiceOption"][];
             form?: components["schemas"]["ChoiceForm"] | null;
+            assign?: components["schemas"]["AssignInfo"] | null;
             /**
              * Created At
              * Format: date-time
@@ -683,14 +720,18 @@ export interface components {
              * @default false
              */
             stale: boolean;
+            /** Default Option Id */
+            default_option_id?: string | null;
         };
         /** ChoiceForm */
         ChoiceForm: {
+            /** Purpose */
+            purpose?: "trip_ask" | null;
             /** Groups */
             groups: components["schemas"]["FormGroup"][];
         };
         /** @enum {string} */
-        ChoiceKind: "pace" | "form" | "budget_relaxation" | "memory_confirm";
+        ChoiceKind: "pace" | "form" | "budget_relaxation" | "memory_confirm" | "hotel_assign";
         /** ChoiceOption */
         ChoiceOption: {
             /** Option Id */
@@ -795,6 +836,14 @@ export interface components {
              * @default []
              */
             shown: string[];
+            /** Allow Text */
+            allow_text?: boolean;
+            /** Text Kind */
+            text_kind?: ("time" | "text") | null;
+            /** Placeholder */
+            placeholder?: string | null;
+            /** Text */
+            text?: string | null;
         };
         /** FormOption */
         FormOption: {
@@ -1090,6 +1139,52 @@ export interface components {
              */
             declined: boolean;
         };
+        /** HotelSelectionPick */
+        HotelSelectionPick: {
+            /**
+             * Evidence Id
+             * Format: uuid
+             */
+            evidence_id: string;
+            /** Hotel Name */
+            hotel_name: string;
+            /**
+             * Source
+             * @enum {string}
+             */
+            source: "button" | "chat" | "assign_confirm";
+        };
+        /** HotelSelectionSegment */
+        HotelSelectionSegment: {
+            /** City */
+            city: string;
+            /**
+             * Check In
+             * Format: date
+             */
+            check_in: string;
+            /**
+             * Check Out
+             * Format: date
+             */
+            check_out: string;
+            selected?: components["schemas"]["HotelSelectionPick"] | null;
+        };
+        /**
+         * HotelSelectionView
+         * @description 酒店面板状态：单城市也是一个住宿段；can_skip时面板显示“先不选酒店，先排行程”。
+         */
+        HotelSelectionView: {
+            /**
+             * State
+             * @enum {string}
+             */
+            state: "not_applicable" | "awaiting" | "complete" | "skipped";
+            /** Segments */
+            segments: components["schemas"]["HotelSelectionSegment"][];
+            /** Can Skip */
+            can_skip: boolean;
+        };
         /**
          * HotelStay
          * @description 住宿段日期与报价引用；段范围及报价条件由行程validator核验。
@@ -1203,6 +1298,11 @@ export interface components {
              * @default 0
              */
             revision: number;
+            /**
+             * Lodging Skipped
+             * @default false
+             */
+            lodging_skipped: boolean;
         };
         /** LockInput */
         LockInput: {
@@ -1267,7 +1367,7 @@ export interface components {
             created_at: string;
         };
         /** @enum {string} */
-        MemoryKey: "pace" | "transport" | "lodging_type" | "room_type" | "smoking" | "dietary" | "interest" | "avoid" | "companion_pattern" | "budget_style";
+        MemoryKey: "pace" | "transport" | "lodging_type" | "room_type" | "smoking" | "dietary" | "interest" | "avoid" | "companion_pattern" | "budget_style" | "wake_time" | "evening_end";
         /** @enum {string} */
         MemoryScope: "long_term" | "trip";
         /** @enum {string} */
@@ -1294,6 +1394,8 @@ export interface components {
             /** Hotel Stays */
             hotel_stays?: components["schemas"]["HotelStay"][] | null;
             selection?: components["schemas"]["ChoiceSelection"] | null;
+            /** Skip Hotels */
+            skip_hotels?: boolean | null;
         };
         /** ModelOption */
         ModelOption: {
@@ -1615,6 +1717,11 @@ export interface components {
              * @default 0
              */
             revision: number;
+            /**
+             * Lodging Skipped
+             * @default false
+             */
+            lodging_skipped: boolean;
             budget_relation: components["schemas"]["BudgetRelation"];
             /** Field Sources */
             field_sources?: {
@@ -1927,6 +2034,11 @@ export interface components {
              * @default 0
              */
             revision: number;
+            /**
+             * Lodging Skipped
+             * @default false
+             */
+            lodging_skipped: boolean;
         };
         /**
          * TripSegment
@@ -2078,6 +2190,8 @@ export interface components {
             lowest_offer_ids: string[];
             /** Scope */
             scope: string;
+            /** Search Url */
+            search_url?: string | null;
         };
         UiDataMode: ("fixture" | "snapshot") | components["schemas"]["UiProviderDataMode"];
         /** HotelCard */
@@ -2663,7 +2777,7 @@ export interface components {
             version: number | null;
         };
         /** @enum {string} */
-        UiChoiceKind: "pace" | "form" | "budget_relaxation" | "memory_confirm";
+        UiChoiceKind: "pace" | "form" | "budget_relaxation" | "memory_confirm" | "hotel_assign";
         /** @enum {string} */
         UiErrorCode: "validation" | "blocked" | "unavailable" | "timeout" | "rate_limited" | "provider_error" | "conflict" | "cancelled";
         /** @enum {string} */
@@ -2735,7 +2849,7 @@ export interface components {
             op: ("ADD" | "UPDATE" | "INVALIDATE") | null;
         };
         /** @enum {string} */
-        UiMemoryKey: "pace" | "transport" | "lodging_type" | "room_type" | "smoking" | "dietary" | "interest" | "avoid" | "companion_pattern" | "budget_style";
+        UiMemoryKey: "pace" | "transport" | "lodging_type" | "room_type" | "smoking" | "dietary" | "interest" | "avoid" | "companion_pattern" | "budget_style" | "wake_time" | "evening_end";
         /** @enum {string} */
         UiMemoryScope: "long_term" | "trip";
         /**
@@ -3487,6 +3601,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["RequestUpdateView"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_hotel_selection_sessions__session_id__hotel_selection_get: {
+        parameters: {
+            query?: never;
+            header?: {
+                authorization?: string | null;
+            };
+            path: {
+                session_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HotelSelectionView"];
                 };
             };
             /** @description Validation Error */

@@ -2,7 +2,7 @@
 "use client";
 import { useState } from "react";
 import type { Choice } from "@/lib/api";
-import { choiceDisabled, type Pick } from "@/lib/choices";
+import { choiceDisabled, memoryPicks, type Pick } from "@/lib/choices";
 import { Button } from "./ui/button";
 import { useClock } from "./results";
 
@@ -24,9 +24,10 @@ export function MemoryChoices({
   const [note, setNote] = useState("");
   const open = (card: Choice) =>
     !choiceDisabled(card, false, sessionId, revision, now);
+  const effective = memoryPicks(cards, picked);
   const chosen = cards.flatMap((card) =>
-    open(card) && picked[card.choice_id!]
-      ? [{ card, optionId: picked[card.choice_id!] }]
+    open(card) && effective[card.choice_id!]
+      ? [{ card, optionId: effective[card.choice_id!] }]
       : [],
   );
   return (
@@ -41,7 +42,7 @@ export function MemoryChoices({
           <div className="flex flex-wrap gap-2">
             {card.options.map((option) => {
               const on =
-                (card.answered_option_id ?? picked[card.choice_id!]) ===
+                (card.answered_option_id ?? effective[card.choice_id!]) ===
                 option.option_id;
               return (
                 <Button

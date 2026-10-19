@@ -12,6 +12,7 @@ from backend.domain.choices import ChoiceCard, ChoiceOption
 from backend.domain.execution import RunContext
 from backend.domain.memory import (
     KEY_LABELS,
+    LONG_TERM_ELIGIBLE,
     VALUE_LABELS,
     MemoryFactView,
     MemoryProposal,
@@ -22,10 +23,15 @@ from backend.domain.memory import (
 from backend.domain.preferences import Preferences, PreferenceVersion
 from backend.persistence import memory, runs, sessions, travel
 from backend.persistence.database import Database
-from backend.persistence.models import ChoiceCardRow, MemoryFactRow, UserRow
+from backend.persistence.models import ChoiceCardRow, MemoryFactRow, PlanDraftRow, UserRow
 from backend.persistence.user_profile import invalidate as invalidate_profile
 from backend.services.common import ServiceError, transaction
-from backend.services.conversation import require_current_run, save_state, valid_state
+from backend.services.conversation import (
+    require_current_run,
+    save_state,
+    stored_state,
+    valid_state,
+)
 
 __all__ = ["MemoryService", "MemoryFactView", "MemoryProposal"]
 SCALAR_KEYS = set(KEY_LABELS) - {"interest", "avoid"}
@@ -57,6 +63,20 @@ def changed(user: UserRow, *, deleted: bool = False) -> None:
     user.preference_changed_at = datetime.now(UTC)
     user.preference_deleted = deleted
     user.preferences = {}  # 不能给旧代码留下删除前正文。
+
+
+async def has_draft(db: AsyncSession, context: RunContext) -> bool:
+    return (
+        await db.scalar(
+            select(PlanDraftRow.id)
+            .where(
+                PlanDraftRow.user_id == context.user_id,
+                PlanDraftRow.session_id == context.session_id,
+            )
+            .limit(1)
+        )
+        is not None
+    )
 
 
 def erase(row: MemoryFactRow) -> None:
@@ -146,19 +166,35 @@ class MemoryService:
             ):
                 if content.get("target_fact_id"):
                     overridden.add(str(content["target_fact_id"]))
+        # 单值偏好(节奏/交通/起床/晚上结束…)排在兴趣/避免等集合之前：快照有30条/2000字上限，
+        # 大量兴趣不能把已确认的单值偏好挤出模型上下文(sorted稳定，原序保留)。
         return memory.bounded_snapshot(
-            [
-                row
-                for row in rows
-                if not (
-                    row.scope == "long_term" and (row.key in trip_keys or str(row.id) in overridden)
-                )
-            ]
+            sorted(
+                (
+                    row
+                    for row in rows
+                    if not (
+                        row.scope == "long_term"
+                        and (row.key in trip_keys or str(row.id) in overridden)
+                    )
+                ),
+                key=lambda row: row.key not in SCALAR_KEYS,
+            )
         )
 
     async def propose(
         self, context: RunContext, proposal: MemoryProposal
     ) -> list[dict[str, object]]:
+        return (await self.propose_with_deferred(context, proposal))[0]
+
+    async def propose_with_deferred(
+        self, context: RunContext, proposal: MemoryProposal
+    ) -> tuple[list[dict[str, object]], int]:
+        """返回(立即展示的确认卡, 暂缓的提议数)。
+
+        规划进行中(有行程目标、草稿尚未暂存)时，节奏/交通/起床/晚上结束的长期ADD/UPDATE
+        照常校验并落成待确认事实，但卡片先不展示：草稿暂存后由服务端合并成一张确认卡。
+        """
         async with transaction(self.database) as db:
             request = await travel.owned_request(db, context)
             if request is None:
@@ -170,7 +206,17 @@ class MemoryService:
             if user.memory_forgotten_at is not None and run.created_at < user.memory_forgotten_at:
                 raise ServiceError(409, "conflict", "用户已遗忘偏好，旧执行不能重新提出记忆")
             cards: list[dict[str, object]] = []
+            deferred = 0
+            planning = "itinerary" in stored_state(request).pending_tasks and not await has_draft(
+                db, context
+            )
             for operation in proposal.ops:
+                defer = (
+                    planning
+                    and operation.op != "INVALIDATE"
+                    and operation.scope == "long_term"
+                    and operation.key in LONG_TERM_ELIGIBLE
+                )
                 if run.user_text is None or not quote_source_valid(run.user_text, operation.quote):
                     raise ServiceError(
                         422,
@@ -214,6 +260,19 @@ class MemoryService:
                         )
                     )
                     if existing:
+                        if existing.content.get("deferred"):
+                            if defer:
+                                deferred += 1
+                            else:  # 草稿已存在：不再等合并，直接展示这条已校验的待确认提议
+                                existing.content = {
+                                    k: v for k, v in existing.content.items() if k != "deferred"
+                                }
+                                cards.append(
+                                    self.card(existing, previous, request.revision).model_dump(
+                                        mode="json"
+                                    )
+                                )
+                            continue
                         if (
                             previous.value != operation.value
                             or previous.scope != operation.scope
@@ -256,39 +315,94 @@ class MemoryService:
                 )
                 db.add(fact)
                 await db.flush()
-                card = ChoiceCard(
-                    kind="memory_confirm",
-                    session_id=context.session_id,
-                    source_run_id=context.run_id,
-                    expected_revision=request.revision,
-                    question="是否保存这条偏好？",
-                    options=(
-                        ChoiceOption(option_id="remember", label="记住", value="remember"),
-                        ChoiceOption(option_id="trip", label="这次而已", value="trip"),
-                        ChoiceOption(option_id="reject", label="不要记", value="reject"),
-                    ),
+                stored = self.add_card(
+                    db,
+                    context,
+                    fact,
+                    operation.op,
+                    operation.target_fact_id,
+                    request.revision,
+                    deferred=defer,
                 )
-                stored = ChoiceCardRow(
-                    id=card.choice_id,
-                    session_id=context.session_id,
-                    source_run_id=context.run_id,
-                    kind=card.kind,
-                    expected_revision=request.revision,
-                    created_at=card.created_at,
-                    content={
-                        "question": card.question,
-                        "options": [o.model_dump(mode="json") for o in card.options],
-                        "fact_id": str(fact.id),
-                        "operation": operation.op,
-                        "target_fact_id": str(operation.target_fact_id)
-                        if operation.target_fact_id
-                        else None,
-                    },
-                )
-                db.add(stored)
                 await db.flush()
-                cards.append(self.card(stored, fact, request.revision).model_dump(mode="json"))
-            return cards
+                if defer:
+                    deferred += 1
+                else:
+                    cards.append(self.card(stored, fact, request.revision).model_dump(mode="json"))
+            return cards, deferred
+
+    @staticmethod
+    def add_card(
+        db: AsyncSession,
+        context: RunContext,
+        fact: MemoryFactRow,
+        operation: str,
+        target_id: UUID | None,
+        revision: int,
+        *,
+        deferred: bool = False,
+        merged_run_id: UUID | None = None,
+    ) -> ChoiceCardRow:
+        card = ChoiceCard(
+            kind="memory_confirm",
+            session_id=context.session_id,
+            source_run_id=context.run_id,
+            expected_revision=revision,
+            question="是否保存这条偏好？",
+            options=(
+                ChoiceOption(option_id="remember", label="记住", value="remember"),
+                ChoiceOption(option_id="trip", label="这次而已", value="trip"),
+                ChoiceOption(option_id="reject", label="不要记", value="reject"),
+            ),
+        )
+        stored = ChoiceCardRow(
+            id=card.choice_id,
+            session_id=context.session_id,
+            source_run_id=context.run_id,
+            kind=card.kind,
+            expected_revision=revision,
+            created_at=card.created_at,
+            content={
+                "question": card.question,
+                "options": [o.model_dump(mode="json") for o in card.options],
+                "fact_id": str(fact.id),
+                "operation": operation,
+                "target_fact_id": str(target_id) if target_id else None,
+                **({"deferred": True} if deferred else {}),
+                **(
+                    {"merged_run_id": str(merged_run_id), "default_option_id": "remember"}
+                    if merged_run_id
+                    else {}
+                ),
+            },
+        )
+        db.add(stored)
+        return stored
+
+    @staticmethod
+    async def deferred_card(
+        db: AsyncSession, context: RunContext, fact: MemoryFactRow
+    ) -> ChoiceCardRow | None:
+        """规划期间暂缓、尚未展示的确认卡行(没有则说明这条提议的卡已经展示过)。"""
+        return await db.scalar(
+            select(ChoiceCardRow).where(
+                ChoiceCardRow.session_id == context.session_id,
+                ChoiceCardRow.kind == "memory_confirm",
+                ChoiceCardRow.answered_option_id.is_(None),
+                ChoiceCardRow.content["fact_id"].astext == str(fact.id),
+                ChoiceCardRow.content["deferred"].as_boolean().is_(True),
+            )
+        )
+
+    async def views(
+        self, db: AsyncSession, context: RunContext, rows: list[ChoiceCardRow], revision: int
+    ) -> list[dict[str, object]]:
+        result: list[dict[str, object]] = []
+        for row in rows:
+            fact = await memory.owned(db, context.user_id, UUID(str(row.content["fact_id"])))
+            assert fact is not None
+            result.append(self.card(row, fact, revision).model_dump(mode="json"))
+        return result
 
     @staticmethod
     def card(row: ChoiceCardRow, fact: MemoryFactRow, revision: int) -> ChoiceCard:
@@ -312,6 +426,11 @@ class MemoryService:
                 "created_at": row.created_at,
                 "answered_option_id": row.answered_option_id,
                 "stale": fact.status != "proposed" and row.answered_option_id is None,
+                **(
+                    {"default_option_id": row.content["default_option_id"]}
+                    if row.content.get("default_option_id")
+                    else {}
+                ),
             }
         )
 

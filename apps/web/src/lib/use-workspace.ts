@@ -3,11 +3,12 @@
 import type { Choice, MessageSelection } from "./api";
 import {
   choiceMessage,
-  answersSummary,
+  selectionText,
   type FormAnswers,
   type Pick,
 } from "./choices";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useHotelSelection } from "./use-hotel-selection";
 import {
   api,
   ApiError,
@@ -103,6 +104,11 @@ export function useWorkspace({
   const historyLoaded = useRef(false);
   const tripsLoaded = useRef(false);
   const owner = useRef<string | undefined>(undefined);
+
+  const hotelSelection = useHotelSelection(
+    identity,
+    `${run?.run_id}:${run?.status}:${request?.revision}:${hotels?.cards.length}`,
+  );
 
   const fail = useCallback(
     (failure: unknown, streamFailure = false) => {
@@ -828,9 +834,7 @@ export function useWorkspace({
                 `${p.card.question} ${p.card.options.find((o) => o.option_id === p.optionId)?.label}`,
             )
             .join("；")}`
-        : answers
-          ? answersSummary(card, answers)
-          : `用户选择：${option.label}`,
+        : selectionText(card, optionId, answers),
       mode,
       choiceMessage(card, optionId, answers, also),
     );
@@ -1062,6 +1066,7 @@ export function useWorkspace({
     tripCursor,
     events,
     hotels,
+    hotelSelection,
     choiceCards,
     plan,
     confirmation,

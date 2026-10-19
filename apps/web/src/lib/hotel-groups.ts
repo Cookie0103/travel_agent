@@ -37,9 +37,7 @@ export function segmentHotelRows(hotels: Hotels): SegmentHotelRow[] {
       hotels.cards.filter((card) =>
         segment.evidence_ids.includes(card.evidence_id),
       ),
-    )
-      .slice(0, 3)
-      .flatMap((group) => group.offers),
+    ).flatMap((group) => group.offers),
   }));
 }
 export function segmentHotelSelection(

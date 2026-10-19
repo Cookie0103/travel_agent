@@ -64,7 +64,7 @@ const hotels: Hotels = {
 };
 const now = Date.parse("2026-10-11T00:00:00Z");
 
-test("three overnight segments have their own three candidates and Rakuten links", () => {
+test("three overnight segments have their own every candidate and Rakuten links", () => {
   const rows = segmentHotelRows(hotels);
   assert.deepEqual(
     rows.map((row) => row.city),
@@ -72,7 +72,7 @@ test("three overnight segments have their own three candidates and Rakuten links
   );
   assert.deepEqual(
     rows.map((row) => row.cards.length),
-    [3, 3, 3],
+    [4, 4, 4],
   );
   assert.deepEqual(
     rows.map((row) => moreTile(row)?.href),

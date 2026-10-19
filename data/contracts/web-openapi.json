@@ -986,6 +986,62 @@
         }
       }
     },
+    "/sessions/{session_id}/hotel-selection": {
+      "get": {
+        "summary": "Get Hotel Selection",
+        "operationId": "get_hotel_selection_sessions__session_id__hotel_selection_get",
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid",
+              "title": "Session Id"
+            }
+          },
+          {
+            "name": "authorization",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Authorization"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HotelSelectionView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/sessions/{session_id}/messages": {
       "post": {
         "summary": "Message",
@@ -1944,6 +2000,64 @@
         ],
         "title": "Article"
       },
+      "AssignInfo": {
+        "properties": {
+          "hotel_name": {
+            "type": "string",
+            "maxLength": 200,
+            "minLength": 1,
+            "title": "Hotel Name"
+          },
+          "city": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 100
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "City"
+          },
+          "check_in": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check In"
+          },
+          "check_out": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Check Out"
+          },
+          "needs_city": {
+            "type": "boolean",
+            "title": "Needs City",
+            "default": false
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "hotel_name"
+        ],
+        "title": "AssignInfo",
+        "description": "hotel_assign卡的内容：用户贴的酒店被归入哪个住宿段；needs_city时服务端判不出城市。"
+      },
       "Booking": {
         "properties": {
           "booking_id": {
@@ -2385,6 +2499,16 @@
               }
             ]
           },
+          "assign": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/AssignInfo"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -2417,6 +2541,17 @@
             "type": "boolean",
             "title": "Stale",
             "default": false
+          },
+          "default_option_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Default Option Id"
           }
         },
         "additionalProperties": false,
@@ -2433,12 +2568,24 @@
       },
       "ChoiceForm": {
         "properties": {
+          "purpose": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "trip_ask"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Purpose"
+          },
           "groups": {
             "items": {
               "$ref": "#/components/schemas/FormGroup"
             },
             "type": "array",
-            "maxItems": 5,
+            "maxItems": 10,
             "minItems": 1,
             "title": "Groups"
           }
@@ -2456,7 +2603,8 @@
           "pace",
           "form",
           "budget_relaxation",
-          "memory_confirm"
+          "memory_confirm",
+          "hotel_assign"
         ]
       },
       "ChoiceOption": {
@@ -2539,7 +2687,7 @@
                   "type": "array"
                 },
                 "type": "object",
-                "maxProperties": 6
+                "maxProperties": 20
               },
               {
                 "type": "null"
@@ -2693,6 +2841,49 @@
             "maxItems": 20,
             "title": "Shown",
             "default": []
+          },
+          "allow_text": {
+            "type": "boolean",
+            "title": "Allow Text"
+          },
+          "text_kind": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "time",
+                  "text"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text Kind"
+          },
+          "placeholder": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Placeholder"
+          },
+          "text": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 40
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Text"
           }
         },
         "additionalProperties": false,
@@ -3581,6 +3772,103 @@
         "type": "object",
         "title": "HotelSearchDiagnostics"
       },
+      "HotelSelectionPick": {
+        "properties": {
+          "evidence_id": {
+            "type": "string",
+            "format": "uuid",
+            "title": "Evidence Id"
+          },
+          "hotel_name": {
+            "type": "string",
+            "title": "Hotel Name"
+          },
+          "source": {
+            "type": "string",
+            "enum": [
+              "button",
+              "chat",
+              "assign_confirm"
+            ],
+            "title": "Source"
+          }
+        },
+        "type": "object",
+        "required": [
+          "evidence_id",
+          "hotel_name",
+          "source"
+        ],
+        "title": "HotelSelectionPick"
+      },
+      "HotelSelectionSegment": {
+        "properties": {
+          "city": {
+            "type": "string",
+            "title": "City"
+          },
+          "check_in": {
+            "type": "string",
+            "format": "date",
+            "title": "Check In"
+          },
+          "check_out": {
+            "type": "string",
+            "format": "date",
+            "title": "Check Out"
+          },
+          "selected": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/HotelSelectionPick"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "type": "object",
+        "required": [
+          "city",
+          "check_in",
+          "check_out"
+        ],
+        "title": "HotelSelectionSegment"
+      },
+      "HotelSelectionView": {
+        "properties": {
+          "state": {
+            "type": "string",
+            "enum": [
+              "not_applicable",
+              "awaiting",
+              "complete",
+              "skipped"
+            ],
+            "title": "State"
+          },
+          "segments": {
+            "items": {
+              "$ref": "#/components/schemas/HotelSelectionSegment"
+            },
+            "type": "array",
+            "title": "Segments"
+          },
+          "can_skip": {
+            "type": "boolean",
+            "title": "Can Skip"
+          }
+        },
+        "type": "object",
+        "required": [
+          "state",
+          "segments",
+          "can_skip"
+        ],
+        "title": "HotelSelectionView",
+        "description": "酒店面板状态：单城市也是一个住宿段；can_skip时面板显示“先不选酒店，先排行程”。"
+      },
       "HotelStay": {
         "properties": {
           "check_in": {
@@ -3864,6 +4152,11 @@
             "minimum": 0.0,
             "title": "Revision",
             "default": 0
+          },
+          "lodging_skipped": {
+            "type": "boolean",
+            "title": "Lodging Skipped",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -4096,7 +4389,9 @@
           "interest",
           "avoid",
           "companion_pattern",
-          "budget_style"
+          "budget_style",
+          "wake_time",
+          "evening_end"
         ]
       },
       "MemoryScope": {
@@ -4184,6 +4479,17 @@
                 "type": "null"
               }
             ]
+          },
+          "skip_hotels": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Skip Hotels"
           }
         },
         "additionalProperties": false,
@@ -5046,6 +5352,11 @@
             "minimum": 0.0,
             "title": "Revision",
             "default": 0
+          },
+          "lodging_skipped": {
+            "type": "boolean",
+            "title": "Lodging Skipped",
+            "default": false
           },
           "budget_relation": {
             "$ref": "#/components/schemas/BudgetRelation"
@@ -6038,6 +6349,11 @@
             "minimum": 0.0,
             "title": "Revision",
             "default": 0
+          },
+          "lodging_skipped": {
+            "type": "boolean",
+            "title": "Lodging Skipped",
+            "default": false
           }
         },
         "additionalProperties": false,
@@ -6415,6 +6731,17 @@
           "scope": {
             "title": "Scope",
             "type": "string"
+          },
+          "search_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Search Url"
           }
         },
         "required": [
@@ -7810,7 +8137,8 @@
           "pace",
           "form",
           "budget_relaxation",
-          "memory_confirm"
+          "memory_confirm",
+          "hotel_assign"
         ],
         "type": "string"
       },
@@ -8045,7 +8373,9 @@
           "interest",
           "avoid",
           "companion_pattern",
-          "budget_style"
+          "budget_style",
+          "wake_time",
+          "evening_end"
         ],
         "type": "string"
       },

@@ -216,13 +216,3 @@ def test_prompt_serializes_answers_with_sorted_keys() -> None:
 
     assert prompt({"b": ("x",), "a": ("y",)}) == prompt({"a": ("y",), "b": ("x",)})
     assert prompt({"a": ("y",), "b": ("x",)}) != prompt({"a": ("z",), "b": ("x",)})
-
-
-def test_auto_card_asks_only_for_fields_still_missing() -> None:
-    from backend.domain.choices import groups_for_missing
-
-    assert [g.key for g in groups_for_missing(("pace",))] == ["pace"]
-    assert [g.key for g in groups_for_missing(("transport",))] == ["transport"]
-    both = groups_for_missing(("lodging_budget", "pace", "transport"))
-    assert [g.key for g in both] == ["transport", "pace"]
-    assert groups_for_missing(("lodging_budget",)) == ()

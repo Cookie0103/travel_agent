@@ -22,6 +22,11 @@ import {
   segmentHotelSelection,
   type HotelSelection,
 } from "@/lib/hotel-groups";
+import {
+  effectiveChoices,
+  emptyHotelNotice,
+  type HotelSelectionView,
+} from "@/lib/hotel-flow";
 import { hotelLinks } from "@/lib/hotel-links";
 import { moreTile, scrollButtons } from "@/lib/hotel-more";
 import { validationGroups, checkTargets } from "@/lib/validation-groups";
@@ -341,7 +346,25 @@ type HotelResultsProps = {
   hold: (offerId: string, revision: number) => Promise<void>;
   selectingSegment?: boolean;
   selectedEvidenceId?: string;
+  /** Server-recorded picks per segment (button, chat or assignment card). */
+  selectionView?: HotelSelectionView;
+  /** Present only while the server says the user may plan without a hotel. */
+  skip?: () => void;
 };
+function SkipHotels({
+  skip,
+  disabled,
+}: {
+  skip?: () => void;
+  disabled: boolean;
+}) {
+  if (!skip) return null;
+  return (
+    <Button variant="outline" disabled={disabled} onClick={skip}>
+      先不选酒店，先排行程
+    </Button>
+  );
+}
 export function HotelResults({
   hotels,
   disabled,
@@ -353,9 +376,11 @@ export function HotelResults({
   compact = false,
   selectingSegment = false,
   selectedEvidenceId,
+  selectionView,
+  skip,
 }: HotelResultsProps) {
   const now = useClock();
-  if (hotels.segments?.length)
+  if (hotels.segments?.length && hotels.cards.length)
     return (
       <SegmentHotelResults
         hotels={hotels}
@@ -366,11 +391,14 @@ export function HotelResults({
         chooseSegments={chooseSegments}
         compact={compact}
         now={now}
+        selectionView={selectionView}
+        skip={skip}
       />
     );
   const expired = expiredHotels(hotels, now);
   const groups = hotelGroups(hotels.cards);
   const more = moreTile(hotels);
+  const notice = emptyHotelNotice(hotels);
   return (
     <section className={`results-section${compact ? " is-compact" : ""}`}>
       <div className="section-heading">
@@ -380,7 +408,20 @@ export function HotelResults({
       {hotels.comparison.room_preferences_question && (
         <p className="warning">{hotels.comparison.room_preferences_question}</p>
       )}
-      {groups.length === 0 && <p>当前没有可展示的酒店报价。</p>}
+      {notice && (
+        <div role="status" className="space-y-1">
+          <p>{notice.message}</p>
+          {notice.href && (
+            <p>
+              <a href={notice.href} target="_blank" rel="noopener noreferrer">
+                打开乐天旅游自己找 ↗
+              </a>
+            </p>
+          )}
+          <p className="muted small">{notice.hint}</p>
+        </div>
+      )}
+      {groups.length === 0 && !notice && <p>当前没有可展示的酒店报价。</p>}
       {hotels.comparison.budget_relation && (
         <p className="warning">{hotels.comparison.budget_relation.message}</p>
       )}
@@ -432,6 +473,7 @@ export function HotelResults({
           dangerouslySetInnerHTML={{ __html: rakutenCredit }}
         />
       )}
+      <SkipHotels skip={skip} disabled={disabled} />
     </section>
   );
 }
@@ -444,9 +486,12 @@ function SegmentHotelResults({
   chooseSegments,
   compact,
   now,
+  selectionView,
+  skip,
 }: HotelResultsProps & { now: number }) {
-  const [choices, setChoices] = useState<Record<string, string>>({});
+  const [local, setLocal] = useState<Record<string, string>>({});
   const rows = segmentHotelRows(hotels);
+  const choices = effectiveChoices(rows, local, selectionView);
   const selected = segmentHotelSelection(rows, choices, revision, now);
   const count = rows.filter((row) =>
     row.cards.some((card) => card.evidence_id === choices[row.check_in]),
@@ -474,7 +519,11 @@ function SegmentHotelResults({
                 ...hotels,
                 segments: undefined,
                 cards: row.cards,
-                comparison: row.comparison,
+                comparison: {
+                  ...row.comparison,
+                  search_url:
+                    row.comparison.search_url ?? hotels.comparison.search_url,
+                },
                 total_found: row.total_found,
                 more_url: row.more_url,
                 more_url_scope: row.more_url_scope,
@@ -487,7 +536,7 @@ function SegmentHotelResults({
               selectingSegment
               selectedEvidenceId={choices[row.check_in]}
               choose={(card) =>
-                setChoices((previous) => ({
+                setLocal((previous) => ({
                   ...previous,
                   [row.check_in]: card.evidence_id,
                 }))
@@ -499,14 +548,17 @@ function SegmentHotelResults({
       <p className="muted small">
         已选 {count}/{rows.length} 段
       </p>
-      <Button
-        disabled={disabled || !selected || !chooseSegments}
-        onClick={() => {
-          if (selected && chooseSegments) chooseSegments(selected);
-        }}
-      >
-        按已选酒店统一规划
-      </Button>
+      <div className="flex flex-wrap gap-2">
+        <Button
+          disabled={disabled || !selected || !chooseSegments}
+          onClick={() => {
+            if (selected && chooseSegments) chooseSegments(selected);
+          }}
+        >
+          按已选酒店统一规划
+        </Button>
+        <SkipHotels skip={skip} disabled={disabled} />
+      </div>
     </section>
   );
 }

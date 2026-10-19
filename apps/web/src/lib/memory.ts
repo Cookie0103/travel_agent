@@ -2,6 +2,8 @@ import type { components } from "./api-types";
 export type MemoryFact = components["schemas"]["MemoryFactView"];
 export const memoryLabels: Record<MemoryFact["key"], string> = {
   pace: "旅行节奏",
+  wake_time: "平时起床时间",
+  evening_end: "晚上结束时间",
   transport: "交通",
   lodging_type: "住宿类型",
   room_type: "房型",

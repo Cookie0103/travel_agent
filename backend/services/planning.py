@@ -15,11 +15,12 @@ from backend.domain.validator import (
     HOTEL_EXPIRED_REASON,
     validate_itinerary,
 )
+from backend.persistence import plans
 from backend.persistence import travel as requests
 from backend.profile import current
 from backend.providers.routes_fixture import RouteRate, estimate, load_routes
 from backend.services.common import ServiceError, transaction
-from backend.services.conversation import selected_hotel_stays
+from backend.services.conversation import chosen_hotel_stays, selected_hotel_stays
 from backend.services.travel import (
     TravelService,
     hydrate_records,
@@ -193,18 +194,30 @@ async def validate_proposal(
 async def apply_selected_hotels(
     db: AsyncSession, context: RunContext, request: TravelRequest, proposal: ItineraryProposal
 ) -> ItineraryProposal:
-    """只补齐该轮用户已核对的选择；不同/明确清除的住宿要求模型修正，校验不降级。"""
-    if not request.segments:
-        return proposal
+    """只补齐用户已核对的选择；不同/明确清除的住宿要求模型修正，校验不降级。
+
+    单城市就是一个住宿段：选择也强制，proposal可用hotel_evidence_id或hotel_stays引用同一报价。
+    """
     row = await requests.owned_request(db, context)
     assert row is not None
-    selected = selected_hotel_stays(row, context, request.revision)
+    plan = await plans.for_session(db, context)
+    selected = (
+        selected_hotel_stays(row, context, request.revision)
+        if plan and plan.current_version
+        else chosen_hotel_stays(row, context, request)
+    )
     if not selected:
         return proposal
+    single = not request.segments
     if proposal.hotel_stays:
         if tuple(sorted(proposal.hotel_stays, key=lambda stay: stay.check_in)) == selected:
             return proposal
+    elif single and proposal.hotel_evidence_id is not None:
+        if proposal.hotel_evidence_id == selected[0].hotel_evidence_id:
+            return proposal
     elif "hotel_stays" not in proposal.model_fields_set and proposal.hotel_evidence_id is None:
+        if single:
+            return proposal.model_copy(update={"hotel_evidence_id": selected[0].hotel_evidence_id})
         return proposal.model_copy(update={"hotel_stays": selected, "hotel_evidence_id": None})
     raise ServiceError(
         422,

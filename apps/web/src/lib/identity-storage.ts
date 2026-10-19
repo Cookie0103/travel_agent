@@ -32,6 +32,7 @@ function pending(value: unknown): Identity["pending_message"] {
     const chosen = value.selection;
     if (
       value.hotel_stays !== undefined ||
+      value.skip_hotels !== undefined ||
       typeof value.expected_revision !== "number" ||
       !Number.isInteger(value.expected_revision) ||
       value.expected_revision < 0 ||
@@ -66,6 +67,19 @@ function pending(value: unknown): Identity["pending_message"] {
     selection = {
       expected_revision: value.expected_revision,
       selection: choice,
+    };
+  } else if (value.skip_hotels !== undefined) {
+    if (
+      value.skip_hotels !== true ||
+      value.hotel_stays !== undefined ||
+      typeof value.expected_revision !== "number" ||
+      !Number.isInteger(value.expected_revision) ||
+      value.expected_revision < 0
+    )
+      return undefined;
+    selection = {
+      expected_revision: value.expected_revision,
+      skip_hotels: true,
     };
   } else if (
     value.hotel_stays !== undefined ||

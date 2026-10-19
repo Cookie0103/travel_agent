@@ -75,8 +75,9 @@ def test_calibration_computes_real_pairs_without_filling_missing_scores() -> Non
 def test_unspoken_pace_is_assumed_standard_but_never_recorded_as_user_fact() -> None:
     prompt = travel_prompt()
     assert "未说明节奏按标准" not in prompt
-    assert "节奏未说明时不追问、不发卡、不写入request" in prompt
+    assert "节奏不确定/没答时不写入request，按标准安排" in prompt
     assert "不把它写成用户事实或explicit_fields" in prompt
+    assert "节奏未说明时不追问、不发卡" not in prompt  # 节奏现在由合并选择卡询问
 
 
 def test_chinese_explanations_preserve_original_proper_names() -> None:
@@ -118,9 +119,30 @@ def test_patch_tool_explains_front_insert_order_to_avoid_reversed_days() -> None
     assert "同一" in description and "执行顺序" in description
 
 
-def test_prompt_keeps_lenient_one_turn_flow_rules() -> None:
+def test_prompt_asks_once_then_waits_for_the_user_to_select_hotels() -> None:
     prompt = travel_prompt()
-    phrases = ("同一轮完成", "超出住宿预算", "节奏未说", "抵达/离开时间未知", "不把它写成用户事实")
+    phrases = (
+        "单城市就是一个住宿段",
+        "合并选择卡",
+        "请在卡片里一次确认",
+        "不要在文字里问卡片已覆盖的内容",
+        "绝不自动替用户选酒店",
+        "select_hotel_from_chat",
+        "先不选酒店，先排行程",
+        "超出预算约X%",
+        "抵达/离开时间不确定按全天安排",
+        "也不写入hard_constraints",
+        "不要重复搜索，不要卡住流程",
+    )
     for phrase in phrases:
         assert phrase in prompt
-    assert "节奏未说明时留空" not in prompt
+    # 撤销第2轮：不再自动选最便宜的一家、不再同一轮暂存草稿
+    for gone in (
+        "一轮做完",
+        "同一轮完成",
+        "价格最低且最贴近预算的一家",
+        "单城市直接用",
+        "节奏未说明时留空",
+    ):
+        assert gone not in prompt
+    assert "绝不为此追问或发卡阻塞查询" not in prompt

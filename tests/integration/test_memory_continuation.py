@@ -79,7 +79,11 @@ def test_memory_confirmation_keeps_tasks_but_does_not_restore_old_goal_text(
         cards = await MemoryService(travel.database).propose(
             context,
             MemoryProposal.model_validate(
-                {"ops": [{"op": "ADD", "key": "pace", "value": "特种兵", "quote": "我喜欢特种兵"}]}
+                {
+                    "ops": [
+                        {"op": "ADD", "key": "interest", "value": "特种兵", "quote": "我喜欢特种兵"}
+                    ]
+                }
             ),
         )
         async with transaction(travel.database) as db:

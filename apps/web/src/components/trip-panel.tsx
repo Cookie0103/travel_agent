@@ -8,7 +8,8 @@ import { Bookings } from "./bookings";
 import { PreferencePanel } from "./preferences";
 import { moneyLabel, moneyRangeLabel, partyLabel } from "@/lib/availability";
 import { sourceRows } from "@/lib/condition-source";
-import { currentPace, paceLabel } from "@/lib/pace";
+import { currentPace, paceLine } from "@/lib/pace";
+import { useLongTermPace } from "@/lib/use-long-term-pace";
 
 const transportLabels: Record<string, string> = {
   walk: "步行",
@@ -35,6 +36,10 @@ export function TripPanel({
   const pace = currentPace(
     request?.soft_constraints ?? [],
     request?.hard_constraints ?? [],
+  );
+  const longTerm = useLongTermPace(
+    identity,
+    `${workspace.run?.run_id ?? ""}:${workspace.run?.status ?? ""}`,
   );
   if (!identity) return null;
   return (
@@ -104,8 +109,8 @@ export function TripPanel({
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
-                  <p className={pace ? undefined : "muted"}>
-                    {paceLabel(pace)}
+                  <p className={pace || longTerm ? undefined : "muted"}>
+                    {paceLine(pace, longTerm)}
                   </p>
                 </>
               ) : (

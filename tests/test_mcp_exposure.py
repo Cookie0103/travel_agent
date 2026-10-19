@@ -14,6 +14,7 @@ KINDS = {
     "get_weather_forecast": "read",
     "load_skill": "read",
     "search_hotel_offers": "read",
+    "select_hotel_from_chat": "state",
     "refresh_hotel_offer": "read",
     "estimate_routes": "read",
     "validate_itinerary": "read",

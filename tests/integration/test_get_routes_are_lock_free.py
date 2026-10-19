@@ -85,6 +85,7 @@ def world(postgres_url: URL, unrepaired: None) -> Iterator[World]:
         paths = {
             "session": f"/sessions/{sid}",
             "request": f"/sessions/{sid}/request",
+            "hotel_selection": f"/sessions/{sid}/hotel-selection",
             "choice": f"/sessions/{sid}/choices/{choice_id}",
             "runs": f"/sessions/{sid}/runs",
             "run": f"/runs/{run_id}",
@@ -104,7 +105,7 @@ def world(postgres_url: URL, unrepaired: None) -> Iterator[World]:
 @pytest.mark.parametrize(
     "name",
     [
-        "session", "request", "choice", "runs", "run", "plan", "calendar",
+        "session", "request", "hotel_selection", "choice", "runs", "run", "plan", "calendar",
         "draft", "bookings", "booking", "sessions", "preferences", "memory",
     ],
 )  # fmt: skip

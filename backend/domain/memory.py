@@ -17,6 +17,8 @@ type MemoryKey = Literal[
     "avoid",
     "companion_pattern",
     "budget_style",
+    "wake_time",
+    "evening_end",
 ]
 type MemoryScope = Literal["long_term", "trip"]
 type MemoryStatus = Literal["proposed", "active", "rejected", "superseded", "deleted"]
@@ -32,7 +34,7 @@ ENUM_VALUES = {
 }
 VALUE_GUIDE = (
     "; ".join(f"{key}: {', '.join(sorted(values))}" for key, values in ENUM_VALUES.items())
-    + "; dietary/interest/avoid: 用户原意的简短文本，最多80字"
+    + "; dietary/interest/avoid/wake_time/evening_end: 用户原意的简短文本，最多80字"
 )
 KEY_LABELS = {
     "pace": "旅行节奏",
@@ -45,7 +47,13 @@ KEY_LABELS = {
     "avoid": "希望避免",
     "companion_pattern": "同行方式",
     "budget_style": "预算风格",
+    "wake_time": "平时起床",
+    "evening_end": "晚上结束",
 }
+# 用户决定(2026-10-19)：只有这四项经确认后可成为长期偏好，之后合并选择卡不再询问；
+# 住宿类型/禁烟/床型/同行/首日到达/末日离开只对本次行程有效，服务端合并确认卡永不把它们提为长期。
+LONG_TERM_ELIGIBLE: tuple[MemoryKey, ...] = ("pace", "wake_time", "evening_end", "transport")
+TRIP_ONLY_PREFERENCES = ("lodging", "smoking", "bed", "companion", "arrival", "departure")
 VALUE_LABELS = {
     "walk": "步行",
     "transit": "公共交通",

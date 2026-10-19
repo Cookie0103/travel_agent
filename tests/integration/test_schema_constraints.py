@@ -41,6 +41,9 @@ NON_TERMINAL_EVENTS = {
 }
 
 
+LATE_CHOICE_KINDS = {"hotel_assign"}  # 0024才加入；更早的版本没有这个取值，也没有可迁移的行
+
+
 def values(alias: Any) -> set[str]:
     return set(get_args(getattr(alias, "__value__", alias)))
 
@@ -144,7 +147,11 @@ def seed(db: Connection) -> None:
     ]
     for mode in modes:
         run_insert(db, user, session, "completed", mode)
+    # 0024之前的版本没有hotel_assign：仅在该版本的CHECK允许时才插入。
+    now_allowed = allowed(db, "choice_cards", "ck_choice_cards_kind")
     for kind in sorted(EXPECTED[("choice_cards", "ck_choice_cards_kind")]):
+        if kind in LATE_CHOICE_KINDS and kind not in (now_allowed or ()):
+            continue
         db.execute(
             text(
                 "INSERT INTO choice_cards(id,session_id,source_run_id,kind,expected_revision,"
@@ -376,8 +383,68 @@ def test_0023_downgrade_reallows_travel_details_and_upgrades_again(postgres_url:
         config = Config(str(ROOT / "backend/persistence/alembic.ini"))
         config.attributes["connection"] = db
         command.downgrade(config, "0022")
-        assert allowed(db, "choice_cards", "ck_choice_cards_kind") == values(ChoiceKind) | {
-            "travel_details"
-        }
+        # 0024之后新增的hotel_assign在0022不存在；旧库允许集合=当前集合-hotel_assign+travel_details
+        assert allowed(db, "choice_cards", "ck_choice_cards_kind") == (
+            values(ChoiceKind) - {"hotel_assign"}
+        ) | {"travel_details"}
         command.upgrade(config, "head")
         assert allowed(db, "choice_cards", "ck_choice_cards_kind") == values(ChoiceKind)
+
+
+def card_insert(db: Connection, session: Any, run: Any, kind: str) -> Any:
+    card = uuid4()
+    db.execute(
+        text(
+            "INSERT INTO choice_cards(id,session_id,source_run_id,kind,expected_revision,"
+            "content) VALUES (:i,:s,:r,:k,1,'{}')"
+        ),
+        {"i": card, "s": session, "r": run, "k": kind},
+    )
+    return card
+
+
+def test_0024_adds_hotel_assign_and_downgrade_retires_rows_without_losing_them(
+    postgres_url: URL,
+) -> None:
+    assign = {
+        "hotel_name": "某酒店",
+        "city": "京都",
+        "check_in": "2026-11-20",
+        "check_out": "2026-11-22",
+        "needs_city": False,
+    }
+    with database_at(postgres_url, "0023") as db:
+        seed(db)
+        session, run = db.execute(text("SELECT session_id, id FROM task_runs LIMIT 1")).one()
+        with pytest.raises(IntegrityError, match="ck_choice_cards_kind"):
+            with db.begin_nested():
+                card_insert(db, session, run, "hotel_assign")
+        upgrade(db)
+        assert "hotel_assign" in (allowed(db, "choice_cards", "ck_choice_cards_kind") or ())
+        card = card_insert(db, session, run, "hotel_assign")
+        db.execute(
+            text("UPDATE choice_cards SET content = CAST(:c AS jsonb) WHERE id=:i"),
+            {"i": card, "c": json.dumps({"question": "q", "assign": assign})},
+        )
+        config = Config(str(ROOT / "backend/persistence/alembic.ini"))
+        config.attributes["connection"] = db
+        command.downgrade(config, "0023")
+        assert "hotel_assign" not in (allowed(db, "choice_cards", "ck_choice_cards_kind") or ())
+        kept = db.execute(
+            text("SELECT kind, answered_option_id, content FROM choice_cards WHERE id=:i"),
+            {"i": card},
+        ).one()
+        assert kept.kind == "form" and kept.answered_option_id is None
+        assert kept.content["superseded"] is True and kept.content["retired_assign"] == assign
+        row = ChoiceCardRow(
+            id=card,
+            session_id=session,
+            source_run_id=run,
+            expected_revision=1,
+            kind=kept.kind,
+            content=kept.content,
+            created_at=datetime.now(UTC),
+        )
+        assert card_from_row(row, 1).stale  # 旧/新代码都能读，且永远是失效卡
+        command.upgrade(config, "head")
+        assert "hotel_assign" in (allowed(db, "choice_cards", "ck_choice_cards_kind") or ())

@@ -16,6 +16,7 @@ from backend.services.catalog import Article, CatalogService
 from backend.services.choices import ChoiceCard, ChoiceService
 from backend.services.common import ServiceError
 from backend.services.history import HistoryService, RunPage, SessionPage
+from backend.services.hotel_selection import HotelSelectionService
 from backend.services.memory import MemoryFactView, MemoryService
 from backend.services.models import ModelOption, model_options
 from backend.services.plans import LockInput, PlanService, SavedPlan
@@ -40,7 +41,7 @@ from backend.services.travel import (
     TravelService,
 )
 from backend.services.user_profile import UserProfileService, UserProfileView
-from backend.services.views import PlanView, RequestView
+from backend.services.views import HotelSelectionView, PlanView, RequestView
 
 
 def create_app(
@@ -62,6 +63,7 @@ def create_app(
     memory = MemoryService(sessions.database)
     profile = UserProfileService(sessions.database, live_enabled=runs.live_enabled)
     catalog = CatalogService(travel)
+    hotel_selection = HotelSelectionService(travel)
     history = HistoryService(sessions.database)
 
     @asynccontextmanager
@@ -214,6 +216,12 @@ def create_app(
         session_id: UUID, user_id: Annotated[UUID, Depends(identity)]
     ) -> RequestView:
         return await travel.get_request_view(RunContext(user_id, session_id))
+
+    @app.get("/sessions/{session_id}/hotel-selection")
+    async def get_hotel_selection(
+        session_id: UUID, user_id: Annotated[UUID, Depends(identity)]
+    ) -> HotelSelectionView:
+        return await hotel_selection.view(user_id, session_id)
 
     @app.patch("/sessions/{session_id}/request")
     async def patch_travel_request(

@@ -1,7 +1,7 @@
 """真实PG：结构化点选与消息同事务，保护归属、版本和重放。"""
 
 import asyncio
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 
@@ -22,6 +22,16 @@ from tests.integration.test_travel import travel_setup as travel_setup
 
 pytestmark = pytest.mark.integration
 
+# 合并选择卡里的行程信息都已知（房型偏好沿用夹具的“无要求”；文字不含数字，不触发旧的时间确认题）。
+ASKED_HARD = (
+    "住宿：无要求",
+    "房型：无要求",
+    "床型：无要求",
+    "第一天抵达：下午",
+    "最后一天离开：傍晚",
+)
+ASKED_SOFT = ("平时起床：早", "晚上结束：晚", "同行：朋友")
+
 
 def test_cancelling_the_task_retires_its_unanswered_details_card(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
@@ -37,7 +47,8 @@ def test_cancelling_the_task_retires_its_unanswered_details_card(
                     "set": {
                         "transport": "transit",
                         "lodging_budget_unlimited": True,
-                        "hard_constraints": ["节奏：标准"],
+                        "hard_constraints": ["节奏：标准", *ASKED_HARD],
+                        "soft_constraints": list(ASKED_SOFT),
                     },
                 }
             ),
@@ -90,7 +101,8 @@ def test_combined_card_stops_automatic_planning_until_explicit_confirmation(
                     "set": {
                         "transport": "transit",
                         "lodging_budget_unlimited": True,
-                        "hard_constraints": ["节奏：标准"],
+                        "hard_constraints": ["节奏：标准", *ASKED_HARD],
+                        "soft_constraints": list(ASKED_SOFT),
                     },
                 }
             ),
@@ -364,7 +376,7 @@ def test_direct_pace_request_without_itinerary_task_creates_card_without_changin
     runner.run(exercise())
 
 
-def test_awaiting_transport_automatically_emits_card_and_explicit_presentation_reuses_it(
+def test_goals_automatically_emit_one_combined_card_and_explicit_form_supersedes_it(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
     runner, travel, original = travel_setup
@@ -377,28 +389,38 @@ def test_awaiting_transport_automatically_emits_card_and_explicit_presentation_r
             context = RunContext(original.user_id, original.session_id, row.id)
         events: list[RuntimeEvent] = []
         executor = TravelToolExecutor(travel)
+        arguments = {"expected_revision": 1, "goals": ["itinerary"], "awaiting_field": "transport"}
+        definition = next(d for d in DEFINITIONS if d.name == "update_conversation_state")
         result = await execute_observed(
-            executor,
-            context,
-            "update_conversation_state",
-            {"expected_revision": 1, "goals": ["itinerary"], "awaiting_field": "transport"},
-            events.append,
-            definition=next(d for d in DEFINITIONS if d.name == "update_conversation_state"),
-        )
+            executor, context, "update_conversation_state", arguments, events.append,
+            definition=definition,
+        )  # fmt: skip
         assert result.code is None
         presentations = [event.presentation for event in events if event.kind == "presentation"]
         assert len(presentations) == 1 and presentations[0]
         data = presentations[0]["data"]
         assert isinstance(data, dict) and data["component"] == "choice"
-        repeated = await executor.execute(
+        assert data["form"]["purpose"] == "trip_ask"
+        # 同一状态再记录一次：复用同一张未答卡，不重复展示
+        events.clear()
+        again = await execute_observed(
+            executor, context, "update_conversation_state", arguments, events.append,
+            definition=definition,
+        )  # fmt: skip
+        assert again.code is None and "choice" not in again.data
+        assert again.data["awaiting_trip_details"] is True
+        assert not [event for event in events if event.kind == "presentation"]
+        # 模型显式出另一张表单：取代合并卡
+        explicit = await executor.execute(
             context,
             "present_form",
-            {
-                "expected_revision": 1,
-                "groups": [{"key": "transport", "label": "交通方式"}],
-            },
+            {"expected_revision": 1, "groups": [{"key": "transport", "label": "交通方式"}]},
         )
-        assert repeated.code is None and repeated.data["choice_id"] == data["choice_id"]
+        assert explicit.code is None and explicit.data["choice_id"] != data["choice_id"]
+        old = await ChoiceService(travel).get(
+            context.user_id, context.session_id, UUID(str(data["choice_id"]))
+        )
+        assert old.stale and old.answered_option_id is None
         assert (await travel.read_request(context)).revision == 1
 
     runner.run(exercise())

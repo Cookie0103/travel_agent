@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.conversation import ConversationState, conversation_view
 from backend.domain.execution import RunContext
+from backend.domain.hotel_flow import current_picks, flow_from_details, selection_state
 from backend.domain.itinerary import HotelStay
 from backend.domain.travel_request import TravelRequest
 from backend.persistence import runs
@@ -86,3 +87,22 @@ def selected_hotel_stays(
     ):
         return ()
     return TypeAdapter(tuple[HotelStay, ...]).validate_python(selection["stays"])
+
+
+def chosen_hotel_stays(
+    row: TravelRequestRow, context: RunContext, request: TravelRequest
+) -> tuple[HotelStay, ...]:
+    """本轮服务端核对过的选择；没有时，用此前（聊天/确认卡）已选齐的各段选择。
+
+    仅用于初始规划之前：已有正式行程后的酒店修改仍只认本轮选择。
+    """
+    run_bound = selected_hotel_stays(row, context, request.revision)
+    if run_bound:
+        return run_bound
+    flow = flow_from_details(row.request_details)
+    if selection_state(flow, request) != "complete":
+        return ()
+    return tuple(
+        HotelStay(check_in=day, check_out=pick.check_out, hotel_evidence_id=pick.evidence_id)
+        for day, pick in sorted(current_picks(flow, request).items())
+    )

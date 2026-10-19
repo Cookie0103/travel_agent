@@ -9,7 +9,7 @@ import { errorActions } from "@/lib/error-actions";
 import { Composer, type Mode } from "./composer";
 import { Conversation, Welcome } from "./conversation";
 import { workspaceTab, type WorkspaceTab } from "@/lib/workspace-tabs";
-import type { HotelSelection } from "@/lib/hotel-groups";
+import type { MessageSelection } from "@/lib/api";
 import { TripPanel } from "./trip-panel";
 
 export type Workspace = ReturnType<typeof useWorkspace>;
@@ -33,7 +33,7 @@ export function Workbench({ articleId }: { articleId?: string }) {
     void workspace.newTrip().then((changed) => {
       if (changed) setText("");
     });
-  const submit = (message: string, via: Mode, selection?: HotelSelection) => {
+  const submit = (message: string, via: Mode, selection?: MessageSelection) => {
     if (!message.trim() || workspace.busy || workspace.restoring) return;
     void workspace.send(message, via, selection).then((accepted) => {
       if (accepted) setText((current) => (current === message ? "" : current));

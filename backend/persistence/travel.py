@@ -192,3 +192,19 @@ async def entity_evidence(
         )
     )
     return list(rows)
+
+
+async def hotel_offer_rows(db: AsyncSession, context: RunContext) -> list[EvidenceRow]:
+    """本会话查到过的酒店报价(新到旧，有界)；聊天里按名字找候选用。"""
+    rows = await db.scalars(
+        select(EvidenceRow)
+        .where(
+            EvidenceRow.user_id == context.user_id,
+            EvidenceRow.session_id == context.session_id,
+            EvidenceRow.kind == "hotel_offer",
+            EvidenceRow.invalidated.is_(False),
+        )
+        .order_by(EvidenceRow.payload["retrieved_at"].as_string().desc(), EvidenceRow.id)
+        .limit(60)
+    )
+    return list(rows)

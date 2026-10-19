@@ -37,6 +37,7 @@ from backend.services.bookings import BookingService
 from backend.services.catalog import CatalogResult, CatalogService
 from backend.services.choices import ChoiceService
 from backend.services.common import ServiceError
+from backend.services.hotel_selection import HotelSelectionService
 from backend.services.hotels import HotelService, cards
 from backend.services.memory import MemoryService
 from backend.services.planning import PlanningService
@@ -87,6 +88,13 @@ class HotelSearchInput(BaseModel):
         le=6,
         description="不同酒店数，默认5；实时模式每家只给一张最低价卡，指定hotel_id时才列同店多套餐（最多6条报价，每家最多2套餐）",
     )
+
+
+class SelectHotelInput(BaseModel):
+    """入参只有条件版本：酒店身份(乐天链接/已展示候选名)由服务端从本轮可信用户原话解析，模型不能提供。"""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    expected_revision: int = Field(strict=True, ge=0)
 
 
 class WeatherInput(BaseModel):
@@ -175,7 +183,7 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "update_conversation_state",
-        "记录用户明确授权的酒店比较/完整行程目标(goals)，后续澄清不重设goals。追问前记录唯一awaiting_field；只能问服务端missing_fields。用户取消用cancel。不能自报完成；实际查询展示后服务端自动推进。元数据不增旅行revision。",
+        "记录用户明确授权的酒店比较/完整行程目标(goals)，后续澄清不重设goals。追问前记录唯一awaiting_field；只能问服务端missing_fields。用户取消用cancel。不能自报完成；实际查询展示后服务端自动推进。元数据不增旅行revision。核心条件齐全且仍有未定的出行信息/酒店偏好时，服务端自动展示一张合并选择卡(结果含choice或awaiting_trip_details)，你只提示用户在卡片里确认，不在文字里问卡片覆盖的内容。",
         ConversationStateInput.model_json_schema(),
         kind="state",
     ),
@@ -188,6 +196,17 @@ DEFINITIONS = (
         "search_hotel_offers",
         "按当前完整入住条件查询不同酒店（limit为酒店数，默认5）；实时模式每家一张最低价套餐卡并带总数与乐天入口，指定hotel_id时列该店套餐（最多6报价，每家最多2套餐）；保持上游顺序。实时模式逐晚核算乐天含税报价，未知不猜测。每张卡的offer_id用于present/refresh，evidence_id用于行程hotel_evidence_id。多城市必须带segment_arrive=段到达日期，各段报价用于hotel_stays；不修改全局city/日期，单城市可省略。",
         HotelSearchInput.model_json_schema(),
+    ),
+    ToolDefinition(
+        "select_hotel_from_chat",
+        "用户在聊天里用乐天链接和/或已展示酒店的名字选酒店(“就住这个”)时调用；入参只有expected_revision，"
+        "服务端只从本轮用户原话解析酒店，你不能指定酒店、城市或价格，也不能用它替用户做选择。"
+        "返回status：selected(已按相同服务端校验记录该住宿段，看all_selected/remaining_segments)；"
+        "needs_confirmation(多城市未说城市，已发归段确认卡或填城市卡，等待用户点击)；"
+        "need_link(名字对不上已展示候选，请用户贴乐天链接)；not_found(这些日期查不到该酒店)；"
+        "search_failed；nothing_to_select。",
+        SelectHotelInput.model_json_schema(),
+        kind="state",
     ),
     ToolDefinition(
         "refresh_hotel_offer",
@@ -240,7 +259,7 @@ DEFINITIONS = (
         "向用户一次问1至4个封闭选择题（key、label、multi、required、2至6个options），"
         "用户答完所有必填题后统一提交。key=transport(交通)与pace(节奏)的选项由服务端固定，"
         "你给的选项会被替换，答案写入对应类型字段；其他题的答案只以“题目：选项”写入约束文本。"
-        "已有抵达/离开时间时服务端自动追加时间确认题。提问后等待用户提交，不提前规划。",
+        "已有抵达/离开时间时服务端自动追加时间确认题。提问后等待用户提交，不提前规划。出行信息(节奏/起床/晚上结束/到达离开时间/同行/交通)与酒店偏好(住宿类型/禁烟/床型)由服务端合并选择卡负责，不要用本工具问这些。",
         FormInput.model_json_schema(),
         kind="presentation",
     ),
@@ -256,6 +275,7 @@ SCHEMAS: dict[str, type[BaseModel]] = {
     "update_conversation_state": ConversationStateInput,
     "load_skill": SkillInput,
     "search_hotel_offers": HotelSearchInput,
+    "select_hotel_from_chat": SelectHotelInput,
     "refresh_hotel_offer": RefreshOfferInput,
     "present_travel_result": PresentationInput,
     "present_form": FormInput,
@@ -288,6 +308,7 @@ def live_definitions(definitions: tuple[ToolDefinition, ...]) -> tuple[ToolDefin
         if definition.name
         in {
             "search_hotel_offers",
+            "select_hotel_from_chat",
             "refresh_hotel_offer",
             "estimate_routes",
             "present_travel_result",
@@ -626,8 +647,19 @@ class TravelToolExecutor:
 
     async def _dispatch(self, context: RunContext, name: str, parsed: BaseModel) -> ToolResult:
         if isinstance(parsed, MemoryProposal):
-            choices = await MemoryService(self.travel.database).propose(context, parsed)
-            return ToolResult({"choices": choices}, empty=not choices)
+            choices, deferred = await MemoryService(self.travel.database).propose_with_deferred(
+                context, parsed
+            )
+            note = (
+                {
+                    "deferred": deferred,
+                    "note": "规划进行中：节奏/交通/平时起床/晚上结束的长期偏好已记录为待确认，"
+                    "草稿暂存后服务端会合并成一张确认卡；现在没有卡片，不要声称已出卡或已保存。",
+                }
+                if deferred
+                else {}
+            )
+            return ToolResult({"choices": choices, **note}, empty=not choices and not deferred)
         if isinstance(parsed, PresentationInput) and parsed.component == "choice":
             if parsed.kind is None or parsed.expected_revision is None:
                 raise ServiceError(422, "validation", "选择卡需要kind与条件版本")
@@ -642,6 +674,11 @@ class TravelToolExecutor:
             return ToolResult({"component": "choice", **card.model_dump(mode="json")})
         if isinstance(parsed, ConversationStateInput):
             return ToolResult(await self.travel.update_conversation_state(context, parsed))
+        if isinstance(parsed, SelectHotelInput):
+            outcome = await HotelSelectionService(self.travel).from_chat(
+                context, parsed.expected_revision
+            )
+            return ToolResult(outcome)
         if isinstance(parsed, WeatherInput):
             request = await self.travel.read_request(context)
             require_revision(request, parsed.expected_revision)
@@ -682,10 +719,20 @@ class TravelToolExecutor:
                 before_validate=lambda proposal: self._take_validation(proposal, staging=True),
             )
             self._remember(draft.content.proposal(draft.request_revision), draft.validation)
-            return ToolResult(
-                draft.summary(),
-                detail=report_detail(draft.validation),
-            )
+            data = draft.summary()
+            if draft.validation.status != "conflict":
+                try:  # 偏好合并确认卡不能影响暂存本身
+                    cards = await ChoiceService(self.travel).merge_memory_cards(context)
+                except ServiceError:
+                    cards = []
+                if cards:
+                    data = {
+                        **data,
+                        "memory_choices": cards,
+                        "memory_note": "服务端已展示一组偏好记忆确认卡（默认记住，"
+                        "可改为这次而已/不要记，一次确认）；只提示用户在卡片里确认，不代为保存。",
+                    }
+            return ToolResult(data, detail=report_detail(draft.validation))
         if isinstance(parsed, PlanInput):
             data = await self.plans.get(
                 context.user_id, parsed.plan_id, session_id=context.session_id

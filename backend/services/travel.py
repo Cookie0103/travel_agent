@@ -12,7 +12,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.adapters.live_data import LiveData
 from backend.domain.booking import Booking
-from backend.domain.choices import groups_for_missing
 from backend.domain.conversation import (
     ConversationState,
     ConversationStateInput,
@@ -22,6 +21,12 @@ from backend.domain.conversation import (
 from backend.domain.evidence import EvidenceKind, EvidenceRecord
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError
+from backend.domain.hotel_flow import (
+    flow_from_details,
+    is_skipped,
+    lodging_segments,
+    selection_state,
+)
 from backend.domain.plans import PlanDraft
 from backend.domain.room_choices import preserve_unmentioned_room_choices
 from backend.domain.travel_request import (
@@ -53,7 +58,7 @@ __all__ = ["RunContext", "RequestPatch", "TravelRequest", "RequestUpdate", "Trav
 def request_from_row(row: TravelRequestRow | None) -> TravelRequest:
     if row is None:
         raise ServiceError(404, "blocked", "会话不存在")
-    return TravelRequest.model_validate(
+    request = TravelRequest.model_validate(
         {
             **row.conditions,
             "revision": row.revision,
@@ -68,6 +73,9 @@ def request_from_row(row: TravelRequestRow | None) -> TravelRequest:
             ),
         }
     )
+    if is_skipped(flow_from_details(row.request_details), request):
+        return request.model_copy(update={"lodging_skipped": True})
+    return request
 
 
 def require_revision(request: TravelRequest, revision: int) -> None:
@@ -212,7 +220,14 @@ class TravelService:
                 after=MemoryService.cutoff(user),
                 live_hotels=self.live is not None,
             )
-            selected = conversation.selected_hotel_stays(request_row, context, current.revision)
+            no_saved_plan = not (plan and plan.current_version)
+            selected = (
+                conversation.chosen_hotel_stays(request_row, context, current)
+                if no_saved_plan
+                else conversation.selected_hotel_stays(request_row, context, current.revision)
+            )
+            lodging = lodging_segments(current)
+            flow_state = selection_state(flow_from_details(request_row.request_details), current)
             waiting_details = await db.scalar(
                 select(ChoiceCardRow.id)
                 .where(
@@ -226,10 +241,10 @@ class TravelService:
             pending_tasks = dialogue["pending_tasks"]
             assert isinstance(pending_tasks, list)
             needs_selection = (
-                bool(current.segments)
-                and any(s.depart > s.arrive for s in current.segments or ())
+                bool(lodging)
                 and not selected
-                and not (plan and plan.current_version)
+                and flow_state not in {"complete", "skipped"}
+                and no_saved_plan
                 and pending_draft is None
                 and "itinerary" in pending_tasks
             )
@@ -250,9 +265,10 @@ class TravelService:
                         and (request_row.request_details or {}).get("hotel_selection_run_id")
                         == str(context.run_id),
                     }
-                    if current.segments
+                    if lodging
                     else {}
                 ),
+                **({"lodging_skipped": True} if flow_state == "skipped" else {}),
                 "request": RequestView.from_request(
                     current, condition_sources(request_row)
                 ).model_dump(mode="json"),
@@ -286,6 +302,18 @@ class TravelService:
                 "时效以observed_at为本次快照时间；不能只看日期就断言报价过期，操作时仍需工具重新核对。"
                 "回顾不覆盖完整历史；无法确定指代时追问，不猜测。",
             }
+
+    async def trip_ask(self, context: RunContext) -> tuple[dict[str, object] | None, bool]:
+        """搜索/规划前的闸门：返回(未答的合并选择卡, 是否本次新建)；执行已结束等情况不拦截。"""
+        from backend.services.choices import ChoiceService
+
+        try:
+            card, created = await ChoiceService(self).ensure_trip_ask(context)
+        except ServiceError as error:
+            if error.status in (404, 409):
+                return None, False
+            raise
+        return (card.model_dump(mode="json") if card else None), created
 
     async def update_conversation_state(
         self, context: RunContext, update: ConversationStateInput
@@ -338,15 +366,14 @@ class TravelService:
             if update.cancel:
                 await ChoiceService(self).supersede_forms(db, context)
             conversation.save_state(row, state)
-            if update.awaiting_field in {"pace", "transport"}:
-                card = await ChoiceService(self).create_in_transaction(
-                    db,
-                    context,
-                    "form",
-                    current.revision,
-                    groups_for_missing(tuple(missing)),
+            if not update.cancel:
+                card, created = await ChoiceService(self).ensure_trip_ask_in_transaction(
+                    db, context
                 )
-                view["choice"] = card.model_dump(mode="json")
+                if card is not None:
+                    view["awaiting_trip_details"] = True
+                if created and card is not None:
+                    view["choice"] = card.model_dump(mode="json")
             return view
 
     async def complete_conversation_task(
@@ -359,9 +386,9 @@ class TravelService:
             state = conversation.stored_state(row)
             waiting = (
                 task == "hotel_comparison"
-                and bool(current.segments)
+                and bool(lodging_segments(current))
                 and "itinerary" in state.pending_tasks
-                and not conversation.selected_hotel_stays(row, context, current.revision)
+                and not conversation.chosen_hotel_stays(row, context, current)
             )
             if task not in state.pending_tasks and not waiting:
                 return
