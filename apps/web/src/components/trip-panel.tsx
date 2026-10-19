@@ -8,7 +8,7 @@ import { Bookings } from "./bookings";
 import { PreferencePanel } from "./preferences";
 import { moneyLabel, moneyRangeLabel, partyLabel } from "@/lib/availability";
 import { sourceRows } from "@/lib/condition-source";
-import { currentPace } from "@/lib/pace";
+import { currentPace, paceLabel } from "@/lib/pace";
 
 const transportLabels: Record<string, string> = {
   walk: "步行",
@@ -100,10 +100,12 @@ export function TripPanel({
                       transportLabels[request.transport ?? ""],
                       request.departure_time &&
                         `${request.departure_time.slice(0, 5)} 出发`,
-                      pace,
                     ]
                       .filter(Boolean)
                       .join(" · ")}
+                  </p>
+                  <p className={pace ? undefined : "muted"}>
+                    {paceLabel(pace)}
                   </p>
                 </>
               ) : (

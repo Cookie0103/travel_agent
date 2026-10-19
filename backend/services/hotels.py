@@ -492,15 +492,7 @@ async def validate_hotel_selection(
         ):
             raise ServiceError(422, "validation", "所选酒店报价不属于对应住宿段，请重新选择")
         offer = HotelOffer.model_validate(record.value)
-        upper = nightly_upper(request)
-        price = nightly_price(offer)
-        if upper is not None and price is not None and price > upper:
-            raise ServiceError(
-                422,
-                "validation",
-                "所选酒店超过原住宿预算，请先接受预算放宽。",
-                "hotel_over_budget_unaccepted",
-            )
+        # 用户决定（2026-10-19）：超预算选择放行，超出额由校验器警告保留。
         if evidence_conditions(offer.request, "hotel_offer") != record.conditions or (
             offer.request.start_date,
             offer.request.end_date,

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { currentPace, mergePace } from "../src/lib/pace.ts";
+import { currentPace, mergePace, paceLabel } from "../src/lib/pace.ts";
 
 test("mergePace replaces an existing pace entry and keeps the others", () => {
   assert.deepEqual(mergePace(["少走路", "节奏：慢节奏", "吃抹茶"], "特种兵"), [
@@ -50,4 +50,9 @@ test("prototype names remain unrelated free constraints", () => {
     assert.equal(currentPace([], [name]), "");
     assert.deepEqual(mergePace([name], "标准"), [name, "节奏：标准"]);
   }
+});
+
+test("paceLabel shows the stated pace plainly and marks the unset default as an assumption", () => {
+  assert.equal(paceLabel("慢节奏"), "节奏：慢节奏");
+  assert.equal(paceLabel(""), "节奏：标准（默认假设，未指定）");
 });

@@ -137,3 +137,30 @@ VERIFIED：ADR-022 时期把“未接受放宽的超预算报价”建模为硬�
 - 多城市“选择酒店”提交仍有服务端闸门：`backend/services/hotels.py:497-503` 对超预算选择返回 422 `hotel_over_budget_unaccepted`（`validate_hotel_selection`）。本轮只改确认链路，未动它；若希望多城市也可直接选超预算酒店，需再放宽此处（并改对应测试）。
 - 校验文案里出现“可在确认前换预算内报价，也可接受超预算”，未接 UI 上的接受按钮；预算放宽卡仍按原流程独立存在。
 - 真实模型下 persona 变更效果未复测。
+
+## 第四轮：多城市超预算选酒店放宽
+
+### 现象
+第三轮遗留：多城市“选择酒店”提交时，用户选了超过每间每晚预算的报价，服务端直接 422 `hotel_over_budget_unaccepted`（“所选酒店超过原住宿预算，请先接受预算放宽。”），选不了。用户明确决定（2026-10-19）：必须允许，仅作警告。
+
+### 根因
+VERIFIED：`validate_hotel_selection` 里有独立于校验器的超预算闸门，仍是 ADR-022 的“先接受放宽才能选”模型，与第三轮“超预算是警告”不一致。
+
+### 方案
+- 删除该闸门，选择按其余守卫通过；超出额不另存，由第三轮已有的校验器检查 `hotel_over_budget_unaccepted`（status `unknown`，文案“超出原每间每晚预算 +X JPY（+Y%）”）在暂存/校验时生成，用户经校验结果看到。
+- 不变：过期/陈旧报价、未知证据、段数与日期覆盖、报价不属于对应住宿段、入住日期不匹配等守卫；预算放宽卡代码保留未删。
+- 前端：检索 `apps/web/src` 无任何“超预算被拒/需先接受放宽”的文案或逻辑（无 `hotel_over_budget_unaccepted` 引用），故无改动、不需 `web-check`。
+
+### 实现
+- `backend/services/hotels.py`（`validate_hotel_selection`，约 494-495 行）：移除 `nightly_upper/nightly_price` 比较与 422，原位留注释。
+
+### 测试
+- 红→绿：`tests/integration/test_segment_hotel_selection.py::test_over_budget_segment_hotel_selection_is_allowed_with_warning`（真实 PG，三城市，每间每晚预算设为 1，三段各选一家 → `RunService.submit` 成功；对所选报价 `accepted_hotel_budget_checks` 返回 `unknown` 的 `hotel_over_budget_unaccepted` 且文案含“超出原每间每晚预算 +”）。修复前该测试在原 422 处失败。
+- 离线 fixture，无付费调用。
+
+### 改动的既有测试及理由
+无。此前没有测试编码“多城市超预算选择被拒”；其余选择守卫测试（missing/dates/unknown/revision/expired）原样保留。
+
+### 遗留
+- 校验文案仍写“也可接受超预算”，UI 无对应接受按钮；预算放宽卡独立存在。
+- 选择结果本身（提交响应）不携带警告文本，警告在暂存草稿的校验结果里出现；如需在选择当下就提示，需另行设计。

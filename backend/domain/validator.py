@@ -656,7 +656,7 @@ def accepted_hotel_budget_checks(
                 "unknown",
                 "hotel_over_budget_unaccepted",
                 f"超出原每间每晚预算 +{excess:,.0f} {offer.currency}（+{percent}%）；"
-                "可在确认前换预算内报价，也可接受超预算。",
+                "可直接确认，也可换成预算内报价。",
             )
         ]
     return []

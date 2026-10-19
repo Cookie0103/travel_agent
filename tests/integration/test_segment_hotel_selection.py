@@ -20,6 +20,7 @@ from backend.domain.travel_request import (
     segment_request,
     trip_segments,
 )
+from backend.domain.validator import accepted_hotel_budget_checks
 from backend.persistence.models import EvidenceRow, PlanVersionRow
 from backend.providers.claude_agent.database_tools import DatabaseTools
 from backend.providers.hotel_fixture import load_rates
@@ -264,6 +265,55 @@ def test_all_selected_stays_survive_model_omission_stage_and_restore(
         )
         with pytest.raises(ServiceError, match="同一消息ID"):
             await service.submit(context.user_id, context.session_id, altered)
+        await service.close()
+
+    runner.run(exercise())
+
+
+def test_over_budget_segment_hotel_selection_is_allowed_with_warning(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """用户决定（2026-10-19）：多城市选超预算酒店放行，超出额以警告保留。"""
+    runner, travel, context = travel_setup
+    runtime = WaitingRuntime(RuntimeOutcome(text="合成执行", sdk_session_id="synthetic"))
+    service = RunService(travel.database, runtime_factory=lambda _: runtime)
+
+    async def exercise() -> None:
+        request, records = await three_city_quotes(travel, context)
+        request = (
+            await travel.patch_request(
+                context,
+                RequestPatch.model_validate(
+                    {
+                        "expected_revision": request.revision,
+                        "set": {
+                            "lodging_budget": {
+                                "amount": {"lower": "1", "upper": "1"},
+                                "basis": "per_room_night",
+                                "currency": request.currency,
+                            }
+                        },
+                    }
+                ),
+            )
+        ).request
+        stays = tuple(
+            HotelStay(
+                check_in=segment.arrive,
+                check_out=segment.depart,
+                hotel_evidence_id=records[index * 3].evidence_id,
+            )
+            for index, segment in enumerate(trip_segments(request))
+        )
+        submitted = await service.submit(
+            context.user_id, context.session_id, selection_message(request.revision, stays)
+        )
+        assert submitted.run_id
+        warnings = accepted_hotel_budget_checks(request, records[0])
+        assert [c.code for c in warnings] == ["hotel_over_budget_unaccepted"]
+        assert warnings[0].status == "unknown" and "超出原每间每晚预算 +" in warnings[0].message
+        await service.cancel(context.user_id, submitted.run_id)
+        await asyncio.gather(*tuple(service.tasks.values()))
         await service.close()
 
     runner.run(exercise())

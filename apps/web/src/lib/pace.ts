@@ -43,3 +43,8 @@ export function mergePace(
     ...(pace ? [`${PACE_PREFIX}${pace}`] : []),
   ];
 }
+
+/** Display only: an unset pace is shown as the assumed 标准, never written to the request. */
+export function paceLabel(pace: Pace | ""): string {
+  return pace ? `节奏：${pace}` : "节奏：标准（默认假设，未指定）";
+}
