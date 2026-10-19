@@ -12,7 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.adapters.live_data import LiveData
 from backend.domain.booking import Booking
-from backend.domain.choices import TRANSPORT_PACE_GROUPS
+from backend.domain.choices import groups_for_missing
 from backend.domain.conversation import (
     ConversationState,
     ConversationStateInput,
@@ -349,7 +349,7 @@ class TravelService:
                     context,
                     "form",
                     current.revision,
-                    TRANSPORT_PACE_GROUPS,
+                    groups_for_missing(tuple(missing)),
                 )
                 view["choice"] = card.model_dump(mode="json")
             return view

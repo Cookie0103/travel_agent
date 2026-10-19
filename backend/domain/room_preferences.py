@@ -5,7 +5,7 @@ from collections.abc import Sequence
 
 from pydantic import BaseModel, ConfigDict
 
-from backend.domain.room_choices import missing_room_choices, recognized_room_choices
+from backend.domain.room_choices import conflicting_room_choices, recognized_room_choices
 from backend.domain.travel_request import TravelRequest
 
 
@@ -51,10 +51,11 @@ def room_order(names: Sequence[str], request: TravelRequest | None) -> tuple[int
 
 
 def room_preferences_question(request: TravelRequest) -> str | None:
+    """房型偏好可选：没说按无要求，只有同一组互相矛盾才需要澄清。"""
     labels = {
         "lodging": "住宿方式（独立房间、接受宿舍/舱房或无要求）",
         "smoking": "禁烟偏好（禁烟或无要求）",
         "bed": "床型（双床、大床或无要求）",
     }
-    missing = [labels[key] for key in missing_room_choices(request.hard_constraints)]
-    return "酒店查询前，请明确房型偏好：" + "、".join(missing) + "。" if missing else None
+    conflicts = [labels[key] for key in conflicting_room_choices(request.hard_constraints)]
+    return "房型偏好有矛盾，请只保留一个：" + "、".join(conflicts) + "。" if conflicts else None

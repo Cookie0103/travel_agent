@@ -178,6 +178,11 @@ TRANSPORT_PACE_GROUPS = (
 )
 
 
+def groups_for_missing(missing: tuple[str, ...]) -> tuple[FormGroupInput, ...]:
+    """自动确认卡只问仍缺的交通/节奏；已知的不再出现在卡上。"""
+    return tuple(group for group in TRANSPORT_PACE_GROUPS if group.key in missing)
+
+
 def canonical_options(key: str) -> tuple[FormOption, ...] | None:
     """transport与pace的选项和含义归服务端，其余题目由模型自拟。"""
     if key == "transport":

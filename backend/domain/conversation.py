@@ -5,7 +5,6 @@ from uuid import UUID
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
-from backend.domain.room_choices import missing_room_choices
 from backend.domain.travel_request import (
     TravelRequest,
     hotel_search_location_required,
@@ -74,7 +73,7 @@ def task_missing(
             fields.append("overnight_stay")
         if request.rooms is None:
             fields.append("rooms")
-        fields.extend(missing_room_choices(request.hard_constraints))
+        # 房型偏好（住宿方式/禁烟/床型）是可选偏好：未说按“无要求”，不再阻塞查询。
     elif request.transport is None:
         fields.append("transport")
     if (

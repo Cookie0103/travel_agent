@@ -40,8 +40,9 @@ def test_only_qualification_changes_order_and_both_partitions_are_stable() -> No
     assert "未核实全部资格" in result.room_tags
 
 
-def test_missing_preferences_have_no_defaults_and_explicit_no_preference_is_answer() -> None:
-    assert room_preferences_question(TravelRequest())
+def test_missing_preferences_are_optional_and_explicit_no_preference_is_answer() -> None:
+    # 2026-10-19 少问流程：未表达的房型偏好不阻塞查询（按无要求处理）；只有互相矛盾才追问。
+    assert room_preferences_question(TravelRequest()) is None
     complete = TravelRequest(hard_constraints=("住宿：无要求", "房型：无要求", "床型：无要求"))
     assert room_preferences_question(complete) is None
     assert room_preferences_question(
@@ -152,7 +153,7 @@ def test_alias_and_canonical_bed_are_same_fact_but_two_different_choices_still_c
     conflict = TravelRequest(hard_constraints=(*trip.hard_constraints, "床型：双床"))
     assert "床型" in (room_preferences_question(conflict) or "")
     denied = TravelRequest(hard_constraints=("住宿：独立房间", "房型：禁烟", "不要大床"))
-    assert "床型" in (room_preferences_question(denied) or "")
+    assert room_preferences_question(denied) is None  # 无法映射的自由文本不再逼用户重答
 
 
 def test_old_twenty_constraints_with_bed_preference_remain_readable_and_recognized() -> None:
@@ -172,10 +173,15 @@ def test_explicit_private_room_with_exclusion_text_is_not_missing_or_conflicting
     )
     assert room_preferences_question(trip) is None
     assert "住宿：独立房间，不接受宿舍青旅" in trip.hard_constraints
+    # 真正互相矛盾（同一组两个规范值）仍需澄清；单条无法解析的自由文本不再追问。
     conflict = TravelRequest(
-        hard_constraints=("住宿：独立房间，接受宿舍", "房型：禁烟", "床型：无要求")
+        hard_constraints=("住宿：独立房间", "住宿：接受宿舍", "房型：禁烟", "床型：无要求")
     )
     assert room_preferences_question(conflict)
+    loose = TravelRequest(
+        hard_constraints=("住宿：独立房间，接受宿舍", "房型：禁烟", "床型：无要求")
+    )
+    assert room_preferences_question(loose) is None
 
 
 def test_typed_same_choice_at_twenty_constraint_limit_is_noop() -> None:

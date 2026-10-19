@@ -116,7 +116,7 @@ def test_nightly_budget_question_and_unlimited_short_answer_survive_pg_restore(
     runner.run(exercise())
 
 
-def test_original_goal_and_bed_question_survive_three_rounds_without_supplier_text(
+def test_original_goal_and_open_question_survive_three_rounds_without_supplier_text(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
     runner, travel, context = travel_setup
@@ -144,20 +144,13 @@ def test_original_goal_and_bed_question_survive_three_rounds_without_supplier_te
             {
                 "expected_revision": 2,
                 "goals": ["hotel_comparison", "itinerary"],
-                "awaiting_field": "bed",
+                "awaiting_field": "lodging_budget",
             },
         )
         assert result.code is None
         await finish(travel, origin)
         for prompt in ("没有小孩", "一间房", "住宿没有单独上限"):
             turn = await create_run(travel, context, prompt)
-            if prompt == "住宿没有单独上限":
-                budget_answer = await TravelToolExecutor(travel).execute(
-                    turn,
-                    "update_travel_request",
-                    {"expected_revision": 2, "set": {"lodging_budget_unlimited": True}},
-                )
-                assert budget_answer.code is None
             await finish(travel, turn)
         state = await TravelService(travel.database).business_context(
             replace(context, run_id=uuid4())
@@ -165,20 +158,20 @@ def test_original_goal_and_bed_question_survive_three_rounds_without_supplier_te
         dialogue = state["conversation"]
         assert isinstance(dialogue, dict)
         assert dialogue["goal_prompt"] == "合成用户任务：查酒店并规划行程"
-        assert dialogue["awaiting_field"] == "bed"
-        assert dialogue["missing_fields"] == ["bed"]
+        assert dialogue["awaiting_field"] == "lodging_budget"
+        assert dialogue["missing_fields"] == ["lodging_budget"]
         assert dialogue["pending_tasks"] == ["hotel_comparison", "itinerary"]
         assert dialogue["nights"] == 1
         assert "住宿预算" not in str(dialogue["missing_fields"])
         assert "实时回复仅供" not in str(dialogue)
-        answer = await create_run(travel, context, "都可以")
+        answer = await create_run(travel, context, "住宿没有单独上限")
         receipt = await TravelToolExecutor(travel).execute(
             answer,
             "update_travel_request",
             {
                 "expected_revision": (await travel.get_request(answer)).revision,
-                "set": {"hard_constraints": ["住宿：独立房间", "房型：禁烟", "床型：无要求"]},
-                "explicit_fields": ["hard_constraints"],
+                "set": {"lodging_budget_unlimited": True},
+                "explicit_fields": ["lodging_budget_unlimited"],
             },
         )
         assert receipt.code is None

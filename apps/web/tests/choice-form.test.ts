@@ -141,3 +141,14 @@ test("a 'not correct' time with no text typed is dropped at submit", () => {
     "nothing left",
   );
 });
+
+test("the echo never prints a group the user left unanswered", () => {
+  const text = answersSummary(form, { interests: ["food"], times: ["yes"] });
+  assert.doesNotMatch(text, /交通/);
+  assert.doesNotMatch(text, /：；|：。|：$/);
+  assert.match(text, /兴趣：美食/);
+  assert.equal(
+    answersSummary(form, { transport: ["walk"] }),
+    "确认：交通：步行。",
+  );
+});

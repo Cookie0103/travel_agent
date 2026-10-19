@@ -93,7 +93,7 @@ def test_explicit_room_group_cannot_authorize_ordinary_mention_of_other_manual_g
     runner.run(exercise())
 
 
-def test_missing_room_preferences_rejects_before_query_then_explicit_no_preference_works(
+def test_missing_room_preferences_do_not_block_query_but_conflict_does(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
@@ -111,22 +111,7 @@ def test_missing_room_preferences_rejects_before_query_then_explicit_no_preferen
             context,
             RequestPatch.model_validate({"expected_revision": 1, "clear": ["hard_constraints"]}),
         )
-        with pytest.raises(ServiceError) as blocked:
-            await HotelService(travel).search(context, update.request.revision, limit=1)
-        assert (
-            blocked.value.code == "validation"
-            and blocked.value.reason == "hotel_room_preferences_missing"
-        )
-        assert "房型" in str(blocked.value) and calls == []
-        update = await travel.patch_request(
-            context,
-            RequestPatch.model_validate(
-                {
-                    "expected_revision": update.request.revision,
-                    "set": {"hard_constraints": ["住宿：无要求", "房型：无要求", "床型：无要求"]},
-                }
-            ),
-        )
+        # 2026-10-19 少问流程：三组房型偏好都没说也直接查询（按无要求）。
         records = await HotelService(travel).search(context, update.request.revision, limit=1)
         assert len(records) == 2 and calls == [True]
         assert (
@@ -134,11 +119,24 @@ def test_missing_room_preferences_rejects_before_query_then_explicit_no_preferen
                 context, update.request.revision, tuple(record.evidence_id for record in records)
             )
         )["cards"]
+        update = await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": update.request.revision,
+                    "set": {"hard_constraints": ["床型：大床", "床型：双床"]},
+                }
+            ),
+        )
+        with pytest.raises(ServiceError) as blocked:
+            await HotelService(travel).search(context, update.request.revision, limit=1)
+        assert blocked.value.reason == "hotel_room_preferences_missing"
+        assert "床型" in str(blocked.value) and calls == [True]
 
     runner.run(exercise())
 
 
-def test_missing_preferences_block_live_search_and_refresh_before_any_provider_but_old_quotes_read(
+def test_conflicting_preferences_block_live_search_and_refresh_but_old_quotes_read(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
     runner, travel, context = travel_setup
@@ -148,7 +146,9 @@ def test_missing_preferences_block_live_search_and_refresh_before_any_provider_b
         original = (await service.search(context, 1, limit=1))[0]
         update = await travel.patch_request(
             context,
-            RequestPatch.model_validate({"expected_revision": 1, "clear": ["hard_constraints"]}),
+            RequestPatch.model_validate(
+                {"expected_revision": 1, "set": {"hard_constraints": ["床型：大床", "床型：双床"]}}
+            ),
         )
         restored = await service.present(context, update.request.revision, (original.evidence_id,))
         panel = HotelPresentation.model_validate(restored)
@@ -156,7 +156,7 @@ def test_missing_preferences_block_live_search_and_refresh_before_any_provider_b
         usage = _CountingUsage({})
 
         def never(query: httpx.Request) -> httpx.Response:
-            pytest.fail("缺偏好不能调用Google或乐天")
+            pytest.fail("偏好矛盾不能调用Google或乐天")
 
         async with httpx.AsyncClient(transport=httpx.MockTransport(never)) as http:
             travel.live = LiveData(
@@ -234,7 +234,7 @@ def test_qualification_partition_precedes_limit_and_full_cards_keep_original_siz
     runner.run(exercise())
 
 
-def test_offline_demo_asks_before_tools_and_completes_after_answer(
+def test_offline_demo_asks_before_tools_only_on_conflicting_preferences(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
     runner, travel, context = travel_setup
@@ -248,7 +248,9 @@ def test_offline_demo_asks_before_tools_and_completes_after_answer(
         assert result.code is None and any(event.kind == "presentation" for event in events)
         await travel.patch_request(
             context,
-            RequestPatch.model_validate({"expected_revision": 1, "clear": ["hard_constraints"]}),
+            RequestPatch.model_validate(
+                {"expected_revision": 1, "set": {"hard_constraints": ["床型：大床", "床型：双床"]}}
+            ),
         )
         events.clear()
         result = await demo_command(

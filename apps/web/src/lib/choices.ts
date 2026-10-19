@@ -118,17 +118,22 @@ export function choiceMessage(
 
 /** Chat text for a submitted form: each group's chosen labels, or the corrected times. */
 export function answersSummary(card: Choice, answers: FormAnswers): string {
-  const parts = (formOf(card) ?? []).map((g) => {
-    if (g.kind === "times")
-      return `${g.label.replace(/[？?]$/, "")}：${
+  // Groups the user left unanswered are omitted: never echo an empty "交通方式：".
+  const parts = (formOf(card) ?? []).flatMap((g) => {
+    if (g.kind === "times") {
+      const value =
         answers[g.key]?.[0] === "no"
           ? answers[`${g.key}_corrected`]?.join("；")
-          : g.shown?.join("；")
-      }`;
-    const labels = (answers[g.key] ?? []).map(
-      (id) => g.options.find((o) => o.option_id === id)?.label,
-    );
-    return `${g.label}：${labels.join("、")}`;
+          : answers[g.key]?.length
+            ? g.shown?.join("；")
+            : "";
+      return value ? [`${g.label.replace(/[？?]$/, "")}：${value}`] : [];
+    }
+    const labels = (answers[g.key] ?? []).flatMap((id) => {
+      const label = g.options.find((o) => o.option_id === id)?.label;
+      return label ? [label] : [];
+    });
+    return labels.length ? [`${g.label}：${labels.join("、")}`] : [];
   });
   return `确认：${parts.join("；")}。`;
 }
