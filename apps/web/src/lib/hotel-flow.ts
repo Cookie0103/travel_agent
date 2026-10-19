@@ -118,12 +118,16 @@ export function selectionProgress(
 }
 
 export const RECLICK_REASON = "请再点一次该酒店的“选用此酒店”";
+export const STALE_REASON = "所选酒店报价基于旧条件，请重新比较酒店后再选";
+export const EXPIRED_REASON = "所选酒店报价已过期，请重新比较酒店后再选";
+export const NO_REVISION_REASON = "当前条件版本尚未载入，请稍候或刷新页面";
 
 /**
- * Submit payload for the plan button over the merged selection. A local click wins (its card
- * must be current); otherwise the server-recorded pick is used by evidence id with the
- * segment's own dates, so chat/assignment picks count without a local click. Returns a
- * reason when a segment has a server pick that cannot form a valid stay.
+ * Submit payload for the plan button over the merged selection. Enablement and payload use
+ * evidence ids and segment dates only, never hotel names. A local click wins (its card must be
+ * current); otherwise the server-recorded pick is used by evidence id with the segment's own
+ * dates, so chat/assignment picks count without a local click. `reason` is set only when every
+ * segment has a pick but the pick cannot form a valid stay; a segment without any pick yields {}.
  */
 export function hotelPlanSelection(
   rows: Rows,
@@ -132,7 +136,7 @@ export function hotelPlanSelection(
   revision: number | undefined,
   now: number,
 ): { selection?: HotelSelection & { text: string }; reason?: string } {
-  if (!rows.length || revision === undefined) return {};
+  if (!rows.length) return {};
   const picked: { evidence_id: string; hotel_name: string }[] = [];
   let reason: string | undefined;
   for (const row of rows) {
@@ -141,12 +145,10 @@ export function hotelPlanSelection(
       : undefined;
     if (mine) {
       const expires = Date.parse(mine.expires_at);
-      if (
-        mine.request_revision !== revision ||
-        !Number.isFinite(expires) ||
-        expires <= now
-      )
-        return {};
+      if (revision === undefined) reason ??= NO_REVISION_REASON;
+      else if (mine.request_revision !== revision) reason ??= STALE_REASON;
+      else if (!Number.isFinite(expires) || expires <= now)
+        reason ??= EXPIRED_REASON;
       picked.push(mine);
       continue;
     }
@@ -154,13 +156,16 @@ export function hotelPlanSelection(
       (s) => s.check_in === row.check_in && s.check_out === row.check_out,
     )?.selected;
     if (!server) return {};
-    if (!server.evidence_id || !server.hotel_name) {
-      reason = RECLICK_REASON;
+    if (!server.evidence_id) {
+      reason ??= RECLICK_REASON;
       continue;
     }
-    picked.push(server);
+    picked.push({
+      evidence_id: server.evidence_id,
+      hotel_name: server.hotel_name ?? "",
+    });
   }
-  if (reason) return { reason };
+  if (reason || revision === undefined) return reason ? { reason } : {};
   return {
     selection: {
       expected_revision: revision,
@@ -180,4 +185,20 @@ export function hotelPlanSelection(
         "\n每晚回到当晚所选酒店；先安排时间与交通缓冲，再按相邻项目结束时间查询路线，校验通过后展示草稿供我确认保存。",
     },
   };
+}
+
+/** Why a fully selected plan button is not actionable, or null when it is (or not fully selected). */
+export function planBlockedReason(s: {
+  selection?: unknown;
+  reason?: string | undefined;
+  disabled: boolean;
+  inactiveReason?: string | null;
+  canSubmit: boolean;
+}): string | null {
+  if (s.reason) return `无法生成规划：${s.reason}`;
+  if (!s.selection) return null;
+  if (s.disabled)
+    return `无法生成规划：${s.inactiveReason ?? "页面正在处理上一条消息，请稍候"}`;
+  if (!s.canSubmit) return "无法生成规划：当前页面不能提交，请刷新";
+  return null;
 }

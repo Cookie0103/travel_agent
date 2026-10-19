@@ -25,6 +25,7 @@ import {
   effectiveChoices,
   selectionProgress,
   hotelPlanSelection,
+  planBlockedReason,
   emptyHotelNotice,
   type HotelSelectionView,
 } from "@/lib/hotel-flow";
@@ -500,6 +501,13 @@ function SegmentHotelResults({
     revision,
     now,
   );
+  const blocked = planBlockedReason({
+    selection: selected,
+    reason,
+    disabled,
+    inactiveReason,
+    canSubmit: !!chooseSegments,
+  });
   const progress = selectionProgress(rows, local, selectionView);
   const count = progress.count;
   return (
@@ -563,7 +571,11 @@ function SegmentHotelResults({
         </Button>
         <SkipHotels skip={skip} disabled={disabled} />
       </div>
-      {reason && !disabled ? <p className="muted small">{reason}</p> : null}
+      {blocked ? (
+        <p className="muted small" role="status">
+          {blocked}
+        </p>
+      ) : null}
     </section>
   );
 }
