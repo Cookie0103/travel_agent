@@ -98,3 +98,42 @@
   5. `tests/integration/test_sdk_choices.py::test_native_sdk_roundtrips_server_owned_pace_card`：脚本里的 `awaiting_field=pace` 改为 `transport`（pace 不再缺失会 422）；自动卡现在只含交通，故由“两次展示同一张卡”改为“第一张只含 transport，第二张（显式 present_form）含 transport+pace 且选项由服务端固定”，选项标签断言原样保留在第二张上。
 - 验证：`dev check`、相关 pytest、全量 `dev test`（结果见下）。无付费模型调用，仅离线 fixture。prompt 修改的真实效果必须再用 DeepSeek 复跑同一句话确认，期望：酒店展示后同一轮出草稿，回复含“超预算 / 节奏按标准 / 抵达离开时间未知”的假设说明，最多一句草稿之后的可选追问。
 - 遗留：prompt 无法保证模型一定遵守；若仍停下，再考虑 `continuation_reason` 在“酒店已展示、itinerary 待办未完成”时由服务端催一次（现有机制已对 ready_tasks 催促，pace 解除后应能触发）。默认“标准”只体现在回复里，不会出现在草稿的条件区；首末日时间未知时的全天安排依赖模型说明。
+
+## 第三轮：超预算不再阻止确认
+
+### 现象
+真实复测中 2 天草稿显示“有硬冲突，不能确认”，确认保存按钮置灰；唯一的硬冲突是 `hotel_over_budget_unaccepted`（“住宿报价超过预算上限，请先接受预算放宽或选择预算内报价”，分类“其他校验”）。用户明确决定：超预算酒店不得阻止确认，应是带超出额的警告。
+
+### 假设与排除
+- ✗ 前端自行计算“可确认”：`results.tsx:636` 的 `blocked`、`conversation.tsx:467`、`business-status.ts:29` 全部只读 `validation.status === "conflict"`，没有任何预算专用逻辑，前端无需改。
+- ✗ 确认接口另有预算门槛：`PlanService.confirm` 只在重新校验 `report.status == "conflict"` 时拒绝（`backend/services/plans.py:326-327`）。
+- ✓ 冲突源于校验器：`backend/domain/validator.py` 的 `accepted_hotel_budget_checks`（约 637 行起）把超预算报价标为 `conflict`，状态聚合（`conflict` > `unknown` > `complete`）使整份报告变冲突。
+
+### 根因
+VERIFIED：ADR-022 时期把“未接受放宽的超预算报价”建模为硬冲突，与现在“宽松流程、超就超了”的用户立场相反。
+
+### 方案
+- 采用：同一检查码 `hotel_over_budget_unaccepted` 的状态由 `conflict` 改为 `unknown`（校验器现有的“警告”词汇，聚合为 `partial`，与已有 `hotel_over_nightly_budget` 一致），文案改为“超出原每间每晚预算 +9,160 JPY（+45.8%）；…”，由同一份 `nightly_upper/nightly_price` 计算，不新增事实。码不变，便于日志/评测延续。
+- 不采用：删除该检查（会丢失超出额提示）；新增 severity 枚举（词汇已够）；删除预算放宽卡流程（用户要求保留，只是不再前置）。
+- 不变：全程总预算冲突 `known_cost_over_budget`、`lodging_budget_conflict`（住宿预算下限超过全程预算）、时间重叠等仍是硬冲突。
+
+### 实现
+- `backend/domain/validator.py:637-662`：降级并生成超出额文案。
+- `backend/agent/persona.py:70`、`backend/tools/skills/hotel-comparison.md:9`：删去“不能规划超预算住宿 / 不得以超预算报价规划”，改为只提示。
+- `docs/adr/022-hotel-budget-recovery.md` 末尾追加 2026-10-19 补充（未改写历史）。
+- 前端无改动（状态驱动，`partial` 时按钮可用，警告文本经 `validation-groups` 作为“未知”组展示）；hotel 卡的超出额显示（`results.tsx:172-176`、`hotels.py:420`）未动。
+
+### 测试
+- 红→绿：`tests/integration/test_lodging_budget.py::test_over_budget_hotel_draft_can_be_confirmed_with_warning`（真实 PG：超预算报价暂存后无冲突、警告含“超出原每间每晚预算 +”，`PlanService.confirm` 成功且保存了该酒店）；单元：`tests/test_hotel_recovery.py::test_over_budget_hotel_warns_with_excess_but_does_not_block`。
+- 离线 fixture，无付费调用。
+
+### 改动的既有测试及理由
+1. `tests/test_hotel_recovery.py::test_over_budget_cannot_be_planned_before_acceptance` → `test_over_budget_hotel_warns_with_excess_but_does_not_block`：原断言 `status == "conflict"`；新规则为 `unknown`/`partial`。
+2. 同文件 `test_total_budget_cannot_be_reused_in_full_for_each_segment`：仍断言两段各一条 `hotel_over_budget_unaccepted`（数量不变），只把状态改为 `unknown`/`partial`。
+3. 同文件 `test_single_city_legacy_hotel_reference_cannot_bypass_budget` → `…_over_budget_only_warns`：该 fixture 本就同时触发 `known_cost_over_budget`（全程总预算，另一规则），故断言硬冲突集合恰为 `{known_cost_over_budget}`，证明该规则未被放宽。
+4. `tests/test_multi_city_itinerary.py::test_nightly_budget_conflict_blocks_unaccepted_increase_and_unlimited_skips_it` → `…excess_warns_without_blocking…`：两条 `hotel_over_budget_unaccepted` 由 `conflict` 改 `unknown`，总状态 `partial`；`hotel_over_nightly_budget` 两条、`known_cost == 30000`、不限预算不误报等断言原样保留。
+
+### 遗留
+- 多城市“选择酒店”提交仍有服务端闸门：`backend/services/hotels.py:497-503` 对超预算选择返回 422 `hotel_over_budget_unaccepted`（`validate_hotel_selection`）。本轮只改确认链路，未动它；若希望多城市也可直接选超预算酒店，需再放宽此处（并改对应测试）。
+- 校验文案里出现“可在确认前换预算内报价，也可接受超预算”，未接 UI 上的接受按钮；预算放宽卡仍按原流程独立存在。
+- 真实模型下 persona 变更效果未复测。

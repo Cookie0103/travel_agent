@@ -290,3 +290,44 @@ def test_budget_update_during_quote_read_cannot_return_stale_comparison(
         assert lodging_budget_relation(await travel.get_request(context)).status == "conflict"
 
     runner.run(exercise())
+
+
+def test_over_budget_hotel_draft_can_be_confirmed_with_warning(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    """用户决定：超预算报价只警告（含超出额），不阻止确认保存。"""
+    from backend.domain.plans import StageInput
+    from backend.services.plans import PlanService
+    from tests.integration.test_hotel_links import stored_link_quote
+    from tests.integration.test_planning import destinations, proposal
+
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        record = await stored_link_quote(travel, context)
+        await travel.patch_request(
+            context,
+            RequestPatch.model_validate(
+                {
+                    "expected_revision": 1,
+                    "set": {"lodging_budget": budget("1", "100")},
+                }
+            ),
+        )
+        first, _ = await destinations(travel, context)
+        candidate = proposal(first).model_copy(update={"hotel_evidence_id": record.evidence_id})
+        service = PlanService(travel)
+        draft = await service.stage(
+            context,
+            StageInput.model_validate(
+                {"change": {"kind": "initial", "proposal": candidate.model_dump(mode="json")}}
+            ),
+        )
+        over = [c for c in draft.validation.checks if c.code == "hotel_over_budget_unaccepted"]
+        assert over and all(c.status == "unknown" for c in over)
+        assert all("超出原每间每晚预算 +" in c.message for c in over)
+        assert not any(c.status == "conflict" for c in draft.validation.checks)
+        saved = await service.confirm(context.user_id, draft.draft_id)
+        assert saved.content.hotel_evidence_id == record.evidence_id
+
+    runner.run(exercise())

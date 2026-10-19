@@ -73,7 +73,7 @@ def test_total_budget_is_normalized_using_whole_trip_rooms_and_nights() -> None:
     )
 
 
-def test_over_budget_cannot_be_planned_before_acceptance() -> None:
+def test_over_budget_hotel_warns_with_excess_but_does_not_block() -> None:
     current, proposal, records = multi_city_example()
     current = TravelRequest.model_validate(
         {
@@ -86,8 +86,11 @@ def test_over_budget_cannot_be_planned_before_acceptance() -> None:
         }
     )
     report = validate_itinerary(current, proposal, records, datetime.now(UTC))
-    assert report.status == "conflict"
-    assert any(c.code == "hotel_over_budget_unaccepted" for c in report.checks)
+    warnings = [c for c in report.checks if c.code == "hotel_over_budget_unaccepted"]
+    assert warnings and all(c.status == "unknown" for c in warnings)
+    assert all("超出原每间每晚预算 +" in c.message and "JPY（+" in c.message for c in warnings)
+    assert not any(c.status == "conflict" for c in report.checks)
+    assert report.status == "partial"
 
 
 def test_total_budget_cannot_be_reused_in_full_for_each_segment() -> None:
@@ -99,11 +102,12 @@ def test_total_budget_cannot_be_reused_in_full_for_each_segment() -> None:
         }
     )
     report = validate_itinerary(current, proposal, records, datetime.now(UTC))
-    assert report.status == "conflict"
-    assert len([c for c in report.checks if c.code == "hotel_over_budget_unaccepted"]) == 2
+    assert report.status == "partial"
+    over = [c for c in report.checks if c.code == "hotel_over_budget_unaccepted"]
+    assert len(over) == 2 and all(c.status == "unknown" for c in over)
 
 
-def test_single_city_legacy_hotel_reference_cannot_bypass_budget() -> None:
+def test_single_city_legacy_hotel_reference_over_budget_only_warns() -> None:
     current = budget_request("1000")
     original = (record(place(), current), record(offer(), current))
     now = datetime.now(UTC)
@@ -117,8 +121,10 @@ def test_single_city_legacy_hotel_reference_cannot_bypass_budget() -> None:
         hotel_evidence_id=hotel.evidence_id,
     )
     report = validate_itinerary(current, proposal, (destination, hotel), now)
-    assert report.status == "conflict"
-    assert any(c.code == "hotel_over_budget_unaccepted" for c in report.checks)
+    warnings = [c for c in report.checks if c.code == "hotel_over_budget_unaccepted"]
+    assert warnings and all(c.status == "unknown" for c in warnings)
+    # 全程总预算冲突（known_cost_over_budget）是另一规则，仍保持硬冲突
+    assert {c.code for c in report.checks if c.status == "conflict"} == {"known_cost_over_budget"}
 
 
 def test_search_size_includes_diagnosis_and_choice_envelope() -> None:

@@ -207,7 +207,7 @@ def test_transfer_day_allows_both_cities_but_a_different_day_rejects_wrong_city(
     assert any(c.code == "city" and c.status == "conflict" for c in report.checks)
 
 
-def test_nightly_budget_conflict_blocks_unaccepted_increase_and_unlimited_skips_it() -> None:
+def test_nightly_budget_excess_warns_without_blocking_and_unlimited_skips_it() -> None:
     """R06：按各段房晚比较，不用全程晚数稀释报价；明确不限不误报。"""
     current, proposal, records = multi_city_example()
     limited = TravelRequest.model_validate(
@@ -223,9 +223,9 @@ def test_nightly_budget_conflict_blocks_unaccepted_increase_and_unlimited_skips_
     report = validate_itinerary(limited, proposal, records, datetime.now(UTC))
     warnings = [c for c in report.checks if c.code == "hotel_over_nightly_budget"]
     assert len(warnings) == 2 and all(c.status == "unknown" for c in warnings)
-    conflicts = [c for c in report.checks if c.code == "hotel_over_budget_unaccepted"]
-    assert len(conflicts) == 2 and all(c.status == "conflict" for c in conflicts)
-    assert report.status == "conflict" and report.known_cost == Decimal("30000")
+    over = [c for c in report.checks if c.code == "hotel_over_budget_unaccepted"]
+    assert len(over) == 2 and all(c.status == "unknown" for c in over)
+    assert report.status == "partial" and report.known_cost == Decimal("30000")
     unlimited = current.model_copy(update={"lodging_budget_unlimited": True})
     report = validate_itinerary(unlimited, proposal, records, datetime.now(UTC))
     assert not any(c.code == "hotel_over_nightly_budget" for c in report.checks)

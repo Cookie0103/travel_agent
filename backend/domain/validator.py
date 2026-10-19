@@ -647,12 +647,16 @@ def accepted_hotel_budget_checks(
         and offer.currency == request.currency
         and price > upper
     ):
+        # 用户决定（2026-10-19）：超预算只提示，不阻止确认；预算放宽卡流程仍保留但不是前置条件。
+        excess = price - upper
+        percent = ((excess / upper) * 100).quantize(Decimal("0.1"))
         return [
             check(
                 "hotel",
-                "conflict",
+                "unknown",
                 "hotel_over_budget_unaccepted",
-                "住宿报价超过原预算上限，请先接受预算放宽或选择预算内报价。",
+                f"超出原每间每晚预算 +{excess:,.0f} {offer.currency}（+{percent}%）；"
+                "可在确认前换预算内报价，也可接受超预算。",
             )
         ]
     return []
