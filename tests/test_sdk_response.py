@@ -7,7 +7,7 @@ import pytest
 from backend.limits import ProbeError
 from backend.providers.claude_agent.request import validate_request
 from backend.providers.claude_agent.response import summarize
-from tests.test_sdk_guard import request_body, response_body
+from tests.model_bodies import request_body, response_body
 
 
 @pytest.mark.parametrize(

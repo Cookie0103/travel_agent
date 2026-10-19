@@ -117,7 +117,7 @@ def test_segmented_queries_and_refresh_preserve_global_request_and_quote_scope(
             refreshed = (await hotels.refresh(context, 2, second.evidence_id))[0]
             assert refreshed.conditions == second.conditions
             assert refreshed.evidence_id != second.evidence_id
-            assert await travel.get_request(context) == original
+            assert await travel.read_request(context) == original
             assert [value for api, value in calls if api == "rakuten"] == [
                 "2026-11-03",
                 "2026-11-04",
@@ -129,7 +129,7 @@ def test_segmented_queries_and_refresh_preserve_global_request_and_quote_scope(
             before = list(calls)
             with pytest.raises(ServiceError, match="本轮.*上限"):
                 await hotels.search(context, 2, limit=1, segment_arrive=date(2026, 11, 3))
-            assert calls == before and await travel.get_request(context) == original
+            assert calls == before and await travel.read_request(context) == original
             replaced = [segment.model_dump(mode="json") for segment in trip_segments(original)]
             replaced[1]["city"] = "奈良"
             await travel.patch_request(

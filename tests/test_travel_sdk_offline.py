@@ -1,7 +1,6 @@
 """R01/R02：真实 SDK/CLI 调用两个旅行工具并续接；全部 API 响应来自本地脚本。"""
 
 import os
-import shutil
 from decimal import Decimal
 from functools import partial
 from pathlib import Path
@@ -16,10 +15,11 @@ from backend.providers.claude_agent.environment import find_cli, worker_environm
 from backend.providers.claude_agent.guard import Guard, serve
 from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.tools.search import DEFINITIONS
+from tests.cli import requires_claude_cli
 from tests.test_sdk_cli_offline import scripted_response
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要本机 Claude CLI；不调用真实模型")
+@requires_claude_cli
 @pytest.mark.parametrize(
     "provider,model",
     [

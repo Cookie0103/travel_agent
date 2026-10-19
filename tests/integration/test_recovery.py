@@ -41,6 +41,7 @@ from mock_supplier.service import SupplierService
 from tests.fakes import FakeRuntime
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.runner import SELECTOR_OPTIONS, selector_runner
 
 pytestmark = pytest.mark.integration
 
@@ -147,7 +148,7 @@ def test_process_killed_after_patch_commit_replays_same_result_and_rejects_later
         )
         with pytest.raises(ServiceError, match="条件已变化"):
             await travel.patch_request(recovered, patch)
-        assert (await travel.get_request(context)).revision == 3
+        assert (await travel.read_request(context)).revision == 3
 
     runner.run(exercise())
 
@@ -354,8 +355,7 @@ def test_api_startup_closes_interrupted_run_atomically_without_runtime_call(
     cancelling: bool,
 ) -> None:
     sessions = SessionService(postgres_url, demo_enabled=True)
-    options = {"loop_factory": asyncio.SelectorEventLoop}
-    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+    with selector_runner() as runner:
 
         async def prepare() -> tuple[RunContext, str]:
             from backend.services.sessions import DemoLogin
@@ -377,7 +377,9 @@ def test_api_startup_closes_interrupted_run_atomically_without_runtime_call(
     runtime = FakeRuntime(RuntimeOutcome(text="new", sdk_session_id="fake"))
     restored = SessionService(postgres_url)
     service = RunService(restored.database, runtime_factory=lambda executor: runtime)
-    with TestClient(create_app(restored, runs_service=service), backend_options=options) as client:
+    with TestClient(
+        create_app(restored, runs_service=service), backend_options=SELECTOR_OPTIONS
+    ) as client:
         headers = {"Authorization": f"Bearer {token}"}
         result = client.get(f"/runs/{context.run_id}", headers=headers).json()
         expected = "cancelled" if cancelling else "partial"

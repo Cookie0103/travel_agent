@@ -3,7 +3,6 @@
 from datetime import date, datetime, time
 from decimal import Decimal
 from typing import Annotated, Literal, Self
-from zoneinfo import ZoneInfo
 
 from pydantic import (
     AfterValidator,
@@ -15,6 +14,7 @@ from pydantic import (
 )
 
 from backend.domain.external_data import broad_region
+from backend.domain.opening_hours import TOKYO
 from backend.domain.room_choices import (
     ROOM_CHOICES,
     RoomPreferencesPatch,
@@ -279,7 +279,7 @@ FUTURE_YEARS = 3
 
 
 def tokyo_today() -> date:
-    return datetime.now(ZoneInfo("Asia/Tokyo")).date()
+    return datetime.now(TOKYO).date()
 
 
 def shift_years(day: date, years: int) -> date:

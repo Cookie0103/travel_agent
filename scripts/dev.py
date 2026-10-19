@@ -129,9 +129,9 @@ def db_up() -> int:
 
 
 def eval_dev(*, live: bool) -> int:
-    """M0.6 实现前明确拒绝评测入口，不伪造结果。"""
+    """评测入口缺失时明确拒绝，不伪造结果。"""
     if not (ROOT / "eval" / "run.py").is_file():
-        print("unavailable: eval.run 尚未实现，等待 M0.6。", file=sys.stderr)
+        print("unavailable: 缺少 eval/run.py，无法运行评测。", file=sys.stderr)
         return 1
     command = [sys.executable, "-m", "eval.run", "--split", "dev"]
     if live:

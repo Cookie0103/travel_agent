@@ -5,11 +5,11 @@ from collections.abc import Awaitable, Callable
 from datetime import datetime, timedelta
 from typing import cast
 from uuid import uuid4
-from zoneinfo import ZoneInfo
 
 from backend.agent.fixture_conditions import missing_question
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
+from backend.domain.opening_hours import TOKYO
 from backend.domain.plans import PlanItem
 from backend.domain.room_preferences import room_preferences_question
 from backend.domain.travel_request import TravelRequest
@@ -118,7 +118,7 @@ async def generate_demo(call: DemoCall, request: TravelRequest) -> str:
     legs: list[dict[str, object]] = []
     for day in range(days):
         date = request.start_date + timedelta(days=day)
-        start = datetime.combine(date, datetime.min.time(), ZoneInfo("Asia/Tokyo"))
+        start = datetime.combine(date, datetime.min.time(), TOKYO)
         legs.append(
             {
                 "from_evidence_id": place_ids[day * 2],
@@ -183,8 +183,8 @@ async def revise_demo(
     candidates = [
         item
         for item in items
-        if item.start.astimezone(ZoneInfo("Asia/Tokyo")).date() == second_day
-        and 12 <= item.start.astimezone(ZoneInfo("Asia/Tokyo")).hour < 18
+        if item.start.astimezone(TOKYO).date() == second_day
+        and 12 <= item.start.astimezone(TOKYO).hour < 18
     ]
     if len(candidates) != 1:
         raise ServiceError(422, "validation", "固定演示需要第二天下午恰好一项；请明确要改的行程项")

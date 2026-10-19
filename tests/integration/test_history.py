@@ -1,6 +1,5 @@
 """R01/R03：历史接口真实PG分页、归属、空结果与只读恢复；不执行模型。"""
 
-import asyncio
 import base64
 import json
 import socket
@@ -22,6 +21,7 @@ from backend.persistence.models import (
 from backend.services.sessions import SessionService
 from tests.integration.test_sessions import client as client
 from tests.integration.test_sessions import login
+from tests.runner import SELECTOR_OPTIONS
 
 pytestmark = pytest.mark.integration
 STAMP = datetime(2026, 10, 8, 1, tzinfo=UTC)
@@ -292,7 +292,7 @@ def test_history_database_outage_is_unavailable_instead_of_empty(postgres_url: U
     with socket.socket() as closed_port:
         closed_port.bind(("127.0.0.1", 0))
         app = create_app(SessionService(postgres_url.set(port=closed_port.getsockname()[1])))
-        with TestClient(app, backend_options={"loop_factory": asyncio.SelectorEventLoop}) as client:
+        with TestClient(app, backend_options=SELECTOR_OPTIONS) as client:
             for path in ("/sessions", f"/sessions/{uuid4()}/runs"):
                 result = client.get(path, headers={"Authorization": "Bearer synthetic-unavailable"})
                 assert result.status_code == 503

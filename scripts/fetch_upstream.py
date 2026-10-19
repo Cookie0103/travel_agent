@@ -1,4 +1,4 @@
-"""获取固定 commit 的只读上游：M0.1 阅读准备，不安装或执行上游代码。"""
+"""获取固定 commit 的只读上游，不安装或执行上游代码。"""
 
 from __future__ import annotations
 
@@ -95,7 +95,7 @@ def main() -> int:
             if upstream.required:
                 print(f"error: {upstream.name}: {exc}", file=sys.stderr)
                 return 1
-            print(f"warning: {upstream.name}: {exc} M0.1 继续；M0.6 前再处理。", file=sys.stderr)
+            print(f"warning: {upstream.name}: {exc} 非必需上游，已跳过。", file=sys.stderr)
     return 0
 
 

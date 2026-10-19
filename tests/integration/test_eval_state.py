@@ -241,7 +241,7 @@ def test_initial_quote_expiry_or_actual_date_change_requires_refresh(
                     )
                 )
             assert len(rows) == 2
-            request = await business.travel.get_request(context)
+            request = await business.travel.read_request(context)
             for row in rows:
                 old = HotelOffer.model_validate(row.payload["value"])
                 with pytest.raises(ServiceError) as failed:

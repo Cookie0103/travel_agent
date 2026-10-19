@@ -59,7 +59,7 @@ def test_both_conflicting_values_save_and_answer_changes_only_trip_budget(
         )
         assert changed.changed_fields == ("budget",) and changed.request.revision == 3
         assert changed.request.lodging_budget == saved.request.lodging_budget
-        assert lodging_budget_relation(await travel.get_request(context)).status == "within"
+        assert lodging_budget_relation(await travel.read_request(context)).status == "within"
         noop = await travel.patch_request(
             context,
             RequestPatch.model_validate(
@@ -77,7 +77,7 @@ def test_old_rows_default_unknown_and_quote_snapshot_stays_legacy_readable(
     runner, travel, context = travel_setup
 
     async def exercise() -> None:
-        assert (await travel.get_request(context)).lodging_budget is None
+        assert (await travel.read_request(context)).lodging_budget is None
         await travel.patch_request(
             context,
             RequestPatch.model_validate(
@@ -102,7 +102,7 @@ def test_old_rows_default_unknown_and_quote_snapshot_stays_legacy_readable(
             # 模拟旧写入者仅更新旧conditions/revision，新列内容应保留。
             row.conditions = {**row.conditions, "budget": "60000"}
             row.revision = 3
-        current = await travel.get_request(context)
+        current = await travel.read_request(context)
         assert current.budget == Decimal("60000") and current.lodging_budget is not None
 
     runner.run(exercise())
@@ -252,7 +252,7 @@ def test_rollback_and_reupgrade_keep_lodging_facts(
             command.check(config)
     finally:
         engine.dispose()
-    current = runner.run(travel.get_request(context))
+    current = runner.run(travel.read_request(context))
     assert current == saved.request
 
 
@@ -287,7 +287,7 @@ def test_budget_update_during_quote_read_cannot_return_stale_comparison(
         with pytest.raises(ServiceError) as failed:
             await hotels.present(context, 1, (existing[0].evidence_id,))
         assert failed.value.code == "conflict"
-        assert lodging_budget_relation(await travel.get_request(context)).status == "conflict"
+        assert lodging_budget_relation(await travel.read_request(context)).status == "conflict"
 
     runner.run(exercise())
 

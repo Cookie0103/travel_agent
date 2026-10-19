@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import shutil
 from pathlib import Path
 
 import pytest
@@ -14,6 +13,7 @@ from backend.services.bookings import BookingService
 from backend.services.travel import TravelService
 from mock_supplier.app import create_app
 from mock_supplier.service import SupplierService
+from tests.cli import requires_claude_cli
 from tests.integration.http_helper import serve_http
 from tests.integration.sdk_helper import run_database_worker
 from tests.integration.test_travel import travel_setup as travel_setup
@@ -54,7 +54,7 @@ def hold_response(body: bytes) -> tuple[int, bytes]:
     return scripted_response(body)
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要本机Claude CLI，不访问真实模型")
+@requires_claude_cli
 def test_sdk_holds_without_confirming_or_ordering(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     tmp_path: Path,

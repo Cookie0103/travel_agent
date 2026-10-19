@@ -172,7 +172,7 @@ def test_overlapping_stay_is_rejected_for_same_or_different_hotel(
 
     async def exercise() -> None:
         service = BookingService(travel, SupplierService(travel.database))
-        request = await travel.get_request(context)
+        request = await travel.read_request(context)
         search = HotelService(travel)
         first = HotelOffer.model_validate(
             (await search.search(context, request.revision, limit=1))[0].value
@@ -226,7 +226,7 @@ def test_checkout_day_allows_next_stay_and_expired_hold_does_not_block(travel_se
     runner, travel, context = travel_setup
 
     async def move(start: str, end: str) -> None:
-        current = await travel.get_request(context)
+        current = await travel.read_request(context)
         await travel.patch_request(
             context,
             RequestPatch.model_validate(
@@ -378,7 +378,7 @@ def test_concurrent_overlapping_holds_leave_exactly_one_held(travel_setup: Setup
     runner, travel, context = travel_setup
 
     async def exercise() -> None:
-        request = await travel.get_request(context)
+        request = await travel.read_request(context)
         offers = [
             HotelOffer.model_validate(row.value)
             for row in await HotelService(travel).search(context, request.revision, limit=6)

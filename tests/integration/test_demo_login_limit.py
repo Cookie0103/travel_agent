@@ -1,6 +1,5 @@
 """E6：/demo/login 按客户端IP和全局的进程内滑动窗口限流，超限429 + Retry-After。"""
 
-import asyncio
 from collections.abc import Iterator
 
 import pytest
@@ -11,6 +10,7 @@ from sqlalchemy import URL
 
 from backend.api.app import create_app
 from backend.services.sessions import SessionService
+from tests.runner import SELECTOR_OPTIONS
 
 pytestmark = pytest.mark.integration
 
@@ -43,7 +43,7 @@ def post(app: FastAPI, ip: str) -> Response:
     with TestClient(
         app,
         client=(ip, 50000),
-        backend_options={"loop_factory": asyncio.SelectorEventLoop},
+        backend_options=SELECTOR_OPTIONS,
     ) as client:
         return client.post("/demo/login", json={"display_name": "旅行者"})
 

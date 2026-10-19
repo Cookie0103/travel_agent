@@ -138,7 +138,7 @@ class DatabaseEvaluation:
         after = await snapshot(self.travel, context)
         if after.saved is None:
             return {"delivered": False, "checks": [], "all_constraints": None}
-        request = await self.travel.get_request(context)
+        request = await self.travel.read_request(context)
         try:
             records = await self.travel.resolve_evidence(
                 context, after.saved.content.proposal(request.revision).evidence_ids()

@@ -68,7 +68,7 @@ def test_conversation_tool_updates_segments_and_unlimited_with_a_safe_receipt(
         assert result.code is None
         message = result.data["message"]
         assert isinstance(message, str) and "大阪" in message and "不限" in message
-        restored = await TravelService(travel.database).get_request(context)
+        restored = await TravelService(travel.database).read_request(context)
         assert restored.segments == example.segments and restored.lodging_budget_unlimited
 
     runner.run(exercise())
@@ -112,7 +112,7 @@ def test_saved_segmented_cities_remain_visible_after_current_segments_are_cleare
         assert after["hotel_stays"] == before["hotel_stays"]
         assert after["version"] == 1
         assert after["needs_refresh"]
-        assert (await travel.get_request(context)).segments is None
+        assert (await travel.read_request(context)).segments is None
 
     runner.run(exercise())
 

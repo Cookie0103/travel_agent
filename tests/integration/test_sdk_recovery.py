@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import shutil
 from dataclasses import replace
 from functools import partial
 from pathlib import Path
@@ -16,8 +15,10 @@ from backend.domain.travel_request import RequestPatch
 from backend.mcp.bridge import sdk_tool_name
 from backend.persistence.database import Database
 from backend.services.travel import TravelService
+from tests.cli import requires_claude_cli
 from tests.integration.sdk_helper import run_database_worker
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.runner import selector_runner
 from tests.test_sdk_cli_offline import scripted_response
 
 pytestmark = pytest.mark.integration
@@ -30,7 +31,7 @@ def sdk_id(report: dict[str, object]) -> str:
     return identity
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要实际CLI，不访问真实模型")
+@requires_claude_cli
 def test_native_sdk_process_restart_and_snapshot_fallbacks(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     tmp_path: Path,
@@ -60,7 +61,7 @@ def test_native_sdk_process_restart_and_snapshot_fallbacks(
                 with transcripts[0].open("ab") as stream:
                     stream.write(b'{"half_record":')
         elif mutation == "revision":
-            revision = runner.run(travel.get_request(context)).revision
+            revision = runner.run(travel.read_request(context)).revision
             runner.run(
                 travel.patch_request(
                     context,
@@ -89,7 +90,7 @@ def test_native_sdk_process_restart_and_snapshot_fallbacks(
         previous_id = actual_id
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要实际CLI，不访问真实模型")
+@requires_claude_cli
 def test_condition_change_during_sdk_round_does_not_certify_old_context_as_new_revision(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     tmp_path: Path,
@@ -115,7 +116,7 @@ def test_condition_change_during_sdk_round_does_not_certify_old_context_as_new_r
                 finally:
                     await database.close()
 
-            with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as loop:
+            with selector_runner() as loop:
                 loop.run(change())
         return scripted(body)
 
@@ -123,7 +124,7 @@ def test_condition_change_during_sdk_round_does_not_certify_old_context_as_new_r
     assert first["status"] == "success" and not guard.failures
     assert first["checkpoint_persisted"] is False
     assert not (tmp_path / "worker" / "checkpoint.json").exists()
-    assert runner.run(travel.get_request(context)).revision == 2
+    assert runner.run(travel.read_request(context)).revision == 2
     second, guard = run_database_worker(
         travel, replace(context, run_id=uuid4()), tmp_path, scripted, "读取最新条件"
     )

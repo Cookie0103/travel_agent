@@ -39,6 +39,6 @@ def test_unrecorded_rooms_is_named_to_user_and_model_and_not_defaulted(
         # 用户侧：固定中文标签；不默认写入rooms=1。
         panel = str(events[-1].presentation)
         assert "缺少：房间数" in panel and "rooms" not in panel
-        assert (await travel.get_request(context)).rooms is None
+        assert (await travel.read_request(context)).rooms is None
 
     runner.run(exercise())

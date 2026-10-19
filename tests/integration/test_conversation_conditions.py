@@ -1,6 +1,5 @@
 """U1首轮真实HTTP/离线工具/PG：不填表、已说事实保存、没说事实追问。"""
 
-import asyncio
 from uuid import uuid4
 
 import pytest
@@ -10,6 +9,7 @@ from sqlalchemy import URL
 from backend.api.app import create_app
 from backend.services.sessions import SessionService
 from tests.integration.test_sessions import login
+from tests.runner import SELECTOR_OPTIONS
 
 pytestmark = pytest.mark.integration
 
@@ -19,7 +19,7 @@ def test_first_offline_turn_extracts_only_spoken_facts_and_asks_for_missing(
 ) -> None:
     with TestClient(
         create_app(SessionService(postgres_url, demo_enabled=True)),
-        backend_options={"loop_factory": asyncio.SelectorEventLoop},
+        backend_options=SELECTOR_OPTIONS,
     ) as client:
         owner = login(client)
         sid = client.post("/sessions", headers=owner).json()["session_id"]
@@ -54,7 +54,7 @@ def test_first_offline_turn_extracts_only_spoken_facts_and_asks_for_missing(
 def test_empty_demo_asks_in_chat_instead_of_form_or_defaults(postgres_url: URL) -> None:
     with TestClient(
         create_app(SessionService(postgres_url, demo_enabled=True)),
-        backend_options={"loop_factory": asyncio.SelectorEventLoop},
+        backend_options=SELECTOR_OPTIONS,
     ) as client:
         owner = login(client)
         sid = client.post("/sessions", headers=owner).json()["session_id"]
@@ -96,7 +96,7 @@ def test_unsupported_or_negative_fact_is_acknowledged_without_mutation_or_search
 ) -> None:
     with TestClient(
         create_app(SessionService(postgres_url, demo_enabled=True)),
-        backend_options={"loop_factory": asyncio.SelectorEventLoop},
+        backend_options=SELECTOR_OPTIONS,
     ) as client:
         owner = login(client)
         sid = client.post("/sessions", headers=owner).json()["session_id"]
@@ -134,7 +134,7 @@ def test_foreign_lodging_fact_is_saved_and_relation_stays_unknown(
 ) -> None:
     with TestClient(
         create_app(SessionService(postgres_url, demo_enabled=True)),
-        backend_options={"loop_factory": asyncio.SelectorEventLoop},
+        backend_options=SELECTOR_OPTIONS,
     ) as client:
         owner = login(client)
         sid = client.post("/sessions", headers=owner).json()["session_id"]
@@ -176,7 +176,7 @@ def test_new_explicit_forms_respect_manual_fields_and_update_only_named_fact(
 ) -> None:
     with TestClient(
         create_app(SessionService(postgres_url, demo_enabled=True)),
-        backend_options={"loop_factory": asyncio.SelectorEventLoop},
+        backend_options=SELECTOR_OPTIONS,
     ) as client:
         owner = login(client)
         sid = client.post("/sessions", headers=owner).json()["session_id"]
@@ -224,7 +224,7 @@ def test_one_explicit_change_does_not_unlock_another_manual_field(
 ) -> None:
     with TestClient(
         create_app(SessionService(postgres_url, demo_enabled=True)),
-        backend_options={"loop_factory": asyncio.SelectorEventLoop},
+        backend_options=SELECTOR_OPTIONS,
     ) as client:
         owner = login(client)
         sid = client.post("/sessions", headers=owner).json()["session_id"]

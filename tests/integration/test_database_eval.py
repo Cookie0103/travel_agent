@@ -3,7 +3,6 @@
 import asyncio
 import hashlib
 import json
-import shutil
 import socket
 from dataclasses import asdict
 from pathlib import Path
@@ -25,6 +24,7 @@ from data.import_catalog import load_snapshot
 from eval.cases import Case
 from eval.database import DATA_VERSION, DatabaseEvaluation, database_evaluation, selector_runner
 from eval.run import run_cases
+from tests.cli import requires_claude_cli
 from tests.integration.sdk_helper import run_database_worker
 from tests.integration.test_sdk_hotels import hotel_response
 from tests.integration.test_travel import travel_setup as travel_setup
@@ -67,7 +67,7 @@ def test_database_eval_separates_case_state_and_uses_actual_application_tools(
             assert contexts[0].user_id != contexts[1].user_id
             assert contexts[0].session_id != contexts[1].session_id
             for context in contexts:
-                request = await business.travel.get_request(context)
+                request = await business.travel.read_request(context)
                 assert request.city == "京都" and request.adults == 2 and request.revision == 1
             for workflow in (None, "search"):
                 directory = tmp_path / (workflow or "autonomous")
@@ -129,7 +129,7 @@ def test_database_live_attempt_has_actual_pg_identity_before_model_and_stops_on_
                 max_attempts=6,
             )
             assert len(calls) == 1 and summary["errors"] == 1 and summary["not_run"] == 1
-            assert (await business.travel.get_request(calls[0])).adults == 2
+            assert (await business.travel.read_request(calls[0])).adults == 2
             assert summary["rule_pass_rate"] is None
 
     with selector_runner() as runner:
@@ -180,7 +180,7 @@ def test_database_unavailable_reports_setup_error_without_retry(
             runner.run(exercise(postgres_url.set(port=listener.getsockname()[1])))
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要实际CLI，不访问真实模型")
+@requires_claude_cli
 @pytest.mark.parametrize("workflow", [None, "hotel"])
 def test_same_real_sdk_and_database_tools_run_both_ordering_modes(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
@@ -210,7 +210,7 @@ def test_same_real_sdk_and_database_tools_run_both_ordering_modes(
     assert all(e["code"] is None for e in events if e["kind"] == "tool_finished")
     presentations = [e["presentation"] for e in events if e["kind"] == "presentation"]
     assert len(presentations) == 1 and "lowest_offer_ids" in str(presentations)
-    assert (runner.run(travel.get_request(context))).revision == 1
+    assert (runner.run(travel.read_request(context))).revision == 1
     results = TypeAdapter(list[RunResult]).validate_python(report["results"])
     assert results[0].context.user_id == context.user_id
 

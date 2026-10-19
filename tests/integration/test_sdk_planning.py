@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import shutil
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -15,6 +14,7 @@ from backend.persistence import plans
 from backend.services.catalog import CatalogService
 from backend.services.common import transaction
 from backend.services.travel import TravelService
+from tests.cli import requires_claude_cli
 from tests.integration.sdk_helper import run_database_worker
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import travel_setup as travel_setup
@@ -23,7 +23,7 @@ from tests.test_sdk_cli_offline import scripted_response
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要本机Claude CLI，不访问真实模型")
+@requires_claude_cli
 @pytest.mark.parametrize("repair", [True, False])
 @pytest.mark.parametrize("conflict", ["opening_hours", "repeated_place_warning"])
 def test_sdk_reads_conflict_and_repairs_or_reports_limit(
@@ -99,7 +99,7 @@ def test_sdk_reads_conflict_and_repairs_or_reports_limit(
         assert isinstance(penultimate, dict) and penultimate["repair_rounds_remaining"] == 0
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要真实CLI；本地脚本不调用模型")
+@requires_claude_cli
 def test_sdk_complete_three_day_chain_has_enough_turns_without_saving_formal_plan(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], tmp_path: Path
 ) -> None:

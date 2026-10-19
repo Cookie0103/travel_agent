@@ -5,7 +5,7 @@ import type { Mode } from "./models";
 export type RequestState = components["schemas"]["RequestView"];
 export type Run = components["schemas"]["RunView"];
 export type HistoricalRun = components["schemas"]["HistoricalRun"];
-export type RunPage = components["schemas"]["RunPage"];
+type RunPage = components["schemas"]["RunPage"];
 export type Plan = components["schemas"]["UiPlanView"];
 export type Article = components["schemas"]["Article"];
 export type Hotels = components["schemas"]["UiHotelPresentation"];
@@ -39,36 +39,12 @@ export class ApiError extends Error {
   }
 }
 
-/** 后端 {code,message}；FastAPI 自带校验错误是 {detail:[{loc,msg}]}，只取字段名，不显示英文原文。 */
+/** 后端统一 {code,message}（含请求校验错误）；其余情况用通用文案。 */
 function apiError(status: number, body: unknown, fallback?: string) {
-  const data = (body ?? {}) as {
-    code?: unknown;
-    message?: unknown;
-    detail?: unknown;
-  };
+  const data = (body ?? {}) as { code?: unknown; message?: unknown };
   const code = typeof data.code === "string" ? data.code : undefined;
   if (typeof data.message === "string" && data.message)
     return new ApiError(data.message, status, code);
-  if (status === 422) {
-    const fields = Array.isArray(data.detail)
-      ? [
-          ...new Set(
-            data.detail.flatMap((item: { loc?: unknown }) =>
-              Array.isArray(item?.loc) && item.loc.length > 1
-                ? [String(item.loc.at(-1))]
-                : [],
-            ),
-          ),
-        ]
-      : [];
-    return new ApiError(
-      fields.length
-        ? `输入不符合条件（${fields.join("、")}），请检查后重试。`
-        : "输入不符合条件，请检查日期、人数和金额。",
-      status,
-      code,
-    );
-  }
   return new ApiError(fallback ?? `请求失败（${status}）`, status, code);
 }
 

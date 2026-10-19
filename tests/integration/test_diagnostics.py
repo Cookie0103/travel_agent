@@ -75,7 +75,7 @@ def test_single_injected_root_is_located_from_actual_tool_and_database_facts(
             "set": {"adults": 3},
             "explicit_fields": ["adults"],
         }
-        previous = await travel.get_request(context)
+        previous = await travel.read_request(context)
         record = None
         if cause == "tool_selection_or_args":
             name, arguments = (
@@ -123,7 +123,7 @@ def test_single_injected_root_is_located_from_actual_tool_and_database_facts(
         start, end = events[-2:]
         assert start.tool_call_id is not None
         if cause == "request_understanding":
-            actual = await travel.get_request(context)
+            actual = await travel.read_request(context)
             assert actual.adults == 3 and actual.revision == 2 and result.code is None
             return ConditionFact(
                 context, start.tool_call_id, TravelConditions(adults=2), actual, actual.revision
@@ -139,7 +139,7 @@ def test_single_injected_root_is_located_from_actual_tool_and_database_facts(
             return EvidenceFact(
                 context, start.tool_call_id, record, start.occurred_at, previous.revision, arguments
             )
-        current = await travel.get_request(context)
+        current = await travel.read_request(context)
         assert result.code == "conflict" and current == previous
         return CommitFact(
             context, start.tool_call_id, previous.revision - 1, current.revision, True
@@ -205,7 +205,7 @@ def test_normal_actual_tool_and_database_control_has_no_failure_cause(
             events.append,
             definition=next(d for d in DEFINITIONS if d.name == "update_travel_request"),
         )
-        assert result.code is None and (await travel.get_request(context)).adults == 3
+        assert result.code is None and (await travel.read_request(context)).adults == 3
 
     runner.run(exercise())
     events.append(RuntimeEvent(context, "completed"))

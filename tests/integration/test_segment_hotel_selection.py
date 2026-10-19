@@ -128,7 +128,7 @@ def test_three_city_presentation_has_independent_rows_and_accepts_nine_offers(
             assert isinstance(comparison, dict) and comparison["comparable"] is True
         presented = result.data["cards"]
         assert isinstance(presented, list) and len(presented) == 9
-        assert await travel.get_request(context) == request
+        assert await travel.read_request(context) == request
 
     runner.run(exercise())
 
@@ -363,7 +363,7 @@ def test_incomplete_or_invalid_hotel_selection_never_starts_run(
         }[bad]
         assert_error(failed, *expected)
         assert not service.tasks
-        assert await travel.get_request(context) == request
+        assert await travel.read_request(context) == request
 
     runner.run(exercise())
 

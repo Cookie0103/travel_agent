@@ -16,7 +16,7 @@ from backend.providers.claude_agent.request import validate_request
 from backend.providers.claude_agent.response import summarize
 from backend.providers.claude_agent.settings import load_runtime_settings
 from backend.services.models import model_options
-from tests.test_sdk_guard import request_body, response_body
+from tests.model_bodies import request_body, response_body
 
 MODEL = "claude-haiku-5-5"
 ENV = {

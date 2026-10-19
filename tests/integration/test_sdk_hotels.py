@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import shutil
 from pathlib import Path
 
 import pytest
@@ -10,6 +9,7 @@ import pytest
 from backend.domain.execution import RunContext
 from backend.mcp.bridge import sdk_tool_name
 from backend.services.travel import TravelService
+from tests.cli import requires_claude_cli
 from tests.integration.sdk_helper import run_database_worker
 from tests.integration.test_travel import travel_setup as travel_setup
 from tests.test_sdk_cli_offline import scripted_response
@@ -51,7 +51,7 @@ def hotel_response(body: bytes) -> tuple[int, bytes]:
     return scripted_response(body)
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要本机Claude CLI，不访问真实模型")
+@requires_claude_cli
 def test_sdk_queries_then_presents_database_prices(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     tmp_path: Path,

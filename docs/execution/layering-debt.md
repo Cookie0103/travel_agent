@@ -13,7 +13,7 @@
 2. 只有入口导入 api。
 3. 生产代码不导入 eval / data / mock_supplier。
 4. adapters 不导入 services / tools / agent / providers / mcp / api / `persistence.models`（登记 1 条）。
-5. tools 不导入 providers / mcp / persistence / api（登记 1 条）。
+5. tools 不导入 providers / mcp / persistence / api（无登记）。
 6. services 不导入 tools（登记 2 条）。
 7. services 不导入 providers 实现（登记 6 条）。
 8. providers 与 agent 不导入 services（登记 4 条）。
@@ -34,7 +34,27 @@ services 导入 agent（`runs` 的 2 条）、mcp→services（3 条）属于主
 | `providers.claude_agent.worker` → `services.common` | 只为 `ServiceError` | `ServiceError` / `transaction` 的共享类型下沉到 domain |
 | `agent.demo` → `services.common` | 同上 | 同上 |
 | `adapters.open_meteo` → `persistence.models` | 适配器内直接读写 `WeatherForecastRow`（2 处查询） | 下沉为 `persistence/weather.py` 仓储函数 |
-| `tools.travel` → `persistence.runs`（并行修复中新增） | 工具执行器直接读仓储 | 经 services 暴露 |
+
+## backend 模块地图（2026-10-19）
+
+本节是后端模块与依赖方向的唯一说明；契约由 `pyproject.toml` 的 11 条 import-linter 保证（只管直接导入）。
+
+| 包 | 职责 | 允许依赖 / 禁止 |
+| --- | --- | --- |
+| api | HTTP/SSE 路由、身份依赖 | 只经 services/agent 访问下层；仅入口 `server` 导入 api |
+| services | 用例与事务组合 | 可用 domain/persistence/agent；不导入 tools、providers（各有登记债务） |
+| domain | 纯业务对象与规则 | 不依赖其他业务层 |
+| persistence | 表、仓储 SQL、Alembic 迁移 | 只依赖 domain；不上行 |
+| tools | 工具契约/执行器、`skills/` 提示技能 | 不导入 providers、mcp、persistence、api |
+| agent | 应用运行契约、上下文策略 | 不导入 services（登记 `demo` 1 条） |
+| providers | Claude SDK 生命周期、worker、费用边界 | 不导入 services（登记 3 条）；SDK 只在此处、adapters、mcp |
+| mcp | SDK 进程内桥接与只读 MCP server | 经 tools/services 取数据 |
+| adapters | 外部服务客户端（乐天/Google/天气/供应商）、外部 API 配额与重试、脱敏 Trace 导出 | 不导入 services/tools/agent/providers/mcp/api/`persistence.models`（登记 1 条） |
+| `server.py` / `cli.py` | 组合根与 uvicorn 入口 / 用户命令行入口 | 可装配各层 |
+| `limits.py` / `profile.py` | 价格与预算设置 / 执行档位（限额分级） | 被 providers、services 读取 |
+| `trace_log.py` | Railway 可见的单行 TRACE 元数据日志 | 各层可用，永不抛错 |
+
+生产代码不得导入 eval / data / mock_supplier。
 
 ## 维护规则
 

@@ -70,7 +70,7 @@ async def rakuten_quotes(
             }
         ),
     )
-    request = await travel.get_request(context)
+    request = await travel.read_request(context)
     async with httpx.AsyncClient(
         transport=httpx.MockTransport(lambda _: httpx.Response(200, json=payload))
     ) as http:

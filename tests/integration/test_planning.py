@@ -30,7 +30,7 @@ def test_unknown_and_entity_ids_are_actionable_without_accepting_or_leaking_evid
     runner, travel, context = travel_setup
 
     async def exercise() -> None:
-        request = await travel.get_request(context)
+        request = await travel.read_request(context)
         assert request.start_date and request.end_date
         await travel.patch_request(
             context,
@@ -73,7 +73,7 @@ def test_unknown_and_entity_ids_are_actionable_without_accepting_or_leaking_evid
         assert_error(failure, 404, "blocked", "evidence_missing")
         assert str(record.evidence_id) not in str(failure.value)
         assert str(failure.value) == "证据不存在或不属于当前会话"
-        current = await travel.get_request(context)
+        current = await travel.read_request(context)
         await travel.patch_request(
             foreign,
             RequestPatch.model_validate(

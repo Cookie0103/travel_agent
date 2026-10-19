@@ -3,7 +3,6 @@
 import asyncio
 import json
 import os
-import shutil
 from decimal import Decimal
 from pathlib import Path
 from uuid import uuid4
@@ -23,8 +22,9 @@ from backend.providers.claude_agent.worker import run as run_worker
 from backend.tools.workflow import WorkflowName
 from eval.judge import evaluate, load_samples, score_report
 from eval.persona import Sample
+from tests.cli import requires_claude_cli
+from tests.model_bodies import request_body, response_body
 from tests.test_sdk_cli_offline import scripted_response
-from tests.test_sdk_guard import request_body, response_body
 
 
 def sample(case_id: str = "one") -> Sample:
@@ -239,7 +239,7 @@ def test_runtime_error_stops_later_samples_after_durable_attempt(
     assert "private-error" not in (directory / "results.jsonl").read_text(encoding="utf-8")
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="真实CLI未安装，不冒充SDK验证")
+@requires_claude_cli
 @pytest.mark.parametrize("response_kind", ["score", "invalid_json", "unauthorized_tool"])
 @pytest.mark.parametrize("kind", ["persona", "content"])
 def test_real_sdk_judge_has_no_tools_and_guard_sets_temperature_zero(

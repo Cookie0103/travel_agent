@@ -157,13 +157,13 @@ def test_alias_and_canonical_bed_are_same_fact_but_two_different_choices_still_c
 
 
 def test_old_twenty_constraints_with_bed_preference_remain_readable_and_recognized() -> None:
-    from backend.domain.room_choices import missing_room_choices
+    from backend.domain.room_choices import ROOM_CHOICES, recognized_room_choices
     from tests.fixtures.legacy_travel_request_v1 import TravelRequest as OldRequest
 
     old = OldRequest(hard_constraints=tuple(f"合成其他要求{i}" for i in range(19)) + ("大床优先",))
     current = TravelRequest.model_validate(old.model_dump())
     assert len(current.hard_constraints) <= 20 and "大床优先" in current.hard_constraints
-    assert "bed" not in missing_room_choices(current.hard_constraints)
+    assert len(ROOM_CHOICES["bed"] & recognized_room_choices(current.hard_constraints)) == 1
     OldRequest.model_validate(legacy_request(current))
 
 

@@ -19,7 +19,7 @@ from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import worker_environment
 from backend.providers.claude_agent.guard import Guard
 from backend.trace_log import FILE_ENV
-from tests.test_sdk_guard import request_body, response_body
+from tests.model_bodies import request_body, response_body
 
 Step = tuple[str, object]  # ("ev", 事件名) | ("tick", 秒) | ("done", http_status) | ("timeout", 0)
 OK = ("done", 200)

@@ -3,7 +3,7 @@ export function Banner({
   kind,
   children,
 }: {
-  kind: "error" | "warning" | "info";
+  kind: "error" | "warning";
   children: React.ReactNode;
 }) {
   return (

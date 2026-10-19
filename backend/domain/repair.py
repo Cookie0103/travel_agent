@@ -15,7 +15,7 @@ from uuid import UUID
 
 from backend.domain.catalog import VISIT_DURATION_RANGES, Place
 from backend.domain.itinerary import RouteEstimate, ValidationCheck, ValidationReport
-from backend.domain.opening_hours import KYOTO, opening_state
+from backend.domain.opening_hours import TOKYO, opening_state
 from backend.domain.plans import PlanContent, PlanItem
 
 STALE = {"route_unexpected", "route_scope", "route_departure"}  # 重建路线即可消除
@@ -62,16 +62,16 @@ def item_index(subject: str) -> int | None:
 
 
 def day_of(item: PlanItem) -> date:
-    return item.start.astimezone(KYOTO).date()
+    return item.start.astimezone(TOKYO).date()
 
 
 def at(day: date, moment: time) -> datetime:
-    return datetime.combine(day, moment, KYOTO)
+    return datetime.combine(day, moment, TOKYO)
 
 
 def label(item: PlanItem, facts: Facts) -> str:
     place = facts.places.get(item.place_evidence_id)
-    start, end = item.start.astimezone(KYOTO), item.end.astimezone(KYOTO)
+    start, end = item.start.astimezone(TOKYO), item.end.astimezone(TOKYO)
     return f"「{place.name if place else '某一项'}」（{start:%m-%d %H:%M}–{end:%H:%M}）"
 
 

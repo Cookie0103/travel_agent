@@ -4,7 +4,7 @@ import re
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 
-KYOTO = timezone(timedelta(hours=9), "Asia/Tokyo")
+TOKYO = timezone(timedelta(hours=9), "Asia/Tokyo")
 DAYS = ("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
 Window = tuple[int, int]
 
@@ -60,7 +60,7 @@ def opening_state(
     """仅支持24/7、星期范围/列表、固定时段及off；节假日/季节/注释均unknown。"""
     if start.utcoffset() is None or end.utcoffset() is None or end <= start:
         raise ValueError("停留时间必须有时区且结束晚于开始")
-    start, end = start.astimezone(KYOTO), end.astimezone(KYOTO)
+    start, end = start.astimezone(TOKYO), end.astimezone(TOKYO)
     if not raw or end - start > timedelta(days=1):
         return "unknown"
     if raw.strip() == "24/7":

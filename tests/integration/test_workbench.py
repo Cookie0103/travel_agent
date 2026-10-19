@@ -27,6 +27,7 @@ from backend.tools.travel import TravelToolExecutor
 from data.import_catalog import load_snapshot
 from tests.integration.test_sessions import login
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.runner import SELECTOR_OPTIONS
 from tests.test_itinerary import record
 
 pytestmark = pytest.mark.integration
@@ -35,13 +36,12 @@ pytestmark = pytest.mark.integration
 def test_http_workbench_flow_and_read_only_reconnect(postgres_url: URL) -> None:
     """R01–R08：实际HTTP契约、离线Agent、真实PG、SSE、确认和恢复读取。"""
     sessions = SessionService(postgres_url, demo_enabled=True)
-    options = {"loop_factory": asyncio.SelectorEventLoop}
 
     async def seed() -> None:
         async with sessions.database.sessions.begin() as db:
             await import_catalog(db, load_snapshot())
 
-    with TestClient(create_app(sessions), backend_options=options) as client:
+    with TestClient(create_app(sessions), backend_options=SELECTOR_OPTIONS) as client:
         assert client.portal is not None
         client.portal.call(seed)
         owner, other = login(client), login(client)
@@ -126,7 +126,9 @@ def test_http_workbench_flow_and_read_only_reconnect(postgres_url: URL) -> None:
             "id: " + str(events[-1]["sequence"]),
         ]
         plan_path = "/plans/" + saved.json()["plan_id"]
-    with TestClient(create_app(SessionService(postgres_url)), backend_options=options) as restarted:
+    with TestClient(
+        create_app(SessionService(postgres_url)), backend_options=SELECTOR_OPTIONS
+    ) as restarted:
         # Runtime fields/events stay immutable; only the original draft's confirmation is projected.
         assert restarted.get(run_path, headers=owner).json() == {
             **snapshot,
@@ -307,7 +309,7 @@ def test_demo_rejects_ambiguous_second_afternoon_hidden_by_card_truncation(
         second = await executor.execute(
             context, "get_place_facts", {"entity_id": "osm:way/554879249"}
         )
-        current = await travel.get_request(context)
+        current = await travel.read_request(context)
         resolved = await travel.resolve_evidence(
             context, (UUID(first.evidence_ids[0]), UUID(second.evidence_ids[0]))
         )

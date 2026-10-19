@@ -41,7 +41,7 @@ def test_successful_database_patch_with_wrong_dates_does_not_get_accurate_call_c
             definition=next(d for d in DEFINITIONS if d.name == "update_travel_request"),
         )
         assert result.code is None
-        request = await travel.get_request(context)
+        request = await travel.read_request(context)
         assert request.start_date is not None
         assert request.start_date.isoformat() == "2026-11-10"
         call_id = events[0].tool_call_id

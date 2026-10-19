@@ -19,7 +19,7 @@ from backend.providers.claude_agent.live import run_live
 from backend.providers.claude_agent.request import validate_request
 from backend.providers.claude_agent.response import summarize
 from backend.providers.claude_agent.settings import load_runtime_settings
-from tests.test_sdk_guard import request_body, response_body
+from tests.model_bodies import request_body, response_body
 
 MODEL = "claude-haiku-4-5-20251001"
 NOW = datetime(2026, 10, 3, tzinfo=UTC)

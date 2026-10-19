@@ -1,6 +1,5 @@
 """对外只读Streamable HTTP：SDK处理协议，认证会话复用现有旅行查询。"""
 
-import asyncio
 import json
 import math
 import os
@@ -192,9 +191,5 @@ def create_app(
     )
 
 
-def loop_factory() -> asyncio.AbstractEventLoop:
-    return asyncio.SelectorEventLoop()
-
-
 if __name__ == "__main__":
-    uvicorn.run(create_app(), host="127.0.0.1", port=8002, loop="backend.mcp.server:loop_factory")
+    uvicorn.run(create_app(), host="127.0.0.1", port=8002, loop="backend.server:loop_factory")

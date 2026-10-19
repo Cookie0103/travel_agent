@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import shutil
 from datetime import timedelta
 from pathlib import Path
 from uuid import UUID
@@ -19,13 +18,14 @@ from backend.services.common import ServiceError, transaction
 from backend.services.preferences import PreferenceService
 from backend.services.travel import TravelService
 from backend.tools.travel import TravelToolExecutor
+from tests.cli import requires_claude_cli
 from tests.integration.sdk_helper import CompactionHistory, run_database_worker
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import travel_setup as travel_setup
 from tests.test_sdk_cli_offline import scripted_response
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要实际CLI，本机脚本不访问模型")
+@requires_claude_cli
 @pytest.mark.parametrize(
     "variant",
     [
@@ -56,7 +56,7 @@ def test_actual_sdk_advertises_variant_and_keeps_trip_and_preferences_unchanged(
             ),
         )
     )
-    before = runner.run(travel.get_request(context))
+    before = runner.run(travel.read_request(context))
     requests: list[dict[str, object]] = []
 
     def forward(body: bytes) -> tuple[int, bytes]:
@@ -98,7 +98,7 @@ def test_actual_sdk_advertises_variant_and_keeps_trip_and_preferences_unchanged(
     if variant == "no_tools":
         assert "服务端业务状态" not in system and str(context.user_id) not in system
     assert runner.run(preferences.get(context.user_id)) == saved
-    assert runner.run(travel.get_request(context)) == before
+    assert runner.run(travel.read_request(context)) == before
 
 
 @pytest.mark.usefixtures("unrepaired")
@@ -177,7 +177,7 @@ def test_no_repairs_keeps_first_validation_and_final_stage_checks(
     runner.run(exercise())
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="实际CLI，本机API脚本不访问模型")
+@requires_claude_cli
 def test_no_repairs_actual_sdk_receives_conflict_then_blocked_repair(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     tmp_path: Path,
@@ -220,7 +220,7 @@ def test_no_repairs_actual_sdk_receives_conflict_then_blocked_repair(
     assert report["checkpoint_persisted"] is False
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="实际CLI；人工usage只核验原生机制")
+@requires_claude_cli
 @pytest.mark.parametrize("variant", ["full", "no_compaction", "baseline_b2"])
 def test_native_compaction_control_with_same_usage_and_trip(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
@@ -228,7 +228,7 @@ def test_native_compaction_control_with_same_usage_and_trip(
     variant: EvaluationVariant,
 ) -> None:
     runner, travel, context = travel_setup
-    before = runner.run(travel.get_request(context))
+    before = runner.run(travel.read_request(context))
     count = 0
 
     def forward(body: bytes) -> tuple[int, bytes]:
@@ -289,4 +289,4 @@ def test_native_compaction_control_with_same_usage_and_trip(
     assert any(e.kind == "tool_finished" and e.code is None for e in events)
     assert [o["input_tokens"] for o in guard.observations[:3]] == [8000, 11000, 22000]
     assert len(history.warmups) == 2 and len(history.business) == 2
-    assert runner.run(travel.get_request(context)) == before
+    assert runner.run(travel.read_request(context)) == before

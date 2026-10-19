@@ -1,6 +1,5 @@
 """M1.8：公开攻略HTTP读取到工作台；真实PG目录，读操作不创建私人业务状态。"""
 
-import asyncio
 from collections.abc import Iterator
 
 import pytest
@@ -16,6 +15,7 @@ from backend.services.catalog import CatalogService
 from backend.services.common import ServiceError
 from backend.services.sessions import SessionService
 from data.import_catalog import load_snapshot
+from tests.runner import SELECTOR_OPTIONS
 
 pytestmark = pytest.mark.integration
 
@@ -41,9 +41,7 @@ def test_public_article_list_detail_preserve_source_and_create_no_private_state(
                 counts.append(int(await db.scalar(select(func.count()).select_from(model)) or 0))
             return tuple(counts)
 
-    with TestClient(
-        create_app(sessions), backend_options={"loop_factory": asyncio.SelectorEventLoop}
-    ) as client:
+    with TestClient(create_app(sessions), backend_options=SELECTOR_OPTIONS) as client:
         assert client.portal is not None
         before = client.portal.call(seed_and_counts, True)
         result = client.get("/articles")
@@ -67,9 +65,7 @@ def test_article_dependency_failure_returns_safe_recoverable_error(
 
     monkeypatch.setattr(CatalogService, "_catalog", unavailable)
     sessions = SessionService(article_url, demo_enabled=True)
-    with TestClient(
-        create_app(sessions), backend_options={"loop_factory": asyncio.SelectorEventLoop}
-    ) as client:
+    with TestClient(create_app(sessions), backend_options=SELECTOR_OPTIONS) as client:
         for path in ("/articles", "/articles/example"):
             response = client.get(path)
             assert response.status_code == 503
@@ -78,8 +74,6 @@ def test_article_dependency_failure_returns_safe_recoverable_error(
 
 def test_unimported_article_catalog_is_not_fabricated(article_url: URL) -> None:
     sessions = SessionService(article_url, demo_enabled=True)
-    with TestClient(
-        create_app(sessions), backend_options={"loop_factory": asyncio.SelectorEventLoop}
-    ) as client:
+    with TestClient(create_app(sessions), backend_options=SELECTOR_OPTIONS) as client:
         assert client.get("/articles").status_code == 503
         assert client.get("/articles/missing").status_code == 503

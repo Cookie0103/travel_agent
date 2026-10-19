@@ -22,6 +22,7 @@ from backend.services.travel import TravelService
 from backend.tools.fencing import fence_payload
 from backend.tools.travel import TravelToolExecutor
 from data.import_catalog import load_snapshot
+from tests.runner import selector_runner
 
 pytestmark = pytest.mark.integration
 
@@ -30,7 +31,7 @@ pytestmark = pytest.mark.integration
 def mcp_setup(
     postgres_url: URL,
 ) -> Iterator[tuple[asyncio.Runner, SessionService, DemoIdentity, RunContext]]:
-    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+    with selector_runner() as runner:
         sessions = SessionService(postgres_url, demo_enabled=True)
         identity = runner.run(sessions.create_demo_user(DemoLogin()))
         session = runner.run(sessions.new_session(identity.user_id))
@@ -190,7 +191,7 @@ def test_mcp_database_outage_does_not_disclose_connection(postgres_url: URL) -> 
     with socket.socket() as socket_guard:
         socket_guard.bind(("127.0.0.1", 0))
         bad_url = postgres_url.set(port=socket_guard.getsockname()[1])
-        with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+        with selector_runner() as runner:
             sessions = SessionService(bad_url)
             app = create_app(sessions)
 

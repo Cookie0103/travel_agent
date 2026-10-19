@@ -296,7 +296,7 @@ async def trial(
                     (await business.sessions.new_session(identity.user_id)).session_id,
                 )
             current_page = await page(business, context)
-            request = await business.travel.get_request(context)
+            request = await business.travel.read_request(context)
             if action.kind == "confirm_plan":
                 draft_ids = current_page["draft_ids"]
                 if (
@@ -392,7 +392,7 @@ async def trial(
         controller_failure = failure_details(failure_reason, raw_simulator_output, rejected_action)
     finally:
         await service.close()
-    request = await business.travel.get_request(context)
+    request = await business.travel.read_request(context)
     final = await snapshot(business.travel, context)
     facts = await MemoryService(business.sessions.database).facts(identity.user_id)
     process = process_metrics(tuple(events), "\n".join(str(t["answer"]) for t in transcript))

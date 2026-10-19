@@ -81,9 +81,9 @@ def test_usd_stays_blocked_under_human(
             budget.reserve(Decimal(1), NOW)
         assert not budget.path.exists()
     else:
-        assert budget.daily_limit(NOW) is None
+        assert budget.daily_limit() is None
         assert budget.reserve(Decimal(1), NOW)
-    assert Budget(tmp_path / "u", tmp_path / "l", Decimal(15), "USD").daily_limit(NOW) == 15
+    assert Budget(tmp_path / "u", tmp_path / "l", Decimal(15), "USD").daily_limit() == 15
 
 
 def test_profile_flags_and_boot_line(

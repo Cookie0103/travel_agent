@@ -29,7 +29,7 @@ uv run --env-file .env python -m backend.cli --live "京都有哪些室内景点
 
 ## 目录放什么
 
-下表是计划职责；建好了目录不代表功能已经实现。
+下表是各目录的职责。
 
 | 目录 | 用途 |
 | --- | --- |
@@ -41,7 +41,7 @@ uv run --env-file .env python -m backend.cli --live "京都有哪些室内景点
 | mock_supplier | 模拟酒店供应商：正常查询/下单，以及超时、重复请求等故障 |
 | eval | 评测 Agent 工具选择和结果，保存改编用例；私有运行结果在.cache/eval |
 | docs | 实际工作的说明、报告和操作日志 |
-| plan | 设计方案、架构和任务计划 |
+| docs/plans | 批次计划、每日进展与问题记录（设计见 docs/design） |
 | vendor | 下载的上游参考代码，不属于我们实现的业务代码，也不提交到 Git |
 
 backend 中只有 api 负责 HTTP；agent 负责旅行上下文与执行策略，providers 接 Claude Agent SDK 承担循环，domain 放业务对象和规则，persistence 放数据库访问。见 [后端目录说明](backend/README.md)。
@@ -126,8 +126,8 @@ uv run python -m backend.server
 API 在 http://127.0.0.1:8000/docs 展示接口；/health 只检查进程存活，迁移与数据库就绪看 /health/ready。
 本地 .env 的 DEMO_MODE=true 启用 POST /demo/login，返回一次性展示的演示令牌；后续 /sessions 请求带 Authorization: Bearer <token>。
 演示身份用于本机开发，不是生产登录。令牌仅保存摘要，默认 30 天过期（`DEMO_TOKEN_DAYS` 可配 1–365；公网部署请设为 1）；不能指定他人的 user_id 登录。
-Windows 服务入口使用兼容 psycopg 的事件循环。数据库迁移在 backend/persistence/migrations，当前包含身份、会话、目录、旅行条件、Evidence和TaskRun/事件。
-check 不连接数据库；test 会检查真实事务和用户隔离。CI 已配置 PostgreSQL 服务，尚未推送或远端运行。
+Windows 服务入口使用兼容 psycopg 的事件循环。数据库迁移在 backend/persistence/migrations/versions（当前 0001–0023，含身份、会话、目录、旅行条件、Evidence、TaskRun/事件等）。
+check 不连接数据库；test 会检查真实事务和用户隔离。CI 配置了 PostgreSQL 服务，已在 PR #9 上远端运行并通过。
 
 发消息：`POST /sessions/{id}/messages`，传 `client_message_id`（UUID）、`text`；默认 `mode=offline`。
 查询 `/runs/{id}`，进度读 `/runs/{id}/events`（SSE，可带 `Last-Event-ID`），取消用 `POST /runs/{id}/cancel`。

@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import shutil
 from dataclasses import replace
 from functools import partial
 from pathlib import Path
@@ -16,6 +15,7 @@ from backend.mcp.bridge import sdk_tool_name
 from backend.services.preferences import PreferenceService
 from backend.services.runs import MessageInput, RunService
 from backend.services.travel import RunContext, TravelService
+from tests.cli import requires_claude_cli
 from tests.fakes import FakeRuntime
 from tests.integration.sdk_helper import run_database_worker
 from tests.integration.test_sdk_recovery import sdk_id
@@ -25,7 +25,7 @@ from tests.test_sdk_cli_offline import scripted_response
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要实际CLI，不访问真实模型")
+@requires_claude_cli
 @pytest.mark.parametrize("saved_preference", [True, False])
 def test_deleted_preference_invalidates_sdk_history_without_changing_trip(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
@@ -90,5 +90,5 @@ def test_deleted_preference_invalidates_sdk_history_without_changing_trip(
     assert second["status"] == "success" and not guard.failures
     assert second["resume_mode"] == "business_snapshot" and sdk_id(second) != first_id
     assert marker not in json.dumps(requests)
-    assert runner.run(travel.get_request(context)).revision == 1
+    assert runner.run(travel.read_request(context)).revision == 1
     assert runner.run(preferences.get(context.user_id)).revision == int(saved_preference) + 1

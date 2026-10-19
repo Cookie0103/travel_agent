@@ -141,9 +141,6 @@ type = "forbidden"
 source_modules = ["backend.tools"]
 forbidden_modules = ["backend.providers", "backend.mcp", "backend.persistence", "backend.api"]
 allow_indirect_imports = true
-ignore_imports = [
-    # 已知债务（并行修复中新增，需确认）：工具执行器直接读仓储；应经 services 暴露。
-]
 
 [[tool.importlinter.contracts]]
 name = "Services do not import tools"

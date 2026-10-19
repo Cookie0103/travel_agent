@@ -25,7 +25,7 @@ from backend.domain.external_data import ExternalDataError, external_code
 from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
 from backend.domain.memory import VALUE_GUIDE, MemoryProposal
-from backend.domain.opening_hours import KYOTO
+from backend.domain.opening_hours import TOKYO
 from backend.domain.plans import InitialStage, StageInput
 from backend.domain.room_choices import room_choices_view
 from backend.domain.travel_request import (
@@ -999,7 +999,7 @@ def compact_plan_items(data: dict[str, object], offset: int) -> ToolResult:
     entries = [
         {
             "item_id": card["item_id"],
-            "day": datetime.fromisoformat(str(card["start"])).astimezone(KYOTO).date().isoformat(),
+            "day": datetime.fromisoformat(str(card["start"])).astimezone(TOKYO).date().isoformat(),
             "name": str(card["name"])[:80],
             "locked": card["locked"],
         }

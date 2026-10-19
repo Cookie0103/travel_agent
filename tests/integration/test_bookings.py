@@ -37,12 +37,13 @@ from mock_supplier.service import SupplierService
 from tests.integration.http_helper import serve_http
 from tests.integration.test_sessions import login
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.runner import SELECTOR_OPTIONS
 
 pytestmark = pytest.mark.integration
 
 
 async def select_offer(travel: TravelService, context: RunContext) -> HoldHotelInput:
-    request = await travel.get_request(context)
+    request = await travel.read_request(context)
     records = await HotelService(travel).search(context, request.revision, limit=1)
     offer = HotelOffer.model_validate(records[0].value)
     return HoldHotelInput(offer_id=offer.offer_id, expected_revision=request.revision)
@@ -117,7 +118,7 @@ def test_long_valid_conditions_keep_hold_result_bounded_and_recoverable(
         executor = TravelToolExecutor(travel)
         executor.bookings.supplier = SupplierService(travel.database)
         body = await select_offer(travel, context)
-        current = await travel.get_request(context)
+        current = await travel.read_request(context)
         assert len(current.hard_constraints) == 20
         assert len(json.dumps(current.model_dump(mode="json"), ensure_ascii=False)) > 8000
         for _ in range(2):
@@ -181,7 +182,7 @@ def test_hold_rejects_forgery_tax_unknown_and_changed_conditions_confirm(
         service = BookingService(travel, SupplierService(travel.database))
         with pytest.raises(ServiceError, match="不存在"):
             await service.hold(context, HoldHotelInput(offer_id=uuid4(), expected_revision=1))
-        request = await travel.get_request(context)
+        request = await travel.read_request(context)
         records = await HotelService(travel).search(context, request.revision, limit=6)
         unknown = next(
             HotelOffer.model_validate(row.value)
@@ -436,9 +437,8 @@ def test_booking_http_user_confirmation_and_recovery_are_private(postgres_url: U
     sessions = SessionService(postgres_url, demo_enabled=True)
     travel = TravelService(sessions.database)
     service = BookingService(travel, SupplierService(sessions.database))
-    options = {"loop_factory": asyncio.SelectorEventLoop}
     with TestClient(
-        create_travel_app(sessions, booking_service=service), backend_options=options
+        create_travel_app(sessions, booking_service=service), backend_options=SELECTOR_OPTIONS
     ) as client:
         owner, other = login(client), login(client)
         sid = client.post("/sessions", headers=owner).json()["session_id"]
@@ -485,7 +485,7 @@ def test_booking_http_user_confirmation_and_recovery_are_private(postgres_url: U
         assert client.post(booking_path + "/confirm", headers=owner).json() == saved.json()
         assert client.post(path, headers=owner, json=body).json() == saved.json()
     with TestClient(
-        create_travel_app(SessionService(postgres_url)), backend_options=options
+        create_travel_app(SessionService(postgres_url)), backend_options=SELECTOR_OPTIONS
     ) as restarted:
         assert restarted.get(booking_path, headers=owner).json() == saved.json()
         assert restarted.get(f"/sessions/{sid}/bookings", headers=owner).json() == [saved.json()]

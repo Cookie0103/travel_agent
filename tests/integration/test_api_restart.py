@@ -1,6 +1,5 @@
 """R12：真实HTTP/API kill→重启→SSE补发/快照；没有付费模型。"""
 
-import asyncio
 import json
 import os
 import subprocess
@@ -19,6 +18,7 @@ from backend.persistence.catalog import import_catalog
 from backend.persistence.database import Database
 from backend.services.common import transaction
 from data.import_catalog import load_snapshot
+from tests.runner import selector_runner
 
 pytestmark = pytest.mark.integration
 
@@ -64,7 +64,7 @@ def test_api_process_crash_preserves_committed_conditions_and_unblocks_session(
         finally:
             await database.close()
 
-    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+    with selector_runner() as runner:
         runner.run(import_data())
     with api_process(postgres_url, interrupt=True) as (endpoint, process):
         with httpx.Client(base_url=endpoint, timeout=5, trust_env=False) as client:

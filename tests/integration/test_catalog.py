@@ -1,7 +1,5 @@
 """真实PostgreSQL验证快照导入的重复执行与事务失败回滚。"""
 
-import asyncio
-
 import pytest
 from sqlalchemy import URL
 
@@ -9,6 +7,7 @@ from backend.domain.catalog import Place
 from backend.persistence.catalog import import_catalog, load_catalog
 from backend.persistence.database import Database
 from data.import_catalog import load_snapshot
+from tests.runner import selector_runner
 
 pytestmark = pytest.mark.integration
 
@@ -34,7 +33,7 @@ def test_repeat_snapshot_import_preserves_count_and_source(postgres_url: URL) ->
         finally:
             await database.close()
 
-    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+    with selector_runner() as runner:
         runner.run(exercise())
 
 
@@ -54,7 +53,7 @@ def test_failed_import_transaction_does_not_leave_partial_data(postgres_url: URL
         finally:
             await database.close()
 
-    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+    with selector_runner() as runner:
         runner.run(exercise())
 
 
@@ -83,5 +82,5 @@ def test_prune_removes_entries_missing_from_new_snapshot(postgres_url: URL) -> N
         finally:
             await database.close()
 
-    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+    with selector_runner() as runner:
         runner.run(exercise())

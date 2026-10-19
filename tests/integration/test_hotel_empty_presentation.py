@@ -145,7 +145,7 @@ def test_failure_panel_keeps_budget_revision_and_unknown_id_guards_without_quote
             )
             assert events[-1].kind == "presentation"
             assert "cards': []" in str(events[-1].presentation)
-        request = await travel.get_request(context)
+        request = await travel.read_request(context)
         assert request.revision == 2 and str(request.budget) == "50000"
         assert (
             request.lodging_budget is not None

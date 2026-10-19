@@ -22,7 +22,7 @@ from backend.providers.claude_agent.guard import Guard
 from backend.tools.contracts import ToolDefinition, ToolResult
 from backend.tools.execution import execute_observed
 from backend.trace_log import FILE_ENV, RUN_ENV, Tail, trace
-from tests.test_sdk_guard import request_body
+from tests.model_bodies import request_body
 
 SECRET = "sk-live-SECRET-123456"
 

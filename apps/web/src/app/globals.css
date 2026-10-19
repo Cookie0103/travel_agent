@@ -793,9 +793,6 @@
   .status-quoted {
     color: var(--warning);
   }
-  .banner-info {
-    color: var(--info);
-  }
   .status-held,
   .status-booked {
     color: var(--success);

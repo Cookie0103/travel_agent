@@ -102,7 +102,7 @@ async def collect(travel: TravelService, context: RunContext) -> dict[str, dict[
         {"component": "itinerary", "draft_id": staged["draft_id"]},
         "present_itinerary",
     )
-    revision = (await travel.get_request(context)).revision
+    revision = (await travel.read_request(context)).revision
     hotels = await call("search_hotel_offers", {"expected_revision": revision})
     offer = hotels["offers"][0]["offer_id"]
     await call(

@@ -1,4 +1,4 @@
-/** 后端 {code,message} 与 FastAPI 422 {detail:[...]} 都要变成可读错误并保留 code。 */
+/** 后端 {code,message} 要保留 code；非 JSON 失败回退到状态码文案。 */
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { api, ApiError } from "../src/lib/api.ts";
@@ -25,28 +25,6 @@ test("ApiError keeps the backend error code", async () => {
   assert.equal(error.status, 409);
   assert.equal(error.code, "conflict");
   assert.equal(error.message, "版本已变化");
-});
-
-test("FastAPI 422 detail list becomes readable Chinese naming the fields", async () => {
-  const error = await failWith(422, {
-    detail: [
-      {
-        loc: ["body", "expected_revision"],
-        msg: "Input should be a valid integer",
-        type: "int_parsing",
-      },
-      {
-        loc: ["body", "text"],
-        msg: "String too short",
-        type: "string_too_short",
-      },
-    ],
-  });
-  assert.ok(error instanceof ApiError);
-  assert.equal(error.status, 422);
-  assert.match(error.message, /expected_revision/);
-  assert.match(error.message, /text/);
-  assert.doesNotMatch(error.message, /Input should be/);
 });
 
 test("non-JSON failures fall back to the status text", async () => {

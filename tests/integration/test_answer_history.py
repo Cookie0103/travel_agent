@@ -321,7 +321,7 @@ def test_history_counts_stale_owned_quote_references(
     runner, travel, context = travel_setup
 
     async def exercise() -> None:
-        record = evidence(await travel.get_request(context))
+        record = evidence(await travel.read_request(context))
         old = record.model_copy(
             update={
                 "retrieved_at": datetime.now(UTC) - timedelta(hours=2),

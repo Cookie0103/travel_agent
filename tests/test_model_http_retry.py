@@ -11,7 +11,7 @@ import pytest
 from backend.limits import ProbeError, Settings, StallError
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.guard import Guard
-from tests.test_sdk_guard import request_body, response_body
+from tests.model_bodies import request_body, response_body
 
 
 @pytest.mark.parametrize("status", [429, 503, 529])

@@ -22,6 +22,7 @@ from tests.fakes import FakeRuntime
 from tests.integration.test_sessions import login
 from tests.integration.test_travel import evidence
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.runner import SELECTOR_OPTIONS
 
 pytestmark = pytest.mark.integration
 
@@ -204,8 +205,7 @@ def test_api_run_events_are_private_and_new_app_does_not_reexecute(postgres_url:
     runtime = FakeRuntime(RuntimeOutcome(text="离线结果", sdk_session_id="fake"), ("离线结果",))
     service = RunService(sessions.database, runtime_factory=lambda executor: runtime)
     app = create_app(sessions, runs_service=service)
-    options = {"loop_factory": asyncio.SelectorEventLoop}
-    with TestClient(app, backend_options=options) as client:
+    with TestClient(app, backend_options=SELECTOR_OPTIONS) as client:
         available = client.get("/models")
         assert available.status_code == 200
         assert [item["id"] for item in available.json()] == ["offline", "deepseek", "claude"]
@@ -240,7 +240,9 @@ def test_api_run_events_are_private_and_new_app_does_not_reexecute(postgres_url:
             client.post(path, headers=owner, json=message).json()["run_id"]
             == created.json()["run_id"]
         )
-    with TestClient(create_app(SessionService(postgres_url)), backend_options=options) as restarted:
+    with TestClient(
+        create_app(SessionService(postgres_url)), backend_options=SELECTOR_OPTIONS
+    ) as restarted:
         replay = restarted.get(event_path, headers={**owner, "Last-Event-ID": "2"})
         assert "id: 3" in replay.text and "id: 1" not in replay.text
         assert restarted.get(run_path, headers=owner).json()["status"] == "completed"
@@ -257,7 +259,7 @@ def test_next_turn_gets_bounded_owned_dialogue_and_valid_evidence(
     service = RunService(travel.database, runtime_factory=lambda executor: runtime)
 
     async def exercise() -> None:
-        request = await travel.get_request(context)
+        request = await travel.read_request(context)
         valid = evidence(request, "place")
         expired = evidence(request, "place").model_copy(
             update={

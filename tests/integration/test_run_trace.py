@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import shutil
 from collections.abc import Callable, Mapping
 from decimal import Decimal
 from functools import partial
@@ -29,6 +28,7 @@ from backend.services.travel import TravelService
 from backend.tools.contracts import ToolExecutor
 from backend.tools.execution import execute_observed
 from backend.tools.travel import DEFINITIONS
+from tests.cli import requires_claude_cli
 from tests.fakes import FakeRuntime
 from tests.integration.test_travel import travel_setup as travel_setup
 from tests.test_sdk_cli_offline import scripted_response
@@ -83,7 +83,7 @@ def test_committed_run_exports_metadata_or_preserves_result_on_disk_failure(
         await asyncio.gather(*tuple(service.tasks.values()))
         final = await service.get(context.user_id, created.run_id)
         assert final.status == "completed" and final.answer == private_text
-        assert (await travel.get_request(context)).revision == 2
+        assert (await travel.read_request(context)).revision == 2
         assert not service.tasks and not service.persistence_failures
         path = (
             directory / str(context.user_id) / str(context.session_id) / f"{created.run_id}.jsonl"
@@ -109,7 +109,7 @@ def test_committed_run_exports_metadata_or_preserves_result_on_disk_failure(
     runner.run(exercise())
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要实际CLI，不访问真实模型")
+@requires_claude_cli
 @pytest.mark.parametrize("upstream_failure", [False, True])
 def test_api_actual_sdk_usage_reaches_committed_trace_and_otlp(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
@@ -224,7 +224,7 @@ def test_api_actual_sdk_usage_reaches_committed_trace_and_otlp(
             final = await service.get(context.user_id, created.run_id)
             assert final.status == "completed"
             assert not service.persistence_failures and not service.tasks
-            assert (await travel.get_request(context)).revision == 1
+            assert (await travel.read_request(context)).revision == 1
             assert runtime.identity is initial and runtime.trace_metadata is not None
             metadata = runtime.trace_metadata
             assert metadata.identity.cli_version != "reported-by-worker"
@@ -358,7 +358,7 @@ def test_cloud_trace_is_explicit_and_failure_preserves_committed_run_and_local_t
             final = await service.get(context.user_id, created.run_id)
             assert final.status == "completed" and final.error_code is None
             assert final.answer == "synthetic-private-interest"
-            assert (await travel.get_request(context)).revision == 2
+            assert (await travel.read_request(context)).revision == 2
             assert not service.tasks and not service.persistence_failures
             path = directory / str(context.user_id) / str(context.session_id)
             raw = (path / f"{created.run_id}.jsonl").read_text(encoding="utf-8")

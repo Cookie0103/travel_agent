@@ -2,9 +2,7 @@
 
 import asyncio
 import re
-from datetime import datetime
 from uuid import uuid4
-from zoneinfo import ZoneInfo
 
 from backend.agent.demo import demo_command
 from backend.agent.fixture_conditions import (
@@ -16,7 +14,7 @@ from backend.agent.fixture_conditions import (
 from backend.agent.runtime import EventSink
 from backend.domain.conversation import Task
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, RuntimeOutcome
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import TravelRequest, tokyo_today
 from backend.tools.contracts import ToolExecutor
 from backend.tools.execution import execute_observed
 from backend.tools.fencing import unfence
@@ -69,7 +67,7 @@ class FixtureRuntime:
             patch = fixture_patch(
                 prompt,
                 request,
-                datetime.now(ZoneInfo("Asia/Tokyo")).date(),
+                tokyo_today(),
                 protect_hard_constraints=protect_hard,
                 awaiting_field=awaiting if isinstance(awaiting, str) else None,
             )

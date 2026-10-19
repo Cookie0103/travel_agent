@@ -6,7 +6,6 @@ import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 from uuid import UUID, uuid4
-from zoneinfo import ZoneInfo
 
 from sqlalchemy import select
 
@@ -15,6 +14,7 @@ from backend.agent.demo import COMMANDS, demo_command
 from backend.domain.booking import Booking, HoldHotelInput
 from backend.domain.execution import RunContext, RuntimeEvent
 from backend.domain.hotels import HotelOffer
+from backend.domain.opening_hours import TOKYO
 from backend.domain.plans import PlanDraft, SavedPlan
 from backend.domain.preferences import PreferencePatch, PreferenceVersion
 from backend.domain.travel_request import RequestPatch, pace_of
@@ -66,7 +66,7 @@ class StateSnapshot:
 
 
 async def snapshot(travel: TravelService, context: RunContext) -> StateSnapshot:
-    request = await travel.get_request(context)
+    request = await travel.read_request(context)
     async with transaction(travel.database) as db:
         plan = await plans.for_session(db, context)
         versions = list(
@@ -215,7 +215,7 @@ async def history(
 async def prepare_offer(
     travel: TravelService, context: RunContext, state: InitialState, supplier_url: str
 ) -> None:
-    request = await travel.get_request(context)
+    request = await travel.read_request(context)
     records = await HotelService(travel).search(context, request.revision, limit=1)
     if not records:
         raise ValueError("初始报价无可用数据")
@@ -294,7 +294,7 @@ async def assess_business(
         "no_implicit_preference_write": after.preferences == before.preferences,
     }
     if case.expected_state:
-        current = await travel.get_request(context)
+        current = await travel.read_request(context)
         actual_state = {
             "request": {**current.model_dump(mode="json"), "pace": pace_of(current)},
             "saved_version": after.saved.version if after.saved else 0,
@@ -458,13 +458,12 @@ async def assess_business(
 def second_afternoon_shift(saved: SavedPlan, draft: PlanDraft) -> bool:
     """本冻结任务的结构期望：准确目标延后一小时，其他项目/住宿完全保留。"""
     items = saved.content.items
-    zone = ZoneInfo("Asia/Tokyo")
-    second_day = min(item.start.astimezone(zone).date() for item in items) + timedelta(days=1)
+    second_day = min(item.start.astimezone(TOKYO).date() for item in items) + timedelta(days=1)
     targets = [
         item
         for item in items
-        if item.start.astimezone(zone).date() == second_day
-        and 12 <= item.start.astimezone(zone).hour < 18
+        if item.start.astimezone(TOKYO).date() == second_day
+        and 12 <= item.start.astimezone(TOKYO).hour < 18
     ]
     if len(targets) != 1 or draft.base_version != saved.version:
         return False

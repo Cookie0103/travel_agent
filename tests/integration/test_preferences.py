@@ -206,7 +206,7 @@ def test_concurrent_preference_edits_only_one_wins_and_tools_cannot_restore_dele
         assert (await service.get(context.user_id)) == Preferences(revision=2)
         state = await travel.business_context(context)
         assert state["preferences"] == Preferences(revision=2).model_dump(mode="json")
-        assert (await travel.get_request(context)).revision == 1
+        assert (await travel.read_request(context)).revision == 1
         with pytest.raises(ServiceError, match="用户不存在"):
             await service.get(uuid4())
 

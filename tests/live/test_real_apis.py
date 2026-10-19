@@ -1,6 +1,5 @@
 """手动选一个供应商接口探针；默认不运行，不更新或持久录制原始响应。"""
 
-import asyncio
 import os
 from datetime import UTC, datetime, timedelta
 from typing import cast
@@ -17,6 +16,7 @@ from backend.domain.travel_request import TravelRequest
 from backend.persistence.database import Database, configuration, database_url
 from data.import_catalog import load_snapshot
 from scripts.dev import ROOT
+from tests.runner import selector_runner
 
 pytestmark = pytest.mark.live
 
@@ -74,5 +74,5 @@ def test_single_real_api() -> None:
             await live.close()
             await database.close()
 
-    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+    with selector_runner() as runner:
         runner.run(exercise())

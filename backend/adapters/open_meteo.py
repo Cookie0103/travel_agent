@@ -1,7 +1,6 @@
 """Open-Meteo 的16天预报；超出范围保持未知，不以历史天气替代。"""
 
 from datetime import UTC, datetime, timedelta
-from zoneinfo import ZoneInfo
 
 import httpx
 from pydantic import BaseModel
@@ -10,7 +9,7 @@ from sqlalchemy.dialects.postgresql import insert
 
 from backend.adapters.external_api import ApiUsage, parse_response, request_json
 from backend.domain.external_data import ExternalDataError, GeoPoint
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import TravelRequest, tokyo_today
 from backend.persistence.models import WeatherForecastRow
 
 
@@ -47,7 +46,7 @@ def description(code: int | None) -> str:
 async def forecast(
     http: httpx.AsyncClient, usage: ApiUsage, point: GeoPoint, request: TravelRequest
 ) -> dict[str, object]:
-    today = datetime.now(ZoneInfo("Asia/Tokyo")).date()
+    today = tokyo_today()
     if not request.start_date or not request.end_date:
         return {"status": "unknown", "reason": "旅行日期尚未确定"}
     if request.start_date < today or request.end_date > today + timedelta(days=15):

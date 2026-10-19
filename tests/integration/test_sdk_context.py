@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import shutil
 import socket
 from dataclasses import replace
 from datetime import UTC, datetime, timedelta
@@ -21,23 +20,25 @@ from backend.persistence.travel import add_evidence
 from backend.services.common import transaction
 from backend.services.runs import MessageInput, RunService
 from backend.services.travel import TravelService
+from tests.cli import requires_claude_cli
 from tests.fakes import FakeRuntime
 from tests.integration.sdk_helper import CompactionHistory, run_database_worker
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import evidence
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.runner import selector_runner
 from tests.test_sdk_cli_offline import scripted_response
 
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要实际CLI，不访问真实模型")
+@requires_claude_cli
 def test_native_auto_compaction_keeps_current_trip_and_paired_tool_results(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     tmp_path: Path,
 ) -> None:
     runner, travel, context = travel_setup
-    current = runner.run(travel.get_request(context))
+    current = runner.run(travel.read_request(context))
     valid, _ = runner.run(destinations(travel, context))
     expired = evidence(current, "place").model_copy(
         update={
@@ -148,7 +149,7 @@ def test_native_auto_compaction_keeps_current_trip_and_paired_tool_results(
         len(requests),
         feedback,
     )
-    assert not guard.failures and runner.run(travel.get_request(context)).revision == 1
+    assert not guard.failures and runner.run(travel.read_request(context)).revision == 1
     assert len(feedback) == 1 and feedback[0]["status"] == "ok"
     validation = feedback[0]["data"]
     assert isinstance(validation, dict) and validation["status"] == "partial"
@@ -192,7 +193,7 @@ def test_long_persisted_dialogue_is_bounded_and_does_not_replace_current_conditi
     runner.run(exercise())
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要实际CLI，不访问真实模型")
+@requires_claude_cli
 def test_failed_business_snapshot_stops_before_any_model_request(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     tmp_path: Path,
@@ -217,7 +218,7 @@ def test_failed_business_snapshot_stops_before_any_model_request(
             runner.run(unavailable.database.close())
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要实际CLI，不访问真实模型")
+@requires_claude_cli
 def test_summary_dependency_failure_does_not_save_a_complete_sdk_checkpoint(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
     tmp_path: Path,
@@ -243,10 +244,10 @@ def test_summary_dependency_failure_does_not_save_a_complete_sdk_checkpoint(
     assert report["status"] == "error" and report["code"] == "provider_error"
     assert "provider_error" in guard.failures and guard.attempts <= 6
     assert not (tmp_path / "worker" / "checkpoint.json").exists()
-    assert runner.run(travel.get_request(context)).revision == 1
+    assert runner.run(travel.read_request(context)).revision == 1
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要实际CLI，不访问真实模型")
+@requires_claude_cli
 @pytest.mark.parametrize("conditions_change", [False, True])
 def test_each_database_user_round_refreshes_snapshot_and_resets_tool_scope(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
@@ -278,7 +279,7 @@ def test_each_database_user_round_refreshes_snapshot_and_resets_tool_scope(
                 finally:
                     await database.close()
 
-            with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as separate:
+            with selector_runner() as separate:
                 separate.run(change())
         # 每个用户轮次固定选一次Skill；响应决策只看本轮，实际SDK历史不改写。
         return scripted_response(
@@ -307,4 +308,4 @@ def test_each_database_user_round_refreshes_snapshot_and_resets_tool_scope(
         text = "\n".join(block["text"] for block in system)
         assert f'"revision": {2 if conditions_change else 1}' in text
         assert f'"rooms": {2 if conditions_change else 1}' in text
-    assert runner.run(travel.get_request(context)).revision == (2 if conditions_change else 1)
+    assert runner.run(travel.read_request(context)).revision == (2 if conditions_change else 1)

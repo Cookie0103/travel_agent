@@ -5,8 +5,7 @@ import asyncio
 import pytest
 
 from backend.domain.execution import RunContext
-from backend.domain.travel_request import ConversationRequestPatch, RequestPatch, legacy_request
-from backend.persistence import operations
+from backend.domain.travel_request import RequestPatch
 from backend.persistence.models import TravelRequestRow
 from backend.services.common import transaction
 from backend.services.travel import TravelService
@@ -38,35 +37,6 @@ def test_form_value_is_protected_but_explicit_same_patch_can_update(
                 context, patch, source="conversation", explicit_fields=("adults",)
             )
         ).field_sources == view.field_sources
-
-    runner.run(exercise())
-
-
-def test_legacy_tool_patch_replay_uses_actual_old_key_without_inventing_source(
-    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
-) -> None:
-    runner, service, context = travel_setup
-
-    async def exercise() -> None:
-        old_patch = RequestPatch.model_validate({"expected_revision": 0, "set": {"adults": 2}})
-        current = await service.get_request(context)
-        async with transaction(service.database) as db:
-            row = await db.get(TravelRequestRow, context.session_id)
-            assert row
-            row.request_details = None
-            operations.save(
-                db,
-                context.session_id,
-                "update_travel_request",
-                operations.key(old_patch),
-                {"request": legacy_request(current), "changed_fields": ["adults"]},
-            )
-        new_tool_patch = ConversationRequestPatch.model_validate(
-            {"expected_revision": 0, "set": {"adults": 2}}
-        )
-        replay = await service.patch_request(context, new_tool_patch, source="conversation")
-        assert replay.request.revision == 1 and replay.request.adults == 2
-        assert set(replay.field_sources.values()) == {"none"}
 
     runner.run(exercise())
 

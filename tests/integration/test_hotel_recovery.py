@@ -156,7 +156,7 @@ def test_budget_choice_requires_click_and_preserves_quotes(
             context, request.revision
         )
         assert records and isinstance(diagnosis, HotelSearchDiagnostics) and card
-        before = await travel.get_request(context)
+        before = await travel.read_request(context)
         assert before.lodging_budget and before.lodging_budget.amount.upper == Decimal(5000)
         assert diagnosis.applied_upper and diagnosis.applied_upper > Decimal(5000)
         assert card.expires_at == min(r.valid_until for r in records if r.valid_until)
@@ -195,7 +195,7 @@ def test_budget_choice_requires_click_and_preserves_quotes(
             await service.submit(original.user_id, original.session_id, message)
         ).run_id == submitted.run_id
         await asyncio.gather(*tuple(service.tasks.values()))
-        after = await travel.get_request(context)
+        after = await travel.read_request(context)
         assert after.lodging_budget
         assert after.lodging_budget.amount.upper == (
             diagnosis.applied_upper if option == "accept" else Decimal(5000)
@@ -328,7 +328,7 @@ def test_different_segment_tiers_have_distinct_bound_choices(
                 ChoiceSelection(choice_id=second.choice_id, option_id="accept"),
                 2,
             )
-        current = await travel.get_request(context)
+        current = await travel.read_request(context)
         assert current.lodging_budget and current.lodging_budget.amount.upper == Decimal(10000)
 
     runner.run(exercise())
@@ -384,7 +384,7 @@ def test_budget_guard_survives_unrelated_revision_and_keep(
                     ChoiceSelection(choice_id=card.choice_id, option_id="keep"),
                     2,
                 )
-        request = await travel.get_request(context)
+        request = await travel.read_request(context)
         with pytest.raises(ServiceError) as rejected:
             await travel.patch_request(
                 context,

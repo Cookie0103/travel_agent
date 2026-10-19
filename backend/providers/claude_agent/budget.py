@@ -61,7 +61,7 @@ class Budget:
     def check_authorization(self) -> None:
         check_authorization(self.currency)
 
-    def daily_limit(self, now: datetime) -> Decimal | None:
+    def daily_limit(self) -> Decimal | None:
         """None仅表示获准日期无日限；零配置仍在预占前拒绝。"""
         if self.currency == "CNY":
             if not current().daily_cny_cap:  # HUMAN档：以供应商账户余额为准，不设每日上限
@@ -132,7 +132,7 @@ class Budget:
             Decimal(0),
         )
         capped = self.currency != "CNY" or current().daily_cny_cap
-        daily_limit = self.daily_limit(now) if self.daily.is_finite() else None
+        daily_limit = self.daily_limit() if self.daily.is_finite() else None
         numbers = {  # 仅数字/日期，供TRACE判断是哪个额度触发
             "day": day,
             "daily_spent": str(daily),

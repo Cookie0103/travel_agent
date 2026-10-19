@@ -266,7 +266,7 @@ def test_multi_city_google_place_keeps_query_city_across_fresh_run(
                 }
             ),
         )
-        original = await travel.get_request(context)
+        original = await travel.read_request(context)
         async with transaction(travel.database) as db:
             await import_catalog(db, load_snapshot())
         async with httpx.AsyncClient(
@@ -298,7 +298,7 @@ def test_multi_city_google_place_keeps_query_city_across_fresh_run(
             assert resolved[0].value["city"] == "大阪"
             assert resolved[0].value["name"] == "合成大阪景点"
             assert resolved[0].conditions == {"city": "京都"}
-            assert await travel.get_request(context) == original
+            assert await travel.read_request(context) == original
             assert usage.used == {"places": 2}
 
     runner.run(exercise())

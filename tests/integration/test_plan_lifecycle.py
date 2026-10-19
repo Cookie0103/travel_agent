@@ -25,6 +25,7 @@ from backend.services.sessions import DemoLogin, SessionService
 from backend.services.travel import TravelService
 from backend.tools.travel import TravelToolExecutor
 from tests.integration.test_plans import initial_draft, patch_stage
+from tests.runner import SELECTOR_OPTIONS, selector_runner
 
 pytestmark = pytest.mark.integration
 
@@ -33,7 +34,7 @@ Env = tuple[asyncio.Runner, TravelService, RunContext, TestClient, dict[str, str
 
 @pytest.fixture
 def env(postgres_url: URL) -> Iterator[Env]:
-    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+    with selector_runner() as runner:
         sessions = SessionService(postgres_url, demo_enabled=True)
         identity = runner.run(sessions.create_demo_user(DemoLogin()))
         session = runner.run(sessions.new_session(identity.user_id))
@@ -59,7 +60,7 @@ def env(postgres_url: URL) -> Iterator[Env]:
             )
         )
         app = create_app(SessionService(postgres_url, demo_enabled=True))
-        with TestClient(app, backend_options={"loop_factory": asyncio.SelectorEventLoop}) as client:
+        with TestClient(app, backend_options=SELECTOR_OPTIONS) as client:
             yield runner, travel, context, client, {"Authorization": "Bearer " + identity.token}
         runner.run(sessions.close())
 

@@ -48,13 +48,6 @@ def normalize_room_choices(values: tuple[str, ...]) -> tuple[str, ...]:
     return tuple(normalized) if len(normalized) <= 20 else values
 
 
-def missing_room_choices(values: tuple[str, ...]) -> tuple[str, ...]:
-    recognized = recognized_room_choices(values)
-    return tuple(
-        key for key, choices in ROOM_CHOICES.items() if len(choices.intersection(recognized)) != 1
-    )
-
-
 def conflicting_room_choices(values: tuple[str, ...]) -> tuple[str, ...]:
     """同一组出现多个互斥规范值才算冲突；没说（0个）按无要求处理，不追问。"""
     recognized = recognized_room_choices(values)

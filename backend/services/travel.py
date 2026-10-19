@@ -132,11 +132,6 @@ class TravelService:
         if self.live:
             await self.live.close()
 
-    async def get_request(self, context: RunContext) -> TravelRequest:
-        """写路径用：锁会话行并按需建行；纯读请用read_request。"""
-        async with transaction(self.database) as db:
-            return request_from_row(await travel.owned_request(db, context))
-
     async def read_request(self, context: RunContext) -> TravelRequest:
         """纯读：不锁会话、不建行，不与写入互相等待；读后不跟写的调用点用它。"""
         async with transaction(self.database) as db:
@@ -166,7 +161,7 @@ class TravelService:
             preferences = await preferences_from_row(db, user)
             assert user is not None
             history = await runs.recent_completed(db, context, after=MemoryService.cutoff(user))
-            rows = await travel.recent_evidence(db, context, current.revision)
+            rows = await travel.recent_evidence(db, context)
             evidence = [travel.evidence_from_row(row) for row in rows]
             valid = [record for record in evidence if record.applicable(current, observed_at)]
             plan = await plans.for_session(db, context)
@@ -445,22 +440,6 @@ class TravelService:
         cached = await operations.result(
             db, context.session_id, "update_travel_request", operation_key
         )
-        if (
-            cached is None
-            and "field_sources" not in (row.request_details or {})
-            and not (isinstance(patch, ConversationRequestPatch) and patch.remove_hard_constraints)
-        ):
-            # 只兼容来源机制出现前的旧回执，不从旧操作推测来源。
-            legacy_patch = RequestPatch.model_validate(
-                {
-                    "expected_revision": patch.expected_revision,
-                    "set": patch.set_fields.model_dump(exclude_unset=True),
-                    "clear": patch.clear,
-                }
-            )
-            cached = await operations.result(
-                db, context.session_id, "update_travel_request", operations.key(legacy_patch)
-            )
         if cached is not None:
             saved = TypeAdapter(RequestUpdate).validate_python(cached)
             require_revision(current, saved.request.revision)

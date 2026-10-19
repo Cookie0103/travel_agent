@@ -1,6 +1,5 @@
 """P-R2：所有GET路由在另一连接持有会话行锁时仍能返回，且不顺手创建travel_requests行。"""
 
-import asyncio
 from collections.abc import Iterator
 from dataclasses import dataclass
 from uuid import UUID, uuid4
@@ -24,6 +23,7 @@ from tests.integration.test_bookings import select_offer
 from tests.integration.test_input_limits import _finishes_while_locked
 from tests.integration.test_plans import initial_draft
 from tests.integration.test_sessions import login
+from tests.runner import SELECTOR_OPTIONS
 
 pytestmark = pytest.mark.integration
 
@@ -55,7 +55,7 @@ def world(postgres_url: URL, unrepaired: None) -> Iterator[World]:
     travel = TravelService(sessions.database)
     bookings = BookingService(travel, SupplierService(sessions.database))
     app = create_app(sessions, booking_service=bookings)
-    with TestClient(app, backend_options={"loop_factory": asyncio.SelectorEventLoop}) as client:
+    with TestClient(app, backend_options=SELECTOR_OPTIONS) as client:
         assert client.portal is not None
         portal = client.portal
         headers = login(client)

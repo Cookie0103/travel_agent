@@ -57,7 +57,7 @@ def test_fixture_explicit_pace_change_removes_only_known_hard_pace_in_pg(
             turn, "改成特种兵", None, events.append, asyncio.Event()
         )
         assert outcome.code is None
-        current = await TravelService(travel.database).get_request(turn)
+        current = await TravelService(travel.database).read_request(turn)
         assert pace_of(current) == "特种兵" and current.hard_constraints == ("不能登山",)
         assert current.revision == 3 and "已按对话更新" in outcome.text
 
@@ -98,7 +98,7 @@ def test_nightly_budget_question_and_unlimited_short_answer_survive_pg_restore(
             turn, "不限", None, events.append, asyncio.Event()
         )
         assert outcome.code is None and "不限" in outcome.text
-        restored = await TravelService(travel.database).get_request(turn)
+        restored = await TravelService(travel.database).read_request(turn)
         assert restored.lodging_budget_unlimited and restored.lodging_budget is None
         await finish(travel, turn)
         next_turn = await create_run(travel, context, "继续")
@@ -169,7 +169,7 @@ def test_original_goal_and_open_question_survive_three_rounds_without_supplier_t
             answer,
             "update_travel_request",
             {
-                "expected_revision": (await travel.get_request(answer)).revision,
+                "expected_revision": (await travel.read_request(answer)).revision,
                 "set": {"lodging_budget_unlimited": True},
                 "explicit_fields": ["lodging_budget_unlimited"],
             },
@@ -181,8 +181,8 @@ def test_original_goal_and_open_question_survive_three_rounds_without_supplier_t
             "hotel_comparison",
             "itinerary",
         ]
-        assert (await travel.get_request(answer)).lodging_budget is None
-        assert (await travel.get_request(answer)).child_ages == ()
+        assert (await travel.read_request(answer)).lodging_budget is None
+        assert (await travel.read_request(answer)).child_ages == ()
 
     runner.run(exercise())
 
@@ -202,7 +202,7 @@ def test_known_or_optional_fields_cannot_be_recorded_as_required_question(
             {"expected_revision": 1, "goals": ["hotel_comparison"], "awaiting_field": field},
         )
         assert result.code == "validation"
-        assert (await travel.get_request(turn)).revision == 1
+        assert (await travel.read_request(turn)).revision == 1
 
     runner.run(exercise())
 
@@ -241,7 +241,7 @@ def test_successful_hotel_presentation_clears_task_but_sdk_finish_does_not(
         assert shown.code is None
         state = (await travel.business_context(turn))["conversation"]
         assert isinstance(state, dict) and state["pending_tasks"] == []
-        assert (await travel.get_request(turn)).revision == 1
+        assert (await travel.read_request(turn)).revision == 1
         await finish(travel, turn)
 
     runner.run(exercise())
@@ -355,7 +355,7 @@ def test_cancel_and_inactive_run_cannot_overwrite_new_task(
         state = (await travel.business_context(current))["conversation"]
         assert isinstance(state, dict) and state["pending_tasks"] == ["itinerary"]
         assert state["goal_prompt"] == "合成新任务"
-        assert (await travel.get_request(current)).revision == 1
+        assert (await travel.read_request(current)).revision == 1
 
     runner.run(exercise())
 
@@ -420,7 +420,7 @@ def test_conversation_bed_only_update_preserves_other_room_groups_and_manual_sou
             {"expected_revision": 2, "set": {"hard_constraints": ["床型：都可以"]}},
         )
         assert skipped.data["skipped_fields"] == ("hard_constraints",)
-        assert (await travel.get_request(turn)).revision == 2
+        assert (await travel.read_request(turn)).revision == 2
         changed = await executor.execute(
             turn,
             "update_travel_request",
@@ -431,7 +431,7 @@ def test_conversation_bed_only_update_preserves_other_room_groups_and_manual_sou
             },
         )
         assert changed.code is None
-        assert set((await travel.get_request(turn)).hard_constraints) == {
+        assert set((await travel.read_request(turn)).hard_constraints) == {
             "住宿：独立房间",
             "房型：禁烟",
             "床型：无要求",
@@ -448,7 +448,7 @@ def test_conversation_bed_only_update_preserves_other_room_groups_and_manual_sou
             },
         )
         assert equivalent.data["changed_fields"] == ()
-        assert (await travel.get_request(turn)).revision == 3
+        assert (await travel.read_request(turn)).revision == 3
 
     runner.run(exercise())
 
@@ -564,7 +564,7 @@ def test_explicit_non_room_removal_keeps_other_hard_constraints(
             },
         )
         assert result.code is None
-        current = await travel.get_request(turn)
+        current = await travel.read_request(turn)
         assert "不坐飞机" not in current.hard_constraints
         assert "返程当天16:00前到机场" in current.hard_constraints
         assert "房型：禁烟" in current.hard_constraints
@@ -613,47 +613,6 @@ def test_new_same_kind_goal_after_privacy_tombstone_uses_new_user_prompt(
     runner.run(exercise())
 
 
-def test_nonempty_constraint_removal_cannot_replay_legacy_no_removal_receipt(
-    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
-) -> None:
-    from backend.domain.travel_request import legacy_request
-    from backend.persistence import operations
-    from backend.persistence import travel as repository
-
-    runner, travel, context = travel_setup
-
-    async def exercise() -> None:
-        old = RequestPatch.model_validate({"expected_revision": 1, "set": {"hard_constraints": []}})
-        before = await travel.get_request(context)
-        async with transaction(travel.database) as db:
-            row = await repository.owned_request(db, context)
-            assert row is not None
-            row.request_details = {"lodging_budget": None}
-            operations.save(
-                db,
-                context.session_id,
-                "update_travel_request",
-                operations.key(old),
-                {"request": legacy_request(before), "changed_fields": [], "skipped_fields": []},
-            )
-        turn = await create_run(travel, context, "合成明确删除床型要求")
-        result = await TravelToolExecutor(travel).execute(
-            turn,
-            "update_travel_request",
-            {
-                "expected_revision": 1,
-                "set": {"hard_constraints": []},
-                "remove_hard_constraints": ["床型：无要求"],
-                "explicit_fields": ["hard_constraints"],
-            },
-        )
-        assert result.code is None
-        assert "床型：无要求" not in (await travel.get_request(turn)).hard_constraints
-        assert (await travel.get_request(turn)).revision == 2
-
-    runner.run(exercise())
-
-
 def test_typed_room_choices_use_same_storage_and_keep_other_user_facts(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
@@ -671,7 +630,7 @@ def test_typed_room_choices_use_same_storage_and_keep_other_user_facts(
             },
         )
         assert result.code is None
-        current = await travel.get_request(turn)
+        current = await travel.read_request(turn)
         assert set(current.hard_constraints) == {"住宿：独立房间", "房型：禁烟", "床型：无要求"}
         assert result.data["room_preferences"] == {
             "lodging": "private",
@@ -689,7 +648,7 @@ def test_typed_room_choices_use_same_storage_and_keep_other_user_facts(
         )
         assert invalid.code == "validation"
         assert invalid.suggestion and "explicit_fields" in invalid.suggestion
-        assert (await travel.get_request(turn)).revision == 2
+        assert (await travel.read_request(turn)).revision == 2
 
     runner.run(exercise())
 
@@ -728,7 +687,7 @@ def test_current_draft_recovers_and_completes_only_its_pending_task(
         tasks = (await travel.business_context(resumed))["conversation"]
         assert isinstance(tasks, dict) and tasks["pending_tasks"] == ["hotel_comparison"]
         assert await version_count(travel, draft.plan_id) == 0
-        assert (await travel.get_request(resumed)).revision == draft.request_revision
+        assert (await travel.read_request(resumed)).revision == draft.request_revision
 
     runner.run(exercise())
 
@@ -878,7 +837,7 @@ def test_live_hotel_location_question_survives_restart_and_queries_selected_loca
                 },
             )
             assert updated.code is None and "住宿查询地点" in str(updated.data)
-            request = await restored.get_request(answer)
+            request = await restored.read_request(answer)
             assert request.city == "冲绳" and request.hotel_search_location == "那霸"
             assert request.revision == revision + 1 and request.lodging_budget is None
             assert (await restored.get_request_view(answer)).field_sources[
@@ -941,7 +900,7 @@ def test_hotel_location_source_cas_and_legacy_storage_remain_safe(
             {"expected_revision": 2, "set": {"hotel_search_location": "北谷"}},
         )
         assert skipped.code is None and skipped.data["skipped_fields"] == ("hotel_search_location",)
-        assert (await travel.get_request(context)) == saved.request
+        assert (await travel.read_request(context)) == saved.request
         explicit = await executor.execute(
             turn,
             "update_travel_request",
@@ -952,7 +911,7 @@ def test_hotel_location_source_cas_and_legacy_storage_remain_safe(
             },
         )
         assert explicit.code is None
-        current = await TravelService(travel.database).get_request(context)
+        current = await TravelService(travel.database).read_request(context)
         assert (
             current.city == "冲绳"
             and current.hotel_search_location == "北谷"
@@ -978,7 +937,7 @@ def test_hotel_location_source_cas_and_legacy_storage_remain_safe(
             # 旧writer不更新details，不能把冲绳的住宿地点带入札幌。
             row.conditions = {**row.conditions, "city": "札幌"}
             row.revision = 4
-        restored = await TravelService(travel.database).get_request(context)
+        restored = await TravelService(travel.database).read_request(context)
         assert restored.city == "札幌" and restored.hotel_search_location is None
         assert (await travel.get_request_view(context)).field_sources[
             "hotel_search_location"
@@ -1019,7 +978,7 @@ def test_old_writer_revision_cannot_resurrect_untrusted_hotel_location(
                 assert row is not None
                 row.conditions = {**row.conditions, "city": "冲绳"}
                 row.revision = 4
-        restored = await TravelService(travel.database).get_request(context)
+        restored = await TravelService(travel.database).read_request(context)
         assert restored.city == "冲绳" and restored.hotel_search_location is None
         # 来源-only写入会刷新source_revision，但不能重新认证旧住宿地点。
         metadata = await travel.patch_request(
@@ -1030,7 +989,7 @@ def test_old_writer_revision_cannot_resurrect_untrusted_hotel_location(
         )
         assert (
             not metadata.changed_fields
-            and (await travel.get_request(context)).hotel_search_location is None
+            and (await travel.read_request(context)).hotel_search_location is None
         )
         async with transaction(travel.database) as db:
             row = await db.get(TravelRequestRow, context.session_id)

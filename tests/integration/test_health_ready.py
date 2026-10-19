@@ -1,6 +1,5 @@
 """/health 只证明进程与连接存活；/health/ready 还要求迁移已到脚本 head。"""
 
-import asyncio
 import re
 from collections.abc import Iterator
 from uuid import uuid4
@@ -17,6 +16,7 @@ from backend.api.app import create_app
 from backend.persistence.database import ROOT, configuration, database_url
 from backend.persistence.temporary import isolated_url
 from backend.services.sessions import SessionService
+from tests.runner import SELECTOR_OPTIONS
 
 pytestmark = pytest.mark.integration
 
@@ -56,9 +56,7 @@ def migrate(url: URL, revision: str) -> None:
 
 
 def client_for(url: URL) -> TestClient:
-    return TestClient(
-        create_app(SessionService(url)), backend_options={"loop_factory": asyncio.SelectorEventLoop}
-    )
+    return TestClient(create_app(SessionService(url)), backend_options=SELECTOR_OPTIONS)
 
 
 def test_unmigrated_database_is_alive_but_not_ready(blank_url: URL) -> None:

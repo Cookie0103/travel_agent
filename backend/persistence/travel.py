@@ -166,9 +166,7 @@ async def hotel_offer_elsewhere(db: AsyncSession, ids: Sequence[str]) -> bool:
     return found is not None
 
 
-async def recent_evidence(
-    db: AsyncSession, context: RunContext, revision: int
-) -> list[EvidenceRow]:
+async def recent_evidence(db: AsyncSession, context: RunContext) -> list[EvidenceRow]:
     rows = await db.scalars(
         select(EvidenceRow)
         .where(

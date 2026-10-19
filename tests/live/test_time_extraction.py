@@ -1,6 +1,5 @@
 """显式授权的真实模型语义回归；默认不调用，不查询旅行供应商。"""
 
-import asyncio
 import json
 import os
 import re
@@ -17,6 +16,7 @@ from backend.providers.claude_agent.live import run_live
 from backend.services.sessions import DemoLogin, SessionService
 from backend.services.travel import TravelService
 from scripts.dev import ROOT
+from tests.runner import selector_runner
 
 pytestmark = pytest.mark.live
 
@@ -72,7 +72,7 @@ def test_flight_times_do_not_replace_daily_start(
         )
         return sessions, travel, context
 
-    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+    with selector_runner() as runner:
         sessions, travel, context = runner.run(prepare())
         try:
             marker.parent.mkdir(exist_ok=True)
@@ -88,7 +88,7 @@ def test_flight_times_do_not_replace_daily_start(
                 max_attempts=2,
                 real_data=False,
             )
-            request = runner.run(travel.get_request(context))
+            request = runner.run(travel.read_request(context))
             events = report.get("events", [])
             tools = [
                 e.get("tool_name")

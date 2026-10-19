@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import shutil
 from pathlib import Path
 from uuid import UUID
 
@@ -12,6 +11,7 @@ from backend.domain.execution import RunContext
 from backend.mcp.bridge import sdk_tool_name
 from backend.services.plans import PlanService
 from backend.services.travel import TravelService
+from tests.cli import requires_claude_cli
 from tests.integration.sdk_helper import run_database_worker
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_plans import version_count
@@ -21,7 +21,7 @@ from tests.test_sdk_cli_offline import scripted_response
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要本机Claude CLI，不访问真实模型")
+@requires_claude_cli
 def test_sdk_stages_and_presents_but_cannot_save_plan(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], tmp_path: Path
 ) -> None:

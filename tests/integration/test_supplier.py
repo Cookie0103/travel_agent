@@ -24,6 +24,7 @@ from mock_supplier.app import create_app
 from mock_supplier.service import SupplierService
 from tests.integration.http_helper import serve_http
 from tests.integration.test_travel import travel_setup as travel_setup
+from tests.runner import SELECTOR_OPTIONS
 
 pytestmark = pytest.mark.integration
 
@@ -34,7 +35,7 @@ def test_supplier_concurrent_hold_order_and_restart_return_same_records(
     runner, travel, context = travel_setup
 
     async def exercise() -> None:
-        offer = quote(load_rates()[0][0], await travel.get_request(context), datetime.now(UTC))
+        offer = quote(load_rates()[0][0], await travel.read_request(context), datetime.now(UTC))
         assert offer is not None
         body = HoldInput(client_ref=uuid4(), offer=offer)
         service = SupplierService(travel.database)
@@ -74,7 +75,7 @@ def test_supplier_rejects_incomplete_forged_expired_quote_and_expired_hold(
 
     async def exercise() -> None:
         now = datetime.now(UTC)
-        offer = quote(load_rates()[0][0], await travel.get_request(context), now)
+        offer = quote(load_rates()[0][0], await travel.read_request(context), now)
         assert offer is not None
         service = SupplierService(travel.database)
         for changes in (
@@ -127,9 +128,8 @@ def test_supplier_http_faults_and_lost_response_leave_one_persisted_order(
     )
     assert offer is not None
     body = HoldInput(client_ref=uuid4(), offer=offer).model_dump(mode="json")
-    options = {"loop_factory": asyncio.SelectorEventLoop}
     with TestClient(
-        create_app(Database(postgres_url), faults_enabled=True), backend_options=options
+        create_app(Database(postgres_url), faults_enabled=True), backend_options=SELECTOR_OPTIONS
     ) as client:
         for fault, status in (("rate_limit", 429), ("server_error", 500)):
             response = client.post("/holds", json=body, headers={"X-Mock-Fault": fault})
@@ -152,7 +152,9 @@ def test_supplier_http_faults_and_lost_response_leave_one_persisted_order(
         lookup = client.get("/orders", params={"client_ref": str(hold.client_ref)}).json()
         assert lookup["order"]["status"] == "booked" and not lookup["absence_final"]
         assert client.post("/orders", json=order).json() == lookup["order"]
-    with TestClient(create_app(Database(postgres_url)), backend_options=options) as restarted:
+    with TestClient(
+        create_app(Database(postgres_url)), backend_options=SELECTOR_OPTIONS
+    ) as restarted:
         assert (
             restarted.get("/orders", params={"client_ref": str(hold.client_ref)}).json() == lookup
         )

@@ -2,7 +2,6 @@
 
 import json
 import os
-import shutil
 import sys
 from decimal import Decimal
 from pathlib import Path
@@ -17,6 +16,7 @@ from backend.providers.claude_agent.guard import Guard, serve
 from backend.providers.claude_agent.process import run_process
 from backend.providers.claude_agent.request import TOOL_NAME
 from backend.tools.search import DEFINITIONS
+from tests.cli import requires_claude_cli
 
 
 def scripted_response(
@@ -123,7 +123,7 @@ asyncio.run(run())
 """
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要真实CLI，本机响应不调用模型")
+@requires_claude_cli
 @pytest.mark.parametrize("flavor", ["tool_loop", "truncated_text"])
 def test_real_sdk_terminal_limit_and_output_continuations_remain_failure(
     tmp_path: Path, flavor: str

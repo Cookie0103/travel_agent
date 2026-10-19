@@ -1,6 +1,5 @@
 """V2终态与选择必须在真实PG评测run中，不依赖模型自述。"""
 
-import asyncio
 import json
 from pathlib import Path
 
@@ -11,6 +10,7 @@ from backend.persistence.models import TaskRunRow
 from eval.cases import Case
 from eval.database import database_evaluation
 from eval.run import run_cases
+from tests.runner import selector_runner
 
 pytestmark = pytest.mark.integration
 
@@ -41,5 +41,5 @@ def test_v2_eval_creates_owned_run_and_checks_predeclared_state(
             assert row["checks"]["expected_state"] is True
             assert "process_metrics" in row
 
-    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+    with selector_runner() as runner:
         runner.run(exercise())

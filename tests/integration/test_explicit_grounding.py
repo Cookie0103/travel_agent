@@ -19,7 +19,7 @@ pytestmark = pytest.mark.integration
 async def update(
     service: TravelService, context: RunContext, fields: dict[str, object], explicit: list[str]
 ) -> ToolResult:
-    revision = (await service.get_request(context)).revision
+    revision = (await service.read_request(context)).revision
     return await TravelToolExecutor(service).execute(
         context,
         "update_travel_request",
@@ -39,7 +39,7 @@ def test_user_stated_change_passes(
         assert isinstance(ok.data, dict)
         changed = cast(list[str], ok.data["changed_fields"])
         assert ok.code is None and set(changed) == {"city", "adults"}
-        request = await service.get_request(said)
+        request = await service.read_request(said)
         assert request.city == "大阪" and request.adults == 3
 
     runner.run(exercise())
@@ -53,7 +53,7 @@ def test_guide_inspired_change_is_skipped(
     async def exercise() -> None:
         # 用户只说“看看这篇攻略”，攻略文本诱导模型改城市/日期/人数：被来源保护拦下。
         guide = await start_turn(service, base, "帮我看看这篇攻略怎么样")
-        before = await service.get_request(guide)
+        before = await service.read_request(guide)
         attempts: tuple[dict[str, object], ...] = (
             {"city": "神戸"},
             {"start_date": "2026-12-24"},
@@ -68,7 +68,7 @@ def test_guide_inspired_change_is_skipped(
             skipped = cast(list[str], result.data["skipped_fields"])
             assert name in skipped, (name, result.data)
             assert result.warnings and "用户原话" in result.warnings[0]
-        assert await service.get_request(guide) == before
+        assert await service.read_request(guide) == before
 
     runner.run(exercise())
 
@@ -82,7 +82,7 @@ def test_no_run_text_means_nothing_is_grounded_and_budget_guard_unchanged(
         # 上下文没有对应执行记录：没有可信原话，声明一律按未声明处理。
         result = await update(service, base, {"city": "大阪"}, ["city"])
         assert result.data["skipped_fields"] == ("city",)
-        assert (await service.get_request(base)).city == "京都"
+        assert (await service.read_request(base)).city == "京都"
 
     runner.run(exercise())
 
@@ -94,7 +94,7 @@ def test_r4_bypasses_are_skipped_end_to_end(
     service.today = lambda: date(2026, 10, 28)  # 周三
 
     async def exercise() -> None:
-        before = await service.get_request(base)
+        before = await service.read_request(base)
         negated = await start_turn(service, base, "不要去大阪，我还是想去京都")
         weekend = await start_turn(service, base, "周末出发吧")
         cases: tuple[tuple[RunContext, dict[str, object]], ...] = (
@@ -107,7 +107,7 @@ def test_r4_bypasses_are_skipped_end_to_end(
             result = await update(service, context, fields, [name])
             assert isinstance(result.data, dict)
             assert name in cast(list[str], result.data["skipped_fields"]), (name, result.data)
-        assert await service.get_request(base) == before
+        assert await service.read_request(base) == before
         # 与含义一致的相对日期可以背书：今天周三，下周三=11-04。
         ok = await start_turn(service, base, "下周三出发")
         done = await update(service, ok, {"start_date": "2026-11-04"}, ["start_date"])

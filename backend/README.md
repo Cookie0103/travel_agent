@@ -9,10 +9,17 @@
 | tools | 工具契约、旅行搜索/校验工具、工具执行事件；SDK 与离线演示共用同一入口 |
 | agent | 应用执行入口：会话归属、版本/模型切换、唯一终态；不自写模型循环 |
 | providers/claude_agent | Claude Agent SDK 的隔离 worker、费用守卫（ledger/budget/guard）、HTTP 转发、事件转换 |
-| adapters | 对接外部服务：供应商、地图、天气、Trace 导出；导入时不联网 |
+| adapters | 外部服务客户端（乐天/Google/天气/供应商）、外部 API 配额与重试、脱敏 Trace 导出；导入时不联网 |
 | persistence | 表映射、迁移、查询和事务 |
 | api | HTTP 与 SSE 薄入口，只调 services/agent，不直接读写数据库 |
 | mcp | 把共享工具接成 SDK 进程内 MCP（bridge）；server 为只读 MCP 服务 |
+| server.py | 组合根与 uvicorn 入口 |
+| cli.py | 用户命令行入口（默认离线，`--live` 才走真实模型） |
+| limits.py | 价格与预算设置（读取并校验配置） |
+| profile.py | 执行档位与限额分级（default/relaxed/human） |
+| trace_log.py | Railway 可见的单行 TRACE 元数据日志 |
+
+完整依赖方向见 [backend 模块地图](../docs/execution/layering-debt.md#backend-模块地图2026-10-19)。
 
 ## 核心阅读顺序（约 12 个文件）
 

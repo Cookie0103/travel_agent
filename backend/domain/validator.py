@@ -16,7 +16,7 @@ from backend.domain.itinerary import (
     ValidationCheck,
     ValidationReport,
 )
-from backend.domain.opening_hours import KYOTO, opening_state
+from backend.domain.opening_hours import TOKYO, opening_state
 from backend.domain.plans import stays_of
 from backend.domain.travel_request import (
     TravelRequest,
@@ -34,14 +34,14 @@ def check(subject: str, status: CheckStatus, code: str, message: str) -> Validat
 
 
 def hhmm(value: datetime) -> str:
-    return value.astimezone(KYOTO).strftime("%H:%M")
+    return value.astimezone(TOKYO).strftime("%H:%M")
 
 
 def traced(
     entry: ValidationCheck, proposal: ItineraryProposal, index: int, times: str = ""
 ) -> ValidationCheck:
     """附加只含序号与时刻的TRACE标签：d{第几天}i{当天第几项}（均从1起）。"""
-    dates = [item.start.astimezone(KYOTO).date() for item in proposal.items]
+    dates = [item.start.astimezone(TOKYO).date() for item in proposal.items]
     day = len(dict.fromkeys(dates[: index + 1]))
     position = dates[: index + 1].count(dates[index])
     return entry.tagged(f"{entry.code}:{entry.status}@d{day}i{position}{times}")
@@ -106,7 +106,7 @@ def sightseeing_checks(
         category = place.category.strip().casefold()
         if category not in SIGHTSEEING_CATEGORIES:
             continue
-        day = item.start.astimezone(KYOTO).date()
+        day = item.start.astimezone(TOKYO).date()
         by_day.setdefault(day, []).append(place.place_id)
         by_place.setdefault(place.place_id, []).append((day, place.name))
     limits = {"慢节奏": 3, "标准": 5, "特种兵": 8}
@@ -160,10 +160,10 @@ def sightseeing_checks(
         for index in range(1, len(proposal.items)):
             previous, current = proposal.items[index - 1 : index + 1]
             previous_place, current_place = places[index - 1 : index + 1]
-            day = current.start.astimezone(KYOTO).date()
+            day = current.start.astimezone(TOKYO).date()
             if (
-                previous.start.astimezone(KYOTO).date() == day
-                and previous.end.astimezone(KYOTO).date() == day
+                previous.start.astimezone(TOKYO).date() == day
+                and previous.end.astimezone(TOKYO).date() == day
                 and previous_place is not None
                 and current_place is not None
                 and same_city(previous_place.city, current_place.city)
@@ -222,7 +222,7 @@ def meal_checks(request: TravelRequest, proposal: ItineraryProposal) -> list[Val
     """用餐时间只提示不阻断：早饭前1小时、午饭/晚饭各2小时空档；不查餐厅，首末日放宽。"""
     days: dict[date, list[tuple[datetime, datetime]]] = {}
     for item in proposal.items:
-        start, end = item.start.astimezone(KYOTO), item.end.astimezone(KYOTO)
+        start, end = item.start.astimezone(TOKYO), item.end.astimezone(TOKYO)
         days.setdefault(start.date(), []).append((start, end))
     short: list[str] = []
     for day, spans in days.items():
@@ -230,17 +230,17 @@ def meal_checks(request: TravelRequest, proposal: ItineraryProposal) -> list[Val
             continue
         spans.sort()
         for name, window_start, window_end, hours in MEALS:
-            low, high = (datetime.combine(day, t, KYOTO) for t in (window_start, window_end))
+            low, high = (datetime.combine(day, t, TOKYO) for t in (window_start, window_end))
             need = timedelta(hours=hours)
             if name == "早饭":  # 07:00起算，首项开始前须留1小时
                 missing = spans[0][0] - low < need
             else:
                 touched = any(start < high and end > low for start, end in spans)
                 edges = [
-                    datetime.combine(day, time(6), KYOTO),
+                    datetime.combine(day, time(6), TOKYO),
                     *(p for span in spans for p in span),
                 ]
-                edges.append(datetime.combine(day, time(23), KYOTO))
+                edges.append(datetime.combine(day, time(23), TOKYO))
                 gaps = zip(edges[0::2], edges[1::2], strict=True)
                 missing = touched and not any(
                     g1 - g0 >= need and g0 < high and g1 > low for g0, g1 in gaps
@@ -265,7 +265,7 @@ def visit_checks(
 ) -> list[ValidationCheck]:
     item = proposal.items[index]
     subject = f"item:{index}"
-    start, end = item.start.astimezone(KYOTO), item.end.astimezone(KYOTO)
+    start, end = item.start.astimezone(TOKYO), item.end.astimezone(TOKYO)
     checks: list[ValidationCheck] = []
     if end <= start:
         return [check(subject, "conflict", "visit_duration", "停留结束必须晚于开始")]
@@ -357,7 +357,7 @@ def visit_checks(
     )
     if (
         request.departure_time
-        and (index == 0 or proposal.items[index - 1].end.astimezone(KYOTO).date() < start.date())
+        and (index == 0 or proposal.items[index - 1].end.astimezone(TOKYO).date() < start.date())
         and start.timetz().replace(tzinfo=None) < request.departure_time
     ):
         checks.append(
@@ -377,7 +377,7 @@ def route_checks(
     previous = proposal.items[index - 1] if index else None
     if (
         previous is None
-        or previous.end.astimezone(KYOTO).date() < item.start.astimezone(KYOTO).date()
+        or previous.end.astimezone(TOKYO).date() < item.start.astimezone(TOKYO).date()
     ):
         return (
             [

@@ -1,6 +1,5 @@
 """真实 PostgreSQL + ASGI：身份隔离、失效令牌、数据库失败和事务落盘。"""
 
-import asyncio
 import hashlib
 import socket
 from collections.abc import Iterator
@@ -13,6 +12,7 @@ from sqlalchemy import URL, create_engine, select, update
 from backend.api.app import create_app
 from backend.persistence.models import SessionRow, UserRow
 from backend.services.sessions import SessionService
+from tests.runner import SELECTOR_OPTIONS
 
 pytestmark = pytest.mark.integration
 
@@ -20,7 +20,7 @@ pytestmark = pytest.mark.integration
 @pytest.fixture
 def client(postgres_url: URL) -> Iterator[TestClient]:
     app = create_app(SessionService(postgres_url, demo_enabled=True))
-    with TestClient(app, backend_options={"loop_factory": asyncio.SelectorEventLoop}) as client:
+    with TestClient(app, backend_options=SELECTOR_OPTIONS) as client:
         yield client
 
 
@@ -73,7 +73,7 @@ def test_demo_login_cannot_impersonate_existing_user(client: TestClient, postgre
     response = client.post("/demo/login", json={"user_id": identity["user_id"]})
     assert response.status_code == 422
     app = create_app(SessionService(postgres_url, demo_enabled=False))
-    with TestClient(app, backend_options={"loop_factory": asyncio.SelectorEventLoop}) as locked:
+    with TestClient(app, backend_options=SELECTOR_OPTIONS) as locked:
         assert locked.post("/demo/login", json={}).status_code == 403
 
 
@@ -81,7 +81,7 @@ def test_database_outage_is_safe_unavailable(postgres_url: URL) -> None:
     with socket.socket() as closed_port:
         closed_port.bind(("127.0.0.1", 0))
         app = create_app(SessionService(postgres_url.set(port=closed_port.getsockname()[1])))
-        with TestClient(app, backend_options={"loop_factory": asyncio.SelectorEventLoop}) as client:
+        with TestClient(app, backend_options=SELECTOR_OPTIONS) as client:
             response = client.get("/health")
     assert response.status_code == 503
     assert response.json() == {"code": "unavailable", "message": "数据库暂不可用"}
@@ -92,7 +92,7 @@ def test_session_survives_new_application_instance(client: TestClient, postgres_
     headers = login(client)
     session_id = str(client.post("/sessions", headers=headers).json()["session_id"])
     app = create_app(SessionService(postgres_url))
-    with TestClient(app, backend_options={"loop_factory": asyncio.SelectorEventLoop}) as restarted:
+    with TestClient(app, backend_options=SELECTOR_OPTIONS) as restarted:
         assert restarted.get("/sessions/" + session_id, headers=headers).status_code == 200
     engine = create_engine(postgres_url, hide_parameters=True)
     try:

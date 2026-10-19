@@ -1,6 +1,5 @@
 """F4：合成三城资料经真实选择/校验/暂存生成全日期草稿，不宣称模型效果。"""
 
-import asyncio
 from datetime import date, datetime, timedelta
 from uuid import UUID, uuid4
 from zoneinfo import ZoneInfo
@@ -22,6 +21,7 @@ from backend.tools.travel import TravelToolExecutor
 from eval.cases import Case
 from eval.database import database_evaluation
 from tests.integration.test_runs import WaitingRuntime
+from tests.runner import selector_runner
 
 pytestmark = pytest.mark.integration
 
@@ -61,7 +61,7 @@ def test_three_city_synthetic_inventory_supports_a_full_date_draft(postgres_url:
                 },
             )
             context = await business.prepare(case)
-            request = await business.travel.get_request(context)
+            request = await business.travel.read_request(context)
             executor = TravelToolExecutor(business.travel)
             place_ids: dict[str, tuple[str, ...]] = {}
             stays = []
@@ -163,6 +163,6 @@ def test_three_city_synthetic_inventory_supports_a_full_date_draft(postgres_url:
 
     with (
         temporary_database(postgres_url, "eval") as url,
-        asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner,
+        selector_runner() as runner,
     ):
         runner.run(exercise(url))

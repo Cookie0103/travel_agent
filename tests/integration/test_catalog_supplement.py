@@ -3,7 +3,6 @@
 import asyncio
 import hashlib
 import json
-import shutil
 from collections.abc import Iterator
 from functools import partial
 from pathlib import Path
@@ -25,6 +24,7 @@ from eval.database import DATA_VERSION, DatabaseEvaluation, database_evaluation,
 from eval.graders import Observation, grade
 from eval.run import ROOT, run_cases
 from eval.suites import load_suite
+from tests.cli import requires_claude_cli
 from tests.integration.sdk_helper import run_database_worker
 from tests.test_catalog_supplement import SUPPLEMENT
 from tests.test_sdk_cli_offline import scripted_response
@@ -112,7 +112,7 @@ def test_selected_catalog_mismatch_keeps_existing_data(
     runner.run(exercise())
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要本机Claude CLI，不访问真实模型")
+@requires_claude_cli
 def test_actual_sdk_matches_original_two_search_tool_contract_on_curated_sources(
     curated_business: tuple[asyncio.Runner, DatabaseEvaluation], tmp_path: Path
 ) -> None:

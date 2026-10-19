@@ -50,7 +50,6 @@ class Price:
 
     input_per_million: Decimal
     output_per_million: Decimal
-    attempt_charge: Decimal
     input_limit: int = 1_048_576
     cache_write_multiplier: Decimal = Decimal(1)
     currency: Currency = "CNY"
@@ -64,15 +63,11 @@ class Price:
 def price_for(model: str) -> Price:
     """拒绝未知/映射模型名，避免换模型后仍套用原来的单价。"""
     prices = {
-        "deepseek-flash": Price(Decimal("2"), Decimal("8"), Decimal("0.05")),
-        "deepseek-v4-pro": Price(Decimal("9"), Decimal("27"), Decimal("0.20")),
-        "claude-haiku-4-5-20251001": Price(
-            Decimal("1"), Decimal("5"), Decimal("0.01"), 200_000, Decimal(2), "USD"
-        ),
+        "deepseek-flash": Price(Decimal("2"), Decimal("8")),
+        "deepseek-v4-pro": Price(Decimal("9"), Decimal("27")),
+        "claude-haiku-4-5-20251001": Price(Decimal("1"), Decimal("5"), 200_000, Decimal(2), "USD"),
         # 2026-10-14：高于100k输入的最高档；网关折扣不作为费用保护依据。
-        "claude-haiku-5-5": Price(
-            Decimal("0.50"), Decimal("2.50"), Decimal("0.01"), 1_000_000, Decimal(2), "USD"
-        ),
+        "claude-haiku-5-5": Price(Decimal("0.50"), Decimal("2.50"), 1_000_000, Decimal(2), "USD"),
     }
     if model not in prices:
         raise ProbeError("validation", "DEEPSEEK_MODEL/ANTHROPIC_MODEL缺失或未配置对应计价规则")

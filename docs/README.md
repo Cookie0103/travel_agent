@@ -1,10 +1,10 @@
 # 文档入口：按用途找
 
-三百多个文件按“用途”分目录。**先看下面“现在在哪”，再用“我想知道…”表跳转**；历史材料在 [archive/](archive/README.md)，不是现状。代码目录说明见[项目首页](../README.md)，模块依赖见 [ARCHITECTURE](../ARCHITECTURE.md)。
+370 多个文件按“用途”分目录。**先看下面“现在在哪”，再用“我想知道…”表跳转**；历史材料在 [archive/](archive/README.md)，不是现状。代码目录说明见[项目首页](../README.md)，模块依赖见 [ARCHITECTURE](../ARCHITECTURE.md)。
 
 ## 现在在哪、怎么恢复
 
-1. **最新批次**：[2026-10-18 完整性加固](plans/2026-10-18-completeness-hardening.md)（审计 + 修复 + 文档整理，分支 `batch/2026-10-15/latency-optimization`）。上一批 [10-15 提速与通用表单](plans/2026-10-15-speed-repair-and-form.md)、基座批次 [10-13 交互、记忆与评测](plans/2026-10-13-interaction-memory-eval.md)（[AGENTS.md](../AGENTS.md) 的稳定入口）。全部批次见[批次索引](plans/README.md#批次索引)。
+1. **最新批次**：[2026-10-19 加固收尾与真模型验证](plans/2026-10-19-session-log.md)（分支 `batch/2026-10-19-architecture-hardening`）。上一批 [10-18 完整性加固](plans/2026-10-18-completeness-hardening.md)、[10-15 提速与通用表单](plans/2026-10-15-speed-repair-and-form.md)、基座批次 [10-13 交互、记忆与评测](plans/2026-10-13-interaction-memory-eval.md)（[AGENTS.md](../AGENTS.md) 的稳定入口）。全部批次见[批次索引](plans/README.md#批次索引)。
 2. 批次计划是**唯一实时进度**：任务表（状态+证据）、每日进展、问题解决记录（P-条目）。别处只链接，不复制状态。
 3. 恢复步骤：`git status` → 读最新批次的“每日进展”和未完成任务 → [工作流](execution/workflow.md)、[工程标准](execution/standards.md) → 按任务读 [design/](design/README.md) 与相关 [ADR](adr/README.md)。
 4. 记录规则（什么时候写什么、P-条目与案例模板）：[plans/README](plans/README.md)，所有执行者共用，不另立。

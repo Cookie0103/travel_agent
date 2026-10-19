@@ -22,6 +22,7 @@ from backend.persistence.models import EvidenceRow, TravelRequestRow
 from backend.services.common import ServiceError, transaction
 from backend.services.sessions import DemoLogin, SessionService
 from backend.services.travel import TravelService
+from tests.runner import selector_runner
 
 pytestmark = pytest.mark.integration
 
@@ -33,7 +34,7 @@ def test_multi_city_sidecar_round_trip_and_segment_only_invalidation(
     runner, service, context = travel_setup
 
     async def exercise() -> None:
-        request = await service.get_request(context)
+        request = await service.read_request(context)
         records = [evidence(request, kind) for kind in ("hotel_offer", "route", "place")]
         await service.record_evidence(context, records)
         segments = [
@@ -49,7 +50,7 @@ def test_multi_city_sidecar_round_trip_and_segment_only_invalidation(
                 }
             ),
         )
-        restored = await service.get_request(context)
+        restored = await service.read_request(context)
         assert restored == result.request and restored.revision == 2
         assert restored.model_dump(mode="json")["segments"] == segments
         assert restored.lodging_budget_unlimited
@@ -74,7 +75,7 @@ def test_multi_city_sidecar_round_trip_and_segment_only_invalidation(
                 RequestPatch.model_validate({"expected_revision": 2, "set": {"city": "大阪"}}),
             )
         assert invalid.value.reason == "request_merge_invalid"
-        assert await service.get_request(context) == restored
+        assert await service.read_request(context) == restored
         async with transaction(service.database) as db:
             row = await db.get(TravelRequestRow, context.session_id)
             assert row is not None and row.request_details is not None
@@ -89,7 +90,7 @@ def test_multi_city_sidecar_round_trip_and_segment_only_invalidation(
                 "place": False,
             }
         await service.patch_request(context, RequestPatch(expected_revision=2, clear=("segments",)))
-        cleared = await service.get_request(context)
+        cleared = await service.read_request(context)
         assert cleared.segments is None and cleared.revision == 3
         assert cleared.lodging_budget_unlimited
         limited = await service.patch_request(
@@ -99,7 +100,7 @@ def test_multi_city_sidecar_round_trip_and_segment_only_invalidation(
             ),
         )
         assert limited.request.revision == 4 and not limited.request.lodging_budget_unlimited
-        assert await service.get_request(context) == limited.request
+        assert await service.read_request(context) == limited.request
 
     runner.run(exercise())
 
@@ -111,7 +112,7 @@ def test_segment_derivation_cannot_bypass_manual_city_source(
     runner, service, context = travel_setup
 
     async def exercise() -> None:
-        current = await service.get_request(context)
+        current = await service.read_request(context)
         patch = RequestPatch.model_validate(
             {
                 "expected_revision": 1,
@@ -132,14 +133,14 @@ def test_segment_derivation_cannot_bypass_manual_city_source(
         assert (
             explicit.field_sources["city"] == explicit.field_sources["segments"] == "conversation"
         )
-        assert await service.get_request(context) == explicit.request
+        assert await service.read_request(context) == explicit.request
 
     runner.run(exercise())
 
 
 @pytest.fixture
 def travel_setup(postgres_url: URL) -> Iterator[tuple[asyncio.Runner, TravelService, RunContext]]:
-    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+    with selector_runner() as runner:
         sessions = SessionService(postgres_url, demo_enabled=True)
         identity = runner.run(sessions.create_demo_user(DemoLogin()))
         session = runner.run(sessions.new_session(identity.user_id))
@@ -213,7 +214,7 @@ def test_concurrent_updates_only_one_wins(
         )
         errors = [result for result in results if isinstance(result, ServiceError)]
         assert len(errors) == 1 and errors[0].code == "conflict"
-        current = await service.get_request(context)
+        current = await service.read_request(context)
         assert current.revision == 2 and current.adults in {3, 4}
 
     runner.run(exercise())
@@ -226,7 +227,7 @@ def test_changed_dates_invalidate_offers_and_routes_atomically(
     runner, service, context = travel_setup
 
     async def exercise() -> None:
-        request = await service.get_request(context)
+        request = await service.read_request(context)
         records = [evidence(request, kind) for kind in ("hotel_offer", "route", "place")]
         await service.record_evidence(context, records)
         await service.patch_request(
@@ -256,7 +257,7 @@ def test_failure_after_invalidation_rolls_back_request_and_evidence(
     runner, service, context = travel_setup
 
     async def exercise() -> None:
-        current = await service.get_request(context)
+        current = await service.read_request(context)
         record = evidence(current)
         await service.record_evidence(context, [record])
         patch = RequestPatch.model_validate({"expected_revision": 1, "set": {"adults": 3}})
@@ -270,7 +271,7 @@ def test_failure_after_invalidation_rolls_back_request_and_evidence(
                 )
                 await db.flush()
                 raise RuntimeError("injected after SQL writes")
-        assert await service.get_request(context) == current
+        assert await service.read_request(context) == current
         assert await service.resolve_evidence(context, [record.evidence_id]) == (record,)
 
     runner.run(exercise())
@@ -283,7 +284,7 @@ def test_forged_expired_foreign_or_wrong_scope_evidence_is_rejected(
     runner, service, context = travel_setup
 
     async def exercise() -> None:
-        current = await service.get_request(context)
+        current = await service.read_request(context)
         record = evidence(current)
         await service.record_evidence(context, [record])
         for foreign in (

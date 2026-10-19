@@ -2,7 +2,6 @@
 
 import asyncio
 import json
-import shutil
 from pathlib import Path
 from uuid import uuid4
 
@@ -19,6 +18,7 @@ from backend.services.common import transaction
 from backend.services.preferences import PreferenceService
 from backend.services.travel import TravelService
 from data.import_catalog import load_snapshot
+from tests.cli import requires_claude_cli
 from tests.integration.sdk_helper import run_database_worker
 from tests.integration.test_travel import travel_setup as travel_setup
 from tests.test_sdk_cli_offline import scripted_response
@@ -26,7 +26,7 @@ from tests.test_sdk_cli_offline import scripted_response
 pytestmark = pytest.mark.integration
 
 
-@pytest.mark.skipif(not shutil.which("claude"), reason="需要实际CLI，不访问真实模型")
+@requires_claude_cli
 @pytest.mark.parametrize("attack", [False, True], ids=["normal", "injected"])
 def test_article_return_cannot_expand_sdk_permissions_or_write_business_state(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], tmp_path: Path, attack: bool
@@ -46,7 +46,7 @@ def test_article_return_cannot_expand_sdk_permissions_or_write_business_state(
             await import_catalog(db, [article])
 
     async def unchanged() -> None:
-        assert (await travel.get_request(context)).revision == 1
+        assert (await travel.read_request(context)).revision == 1
         assert await PreferenceService(travel.database).get(context.user_id) == Preferences()
         async with transaction(travel.database) as db:
             for model in (PlanRow, BookingRow):

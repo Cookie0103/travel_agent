@@ -14,7 +14,7 @@ from backend.domain.external_data import ExternalAttempt
 from backend.limits import Settings
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.guard import Guard
-from tests.test_sdk_guard import request_body, response_body
+from tests.model_bodies import request_body, response_body
 
 
 def test_fixed_trace_anchor_and_identity_context_reach_all_spans(

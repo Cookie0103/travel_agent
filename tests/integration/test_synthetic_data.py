@@ -1,6 +1,5 @@
 """F3真实PG：假供应商经过实际适配器仍明确synthetic，价格计算不退化。"""
 
-import asyncio
 from decimal import Decimal
 from unittest.mock import patch
 from uuid import UUID
@@ -16,6 +15,7 @@ from backend.services.common import ServiceError
 from backend.tools.travel import TravelToolExecutor
 from eval.cases import Case
 from eval.database import database_evaluation
+from tests.runner import selector_runner
 
 pytestmark = pytest.mark.integration
 
@@ -53,7 +53,7 @@ def test_eval_hotel_result_and_evidence_are_synthetic_without_losing_verified_to
                 },
             )
             context = await business.prepare(case)
-            revision = (await business.travel.get_request(context)).revision
+            revision = (await business.travel.read_request(context)).revision
             result = await TravelToolExecutor(business.travel).execute(
                 context, "search_hotel_offers", {"expected_revision": revision}
             )
@@ -90,6 +90,6 @@ def test_eval_hotel_result_and_evidence_are_synthetic_without_losing_verified_to
 
     with (
         temporary_database(postgres_url, "eval") as url,
-        asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner,
+        selector_runner() as runner,
     ):
         runner.run(exercise(url))

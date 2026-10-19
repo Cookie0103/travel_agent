@@ -188,7 +188,7 @@ def test_combined_details_are_saved_once_with_the_message_and_restored(
         groups = {group.key: group for group in card.form.groups}
         assert groups["transport"].selected == ("transit",) and groups["pace"].selected == ()
         assert groups["times"].shown == ("2026-11-10 09:00抵达；2026-11-12 22:00离开",)
-        assert (await travel.get_request(context)).revision == 2
+        assert (await travel.read_request(context)).revision == 2
         async with transaction(travel.database) as db:
             await runs.finish(db, source, RuntimeOutcome(text="请一次确认"))
         message = MessageInput.model_validate(
@@ -219,7 +219,7 @@ def test_combined_details_are_saved_once_with_the_message_and_restored(
         )
         assert first.run_id == replay.run_id
         await asyncio.gather(*tuple(service.tasks.values()))
-        result = await travel.get_request(context)
+        result = await travel.read_request(context)
         assert result.revision == 3 and result.transport == "taxi" and pace_of(result) == "慢节奏"
         expected = (
             "2026-11-10 09:00抵达；2026-11-12 22:00离开"
@@ -294,7 +294,7 @@ def test_invalid_combined_details_do_not_write_a_message_or_change_conditions(
                     {"expected_revision": 2, "set": {"interests": ["甜点"]}}
                 ),
             )
-        before = await travel.get_request(context)
+        before = await travel.read_request(context)
         answers: dict[str, list[str]] = {
             "transport": ["walk"],
             "pace": ["standard"],
@@ -327,7 +327,7 @@ def test_invalid_combined_details_do_not_write_a_message_or_change_conditions(
                     }
                 ),
             )
-        assert await travel.get_request(context) == before
+        assert await travel.read_request(context) == before
         async with transaction(travel.database) as db:
             assert await runs.by_message(db, context.session_id, client_id) is None
         assert not service.tasks
@@ -347,7 +347,7 @@ def test_direct_pace_request_without_itinerary_task_creates_card_without_changin
                 db, original.user_id, original.session_id, uuid4(), "给我旅行节奏选择卡", "offline"
             )
             context = RunContext(original.user_id, original.session_id, row.id)
-        before = await travel.get_request(context)
+        before = await travel.read_request(context)
         result = await TravelToolExecutor(travel).execute(
             context,
             "present_travel_result",
@@ -356,7 +356,7 @@ def test_direct_pace_request_without_itinerary_task_creates_card_without_changin
         assert result.code is None
         options = result.data["options"]
         assert isinstance(options, list) and len(options) == 3
-        assert await travel.get_request(context) == before
+        assert await travel.read_request(context) == before
         snapshot = await travel.business_context(context)
         state = snapshot["conversation"]
         assert isinstance(state, dict) and state["pending_tasks"] == []
@@ -399,7 +399,7 @@ def test_awaiting_transport_automatically_emits_card_and_explicit_presentation_r
             },
         )
         assert repeated.code is None and repeated.data["choice_id"] == data["choice_id"]
-        assert (await travel.get_request(context)).revision == 1
+        assert (await travel.read_request(context)).revision == 1
 
     runner.run(exercise())
 
@@ -444,7 +444,7 @@ def test_choice_submission_preserves_conditions_and_survives_restart(
         )
         assert first.run_id == second.run_id
         await asyncio.gather(*tuple(service.tasks.values()))
-        request = await travel.get_request(context)
+        request = await travel.read_request(context)
         assert pace_of(request) == "慢节奏" and request.revision == 2
         assert "住宿：无要求" in request.hard_constraints
         assert (await travel.get_request_view(context)).field_sources[
@@ -497,7 +497,7 @@ def test_invalid_choice_cannot_modify_request(
                     {"expected_revision": 1, "set": {"interests": ["合成甜点"]}}
                 ),
             )
-        before = await travel.get_request(context)
+        before = await travel.read_request(context)
         service = RunService(travel.database)
         message = MessageInput.model_validate(
             {
@@ -515,7 +515,7 @@ def test_invalid_choice_cannot_modify_request(
                 uuid4() if failure == "owner" else context.user_id, context.session_id, message
             )
         assert rejected.value.status == {"option": 422, "revision": 409, "owner": 404}[failure]
-        assert await travel.get_request(context) == before
+        assert await travel.read_request(context) == before
         assert not service.tasks
         await service.close()
 
@@ -528,7 +528,7 @@ def test_explicit_card_can_change_existing_hard_and_soft_pace(
     runner, travel, original = travel_setup
 
     async def exercise() -> None:
-        request = await travel.get_request(original)
+        request = await travel.read_request(original)
         await travel.patch_request(
             original,
             RequestPatch.model_validate(
@@ -550,7 +550,7 @@ def test_explicit_card_can_change_existing_hard_and_soft_pace(
             context, ConversationStateInput(expected_revision=2, goals=("itinerary",))
         )
         card = await ChoiceService(travel).create(context, "pace", 2)
-        assert pace_of(await travel.get_request(context)) == "标准"
+        assert pace_of(await travel.read_request(context)) == "标准"
         async with transaction(travel.database) as db:
             await runs.finish(db, context, RuntimeOutcome(text="请选择新的节奏"))
         service = RunService(travel.database)
@@ -567,7 +567,7 @@ def test_explicit_card_can_change_existing_hard_and_soft_pace(
             ),
         )
         await asyncio.gather(*tuple(service.tasks.values()))
-        updated = await travel.get_request(original)
+        updated = await travel.read_request(original)
         assert pace_of(updated) == "特种兵"
         assert updated.hard_constraints == (*request.hard_constraints, "节奏：特种兵")
         assert updated.soft_constraints == ("甜点",)
@@ -626,12 +626,12 @@ def test_extra_group_answers_land_only_in_constraint_text_and_replace_on_reask(
         await service.close()
 
     async def exercise() -> None:
-        before = await travel.get_request(original)
+        before = await travel.read_request(original)
         await ask("a", before.revision)
-        first = await travel.get_request(original)
+        first = await travel.read_request(original)
         assert "同行者：带孩子" in first.hard_constraints and first.transport == before.transport
         await ask("b", first.revision)
-        second = await travel.get_request(original)
+        second = await travel.read_request(original)
         assert [t for t in second.hard_constraints if t.startswith("同行者")] == ["同行者：朋友"]
 
     runner.run(exercise())

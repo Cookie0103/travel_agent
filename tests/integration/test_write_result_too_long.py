@@ -50,7 +50,7 @@ def test_committed_state_write_with_oversized_result_reports_success(
         assert result.code is None and "result_too_long" not in result.detail
         assert result.data["request_revision"] == 2 and "padding" not in result.data
         assert "已提交" in result.warnings[-1] and "不要重复" in result.warnings[-1]
-        assert (await travel.get_request(context)).rooms == 2  # 写入确实发生
+        assert (await travel.read_request(context)).rooms == 2  # 写入确实发生
 
     runner.run(exercise())
 

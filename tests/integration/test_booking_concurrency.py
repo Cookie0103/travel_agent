@@ -19,6 +19,7 @@ from backend.services.hotels import HotelService
 from backend.services.sessions import DemoLogin, SessionService
 from backend.services.travel import TravelService
 from mock_supplier.service import SupplierService
+from tests.runner import selector_runner
 
 pytestmark = pytest.mark.integration
 
@@ -60,7 +61,7 @@ class World:
     async def offers(
         self, context: RunContext, arrive: date | None = None, limit: int = 6
     ) -> tuple[tuple[HotelOffer, ...], int]:
-        request = await self.travel.get_request(context)
+        request = await self.travel.read_request(context)
         records = await HotelService(self.travel).search(
             context, request.revision, limit=limit, segment_arrive=arrive
         )
@@ -88,7 +89,7 @@ class World:
 
 @pytest.fixture
 def world(postgres_url: URL) -> Iterator[World]:
-    with asyncio.Runner(loop_factory=asyncio.SelectorEventLoop) as runner:
+    with selector_runner() as runner:
         sessions = SessionService(postgres_url, demo_enabled=True)
         try:
             yield World(runner, sessions)

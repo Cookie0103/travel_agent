@@ -42,7 +42,7 @@ async def click(
                 {
                     "client_message_id": str(uuid4()),
                     "text": "选择记忆",
-                    "expected_revision": (await travel.get_request(context)).revision,
+                    "expected_revision": (await travel.read_request(context)).revision,
                     "selection": {"choice_id": card["choice_id"], "option_id": option},
                 }
             ),

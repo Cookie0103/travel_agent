@@ -28,21 +28,15 @@
 @theme inline {
   --color-primary: var(--primary);
   --color-primary-ink: var(--primary-ink);
-  --color-accent: var(--accent);
   --color-bg: var(--bg);
   --color-bg-subtle: var(--bg-subtle);
   --color-border: var(--border);
   --color-text: var(--text);
   --color-text-muted: var(--text-muted);
-  --color-success: var(--success);
-  --color-warning: var(--warning);
-  --color-error: var(--error);
-  --color-info: var(--info);
   --font-sans:
     system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC",
     "Hiragino Sans", "Noto Sans", "Noto Sans SC", "Microsoft YaHei", sans-serif;
   --text-sm: 14px;
   --text-base: 16px;
   --text-xl: 20px;
-  --text-3xl: 28px;
 }

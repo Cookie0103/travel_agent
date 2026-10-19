@@ -4,11 +4,11 @@ import re
 from collections.abc import Mapping, Sequence
 from datetime import datetime, timedelta
 from decimal import Decimal
-from zoneinfo import ZoneInfo
 
 from pydantic import AwareDatetime, TypeAdapter, ValidationError
 
 from backend.domain.execution import RuntimeEvent
+from backend.domain.opening_hours import TOKYO
 from backend.domain.plans import SavedPlan
 from backend.domain.travel_request import TripSegment
 from eval.claims import claim_consistency
@@ -59,7 +59,7 @@ def saved_items_cover_segments(saved: SavedPlan | None, conditions: Mapping[str,
         for offset in range((segment.depart - segment.arrive).days)
     }
     expected.add(segments[-1].depart)  # 行程包含最后退房当天；与产品日期校验一致。
-    actual = {item.start.astimezone(ZoneInfo("Asia/Tokyo")).date() for item in saved.content.items}
+    actual = {item.start.astimezone(TOKYO).date() for item in saved.content.items}
     return expected <= actual and {
         (stay.check_in, stay.check_out) for stay in saved.content.hotel_stays
     } == {(segment.arrive, segment.depart) for segment in segments}

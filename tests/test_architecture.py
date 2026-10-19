@@ -1,4 +1,4 @@
-"""对临时包运行真实 import-linter：证明三条分层规则会拦截违规调用链。"""
+"""对临时包运行真实 import-linter：抽样证明 pyproject 的 11 条分层契约会拦截违规调用链。"""
 
 from __future__ import annotations
 

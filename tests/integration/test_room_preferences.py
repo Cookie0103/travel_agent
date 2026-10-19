@@ -87,7 +87,7 @@ def test_explicit_room_group_cannot_authorize_ordinary_mention_of_other_manual_g
             turn, prompt, None, events.append, asyncio.Event()
         )
         assert result.code is None
-        assert (await travel.get_request(turn)).hard_constraints == tuple(expected)
+        assert (await travel.read_request(turn)).hard_constraints == tuple(expected)
         assert "手动房型" in result.text
 
     runner.run(exercise())
