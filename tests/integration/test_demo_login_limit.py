@@ -76,6 +76,7 @@ def test_disabled_demo_is_not_counted_and_defaults_are_generous(postgres_url: UR
 def test_environment_configures_and_caps_limits() -> None:
     service = SessionService.from_environment(
         {
+            "POSTGRES_PASSWORD": "unused",  # 只为通过配置校验；CI 没有 .env
             "DEMO_MODE": "true",
             "DEMO_LOGIN_PER_IP": "5",
             "DEMO_LOGIN_GLOBAL": "999999",
@@ -85,7 +86,7 @@ def test_environment_configures_and_caps_limits() -> None:
     assert service.login_ip.limit == 5 and service.login_ip.seconds == 120
     assert service.login_all.limit == 5000  # 上限
     with pytest.raises(ValueError, match="DEMO_LOGIN_PER_IP"):
-        SessionService.from_environment({"DEMO_LOGIN_PER_IP": "0"})
+        SessionService.from_environment({"POSTGRES_PASSWORD": "unused", "DEMO_LOGIN_PER_IP": "0"})
 
 
 def test_globally_rejected_requests_leave_no_per_ip_state(
