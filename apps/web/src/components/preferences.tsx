@@ -181,7 +181,7 @@ export function PreferencePanel({
       setFacts(rows);
       setProfile(summary);
       onChanged();
-      setStatus("这条偏好已删除。");
+      setStatus("这条偏好已删除；聊天记录仍保留，只是不再用于推荐。");
     } catch (error) {
       if (generation.current === started) onError(error);
     } finally {
