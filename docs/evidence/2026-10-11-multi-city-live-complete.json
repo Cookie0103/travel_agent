@@ -1,0 +1,178 @@
+{
+  "session_id": "61c9c7a3-8ab2-4e08-8c6d-d848360a6e7d",
+  "formal_version": 2,
+  "request_revision": 3,
+  "global_city": "大阪",
+  "days": {
+    "2026-11-03": 2,
+    "2026-11-04": 3,
+    "2026-11-05": 1,
+    "2026-11-06": 2,
+    "2026-11-07": 2
+  },
+  "cities_by_day": {
+    "2026-11-03": [
+      "大阪"
+    ],
+    "2026-11-04": [
+      "大阪"
+    ],
+    "2026-11-05": [
+      "神户"
+    ],
+    "2026-11-06": [
+      "神户"
+    ],
+    "2026-11-07": [
+      "京都"
+    ]
+  },
+  "unique_place_entities": 10,
+  "hotel_stays": [
+    {
+      "check_in": "2026-11-03",
+      "check_out": "2026-11-05",
+      "hotel_evidence_id": "c93d24f4-aba8-4be1-baac-f10696ee17f6"
+    },
+    {
+      "check_in": "2026-11-05",
+      "check_out": "2026-11-07",
+      "hotel_evidence_id": "4ae42ed5-5078-4e79-bc5a-1a881b463c6b"
+    }
+  ],
+  "external_api_calls": {
+    "routes": 74,
+    "rakuten": 44,
+    "places": 80,
+    "geocode": 1
+  },
+  "model_day_http": 134,
+  "model_day_cny": "9.336994",
+  "segments": [
+    {
+      "city": "大阪",
+      "arrive": "2026-11-03",
+      "depart": "2026-11-05"
+    },
+    {
+      "city": "神户",
+      "arrive": "2026-11-05",
+      "depart": "2026-11-07"
+    },
+    {
+      "city": "京都",
+      "arrive": "2026-11-07",
+      "depart": "2026-11-07"
+    }
+  ],
+  "lodging_budget_unlimited": true,
+  "condition_source": "conversation",
+  "result": "complete_acceptance_with_natural_language_diagnostic_guidance",
+  "saved_at": "2026-10-11T00:58:29.914044Z",
+  "item_count": 10,
+  "validation_status": "partial",
+  "checks": {
+    "verified": 20,
+    "unknown": 15,
+    "conflict": 0
+  },
+  "unknown_codes": {
+    "route_missing": 1,
+    "route_source": 4,
+    "opening_hours": 1,
+    "other_costs": 1,
+    "lodging_budget_unknown": 1,
+    "hotel_total": 1,
+    "route_fare": 4,
+    "budget_missing": 1,
+    "free_text_constraints": 1
+  },
+  "known_cost_jpy": "22680",
+  "estimated_cost_jpy": "0",
+  "google_places_daily_cap": 90,
+  "model_daily_cap_cny": "15",
+  "this_continuation_http": 51,
+  "this_continuation_cny": "2.842938",
+  "guidance": "Initial itinerary request and a single 不限 budget answer were followed by six ordinary-language continuation/diagnostic prompts. One prompt supplied the observed unsaved draft ID, but no complete JSON patch or item/evidence UUID list was supplied in this successful session. A four-day V1 was saved as a recovery point; the final real-model stage moved Meriken Park to Nov 5, then Chrome confirmed five-day V2 and refreshed. This is guided completion, not first-try or zero-guidance planning.",
+  "model_runs": [
+    {
+      "run": "ec53edb6",
+      "http": 5,
+      "tool_calls": 5,
+      "validation_or_stage_calls": 0,
+      "result": "Conditions extracted; one nightly-budget question."
+    },
+    {
+      "run": "8e42dfe4",
+      "http": 5,
+      "tool_calls": 5,
+      "validation_or_stage_calls": 0,
+      "result": "Unlimited recorded; hotel queries succeeded; no itinerary yet."
+    },
+    {
+      "run": "7344625c",
+      "http": 12,
+      "tool_calls": 18,
+      "validation_or_stage_calls": 4,
+      "result": "Initial validation plus three repairs still conflicted; no draft."
+    },
+    {
+      "run": "095e30bd",
+      "http": 10,
+      "tool_calls": 12,
+      "validation_or_stage_calls": 3,
+      "result": "Initial validation plus one repair yielded conflict-free four-day draft; Nov 5 missing."
+    },
+    {
+      "run": "c3cb2acb",
+      "http": 3,
+      "tool_calls": 2,
+      "validation_or_stage_calls": 0,
+      "result": "Tried saved-plan read before confirmation, got 404; no edit."
+    },
+    {
+      "run": "e8e930e6",
+      "http": 7,
+      "tool_calls": 10,
+      "validation_or_stage_calls": 1,
+      "result": "Saved-plan reads still 404, extra queries and failed stage; no edit."
+    },
+    {
+      "run": "c029aa30",
+      "http": 4,
+      "tool_calls": 3,
+      "validation_or_stage_calls": 0,
+      "result": "After four-day V1 saved, reported unavailable facts at exhausted cap60; no edit."
+    },
+    {
+      "run": "2aa2b7a1",
+      "http": 5,
+      "tool_calls": 4,
+      "validation_or_stage_calls": 1,
+      "result": "After authorized cap90 reload, read V1, stage one five-day modification with zero conflicts, present; no conflict-repair iteration."
+    }
+  ],
+  "browser_checks": {
+    "1": "Three cities, five dates, ten named nonduplicate places, two stays: draft -> confirm V2 -> reload; dates/cities/names/stays retained.",
+    "3": "Asked nightly budget once, answer only 不限 continued real hotel search and planning; source is conversation.",
+    "8": "Previously verified own legacy-format Kyoto V1 -> reload -> one time edit -> V2 -> reload; direct legacy payload also covered by real PostgreSQL regression."
+  },
+  "project_commands": {
+    "check": "303 files, strict types on 3 platforms, 3 import contracts, 10 doc entries; exit0",
+    "test": "1560 passed, 1 existing skipped, 4 existing live deselected, 301.31s; exit0",
+    "db-up": "PostgreSQL17 Healthy; exit0",
+    "web-generate": "exit0; no generated net diff in final fix",
+    "web-check": "129 passed, 0 failed; types/lint/5 routes build exit0"
+  },
+  "limits": "Four route sources and one missing route, one unsupported/missing opening time, partial Kobe hotel total, other trip costs and free-text conditions remain unknown; unqueried intercity times/trains/fares shown only as suggestions. Saved report is partial with zero conflicts, not fully verified. Hotel quotes may expire after capture and are then shown expired. No cap/counter/budget reset, new loop, dependency, or persistent Google response cache.",
+  "screenshots": [
+    "2026-10-11-cap60-budget-question-local.jpg",
+    "2026-10-11-cap90-five-day-draft-local.jpg",
+    "2026-10-11-cap90-draft-transfer-local.jpg",
+    "2026-10-11-cap90-five-day-restored-local.jpg",
+    "2026-10-11-cap90-restored-transfer-local.jpg",
+    "2026-10-11-cap90-restored-kyoto-local.jpg",
+    "2026-10-10-legacy-v1-restored-local.jpg",
+    "2026-10-10-legacy-v2-restored-local.jpg"
+  ]
+}

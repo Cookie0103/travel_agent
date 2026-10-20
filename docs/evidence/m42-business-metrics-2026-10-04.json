@@ -1,0 +1,162 @@
+{
+  "scope": "M4.2 offline business metric capture/report verification, not a paid rerun",
+  "date": "2026-10-04 JST",
+  "paid_http_requests": 0,
+  "verification": {
+    "targeted_tests": "116 passed, 603 deselected; actual PostgreSQL and local supplier HTTP; 28.55 seconds",
+    "independent_review": "No P1/P2; formal-version test construction corrected without relaxing assertion",
+    "normal_hooks": "581870a normal static/full default offline Python hooks Passed; ordinary push and exact remote SHA verified",
+    "static_check": "222 sources strict win32/linux/darwin, ruff/format,3 import contracts,10 maps Passed",
+    "remote_ci": "581870a events37134456437/37134458120 all success; actual Linux716 passed/1 existing Windows platform skip/2 live deselected in185.43s; web type/lint/14 tests/build and Docker demo all success"
+  },
+  "original_batches": {
+    "a": {
+      "business_metrics": {
+        "version": 1,
+        "records": 120,
+        "missing_observation_n": 120,
+        "constraints": {
+          "applicable_n": null,
+          "observed_applicable_n": 0,
+          "validated_candidate_n": 0,
+          "states": {
+            "complete": 0,
+            "partial": 0,
+            "conflict": 0,
+            "no_candidate": 0,
+            "unavailable": 0
+          },
+          "check_counts": {
+            "verified": null,
+            "unknown": null,
+            "conflict": null
+          },
+          "candidate_coverage": null,
+          "observed_hard_constraint_pass_rate": null,
+          "hard_constraint_pass_rate": null,
+          "observed_candidate_no_conflict_rate": null,
+          "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+        },
+        "booking": {
+          "applicable_n": null,
+          "observed_applicable_n": 0,
+          "measured_n": 0,
+          "correct_n": 0,
+          "incorrect_n": 0,
+          "unavailable_n": 0,
+          "correctness_rate": null,
+          "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+        },
+        "recovery": {
+          "completion_rate": null,
+          "measured_n": 0,
+          "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+        }
+      },
+      "rule_pass_rate": 0.7833333333333333,
+      "passed": 94,
+      "original_currency_cost": {
+        "CNY": {
+          "n": 120,
+          "measured_n": 120,
+          "unknown_n": 0,
+          "total": "9.363264",
+          "measured_subtotal": "9.363264",
+          "distribution": {
+            "measured_n": 120,
+            "p50": 0.045454,
+            "p95": 0.287818,
+            "method": "nearest-rank"
+          }
+        }
+      },
+      "source_file_hashes": {
+        "manifest.json": "0ba14cf33be6dcd57fc27611cb51dd285a3ab11846bc5fe9fedd5e418aee11e5",
+        "results.jsonl": "5fff2556ecc7be2aa1e2f6c808df4dfaefd1b17d26015ec82c20a068c04a6779",
+        "attempts.jsonl": "d440f421405fdada36d6c13e579172a58c0ba544a0c5e05bc22c3c8ec430b6b9",
+        "summary.json": "9d47273ce13078df242ba6822f32a8cc466e026413854abc2d02610c94981ea2"
+      }
+    },
+    "b": {
+      "business_metrics": {
+        "version": 1,
+        "records": 120,
+        "missing_observation_n": 120,
+        "constraints": {
+          "applicable_n": null,
+          "observed_applicable_n": 0,
+          "validated_candidate_n": 0,
+          "states": {
+            "complete": 0,
+            "partial": 0,
+            "conflict": 0,
+            "no_candidate": 0,
+            "unavailable": 0
+          },
+          "check_counts": {
+            "verified": null,
+            "unknown": null,
+            "conflict": null
+          },
+          "candidate_coverage": null,
+          "observed_hard_constraint_pass_rate": null,
+          "hard_constraint_pass_rate": null,
+          "observed_candidate_no_conflict_rate": null,
+          "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+        },
+        "booking": {
+          "applicable_n": null,
+          "observed_applicable_n": 0,
+          "measured_n": 0,
+          "correct_n": 0,
+          "incorrect_n": 0,
+          "unavailable_n": 0,
+          "correctness_rate": null,
+          "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+        },
+        "recovery": {
+          "completion_rate": null,
+          "measured_n": 0,
+          "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+        }
+      },
+      "rule_pass_rate": 0.14166666666666666,
+      "passed": 17,
+      "original_currency_cost": {
+        "CNY": {
+          "n": 120,
+          "measured_n": 120,
+          "unknown_n": 0,
+          "total": "0.646906",
+          "measured_subtotal": "0.646906",
+          "distribution": {
+            "measured_n": 120,
+            "p50": 0.005306,
+            "p95": 0.007388,
+            "method": "nearest-rank"
+          }
+        }
+      },
+      "source_file_hashes": {
+        "manifest.json": "e8b2c9283336caa89bd2b8b338fc8bd9779324fe01bcc32d4f53065d25a19b09",
+        "results.jsonl": "375a5bad97e9d3be08cec35192c40a379050d2909d2c66609760e1cc6c8c62d0",
+        "attempts.jsonl": "06cfbaa04d43e77afbb9eda4fd8e22c399d43095c8bc8bcb155266220e0d65bd",
+        "summary.json": "0261be154a5bf78f782b18eac99164a3466f037a5eda801d4b6f1e05c95e72fb"
+      }
+    }
+  },
+  "limitations": [
+    "Original frozen full/B0 records have no business metric observation: missing120 per group, all business rates unknown. Rule/cost/source records remain untouched.",
+    "New reports separate complete, partial, conflict, no_candidate and unavailable, using current revalidation full counts. Partial is not fully verified.",
+    "Booking measurement covers only declared mock hold/unknown/failure expectations and no additional order; no real payment/order.",
+    "Frozen suite executes no recovery goal: recovery completion remains unmeasured. Mechanism tests do not prove real model effectiveness."
+  ],
+  "source_sha256": {
+    "eval/business_metrics.py": "49f641190b8100cf22d168dfb1112a2a05177dbadf501e1f5165afbd944f8c8f",
+    "eval/state.py": "ce5292892cab35c6eeb3ead3595205d4579ff5a8e420b6936639830d47854c76",
+    "eval/database.py": "d7c9e860a554c4ee6e0c9ffd0d75089ade600ac3f706dc63ddbd5ca9660cca41",
+    "eval/run.py": "fbdb3653a0a2626d899c3f856694d63acd771d0bbd4202c556cbc28b8a83ec98",
+    "eval/report.py": "01e6aed973a13c45ed006d845ad7b92126d8f87c57783682f0e52f18c6eb7650",
+    "eval/compare.py": "153796a063c037088fe36f7b0853cc7413420e67001d6f0ef2fa502e614f9ce8"
+  }
+}

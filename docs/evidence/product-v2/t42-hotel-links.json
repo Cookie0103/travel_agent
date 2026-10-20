@@ -1,0 +1,42 @@
+{
+  "scope": "controlled local fixture; no real provider API or order",
+  "adapter": {
+    "scope": "local controlled fixture, no real provider API",
+    "mock_nightly_calls": 2,
+    "run_id": "3a0e1627-e45a-4200-ba13-6ba7e9bd9b64",
+    "offer_id": "83bf4015-872f-467d-bde8-69ebd89d8b2a",
+    "evidence_id": "0ecebd60-935f-4579-8551-4ff9ade574c9",
+    "revision": 8,
+    "urls": {
+      "hotel_info_url": "https://example.com/?hotel-info=1",
+      "plan_list_url": "https://example.com/?hotel-plans=1",
+      "reservation_url": "https://example.com/?hotel-reserve=1"
+    }
+  },
+  "chrome": {
+    "info_navigation": "https://example.com/?hotel-info=1",
+    "title": "Example Domain",
+    "plans_href": "https://example.com/?hotel-plans=1",
+    "reservation_href": "https://example.com/?hotel-reserve=1",
+    "reloaded": true,
+    "clicked_only_info": true
+  },
+  "pg": {
+    "revision": 8,
+    "evidence_count": 10,
+    "hotel_details": [
+      {
+        "evidence_id": "0ecebd60-935f-4579-8551-4ff9ade574c9",
+        "display_details": {
+          "plan_list_url": "https://example.com/?hotel-plans=1",
+          "hotel_info_url": "https://example.com/?hotel-info=1",
+          "reservation_url": "https://example.com/?hotel-reserve=1"
+        }
+      }
+    ],
+    "supplier_orders": 0,
+    "original_versions": 1,
+    "original_hash": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f"
+  },
+  "compatibility": "Frozen old offers/nested Booking/SupplierHold tested with local PG; down/up sidecar preserved; formal V1 new service URL restore/payload unchanged tested separately, not Chrome formal test."
+}

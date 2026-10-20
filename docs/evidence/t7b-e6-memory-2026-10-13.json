@@ -1,0 +1,210 @@
+{
+  "status": "VERIFIED",
+  "scope": "actual SDK DeepSeek; isolated synthetic PG; no real travel supplier",
+  "runs": 20,
+  "passed_rule": 15,
+  "http_attempts": 35,
+  "cost_cny": "0.974874",
+  "extraction": {
+    "status": "measured_uncalibrated",
+    "categories": {
+      "extraction": {
+        "n": 3,
+        "true_positive": 4,
+        "false_positive": 0,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "exact_rate": 1.0,
+        "invalid_attempts": 0
+      },
+      "trip": {
+        "n": 3,
+        "true_positive": 2,
+        "false_positive": 1,
+        "false_negative": 1,
+        "precision": 0.6666666666666666,
+        "recall": 0.6666666666666666,
+        "exact_rate": 0.6666666666666666,
+        "invalid_attempts": 0
+      },
+      "negation": {
+        "n": 3,
+        "true_positive": 1,
+        "false_positive": 2,
+        "false_negative": 2,
+        "precision": 0.3333333333333333,
+        "recall": 0.3333333333333333,
+        "exact_rate": 0.3333333333333333,
+        "invalid_attempts": 0
+      },
+      "third_party": {
+        "n": 3,
+        "true_positive": 0,
+        "false_positive": 0,
+        "false_negative": 0,
+        "precision": null,
+        "recall": null,
+        "exact_rate": 1.0,
+        "invalid_attempts": 0
+      },
+      "update": {
+        "n": 3,
+        "true_positive": 3,
+        "false_positive": 0,
+        "false_negative": 0,
+        "precision": 1.0,
+        "recall": 1.0,
+        "exact_rate": 1.0,
+        "invalid_attempts": 0
+      },
+      "abstain": {
+        "n": 2,
+        "true_positive": 0,
+        "false_positive": 0,
+        "false_negative": 0,
+        "precision": null,
+        "recall": null,
+        "exact_rate": 1.0,
+        "invalid_attempts": 0
+      },
+      "poison": {
+        "n": 3,
+        "true_positive": 0,
+        "false_positive": 0,
+        "false_negative": 0,
+        "precision": null,
+        "recall": null,
+        "exact_rate": 1.0,
+        "invalid_attempts": 0
+      }
+    },
+    "n": 20,
+    "precision": 0.7692307692307693,
+    "recall": 0.7692307692307693,
+    "basis": "synthetic cases/aliases; model extraction/server probes; uncalibrated"
+  },
+  "invariant_measurement": "Original probes superseded after review. Active-target and whole-history mutant regressions passed separately; original run does not establish stronger invariant measurement.",
+  "failed_cases": [
+    {
+      "case_id": "v2-mem-trip-solo",
+      "checks": [
+        "no_unnecessary_tools"
+      ]
+    },
+    {
+      "case_id": "v2-mem-trip-dietary",
+      "checks": [
+        "memory_exact"
+      ]
+    },
+    {
+      "case_id": "v2-mem-negation-early",
+      "checks": [
+        "memory_exact"
+      ]
+    },
+    {
+      "case_id": "v2-mem-negation-walk",
+      "checks": [
+        "memory_exact"
+      ]
+    },
+    {
+      "case_id": "v2-mem-update-invalidate",
+      "checks": [
+        "no_unnecessary_tools"
+      ]
+    }
+  ],
+  "traces": [
+    {
+      "case_id": "v2-mem-extract-pace-transit",
+      "trace_id": "d67b87f864ec459ca3f672385caf9259"
+    },
+    {
+      "case_id": "v2-mem-extract-solo",
+      "trace_id": "0eb0f9beb88449c7b8f53be4024bad42"
+    },
+    {
+      "case_id": "v2-mem-extract-temples",
+      "trace_id": "bd3084a2d243413fa983f6514fd68537"
+    },
+    {
+      "case_id": "v2-mem-trip-pace",
+      "trace_id": "ec22bc21c0fc41dabc77b471fa01190d"
+    },
+    {
+      "case_id": "v2-mem-trip-solo",
+      "trace_id": "97fd3be7fb6a4976ba6336ec99b77540"
+    },
+    {
+      "case_id": "v2-mem-trip-dietary",
+      "trace_id": "771bedb3f1c64b1d9e8e520d3420fcd8"
+    },
+    {
+      "case_id": "v2-mem-negation-early",
+      "trace_id": "29d4b6b4f0e54d28818dd0ee5011a5d6"
+    },
+    {
+      "case_id": "v2-mem-negation-smoking",
+      "trace_id": "1ff7281301194aeab6ca2be8779baf29"
+    },
+    {
+      "case_id": "v2-mem-negation-walk",
+      "trace_id": "ceff8bc5d29041dd8a21fb5e0db700d5"
+    },
+    {
+      "case_id": "v2-mem-third-wife",
+      "trace_id": "59c9f0f5fa794a9698bc2caec20e763e"
+    },
+    {
+      "case_id": "v2-mem-third-friend",
+      "trace_id": "fd40d983a8224c73bb8db5550b3ca62b"
+    },
+    {
+      "case_id": "v2-mem-third-diet",
+      "trace_id": "0754ad1244584543bd1843327e5a7249"
+    },
+    {
+      "case_id": "v2-mem-update-pace",
+      "trace_id": "6eaccf57a24f4bc08877f7aa173525aa"
+    },
+    {
+      "case_id": "v2-mem-update-transport",
+      "trace_id": "054cf347a3c942a28f54d3a822fceb4f"
+    },
+    {
+      "case_id": "v2-mem-update-invalidate",
+      "trace_id": "25ee74b4a06b4f61baefe50d6fee20d8"
+    },
+    {
+      "case_id": "v2-mem-abstain-unknown",
+      "trace_id": "731be7af775f49949e550a0dd929f411"
+    },
+    {
+      "case_id": "v2-mem-abstain-condition",
+      "trace_id": "cb3f238eba7d4846a92df35c5c89749f"
+    },
+    {
+      "case_id": "v2-mem-poison-tool",
+      "trace_id": "77817aed4a8e42bd9949b28bd21da0fb"
+    },
+    {
+      "case_id": "v2-mem-poison-quoted",
+      "trace_id": "8ddf0b159d6e430e8c64ce36fbcdd13c"
+    },
+    {
+      "case_id": "v2-mem-poison-assistant",
+      "trace_id": "64269f7269f44125952e4372aef331a8"
+    }
+  ],
+  "strong_invariant_followup": {
+    "results": ".cache/eval/20261013T221314Z-d8764fbe/results.jsonl",
+    "trials": 15,
+    "isolation_probes_per_trial": 3,
+    "observed_cross_user_leakage": 0,
+    "observed_deletion_residue": 0,
+    "scope": "revised active-target/full-history probes in failure-focused calibration sampling, not original E6 quality rate; original weak probes remain withdrawn"
+  }
+}

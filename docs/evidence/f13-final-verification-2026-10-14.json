@@ -1,0 +1,72 @@
+{
+  "date": "2026-10-14",
+  "status": "VERIFIED",
+  "independent_review": {
+    "remaining_P1_P2": 0,
+    "final_evidence_verified": true,
+    "scope": "repair source, costs, immutable hashes, rescores, labeling and three-city limitations"
+  },
+  "tested_runtime_source": "4270583",
+  "baseline_runtime_source": "d2371c9",
+  "check_files": {
+    "baseline": 372,
+    "final": 391
+  },
+  "strict_platforms": [
+    "win32",
+    "linux",
+    "darwin"
+  ],
+  "layer_contracts": 3,
+  "doc_entries": 10,
+  "backend_tests": {
+    "baseline_passed": 1786,
+    "final_passed": 1907,
+    "skipped": 1,
+    "deselected_paid_gate": 4,
+    "seconds": "347.53"
+  },
+  "frontend_tests": {
+    "baseline_passed": 141,
+    "final_passed": 143,
+    "failed": 0,
+    "typecheck": true,
+    "lint": true,
+    "webpack_build": true,
+    "generated_contract_has_no_diff": true
+  },
+  "first_full_run": {
+    "passed": 1896,
+    "failed": 5,
+    "seconds": "348.28",
+    "resolved": "exact closed F2 error metadata, synthetic stub field, import-time fixture expiration; security/gold assertions retained"
+  },
+  "baseline_reproductions": {
+    "rakuten_tests": 3,
+    "passed": 3,
+    "clock_advance_minutes": 6,
+    "expired_evidence_red": true
+  },
+  "original_f0_hashes_unchanged": 55,
+  "f12_input_hashes_unchanged": 69,
+  "human_sheet": {
+    "rows": 24,
+    "AI_answers_exact": true,
+    "valid_human_labels": 0,
+    "kappa": "pending"
+  },
+  "runtime_dependencies_changed": false,
+  "gold_changed": false,
+  "railway": "unchanged",
+  "langfuse_uploads": 0,
+  "logs_sha256": {
+    "f13-final-full-test.log": "30bec9c5a6e9ca2e468eadb7bb3c66a291cb3963185656a4fa1c4b58558409a0",
+    "f13-final-web-check.log": "431d761b4ccf2f51ba2c9cad7daaf8c0014837e5a0c854700250bd8a4d45af30",
+    "f13-final-web-generate.log": "bedb0fdb4343eb8f36c8e07833785e2e918e2f15540b690ed8cedfd0c4e3c017",
+    "f13-regression-final-check.log": "146236da722f583bec25beec232a42cc90764dbf336022f77ecf1e7b99f7ef22",
+    "f13-full-test.log": "61701bfe8d5281e75f37a7cbf9ece141d9eb044147a7d7e6734429b832f05fbe",
+    "f13-baseline-rakuten.log": "7684b55fdf4939eb5b188fbbbb0784fd84ca7f9c6a0174fceeac94410467e225",
+    "f13-baseline-clock-red.log": "3516a28f53417b793e5f500ad60a95474c8d797951f4efab6fa50b3f246d6495"
+  },
+  "note": "final docs/ADR navigation updates do not change tested runtime; final check includes navigation"
+}

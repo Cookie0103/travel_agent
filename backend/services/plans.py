@@ -1,0 +1,522 @@
+"""草稿与确认用例；同一会话锁内重新校验证据、条件和版本，重复确认返回原版本。"""
+
+from collections.abc import Callable, Sequence
+from datetime import UTC, datetime, timedelta
+from uuid import UUID, uuid4
+
+from pydantic import BaseModel, ConfigDict, Field
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.adapters.live_data import LiveData
+from backend.domain.catalog import Place
+from backend.domain.evidence import EvidenceRecord
+from backend.domain.execution import RunContext
+from backend.domain.itinerary import (
+    PLAN_ITEM_LIMIT,
+    ItineraryProposal,
+    RouteEstimate,
+    RouteInput,
+    RouteLeg,
+    ValidationReport,
+)
+from backend.domain.plans import (
+    InitialStage,
+    PatchItemLocked,
+    PlanContent,
+    PlanDraft,
+    StageInput,
+    apply_plan_patch,
+    differences,
+    initial_content,
+    stays_of,
+)
+from backend.domain.plans import (
+    SavedPlan as SavedPlan,
+)
+from backend.domain.repair import Facts, Repair, repair
+from backend.domain.travel_request import TravelRequest, same_city
+from backend.persistence import operations, plans
+from backend.persistence import travel as requests
+from backend.persistence.models import PlanRow
+from backend.services.calendar import calendar
+from backend.services.common import ServiceError, transaction
+from backend.services.hotels import cards as hotel_cards
+from backend.services.planning import PlanningService, apply_selected_hotels, validate_proposal
+from backend.services.travel import (
+    TravelService,
+    hydrate_records,
+    request_from_row,
+    require_revision,
+    resolve_records,
+)
+from backend.services.views import PlanView
+
+VERSION_CHANGED = "plan_version_changed"  # 版本变化(含仅锁定变化)统一的稳定标签
+
+
+class PlanInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    plan_id: UUID
+    items_only: bool = Field(default=False, strict=True)
+    item_offset: int = Field(default=0, strict=True, ge=0, lt=PLAN_ITEM_LIMIT)
+
+
+class LockInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    expected_version: int = Field(strict=True, ge=1)
+    locked_item_ids: tuple[UUID, ...] = Field(max_length=PLAN_ITEM_LIMIT)
+
+
+class PlanService:
+    def __init__(self, travel: TravelService) -> None:
+        self.travel = travel
+
+    async def calendar(self, user_id: UUID, plan_id: UUID) -> tuple[str, int]:
+        view = PlanView.model_validate(await self.get(user_id, plan_id))
+        assert view.version is not None
+        return calendar(view), view.version
+
+    async def stage(
+        self,
+        context: RunContext,
+        arguments: StageInput,
+        *,
+        before_validate: Callable[[ItineraryProposal], None] | None = None,
+    ) -> PlanDraft:
+        """硬冲突不拒绝暂存：先本地修复，修复后（或修不动时）仍暂存并标明未解决冲突。"""
+        draft, final = await self._stage(context, arguments, before_validate)
+        if final:
+            return draft
+        try:
+            fixed = await self._repair(context, draft)
+        except ServiceError:
+            fixed = None  # 修复是尽力而为；失败时照常交付未修复草稿
+        return (
+            await self._stage(
+                context, arguments, None, fixed or Repair(draft.content, draft.validation)
+            )
+        )[0]
+
+    async def _repair(self, context: RunContext, draft: PlanDraft) -> Repair:
+        planning, live = PlanningService(self.travel), self.travel.live
+        async with transaction(self.travel.database) as db:
+            request = request_from_row(await requests.owned_request(db, context))
+            ids = draft.content.proposal(request.revision).evidence_ids()
+            resolved: list[EvidenceRecord] = []
+            for offset in range(0, len(ids), 50):
+                batch = ids[offset : offset + 50]
+                resolved.extend(
+                    await resolve_records(db, context, request, batch, datetime.now(UTC))
+                )
+            records = await hydrate_records(tuple(resolved), live)
+        first, last = request.start_date, request.end_date
+        facts = Facts(
+            places={
+                r.evidence_id: Place.model_validate(r.value)
+                for r in records
+                if r.kind == "place" and r.status == "verified"
+            },
+            routes={
+                r.evidence_id: RouteEstimate.model_validate(r.value)
+                for r in records
+                if r.kind == "route" and r.status == "verified"
+            },
+            days=tuple(first + timedelta(days=n) for n in range((last - first).days + 1))
+            if first and last
+            else (),
+        )
+        cap = live.usage.run_caps["routes"] if live else None
+        budget = None if cap is None or live is None else cap - live.usage.used.get("routes", 0)
+
+        async def validate(candidate: PlanContent) -> ValidationReport:
+            async with transaction(self.travel.database) as db:
+                return await validate_proposal(
+                    db, context, request, candidate.proposal(request.revision), live
+                )
+
+        async def reroute(
+            legs: Sequence[tuple[UUID, UUID, datetime]],
+        ) -> list[tuple[UUID, RouteEstimate]]:
+            nonlocal budget
+            built: list[tuple[UUID, RouteEstimate]] = []
+            for offset in range(0, len(legs), 6):
+                chunk = legs[offset : offset + 6][: None if budget is None else max(budget, 0)]
+                if not chunk:
+                    break
+                budget = None if budget is None else budget - len(chunk)
+                found = await planning.routes(
+                    context,
+                    RouteInput(
+                        expected_revision=request.revision,
+                        legs=tuple(
+                            RouteLeg(from_evidence_id=a, to_evidence_id=b, departure=d)
+                            for a, b, d in chunk
+                        ),
+                    ),
+                )
+                built.extend((r.evidence_id, RouteEstimate.model_validate(r.value)) for r in found)
+            return built
+
+        return await repair(
+            draft.content, draft.validation, facts, validate=validate, reroute=reroute
+        )
+
+    async def _stage(
+        self,
+        context: RunContext,
+        arguments: StageInput,
+        before_validate: Callable[[ItineraryProposal], None] | None,
+        fixed: Repair | None = None,
+    ) -> tuple[PlanDraft, bool]:
+        """返回(草稿, 是否已落库)；首轮遇硬冲突先不落库，留给事务外的路线重建与修复。"""
+        async with transaction(self.travel.database) as db:
+            request = request_from_row(await requests.owned_request(db, context))
+            change = arguments.change
+            if isinstance(change, InitialStage):
+                chosen = await apply_selected_hotels(db, context, request, change.proposal)
+                if chosen != change.proposal:
+                    change = change.model_copy(update={"proposal": chosen})
+                    arguments = arguments.model_copy(update={"change": change})
+            explicit_clear = not isinstance(change, InitialStage) and (
+                "hotel_stays" in change.patch.model_fields_set
+                and not change.patch.hotel_stays
+                or "hotel_evidence_id" in change.patch.model_fields_set
+                and change.patch.hotel_evidence_id is None
+            )
+            operation_key = operations.key(arguments)
+            cached = await operations.result(db, context.session_id, "stage_plan", operation_key)
+            replay = PlanDraft.model_validate(cached) if cached is not None else None
+            if replay is not None and datetime.now(UTC) < replay.expires_at:
+                saved = replay
+                require_revision(request, saved.request_revision)
+                current_plan = await plans.for_session(db, context)
+                if current_plan is None or current_plan.current_version != saved.base_version:
+                    raise ServiceError(
+                        409, "conflict", "正式行程版本已变化，请重新读取", VERSION_CHANGED
+                    )
+                proposal = saved.content.proposal(request.revision)
+                if explicit_clear:
+                    proposal = proposal.model_copy(update={"hotel_stays": ()})
+                chosen = await apply_selected_hotels(db, context, request, proposal)
+                if chosen != proposal:
+                    raise ServiceError(
+                        409,
+                        "conflict",
+                        "缓存草稿未包含本轮选择，请明确带上selected_hotel_stays重新暂存",
+                    )
+                report = await validate_proposal(db, context, request, proposal, self.travel.live)
+                return saved.model_copy(update={"validation": report}), True
+            # 缓存草稿已过期：按同样参数重新生成新草稿(旧草稿保持过期)；若证据也过期，
+            # 下面的校验会以evidence_stale与重新查询指引拒绝。
+            row = await plans.for_session(db, context)
+            previous = await plans.version(db, row) if row else None
+            if isinstance(change, InitialStage):
+                require_revision(request, change.proposal.expected_revision)
+                if previous is not None:
+                    raise ServiceError(
+                        409, "conflict", "已有正式行程，请读取后使用局部patch", "plan_exists"
+                    )
+                content = initial_content(change.proposal)
+            else:
+                require_revision(request, change.patch.expected_revision)
+                if row is None or row.id != change.plan_id or previous is None:
+                    raise ServiceError(404, "blocked", "正式行程不存在或不属于当前会话")
+                if previous.version != change.patch.base_version:
+                    raise ServiceError(
+                        409, "conflict", "正式行程版本已变化，请重新读取", VERSION_CHANGED
+                    )
+                try:
+                    content = apply_plan_patch(previous, change.patch)
+                except PatchItemLocked as locked:
+                    raise ServiceError(
+                        422, "validation", str(locked), "patch_item_locked"
+                    ) from None
+                except ValueError:
+                    raise ServiceError(
+                        422, "validation", "patch引用了不存在或无效的行程项", "patch_invalid"
+                    ) from None
+            if fixed is not None:
+                content = fixed.content
+            proposal = content.proposal(request.revision)
+            if explicit_clear:
+                proposal = proposal.model_copy(update={"hotel_stays": ()})
+            chosen = await apply_selected_hotels(db, context, request, proposal)
+            if chosen != proposal:
+                content = content.model_copy(
+                    update={
+                        "hotel_stays": chosen.hotel_stays,
+                        "hotel_evidence_id": chosen.hotel_evidence_id,
+                    }
+                )
+            proposal = chosen
+            if before_validate is not None:
+                before_validate(proposal)
+            report = await validate_proposal(db, context, request, proposal, self.travel.live)
+            draft = PlanDraft(
+                plan_id=row.id if row else uuid4(),
+                base_version=row.current_version if row else 0,
+                request_revision=request.revision,
+                content=content,
+                changes=differences(previous.content if previous else None, content),
+                hotel_changed=(
+                    previous is None
+                    and bool(content.hotel_evidence_id or content.hotel_stays)
+                    or previous is not None
+                    and (
+                        previous.content.hotel_evidence_id != content.hotel_evidence_id
+                        or previous.content.hotel_stays != content.hotel_stays
+                    )
+                ),
+                validation=report,
+                expires_at=datetime.now(UTC) + timedelta(minutes=10),
+                repairs=fixed.disclosed if fixed else (),
+            )
+            if fixed is None and report.status == "conflict":
+                return draft, False
+            if row is None:  # 首个草稿才建行程行：未落库的首轮冲突不留空行
+                row = PlanRow(
+                    id=draft.plan_id,
+                    user_id=context.user_id,
+                    session_id=context.session_id,
+                    current_version=0,
+                )
+                db.add(row)
+                await db.flush()
+            await plans.add_draft(db, context, draft)
+            payload = draft.model_dump(mode="json")
+            if replay is None:
+                operations.save(db, context.session_id, "stage_plan", operation_key, payload)
+            else:
+                await operations.replace(
+                    db, context.session_id, "stage_plan", operation_key, payload
+                )
+            return draft, True
+
+    async def confirm(self, user_id: UUID, draft_id: UUID) -> SavedPlan:
+        async with transaction(self.travel.database) as db:
+            draft_row = await plans.draft(db, user_id, draft_id)
+            if draft_row is None:
+                raise ServiceError(404, "blocked", "草稿不存在")
+            context = RunContext(user_id, draft_row.session_id)
+            request = request_from_row(await requests.owned_request(db, context))
+            # 不变量：先获取会话锁，再刷新确认标记；锁前读取不能判定并发幂等结果。
+            await db.refresh(draft_row)
+            row = await plans.for_session(db, context)
+            if row is None or row.id != draft_row.plan_id:
+                raise ServiceError(404, "blocked", "行程不存在")
+            if draft_row.confirmed_version is not None:
+                saved = await plans.version(db, row, draft_row.confirmed_version)
+                if saved is None:
+                    raise ServiceError(503, "unavailable", "已确认行程记录缺失")
+                return saved
+            draft = PlanDraft.model_validate(draft_row.payload)
+            if datetime.now(UTC) >= draft.expires_at:
+                raise ServiceError(409, "conflict", "草稿已过期，请重新生成", "draft_expired")
+            require_revision(request, draft.request_revision)
+            if row.current_version != draft.base_version:
+                raise ServiceError(
+                    409,
+                    "conflict",
+                    "正式版本已变化（例如刚修改了锁定），请重新生成patch",
+                    VERSION_CHANGED,
+                )
+            report = await validate_proposal(
+                db, context, request, draft.content.proposal(request.revision), self.travel.live
+            )
+            if report.status == "conflict":
+                raise ServiceError(409, "conflict", "草稿存在硬冲突，不能保存；请修正后重新确认")
+            saved = SavedPlan(
+                plan_id=row.id,
+                version=row.current_version + 1,
+                request_revision=request.revision,
+                content=draft.content,
+                validation=report,
+                saved_at=datetime.now(UTC),
+            )
+            await plans.save(db, row, saved)
+            draft_row.confirmed_version = saved.version
+            await db.flush()
+            return saved
+
+    async def get(
+        self, user_id: UUID, plan_id: UUID, *, session_id: UUID | None = None
+    ) -> dict[str, object]:
+        async with transaction(self.travel.database) as db:
+            row = await plans.owned(db, user_id, plan_id)
+            if row is None or (session_id is not None and row.session_id != session_id):
+                raise ServiceError(404, "blocked", "行程不存在")
+            context = RunContext(user_id, row.session_id)
+            request = request_from_row(await requests.read_request(db, context))
+            await db.refresh(row)
+            saved = await plans.version(db, row)
+            if saved is None:
+                raise ServiceError(404, "blocked", "尚无正式保存的行程")
+            return await content_view(
+                db,
+                context,
+                request,
+                saved.content,
+                {
+                    **saved.model_dump(mode="json", exclude={"content", "validation"}),
+                    "validation": saved.validation.feedback(),
+                    "historical": True,
+                },
+                self.travel.live,
+            )
+
+    async def get_draft(
+        self, user_id: UUID, draft_id: UUID, *, session_id: UUID | None = None
+    ) -> dict[str, object]:
+        async with transaction(self.travel.database) as db:
+            row = await plans.draft(db, user_id, draft_id)
+            if row is None:
+                raise ServiceError(404, "blocked", "草稿不存在")
+            if session_id is not None and row.session_id != session_id:
+                raise ServiceError(404, "blocked", "草稿不属于当前会话")
+            draft = PlanDraft.model_validate(row.payload)
+            context = RunContext(user_id, row.session_id)
+            request = request_from_row(await requests.read_request(db, context))
+            await db.refresh(row)
+            report = draft.validation
+            parent = await plans.for_session(db, context)
+            version_changed = parent is None or parent.current_version != draft.base_version
+            if session_id is not None:
+                if row.confirmed_version is not None or datetime.now(UTC) >= draft.expires_at:
+                    raise ServiceError(
+                        409, "conflict", "草稿已确认或过期，请读取正式行程或重新生成"
+                    )
+                require_revision(request, draft.request_revision)
+                if version_changed:
+                    raise ServiceError(
+                        409, "conflict", "草稿基于旧正式版本，请重新生成patch", VERSION_CHANGED
+                    )
+                report = await validate_proposal(
+                    db,
+                    context,
+                    request,
+                    draft.content.proposal(request.revision),
+                    self.travel.live,
+                )
+            data = {
+                **draft.model_dump(mode="json", exclude={"content", "validation"}),
+                "validation": report.feedback(),
+                "status": "confirmed" if row.confirmed_version else "staged",
+                "expired": datetime.now(UTC) >= draft.expires_at,
+                "conditions_changed": request.revision != draft.request_revision,
+                "version_changed": version_changed,
+            }
+            return await content_view(db, context, request, draft.content, data, self.travel.live)
+
+    async def locks(self, user_id: UUID, plan_id: UUID, arguments: LockInput) -> SavedPlan:
+        async with transaction(self.travel.database) as db:
+            row = await plans.owned(db, user_id, plan_id)
+            if row is None:
+                raise ServiceError(404, "blocked", "行程不存在")
+            await requests.owned_request(db, RunContext(user_id, row.session_id))
+            await db.refresh(row)
+            current = await plans.version(db, row)
+            if current is None or current.version != arguments.expected_version:
+                raise ServiceError(
+                    409, "conflict", "正式行程版本已变化，请重新读取后再锁定", VERSION_CHANGED
+                )
+            ids = set(arguments.locked_item_ids)
+            if len(ids) != len(arguments.locked_item_ids) or ids - {
+                item.item_id for item in current.content.items
+            }:
+                raise ServiceError(
+                    422, "validation", "锁定列表包含重复或不存在的item_id", "lock_invalid"
+                )
+            content = PlanContent(
+                items=tuple(
+                    item.model_copy(update={"locked": item.item_id in ids})
+                    for item in current.content.items
+                ),
+                hotel_evidence_id=current.content.hotel_evidence_id,
+                hotel_stays=current.content.hotel_stays,
+            )
+            if content == current.content:
+                return current
+            saved = current.model_copy(
+                update={
+                    "version": current.version + 1,
+                    "content": content,
+                    "saved_at": datetime.now(UTC),
+                }
+            )
+            await plans.save(db, row, saved)
+            return saved
+
+
+async def content_view(
+    db: AsyncSession,
+    context: RunContext,
+    request: TravelRequest,
+    content: PlanContent,
+    data: dict[str, object],
+    live: LiveData | None = None,
+) -> dict[str, object]:
+    """历史内容可以读取；过期或旧条件引用显式标记，不能伪装成当前事实。"""
+    rows = await requests.find_evidence(
+        db, context, content.proposal(request.revision).evidence_ids()
+    )
+    records = await hydrate_records(tuple(requests.evidence_from_row(row) for row in rows), live)
+    evidence = {record.evidence_id: record for record in records}
+    stale = [
+        str(row.id)
+        for row in rows
+        if row.invalidated or not evidence[row.id].applicable(request, datetime.now(UTC))
+    ]
+    stale.extend(
+        str(id) for id in content.proposal(request.revision).evidence_ids() if id not in evidence
+    )
+    historic_cities = {
+        str(record.value["city"])
+        for record in records
+        if record.kind == "place"
+        and isinstance(record.value, dict)
+        and isinstance(record.value.get("city"), str)
+    }
+    show_cities = request.segments or (
+        content.hotel_stays
+        and any(not same_city(city, request.city or "") for city in historic_cities)
+    )
+    cards = []
+    for item in content.items:
+        record = evidence.get(item.place_evidence_id)
+        place = Place.model_validate(record.value) if record and record.value is not None else None
+        cards.append(
+            {
+                **item.model_dump(mode="json"),
+                "name": place.name if place else "历史地点证据缺失",
+                "source_ref": record.source_ref if record else None,
+                "data_mode": record.data_mode if record else "snapshot",
+                **({"city": place.city if place else None} if show_cities else {}),
+            }
+        )
+    return {
+        **data,
+        **(
+            {
+                "hotel_stays": [
+                    {
+                        **stay.model_dump(mode="json"),
+                        "hotel": hotel_cards(
+                            (evidence[stay.hotel_evidence_id],), request, selectable=False
+                        )[0]
+                        if stay.hotel_evidence_id in evidence
+                        else None,
+                    }
+                    for stay in stays_of(content, request)
+                ]
+            }
+            if content.hotel_stays
+            else {}
+        ),
+        "cards": cards,
+        "hotel_evidence_id": str(content.hotel_evidence_id) if content.hotel_evidence_id else None,
+        "hotel": hotel_cards((evidence[content.hotel_evidence_id],), request, selectable=False)[0]
+        if content.hotel_evidence_id in evidence
+        else None,
+        "needs_refresh": stale,
+        "guidance": "历史校验报告与快照，当前保存/预订仍须重新校验",
+    }

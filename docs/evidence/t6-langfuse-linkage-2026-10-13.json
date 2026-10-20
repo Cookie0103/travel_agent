@@ -1,0 +1,27 @@
+{
+  "verification": "VERIFIED",
+  "date": "2026-10-13T18:47:48.353085+00:00",
+  "run_id": "8a5d018f-1efa-4669-abd0-08f7ddc4fadc",
+  "trace_id": "46572af43401442784a02663cc0cde67",
+  "status": "completed",
+  "session_hmac": "a32f7df07c661835978af245e7ff8f09247862cfb3ff27751779bb382186dc84",
+  "tags": [
+    "deepseek",
+    "deepseek",
+    "default"
+  ],
+  "pg_tool_events": 2,
+  "cloud_tool_spans": 2,
+  "cloud_model_spans": 3,
+  "score_read_back": true,
+  "model_cost_cny": "0.078608",
+  "api_call_delta": {
+    "places": 0,
+    "geocode": 0,
+    "rakuten": 0
+  },
+  "body_exported": false,
+  "body_read": false,
+  "model_http_attempts": 3,
+  "cost_basis": "target run agent.sdk span (checked against former global delta)"
+}

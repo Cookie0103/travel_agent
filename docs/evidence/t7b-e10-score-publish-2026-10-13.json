@@ -1,0 +1,34 @@
+{
+  "scope": "Existing real-evaluation numeric scores only; no conversation bodies",
+  "first_attempt": {
+    "targets": 81,
+    "fully_accepted": 2,
+    "cause": "general score API rate limit HTTP429",
+    "receipt_sha256": "f658c7d34f4874c9fa46fbaaa099b90a97ad04ad1c49ff2d403d267294ed888d"
+  },
+  "fix": {
+    "endpoint": "/api/public/ingestion",
+    "type": "score-create",
+    "requests_per_trace": 1,
+    "required_ack": "Every event id with strict integer 2xx status, errors empty",
+    "regression_tests": 13,
+    "independent_review": "No remaining P1/P2"
+  },
+  "batch_retry": {
+    "status": "awaiting_explicit_upload_authorization",
+    "automatic_review": "rejected generic authorization for external numeric score upload",
+    "model_calls": 0
+  },
+  "sources": [
+    "https://langfuse.com/faq/all/api-limits",
+    "https://langfuse.com/faq/all/deprecated-api-migration",
+    "https://github.com/langfuse/langfuse/blob/main/packages/shared/src/server/ingestion/processEventBatch.ts"
+  ],
+  "final_checks": {
+    "backend_passed": 1786,
+    "skipped": 1,
+    "deselected": 4,
+    "seconds": 346.71,
+    "frontend_passed": 141
+  }
+}

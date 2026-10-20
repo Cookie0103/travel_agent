@@ -1,0 +1,332 @@
+"""显式 live 的组合入口；复用已验证的请求预算、环境隔离和进程期限。"""
+
+import json
+import os
+import time
+from collections.abc import Mapping
+from functools import partial
+from pathlib import Path
+from threading import Event
+from typing import get_args
+
+from backend.adapters.evaluation_faults import EvaluationFault, is_eval_database, validate_fault
+from backend.adapters.tracing import cloud_exporter, trace_report
+from backend.agent.persona import JudgeKind
+from backend.agent.runtime import EventSink
+from backend.domain.execution import (
+    UPSTREAM_REASON,
+    RunContext,
+    RuntimeEvent,
+    error_code,
+    event_metadata,
+)
+from backend.limits import ProbeError, Provider, Settings
+from backend.mcp.bridge import sdk_tool_name
+from backend.profile import current
+from backend.providers.claude_agent import http as upstream
+from backend.providers.claude_agent.budget import Budget
+from backend.providers.claude_agent.environment import find_cli, worker_environment
+from backend.providers.claude_agent.evaluation import (
+    EvaluationVariant,
+    evaluation_definitions,
+    judge_combo_invalid,
+    validate_variant,
+)
+from backend.providers.claude_agent.events import EventReader
+from backend.providers.claude_agent.guard import Guard, serve
+from backend.providers.claude_agent.http import forward_messages
+from backend.providers.claude_agent.ledger import exclusive
+from backend.providers.claude_agent.process import invoke_worker, run_process
+from backend.providers.claude_agent.settings import load_runtime_settings
+from backend.tools.travel import live_definitions
+from backend.tools.workflow import WorkflowName
+from backend.trace_log import FILE_ENV, RUN_ENV, Tail, trace
+
+
+def runtime_budget(root: Path, settings: Settings) -> Budget:
+    cache = root / ".cache"
+    return Budget(
+        cache / "model-budget" / f"{settings.provider}.jsonl",
+        cache / "m02-protocol" / "ledger.jsonl",
+        settings.daily_limit,
+        settings.currency,
+    )
+
+
+def check_evaluation_size(root: Path, minimum_requests: int) -> None:
+    runtime_budget(root, load_runtime_settings(os.environ)).check_minimum_requests(minimum_requests)
+
+
+def prompt_snapshot_enabled(
+    requested: bool, database_dsn: str | None, environ: Mapping[str, str]
+) -> bool:
+    """三道门同时满足才落盘system prompt：参数、环境变量、专用评测库。"""
+    return (
+        requested
+        and environ.get("TRAVEL_EVAL_PROMPT_SNAPSHOT") == "1"
+        and database_dsn is not None
+        and is_eval_database(database_dsn)
+    )
+
+
+def run_live(
+    prompt: str,
+    context: RunContext,
+    root: Path,
+    *,
+    trace_cloud: bool = False,
+    database_dsn: str | None = None,
+    emit: EventSink | None = None,
+    cancelled: Event | None = None,
+    workflow: WorkflowName | None = None,
+    max_attempts: int | None = 4,
+    supplier_url: str | None = None,
+    persona_judge: bool = False,
+    judge_kind: JudgeKind = "persona",
+    evaluation_variant: EvaluationVariant = "full",
+    provider: Provider | None = None,
+    real_data: bool = False,
+    evaluation_fault: EvaluationFault | None = None,
+    evaluation: Mapping[str, object] | None = None,
+    trace_id: str | None = None,
+    prompt_snapshot: bool = False,
+) -> dict[str, object]:
+    snapshot_enabled = prompt_snapshot_enabled(prompt_snapshot, database_dsn, os.environ)
+    if evaluation_fault is not None:
+        try:
+            validate_fault(evaluation_fault, profile="eval", database_dsn=database_dsn or "")
+            if real_data or persona_judge:
+                raise ValueError
+        except ValueError:
+            raise ProbeError(
+                "validation", "故障评测需要专用本地评测库；不能混用生产/评审路径"
+            ) from None
+    try:
+        validate_variant(
+            evaluation_variant,
+            database=database_dsn is not None,
+            workflow=workflow,
+            judge=persona_judge,
+        )
+    except ValueError as error:
+        raise ProbeError("validation", str(error)) from None
+    attempt_limit = current().max_attempts
+    if (
+        judge_kind not in get_args(JudgeKind.__value__)
+        or judge_combo_invalid(
+            judge_kind,
+            persona_judge,
+            database=bool(database_dsn),
+            supplier=bool(supplier_url),
+            workflow=workflow is not None,
+        )
+        or (max_attempts is None and attempt_limit is not None)
+        or (max_attempts is not None and (type(max_attempts) is not int or max_attempts < 1))
+        or (max_attempts is not None and attempt_limit is not None and max_attempts > attempt_limit)
+        or (workflow is not None and database_dsn is None)
+        or type(persona_judge) is not bool
+    ):
+        raise ProbeError("validation", f"对照需数据库工具；请求上限须为1至{current().max_attempts}")
+    exporter = cloud_exporter(os.environ) if trace_cloud else None
+    settings = load_runtime_settings(
+        {**os.environ, "LLM_PROVIDER": provider} if provider is not None else os.environ
+    )
+    if persona_judge and settings.provider != "deepseek":
+        raise ProbeError("blocked", "语气评审仅核验了DeepSeek固定温度线路")
+    cache = root / ".cache"
+    directory = cache / "sessions" / str(context.user_id) / str(context.session_id)
+    event_path = directory / f"events-{context.run_id}.jsonl"
+    reader = EventReader(event_path, context, emit)
+    # 子进程（worker/上游转发器）的TRACE写入此文件，父进程每0.2秒转印到自己的stdout。
+    trace_path = directory / f"trace-{context.run_id}.jsonl"
+    tail, run = Tail(trace_path), str(context.run_id)
+
+    def drain() -> None:
+        tail.drain()
+        reader.drain()
+
+    definitions = (
+        ()
+        if persona_judge
+        else evaluation_definitions(evaluation_variant, database=database_dsn is not None)
+    )
+    if real_data:
+        definitions = live_definitions(definitions)
+    budget = runtime_budget(root, settings)
+    budget.check_authorization()
+    cli = find_cli(os.environ)
+    with exclusive(cache / "model-budget" / "active.lock"):
+        if event_path.exists():
+            raise ProbeError("conflict", "此run已有执行记录，不能自动重复付费执行")
+        _, before_charge = budget.totals()
+        guard = Guard(
+            settings,
+            budget,
+            partial(forward_messages, settings.provider, settings.api_key),
+            allowed_tools=frozenset(sdk_tool_name(d.name) for d in definitions),
+            max_attempts=max_attempts,
+        )
+        guard.run = run[:8]
+        upstream.child_trace = (trace_path, run[:8])  # 每个run开始时覆盖；独占锁保证一次一个
+        if persona_judge:
+            guard.temperature = 0
+        with serve(guard) as endpoint:
+            env = worker_environment(
+                os.environ, directory, root, endpoint, guard.token, settings.model, live=real_data
+            )
+            env.update({FILE_ENV: str(trace_path), RUN_ENV: run[:8]})
+            version = run_process([str(cli), "--version"], directory, env, timeout=10)
+            if version.returncode:
+                raise ProbeError("unavailable", "Claude CLI 版本检查失败")
+            trace("worker_spawned", run, provider=settings.provider, real_data=real_data)
+            worker_started = time.monotonic()
+            report = invoke_worker(
+                cli,
+                directory,
+                env,
+                module="backend.providers.claude_agent.worker",
+                payload={
+                    "prompts": [prompt],
+                    "user_id": str(context.user_id),
+                    "session_id": str(context.session_id),
+                    "run_id": str(context.run_id),
+                    "database_dsn": database_dsn,
+                    "supplier_url": None
+                    if persona_judge or evaluation_variant == "no_tools"
+                    else supplier_url or os.environ.get("MOCK_SUPPLIER_URL"),
+                    "cli_version": version.stdout.split()[0],
+                    "workflow": workflow,
+                    "provider": settings.provider,
+                    "persona_judge": persona_judge,
+                    "judge_kind": judge_kind,
+                    "evaluation_variant": evaluation_variant,
+                    "real_data": real_data,
+                    "evaluation_fault": evaluation_fault,
+                    "prompt_snapshot": snapshot_enabled,
+                },
+                cancelled=cancelled,
+                progress=drain,
+            )
+            tail.drain()  # 超时/被杀时也要转印已写出的子进程TRACE
+            trace(
+                "worker_exited",
+                run,
+                status=report.get("status"),
+                code=report.get("code"),
+                reason=report.get("reason"),
+                exit_code=report.get("exit_code"),
+                elapsed_ms=round((time.monotonic() - worker_started) * 1000),
+                http_attempts=guard.attempts,
+                guard_failures=guard.failures,
+            )
+        count, charge = budget.totals()
+        report.update(
+            evaluation=dict(evaluation or {}),
+            http_attempts=guard.attempts,
+            requests=guard.observations,
+            http_requests=guard.http_requests,
+            http_retries=guard.http_retries,
+            last_http_retries=guard.last_http_retries,
+            grant_attempts=count,
+            currency=settings.currency,
+            grant_accounted=str(charge),
+            run_accounted=str(charge - before_charge),
+            guard_failures=guard.failures,
+            guard_failure_details=guard.failure_details,
+        )
+        if trace_id is not None:
+            report["trace_id"] = trace_id
+        if settings.currency == "CNY":
+            report.update(
+                grant_accounted_cny=str(charge), run_accounted_cny=str(charge - before_charge)
+            )
+        if guard.failures:
+            report["status"] = "error"
+            if "timeout" in guard.failures and report.get("code") != "cancelled":
+                trace(
+                    "timeout_fired",
+                    run,
+                    layer="upstream",
+                    limit_s=current().upstream_timeout,
+                    elapsed_ms=round((time.monotonic() - worker_started) * 1000),
+                    guard_failures=guard.failures,
+                )
+                report.update(code="timeout", reason="upstream_timeout")
+            elif guard.upstream_status is not None and report.get("code") != "cancelled":
+                # 供应商HTTP错误(402/401/429/5xx…)：仅传状态码，UI据此显示固定说明。
+                report.update(
+                    reason=f"{UPSTREAM_REASON}{guard.upstream_status}",
+                    upstream_http_status=guard.upstream_status,
+                )
+            elif "blocked" in guard.failures and report.get("code") not in {"cancelled", "timeout"}:
+                report.update(code="blocked", reason=guard.stop_reason)
+        if (
+            report.get("status") == "success"
+            and guard.observations
+            and guard.observations[-1]["stop_reason"]
+            not in {
+                "end_turn",
+                "stop_sequence",
+            }
+        ):
+            # 旧 CLI 可能没有向 SDK 透出 stop_reason；费用仍按完整 usage 结算。
+            trace("incomplete_output", run, stop_reason=guard.observations[-1]["stop_reason"])
+            report.update(status="error", code="provider_error", reason="incomplete_output")
+        # 先保存执行证据，即使随后进程在导出期间被终止也能恢复结果。
+        stored = report_metadata_only(report) if real_data else report
+        if real_data and event_path.exists():
+            stored_events = stored.get("events", [])
+            assert isinstance(stored_events, list)
+            event_path.write_text(
+                "".join(
+                    json.dumps(event, ensure_ascii=False, default=str) + "\n"
+                    for event in stored_events
+                    if isinstance(event, dict)
+                ),
+                encoding="utf-8",
+                newline="\n",
+            )
+        report_path = directory / "report.json"
+
+        def save_report() -> None:
+            """trace_report 会就地补写 trace 字段；每次保存都重新序列化当前 stored。"""
+            report_path.write_text(
+                json.dumps(stored, ensure_ascii=False, indent=2, default=str) + "\n",
+                encoding="utf-8",
+                newline="\n",
+            )
+
+        save_report()
+        trace_report(stored, directory, exporter)
+        save_report()
+        if emit is not None:
+            code = report.get("code")
+            if report.get("status") == "success":
+                emit(RuntimeEvent(context, "completed"))
+            else:
+                emit(
+                    RuntimeEvent(
+                        context,
+                        "cancelled" if code == "cancelled" else "failed",
+                        code=error_code(code),
+                    )
+                )
+        return report
+
+
+def report_metadata_only(report: dict[str, object]) -> dict[str, object]:
+    from pydantic import TypeAdapter
+
+    safe = dict(report)
+    events = TypeAdapter(list[RuntimeEvent]).validate_python(report.get("events", []))
+    safe["events"] = TypeAdapter(list[RuntimeEvent]).dump_python(
+        [event_metadata(event) for event in events], mode="json"
+    )
+    results = report.get("results")
+    if isinstance(results, list):
+        safe["results"] = [
+            {**result, "outcome": {**result["outcome"], "text": ""}}
+            for result in results
+            if isinstance(result, dict) and isinstance(result.get("outcome"), dict)
+        ]
+    return safe

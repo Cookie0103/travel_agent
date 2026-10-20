@@ -1,0 +1,54 @@
+{
+  "synthetic": true,
+  "mode": "DeepSeek API",
+  "task": "T3",
+  "cards": [
+    {
+      "source_run": "88b64ba0",
+      "answered_option_id": "relaxed",
+      "expected_revision": 1
+    },
+    {
+      "source_run": "7d191ff8",
+      "answered_option_id": "intensive",
+      "expected_revision": 3
+    }
+  ],
+  "runs": [
+    {
+      "tag": "88b64ba0",
+      "status": "completed"
+    },
+    {
+      "tag": "469df068",
+      "status": "completed"
+    },
+    {
+      "tag": "7d191ff8",
+      "status": "completed"
+    },
+    {
+      "tag": "0de49656",
+      "status": "completed"
+    }
+  ],
+  "pace": "特种兵",
+  "hard_source": "user_form",
+  "revision": 4,
+  "formal_plans": 0,
+  "bookings": 0,
+  "model_requests": 12,
+  "model_CNY": "0.318704",
+  "supplier_today": {
+    "places": 7
+  },
+  "keyboard_enter_selected_relaxed": true,
+  "automatic_continuation": true,
+  "source_card_answered_after_refresh": true,
+  "screenshots": [
+    "t3-pace-before-choice.jpg",
+    "t3-pace-after-choice.jpg",
+    "t3-pace-after-refresh.jpg",
+    "t3-pace-revised-provenance.jpg"
+  ]
+}

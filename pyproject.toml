@@ -1,0 +1,185 @@
+[project]
+name = "travel-agent"
+version = "0.1.0"
+description = "旅行规划 Agent：工程骨架"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "alembic>=1,<2",
+    "claude-agent-sdk>=0.2.139,<0.3",
+    "fastapi>=0.115,<1",
+    "httpx>=0.28.1,<1",
+    "mcp>=2.3,<3",
+    "opentelemetry-exporter-otlp-proto-http>=1.45.0",
+    "opentelemetry-sdk>=1.45.0",
+    "psycopg[binary]>=3,<4",
+    "pydantic>=2.12,<3",
+    "python-dotenv>=1.2.4",
+    "sqlalchemy[asyncio]>=2.0,<3",
+    "starlette>=1.7,<2",
+    "uvicorn>=0.30,<1",
+]
+
+[dependency-groups]
+dev = [
+    "httpx2>=2.13,<3",
+    "import-linter",
+    "mypy",
+    "pre-commit",
+    "pytest",
+    "pytest-asyncio",
+    "ruff",
+]
+
+[tool.uv]
+package = false
+cache-dir = ".cache/uv"
+# 现有锁文件固定版本；不让用户全局相对日期触发重新解析。
+exclude-newer = "2026-10-08T00:00:00Z"
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+include = ["*.py", "*.pyi", "pyproject.toml"]
+extend-exclude = ["vendor", ".cache"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+files = ["backend", "mock_supplier", "data", "eval", "scripts", "tests"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-config --strict-markers -m 'not live'"
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
+markers = [
+    "live: 显式授权后才可执行的真实外部模型测试",
+    "integration: 需要真实 PostgreSQL 的事务或恢复测试",
+]
+
+[tool.importlinter]
+root_packages = ["backend", "mock_supplier", "data", "eval"]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "Domain is independent of other project layers"
+type = "forbidden"
+source_modules = ["backend.domain"]
+forbidden_modules = ["backend.*", "mock_supplier", "data", "eval"]
+
+[[tool.importlinter.contracts]]
+name = "External service SDKs stay in providers adapters or mcp"
+type = "forbidden"
+source_modules = [
+    "backend.api", "backend.agent", "backend.tools", "backend.domain",
+    "backend.services", "backend.persistence", "mock_supplier", "data", "eval",
+]
+forbidden_modules = ["claude_agent_sdk", "anthropic", "openai", "mcp", "httpx"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "API reaches project layers through services or agent"
+type = "forbidden"
+source_modules = ["backend.api"]
+forbidden_modules = [
+    "backend.providers", "backend.adapters", "backend.tools", "backend.domain",
+    "backend.mcp", "backend.persistence", "mock_supplier", "data", "eval",
+]
+allow_indirect_imports = true
+
+# 以下分层契约按 ARCHITECTURE.md 声明的方向收紧；allow_indirect_imports 只约束直接导入。
+# ignore_imports 里的每一条都是已知债务，清单与消除方式见 docs/execution/layering-debt.md。
+[[tool.importlinter.contracts]]
+name = "Persistence sits below services adapters tools agent providers and API"
+type = "forbidden"
+source_modules = ["backend.persistence"]
+forbidden_modules = [
+    "backend.services", "backend.adapters", "backend.tools", "backend.agent",
+    "backend.providers", "backend.mcp", "backend.api", "mock_supplier", "data", "eval",
+]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Only the entrypoint imports the API layer"
+type = "forbidden"
+source_modules = [
+    "backend.domain", "backend.persistence", "backend.services", "backend.adapters",
+    "backend.tools", "backend.agent", "backend.providers", "backend.mcp",
+    "mock_supplier", "data", "eval",
+]
+forbidden_modules = ["backend.api"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Production code does not import eval data or the mock supplier"
+type = "forbidden"
+source_modules = ["backend"]
+forbidden_modules = ["eval", "data", "mock_supplier"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Adapters do not reach use cases tools agents or ORM models"
+type = "forbidden"
+source_modules = ["backend.adapters"]
+forbidden_modules = [
+    "backend.services", "backend.tools", "backend.agent", "backend.providers",
+    "backend.mcp", "backend.api", "backend.persistence.models",
+]
+allow_indirect_imports = true
+ignore_imports = [
+    # 已知债务：天气缓存在适配器里直接读写 ORM 行；应下沉为 persistence 仓储函数。
+    "backend.adapters.open_meteo -> backend.persistence.models",
+]
+
+[[tool.importlinter.contracts]]
+name = "Tools do not reach providers mcp persistence or API"
+type = "forbidden"
+source_modules = ["backend.tools"]
+forbidden_modules = ["backend.providers", "backend.mcp", "backend.persistence", "backend.api"]
+allow_indirect_imports = true
+
+[[tool.importlinter.contracts]]
+name = "Services do not import tools"
+type = "forbidden"
+source_modules = ["backend.services"]
+forbidden_modules = ["backend.tools"]
+allow_indirect_imports = true
+ignore_imports = [
+    # 已知债务：RunService 直接构造 TravelToolExecutor；tools.travel 又导入 9 个 services 模块，形成环。
+    "backend.services.runs -> backend.tools.contracts",
+    "backend.services.runs -> backend.tools.travel",
+]
+
+[[tool.importlinter.contracts]]
+name = "Services do not import provider implementations"
+type = "forbidden"
+source_modules = ["backend.services"]
+forbidden_modules = ["backend.providers"]
+allow_indirect_imports = true
+ignore_imports = [
+    # 已知债务：用例直接依赖 fixture 提供者与 Claude 运行时；应在组合根注入。
+    "backend.services.hotels -> backend.providers.hotel_fixture",
+    "backend.services.planning -> backend.providers.routes_fixture",
+    "backend.services.models -> backend.providers.claude_agent.budget",
+    "backend.services.models -> backend.providers.claude_agent.settings",
+    "backend.services.runs -> backend.providers.claude_agent.application",
+    "backend.services.user_profile -> backend.providers.claude_agent.structured",
+]
+
+[[tool.importlinter.contracts]]
+name = "Providers and agent do not import services"
+type = "forbidden"
+source_modules = ["backend.providers", "backend.agent"]
+forbidden_modules = ["backend.services"]
+allow_indirect_imports = true
+ignore_imports = [
+    # 已知债务：反向依赖；应把 ServiceError 等共享类型下沉到 domain，数据库工具改为注入。
+    "backend.providers.claude_agent.database_tools -> backend.services.memory",
+    "backend.providers.claude_agent.database_tools -> backend.services.travel",
+    "backend.providers.claude_agent.worker -> backend.services.common",
+    "backend.agent.demo -> backend.services.common",
+]

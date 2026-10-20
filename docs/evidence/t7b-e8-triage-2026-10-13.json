@@ -1,0 +1,199 @@
+{
+  "date": "2026-10-14",
+  "scope": "ten actual failed E6/E7 trials; closed no-tool SDK triage; no human ground truth",
+  "trials": [
+    {
+      "case_id": "v2-mem-trip-solo",
+      "trial": null,
+      "reference": {
+        "first_step": 0,
+        "label": "wrong_tool"
+      },
+      "cost_cny": "0.001486",
+      "http_attempts": 1,
+      "trace_id": "9302d30d9ac68ed3240ff6680313349b",
+      "human_verified": false
+    },
+    {
+      "case_id": "v2-mem-trip-dietary",
+      "trial": null,
+      "reference": {
+        "first_step": 0,
+        "label": "wrong_tool"
+      },
+      "cost_cny": "0.001194",
+      "http_attempts": 1,
+      "trace_id": "18570693c6e49ecd652ca42e43486bed",
+      "human_verified": false
+    },
+    {
+      "case_id": "v2-mem-negation-early",
+      "trial": null,
+      "reference": {
+        "first_step": 0,
+        "label": "wrong_tool"
+      },
+      "cost_cny": "0.001210",
+      "http_attempts": 1,
+      "trace_id": "fd72c4b9d3150932e740553e9cf76521",
+      "human_verified": false
+    },
+    {
+      "case_id": "v2-mem-negation-walk",
+      "trial": null,
+      "reference": {
+        "first_step": 0,
+        "label": "wrong_tool"
+      },
+      "cost_cny": "0.001208",
+      "http_attempts": 1,
+      "trace_id": "d3ff33fb5470c6d2380830dca9fe86cc",
+      "human_verified": false
+    },
+    {
+      "case_id": "v2-mem-update-invalidate",
+      "trial": null,
+      "reference": {
+        "first_step": 0,
+        "label": "wrong_tool"
+      },
+      "cost_cny": "0.001492",
+      "http_attempts": 1,
+      "trace_id": "f9b18659461665d29fe24e28760063fc",
+      "human_verified": false
+    },
+    {
+      "case_id": "v2-user-budget-reject",
+      "trial": 3,
+      "reference": {
+        "first_step": 5,
+        "label": "premature_confirmation"
+      },
+      "cost_cny": "0.002316",
+      "http_attempts": 1,
+      "trace_id": "515d274cf5f0724d1652f4d7db649426",
+      "human_verified": false
+    },
+    {
+      "case_id": "v2-user-pace",
+      "trial": 1,
+      "reference": {
+        "first_step": 8,
+        "label": "ignored_tool_error"
+      },
+      "cost_cny": "0.002690",
+      "http_attempts": 1,
+      "trace_id": "8568d2cb2432e971c7d3f7a3b901f0d9",
+      "human_verified": false
+    },
+    {
+      "case_id": "v2-user-pace",
+      "trial": 2,
+      "reference": {
+        "first_step": 8,
+        "label": "ignored_tool_error"
+      },
+      "cost_cny": "0.002164",
+      "http_attempts": 1,
+      "trace_id": "74e121fc34d06282e460ffd7de15ccc9",
+      "human_verified": false
+    },
+    {
+      "case_id": "v2-user-memory-cross",
+      "trial": 1,
+      "reference": {
+        "first_step": null,
+        "label": "unknown"
+      },
+      "cost_cny": "0.001476",
+      "http_attempts": 1,
+      "trace_id": "b38be62dea64364d36e9f1d43a5bb5d2",
+      "human_verified": false
+    },
+    {
+      "case_id": "v2-user-three-segments",
+      "trial": 1,
+      "reference": {
+        "first_step": 26,
+        "label": "ignored_tool_error"
+      },
+      "cost_cny": "0.006198",
+      "http_attempts": 1,
+      "trace_id": "06b5c826cd70b132535c21024ea6693b",
+      "human_verified": false
+    }
+  ],
+  "model_http": 10,
+  "cost_cny": "0.021434",
+  "labels": {
+    "wrong_tool": 5,
+    "premature_confirmation": 1,
+    "ignored_tool_error": 3,
+    "unknown": 1
+  },
+  "limitations": [
+    "Labels are uncalibrated model references, not verified root causes.",
+    "Input metadata excludes argument/body text; semantic alias failures can remain unknown.",
+    "Stage indices are validated against observed bounded metadata only; no inferred hidden steps."
+  ],
+  "human_ground_truth": "pending",
+  "agent_spot_check": {
+    "assessor": "GPT read-only provisional inspection, not human ground truth",
+    "root_cause_accuracy": null,
+    "reviewed": 10,
+    "findings": [
+      {
+        "case_id": "v2-mem-trip-solo",
+        "finding": "wrong_tool names step0 propose_memory, which was required; the extra presentation call occurs later.",
+        "supported": false
+      },
+      {
+        "case_id": "v2-mem-trip-dietary",
+        "finding": "Only propose_memory observed; failure was a declared alias mismatch, unavailable in compact metadata.",
+        "supported": false
+      },
+      {
+        "case_id": "v2-mem-negation-early",
+        "finding": "Only propose_memory observed; alias mismatch does not establish wrong_tool.",
+        "supported": false
+      },
+      {
+        "case_id": "v2-mem-negation-walk",
+        "finding": "Only propose_memory observed; semantic alias failure cannot be located from metadata alone.",
+        "supported": false
+      },
+      {
+        "case_id": "v2-mem-update-invalidate",
+        "finding": "Required propose_memory step0 is valid; extra present_travel_result appears later.",
+        "supported": false
+      },
+      {
+        "case_id": "v2-user-budget-reject",
+        "finding": "Controller repetition/failure is outside these tool-only steps; premature_confirmation is not established.",
+        "supported": false
+      },
+      {
+        "case_id": "v2-user-pace",
+        "trial": 1,
+        "finding": "Validation failure at step8 observed; product card restriction was separately reproduced/fixed. Label alone does not identify that backend root cause.",
+        "supported": null
+      },
+      {
+        "case_id": "v2-user-pace",
+        "trial": 2,
+        "finding": "Same observed card validation failure; do not treat ignored_tool_error as confirmed backend cause.",
+        "supported": null
+      },
+      {
+        "case_id": "v2-user-memory-cross",
+        "finding": "Unknown is appropriate for conservative semantic recall failure without full argument/text evidence.",
+        "supported": null
+      },
+      {
+        "case_id": "v2-user-three-segments",
+        "finding": "Route validation failures observed; root cause and first causal step still need richer evidence.",
+        "supported": null
+      }
+    ]
+  }
+}
