@@ -9,7 +9,7 @@ import pytest
 
 from backend.services.common import ServiceError
 from eval.v3_cases import V3Case
-from eval.v3_run import build_parser, main, require_snapshot_database
+from eval.v3_run import build_parser, l1_predictions, main, require_snapshot_database
 from eval.v3_user import ScriptRunner, choose_card
 
 EVAL_DSN = "postgresql://u:p@localhost:5432/travel_agent_eval_" + "b" * 32
@@ -37,6 +37,27 @@ def hotel_card(evidence: str, total: Any) -> dict[str, Any]:
         "evidence_id": evidence,
         "source_ref": "fixture:" + evidence,
     }
+
+
+def test_l1_predictions_derive_update_from_superseded_by() -> None:
+    from types import SimpleNamespace
+    from uuid import uuid4
+
+    old_id, new_id = uuid4(), uuid4()
+    facts = [
+        SimpleNamespace(
+            id=old_id, key="pace", value="特种兵", scope="long_term", superseded_by=new_id
+        ),
+        SimpleNamespace(
+            id=new_id, key="pace", value="慢节奏", scope="long_term", superseded_by=None
+        ),
+        SimpleNamespace(
+            id=uuid4(), key="transport", value="walk", scope="long_term", superseded_by=None
+        ),
+    ]
+    predictions = l1_predictions(facts)  # type: ignore[arg-type]
+    assert [p["op"] for p in predictions] == ["ADD", "UPDATE", "ADD"]
+    assert predictions[1]["value"] == "慢节奏"
 
 
 def test_choose_card_ranks_with_realistic_cards() -> None:

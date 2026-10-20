@@ -43,7 +43,7 @@
 - `live.py`、`application.py`：透传开关；开关由三道门共同控制，见下。
 - `evaluation_faults.py`：抽出 `is_eval_database`。
 - `tracing.py`：metadata 和标签里加入 `category`。
-- `claims.py`：增加三类声明，"在预算内"、"已选酒店"、"已记住"；不传 facts 时输出与旧版完全一致。
+- `claims.py`：增加声明对账，"在预算内"、"已选酒店"、"已记住"，以及 2026-10-20 补的"已订好"（`claims-v7`，按该用户 status=booked 的真实预订对账）；不传 facts 时输出与旧版完全一致。
 - `scripts/dev.py`：增加 `eval-v3` 子命令。
 
 prompt 快照只写入 `.cache/sessions/<uid>/<sid>/system-prompt-<run_id>.txt`，不进 trace、报告或 stdout。要写入必须同时满足三个条件：payload 标志为 true、环境变量 `TRAVEL_EVAL_PROMPT_SNAPSHOT=1`、DSN 是评测临时库。
@@ -95,6 +95,7 @@ prompt 快照只写入 `.cache/sessions/<uid>/<sid>/system-prompt-<run_id>.txt`�
 - 声明一致性的服务端事实逐轮计算（该轮结束时的状态）；“在预算内”按到该轮为止展示过的所有酒店卡判断，不区分声明指哪一张卡，粗检可能漏报或误报。
 - 声明检测器只认断言句：搜不到、提供选项、提问（可以选择/可选/要不要/是否/吗/？）会被跳过。
 - live 下新会话首轮的 prompt 快照缺失按 `infra_error`（`prompt_snapshot_missing`）处理，不算 `memory:L3`。
+- 运行可中断后用 `--resume <run_dir>` 续跑（跳过已完成 trial，重跑 infra_error trial，报告取每个 (case, trial) 的最新一行）；连续 2 个限额类 infra_error 会停下并打印续跑命令。
 - `fallback.policy=facts` 的 LLM 调用走同一预算账本，包含在 trial 成本里。
 
 ## 7. 暂缓

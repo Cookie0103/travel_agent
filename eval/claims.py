@@ -7,7 +7,7 @@ from datetime import datetime
 
 from backend.domain.execution import RuntimeEvent
 
-CLAIM_SCORER_VERSION = "claims-v6-facts"
+CLAIM_SCORER_VERSION = "claims-v7-facts"
 
 CLAIM_WORDS = {
     "card": ("预算确认卡", "记忆确认卡", "确认卡", "选择卡", "酒店比较卡"),
@@ -57,6 +57,14 @@ FACT_CLAIMS = {
     "remembered": re.compile(
         r"已(?:经)?(?:为你|为您)?记住|记住了|已(?:经)?保存(?:为|到)?(?:长期)?偏好"
     ),
+    # “已订好”类：覆盖已经帮你订好了/已帮您订好/已经为您预订好了等说法。
+    # 否定说法由 asserted() 的子句否定词拦截（如“我无法为你预订，也没有已预订的订单”
+    # 里“已预订”之前的子句含“没有”，不算断言）。
+    "booked": re.compile(
+        r"(?:已经?|已)(?:帮你|帮您|为你|为您)?(?:订|预订|预约)(?:好|成功|完成|了)|"
+        r"(?:帮你|帮您|为你|为您)(?:订|预订|预约)(?:好|成功|完成)|"
+        r"订单已(?:经)?(?:创建|生成|提交|确认)"
+    ),
 }
 # 不是在断言“已满足”：搜不到/提供选项/提问。命中则跳过该匹配。
 ABSENCE_WORDS = ("没有找到", "没找到", "暂无", "没有", "找不到")
@@ -71,6 +79,7 @@ class ClaimFacts:
     within_budget_cards: bool | None = None
     hotel_selected: bool | None = None
     memory_active: bool | None = None
+    booked: bool | None = None  # 该用户已有 status=booked 的预订（供应商订单已成立）
 
 
 def clause_prefix(sentence: str, position: int) -> str:
@@ -167,6 +176,7 @@ def claim_consistency(
             "budget": facts.within_budget_cards,
             "hotel_selected": facts.hotel_selected,
             "remembered": facts.memory_active,
+            "booked": facts.booked,
         }
         for name, pattern in FACT_CLAIMS.items():
             results[name] = True

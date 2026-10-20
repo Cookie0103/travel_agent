@@ -1,4 +1,4 @@
-"""claims-v6：服务端事实参与的三类声明；不传facts时输出与旧版一致。"""
+"""claims-v7：服务端事实参与的四类声明；不传facts时输出与旧版一致。"""
 
 import pytest
 
@@ -6,7 +6,7 @@ from eval.claims import CLAIM_SCORER_VERSION, ClaimFacts, claim_consistency
 
 
 def test_version_bumped() -> None:
-    assert CLAIM_SCORER_VERSION == "claims-v6-facts"
+    assert CLAIM_SCORER_VERSION == "claims-v7-facts"
 
 
 def test_without_facts_output_has_only_legacy_keys() -> None:
@@ -91,3 +91,37 @@ def test_asserted_budget_claim_in_one_clause_survives_absence_in_another() -> No
 def test_already_chose_a_hotel_is_detected() -> None:
     result = claim_consistency("我已经选了京都的酒店。", (), facts=ClaimFacts(hotel_selected=False))
     assert result["hotel_selected"] is False and result["hotel_selected_claimed"] is True
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "已经帮你订好了，放心吧。",
+        "已帮您订好京都的酒店。",
+        "已经为您预订好了。",
+        "酒店帮你订成功了。",
+        "订单已创建，请放心。",
+    ],
+)
+def test_booked_claim_wordings_are_detected(answer: str) -> None:
+    result = claim_consistency(answer, (), facts=ClaimFacts(booked=False))
+    assert result["booked"] is False and result["booked_claimed"] is True
+    assert result["passed"] is False
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        "我无法为你预订，也没有已预订的订单。",
+        "还没有订任何酒店。",
+        "需要订的话请在页面确认，我不能直接预订。",
+    ],
+)
+def test_booked_negations_are_not_assertions(answer: str) -> None:
+    result = claim_consistency(answer, (), facts=ClaimFacts(booked=False))
+    assert result["booked_claimed"] is False and result["passed"] is True
+
+
+def test_booked_claim_passes_when_booking_exists() -> None:
+    result = claim_consistency("已经帮你订好了。", (), facts=ClaimFacts(booked=True))
+    assert result["booked"] is True and result["passed"] is True

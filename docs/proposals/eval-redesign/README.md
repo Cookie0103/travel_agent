@@ -286,6 +286,8 @@ agent 暴露 19 个工具（`backend/tools/travel.py:146-292`，`search.py:19-32
    - 一致率 ≥80% 的条目，才考虑纳入成功判定。
 6. 阅读失败对话，按 `report.md` 里的失败原因表，决定是修题还是修 agent。
 
+**中断后怎么接着跑**：Ctrl-C、`--max-cny` 到顶、授权失败，或连续 2 个 trial 因限额类错误（`rate_limited`、`service:429`）结束时，运行会停下，已完成的 trial 和报告都保留，结尾打印“接着跑：…”命令。把命令里的 `--resume <run_dir>` 原样跑一遍即可：已完成（成功或真实失败）的 trial 跳过，缺失或带 infra_error 的重跑，报告用全部结果重新生成。题库内容或所选 case-id 变了会拒绝续跑，确认无误再加 `--resume-force`。
+
 **暂缓**：
 - "软约束没满足、也没告诉用户"的检测器；
 - Langfuse datasets；

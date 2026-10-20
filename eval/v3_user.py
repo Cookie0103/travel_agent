@@ -389,7 +389,7 @@ class ScriptRunner:
         self.result.context = run_context
         if abandoned:
             return False
-        if final.error_code in {"provider_error", "timeout"}:
+        if final.error_code in {"provider_error", "timeout", "rate_limited"}:
             self.result.infra_error = final.error_code
             return False
         return True

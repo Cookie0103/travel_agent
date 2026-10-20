@@ -6,10 +6,13 @@ uv run python -m eval.v3_run --live --case-id <id> # 真实DeepSeek/乐天/Googl
 
 import argparse
 import asyncio
+import hashlib
 import json
 import os
+import signal
 import subprocess
 from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Set as AbstractSet
 from contextlib import nullcontext
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime
@@ -32,8 +35,9 @@ from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.hotel_flow import current_picks, flow_from_details
 from backend.domain.plans import PlanDraft
 from backend.domain.travel_request import RequestPatch, pace_of
+from backend.limits import ProbeError
 from backend.persistence import travel as request_rows
-from backend.persistence.models import MemoryFactRow, PlanDraftRow, SupplierOrderRow
+from backend.persistence.models import BookingRow, MemoryFactRow, PlanDraftRow, SupplierOrderRow
 from backend.persistence.temporary import temporary_database
 from backend.providers.claude_agent.application import GuardedRuntime
 from backend.services.common import transaction
@@ -54,6 +58,11 @@ from eval.v3_user import ScriptResult, ScriptRunner, StructuredCall
 
 PROFILES = ("human", "default", "relaxed")
 PROMPT_ENV = "TRAVEL_EVAL_PROMPT_SNAPSHOT"
+# 表示“额度/限流”的infra_error：run的rate_limited(provider限流)与服务层429。
+# 其余(provider_error/timeout/harness:*)可能是偶发故障，不据此停止。
+LIMIT_ERRORS = frozenset({"rate_limited", "service:429"})
+QUOTA_STREAK = 2
+RUNS_DIR = ROOT / ".cache" / "eval-v3"
 SCORE_FLAGS = (
     "success",
     "hard_pass",
@@ -179,6 +188,17 @@ async def pick_count(business: DatabaseEvaluation, context: RunContext) -> int:
         return len(current_picks(flow_from_details(row.request_details), request_from_row(row)))
 
 
+async def booked_for(business: DatabaseEvaluation, context: RunContext) -> bool:
+    """该用户是否已有 status=booked 的预订；held/confirmed 不算“已订好”。"""
+    async with transaction(business.sessions.database) as db:
+        payloads = list(
+            await db.scalars(
+                select(BookingRow.payload).where(BookingRow.user_id == context.user_id)
+            )
+        )
+    return any(isinstance(p, dict) and p.get("status") == "booked" for p in payloads)
+
+
 async def facts_at(
     business: DatabaseEvaluation, context: RunContext, turns: Sequence[TurnObs]
 ) -> ClaimFacts:
@@ -189,7 +209,26 @@ async def facts_at(
         within_budget_cards=(not any(c.get("budget_excess") for c in cards)) if cards else None,
         hotel_selected=await pick_count(business, context) > 0,
         memory_active=any(f.status == "active" for f in facts),
+        booked=await booked_for(business, context),
     )
+
+
+def l1_predictions(facts: Sequence[MemoryFactRow]) -> list[dict[str, object]]:
+    """落库事实 → L1 预测：被某条旧事实的 superseded_by 指向的新事实记 UPDATE，其余记 ADD。
+
+    旧事实若不在同一批（例如跨 trial 更新）则指向关系看不见，退化为 ADD；
+    本题库的更新题都在同一 trial 内先建后改，不受影响。
+    """
+    superseded_targets = {f.superseded_by for f in facts if f.superseded_by is not None}
+    return [
+        {
+            "key": f.key,
+            "value": f.value,
+            "scope": f.scope,
+            "op": "UPDATE" if f.id in superseded_targets else "ADD",
+        }
+        for f in facts
+    ]
 
 
 async def count_orders(business: DatabaseEvaluation) -> int:
@@ -260,9 +299,7 @@ async def collect(
                     select(MemoryFactRow).where(MemoryFactRow.source_run_id.in_(run_ids))
                 )
             )
-        predictions = [
-            {"key": f.key, "value": f.value, "scope": f.scope, "op": "ADD"} for f in facts
-        ]
+        predictions = l1_predictions(facts)
         layer1 = memory_scores(
             [e.model_dump(mode="json") for e in case.memory.l1],
             predictions,
@@ -287,6 +324,7 @@ async def collect(
             else None,
             hotel_selected=picks > 0,
             memory_active=any(f.get("status") == "active" for f in current_facts),
+            booked=await booked_for(business, final),
         ),
         step_unavailable=result.step_unavailable,
         infra_error=result.infra_error,
@@ -477,11 +515,18 @@ async def run_all(
     *,
     max_cny: float | None,
     on_row: Callable[[dict[str, object]], None],
+    skip: AbstractSet[tuple[str, int]] = frozenset(),
 ) -> str | None:
-    """顺序执行所有trial；返回提前停止的原因（超出费用上限）或None。"""
+    """顺序执行所有trial；返回提前停止的原因（费用上限/疑似额度耗尽）或None。
+
+    skip：断点续跑时已完成的(case_id, trial)。连续QUOTA_STREAK个trial以限额类
+    infra_error结束时停止，避免把剩余trial都烧成infra_error。"""
     spent = Decimal(0)
+    streak: list[str] = []
     for case in cases:
         for trial in range(1, repeat + 1):
+            if (case.case_id, trial) in skip:
+                continue
             if max_cny is not None and spent >= Decimal(str(max_cny)):
                 return f"max_cny_reached:{spent}"
             if config.budget is not None:
@@ -535,6 +580,10 @@ async def run_all(
             row["cost_cny"] = str(cost)
             finish_trial(row, config)
             on_row(row)
+            code = row.get("infra_error")
+            streak = [*streak, str(code)] if code in LIMIT_ERRORS else []
+            if len(streak) >= QUOTA_STREAK:
+                return f"quota_suspected:{streak[-1]}"
     return None
 
 
@@ -600,6 +649,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="可选的软上限（默认不限）：只在两个trial之间检查累计花费，最多可超出一个trial。",
     )
     parser.add_argument(
+        "--resume",
+        type=Path,
+        default=None,
+        metavar="RUN_DIR",
+        help="接着跑被中断的运行：跳过已完成的trial，重跑缺失/infra_error的trial",
+    )
+    parser.add_argument(
+        "--resume-force", action="store_true", help="题库或case-id与原运行不一致时仍然续跑"
+    )
+    parser.add_argument(
         "--no-judge", action="store_true", help="--live默认开启rubric评审；加此项关闭"
     )
     parser.add_argument(
@@ -608,6 +667,77 @@ def build_parser() -> argparse.ArgumentParser:
         help="用另一套措辞重评通用项，报告翻转率（评审成本约翻倍）",
     )
     return parser
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def read_rows(directory: Path) -> list[dict[str, object]]:
+    """读已有trials.jsonl；被中断写坏的最后一行直接忽略（该trial会重跑）。"""
+    path = directory / "trials.jsonl"
+    rows: list[dict[str, object]] = []
+    if path.exists():
+        for line in path.read_text(encoding="utf-8").splitlines():
+            try:
+                rows.append(json.loads(line))
+            except json.JSONDecodeError:
+                continue
+    return rows
+
+
+def latest_rows(rows: Sequence[dict[str, object]]) -> list[dict[str, object]]:
+    """每个(case_id, trial)只保留最后一行（重跑infra_error后以新行为准），保持首次出现的顺序。"""
+    latest: dict[tuple[str, int], dict[str, object]] = {}
+    for row in rows:
+        latest[(str(row["case_id"]), int(str(row["trial"])))] = row
+    return list(latest.values())
+
+
+def completed_keys(rows: Sequence[dict[str, object]], repeat: int) -> set[tuple[str, int]]:
+    """已完成=最新一行没有infra_error（成功或真实失败都算）；缺失或infra_error的要重跑。"""
+    return {
+        (str(r["case_id"]), int(str(r["trial"])))
+        for r in latest_rows(rows)
+        if r.get("infra_error") is None and int(str(r["trial"])) <= repeat
+    }
+
+
+def resume_mismatch(
+    manifest: Mapping[str, object], cases_file: Path, case_ids: Sequence[str], live: bool
+) -> str | None:
+    if manifest.get("cases_sha256") != file_sha256(cases_file):
+        return "题库文件内容与原运行不同"
+    if sorted(map(str, manifest.get("cases", []))) != sorted(case_ids):  # type: ignore[call-overload]
+        return "所选case-id与原运行不同"
+    if bool(manifest.get("live")) != live:
+        return "live/离线模式与原运行不同"
+    return None
+
+
+def resume_command(args: argparse.Namespace, directory: Path) -> str:
+    parts = ["uv run python scripts/dev.py eval-v3"]
+    if args.live:
+        parts.append("--live")
+    if args.trace_cloud:
+        parts.append("--trace-cloud")
+    parts += [f"--resume {directory}", f"--repeat {args.repeat}", f"--profile {args.profile}"]
+    parts += [f"--case-id {c}" for c in args.case_id]
+    if Path(args.cases) != DEFAULT_CASES:
+        parts.append(f"--cases {args.cases}")
+    if args.max_cny is not None:
+        parts.append(f"--max-cny {args.max_cny}")
+    if args.no_judge:
+        parts.append("--no-judge")
+    if args.judge_check:
+        parts.append("--judge-check")
+    if args.resume_force:
+        parts.append("--resume-force")
+    return " ".join(parts)
+
+
+def _raise_interrupt(signum: int, frame: object) -> None:
+    raise KeyboardInterrupt
 
 
 def main(argv: Sequence[str] | None = None) -> int:
@@ -620,16 +750,41 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("--max-cny必须为正数")
     if args.judge_check and (args.no_judge or not args.live):
         parser.error("--judge-check需要--live且不能与--no-judge同用")
+    if args.resume_force and args.resume is None:
+        parser.error("--resume-force需要--resume")
     cases = [c for c in load_cases(args.cases) if not args.case_id or c.case_id in args.case_id]
     if args.case_id and len(cases) != len(set(args.case_id)):
         parser.error("有case-id不在题库里")
+    old_rows: list[dict[str, object]] = []
+    previous: dict[str, object] = {}
+    if args.resume is not None:
+        directory = Path(args.resume)
+        try:
+            previous = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            print(f"无法续跑：{directory}里没有可读的manifest.json")
+            return 2
+        mismatch = resume_mismatch(previous, args.cases, [c.case_id for c in cases], args.live)
+        if mismatch and not args.resume_force:
+            print(f"拒绝续跑：{mismatch}（确认无误可加 --resume-force）")
+            return 2
+        old_rows = read_rows(directory)
+        run_name = str(previous.get("run_name", directory.name))
+    else:
+        run_name = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:6]
+        directory = RUNS_DIR / run_name
+        directory.mkdir(parents=True)
+    skip = completed_keys(old_rows, args.repeat) if args.resume is not None else set()
+    total = len(cases) * args.repeat
+    pending = sum((c.case_id, t) not in skip for c in cases for t in range(1, args.repeat + 1))
+    if args.resume is not None:
+        print(
+            f"已完成 {total - pending}，待跑 {pending}（含需重跑的infra_error trial）", flush=True
+        )
     from scripts.dev import configure_environment
 
     configure_environment()
     configure_profile(args.profile)
-    run_name = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:6]
-    directory = ROOT / ".cache" / "eval-v3" / run_name
-    directory.mkdir(parents=True)
     budget = None
     structured: StructuredCall | None = None
     if args.live:
@@ -662,25 +817,38 @@ def main(argv: Sequence[str] | None = None) -> int:
         judge_check=args.judge_check,
         judge_call=structured if args.live else None,
     )
-    manifest = {
+    manifest: dict[str, object] = {
+        **previous,
         "run_name": run_name,
         "live": args.live,
         "profile": args.profile,
         "repeat": args.repeat,
         "cases": [c.case_id for c in cases],
         "cases_file": str(args.cases),
+        "cases_sha256": file_sha256(args.cases),
         "max_cny": args.max_cny,
         "judge": config.judge,
         "judge_check": config.judge_check,
-        "git_sha": meta["git_sha"],
-        "started_at": datetime.now(UTC).isoformat(),
+        "git_sha": previous.get("git_sha", meta["git_sha"]),
+        "started_at": previous.get("started_at", datetime.now(UTC).isoformat()),
         "prompt_snapshot_env": os.environ.get(PROMPT_ENV) == "1",
     }
-    (directory / "manifest.json").write_text(
-        json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
-    )
-    rows: list[dict[str, object]] = []
+    if args.resume is not None:
+        resumed = list(previous.get("resumed_from") or [])  # type: ignore[call-overload]
+        manifest["resumed_from"] = [
+            *resumed,
+            {"at": datetime.now(UTC).isoformat(), "completed": total - pending, "pending": pending},
+        ]
+    rows = list(old_rows)
     stopped: list[str | None] = [None]
+
+    def save_manifest() -> None:
+        manifest["stopped"] = stopped[0]
+        (directory / "manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+
+    save_manifest()
 
     def record(row: dict[str, object]) -> None:
         rows.append(row)
@@ -695,6 +863,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             flush=True,
         )
 
+    signal.signal(signal.SIGTERM, _raise_interrupt)
     with (
         temporary_database(_database_url(), "eval") as url,
         selector_runner() as runner,
@@ -703,7 +872,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         async def execute() -> None:
             async with database_evaluation(url) as business:
                 stopped[0] = await run_all(
-                    business, cases, args.repeat, config, max_cny=args.max_cny, on_row=record
+                    business,
+                    cases,
+                    args.repeat,
+                    config,
+                    max_cny=args.max_cny,
+                    on_row=record,
+                    skip=skip,
                 )
 
         try:
@@ -711,10 +886,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         except ValueError as error:
             print(error)
             return 2
-        runner.run(execute())
-    write_reports(directory, manifest, rows, args.repeat, stopped[0])
+        try:
+            runner.run(execute())
+        except KeyboardInterrupt:
+            stopped[0] = "interrupted"  # 在途trial不记录，续跑时重跑
+        except ProbeError as error:
+            stopped[0] = f"authorization_failed:{error.code}"
+    save_manifest()
+    # 报告用全部行（旧+新）；同一(case, trial)以最新一行为准。
+    write_reports(directory, manifest, latest_rows(rows), args.repeat, stopped[0])
     print(directory)
-    return 0
+    if stopped[0] is None:
+        return 0
+    if not str(stopped[0]).startswith("max_cny_reached"):
+        print(f"提前结束：{stopped[0]}")
+    print(f"接着跑：{resume_command(args, directory)}")
+    return 130 if stopped[0] == "interrupted" else (0 if "max_cny" in str(stopped[0]) else 1)
 
 
 def _database_url() -> Any:

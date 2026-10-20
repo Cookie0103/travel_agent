@@ -313,6 +313,55 @@ def test_live_missing_prompt_snapshot_is_infra_error_not_memory_failure() -> Non
     assert score_trial(case(), Observation(turns=(turn(),))).l3_source is None
 
 
+def test_turn_tool_check_empty_reply_and_proposed_memory_absent() -> None:
+    searched = turn(events=(event("tool_started", 1, tool="search_hotel_offers"),))
+    ok_case = case(
+        hard_checks=[
+            {
+                "id": "t",
+                "type": "turn_tool",
+                "turn": "last",
+                "called": ["search_hotel_offers"],
+                "not_called": ["stage_plan_change"],
+            }
+        ]
+    )
+    assert score_trial(ok_case, Observation(turns=(searched,))).success
+    assert not score_trial(ok_case, Observation(turns=(turn(),))).success
+    empty = score_trial(case(), Observation(turns=(turn(""),)))
+    assert not empty.success and empty.reason == "empty_reply"
+    proposed = DbFacts(
+        memory_current=(
+            {"key": "pace", "value": "特种兵", "scope": "long_term", "status": "proposed"},
+        )
+    )
+    absent_case = case(
+        hard_checks=[{"id": "m", "type": "db", "assert": "memory_absent", "key": "pace"}]
+    )
+    assert not score_trial(absent_case, Observation(turns=(turn(),), db=proposed)).success
+    scoped = case(
+        hard_checks=[
+            {"id": "m", "type": "db", "assert": "memory_absent", "key": "pace", "scope": "trip"}
+        ]
+    )
+    assert score_trial(scoped, Observation(turns=(turn(),), db=proposed)).success
+
+
+def test_l3_fragment_contract() -> None:
+    """片段只出现在记忆快照序列化里，人设全文里没有（normalized_surface 口径）。"""
+    import json
+
+    from backend.agent.persona import travel_prompt
+    from eval.memory_metrics import normalized_surface
+
+    snapshot = json.dumps(
+        [{"fact_id": "x", "key": "pace", "value": "慢节奏", "scope": "long_term"}],
+        ensure_ascii=False,
+    )
+    assert "pacevalue慢节奏" in normalized_surface(snapshot)
+    assert "pacevalue慢节奏" not in normalized_surface(travel_prompt())
+
+
 def test_claims_use_each_turns_own_facts() -> None:
     early = turn("已为你记住慢节奏。", claim_facts=ClaimFacts(memory_active=True))
     late = turn("已为你记住慢节奏。", index=2, claim_facts=ClaimFacts(memory_active=False))

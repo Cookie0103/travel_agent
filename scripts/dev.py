@@ -230,6 +230,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     v3.add_argument("--cases", type=Path)
     v3.add_argument("--profile", choices=("human", "default", "relaxed"), default="human")
     v3.add_argument("--max-cny", type=float)
+    v3.add_argument("--resume", type=Path)
+    v3.add_argument("--resume-force", action="store_true")
     v3.add_argument("--no-judge", action="store_true")
     v3.add_argument("--judge-check", action="store_true")
     calibration = commands.add_parser("eval-calibration")
@@ -340,6 +342,10 @@ def main(argv: Sequence[str] | None = None) -> int:
                 command.extend(["--cases", str(args.cases)])
             if args.max_cny is not None:
                 command.extend(["--max-cny", str(args.max_cny)])
+            if args.resume:
+                command.extend(["--resume", str(args.resume)])
+            if args.resume_force:
+                command.append("--resume-force")
             if args.no_judge:
                 command.append("--no-judge")
             if args.judge_check:

@@ -35,7 +35,8 @@ def test_shipped_examples_load_and_cover_three_categories() -> None:
     assert {c.category for c in cases} >= {"memory", "fault", "out_of_scope"}
     assert len({c.case_id for c in cases}) == len(cases)
     memory = next(c for c in cases if c.category == "memory")
-    assert memory.fault is None and memory.memory.l3.present == ("慢节奏",)
+    # L3 用快照 JSON 片段而不是裸词：人设全文自带「慢节奏」，裸词 present 恒真无区分度。
+    assert memory.fault is None and memory.memory.l3.present == ("pacevalue慢节奏",)
 
 
 def test_defaults() -> None:
@@ -145,6 +146,29 @@ def test_time_limits_are_optional_but_validated_when_set() -> None:
     for changes in ({"patience_s": 5}, {"ttfua_s": 0}, {"patience_s": 20, "ttfua_s": 30}):
         with pytest.raises(ValidationError):
             build(**changes)
+
+
+def test_turn_tool_check_and_scoped_memory_absent_are_valid() -> None:
+    value = build(
+        hard_checks=[
+            {"id": "a", "type": "turn_tool", "turn": "last", "called": ["search_hotel_offers"]},
+            {"id": "b", "type": "db", "assert": "memory_absent", "key": "pace", "scope": "trip"},
+            {"id": "c", "type": "turn_tool", "turn": 1, "not_called": ["stage_plan_change"]},
+        ]
+    )
+    assert len(value.hard_checks) == 3
+    for bad in (
+        {"id": "x", "type": "turn_tool", "turn": "last"},
+        {"id": "x", "type": "turn_tool", "called": ["save_plan"]},
+        {
+            "id": "x",
+            "type": "turn_tool",
+            "called": ["search_places"],
+            "not_called": ["search_places"],
+        },
+    ):
+        with pytest.raises(ValidationError):
+            build(hard_checks=[bad])
 
 
 def test_case_rubric_ids_cannot_shadow_generic_items() -> None:

@@ -83,6 +83,8 @@ class ScriptedRuntime(OfflineRuntime):
         if prompt.startswith("追问"):
             tee(RuntimeEvent(context, "text", text="你们几个人出行？"))
             return RuntimeOutcome("你们几个人出行？", "sdk")
+        if prompt.startswith("限流"):
+            return RuntimeOutcome(code="rate_limited", reason="provider_rate_limit")
         if prompt.startswith("慢速"):
             await asyncio.sleep(0.4)
             tee(RuntimeEvent(context, "text", text="慢但完成"))
@@ -405,3 +407,14 @@ def test_judge_error_never_changes_success(
     judge_result: Any = rows[0]["judge"]
     assert judge_result["error"] == "judge_error:RuntimeError" and rows[0]["judge_yes_rate"] is None
     assert not any(k.startswith("judge_") for k in pushed[0])
+
+
+def test_provider_rate_limit_is_an_infra_error_that_stops_the_script(postgres_url: URL) -> None:
+    async def body(business: DatabaseEvaluation) -> None:
+        case = make(user_script=[{"say": "限流"}, {"say": "不应执行"}])
+        result, events, orders = await play(business, case)
+        assert result.infra_error == "rate_limited" and len(result.turns) == 1
+        score = score_trial(case, await collect(business, case, result, events, orders))
+        assert score.reason == "infra_error" and score.infra_error == "rate_limited"
+
+    in_eval_db(postgres_url, body)

@@ -171,7 +171,13 @@ class DbCheck(CheckBase):
             "memory_active": {"key", "scope"},
             "memory_absent": {"key"},
         }.get(self.assert_, set())
-        optional = {"value_contains"} if self.assert_ == "memory_active" else set()
+        optional = (
+            {"value_contains"}
+            if self.assert_ == "memory_active"
+            else {"scope"}
+            if self.assert_ == "memory_absent"
+            else set()
+        )
         if not needed <= given or not given <= needed | optional:
             raise ValueError(f"{self.assert_}的参数应为{sorted(needed | optional)}")
         return self
@@ -217,8 +223,34 @@ class CardCheck(CheckBase):
         return self
 
 
+class TurnToolCheck(CheckBase):
+    """指定轮次实际调用过的工具：called 必须全出现，not_called 必须都不出现。
+
+    trial 级 required/forbidden 只能看并集，改条件后“是否真的按新条件重查”
+    这类问题必须按轮断言，所以单列这一类。
+    """
+
+    type: Literal["turn_tool"]
+    turn: int | Literal["last", "any"] = "last"
+    called: tuple[str, ...] = ()
+    not_called: tuple[str, ...] = ()
+
+    @model_validator(mode="after")
+    def valid_tools(self) -> "TurnToolCheck":
+        valid_turn(self.turn)
+        if not self.called and not self.not_called:
+            raise ValueError("turn_tool检查需要called或not_called")
+        unknown = {*self.called, *self.not_called} - TOOL_NAMES
+        if unknown:
+            raise ValueError(f"未注册的工具名：{sorted(unknown)}")
+        if set(self.called) & set(self.not_called):
+            raise ValueError("called与not_called不能相交")
+        return self
+
+
 type Check = Annotated[
-    ValidatorCheck | StateCheck | DbCheck | ReplyCheck | CardCheck, Field(discriminator="type")
+    ValidatorCheck | StateCheck | DbCheck | ReplyCheck | CardCheck | TurnToolCheck,
+    Field(discriminator="type"),
 ]
 
 
@@ -310,7 +342,9 @@ class V3Case(Strict):
         producing = sum(s.action in {"say", "card", "hotel_pick"} for s in self.user_script)
         limit = producing + self.fallback.max_extra_turns
         for check in (*self.hard_checks, *self.soft_checks, *self.memory.l4):
-            if isinstance(check, (ReplyCheck, CardCheck)) and isinstance(check.turn, int):
+            if isinstance(check, (ReplyCheck, CardCheck, TurnToolCheck)) and isinstance(
+                check.turn, int
+            ):
                 if check.turn > limit:
                     raise ValueError(
                         f"检查{check.id}的turn={check.turn}超过脚本最多产生的{limit}轮run"

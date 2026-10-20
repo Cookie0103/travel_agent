@@ -17,6 +17,7 @@ from eval.v3_cases import (
     DbCheck,
     ReplyCheck,
     StateCheck,
+    TurnToolCheck,
     V3Case,
     ValidatorCheck,
 )
@@ -174,6 +175,13 @@ def run_check(check: Check, obs: Observation) -> tuple[Outcome, str]:
         return ("pass" if ok else "fail"), ""
     if isinstance(check, DbCheck):
         return db_outcome(check, obs.db)
+    if isinstance(check, TurnToolCheck):
+        picked = last_turn(obs.turns, check.turn)
+        if not picked:
+            return "unknown", "该轮不存在"
+        names = set(tool_names(picked))
+        ok = set(check.called) <= names and not (set(check.not_called) & names)
+        return ("pass" if ok else "fail"), ""
     if isinstance(check, ReplyCheck):
         picked = last_turn(obs.turns, check.turn)
         if not picked:
@@ -248,9 +256,13 @@ def db_outcome(check: DbCheck, db: DbFacts) -> tuple[Outcome, str]:
                 )
             )
         case "memory_absent":
+            # 只看 active 时这条永远通过（没有确认点击就不可能 active）；
+            # proposed 也算“已经提出了不该提的记忆”，scope 给了就一并限定。
             return _flag(
                 not any(
-                    f.get("key") == check.key and f.get("status") == "active"
+                    f.get("key") == check.key
+                    and f.get("status") in {"proposed", "active"}
+                    and (check.scope is None or f.get("scope") == check.scope)
                     for f in db.memory_current
                 )
             )
@@ -373,6 +385,7 @@ def score_trial(case: V3Case, obs: Observation) -> Score:
         else None
     )
     violations, claim_unknown, claimed = claim_summary(obs)
+    empty_reply = any(not t.answer.strip() for t in obs.turns)
     tools = tool_summary(case, obs)
     tool_ok = not (
         tools["missing_required"]
@@ -407,6 +420,7 @@ def score_trial(case: V3Case, obs: Observation) -> Score:
         and tool_ok
         and memory_ok
         and not abandoned
+        and not empty_reply
         and step_ok
         and infra_error is None
     )
@@ -460,6 +474,8 @@ def failure_reason(
         return "blocked_or_hallucinated_tool"
     if violations:
         return f"false_claim:{violations[0]}"
+    if any(not t.answer.strip() for t in obs.turns):
+        return "empty_reply"
     if hard_failures:
         return f"hard:{hard_failures[0].id}"
     if obs.step_unavailable is not None:
