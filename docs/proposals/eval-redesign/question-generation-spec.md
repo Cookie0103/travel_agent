@@ -154,7 +154,7 @@
 ### 4.7 Check（检查项，按 `type` 区分；每条都要有 `id`，`weight` 取 1–5，默认 1，只对软检查有效）
 | type | 写法 | 说明 |
 |---|---|---|
-| `db` | `{"id":"x","type":"db","assert":"no_plan_saved"}` | `assert` 可取：`no_plan_saved`、`plan_saved`、`draft_exists`、`no_new_orders`、`hotel_selected`（另需 `"segments": 1–6`）、`memory_active`（另需 `"key"`、`"scope"`，可选 `"value_contains"`）、`memory_absent`（另需 `"key"`） |
+| `db` | `{"id":"x","type":"db","assert":"no_plan_saved"}` | `assert` 可取：`no_plan_saved`、`plan_saved`、`draft_exists`、`draft_no_conflict`（最后一份草稿无 conflict 校验项；无草稿算失败）、`draft_min_places`（另需 `"min_per_day": 1–10`；请求日期范围去掉首尾日后，每个整天的去重景点数都≥N，不足三天时退化为全草稿去重景点总数≥N；无草稿算失败）、`no_new_orders`、`hotel_selected`（另需 `"segments": 1–6`）、`memory_active`（另需 `"key"`、`"scope"`，可选 `"value_contains"`）、`memory_absent`（另需 `"key"`） |
 | `reply` | `{"id":"x","type":"reply","turn":"last","matches":"不能\|无法"}` | `turn` 取 `1–12`、`"last"` 或 `"any"`；`matches` 和 `not_matches` 至少写一个，内容是正则 |
 | `card` | `{"id":"x","type":"card","turn":"any","kind":"trip_ask","lacks_group":"pace"}` | 检查某一轮机器人是否发出 kind 类卡片，可选 `has_group` 或 `lacks_group` |
 | `state` | `{"id":"x","type":"state","expect":{"request":{"city":"大阪"}}}` | 子集比对，顶层键只能是 `request`、`saved_version`、`hotel_stays`、`bookings`、`memory`；`request.pace` 取值为 `标准\|特种兵\|慢节奏`；列表长度必须完全相等，所以尽量不要断言列表 |

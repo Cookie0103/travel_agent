@@ -70,6 +70,11 @@ class TurnObs:
 @dataclass(frozen=True)
 class DbFacts:
     draft_exists: bool = False
+    draft_conflicts: int = 0  # 最后一份草稿validation中status=conflict的check数
+    # 最后一份草稿按日期(行程自带的+09:00本地日)去重后的景点数；None=无草稿。
+    # draft_trip_dates是请求的start..end全部日期；首尾日(到达/离开)不算整天。
+    draft_places_by_day: Mapping[str, int] | None = None
+    draft_trip_dates: tuple[str, ...] = ()
     plan_saved: bool = False
     new_orders: int = 0
     hotel_selected_segments: int = 0
@@ -236,6 +241,10 @@ def db_outcome(check: DbCheck, db: DbFacts) -> tuple[Outcome, str]:
             return _flag(db.hotel_selected_segments >= (check.segments or 1))
         case "draft_exists":
             return _flag(db.draft_exists)
+        case "draft_no_conflict":
+            return _flag(db.draft_exists and db.draft_conflicts == 0)
+        case "draft_min_places":
+            return _flag(draft_has_min_places(db, check.min_per_day or 1))
         case "plan_saved":
             return _flag(db.plan_saved)
         case "no_plan_saved":
@@ -267,6 +276,22 @@ def db_outcome(check: DbCheck, db: DbFacts) -> tuple[Outcome, str]:
                 )
             )
     raise AssertionError(check.assert_)
+
+
+def draft_has_min_places(db: DbFacts, minimum: int) -> bool:
+    """整天=请求日期范围去掉首尾日；每个整天的去重景点数都须>=minimum。
+
+    草稿items全是景点(酒店走hotel_stays、交通走route_evidence_id，都不是item)，
+    按place_evidence_id去重。没有整天(行程<=2天)时退化为全草稿去重景点总数>=minimum。
+    无草稿/无日期信息一律不通过。
+    """
+    counts = db.draft_places_by_day
+    if counts is None or not db.draft_trip_dates:
+        return False
+    full_days = db.draft_trip_dates[1:-1]
+    if not full_days:
+        return sum(counts.values()) >= minimum
+    return all(counts.get(day, 0) >= minimum for day in full_days)
 
 
 def _flag(value: bool) -> tuple[Outcome, str]:

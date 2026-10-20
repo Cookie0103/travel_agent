@@ -372,3 +372,32 @@ def test_claims_use_each_turns_own_facts() -> None:
     legacy = turn("已为你记住慢节奏。")
     fallback = Observation(turns=(legacy,), claim_facts=ClaimFacts(memory_active=False))
     assert not score_trial(case(), fallback).success
+
+
+def test_draft_completeness_and_conflict_asserts() -> None:
+    checks: list[dict[str, Any]] = [
+        {"id": "p", "type": "db", "assert": "draft_min_places", "min_per_day": 2},
+        {"id": "c", "type": "db", "assert": "draft_no_conflict"},
+    ]
+    dates = ("2026-12-11", "2026-12-12", "2026-12-13")
+    good = DbFacts(
+        draft_exists=True,
+        draft_places_by_day={"2026-12-11": 1, "2026-12-12": 3, "2026-12-13": 0},
+        draft_trip_dates=dates,
+    )
+    assert score_trial(case(hard_checks=checks), Observation(db=good)).success
+    # 两晚只有一个景点：中间整天不足2个
+    sparse = DbFacts(
+        draft_exists=True,
+        draft_places_by_day={"2026-12-12": 1},
+        draft_trip_dates=dates,
+    )
+    assert score_trial(case(hard_checks=checks), Observation(db=sparse)).reason == "hard:p"
+    conflicted = DbFacts(
+        draft_exists=True,
+        draft_conflicts=1,
+        draft_places_by_day=good.draft_places_by_day,
+        draft_trip_dates=dates,
+    )
+    assert score_trial(case(hard_checks=checks), Observation(db=conflicted)).reason == "hard:c"
+    assert not score_trial(case(hard_checks=checks), Observation(db=DbFacts())).success

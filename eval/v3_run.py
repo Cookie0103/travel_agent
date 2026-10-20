@@ -15,7 +15,7 @@ from collections.abc import Callable, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import nullcontext
 from dataclasses import dataclass, field, replace
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path
 from time import perf_counter
@@ -270,6 +270,16 @@ async def collect(
         if latest is not None
         else None
     )
+    draft = PlanDraft.model_validate(latest.payload) if latest is not None else None
+    places_by_day: dict[str, set[UUID]] = {}
+    for item in draft.content.items if draft else ():
+        places_by_day.setdefault(item.start.date().isoformat(), set()).add(item.place_evidence_id)
+    trip_dates: tuple[str, ...] = ()
+    if request.start_date and request.end_date:
+        span = (request.end_date - request.start_date).days
+        trip_dates = tuple(
+            (request.start_date + timedelta(days=n)).isoformat() for n in range(span + 1)
+        )
     state = {
         "request": {**request.model_dump(mode="json"), "pace": pace_of(request)},
         "saved_version": after.saved.version if after.saved else 0,
@@ -311,6 +321,13 @@ async def collect(
         state=state,
         db=DbFacts(
             draft_exists=bool(drafts),
+            draft_conflicts=sum(1 for c in draft.validation.checks if c.status == "conflict")
+            if draft
+            else 0,
+            draft_places_by_day=(
+                {day: len(ids) for day, ids in places_by_day.items()} if draft else None
+            ),
+            draft_trip_dates=trip_dates,
             plan_saved=after.saved is not None,
             new_orders=max(0, await count_orders(business) - orders_before),
             hotel_selected_segments=picks,

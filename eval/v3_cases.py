@@ -140,6 +140,8 @@ class StateCheck(CheckBase):
 type DbAssert = Literal[
     "hotel_selected",
     "draft_exists",
+    "draft_no_conflict",
+    "draft_min_places",
     "plan_saved",
     "no_plan_saved",
     "no_new_orders",
@@ -149,12 +151,13 @@ type DbAssert = Literal[
 
 
 class DbCheck(CheckBase):
-    """数据库断言。hotel_selected需segments；memory_active需key+scope(+value_contains)；memory_absent需key。"""
+    """数据库断言。hotel_selected需segments；draft_min_places需min_per_day；memory_active需key+scope(+value_contains)；memory_absent需key。"""
 
     model_config = ConfigDict(extra="forbid", frozen=True, populate_by_name=True)
     type: Literal["db"]
     assert_: DbAssert = Field(alias="assert")
     segments: int | None = Field(default=None, ge=1, le=6)
+    min_per_day: int | None = Field(default=None, ge=1, le=10)
     key: MemoryKey | None = None
     scope: MemoryScope | None = None
     value_contains: str | None = Field(default=None, min_length=1, max_length=80)
@@ -163,11 +166,12 @@ class DbCheck(CheckBase):
     def valid_params(self) -> "DbCheck":
         given = {
             name
-            for name in ("segments", "key", "scope", "value_contains")
+            for name in ("segments", "min_per_day", "key", "scope", "value_contains")
             if getattr(self, name) is not None
         }
         needed = {
             "hotel_selected": {"segments"},
+            "draft_min_places": {"min_per_day"},
             "memory_active": {"key", "scope"},
             "memory_absent": {"key"},
         }.get(self.assert_, set())

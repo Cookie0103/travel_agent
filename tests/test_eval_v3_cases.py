@@ -73,6 +73,17 @@ def test_defaults() -> None:
         {"hard_checks": [{"id": "a", "type": "reply"}]},
         {"hard_checks": [{"id": "a", "type": "reply", "matches": "("}]},
         {"hard_checks": [{"id": "a", "type": "db", "assert": "hotel_selected"}]},
+        {"hard_checks": [{"id": "a", "type": "db", "assert": "draft_min_places"}]},
+        {
+            "hard_checks": [
+                {"id": "a", "type": "db", "assert": "draft_min_places", "min_per_day": 11}
+            ]
+        },
+        {
+            "hard_checks": [
+                {"id": "a", "type": "db", "assert": "draft_no_conflict", "min_per_day": 2}
+            ]
+        },
         {"hard_checks": [{"id": "a", "type": "db", "assert": "memory_absent", "scope": "trip"}]},
         {
             "hard_checks": [{"id": "a", "type": "reply", "matches": "x"}],
