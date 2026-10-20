@@ -56,6 +56,11 @@ def test_effective_answers_use_card_defaults_and_script_overrides() -> None:
         "pace": ("intensive",),
         "wake": ("w0730",),
     }
+    # 脚本答案落在卡上没有的组里时丢弃，而不是让服务端以多余题目拒绝整卡
+    assert effective_answers(card, {"children": ("none",)}) == {
+        "pace": ("relaxed",),
+        "wake": ("w0730",),
+    }
     # 非表单卡不组装答案（服务端禁止普通选择混填表单答案）
     assert effective_answers({"kind": "memory_confirm"}, None) is None
     # 表单卡没有预选时给空答案而不是None：trip_ask 允许全不答，None会被服务端422拒绝

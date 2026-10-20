@@ -136,8 +136,14 @@ def effective_answers(
             if isinstance(selected, list) and selected:
                 answers[str(group["key"])] = tuple(str(v) for v in selected)
     if isinstance(scripted, dict):
+        # 脚本写死的答案只能落在卡上实际有的组里：某个组已被服务端跳过
+        # （例如儿童情况已从对话得知）时硬塞会让服务端以“答案包含卡片没有的题目”拒绝整卡。
+        present = set(answers) | {
+            str(g["key"]) for g in groups or [] if isinstance(g, dict) and "key" in g
+        }
         for key, values in scripted.items():
-            answers[str(key)] = tuple(str(v) for v in values)
+            if str(key) in present:
+                answers[str(key)] = tuple(str(v) for v in values)
     return answers
 
 
