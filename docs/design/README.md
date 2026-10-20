@@ -13,7 +13,7 @@
 | [05 评测验收](05-validation.md) | 回归矩阵、用例集、指标、对照实验、失败归因 |
 | [06 来源记录](06-sources.md) | 官方材料、上游源码事实、外部接口结论、待实测清单 |
 | [07 前端视觉规则](07-frontend-style.md) | 主色与灰阶 token、对话/行程面板布局、状态规则、迁移方式（待实施） |
-| [简历项目构想](../review/project-pitch.md) | 做完后怎么介绍这个项目 |
+| [简历项目条目](../review/project-pitch.md) | 怎么介绍这个项目（已按实测数据重写） |
 | [项目掌握与 AI 协作](../guides/ai-collaboration.html) | 怎样读代码、参与决策、定位问题、独立验证 |
 
 **给 AI 的执行入口**（不在 `docs/design/` 里）：[`AGENTS.md`](../../AGENTS.md)（执行规则、代码规范、命令、密钥约定）、[`docs/tasks/`](../tasks/)（各里程碑的可执行规格）、[`docs/adr/`](../adr/)（技术决策）。设计以 `docs/design/` 为唯一来源，AI 文档只规定怎么执行。

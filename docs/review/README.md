@@ -6,7 +6,8 @@
 | --- | --- |
 | 沿调用链读源码 | [learning.md](learning.md) |
 | 跑可重放演示 | [demos.md](demos.md) |
-| 项目一句话/电梯陈述 | [project-pitch.md](project-pitch.md) |
+| 项目一句话/电梯陈述、简历条目 | [project-pitch.md](project-pitch.md) |
+| 架构与效果复盘（取舍、数字、教训） | [architecture-retrospective.md](architecture-retrospective.md) |
 | 简历表述的证据边界审计 | [resume-draft.md](resume-draft.md) |
 | 面试案例（STAR + 深挖问答 + 证据链接） | [cases/2026-10-08-product-v2.md](cases/2026-10-08-product-v2.md)、[cases/2026-10-13-interaction-memory-eval.md](cases/2026-10-13-interaction-memory-eval.md) |
 | 各里程碑的集中审查记录 | [M1](M1.md)（业务）、[M2](M2.md)（可靠执行）、[M3](M3.md)（上下文与对照）、[M4](M4.md)（容器与评测）；M0 见 [archive](../archive/review/M0.md) |
