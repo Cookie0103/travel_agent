@@ -114,6 +114,33 @@ def asks_question(answer: str) -> bool:
     return bool(re.search(r"[？?]", answer[-200:]))
 
 
+def effective_answers(
+    card: dict[str, object], scripted: object
+) -> dict[str, tuple[str, ...]] | None:
+    """表单卡提交必须带 answers（服务端 422 拒绝 None）。
+
+    出题规范约定脚本可以不写 answers、按卡片默认选项确认，所以先把卡上
+    每组的预选值（selected）组装成默认答案，脚本显式写的 answers 再覆盖同名组。
+    非表单卡保持 None（服务端禁止普通选择混填表单答案）。
+    """
+    form = card.get("form")
+    if not isinstance(form, dict):
+        return None  # 非表单卡的脚本按加载器约束不会带 answers，保持 None
+    groups = form.get("groups")
+    answers: dict[str, tuple[str, ...]] = {}
+    if isinstance(groups, list):
+        for group in groups:
+            if not isinstance(group, dict):
+                continue
+            selected = group.get("selected")
+            if isinstance(selected, list) and selected:
+                answers[str(group["key"])] = tuple(str(v) for v in selected)
+    if isinstance(scripted, dict):
+        for key, values in scripted.items():
+            answers[str(key)] = tuple(str(v) for v in values)
+    return answers
+
+
 class ScriptRunner:
     def __init__(
         self,
@@ -229,7 +256,9 @@ class ScriptRunner:
             raise StepUnavailable
         request = await self.business.travel.read_request(self.context)
         selection = ChoiceSelection(
-            choice_id=UUID(str(match["choice_id"])), option_id=str(option), answers=step.answers
+            choice_id=UUID(str(match["choice_id"])),
+            option_id=str(option),
+            answers=effective_answers(match, step.answers),
         )
         return await self.submit(
             text or DEFAULT_CARD_TEXT,

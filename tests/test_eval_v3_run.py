@@ -10,7 +10,7 @@ import pytest
 from backend.services.common import ServiceError
 from eval.v3_cases import V3Case
 from eval.v3_run import build_parser, l1_predictions, main, require_snapshot_database
-from eval.v3_user import ScriptRunner, choose_card
+from eval.v3_user import ScriptRunner, choose_card, effective_answers
 
 EVAL_DSN = "postgresql://u:p@localhost:5432/travel_agent_eval_" + "b" * 32
 BASE = {
@@ -37,6 +37,33 @@ def hotel_card(evidence: str, total: Any) -> dict[str, Any]:
         "evidence_id": evidence,
         "source_ref": "fixture:" + evidence,
     }
+
+
+def test_effective_answers_use_card_defaults_and_script_overrides() -> None:
+    card: dict[str, object] = {
+        "kind": "form",
+        "form": {
+            "purpose": "trip_ask",
+            "groups": [
+                {"key": "pace", "selected": ["relaxed"]},
+                {"key": "transport", "selected": []},
+                {"key": "wake", "selected": ["w0730"]},
+            ],
+        },
+    }
+    assert effective_answers(card, None) == {"pace": ("relaxed",), "wake": ("w0730",)}
+    assert effective_answers(card, {"pace": ("intensive",)}) == {
+        "pace": ("intensive",),
+        "wake": ("w0730",),
+    }
+    # 非表单卡不组装答案（服务端禁止普通选择混填表单答案）
+    assert effective_answers({"kind": "memory_confirm"}, None) is None
+    # 表单卡没有预选时给空答案而不是None：trip_ask 允许全不答，None会被服务端422拒绝
+    bare: dict[str, object] = {
+        "kind": "form",
+        "form": {"purpose": "trip_ask", "groups": [{"key": "pace", "selected": []}]},
+    }
+    assert effective_answers(bare, None) == {}
 
 
 def test_l1_predictions_derive_update_from_superseded_by() -> None:
