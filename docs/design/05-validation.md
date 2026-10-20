@@ -163,7 +163,6 @@ F10记忆引用边界：仅可信本轮run.user_text；NFKC去空白后至少4�
 ```text
 python -m eval.run --config eval/configs/baseline.yaml --split dev
 python -m eval.run --config eval/configs/baseline.yaml --split test --repeat 3
-python -m eval.compare --runs <run_id_a> <run_id_b>
 python -m eval.faults --suite booking
 ```
 

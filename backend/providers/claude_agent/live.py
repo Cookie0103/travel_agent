@@ -9,7 +9,7 @@ from pathlib import Path
 from threading import Event
 from typing import get_args
 
-from backend.adapters.evaluation_faults import EvaluationFault, validate_fault
+from backend.adapters.evaluation_faults import EvaluationFault, is_eval_database, validate_fault
 from backend.adapters.tracing import cloud_exporter, trace_report
 from backend.agent.persona import JudgeKind
 from backend.agent.runtime import EventSink
@@ -57,6 +57,18 @@ def check_evaluation_size(root: Path, minimum_requests: int) -> None:
     runtime_budget(root, load_runtime_settings(os.environ)).check_minimum_requests(minimum_requests)
 
 
+def prompt_snapshot_enabled(
+    requested: bool, database_dsn: str | None, environ: Mapping[str, str]
+) -> bool:
+    """三道门同时满足才落盘system prompt：参数、环境变量、专用评测库。"""
+    return (
+        requested
+        and environ.get("TRAVEL_EVAL_PROMPT_SNAPSHOT") == "1"
+        and database_dsn is not None
+        and is_eval_database(database_dsn)
+    )
+
+
 def run_live(
     prompt: str,
     context: RunContext,
@@ -77,7 +89,9 @@ def run_live(
     evaluation_fault: EvaluationFault | None = None,
     evaluation: Mapping[str, object] | None = None,
     trace_id: str | None = None,
+    prompt_snapshot: bool = False,
 ) -> dict[str, object]:
+    snapshot_enabled = prompt_snapshot_enabled(prompt_snapshot, database_dsn, os.environ)
     if evaluation_fault is not None:
         try:
             validate_fault(evaluation_fault, profile="eval", database_dsn=database_dsn or "")
@@ -188,6 +202,7 @@ def run_live(
                     "evaluation_variant": evaluation_variant,
                     "real_data": real_data,
                     "evaluation_fault": evaluation_fault,
+                    "prompt_snapshot": snapshot_enabled,
                 },
                 cancelled=cancelled,
                 progress=drain,

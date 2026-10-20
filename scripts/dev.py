@@ -222,19 +222,16 @@ def main(argv: Sequence[str] | None = None) -> int:
     simulator.add_argument("--trace-cloud", action="store_true")
     simulator.add_argument("--repeat", type=int, choices=range(1, 4), default=3)
     simulator.add_argument("--case-id", action="append", default=[])
-    triage = commands.add_parser("eval-triage")
-    triage.add_argument("results", type=Path)
-    triage.add_argument("--live", action="store_true")
-    triage.add_argument("--check-references", type=Path)
-    triage.add_argument("--out", type=Path)
-    rescore = commands.add_parser("eval-simulator-rescore")
-    rescore.add_argument("results", type=Path)
-    rescore.add_argument("--out", type=Path)
-    rescore.add_argument("--hashes", type=Path)
-    memory_rescore = commands.add_parser("eval-memory-rescore")
-    memory_rescore.add_argument("results", type=Path)
-    memory_rescore.add_argument("--out", type=Path)
-    memory_rescore.add_argument("--hashes", type=Path)
+    v3 = commands.add_parser("eval-v3")
+    v3.add_argument("--live", action="store_true")
+    v3.add_argument("--trace-cloud", action="store_true")
+    v3.add_argument("--repeat", type=int, choices=range(1, 4), default=1)
+    v3.add_argument("--case-id", action="append", default=[])
+    v3.add_argument("--cases", type=Path)
+    v3.add_argument("--profile", choices=("human", "default", "relaxed"), default="human")
+    v3.add_argument("--max-cny", type=float)
+    v3.add_argument("--no-judge", action="store_true")
+    v3.add_argument("--judge-check", action="store_true")
     calibration = commands.add_parser("eval-calibration")
     calibration.add_argument("results", type=Path, nargs="+")
     calibration.add_argument("--live", action="store_true")
@@ -244,10 +241,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     human_score = commands.add_parser("eval-human-score")
     human_score.add_argument("csv", type=Path)
     human_score.add_argument("references", type=Path)
-    publish = commands.add_parser("eval-publish-v2")
-    publish.add_argument("results", type=Path, nargs="+")
-    publish.add_argument("--triage", type=Path)
-    publish.add_argument("--trace-cloud", action="store_true")
     args = parser.parse_args(argv)
     python = sys.executable
     match args.command:
@@ -327,22 +320,33 @@ def main(argv: Sequence[str] | None = None) -> int:
             for case_id in args.case_id:
                 command.extend(["--case-id", case_id])
             return run_command(command, timeout=14400)
-        case "eval-triage":
-            command = [python, "-m", "eval.triage", str(args.results)]
-            if args.check_references:
-                command.extend(["--check-references", str(args.check_references)])
-            if args.out:
-                command.extend(["--out", str(args.out)])
+        case "eval-v3":
+            if (args.trace_cloud and not args.live) or (args.judge_check and not args.live):
+                return 2
+            command = [
+                python,
+                "-m",
+                "eval.v3_run",
+                "--repeat",
+                str(args.repeat),
+                "--profile",
+                args.profile,
+            ]
             if args.live:
                 command.append("--live")
-            return run_command(command, timeout=7200)
-        case "eval-simulator-rescore" | "eval-memory-rescore":
-            command = [python, "-m", "eval.rescore_simulator", str(args.results)]
-            if args.hashes:
-                command.extend(["--hashes", str(args.hashes)])
-            if args.out:
-                command += ["--out", str(args.out)]
-            return run_command(command)
+            if args.trace_cloud:
+                command.append("--trace-cloud")
+            if args.cases:
+                command.extend(["--cases", str(args.cases)])
+            if args.max_cny is not None:
+                command.extend(["--max-cny", str(args.max_cny)])
+            if args.no_judge:
+                command.append("--no-judge")
+            if args.judge_check:
+                command.append("--judge-check")
+            for case_id in args.case_id:
+                command.extend(["--case-id", case_id])
+            return run_command(command, timeout=14400)
         case "eval-calibration":
             command = [
                 python,
@@ -362,15 +366,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             return run_command(command)
         case "eval-human-score":
             return run_command(
-                [python, "-m", "eval.calibrate_v2", str(args.csv), str(args.references)]
+                [python, "-m", "eval.calibration", "score", str(args.csv), str(args.references)]
             )
-        case "eval-publish-v2":
-            command = [python, "-m", "eval.publish_v2", *[str(p) for p in args.results]]
-            if args.triage:
-                command.extend(["--triage", str(args.triage)])
-            if args.trace_cloud:
-                command.append("--trace-cloud")
-            return run_command(command, timeout=300)
         case "eval-v2":
             if args.trace_cloud and not args.live:
                 return 2

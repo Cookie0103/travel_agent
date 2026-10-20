@@ -36,7 +36,7 @@
 | 16 | `FORM_ROW_KINDS = ("form","travel_details")`（`domain/choices.py:19`；`services/choices.py:321`、`models.py:51`、迁移 0022 CHECK、`eval/simulator.py:471`） | 读取边界兼容层，库里可能还有旧 `travel_details` 卡；**不能直接删**，因为 0022 的 CHECK 约束包含它。清理需先写数据迁移把旧卡改成 `form`，再收紧 CHECK，然后一起删 `legacy_form`、`services/choices.py:321-329`、`ChoiceSelection.legacy_details`，合计约 55 行 |
 | 17 | `TravelService.get_request()`（`services/travel.py:135`）仍走写锁路径 | 它用 `owned_request`（对会话 `FOR UPDATE` 并 `INSERT … ON CONFLICT DO NOTHING`），却被约 16 处纯读调用使用。本轮新增的只读 `read_request` 只给 `get_request_view` 用。**被本轮取代但没迁完**：纯读场景改用只读版才能彻底取消读路径的写锁 |
 | 18 | `backend/providers/claude_agent/request.py:14` 的 `TOOL_NAME="mcp__probe__echo"`、`guard.py:47` 默认 allowed_tools | 探针时代遗留，但 `test_sdk_guard.py`、`test_sdk_cli_offline.py` 在用；要清理需连带改测试，优先级低 |
-| 19 | `eval/assess.py`、`eval/structured.py`、eval 的 legacy / frozen 套件 | `assess.py` 是文档化的手动入口；`structured.py` 仅 3 行转发；legacy / frozen 套件被 `docs/evidence/*.json` 的哈希引用，是冻结证据，**不要动** |
+| 19 | `eval/assess.py`、`eval/structured.py`、eval 的 legacy / frozen 套件 | `assess.py` 是文档化的手动入口；`structured.py` 仅 3 行转发；legacy / frozen 套件被 `docs/evidence/*.json` 的哈希引用，是冻结证据，**不要动**；**2026-10-20 负责人决定取代本行**：`assess.py`、`structured.py` 以及 compare / triage / publish_v2 / rescore_simulator 已移除（calibrate_v2 并入 calibration），legacy / frozen 套件仍保留 |
 | 20 | `legacy_request()`、`LegacyRequestSnapshot`、`LEGACY_DETAIL_FIELDS`、`tests/fixtures/legacy_*_v1.py` | 仍有生产调用（`conditions` 列、报价快照、验证器），是有意的双写，不是死代码 |
 | 21 | 旧人民币账本归一化（`budget.py:68-73`）、`Budget.legacy` | 兼容磁盘上已有账本文件，保留 |
 | 22 | 无断言测试 | 只有 `tests/test_evidence_ttl.py:90` 与 `tests/test_trace_log.py:69` 两个“不应抛错”型，可保留，建议补显式断言 |

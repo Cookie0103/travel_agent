@@ -41,6 +41,13 @@ from backend.tools.workflow import WorkflowName
 from backend.trace_log import trace
 
 
+def snapshot_prompt(payload: dict[str, object], context: RunContext, system: str) -> None:
+    """评测专用：仅当父进程三道门放行时把system prompt写入worker工作目录；不记录、不回传。"""
+    if payload.get("prompt_snapshot") is not True:
+        return
+    (Path.cwd() / f"system-prompt-{context.run_id}.txt").write_text(system, encoding="utf-8")
+
+
 async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
     prompts = payload.get("prompts")
     if (
@@ -145,6 +152,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
             rounds = executor.executor.max_validations
             definitions = repair_definitions(definitions, rounds)
             system = travel_prompt(repair_rounds(rounds)) + snapshot
+            snapshot_prompt(payload, context, system)
             return await run_prompts(
                 prompts,
                 context,
@@ -160,6 +168,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
                 preference_revision=preference_revision,
                 workflow=workflow,
                 disable_auto_compaction=variant in {"no_compaction", "baseline_b2"},
+                payload=payload,
             )
     return await run_prompts(
         prompts, context, identity, cli, DEFINITIONS, SearchExecutor(), travel_prompt()
@@ -181,6 +190,7 @@ async def run_prompts(
     workflow: WorkflowName | None = None,
     max_turns: int | None = 6,
     disable_auto_compaction: bool = False,
+    payload: dict[str, object] | None = None,
 ) -> dict[str, object]:
     config = RuntimeConfig(
         identity,
@@ -245,13 +255,12 @@ async def run_prompts(
                 executor = DatabaseTools(
                     executor.loop, executor.travel.database, executor.supplier_url
                 )
+                system = travel_prompt(repair_rounds(executor.executor.max_validations)) + snapshot
+                snapshot_prompt(payload or {}, context, system)
                 agent.runtime = ClaudeRuntime(
                     replace(
                         config,
-                        system_prompt=travel_prompt(
-                            repair_rounds(executor.executor.max_validations)
-                        )
-                        + snapshot,
+                        system_prompt=system,
                     ),
                     definitions,
                     executor,

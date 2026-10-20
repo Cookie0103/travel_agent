@@ -41,8 +41,10 @@ class GuardedRuntime:
         real_data: bool = False,
         evaluation_fault: EvaluationFault | None = None,
         evaluation: Mapping[str, object] | None = None,
+        prompt_snapshot: bool = False,
     ) -> None:
         self.root, self.database_dsn = root, database_dsn
+        self.prompt_snapshot = prompt_snapshot
         self.real_data = real_data
         if evaluation_fault is not None:
             validate_fault(evaluation_fault, profile="eval", database_dsn=database_dsn)
@@ -101,6 +103,7 @@ class GuardedRuntime:
                 real_data=self.real_data,
                 evaluation_fault=self.evaluation_fault,
                 evaluation=self.evaluation,
+                prompt_snapshot=self.prompt_snapshot,
             )
         )
         watcher = asyncio.create_task(cancelled.wait())

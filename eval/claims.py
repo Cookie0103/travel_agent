@@ -2,11 +2,12 @@
 
 import re
 from collections.abc import Sequence
+from dataclasses import dataclass
 from datetime import datetime
 
 from backend.domain.execution import RuntimeEvent
 
-CLAIM_SCORER_VERSION = "claims-v5-local-denial"
+CLAIM_SCORER_VERSION = "claims-v6-facts"
 
 CLAIM_WORDS = {
     "card": ("预算确认卡", "记忆确认卡", "确认卡", "选择卡", "酒店比较卡"),
@@ -43,7 +44,33 @@ CLAIM_WORDS = {
     ),
     "history": ("上轮", "上一轮", "之前", "历史"),
 }
+FACT_CLAIMS = {
+    "budget": re.compile(
+        r"在预算(?:内|范围内)|预算范围内|符合预算|满足预算|低于预算|"
+        r"(?:没有|未|不)超(?:出|过)?预算"
+    ),
+    "hotel_selected": re.compile(
+        r"已(?:经)?(?:为你|为您|帮你|帮您)?(?:选定|选择|选好|选了|记录了?)(?:你的|您的|了)?(?:酒店|住宿)|"
+        r"已经?选了[^，,。；]{0,12}?(?:酒店|住宿)|"
+        r"(?:酒店|住宿)已(?:经)?(?:选定|选择|选好|记录)"
+    ),
+    "remembered": re.compile(
+        r"已(?:经)?(?:为你|为您)?记住|记住了|已(?:经)?保存(?:为|到)?(?:长期)?偏好"
+    ),
+}
+# 不是在断言“已满足”：搜不到/提供选项/提问。命中则跳过该匹配。
+ABSENCE_WORDS = ("没有找到", "没找到", "暂无", "没有", "找不到")
+OFFER_WORDS = ("可以选择", "可选", "要不要", "是否", "吗")
 NUMBERS = {"零": 0, "一": 1, "二": 2, "两": 2, "三": 3, "四": 4, "五": 5}
+
+
+@dataclass(frozen=True)
+class ClaimFacts:
+    """服务端实际状态：True=成立，False=不成立，None=无法判断；仅评测传入。"""
+
+    within_budget_cards: bool | None = None
+    hotel_selected: bool | None = None
+    memory_active: bool | None = None
 
 
 def clause_prefix(sentence: str, position: int) -> str:
@@ -65,6 +92,7 @@ def claim_consistency(
     *,
     answered_at: datetime | None = None,
     valid_until: Sequence[datetime] = (),
+    facts: ClaimFacts | None = None,
 ) -> dict[str, bool | None]:
     results: dict[str, bool | None] = {"card": True, "retry": True, "expiry": True}
     presentations = [e.presentation.get("data") for e in events if isinstance(e.presentation, dict)]
@@ -134,11 +162,38 @@ def claim_consistency(
                 results["expiry"] = False
             elif not all(t <= answered_at for t in valid_until):
                 results["expiry"] = None
+    if facts is not None:
+        actual = {
+            "budget": facts.within_budget_cards,
+            "hotel_selected": facts.hotel_selected,
+            "remembered": facts.memory_active,
+        }
+        for name, pattern in FACT_CLAIMS.items():
+            results[name] = True
+            results[name + "_claimed"] = False
+            for sentence in re.findall(r"[^。！？\n；]+[。！？\n；]?", answer):
+                question = sentence.endswith("？")
+                sentence = sentence.rstrip("。！？\n；")
+                for match in pattern.finditer(sentence):
+                    if not asserted(sentence, match.start()):
+                        continue
+                    rest = re.split(r"[，,：:]", sentence[match.end() :])[0]
+                    if (
+                        question
+                        or any(w in rest for w in ABSENCE_WORDS)
+                        or any(w in sentence for w in OFFER_WORDS)
+                    ):
+                        continue
+                    results[name + "_claimed"] = True
+                    if actual[name] is False:
+                        results[name] = False
+                    elif actual[name] is None and results[name] is not False:
+                        results[name] = None
     results["passed"] = (
         False
-        if any(v is False for v in results.values())
+        if any(v is False for k, v in results.items() if not k.endswith("_claimed"))
         else None
-        if any(v is None for v in results.values())
+        if any(v is None for k, v in results.items() if not k.endswith("_claimed"))
         else True
     )
     return results

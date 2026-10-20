@@ -23,20 +23,6 @@ from eval.run import main as eval_main
         ("eval.judge", ["missing"], "评审输入/运行不可用"),
         ("eval.persona", ["missing", "--kind", "content"], "校准记录格式错误"),
         ("eval.content", ["--answer", "missing", "--review", "missing"], "内容评审未完成"),
-        (
-            "eval.assess",
-            [
-                "--events",
-                "missing",
-                "--actual",
-                "missing",
-                "--expected",
-                "missing",
-                "--case-id",
-                "kyoto-matcha",
-            ],
-            "评分未完成",
-        ),
     ],
 )
 def test_private_evaluation_cli_emits_utf8_failure_without_shell_configuration(
@@ -219,6 +205,7 @@ async def test_interruption_keeps_started_case_and_private_session_location(
     assert (directory / "attempts.jsonl").read_text(encoding="utf-8")
 
 
+@pytest.mark.usefixtures("allow_mocked_live")
 def test_cli_rejects_unsupported_request_limit_before_live(monkeypatch: pytest.MonkeyPatch) -> None:
     def forbidden(*args: object, **kwargs: object) -> object:
         raise AssertionError("invalid request limit cannot reach paid evaluation")
@@ -232,6 +219,7 @@ def test_cli_rejects_unsupported_request_limit_before_live(monkeypatch: pytest.M
 @pytest.mark.parametrize(
     "arguments", [[], ["--database", "--suite", "frozen"], ["--database", "--split", "test"]]
 )
+@pytest.mark.usefixtures("allow_mocked_live")
 def test_custom_catalog_cannot_change_frozen_test_or_search_only_data(
     monkeypatch: pytest.MonkeyPatch, arguments: list[str]
 ) -> None:

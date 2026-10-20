@@ -6,11 +6,12 @@ from datetime import datetime
 from typing import Literal
 from uuid import UUID
 
-from pydantic import ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 from backend.domain.booking import HoldHotelInput
 from backend.domain.evidence import EvidenceRecord
 from backend.domain.execution import RunContext, RuntimeEvent
+from backend.domain.tool_facts import ChoiceOptionId
 from backend.domain.travel_request import TravelConditions
 from backend.tools.travel import SCHEMAS
 
@@ -222,3 +223,53 @@ def _finding(
     ):
         return "state_commit", ("expected_revision", "observed_revision", "transaction_rollback")
     return None
+
+
+def choice_options(event: RuntimeEvent) -> list[str]:
+    data = event.presentation.get("data") if event.presentation else None
+    options = (
+        data.get("options")
+        if isinstance(data, dict) and data.get("component") == "choice"
+        else None
+    )
+    if not isinstance(options, list):
+        return []
+    found: list[str] = []
+    for option in options[:3]:
+        if not isinstance(option, dict):
+            continue
+        try:
+            found.append(TypeAdapter(ChoiceOptionId).validate_python(option.get("option_id")))
+        except ValueError:
+            continue
+    return found
+
+
+def compact_steps(events: tuple[RuntimeEvent, ...]) -> list[dict[str, object]]:
+    steps: list[dict[str, object]] = []
+    for event in events:
+        if event.kind not in {"tool_started", "tool_finished", "presentation", "failed"}:
+            continue
+        steps.append(
+            {
+                "index": len(steps),
+                "kind": event.kind,
+                "tool": event.tool_name if event.tool_name in SCHEMAS else None,
+                "code": event.code,
+                "result_empty": event.result_empty,
+                "external": event.external.model_dump(mode="json") if event.external else None,
+                "relaxation_cause": event.relaxation_cause,
+                "argument_keys": [
+                    key
+                    for key in event.argument_keys
+                    if event.tool_name in SCHEMAS and key in SCHEMAS[event.tool_name].model_fields
+                ],
+                "arguments": event.arguments.model_dump(mode="json", exclude_none=True)
+                if event.arguments
+                else None,
+                "choice_options": choice_options(event),
+            }
+        )
+        if len(steps) == 40:
+            break
+    return steps

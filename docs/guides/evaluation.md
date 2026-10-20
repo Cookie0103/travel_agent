@@ -35,7 +35,7 @@ InitialState使用现有服务构造正式行程/锁、报价过期/条件失效
 
 逐调用报告保留correct/incorrect/unknown；成功返回不能证明参数符合用户目标。缺少整个指标的旧报告全量计数为null，已测小计单列。首次进度自动只计实际工具事件和展示卡片，排除started/心跳及未分类文本ACK；纯文本回答未人工分类时该测量为unknown。
 
-独立参数评审复用同一指标函数，可运行 `uv run python -m eval.assess --events <私有events.jsonl> --actual <actual.json> --expected <expected.json> --case-id <原case_id>`。actual/expected是ArgumentFact JSON数组，包含context（user_id/session_id/run_id）、tool_call_id、arguments，事件为RuntimeEvent JSONL。实际参数从对应私有轨迹核对，答案依据用户输入/已知业务状态独立填写；不能抄实际参数、用模型自述或为失败改答案。允许多条合法路径，每条已审查调用给自己的完整答案；没有证据的调用继续unknown。附件留.cache，不加入提交/公共Trace。该命令只输出脱敏计数，不改既有规则结果或冻结集；自动事件报告本身没有完整参数语义答案。
+独立参数评审入口 `eval.assess` 已于2026-10-20移除（见git历史）；指标函数仍在 `eval/metrics.py`。
 
 ## 同一SDK对照
 
@@ -61,21 +61,12 @@ human_quality只接收真人提供的relevance/explanation/tradeoffs各0–5、r
 
 后续B0对照在运行前明确：仍用同40test、同顺序、3个独立重复、原期望与初始状态、同模型/SDK/CLI/数据/源码和12HTTP上限，唯一运行配置变为no_tools。先完成当前批次并核对日余额，再决定是否启动；日硬限不足停止并公开not_run，不自动回放失败。B0不注入数据库事实/工具，其缺工具导致的结构规则失败是预期对照边界，不能据此宣称事实准确率提升。对照不用于调提示或挑选有利案例。
 
-B2/B1及单因素后续测量各自记录实际样本/重复/适用范围，不能把未运行的组别填为成功或将B2两开关组合当单因素。比较入口只读取原manifest/results，核对完整配对/执行版本并重用report统计，缺语义或真人答案继续unknown。新增eval比较源码会改变未来manifest哈希集合，因此本轮同版本受控调用先完成，随后实现比较；不临时忽略源码差异来接纳不同实验。
+B2/B1及单因素后续测量各自记录实际样本/重复/适用范围，不能把未运行的组别填为成功或将B2两开关组合当单因素。比较入口（`eval.compare`，已于2026-10-20移除）当时只读取原manifest/results，核对完整配对/执行版本并重用report统计，缺语义或真人答案继续unknown。新增eval比较源码会改变未来manifest哈希集合，因此本轮同版本受控调用先完成，随后实现比较；不临时忽略源码差异来接纳不同实验。
 
 
 ## 原记录离线配对比较
 
-`uv run python -m eval.compare --runs <run_id_a> <run_id_b>`，接受原目录或.cache/eval中的run id；不会调用模型/DB/供应商。原四文件读取后绑定hash，以完整selected_cases×repeat原顺序校核，不能挑交集、重复/缺记录或接纳未结束批次。结果、attempt、独立身份、汇总均核对；副作用断言仍从原公开评测证据审查，不由比较入口追加运行。
-
-共用运行时配置注册表和工具schema序列化；源码hash集合、用例全文/初始状态/故障/期望、目录/套件/价表/重复/每例HTTP上限必须相同。每组已知模型身份保持一致、SDK/CLI版本相同；不同provider/model仅描述其真实记录，不支持未经接入模型。未知身份不补成相同，报告runtime_identity_complete=false。原manifest未含的执行助手不静默补写；未来manifest已纳入scripts/dev.py，旧组在集中证据补Git blob hash。
-
-复用report：passed/failed/error/not_run各自保留，另给planned_pass_rate（通过/计划数），原rule_pass_rate仍是通过/已评测；两个分母都公开。时延/原币种费用差仅统计双方已知配对并列n，金额汇总用Decimal，不混CNY/USD。纯文本首次进度和参数语义未标注仍unknown。公共输出只含声明配置、可信实际身份、数值和四原文件hash，原prompt/回答/事实附件/身份UUID/连接信息不导出。
-
-full→B0的120个配对：15两组通过、24两组失败、79完整组通过但B0失败、2相反。规则差B0−full为−64.17个百分点，费用差−8.716358CNY；不称事实准确率变化，既定no_tools还关闭续接能力/Skills/事实注入，均fresh没有旧checkpoint，此配置整体差异不用于单独归因。原文件不改，原失败不重跑。
-
-
-下一版本完整模型测量预声明（启动前）：在本次API用量修复正常check/test/独立审查/commit/push全部通过后，仅当实际UTC日余额至少10CNY、未结0且无运行中的评测，开始原frozen travel-eval-v1 test40×3 full/B3、maxHTTP12/tools16/repair3，默认原166目录/原Case和初始状态/原顺序/独立身份，不使用抹茶补充包。此为已看过原test后的当前版本测量；提示改动依据legacy dev的纯查询/完整规划问题，不能声称未见集或倒填成功阈值，也不能与旧版本作为同源码比较。目的记录新增业务分项及当前实际行为，单次全组不挑失败重放、不根据新结果调test期待/源码。余额低于条件只保留待运行；错误/预算不足按原停止规则保留error/not_run；该测量不自动等于产品质量达标。后续同版本baseline_b2/B1仍各自需余额/适用范围声明、保持完整/未知分母，不自动用尽日预算。
+`eval.compare` 已于2026-10-20移除（见git历史）；此节保留以维持锚点。
 
 ## V2 评测套件、模拟用户与 pass^k（入口）
 
@@ -88,5 +79,5 @@ uv run python scripts/dev.py eval-simulator [--live] [--repeat 1..3]   # 模拟�
 ```
 
 - **pass@1 / pass@k / pass^k**：`eval/report.py` 对每个用例的 k 次预声明独立试验计 `pass_at_1`、`pass_at_k`（任一次通过）、`pass_power_k`（即 pass^k，k 次全部通过）；错误/缺失试验保持 unknown，不进分母。
-- 分诊、重算分、校准、盲标、Langfuse 推送（`eval-triage`、`eval-*-rescore`、`eval-calibration`、`eval-human-sheet`、`eval-publish-v2`）与授权/预算注意事项，见 [operations/interaction-memory-eval.md](../operations/interaction-memory-eval.md#v2评测与恢复)，此处不复制。
+- 校准、盲标（`eval-calibration`、`eval-human-sheet`、`eval-human-score`；分诊/重算分/重发分数命令已于2026-10-20移除）与授权/预算注意事项，见 [operations/interaction-memory-eval.md](../operations/interaction-memory-eval.md#v2评测与恢复)，此处不复制。
 - 测试总览与环境要求：[testing/README](../testing/README.md)。

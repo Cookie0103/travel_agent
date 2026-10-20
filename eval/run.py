@@ -43,14 +43,14 @@ from eval.cases import Case
 from eval.claims import CLAIM_SCORER_VERSION, claim_consistency
 from eval.content import AnswerRecord
 from eval.database import DatabaseEvaluation, database_evaluation, selector_runner
-from eval.diagnostics import diagnose
+from eval.diagnostics import compact_steps, diagnose
 from eval.graders import Observation, grade
+from eval.guard import refuse_live_under_pytest
 from eval.memory_metrics import SCORER_VERSION, inspect_memory
 from eval.metrics import first_progress_seconds, process_metrics, tool_call_accuracy
 from eval.persona import rules as persona_rules
 from eval.report import measured_summary
 from eval.suites import load_suite
-from eval.triage import compact_steps
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -565,6 +565,7 @@ def main() -> int:
         help="预先定义独立重复；失败/安全异常后不重新付费",
     )
     arguments = parser.parse_args()
+    refuse_live_under_pytest(arguments.live)
     try:
         if arguments.trace_cloud and not (arguments.live and arguments.database):
             raise ValueError("云评测需显式live与专用数据库")

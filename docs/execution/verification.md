@@ -57,7 +57,7 @@ M0.7：test_persona_judge覆盖原旅行bytes不变、实际temp0、采样/工�
 
 评测指标增量（71bd308，独立两P2已关闭）：test_eval_metrics覆盖逐调用参数schema/独立答案、错run/重复/缺附件、成功不等于正确、非法选择与输入、未知分母、首次进度缺失/异常时间；integration/test_eval_metrics使用真实PG证明合法但日期错误的成功工具仍记incorrect。默认事件没有独立语义答案时accuracy为unknown；B0/单因素配置已实现并验证机制，实际模型对照尚未完成。
 
-两P2反例已补：跨run结束事件/倒序时间不能配对；旧报告缺指标不是零调用。test_eval_assess覆盖原案例选择、私有参数附件评分、无效输入脱敏、附件不改；该离线人工参数入口不等于已对真实模型全量逐调用评分。文本未语义分类不自动计首次进度，避免ACK刷低延迟。
+两P2反例已补：跨run结束事件/倒序时间不能配对；旧报告缺指标不是零调用。test_eval_assess覆盖原案例选择、私有参数附件评分、无效输入脱敏、附件不改；该离线人工参数入口不等于已对真实模型全量逐调用评分。文本未语义分类不自动计首次进度，避免ACK刷低延迟。（`eval.assess`/`eval.compare` 及其测试已于2026-10-20移除，见git历史）
 
 ADR012对照配置：test_evaluation_variants覆盖共享注册表、非法配置收费前拒绝、数据库要求、workflow/judge/多轮冲突、FixtureRuntime不能冒充效果；integration/test_evaluation_variants用实际SDK/CLI+真实PG核对schema/偏好/快照/无checkpoint/业务不改，并验证首次校验后修复阻止、原候选可暂存、conflict可展示而用户确认拒绝且正式V0。新增no_compaction及B2：同人工usage/阈值原生自动压缩与关闭两分支；test_claude_runtime覆盖未知SDK/CLI在初始化前拒绝、意外压缩中断且无session ref。零工具公开状态探针只证实锁定版本能力；带工具不逐轮探测，不放宽费用。B2同时关闭偏好和压缩是组合基线，与单因素区分。真实模型压缩质量和统计对照仍未满足。
 
@@ -75,7 +75,7 @@ M4.2首次完整真实test三轮：原40×3、实际DeepSeek/SDK/PG/HTTP，94/12
 
 B0同版本真实120次：17通过/103失败/0error/not_run，三轮6/6/5；120HTTP/0.646906CNY，零工具首进度120 unknown。源版本/冻结用例/状态/schema变更边界见M4与公开证据；不得当事实准确率。CI平台保护新增两原红色失败回归，修后8生命周期测试通过；三平台各216源码strict及原静态检查全通过，完整钩子与远端待验。
 
-原记录比较：test_eval_compare覆盖完整配对、失败/错误/未跑分母、源/期望/状态/数据/schema/配置漂移、缺/重复/乱序/未结束、attempt/组内组间身份重复、混模型/SDK漂移、缓存摘要不符、缺指标/币种不同/非法数字、UTF8脱敏CLI失败。比较不产生真实模型调用；73相关专项（含PG对照机制）通过，独立审查/全仓关卡待完成。
+原记录比较：test_eval_compare覆盖完整配对、失败/错误/未跑分母、源/期望/状态/数据/schema/配置漂移、缺/重复/乱序/未结束、attempt/组内组间身份重复、混模型/SDK漂移、缓存摘要不符、缺指标/币种不同/非法数字、UTF8脱敏CLI失败。比较不产生真实模型调用；73相关专项（含PG对照机制）通过，独立审查/全仓关卡待完成。（`eval.assess`/`eval.compare` 及其测试已于2026-10-20移除，见git历史）
 
 CI恢复：558e7d2两事件37130689536/37130692016的Python/web/docker-demo全success，首次失败保留；不是只有配置。比较1P2已红→绿→独立关闭，partial费用total null/小计单列，34比较测试通过，原120精确费用差不变。
 

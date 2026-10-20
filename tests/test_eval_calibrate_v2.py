@@ -4,11 +4,11 @@ import csv
 import json
 from pathlib import Path
 
-from eval.calibrate_v2 import prepare
+from eval.calibration import prepare
 
 
 def test_readable_labels_exclude_unknown_or_incomplete_and_use_twenty_row_minimum() -> None:
-    from eval.calibrate_v2 import agreement, human_pairs
+    from eval.calibration import agreement, human_pairs
 
     reference: dict[str, object] = {"01": {"model_reference": 1}, "02": {"model_reference": 0}}
     yes = {

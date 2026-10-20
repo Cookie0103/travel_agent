@@ -11,6 +11,7 @@ from eval import run
 from eval.cases import Case
 
 
+@pytest.mark.usefixtures("allow_mocked_live")
 def test_explicit_live_evaluation_loads_env_before_budget_preflight(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

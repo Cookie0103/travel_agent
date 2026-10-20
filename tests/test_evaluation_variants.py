@@ -103,6 +103,7 @@ async def test_offline_fixture_cannot_claim_variant_effect(tmp_path: Path) -> No
     assert not (tmp_path / "output").exists()
 
 
+@pytest.mark.usefixtures("allow_mocked_live")
 def test_eval_cli_compaction_or_offline_variant_stops_before_database_or_budget(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:

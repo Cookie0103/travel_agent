@@ -3,25 +3,215 @@
 import argparse
 import csv
 import json
+import random
+import sys
 from pathlib import Path
 from typing import Literal
 from uuid import uuid4
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
-from backend.domain.execution import RuntimeEvent
-from eval.calibrate_v2 import agreement, prepare
-from eval.content import QualityScore
+from backend.domain.execution import RunContext, RuntimeEvent
+from backend.providers.claude_agent.structured import structured_call
+from eval.content import AnswerRecord, QualityScore
 from eval.event_summary import JudgeEvents, event_summary
+from eval.guard import refuse_live_under_pytest
 from eval.persona import content_reference
-from eval.rescore_simulator import original_events, record_events
 from eval.run import manifest
 from eval.simulator_metrics import dialogue_event_groups
-from eval.structured import structured_call
 from eval.suites import load_suite
 from scripts.dev import configure_environment
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def event_path(context: RunContext) -> Path:
+    return (
+        ROOT
+        / ".cache"
+        / "sessions"
+        / str(context.user_id)
+        / str(context.session_id)
+        / f"events-{context.run_id}.jsonl"
+    )
+
+
+def original_events(row: dict[str, object]) -> tuple[RuntimeEvent, ...]:
+    values = row.get("steps")
+    if not isinstance(values, list):
+        raise ValueError("缺少原始步骤")
+    restored = []
+    for item in values:
+        if not isinstance(item, dict):
+            raise ValueError("步骤格式无效")
+        item = dict(item)
+        if isinstance(item.get("external"), str):
+            # 首批asdict未递归Pydantic子对象：从同一实际SDK事件文件恢复，绝不猜字符串。
+            context = TypeAdapter(RuntimeEvent).validate_python({**item, "external": None}).context
+            path = event_path(context)
+            matches = [
+                json.loads(line)
+                for line in (path.read_text(encoding="utf-8").splitlines() if path.exists() else [])
+                if line.strip()
+            ]
+            matched = [
+                event
+                for event in matches
+                if event.get("kind") == item.get("kind")
+                and event.get("tool_call_id") == item.get("tool_call_id")
+                and event.get("context") == item.get("context")
+            ]
+            item["external"] = (
+                matched[0]["external"]
+                if len(matched) == 1 and isinstance(matched[0].get("external"), dict)
+                else None
+            )
+        restored.append(item)
+    return TypeAdapter(tuple[RuntimeEvent, ...]).validate_python(restored)
+
+
+def record_events(row: dict[str, object]) -> tuple[AnswerRecord, tuple[RuntimeEvent, ...] | None]:
+    record = AnswerRecord.model_validate(row["content_record"])
+    path = event_path(record.context)
+    if not path.exists():
+        return record, None
+    events = TypeAdapter(tuple[RuntimeEvent, ...]).validate_python(
+        [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    )
+    if any(e.context != record.context for e in events):
+        raise ValueError("原始SDK事件不属于本轮回答")
+    return record, events
+
+
+def agreement(
+    pairs: list[tuple[int, int]], *, minimum_pairs: int = 30, allow_partial: bool = True
+) -> dict[str, object]:
+    if any(
+        type(a) is not int or type(b) is not int or a not in (0, 1) or b not in (0, 1)
+        for a, b in pairs
+    ):
+        raise ValueError("校准标签必须是0/1")
+    matrix = [[sum(a == i and b == j for a, b in pairs) for j in range(2)] for i in range(2)]
+    n = len(pairs)
+    observed = sum(a == b for a, b in pairs) / n if n else None
+    chance = (
+        sum(sum(matrix[i]) * sum(row[i] for row in matrix) for i in range(2)) / n**2 if n else None
+    )
+    if n < minimum_pairs and not allow_partial:
+        observed, chance = None, None
+    return {
+        "status": "pending" if n < minimum_pairs else "paired",
+        "paired": n,
+        "exact_rate": observed,
+        "kappa": (observed - chance) / (1 - chance)
+        if observed is not None and chance is not None and chance < 1
+        else None,
+        "confusion": matrix,
+        "basis": "actual human labels only; model reference remains uncalibrated until paired",
+    }
+
+
+def human_pairs(rows: list[dict[str, str]], references: dict[str, object]) -> list[tuple[int, int]]:
+    pairs = []
+    for row in rows:
+        if "编号" in row:
+            answers = [
+                row.get(key, "").strip()
+                for key in ("Q1按要求做了吗", "Q2说得清楚不矛盾吗", "Q3知道下一步吗")
+            ]
+            if row.get("不确定", "").strip() not in ("", "否", "0") or any(
+                a not in ("是", "否") for a in answers
+            ):
+                continue
+            identifier, value = row["编号"], int(all(a == "是" for a in answers))
+        else:
+            if not row.get("human_rater", "").strip() or row.get("human_pass") not in ("0", "1"):
+                continue
+            identifier, value = row["sample_id"], int(row["human_pass"])
+        reference = references.get(identifier)
+        model = reference.get("model_reference") if isinstance(reference, dict) else None
+        if type(model) is int and model in (0, 1):
+            pairs.append((model, value))
+    return pairs
+
+
+def prepare(rows: list[dict[str, object]], directory: Path) -> Path:
+    selected = []
+    for status in ("passed", "failed"):
+        candidates = [
+            row
+            for row in rows
+            if row.get("status") == status and isinstance(row.get("text"), str) and row["text"]
+        ]
+        if len(candidates) < 15:
+            raise ValueError("需要15条通过和15条失败的实际回答，不生成假回答补数")
+        selected.extend(candidates[:15])
+    directory.mkdir(parents=True, exist_ok=False)
+    target = directory / "human-labels.csv"
+    references = {}
+    with target.open("w", encoding="utf-8-sig", newline="") as handle:
+        writer = csv.DictWriter(
+            handle,
+            fieldnames=[
+                "sample_id",
+                "case_id",
+                "task",
+                "conditions",
+                "answer",
+                "human_pass",
+                "human_rater",
+                "notes",
+            ],
+        )
+        writer.writeheader()
+        # 固定种子洗牌，可复现但不以奇偶泄露参考标签。
+        ordered = selected.copy()
+        random.Random(20261013).shuffle(ordered)
+        for index, row in enumerate(ordered, 1):
+            sample = f"sample-{index:02d}"
+            writer.writerow(
+                {
+                    "sample_id": sample,
+                    "case_id": row.get("case_id"),
+                    "task": row.get("user_input", ""),
+                    "conditions": json.dumps(row.get("conditions", {}), ensure_ascii=False),
+                    "answer": row["text"],
+                }
+            )
+            references[sample] = {
+                "rule_reference": int(row["status"] == "passed"),
+                "model_reference": None,
+                "event_summary": row.get("event_summary"),
+            }
+    (directory / "hidden-reference.json").write_text(
+        json.dumps({"seed": 20261013, "references": references}, ensure_ascii=False, indent=2)
+        + "\n",
+        encoding="utf-8",
+    )
+    return target
+
+
+def score_main(argv: list[str]) -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("csv", type=Path)
+    parser.add_argument("references", type=Path)
+    args = parser.parse_args(argv)
+    references = json.loads(args.references.read_text(encoding="utf-8"))
+    references = references.get("references", references)
+    with args.csv.open(encoding="utf-8-sig", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+    readable = bool(rows and "编号" in rows[0])
+    print(
+        json.dumps(
+            agreement(
+                human_pairs(rows, references),
+                minimum_pairs=20 if readable else 30,
+                allow_partial=not readable,
+            ),
+            ensure_ascii=False,
+        )
+    )
+    return 0
 
 
 class ComparisonScore(BaseModel):
@@ -132,6 +322,8 @@ def row_event_summary(
 
 
 def main() -> int:
+    if sys.argv[1:2] == ["score"]:  # 真人CSV与隐藏参考的一致率（原calibrate_v2）
+        return score_main(sys.argv[2:])
     from dotenv import load_dotenv
 
     parser = argparse.ArgumentParser(description=__doc__)
@@ -139,6 +331,7 @@ def main() -> int:
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--threshold", type=int, choices=range(1, 6), default=3)
     args = parser.parse_args()
+    refuse_live_under_pytest(args.live)
     cases = {}
     for suite in ("v2", "v2-memory"):
         loaded, _ = load_suite(ROOT, suite, "dev")

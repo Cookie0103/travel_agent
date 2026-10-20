@@ -6,7 +6,7 @@ import pytest
 
 from backend.domain.execution import RunContext, RuntimeEvent
 from backend.domain.external_data import ExternalAttempt
-from eval.calibrate_v2 import agreement
+from eval.calibration import agreement
 from eval.metrics import constraint_scores, process_metrics, subset_matches
 from eval.report import reliability
 

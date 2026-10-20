@@ -481,17 +481,18 @@ def _context_attributes(
     if known_revision is not None:
         attributes["langfuse.trace.metadata.revision"] = known_revision
     if evaluation:
-        for source, target in (("case_id", "eval_case_id"), ("suite", "suite")):
+        for source, target in (
+            ("case_id", "eval_case_id"),
+            ("suite", "suite"),
+            ("category", "category"),
+        ):
             value = evaluation.get(source)
             if isinstance(value, str) and re.fullmatch(r"[a-z0-9][a-z0-9_-]{0,79}", value):
                 attributes["langfuse.trace.metadata." + target] = value
-                if source == "suite":
-                    attributes["langfuse.trace.tags"] = (
-                        mode,
-                        identity.provider,
-                        profile_name(),
-                        value,
-                    )
+                if source in {"suite", "category"}:
+                    tags = attributes["langfuse.trace.tags"]
+                    assert isinstance(tags, tuple)
+                    attributes["langfuse.trace.tags"] = (*tags, value)
         trial = evaluation.get("trial")
         if type(trial) is int and isinstance(trial, int) and 1 <= trial <= 3:
             attributes["langfuse.trace.metadata.eval_trial"] = trial

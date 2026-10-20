@@ -3,6 +3,7 @@
 import argparse
 import asyncio
 import json
+from collections.abc import Sequence
 from dataclasses import asdict, dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -32,6 +33,7 @@ from backend.persistence.temporary import temporary_database
 from backend.providers.claude_agent.application import GuardedRuntime
 from backend.providers.claude_agent.live import runtime_budget
 from backend.providers.claude_agent.settings import load_runtime_settings
+from backend.providers.claude_agent.structured import structured_call
 from backend.services.choices import ChoiceService, card_from_row
 from backend.services.common import ServiceError, transaction
 from backend.services.memory import MemoryService
@@ -39,6 +41,7 @@ from backend.services.plans import PlanService
 from backend.services.runs import MessageInput, RunService
 from backend.services.sessions import DemoLogin
 from eval.database import DatabaseEvaluation, database_evaluation, selector_runner
+from eval.guard import refuse_live_under_pytest
 from eval.metrics import process_metrics
 from eval.report import simulation_summary
 from eval.run import manifest
@@ -53,7 +56,6 @@ from eval.simulator_metrics import (
     recalled as recalled,
 )
 from eval.state import snapshot
-from eval.structured import structured_call
 from scripts.dev import configure_environment
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -562,13 +564,14 @@ def hotel_delivered(events: tuple[RuntimeEvent, ...]) -> bool:
     )
 
 
-def main() -> int:
+def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--live", action="store_true")
     parser.add_argument("--trace-cloud", action="store_true")
     parser.add_argument("--repeat", type=int, choices=(1, 2, 3), default=3)
     parser.add_argument("--case-id", action="append", default=[])
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    refuse_live_under_pytest(args.live)
     cases = [s for s in SCENARIOS if not args.case_id or s.case_id in args.case_id]
     if not args.live:
         print(json.dumps({"prepared": len(cases), "repeat": args.repeat, "http_attempts": 0}))

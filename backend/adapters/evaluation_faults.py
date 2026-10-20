@@ -84,15 +84,18 @@ def evaluation_data(scenario: str, database: Database, database_dsn: str) -> Liv
     )
 
 
-def validate_fault(scenario: str, *, profile: str, database_dsn: str) -> None:
+def is_eval_database(database_dsn: str) -> bool:
+    """本地随机专用评测库：仅localhost、无查询参数、库名为travel_agent_eval_<32hex>。"""
     url = make_url(database_dsn)
-    if (
-        profile != "eval"
-        or scenario not in SCENARIOS
-        or url.host not in {"localhost", "127.0.0.1"}
-        or url.query
-        or not re.fullmatch(r"travel_agent_eval_[0-9a-f]{32}", url.database or "")
-    ):
+    return (
+        url.host in {"localhost", "127.0.0.1"}
+        and not url.query
+        and re.fullmatch(r"travel_agent_eval_[0-9a-f]{32}", url.database or "") is not None
+    )
+
+
+def validate_fault(scenario: str, *, profile: str, database_dsn: str) -> None:
+    if profile != "eval" or scenario not in SCENARIOS or not is_eval_database(database_dsn):
         raise ValueError("故障注入只允许显式eval与本地随机专用评测库")
 
 

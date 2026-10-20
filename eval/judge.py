@@ -17,6 +17,7 @@ from backend.limits import ProbeError
 from backend.providers.claude_agent.live import check_evaluation_size, run_live
 from backend.providers.claude_agent.settings import load_runtime_settings
 from eval.content import QualityScore
+from eval.guard import refuse_live_under_pytest
 from eval.persona import JudgeScore, Sample, calibration, content_calibration, validate_threshold
 from eval.run import manifest
 from scripts.dev import configure_environment
@@ -202,6 +203,7 @@ def main() -> int:
     parser.add_argument("--kind", choices=["persona", "content"], default="persona")
     parser.add_argument("--threshold", type=int, choices=range(1, 6), default=3)
     args = parser.parse_args()
+    refuse_live_under_pytest(args.live)
     try:
         samples = load_samples(args.samples, kind=args.kind)
         if not args.live:
