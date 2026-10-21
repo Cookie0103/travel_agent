@@ -2,7 +2,6 @@
 "use client";
 import { useEffect, useRef } from "react";
 import type { Workspace } from "./workbench";
-import { toolLabel } from "./tool-names";
 import type { MessageSelection } from "@/lib/api";
 import {
   hotelSelectionLive,
@@ -18,9 +17,10 @@ import {
   hotelsForRun,
 } from "@/lib/early-cards";
 import type { Mode } from "./composer";
-import { RunSteps } from "./activity-drawer";
+import { RunStepList, RunSteps } from "./activity-drawer";
+import { stepsPlacement } from "@/lib/run-steps";
 import { Markdown } from "./markdown";
-import { Loading, Skeleton } from "./ui/loading";
+import { Loading } from "./ui/loading";
 import { Button } from "./ui/button";
 import { ChoiceCard } from "./choice-card";
 import { MemoryChoices } from "./memory-choices";
@@ -38,25 +38,6 @@ const examples = [
   "下雨天京都有哪些室内景点？",
   "帮我比较这几天京都的酒店",
 ];
-
-function currentStep(workspace: Workspace): string | undefined {
-  if (!workspace.run) return undefined;
-  const events = workspace.events.filter((event) =>
-    belongsToRun(event, workspace.run!),
-  );
-  const finished = new Set(
-    events
-      .filter((event) => event.kind === "tool_finished")
-      .map((event) => event.tool_call_id),
-  );
-  const open = events
-    .filter(
-      (event) =>
-        event.kind === "tool_started" && !finished.has(event.tool_call_id),
-    )
-    .at(-1);
-  return open ? toolLabel(open.tool_name) : undefined;
-}
 
 /** Keep the nearest scroll parent pinned to the end while the reader is already there; a new turn always jumps down (instantly). */
 function useStickyBottom(turnKey: string | undefined) {
@@ -128,8 +109,17 @@ export function Conversation({
   openPanel: () => void;
 }) {
   const { run } = workspace;
-  const step = currentStep(workspace);
   const running = ["running", "cancelling"].includes(run?.status ?? "");
+  const runEvents = run
+    ? workspace.events.filter((event) => belongsToRun(event, run))
+    : [];
+  const placement = run
+    ? stepsPlacement({
+        status: run.status,
+        answer: run.answer,
+        guided: !!stageGuidance(run),
+      })
+    : undefined;
   const currentPrompt = workspace.history.find(
     (row) => row.run_id === run?.run_id,
   )?.prompt;
@@ -244,12 +234,13 @@ export function Conversation({
         <div className="bg-bg text-text">
           <div className="min-w-0 space-y-3">
             <p className="run-status">{running ? "处理中…" : runLabel(run)}</p>
-            {running && !run.answer && (
-              <p className="step">
-                {step ? `正在${step}…` : <span>思考中</span>}
-              </p>
+            {placement === "live" && !runEvents.length && !run.answer && (
+              <p className="step">思考中</p>
             )}
-            {running && !run.answer && <Skeleton />}
+            {placement === "live" && <RunStepList events={runEvents} />}
+            {placement === "expanded" && (
+              <RunStepList events={runEvents} settled />
+            )}
             {run.answer && !stageGuidance(run) && (
               <div className="answer">
                 <Markdown text={run.answer} />
@@ -268,20 +259,17 @@ export function Conversation({
               newTrip={newTrip}
               openPanel={openPanel}
             />
-            <RunSteps
-              events={workspace.events.filter((event) =>
-                belongsToRun(event, run),
-              )}
-            />
-            {!workspace.events.some((event) => belongsToRun(event, run)) &&
-              run.last_sequence > 0 && (
-                <button
-                  disabled={workspace.busy || workspace.restoring}
-                  onClick={() => void workspace.reconnect()}
-                >
-                  查看执行步骤
-                </button>
-              )}
+            {placement === "folded" && (
+              <RunSteps key={run.run_id} events={runEvents} />
+            )}
+            {!runEvents.length && run.last_sequence > 0 && (
+              <button
+                disabled={workspace.busy || workspace.restoring}
+                onClick={() => void workspace.reconnect()}
+              >
+                查看执行步骤
+              </button>
+            )}
             <TurnCards
               workspace={workspace}
               run={run}

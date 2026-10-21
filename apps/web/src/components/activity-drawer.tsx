@@ -1,91 +1,91 @@
-/** Tool-call inspector built only from persisted run events; argument values are never shown. */
+/** Run progress built only from run events: a live list while running, folded under the answer afterwards. */
 "use client";
+import { useEffect, useState } from "react";
 import type { AppEvent } from "@/lib/api";
-import { toolLabel } from "./tool-names";
-import { errorExplanation } from "@/lib/error-explanation";
-import { toolCompletionState } from "@/lib/external-status";
+import { buildSteps, stepCount, toolLine, type Step } from "@/lib/run-steps";
 
-type Entry =
-  | {
-      type: "tool";
-      key: string;
-      name: string | null;
-      keys: string[];
-      state: "running" | "ok" | "failed" | "correcting";
-      code: string | null;
-      reason: string | null;
-      external?: AppEvent["external"];
-    }
-  | { type: "compacted"; key: string }
-  | { type: "presentation"; key: string };
-
-function activityEntries(events: AppEvent[]): Entry[] {
-  const entries: Entry[] = [];
-  const open = new Map<string, Extract<Entry, { type: "tool" }>>();
-  for (const event of [...events].sort((a, b) => a.sequence - b.sequence)) {
-    if (event.kind === "tool_started") {
-      const entry: Extract<Entry, { type: "tool" }> = {
-        type: "tool",
-        key: `s${event.sequence}`,
-        name: event.tool_name,
-        keys: event.argument_keys,
-        state: "running",
-        code: null,
-        reason: null,
-      };
-      entries.push(entry);
-      if (event.tool_call_id) open.set(event.tool_call_id, entry);
-    } else if (event.kind === "tool_finished") {
-      const entry = event.tool_call_id
-        ? open.get(event.tool_call_id)
-        : undefined;
-      const state = toolCompletionState(event.code, event.external);
-      if (entry)
-        Object.assign(entry, {
-          state,
-          code: event.code,
-          reason: event.reason ?? null,
-          external: event.external,
-        });
-      else
-        entries.push({
-          type: "tool",
-          key: `f${event.sequence}`,
-          name: event.tool_name,
-          keys: event.argument_keys,
-          state,
-          code: event.code,
-          reason: event.reason ?? null,
-          external: event.external,
-        });
-    } else if (event.kind === "context_compacted")
-      entries.push({ type: "compacted", key: `c${event.sequence}` });
-    else if (event.kind === "presentation")
-      entries.push({ type: "presentation", key: `p${event.sequence}` });
-  }
-  return entries;
+/** Wall clock that ticks once a second only while `active`; stops on unmount or when inactive. */
+function useNow(active: boolean): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    if (!active) return;
+    const refresh = () => setNow(Date.now());
+    const first = setTimeout(refresh, 0);
+    const timer = setInterval(refresh, 1000);
+    return () => {
+      clearTimeout(first);
+      clearInterval(timer);
+    };
+  }, [active]);
+  return now;
 }
 
-const toolCallCount = (events: AppEvent[]) =>
-  events.filter((event) => event.kind === "tool_started").length;
+function Row({ step, now }: { step: Step; now: number }) {
+  if (step.type !== "tool")
+    return (
+      <li className="step-extra">
+        {step.type === "compacted" ? "上下文已压缩" : "已更新卡片"}
+      </li>
+    );
+  const line = toolLine(step, now);
+  return (
+    <li className={`step-row step-${step.state}`}>
+      {step.state === "running" ? (
+        <span aria-hidden="true" className="step-dot" />
+      ) : (
+        <span aria-hidden="true" className="step-mark">
+          {line.mark}
+        </span>
+      )}
+      <span>{line.text}</span>
+      {line.seconds !== null ? (
+        <span aria-hidden="true"> · {line.seconds} 秒</span>
+      ) : null}
+    </li>
+  );
+}
 
+function StepList({ steps, settled }: { steps: Step[]; settled: boolean }) {
+  const ticking =
+    !settled &&
+    steps.some(
+      (s) => s.type === "tool" && s.state === "running" && s.startedAt !== null,
+    );
+  const now = useNow(ticking);
+  return (
+    <ol className="step-list" aria-live={settled ? undefined : "polite"}>
+      {steps.map((step) => (
+        <Row key={step.key} step={step} now={now} />
+      ))}
+    </ol>
+  );
+}
+
+/** Visible, never-collapsed list for an active run, or a run that ended without an answer. */
+export function RunStepList({
+  events,
+  settled = false,
+}: {
+  events: AppEvent[];
+  settled?: boolean;
+}) {
+  const steps = buildSteps(events, { settled });
+  if (!steps.length) return null;
+  return (
+    <div className="run-live">
+      <StepList steps={steps} settled={settled} />
+    </div>
+  );
+}
+
+/** Collapsed summary under a finished answer; the user's open/closed state is not carried to the next run. */
 export function RunSteps({ events }: { events: AppEvent[] }) {
-  const entries = activityEntries(events);
-  if (!entries.length) return null;
+  const steps = buildSteps(events, { settled: true });
+  if (!steps.length) return null;
   return (
     <details className="run-steps">
-      <summary>执行了 {toolCallCount(events)} 步 ▸</summary>
-      <ol>
-        {entries.map((entry) => (
-          <li key={entry.key}>
-            {entry.type === "tool"
-              ? `${entry.state === "ok" ? "✓" : entry.state === "failed" ? "✗" : "●"} ${toolLabel(entry.name)}${entry.state === "failed" || entry.state === "correcting" ? ` — ${errorExplanation(entry.code, entry.reason, entry.external)}` : ""}`
-              : entry.type === "compacted"
-                ? "上下文已压缩"
-                : "已更新卡片"}
-          </li>
-        ))}
-      </ol>
+      <summary>执行了 {stepCount(events)} 步 ▸</summary>
+      <StepList steps={steps} settled />
     </details>
   );
 }

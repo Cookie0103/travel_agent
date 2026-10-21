@@ -49,6 +49,7 @@ import {
 } from "./identity-storage";
 import { mergeHistory, mergeRun } from "./history";
 import { followRun, isRunActive } from "./run-stream";
+import { appendEvent } from "./run-steps";
 import { errorKindFor, type ErrorKind } from "./error-actions";
 import type { Mode } from "./models";
 import type { ConditionPatch } from "./condition-patch";
@@ -245,7 +246,7 @@ export function useWorkspace({
         if (event.kind === "failed" && event.reason)
           failedReason = event.reason;
         if (event.kind === "failed") failedExternal = event.external;
-        setEvents((old) => [...old.slice(-79), event]);
+        setEvents((old) => appendEvent(old, event));
         if (isCardEvent(event))
           early = early
             .then(() => hydrate(event, current, active, binding))
