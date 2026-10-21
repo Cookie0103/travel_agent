@@ -224,6 +224,9 @@ def test_api_run_events_are_private_and_new_app_does_not_reexecute(postgres_url:
         event_path = run_path + "/events"
         stream = client.get(event_path, headers=owner)
         assert stream.status_code == 200
+        assert stream.headers["content-type"].startswith("text/event-stream")
+        assert "no-transform" in stream.headers["cache-control"]
+        assert stream.headers["x-accel-buffering"] == "no"
         events = [
             json.loads(line[6:]) for line in stream.text.splitlines() if line.startswith("data: ")
         ]

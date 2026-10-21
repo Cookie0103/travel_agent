@@ -247,7 +247,8 @@ def create_app(
         return StreamingResponse(
             stream_events(request, runs, user_id, run_id, cursor),
             media_type="text/event-stream",
-            headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
+            # no-transform：前端代理（Next rewrites）会对响应做 gzip，小块 SSE 会被缓冲到流结束。
+            headers={"Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no"},
         )
 
     @app.get("/plans/{plan_id}")
