@@ -13,7 +13,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, Field, ValidationError, model_validator
 from sqlalchemy.exc import SQLAlchemyError
 
-from backend.adapters.external_api import REQUEST_DEADLINE
+from backend.adapters.external_api import CALL_OBSERVATIONS, REQUEST_DEADLINE
 from backend.adapters.live_data import LiveData
 from backend.adapters.open_meteo import forecast
 from backend.domain.booking import HoldHotelInput
@@ -21,7 +21,7 @@ from backend.domain.choices import ChoiceKind, FormInput
 from backend.domain.condition_labels import update_message
 from backend.domain.conversation import ConversationStateInput
 from backend.domain.execution import RunContext, ToolReason
-from backend.domain.external_data import ExternalDataError, external_code
+from backend.domain.external_data import ExternalAttempt, ExternalDataError, external_code
 from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
 from backend.domain.memory import VALUE_GUIDE, MemoryProposal
@@ -44,6 +44,7 @@ from backend.services.planning import PlanningService
 from backend.services.plans import PlanInput, PlanService
 from backend.services.travel import TravelService, require_revision
 from backend.tools.contracts import (
+    CONCURRENT_READS,
     PRESENTATION_RESULT_LIMIT,
     RESULT_LIMIT,
     WRITE_KINDS,
@@ -349,6 +350,15 @@ def call_key(name: str, arguments: dict[str, object]) -> tuple[str, str]:
     return name, json.dumps(arguments, sort_keys=True, ensure_ascii=False, default=str)
 
 
+def call_scope(name: str, arguments: dict[str, object]) -> tuple[str, str, str]:
+    """参数修正的范围：同一工具、条件版本与住宿段共享一次修正机会。"""
+    return (
+        name,
+        str(arguments.get("expected_revision", "")),
+        str(arguments.get("segment_arrive", "")),
+    )
+
+
 MAX_VALIDATIONS_CAP = 50  # 有限实验配置的构造上限；人工档用None
 
 
@@ -405,8 +415,10 @@ class TravelToolExecutor:
         # 冲突最少的已校验候选；修复次数用完或暂存被拒时交出它
         self.best: tuple[ItineraryProposal, ValidationReport] | None = None
         self.loaded_skills: set[str] = set()
-        # 第一版全部串行（读并发上限1），避免为尚不存在的并行收益实现读写锁。
+        # 状态登记与写工具全程持锁串行；CONCURRENT_READS只在登记/结算时持锁，查询本身在锁外。
         self.lock = asyncio.Lock()
+        # 并发纯查询的门：相同调用(修正窗口内同一scope)排队，保证失败缓存和“只修正一次”。
+        self.gates: dict[tuple[str, str] | tuple[str, str, str], asyncio.Lock] = {}
         self.context: RunContext | None = None
         self.stopping_error = False
         self.paused_tool: str | None = None
@@ -417,92 +429,136 @@ class TravelToolExecutor:
     async def execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
     ) -> ToolResult:
+        if name in CONCURRENT_READS:
+            return await self._execute_concurrent(context, name, arguments)
         async with self.lock:
-            key = call_key(name, arguments)
-            scope = (
-                name,
-                str(arguments.get("expected_revision", "")),
-                str(arguments.get("segment_arrive", "")),
-            )
+            key, scope = call_key(name, arguments), call_scope(name, arguments)
             # 缓存不得绕过run/owner检查，亦不会被无关工具成功清空。
             if self.context is not None and self.context != context:
                 return hotel_search_facts(await self._execute(context, name, arguments), name)
-            result = self.external_failures.get(key) or self.failed_corrections.get(scope)
-            if result is not None and result.external and result.external.provisional:
+            result = self._cached(key, scope)
+            if result is None:
+                result = self._record(key, scope, await self._execute(context, name, arguments))
+            return self._settle(name, arguments, result)
+
+    async def _execute_concurrent(
+        self, context: RunContext, name: str, arguments: dict[str, object]
+    ) -> ToolResult:
+        """准入与结算同串行路径持锁；只有_perform在锁外，计数在准入时预占，上限不被并发绕过。"""
+        key, scope = call_key(name, arguments), call_scope(name, arguments)
+        async with self.lock:
+            gate = self.gates.setdefault(
+                scope if scope in self.corrections else key, asyncio.Lock()
+            )
+        async with gate:
+            async with self.lock:
+                if self.context is not None and self.context != context:
+                    return hotel_search_facts(await self._execute(context, name, arguments), name)
+                cached = self._cached(key, scope)
+                admitted = self._admit(context, name, arguments) if cached is None else cached
+            result = (
+                await self._perform(context, name, arguments, admitted)
+                if isinstance(admitted, ToolDefinition)
+                else admitted
+            )
+            attempted = cached is None
+            async with self.lock:
+                if attempted:
+                    result = self._record(key, scope, result)
+                return self._settle(name, arguments, result)
+
+    def _cached(self, key: tuple[str, str], scope: tuple[str, str, str]) -> ToolResult | None:
+        result = self.external_failures.get(key) or self.failed_corrections.get(scope)
+        if result is not None and result.external and result.external.provisional:
+            result = replace(
+                result,
+                external=result.external.model_copy(update={"provisional": False}),
+                suggestion="相同错误参数不能重复查询，请向用户说明需核对的条件",
+            )
+            self.external_failures[key] = result
+            self.failed_corrections[scope] = result
+        return result
+
+    def _record(
+        self, key: tuple[str, str], scope: tuple[str, str, str], result: ToolResult
+    ) -> ToolResult:
+        if (
+            result.external
+            and result.external.kind == "bad_request"
+            and result.external.status == 400
+        ):
+            if scope not in self.corrections:
+                self.corrections.add(scope)
                 result = replace(
                     result,
-                    external=result.external.model_copy(update={"provisional": False}),
-                    suggestion="相同错误参数不能重复查询，请向用户说明需核对的条件",
+                    external=result.external.model_copy(update={"provisional": True}),
+                    suggestion="供应商拒绝查询参数；请修正参数一次，不要重复相同请求",
                 )
-                self.external_failures[key] = result
+            else:
                 self.failed_corrections[scope] = result
-            if result is None:
-                result = await self._execute(context, name, arguments)
-                if (
-                    result.external
-                    and result.external.kind == "bad_request"
-                    and result.external.status == 400
-                ):
-                    if scope not in self.corrections:
-                        self.corrections.add(scope)
-                        result = replace(
-                            result,
-                            external=result.external.model_copy(update={"provisional": True}),
-                            suggestion="供应商拒绝查询参数；请修正参数一次，不要重复相同请求",
-                        )
-                    else:
-                        self.failed_corrections[scope] = result
-                if (
-                    scope in self.corrections
-                    and result.code is not None
-                    and not (result.external and result.external.provisional)
-                ):
-                    self.failed_corrections[scope] = result
-                if result.external and result.code is not None:
-                    self.external_failures[key] = result
-            if result.external is not None and self.travel.live:
-                result = replace(result, data_mode=self.travel.live.data_mode)
-            if result.code is None:
-                self.rejected.clear()
-                if name == self.paused_tool:
-                    self.stopping_error, self.paused_tool = False, None
-            elif result.code == "blocked" and not {"tool_call_cap", "repeat_blocked"} & set(
-                result.detail
-            ):
-                self.rejected[call_key(name, arguments)] = tuple(
-                    tag for tag in result.detail if tag in get_args(ToolReason.__value__)
-                )
-            if (
-                name != "get_weather_forecast"
-                and "repair_limit" not in result.detail  # 修复上限不终止运行：还要暂存并展示
-                and not (result.external and result.external.provisional)
-                and (
-                    result.code
-                    in {
-                        "unavailable",
-                        "timeout",
-                        "blocked",
-                        "rate_limited",
-                        "cancelled",
-                        "provider_error",
-                    }
-                    or (result.code is not None and result.external is not None)
-                )
-            ):
-                self.stopping_error = True
-                self.paused_tool = name
-            if name in {"validate_itinerary", "stage_plan_change"}:
-                # 每次校验调用都记录修复轮次(含被拒绝的调用)。
-                rounds = (
-                    f"repair_round:{self.validations}",
-                    f"max_validations:{self.max_validations}",
-                )
-                result = replace(result, detail=(*result.detail, *rounds))
-            return hotel_search_facts(result, name)
+        if (
+            scope in self.corrections
+            and result.code is not None
+            and not (result.external and result.external.provisional)
+        ):
+            self.failed_corrections[scope] = result
+        if result.external and result.code is not None:
+            self.external_failures[key] = result
+        return result
+
+    def _settle(self, name: str, arguments: dict[str, object], result: ToolResult) -> ToolResult:
+        if result.external is not None and self.travel.live:
+            result = replace(result, data_mode=self.travel.live.data_mode)
+        if result.code is None:
+            self.rejected.clear()
+            if name == self.paused_tool:
+                self.stopping_error, self.paused_tool = False, None
+        elif result.code == "blocked" and not {"tool_call_cap", "repeat_blocked"} & set(
+            result.detail
+        ):
+            self.rejected[call_key(name, arguments)] = tuple(
+                tag for tag in result.detail if tag in get_args(ToolReason.__value__)
+            )
+        if (
+            name != "get_weather_forecast"
+            and "repair_limit" not in result.detail  # 修复上限不终止运行：还要暂存并展示
+            and not (result.external and result.external.provisional)
+            and (
+                result.code
+                in {
+                    "unavailable",
+                    "timeout",
+                    "blocked",
+                    "rate_limited",
+                    "cancelled",
+                    "provider_error",
+                }
+                or (result.code is not None and result.external is not None)
+            )
+        ):
+            self.stopping_error = True
+            self.paused_tool = name
+        if name in {"validate_itinerary", "stage_plan_change"}:
+            # 每次校验调用都记录修复轮次(含被拒绝的调用)。
+            rounds = (
+                f"repair_round:{self.validations}",
+                f"max_validations:{self.max_validations}",
+            )
+            result = replace(result, detail=(*result.detail, *rounds))
+        return hotel_search_facts(result, name)
 
     async def _execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
     ) -> ToolResult:
+        admitted = self._admit(context, name, arguments)
+        if isinstance(admitted, ToolResult):
+            return admitted
+        return await self._perform(context, name, arguments, admitted)
+
+    def _admit(
+        self, context: RunContext, name: str, arguments: dict[str, object]
+    ) -> ToolDefinition | ToolResult:
+        """同步准入：通过时预占一次调用额度，持锁调用即可保证并发下计数不超限。"""
         definitions = live_definitions(DEFINITIONS) if self.travel.live else DEFINITIONS
         definition = next((d for d in definitions if d.name == name), None)
         if definition is None:
@@ -532,19 +588,30 @@ class TravelToolExecutor:
                 detail=("repeat_blocked", *original),
             )
         self.calls += 1
+        return definition
+
+    async def _perform(
+        self,
+        context: RunContext,
+        name: str,
+        arguments: dict[str, object],
+        definition: ToolDefinition,
+    ) -> ToolResult:
         try:
             parsed = SCHEMAS[name].model_validate(arguments)
             live = self.travel.live
-            before = len(live.usage.observations) if live else 0
+            observed: list[ExternalAttempt] = []
             deadline = REQUEST_DEADLINE.set(time.monotonic() + definition.timeout_seconds)
+            own = CALL_OBSERVATIONS.set(observed)
             try:
                 async with asyncio.timeout(definition.timeout_seconds):
                     result = await self._dispatch(context, name, parsed)
-                if live and (observations := live.usage.observations[before:]):
+                if live and observed:
                     # 优先保留已恢复的请求，逐晚正常核价不覆盖其重试证据。
-                    info = next((o for o in observations if o.recovered_from), observations[-1])
+                    info = next((o for o in observed if o.recovered_from), observed[-1])
                     result = replace(result, external=info)
             finally:
+                CALL_OBSERVATIONS.reset(own)
                 REQUEST_DEADLINE.reset(deadline)
             result = hotel_search_facts(result, name)
             result_limit = definition.max_result_chars

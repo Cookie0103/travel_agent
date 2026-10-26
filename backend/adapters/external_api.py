@@ -30,6 +30,10 @@ CAP_NAMES: dict[ApiName, str] = {
     "weather": "WEATHER_DAILY_CAP",
 }
 REQUEST_DEADLINE: ContextVar[float | None] = ContextVar("external_request_deadline", default=None)
+# 本次工具调用自己的外部尝试；并发调用共享usage.observations，按切片归属会串到别的调用。
+CALL_OBSERVATIONS: ContextVar[list[ExternalAttempt] | None] = ContextVar(
+    "external_call_observations", default=None
+)
 
 
 class RakutenLimiter:
@@ -129,17 +133,24 @@ class ApiUsage:
                 f"{api} 调用已禁用（0/0）",
                 info=ExternalAttempt(kind="quota_exhausted", cap_scope="daily", used=0, limit=0),
             )
+        # 先占本轮额度再await：并发只读工具不能在计数事务期间一起越过本轮上限；未发出则退还。
+        self.used[api] = self.used.get(api, 0) + 1
         # 不变量：独立事务先提交计数，再联网；业务失败/回滚不会退还已发请求。
-        async with self.database.sessions.begin() as db:
-            count = await db.scalar(
-                text(
-                    "INSERT INTO external_api_usage(day, api, calls) VALUES (:day, :api, 1) "
-                    "ON CONFLICT (day, api) DO UPDATE SET calls = external_api_usage.calls + 1 "
-                    "WHERE external_api_usage.calls < :cap RETURNING calls"
-                ),
-                {"day": datetime.now(UTC).date(), "api": api, "cap": cap},
-            )
+        try:
+            async with self.database.sessions.begin() as db:
+                count = await db.scalar(
+                    text(
+                        "INSERT INTO external_api_usage(day, api, calls) VALUES (:day, :api, 1) "
+                        "ON CONFLICT (day, api) DO UPDATE SET calls = external_api_usage.calls + 1 "
+                        "WHERE external_api_usage.calls < :cap RETURNING calls"
+                    ),
+                    {"day": datetime.now(UTC).date(), "api": api, "cap": cap},
+                )
+        except BaseException:
+            self.used[api] -= 1
+            raise
         if count is None:
+            self.used[api] -= 1
             trace("cap_hit", api=api, cap="daily", used=cap, limit=cap)
             raise ExternalDataError(
                 f"今日 {api} 调用已达上限（{cap}/{cap}）",
@@ -147,7 +158,6 @@ class ApiUsage:
                     kind="quota_exhausted", cap_scope="daily", used=cap, limit=cap
                 ),
             )
-        self.used[api] = self.used.get(api, 0) + 1
 
 
 def parse_response[T: BaseModel](model: type[T], payload: object) -> T:
@@ -260,6 +270,8 @@ async def request_json(
         raise AssertionError("bounded request loop exhausted")
     finally:
         usage.observations.append(info)
+        if (own := CALL_OBSERVATIONS.get()) is not None:
+            own.append(info)
         if len(usage.observations) > 256:
             del usage.observations[:-256]
         trace(

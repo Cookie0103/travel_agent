@@ -88,6 +88,11 @@ class ToolResult:
 
 
 WRITE_KINDS = frozenset({"state", "draft", "side_effect"})  # 会提交业务写入的工具类别
+# 可与其他调用重叠执行的纯查询：只追加证据、不发卡/不推进会话。CLI仅对readOnlyHint工具并发分发，
+# 执行器也只对这些工具在锁外执行。酒店查询会发预算卡/完成任务，路线前置合并卡，均不在内。
+CONCURRENT_READS = frozenset(
+    {"search_places", "search_content", "get_article", "get_place_facts", "get_weather_forecast"}
+)
 _KEEP_KEYS = frozenset({"status", "version", "expires_at", "changed_fields", "skipped_fields"})
 COMMITTED_NOTE = (
     "操作已提交成功，但完整结果未能返回，仅给出标识与版本；不要重复调用同一操作，"

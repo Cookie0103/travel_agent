@@ -4,10 +4,12 @@ import json
 
 from claude_agent_sdk import SdkMcpTool, create_sdk_mcp_server, tool
 from claude_agent_sdk.types import McpSdkServerConfig
+from mcp import types
 
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext
 from backend.tools.contracts import (
+    CONCURRENT_READS,
     WRITE_KINDS,
     ToolDefinition,
     ToolExecutor,
@@ -55,7 +57,13 @@ def _build_tool(
     context: RunContext,
     emit: EventSink,
 ) -> SdkMcpTool[dict[str, object]]:
-    @tool(definition.name, definition.description, definition.schema)
+    @tool(
+        definition.name,
+        definition.description,
+        definition.schema,
+        # CLI只把readOnlyHint工具判为可并发；写工具不标注，仍逐个分发。
+        types.ToolAnnotations(read_only_hint=True) if definition.name in CONCURRENT_READS else None,
+    )
     async def handler(arguments: dict[str, object]) -> dict[str, object]:
         finished: list[ToolResult] = []
         try:
