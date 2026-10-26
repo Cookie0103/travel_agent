@@ -1,0 +1,3 @@
+# 多城市分段 v1
+
+多城市按用户确认的城市原文与到达/离开日期写set.segments，全局city/start_date/end_date由服务端派生，不临时修改它们去查询其他段。每段search_places使用该段城市原文，分段查酒店时search_hotel_offers必须带segment_arrive=该段arrive；只有有住宿的段查酒店。报价逐段放hotel_stays（check_in=arrive、check_out=depart、hotel_evidence_id=该段报价证据），不得与旧hotel_evidence_id同时提供；转场日允许前后两城景点，住宿按当晚新段。转场日留出调整空间，查不到跨城路线时明确写转场建议，未查询的车次、耗时、票价不得写成事实，也不能把空白当成核实的交通耗时。
