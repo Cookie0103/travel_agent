@@ -36,3 +36,4 @@
 | [028](028-live-process-lock.md) | 运行互斥随进程退出释放 |
 | [029](029-combined-travel-details.md) | 交通、节奏与时间一次确认 |
 | [030](030-generic-choice-form.md) | 通用服务端校验表单取代写死的组合卡 |
+| [031](031-async-memory-extraction.md) | 记忆改为run结束后的异步抽取 |

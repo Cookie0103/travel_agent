@@ -34,6 +34,7 @@ from backend.providers.claude_agent.evaluation import (
 )
 from backend.providers.claude_agent.live import check_evaluation_size, run_live
 from backend.services.common import ServiceError
+from backend.services.memory_extractor import MemoryExtractor
 from backend.tools.contracts import ToolDefinition
 from backend.tools.search import DEFINITIONS, SearchExecutor
 from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
@@ -378,7 +379,15 @@ async def run_case(
     memory_metrics: dict[str, object] | None = None
     if case.memory_category and business:
         try:
-            memory_metrics = await inspect_memory(business, context, case, actual.events)
+            # 记忆改为轮次结束后异步抽取：评测在本轮落库(record)后同步跑同一抽取器再查验。
+            extracted = (
+                (await MemoryExtractor(business.sessions.database).extract(context)).events
+                if live and not verification_failed
+                else ()
+            )
+            memory_metrics = await inspect_memory(
+                business, context, case, (*actual.events, *extracted)
+            )
             checks["memory_exact"] = memory_metrics["exact"] is True
             checks["memory_cross_user_isolated"] = memory_metrics["cross_user_leakage"] is False
             checks["memory_deletion_complete"] = memory_metrics["deletion_residue"] is False

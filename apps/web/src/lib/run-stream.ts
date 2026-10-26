@@ -53,3 +53,41 @@ export async function followRun(options: {
   }
   return "aborted";
 }
+
+export const MEMORY_POLL_MS = 3000;
+export const MEMORY_POLL_LIMIT = 40; // 约2分钟；抽取在后台失败或进程重启时不无限轮询
+
+/**
+ * 运行终态后记忆仍在后台抽取（memory_pending）：低频查 /runs/{id}，
+ * 把新追加的展示事件交给 hydrate，直到抽取结束、超出次数或界面不再关注本轮。
+ */
+export async function followMemory<
+  T extends { memory_pending?: boolean | null; presentations?: unknown[] },
+>(options: {
+  initial: T;
+  status: () => Promise<T>;
+  wait: (ms: number) => Promise<void>;
+  active: () => boolean;
+  hydrate: (event: unknown, run: T) => Promise<void>;
+  limit?: number;
+}): Promise<void> {
+  let seen = options.initial.presentations?.length ?? 0;
+  let pending = options.initial.memory_pending === true;
+  for (let i = 0; pending && i < (options.limit ?? MEMORY_POLL_LIMIT); i++) {
+    await options.wait(MEMORY_POLL_MS);
+    if (!options.active()) return;
+    let run: T;
+    try {
+      run = await options.status();
+    } catch {
+      continue; // 记忆卡只是附加内容：查询失败不打断对话，下次再试
+    }
+    if (!options.active()) return;
+    const events = run.presentations ?? [];
+    // 展示事件按时间追加；只交出上次之后的新事件，避免重复补卡。
+    for (const event of events.slice(Math.min(seen, events.length)))
+      await options.hydrate(event, run);
+    seen = events.length;
+    pending = run.memory_pending === true;
+  }
+}

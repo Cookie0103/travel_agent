@@ -39,6 +39,7 @@ from backend.services.choices import ChoiceService, owned_card, selected_option,
 from backend.services.common import ServiceError, database_error_details, transaction
 from backend.services.hotel_selection import skip_hotels, write_picks
 from backend.services.hotels import validate_hotel_selection
+from backend.services.memory_extractor import Extraction, MemoryExtractor
 from backend.services.travel import TravelService, request_from_row, require_revision
 from backend.tools.contracts import ToolExecutor
 from backend.tools.travel import TravelToolExecutor
@@ -46,6 +47,8 @@ from backend.trace_log import trace
 
 LOGGER = logging.getLogger(__name__)
 RUN_TIMEOUT: float | None = None  # 测试可覆盖；默认取 profile
+EXTRACTIONS_KEPT = 64
+EXTRACTION_WAIT = 90.0  # 新的真实模型轮次最多等后台记忆抽取这么久(秒)
 
 
 class MessageInput(BaseModel):
@@ -103,6 +106,8 @@ class RunView:
     business_result: BusinessResult | None = None
     stale_refs: int | None = None
     answer_truncated: bool | None = None
+    # 本轮结束后的异步记忆抽取仍在进行；完成后确认卡作为本轮展示事件追加。
+    memory_pending: bool | None = None
 
 
 def view(row: TaskRunRow | None) -> RunView:
@@ -142,8 +147,10 @@ class RunService:
         runtime_factory: Callable[[ToolExecutor], Runtime] | None = None,
         trace_directory: Path | None = None,
         trace_cloud: bool = False,
+        memory_extractor: MemoryExtractor | None = None,
     ) -> None:
         self.database, self.live_enabled = database, live_enabled
+        self.memory_extractor = memory_extractor
         self.runtime_factory = runtime_factory
         self.trace_cloud = trace_cloud
         self.trace_directory = (
@@ -154,6 +161,10 @@ class RunService:
         self.persistence_failures: dict[UUID, RunContext] = {}
         self.recovery_pending = False
         self.recovery_lock = asyncio.Lock()
+        # 异步记忆抽取：按run跟踪，同会话串行，避免两轮抽取交错提议。
+        self.extractions: dict[UUID, asyncio.Task[Extraction]] = {}
+        self.extraction_pending: set[UUID] = set()
+        self.extraction_locks: dict[UUID, asyncio.Lock] = {}
 
     async def _settle(self, db: AsyncSession, context: RunContext) -> None:
         """启动恢复与在线恢复共用：锁会话后把仍在运行的旧执行裁决为终态。"""
@@ -299,7 +310,63 @@ class RunService:
     async def get(self, user_id: UUID, run_id: UUID) -> RunView:
         await self._require_recovery()
         async with transaction(self.database) as db:
-            return await recorded_view(db, await runs.owned(db, user_id, run_id))
+            result = await recorded_view(db, await runs.owned(db, user_id, run_id))
+        if run_id in self.extraction_pending:
+            result = replace(result, memory_pending=True)
+        return result
+
+    async def memory_settled(self, run_id: UUID) -> Extraction | None:
+        """等待该轮异步记忆抽取结束(评测/测试用)；没有抽取任务返回None。"""
+        task = self.extractions.get(run_id)
+        if task is None:
+            return None
+        return await asyncio.shield(task)
+
+    async def _wait_extractions(self) -> None:
+        """真实模型调用共用一把进程互斥锁(live.exclusive，非阻塞)：新轮次先等进行中的
+        记忆抽取结束，避免用户下一轮因锁被占而直接失败；抽取有worker时限，这里再设上限。"""
+        running = [task for task in self.extractions.values() if not task.done()]
+        if running:
+            await asyncio.wait([asyncio.shield(task) for task in running], timeout=EXTRACTION_WAIT)
+
+    def _start_extraction(self, context: RunContext) -> None:
+        assert self.memory_extractor is not None
+        task = asyncio.create_task(self._extract(context, self.memory_extractor))
+        self.extractions[context.run_id] = task
+
+        def done(_: asyncio.Task[Extraction]) -> None:
+            self.extraction_pending.discard(context.run_id)
+            # 已完成的结果留给memory_settled读取；只保留最近一批，避免常驻进程无限增长。
+            for run_id in [k for k, t in self.extractions.items() if t.done()][:-EXTRACTIONS_KEPT]:
+                self.extractions.pop(run_id)
+
+        task.add_done_callback(done)
+
+    async def _extract(self, context: RunContext, extractor: MemoryExtractor) -> Extraction:
+        """失败只记日志：记忆抽取不能改变本轮终态或阻塞下一轮。"""
+        lock = self.extraction_locks.setdefault(context.session_id, asyncio.Lock())
+        try:
+            async with lock:
+                result = await extractor.extract(context)
+                if result.events:
+                    async with transaction(self.database) as db:
+                        for event in result.events:
+                            await runs.append_event(db, event_metadata(event))
+                trace(
+                    "memory_extracted",
+                    context.run_id,
+                    proposed=result.proposed,
+                    deferred=result.deferred,
+                    invalid=result.invalid,
+                    skipped=result.skipped,
+                )
+                return result
+        except Exception as error:
+            kind, sqlstate = database_error_details(error)
+            LOGGER.warning(
+                "memory extraction failed: %s error=%s sqlstate=%s", context.run_id, kind, sqlstate
+            )
+            return Extraction(skipped="failed")
 
     async def progress(self, user_id: UUID, run_id: UUID) -> tuple[bool, int]:
         """SSE轮询用的轻量查询：只读一行，返回(是否仍在运行, 最新事件序号)。"""
@@ -388,6 +455,8 @@ class RunService:
                 )
 
         try:
+            if message.mode != "offline":
+                await self._wait_extractions()
             executor = TravelToolExecutor(TravelService(self.database))
             runtime = self._runtime(message.mode, executor)
             identity = runtime.identity
@@ -436,8 +505,17 @@ class RunService:
                         outcome,
                         text="\n\n".join(text for text in (detail, outcome.text) if text),
                     )
+                extract = (
+                    self.memory_extractor is not None
+                    and outcome.code is None
+                    and message.mode != "offline"
+                )
+                if extract:  # 终态提交前先登记，读到completed的请求一定同时看到memory_pending
+                    self.extraction_pending.add(context.run_id)
                 async with transaction(self.database) as db:
                     await runs.finish(db, context, outcome)
+                if extract:
+                    self._start_extraction(context)
                 if identity is not None:
                     metadata = (
                         runtime.trace_metadata if isinstance(runtime, GuardedRuntime) else None
@@ -454,6 +532,8 @@ class RunService:
                     sqlstate,
                 )
             finally:
+                if context.run_id not in self.extractions:  # 终态落库失败：不会再抽取
+                    self.extraction_pending.discard(context.run_id)
                 self.cancelled.pop(context.run_id, None)
                 self.tasks.pop(context.run_id, None)
 
@@ -495,3 +575,4 @@ class RunService:
         for event in self.cancelled.values():
             event.set()
         await asyncio.gather(*tuple(self.tasks.values()), return_exceptions=True)
+        await asyncio.gather(*tuple(self.extractions.values()), return_exceptions=True)

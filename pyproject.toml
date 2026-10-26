@@ -168,6 +168,7 @@ ignore_imports = [
     "backend.services.models -> backend.providers.claude_agent.settings",
     "backend.services.runs -> backend.providers.claude_agent.application",
     "backend.services.user_profile -> backend.providers.claude_agent.structured",
+    "backend.services.memory_extractor -> backend.providers.claude_agent.structured",
 ]
 
 [[tool.importlinter.contracts]]

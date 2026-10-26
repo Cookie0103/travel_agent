@@ -41,7 +41,7 @@ from backend.services.travel import TravelService, request_from_row, require_rev
 
 # 记忆合并确认卡(docs/plans/2026-10-19-memory-flow.md)：草稿暂存之后，由tools.travel的暂存分支调用
 # ChoiceService.merge_memory_cards，把本会话新增/变更的可长期偏好合成“一组”memory_confirm卡
-# (默认记住，页面一次确认，沿用ChoiceSelection.also)。逐条的propose_memory/memory_confirm路径不变。
+# (默认记住，页面一次确认，沿用ChoiceSelection.also)。run后异步抽取的逐条memory_confirm路径不变。
 MEMORY_MERGE_EXTENSION_POINT = "after_draft_staged"
 # 已确认的记忆键中，可替代合并选择卡里 节奏/交通/起床/晚上结束 四组的键。
 MEMORY_ASK_KEYS = frozenset(LONG_TERM_ELIGIBLE)
@@ -151,7 +151,7 @@ class ChoiceService:
         """草稿暂存之后，把本会话新增/变更的可长期偏好合成一组确认卡(默认“记住”)。
 
         证据只有两类，都由服务端核对：用户在合并选择卡上已提交的答案，以及用户原话经
-        propose_memory校验后暂缓的提议。模型不构造这批卡，也不能确认。无草稿不发；同一轮至多一组；
+        异步抽取校验后暂缓的提议。模型不构造这批卡，也不能确认。无草稿不发；同一轮至多一组；
         已存在且不变/用户已拒绝/本卡答案已评估过的偏好不再提议。
         """
         row = await requests.owned_request(db, context)

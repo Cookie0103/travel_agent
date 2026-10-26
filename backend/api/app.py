@@ -18,6 +18,7 @@ from backend.services.common import ServiceError
 from backend.services.history import HistoryService, RunPage, SessionPage
 from backend.services.hotel_selection import HotelSelectionService
 from backend.services.memory import MemoryFactView, MemoryService
+from backend.services.memory_extractor import MemoryExtractor
 from backend.services.models import ModelOption, model_options
 from backend.services.plans import LockInput, PlanService, SavedPlan
 from backend.services.preferences import (
@@ -52,7 +53,11 @@ def create_app(
 ) -> FastAPI:
     sessions = service or SessionService.from_environment()
     runs = runs_service or RunService(
-        sessions.database, live_enabled=live_enabled, trace_cloud=trace_cloud
+        sessions.database,
+        live_enabled=live_enabled,
+        trace_cloud=trace_cloud,
+        # 真实模型轮次结束后异步抽取记忆；离线模式没有模型，不抽取。
+        memory_extractor=MemoryExtractor(sessions.database) if live_enabled else None,
     )
     travel = TravelService.from_environment(sessions.database, runs.live_enabled)
     plans = PlanService(travel)

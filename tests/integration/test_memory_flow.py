@@ -557,7 +557,7 @@ def test_this_time_relaxed_with_a_long_term_pace_changes_no_memory_and_issues_no
             ),
         )
         await goals(travel, fresh, "itinerary")
-        # 用户说“这次想轻松点”：模型只改本次request，不调用propose_memory
+        # 用户说“这次想轻松点”：模型只改本次request，记忆抽取器也不提出长期偏好
         await travel.patch_request(
             fresh,
             RequestPatch.model_validate(

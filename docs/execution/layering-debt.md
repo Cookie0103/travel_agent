@@ -30,6 +30,7 @@ services 导入 agent（`runs` 的 2 条）、mcp→services（3 条）属于主
 | `services.models` → `providers.claude_agent.budget`、`settings` | 模型选项直接读 SDK 配置 | 把纯配置/预算常量下沉到 domain 或 `backend.profile` |
 | `services.runs` → `providers.claude_agent.application` | 用例直接依赖 Claude 运行时 | 经 `agent.runtime` 协议由组合根注入 |
 | `services.user_profile` → `providers.claude_agent.structured` | 函数内懒导入，绕过静态检查 | 注入“结构化生成”可调用对象 |
+| `services.memory_extractor` → `providers.claude_agent.structured` | 默认DeepSeek抽取调用的函数内懒导入（构造参数已可注入） | 与画像一起由组合根注入“结构化生成”可调用对象 |
 | `providers.claude_agent.database_tools` → `services.memory`、`services.travel` | 反向依赖：provider 调用业务用例 | 经 `tools` 层 executor 注入，不让 provider 直接持有 services |
 | `providers.claude_agent.worker` → `services.common` | 只为 `ServiceError` | `ServiceError` / `transaction` 的共享类型下沉到 domain |
 | `agent.demo` → `services.common` | 同上 | 同上 |

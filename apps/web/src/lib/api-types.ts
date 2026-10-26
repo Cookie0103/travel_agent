@@ -876,6 +876,8 @@ export interface components {
             stale_refs?: number | null;
             /** Answer Truncated */
             answer_truncated?: boolean | null;
+            /** Memory Pending */
+            memory_pending?: boolean | null;
             /**
              * Prompt
              * @default
@@ -1733,6 +1735,8 @@ export interface components {
             stale_refs?: number | null;
             /** Answer Truncated */
             answer_truncated?: boolean | null;
+            /** Memory Pending */
+            memory_pending?: boolean | null;
         };
         /** SavedPlan */
         SavedPlan: {

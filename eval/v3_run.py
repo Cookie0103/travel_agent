@@ -43,6 +43,7 @@ from backend.providers.claude_agent.application import GuardedRuntime
 from backend.providers.claude_agent.response import cache_totals
 from backend.services.common import transaction
 from backend.services.memory import MemoryService
+from backend.services.memory_extractor import MemoryExtractor
 from backend.services.runs import RunService
 from backend.services.sessions import DemoLogin
 from backend.services.travel import request_from_row
@@ -392,6 +393,7 @@ async def run_trial(
             trace_cloud=config.cloud,
             trace_directory=config.directory / "traces",
             runtime_factory=lambda _: V3Runtime(business, case, repeat, events, usage),
+            memory_extractor=MemoryExtractor(business.sessions.database),
         )
     else:
         service = RunService(

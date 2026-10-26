@@ -134,12 +134,17 @@ def test_default_option_is_one_of_the_options() -> None:
 
 
 def test_persona_states_the_long_term_scope_and_this_trip_rule() -> None:
+    from backend.agent.persona import evaluation_judge_prompt
+
     text = travel_prompt()
     for phrase in (
-        "pace/transport/wake_time/evening_end",
         "住宿类型、禁烟、床型、同行、第一天几点到、最后一天几点走只对本次行程有效",
         "服务端不再询问",
-        "只改本次request，不调用propose_memory，不改长期偏好，不出卡",
-        "合成一组确认卡（默认记住，一次确认）",
+        "只改本次request，不改长期偏好",
+        "你没有记忆工具",
     ):
         assert phrase in text
+    assert "propose_memory" not in text
+    extractor = evaluation_judge_prompt("memory")
+    for phrase in ("pace", "transport", "wake_time", "evening_end", "这次……”只是本次行程"):
+        assert phrase in extractor

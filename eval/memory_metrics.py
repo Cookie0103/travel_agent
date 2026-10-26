@@ -21,6 +21,7 @@ from backend.services.sessions import DemoLogin
 from backend.tools.search import SearchExecutor
 from eval.cases import Case
 from eval.database import DatabaseEvaluation
+from eval.graders import MEMORY_SOURCES
 
 FREE_KEYS = frozenset({"avoid", "dietary", "interest"})
 SCORER_VERSION = "memory-v3-normalized-polarity"
@@ -292,7 +293,7 @@ def proposal_failures(events: tuple[RuntimeEvent, ...]) -> dict[str, int]:
     failed = [
         e
         for e in events
-        if e.kind == "tool_finished" and e.tool_name == "propose_memory" and e.code is not None
+        if e.kind == "tool_finished" and e.tool_name in MEMORY_SOURCES and e.code is not None
     ]
     invalid = sum(
         e.code in {"validation", "conflict", "blocked"}

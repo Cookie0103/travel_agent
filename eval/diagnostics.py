@@ -13,6 +13,7 @@ from backend.domain.evidence import EvidenceRecord
 from backend.domain.execution import RunContext, RuntimeEvent
 from backend.domain.tool_facts import ChoiceOptionId
 from backend.domain.travel_request import TravelConditions
+from backend.services.memory_extractor import TOOL_NAME as MEMORY_EXTRACTOR
 from backend.tools.travel import SCHEMAS
 
 type Cause = Literal[
@@ -254,7 +255,9 @@ def compact_steps(events: tuple[RuntimeEvent, ...]) -> list[dict[str, object]]:
             {
                 "index": len(steps),
                 "kind": event.kind,
-                "tool": event.tool_name if event.tool_name in SCHEMAS else None,
+                "tool": event.tool_name
+                if event.tool_name in SCHEMAS or event.tool_name == MEMORY_EXTRACTOR
+                else None,
                 "code": event.code,
                 "result_empty": event.result_empty,
                 "external": event.external.model_dump(mode="json") if event.external else None,

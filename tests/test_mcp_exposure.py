@@ -19,7 +19,6 @@ KINDS = {
     "estimate_routes": "read",
     "validate_itinerary": "read",
     "get_saved_plan": "read",
-    "propose_memory": "state",
     "update_travel_request": "state",
     "update_conversation_state": "state",
     "hold_hotel": "state",

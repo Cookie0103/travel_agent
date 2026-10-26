@@ -163,7 +163,7 @@ class TravelService:
             return request_from_row(await travel.read_request(db, context))
 
     async def trusted_user_text(self, context: RunContext) -> str:
-        """本轮可信用户原话(与propose_memory同源)；没有执行记录则为空。"""
+        """本轮可信用户原话(与记忆引用核验同源)；没有执行记录则为空。"""
         async with transaction(self.database) as db:
             run = await runs.owned(db, context.user_id, context.run_id)
         return (run.user_text or "") if run else ""

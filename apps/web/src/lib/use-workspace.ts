@@ -48,7 +48,7 @@ import {
   pendingFor,
 } from "./identity-storage";
 import { mergeHistory, mergeRun } from "./history";
-import { followRun, isRunActive } from "./run-stream";
+import { followMemory, followRun, isRunActive } from "./run-stream";
 import { errorKindFor, type ErrorKind } from "./error-actions";
 import type { Mode } from "./models";
 import type { ConditionPatch } from "./condition-patch";
@@ -298,6 +298,15 @@ export function useWorkspace({
         for (const event of final.presentations ?? [])
           await hydrate(event, current, active, final);
         if (!active()) return;
+        // 记忆确认卡在本轮结束后异步生成：后台低频补卡，不阻塞本轮收尾。
+        void followMemory({
+          initial: final,
+          status: () => api<Run>(`/runs/${runId}`, current.token),
+          wait: (ms) => new Promise((resolve) => setTimeout(resolve, ms)),
+          active,
+          hydrate: (event, run) =>
+            hydrate(event as { presentation?: unknown }, current, active, run),
+        }).catch(() => undefined);
         const state = await api<RequestState>(
           `/sessions/${current.session_id}/request`,
           current.token,
