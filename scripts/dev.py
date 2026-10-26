@@ -128,15 +128,20 @@ def db_up() -> int:
     )
 
 
-def eval_dev(*, live: bool) -> int:
-    """评测入口缺失时明确拒绝，不伪造结果。"""
+def eval_dev(*, live: bool, suite: str = "legacy", case_ids: Sequence[str] = ()) -> int:
+    """评测入口缺失时明确拒绝，不伪造结果；冻结集只跑dev划分且必须走数据库。"""
     if not (ROOT / "eval" / "run.py").is_file():
         print("unavailable: 缺少 eval/run.py，无法运行评测。", file=sys.stderr)
         return 1
     command = [sys.executable, "-m", "eval.run", "--split", "dev"]
+    if suite == "frozen":
+        command.extend(["--suite", "frozen", "--database"])
     if live:
         command.append("--live")
-    return run_command(command)
+    for case_id in case_ids:
+        command.extend(["--case-id", case_id])
+    # 冻结dev为20条真实模型案例，默认300秒外层预算不够。
+    return run_command(command, timeout=7200 if live else 300)
 
 
 def web(command: str, *, webpack: bool = False) -> int:
@@ -202,6 +207,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     api.add_argument("--trace-cloud", action="store_true", help="显式上传脱敏 Trace")
     evaluation = commands.add_parser("eval-dev")
     evaluation.add_argument("--live", action="store_true", help="显式启用真实模型评测")
+    evaluation.add_argument("--suite", choices=("legacy", "frozen"), default="legacy")
+    evaluation.add_argument("--case-id", action="append", default=[])
     probe = commands.add_parser("probe-hotel-sort")
     probe.add_argument("--live", action="store_true", help="显式允许最多2次乐天请求核实排序")
     smoke = commands.add_parser("smoke-langfuse-linkage")
@@ -283,7 +290,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                 ]
             )
         case "eval-dev":
-            return eval_dev(live=args.live)
+            return eval_dev(live=args.live, suite=args.suite, case_ids=args.case_id)
         case "eval-memory":
             if args.trace_cloud and not args.live:
                 return 2

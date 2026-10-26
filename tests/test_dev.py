@@ -237,6 +237,24 @@ def test_unimplemented_evaluation_fails_without_starting_a_process(
     run.assert_not_called()
 
 
+def test_frozen_evaluation_uses_database_and_selected_cases() -> None:
+    with patch.object(dev, "run_command", return_value=0) as run:
+        assert dev.main(["eval-dev", "--suite", "frozen", "--live", "--case-id", "a-1"]) == 0
+    assert run.call_args.args[0][1:] == [
+        "-m",
+        "eval.run",
+        "--split",
+        "dev",
+        "--suite",
+        "frozen",
+        "--database",
+        "--live",
+        "--case-id",
+        "a-1",
+    ]
+    assert run.call_args.kwargs["timeout"] == 7200
+
+
 def test_pinned_cli_is_read_from_env_file_without_overriding_the_environment(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

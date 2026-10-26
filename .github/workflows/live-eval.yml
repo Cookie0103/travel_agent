@@ -1,0 +1,128 @@
+name: live-eval
+# 真实模型回归：会产生模型与外部API费用，只能手动触发；
+# 每周定时默认不跑，需在仓库变量设置 LIVE_EVAL_SCHEDULE=1 才生效。
+on:
+  workflow_dispatch:
+    inputs:
+      suite:
+        description: "v3=现行题库（eval-v3）；frozen-dev=冻结集20条dev（eval-dev --suite frozen）"
+        type: choice
+        options: [v3, frozen-dev]
+        default: v3
+      case_ids:
+        description: "只跑这些case_id，空格分隔；留空跑全集"
+        type: string
+        default: ""
+      repeat:
+        description: "每题重复次数（仅v3）"
+        type: choice
+        options: ["1", "2", "3"]
+        default: "1"
+      max_cny:
+        description: "v3累计花费软上限（元，trial之间检查，最多超出一个trial）"
+        type: string
+        default: "15"
+      judge:
+        description: "v3是否开启rubric评审（关闭可省约一半评审费用）"
+        type: boolean
+        default: true
+  schedule:
+    - cron: "0 18 * * 0" # 每周一 03:00 JST
+permissions:
+  contents: read
+concurrency:
+  group: live-eval
+  cancel-in-progress: false
+jobs:
+  eval:
+    if: github.event_name != 'schedule' || vars.LIVE_EVAL_SCHEDULE == '1'
+    runs-on: ubuntu-latest
+    timeout-minutes: 240
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: travel_agent
+          POSTGRES_DB: travel_agent
+          # 仅用于此CI作业内的临时服务，不是任何开发/生产凭据。
+          POSTGRES_PASSWORD: ci-ephemeral-only
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U travel_agent -d travel_agent"
+          --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      POSTGRES_USER: travel_agent
+      POSTGRES_DB: travel_agent
+      POSTGRES_PASSWORD: ci-ephemeral-only
+      POSTGRES_PORT: 5432
+      LLM_PROVIDER: ${{ vars.LLM_PROVIDER || 'deepseek' }}
+      DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+      DEEPSEEK_MODEL: ${{ vars.DEEPSEEK_MODEL }}
+      DAILY_BUDGET_CNY: ${{ vars.DAILY_BUDGET_CNY || '30' }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANTHROPIC_BASE_URL: ${{ vars.ANTHROPIC_BASE_URL }}
+      ANTHROPIC_MODEL: ${{ vars.ANTHROPIC_MODEL }}
+      ANTHROPIC_LIVE_ENABLED: ${{ vars.ANTHROPIC_LIVE_ENABLED || '0' }}
+      DAILY_BUDGET_USD: ${{ vars.DAILY_BUDGET_USD || '0' }}
+      GOOGLE_MAPS_API_KEY: ${{ secrets.GOOGLE_MAPS_API_KEY }}
+      RAKUTEN_APP_ID: ${{ secrets.RAKUTEN_APP_ID }}
+      RAKUTEN_ACCESS_KEY: ${{ secrets.RAKUTEN_ACCESS_KEY }}
+      RAKUTEN_AFFILIATE_ID: ${{ secrets.RAKUTEN_AFFILIATE_ID }}
+      RAKUTEN_REFERER: ${{ secrets.RAKUTEN_REFERER }}
+      # 输入只经环境变量进入脚本，不直接拼进shell，避免注入。
+      SUITE: ${{ inputs.suite || 'v3' }}
+      CASE_IDS: ${{ inputs.case_ids }}
+      REPEAT: ${{ inputs.repeat || '1' }}
+      MAX_CNY: ${{ inputs.max_cny || '15' }}
+      # 定时触发时inputs为空：空串按开启评审处理。
+      JUDGE: ${{ format('{0}', inputs.judge) }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # 与checks相同的已验证CLI；白名单之外的版本会被运行时拒绝。
+      - run: npm install --global @anthropic-ai/claude-code@2.1.295
+      - run: claude --version
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - name: Run evaluation
+        shell: bash
+        run: |
+          set -euo pipefail
+          args=()
+          for id in $CASE_IDS; do
+            if [[ ! "$id" =~ ^[a-z0-9-]+$ ]]; then
+              echo "非法case_id: $id" >&2
+              exit 2
+            fi
+            args+=(--case-id "$id")
+          done
+          if [[ "$SUITE" == "frozen-dev" ]]; then
+            uv run python scripts/dev.py eval-dev --suite frozen --live "${args[@]}"
+          else
+            if [[ ! "$MAX_CNY" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+              echo "非法max_cny: $MAX_CNY" >&2
+              exit 2
+            fi
+            extra=()
+            if [[ "$JUDGE" == "false" ]]; then
+              extra+=(--no-judge)
+            fi
+            uv run python scripts/dev.py eval-v3 --live --repeat "$REPEAT" \
+              --max-cny "$MAX_CNY" "${extra[@]}" "${args[@]}"
+          fi
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-eval-${{ github.run_id }}
+          path: |
+            .cache/eval-v3/
+            .cache/eval/
+            .cache/model-budget/
+          if-no-files-found: ignore
+          retention-days: 30
