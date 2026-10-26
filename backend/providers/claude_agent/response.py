@@ -1,6 +1,7 @@
 """解析完整 SSE 的费用摘要，缺最终 usage 或重复终止时拒绝退款。"""
 
 import json
+from collections.abc import Iterable, Mapping
 
 from backend.limits import Currency, ProbeError, price_for
 from backend.providers.claude_agent.request import Request
@@ -77,6 +78,31 @@ def summarize(
     if request.temperature is not None:
         result["temperature"] = request.temperature
     return result
+
+
+def cache_hit_rate(tokens: Mapping[str, object]) -> float | None:
+    """缓存读/全部输入；input_tokens只含未命中部分。缺字段或无输入时为None，不按0计。"""
+    counts = [
+        value
+        for key in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
+        if type(value := tokens.get(key)) is int and value >= 0
+    ]
+    if len(counts) != 3 or not sum(counts):
+        return None
+    return counts[1] / sum(counts)
+
+
+def cache_totals(rows: Iterable[object]) -> dict[str, object] | None:
+    """多次请求的输入token合计与命中率；任一行缺字段则整体未知，不用部分样本冒充。"""
+    keys = ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens")
+    measured = [row for row in rows if isinstance(row, Mapping)]
+    if not measured or not all(
+        all(type(row.get(key)) is int and row[key] >= 0 for key in keys) for row in measured
+    ):
+        return None
+    totals: dict[str, object] = {key: sum(int(row[key]) for row in measured) for key in keys}
+    totals["cache_hit_rate"] = cache_hit_rate(totals)
+    return totals
 
 
 def _events(content: bytes) -> list[dict[str, object]]:

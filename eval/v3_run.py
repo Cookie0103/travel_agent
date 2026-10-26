@@ -40,6 +40,7 @@ from backend.persistence import travel as request_rows
 from backend.persistence.models import BookingRow, MemoryFactRow, PlanDraftRow, SupplierOrderRow
 from backend.persistence.temporary import temporary_database
 from backend.providers.claude_agent.application import GuardedRuntime
+from backend.providers.claude_agent.response import cache_totals
 from backend.services.common import transaction
 from backend.services.memory import MemoryService
 from backend.services.runs import RunService
@@ -112,6 +113,7 @@ class V3Runtime(GuardedRuntime):
         case: V3Case,
         repeat: int,
         store: dict[UUID, list[RuntimeEvent]],
+        usage: list[Mapping[str, object]] | None = None,
     ) -> None:
         super().__init__(
             ROOT,
@@ -127,6 +129,7 @@ class V3Runtime(GuardedRuntime):
             prompt_snapshot=True,
         )
         self.recording = Recording(store)
+        self.usage = usage
 
     async def execute(  # type: ignore[no-untyped-def]
         self, context, prompt, sdk_session_id, emit, cancelled
@@ -134,6 +137,11 @@ class V3Runtime(GuardedRuntime):
         outcome = await super().execute(
             context, prompt, sdk_session_id, self.recording.tee(context, emit), cancelled
         )
+        # 每轮模型请求用量汇入trial供缓存命中率统计；报告不可读的一轮记为未知，不按0计。
+        if self.usage is not None:
+            self.usage.extend(
+                self.trace_metadata.requests if self.trace_metadata else [{"unknown": True}]
+            )
         return outcome
 
 
@@ -376,13 +384,14 @@ async def run_trial(
     trace_id: str | None,
 ) -> dict[str, object]:
     events: dict[UUID, list[RuntimeEvent]] = {}
+    usage: list[Mapping[str, object]] = []
     if config.live:
         service = RunService(
             business.sessions.database,
             live_enabled=True,
             trace_cloud=config.cloud,
             trace_directory=config.directory / "traces",
-            runtime_factory=lambda _: V3Runtime(business, case, repeat, events),
+            runtime_factory=lambda _: V3Runtime(business, case, repeat, events, usage),
         )
     else:
         service = RunService(
@@ -442,6 +451,7 @@ async def run_trial(
         perf_counter() - started,
         judge=judge,
         transcript=transcript,
+        cache=cache_totals(usage) if config.live else None,
     )
 
 
@@ -455,6 +465,7 @@ def trial_row(
     *,
     judge: dict[str, object] | None = None,
     transcript: str | None = None,
+    cache: dict[str, object] | None = None,
 ) -> dict[str, object]:
     turns: list[TurnObs] = list(observation.turns)
     return {
@@ -485,6 +496,7 @@ def trial_row(
         "judge_yes_rate": judge.get("yes_rate") if judge else None,
         "judge": judge,
         "transcript_path": transcript,
+        "cache": cache,
         "infra_error": score.infra_error,
         "step_unavailable": observation.step_unavailable,
         "turns": [

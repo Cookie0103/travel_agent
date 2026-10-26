@@ -82,6 +82,20 @@ def test_missing_cost_makes_total_unknown_instead_of_zero() -> None:
     assert summarize(data, 2)["cost_cny"]["total"] is None  # type: ignore[index]
 
 
+def test_cache_hit_rate_needs_every_trial_measured() -> None:
+    tokens = {"input_tokens": 10, "cache_read_input_tokens": 30, "cache_creation_input_tokens": 0}
+    cached = [row("a", 1, True, cache=tokens), row("a", 2, True, cache=tokens)]
+    assert summarize(cached, 2)["cache"] == {
+        "measured_n": 2,
+        "unknown_n": 0,
+        "hit_rate": 0.75,
+        "measured_hit_rate": 0.75,
+    }
+    partial = summarize([*cached, row("a", 3, True, cache=None)], 3)["cache"]
+    assert partial["hit_rate"] is None and partial["measured_hit_rate"] == 0.75  # type: ignore[index]
+    assert summarize(ROWS, 3)["cache"]["hit_rate"] is None  # type: ignore[index]
+
+
 def test_write_reports_creates_scatter_summary_and_markdown(tmp_path: Path) -> None:
     write_reports(
         tmp_path,
@@ -114,3 +128,4 @@ def test_write_reports_creates_scatter_summary_and_markdown(tmp_path: Path) -> N
     assert json.loads((tmp_path / "summary.json").read_text(encoding="utf-8"))["trials"] == 6
     markdown = (tmp_path / "report.md").read_text(encoding="utf-8")
     assert "pass^3" in markdown and "false_claim:budget" in markdown and "离线夹具" in markdown
+    assert "输入缓存命中率：n/a" in markdown

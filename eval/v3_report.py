@@ -6,6 +6,7 @@ from collections import Counter
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
+from backend.providers.claude_agent.response import cache_totals
 from eval.report import distribution, reliability
 from eval.v3_judge import judge_report
 
@@ -61,6 +62,18 @@ def failure_table(rows: list[dict[str, object]]) -> dict[str, dict[str, int]]:
     return {reason: dict(counts) for reason, counts in sorted(table.items())}
 
 
+def cache_summary(rows: list[dict[str, object]]) -> dict[str, object]:
+    """trial级输入token合计的缓存命中率；有trial未知时合计为None，另给已测子集。"""
+    known = [r["cache"] for r in rows if isinstance(r.get("cache"), dict)]
+    measured = cache_totals(known) if known else None
+    return {
+        "measured_n": len(known),
+        "unknown_n": len(rows) - len(known),
+        "hit_rate": measured["cache_hit_rate"] if measured and len(known) == len(rows) else None,
+        "measured_hit_rate": measured["cache_hit_rate"] if measured else None,
+    }
+
+
 def summarize(
     rows: list[dict[str, object]], repeat: int, stopped: str | None = None
 ) -> dict[str, object]:
@@ -91,6 +104,7 @@ def summarize(
             "total": str(sum(costs, Decimal(0))) if len(costs) == len(rows) else None,
             "per_trial": str(sum(costs, Decimal(0)) / len(costs)) if costs else None,
         },
+        "cache": cache_summary(rows),
         "judge": judge_report(rows),
         "claim_unknown": {
             "count": unknown_claims,
@@ -154,13 +168,17 @@ def render_markdown(manifest: dict[str, object], summary: dict[str, object]) -> 
     total, ttfua = summary["total_s"], summary["ttfua_s"]
     assert isinstance(cost, dict) and isinstance(total, dict) and isinstance(ttfua, dict)
     unknown = summary["claim_unknown"]
-    assert isinstance(unknown, dict)
+    cache = summary["cache"]
+    assert isinstance(unknown, dict) and isinstance(cache, dict)
     lines += [
         "",
         "## 耗时与成本",
         f"- 总耗时 p50/p95：{total['p50']}/{total['p95']} s",
         f"- TTFUA p50/p95：{ttfua['p50']}/{ttfua['p95']} s",
         f"- 成本（CNY）合计 {cost['total']}，每trial {cost['per_trial']}",
+        f"- 输入缓存命中率：{pct(cache['hit_rate'])}"
+        f"（已测{cache['measured_n']}个trial {pct(cache['measured_hit_rate'])}，"
+        f"未知{cache['unknown_n']}）",
         f"- 声明判定unknown：{unknown['count']}次（{unknown['trials_with_unknown']}个trial）",
         "",
     ]

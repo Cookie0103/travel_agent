@@ -20,6 +20,7 @@ from claude_agent_sdk import (
 from claude_agent_sdk.types import StopHookInput
 
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity
+from backend.providers.claude_agent.database_tools import state_prefix
 from backend.providers.claude_agent.runtime import (
     MAX_STOP_CORRECTIONS,
     ClaudeRuntime,
@@ -43,6 +44,7 @@ class ScriptedClient:
         self.closed = self.interrupted = False
         self.queried = asyncio.Event()
         self.options: ClaudeAgentOptions | None = None
+        self.prompts: list[str] = []
 
     async def __aenter__(self) -> "ScriptedClient":
         return self
@@ -56,6 +58,7 @@ class ScriptedClient:
         self.closed = True
 
     async def query(self, prompt: str) -> None:
+        self.prompts.append(prompt)
         self.queried.set()
 
     async def receive_response(self) -> AsyncIterator[Message]:
@@ -107,6 +110,30 @@ async def test_complete_result_translates_and_closes_sdk(
     assert client.options.tools == [] and client.options.setting_sources == []
     assert client.options.permission_mode == "dontAsk" and client.options.verbatim_prompts
     assert client.options.env == {}
+
+
+@pytest.mark.asyncio
+async def test_business_state_goes_before_user_message_not_into_system(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    client = ScriptedClient(
+        [
+            AssistantMessage([TextBlock("好")], "deepseek-flash"),
+            ResultMessage("success", 1, 1, False, 1, "sdk-session", result="好"),
+        ]
+    )
+    adapter = runtime(tmp_path, monkeypatch, client)
+    # 状态含@与/开头文本：旧CLI(2.1.114)的字面量检查不能因前置块拒绝整轮。
+    prefix = state_prefix({"observed_at": "t1", "note": "a@b\n/etc", "revision": 3})
+    adapter.config = replace(adapter.config, turn_prefix=prefix)
+    outcome = await adapter.execute(
+        RunContext(uuid4()), "去京都", None, lambda event: None, asyncio.Event()
+    )
+    assert outcome.code is None
+    assert client.prompts == [prefix + "去京都"]
+    assert client.options and client.options.system_prompt == "Only travel tools."
+    assert "@" not in prefix and literal_prompt_supported(prefix + "去京都", "2.1.114")
+    assert "不是用户原话" in prefix and prefix.endswith("用户本轮消息：\n")
 
 
 class CompactionClient(ScriptedClient):

@@ -5,6 +5,7 @@ import importlib.metadata
 import json
 import os
 import sys
+from collections.abc import Awaitable, Callable
 from dataclasses import asdict, replace
 from pathlib import Path
 from uuid import UUID, uuid4
@@ -41,11 +42,28 @@ from backend.tools.workflow import WorkflowName
 from backend.trace_log import trace
 
 
-def snapshot_prompt(payload: dict[str, object], context: RunContext, system: str) -> None:
-    """评测专用：仅当父进程三道门放行时把system prompt写入worker工作目录；不记录、不回传。"""
+def snapshot_prompt(
+    payload: dict[str, object], context: RunContext, system: str, prefix: str = ""
+) -> None:
+    """评测专用：仅当父进程三道门放行时把模型可见上下文（system+本轮业务状态前置块）
+    写入worker工作目录；不记录、不回传。文件名沿用system-prompt供评测读取。"""
     if payload.get("prompt_snapshot") is not True:
         return
-    (Path.cwd() / f"system-prompt-{context.run_id}.txt").write_text(system, encoding="utf-8")
+    (Path.cwd() / f"system-prompt-{context.run_id}.txt").write_text(
+        system + ("\n\n" + prefix if prefix else ""), encoding="utf-8"
+    )
+
+
+def state_reader(
+    executor: DatabaseTools, *, include_preferences: bool = True
+) -> Callable[[RunContext], Awaitable[str]]:
+    """压缩后补回用的最新业务状态前置块；偏好消融变体同样不带偏好。"""
+
+    async def read(context: RunContext) -> str:
+        snapshot = await executor.context_snapshot(context, include_preferences=include_preferences)
+        return snapshot[0]
+
+    return read
 
 
 async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
@@ -146,13 +164,14 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         ) as executor:
             if variant == "no_repairs":
                 executor.executor.max_validations = 1
+            include_preferences = variant not in {"no_preferences", "baseline_b2"}
             snapshot, revision, preference_revision = await executor.context_snapshot(
-                context, include_preferences=variant not in {"no_preferences", "baseline_b2"}
+                context, include_preferences=include_preferences
             )
             rounds = executor.executor.max_validations
             definitions = repair_definitions(definitions, rounds)
-            system = travel_prompt(repair_rounds(rounds)) + snapshot
-            snapshot_prompt(payload, context, system)
+            system = travel_prompt(repair_rounds(rounds)) + executor.guidance()
+            snapshot_prompt(payload, context, system, snapshot)
             return await run_prompts(
                 prompts,
                 context,
@@ -161,6 +180,8 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
                 definitions,
                 executor,
                 system,
+                turn_prefix=snapshot,
+                refresh_state=state_reader(executor, include_preferences=include_preferences),
                 checkpoints=Checkpoints(Path.cwd())
                 if variant == "full" and not real_data
                 else None,
@@ -184,6 +205,8 @@ async def run_prompts(
     executor: ToolExecutor,
     system: str,
     *,
+    turn_prefix: str = "",
+    refresh_state: Callable[[RunContext], Awaitable[str]] | None = None,
     checkpoints: Checkpoints | None = None,
     revision: int = 0,
     preference_revision: int = 0,
@@ -197,6 +220,8 @@ async def run_prompts(
         cli,
         Path.cwd(),
         system,
+        turn_prefix=turn_prefix,
+        refresh_state=refresh_state,
         workflow=workflow,
         max_turns=max_turns,
         disable_auto_compaction=disable_auto_compaction,
@@ -252,15 +277,21 @@ async def run_prompts(
                     reference_id = None
                 revision, preference_revision = current_revision, current_preferences
                 # 每个用户轮次重新注入事实并建立独立工具限额；SDK负责旧消息和压缩。
+                # 事实只换用户消息前置块，system不随轮次变化。
                 executor = DatabaseTools(
                     executor.loop, executor.travel.database, executor.supplier_url
                 )
-                system = travel_prompt(repair_rounds(executor.executor.max_validations)) + snapshot
-                snapshot_prompt(payload or {}, context, system)
+                system = (
+                    travel_prompt(repair_rounds(executor.executor.max_validations))
+                    + executor.guidance()
+                )
+                snapshot_prompt(payload or {}, context, system, snapshot)
                 agent.runtime = ClaudeRuntime(
                     replace(
                         config,
                         system_prompt=system,
+                        turn_prefix=snapshot,
+                        refresh_state=state_reader(executor),
                     ),
                     definitions,
                     executor,

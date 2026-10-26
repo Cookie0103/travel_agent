@@ -17,7 +17,7 @@ from backend.services.runs import MessageInput, RunService
 from backend.services.travel import RunContext, TravelService
 from tests.cli import requires_claude_cli
 from tests.fakes import FakeRuntime
-from tests.integration.sdk_helper import run_database_worker
+from tests.integration.sdk_helper import run_database_worker, server_state
 from tests.integration.test_sdk_recovery import sdk_id
 from tests.integration.test_travel import travel_setup as travel_setup
 from tests.test_sdk_cli_offline import scripted_response
@@ -76,7 +76,8 @@ def test_deleted_preference_invalidates_sdk_history_without_changing_trip(
 
     first, guard = run_database_worker(travel, context, tmp_path, forward, "读取当前条件及偏好")
     assert first["status"] == "success" and first["checkpoint_persisted"] is True
-    assert not guard.failures and marker in json.dumps(requests[0]["system"])
+    assert not guard.failures and marker in server_state(requests[0])
+    assert marker not in json.dumps(requests[0]["system"])
     first_id = sdk_id(first)
     runner.run(
         preferences.change(

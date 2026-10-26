@@ -24,7 +24,7 @@ from backend.providers.claude_agent.request import (
     request_byte_limit,
     validate_request,
 )
-from backend.providers.claude_agent.response import summarize
+from backend.providers.claude_agent.response import cache_hit_rate, summarize
 from backend.trace_log import trace
 
 Forward = Callable[[bytes], tuple[int, bytes]]
@@ -179,6 +179,9 @@ class Guard:
                 elapsed_ms=round((time.monotonic() - started) * 1000),
                 resp_bytes=len(content),
                 input_tokens=observation.get("input_tokens"),
+                cache_read_input_tokens=observation.get("cache_read_input_tokens"),
+                cache_creation_input_tokens=observation.get("cache_creation_input_tokens"),
+                cache_hit_rate=cache_hit_rate(observation),
                 output_tokens=observation.get("output_tokens"),
                 stop_reason=observation.get("stop_reason"),
                 tools=observation.get("tool_names"),

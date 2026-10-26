@@ -3,6 +3,7 @@
 import math
 from decimal import Decimal, InvalidOperation
 
+from backend.providers.claude_agent.response import cache_hit_rate
 from eval.business_metrics import business_summary
 
 
@@ -145,12 +146,16 @@ def token_summary(rows: list[dict[str, object]]) -> dict[str, object]:
             type(value.get(key)) is int and value[key] >= 0 for key in keys
         ):
             measured.append({key: value[key] for key in keys})
+    totals = (
+        {key: sum(v[key] for v in measured) for key in keys}
+        if measured and len(measured) == len(rows)
+        else None
+    )
     return {
         "measured_n": len(measured),
         "unknown_n": len(rows) - len(measured),
-        "totals": {key: sum(v[key] for v in measured) for key in keys}
-        if measured and len(measured) == len(rows)
-        else None,
+        "totals": totals,
+        "cache_hit_rate": cache_hit_rate(totals) if totals else None,
     }
 
 

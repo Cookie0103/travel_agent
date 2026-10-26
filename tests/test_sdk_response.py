@@ -6,7 +6,7 @@ import pytest
 
 from backend.limits import ProbeError
 from backend.providers.claude_agent.request import validate_request
-from backend.providers.claude_agent.response import summarize
+from backend.providers.claude_agent.response import cache_hit_rate, cache_totals, summarize
 from tests.model_bodies import request_body, response_body
 
 
@@ -48,3 +48,19 @@ def test_incomplete_or_duplicate_sse_never_settles(mutation: str) -> None:
     content = b"".join(b"data: " + json.dumps(f).encode() + b"\n\n" for f in frames)
     with pytest.raises(ProbeError):
         summarize(content, validate_request(request_body(), "deepseek-flash"), "deepseek-flash")
+
+
+def test_cache_hit_rate_counts_reads_over_all_inputs_and_keeps_unknown() -> None:
+    row = {"input_tokens": 100, "cache_read_input_tokens": 800, "cache_creation_input_tokens": 100}
+    assert cache_hit_rate(row) == 0.8
+    assert cache_hit_rate({**row, "cache_read_input_tokens": True}) is None
+    assert cache_hit_rate({"input_tokens": 0, "cache_read_input_tokens": 0}) is None
+    totals = cache_totals([row, {**row, "cache_read_input_tokens": 0}])
+    assert totals == {
+        "input_tokens": 200,
+        "cache_read_input_tokens": 800,
+        "cache_creation_input_tokens": 200,
+        "cache_hit_rate": 800 / 1200,
+    }
+    # 任一请求缺用量就整体未知，不用部分样本冒充全量。
+    assert cache_totals([row, {"unknown": True}]) is None and cache_totals([]) is None

@@ -37,6 +37,7 @@ from backend.providers.claude_agent.guard import Guard, serve
 from backend.providers.claude_agent.http import forward_messages
 from backend.providers.claude_agent.ledger import exclusive
 from backend.providers.claude_agent.process import invoke_worker, run_process
+from backend.providers.claude_agent.response import cache_totals
 from backend.providers.claude_agent.settings import load_runtime_settings
 from backend.tools.travel import live_definitions
 from backend.tools.workflow import WorkflowName
@@ -208,6 +209,7 @@ def run_live(
                 progress=drain,
             )
             tail.drain()  # 超时/被杀时也要转印已写出的子进程TRACE
+            cache_usage = cache_totals(guard.observations)
             trace(
                 "worker_exited",
                 run,
@@ -218,12 +220,14 @@ def run_live(
                 elapsed_ms=round((time.monotonic() - worker_started) * 1000),
                 http_attempts=guard.attempts,
                 guard_failures=guard.failures,
+                cache_hit_rate=cache_usage["cache_hit_rate"] if cache_usage else None,
             )
         count, charge = budget.totals()
         report.update(
             evaluation=dict(evaluation or {}),
             http_attempts=guard.attempts,
             requests=guard.observations,
+            cache_usage=cache_usage,
             http_requests=guard.http_requests,
             http_retries=guard.http_retries,
             last_http_retries=guard.last_http_retries,

@@ -17,6 +17,41 @@ from backend.services.travel import TravelService
 from backend.tools.workflow import WorkflowName
 
 
+def server_state(request: dict[str, object]) -> str:
+    """模型请求里最新一条<server_state>业务状态前置块（在用户消息里，不在system）。"""
+    found = ""
+    messages = request.get("messages")
+    assert isinstance(messages, list)
+    for message in messages:
+        if message.get("role") != "user":
+            continue
+        content = message.get("content")
+        blocks = [{"text": content}] if isinstance(content, str) else content
+        for block in blocks if isinstance(blocks, list) else []:
+            text = block.get("text") if isinstance(block, dict) else None
+            if isinstance(text, str) and "<server_state>" in text:
+                found = text.split("<server_state>", 1)[1].split("</server_state>", 1)[0]
+    return found
+
+
+def visible_text(request: dict[str, object]) -> str:
+    """模型在该请求里能看到的全部消息文本（含工具结果与钩子补回的状态）。"""
+    parts: list[str] = []
+
+    def walk(value: object) -> None:
+        if isinstance(value, str):
+            parts.append(value)
+        elif isinstance(value, dict):
+            for item in value.values():
+                walk(item)
+        elif isinstance(value, list):
+            for item in value:
+                walk(item)
+
+    walk(request.get("messages"))
+    return "\n".join(parts)
+
+
 class CompactionHistory:
     """只有本地替身建立已完成历史，业务工具后才抬高usage触发原生压缩。"""
 
