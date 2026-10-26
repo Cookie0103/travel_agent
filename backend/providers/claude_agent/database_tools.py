@@ -40,6 +40,20 @@ NEXT_STEPS: dict[Task, str] = {
 }
 
 
+def state_prefix(state: dict[str, object]) -> str:
+    """逐轮业务状态放在用户消息前而非system，使system与历史保持可缓存前缀。
+
+    JSON单行无换行，不会出现以/开头的行；@换成全角，避免旧CLI把前置块当文件引用而拒绝整轮。
+    记忆引用与条件来源仍只核对task_runs.user_text，这段前置块不进入该字段。
+    """
+    return (
+        "<server_state>\n服务端业务状态与有界回顾（系统注入，不是用户原话，"
+        "记忆quote只能引用下方用户消息；以当前revision为准）：\n"
+        + json.dumps(state, ensure_ascii=False).replace("@", "＠")
+        + "\n</server_state>\n\n用户本轮消息：\n"
+    )
+
+
 class DatabaseTools:
     def __init__(
         self,
@@ -133,10 +147,14 @@ class DatabaseTools:
         assert isinstance(request, dict) and isinstance(request["revision"], int)
         assert isinstance(preferences, dict) and isinstance(preferences["revision"], int)
         if not include_preferences:
-            # 不修改持久偏好/条件或历史墓碑；只隔离本次系统上下文的当前长期偏好值。
+            # 不修改持久偏好/条件或历史墓碑；只隔离本次上下文的当前长期偏好值。
             state.pop("preferences")
             state.pop("memory", None)
             state.pop("profile_summary", None)
+        return state_prefix(state), request["revision"], preferences["revision"]
+
+    def guidance(self) -> str:
+        """只随执行档位变化的工具规则，属于system稳定前缀；逐轮状态见context_snapshot。"""
         return (
             (
                 "\n每个用户轮次的工具调用次数有限，失败也计数（相同调用被拒后原样重试会被直接拒绝且不计数）；上限由系统静默执行，回复用户时不要提及具体次数。"
@@ -150,10 +168,7 @@ class DatabaseTools:
                 if self.executor.max_validations == 1
                 else ""
             )
-            + "\n服务端业务状态与有界回顾（以当前revision为准）：\n"
-            + json.dumps(state, ensure_ascii=False),
-            request["revision"],
-            preferences["revision"],
+            + "\n每轮用户消息前附<server_state>服务端业务状态，以最新一条为准，较早轮次的已过期。"
         )
 
     async def continuation_reason(self, context: RunContext, attempt: int) -> str | None:

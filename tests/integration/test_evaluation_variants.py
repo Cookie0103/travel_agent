@@ -288,5 +288,7 @@ def test_native_compaction_control_with_same_usage_and_trip(
         assert report["checkpoint_persisted"] is False
     assert any(e.kind == "tool_finished" and e.code is None for e in events)
     assert [o["input_tokens"] for o in guard.observations[:3]] == [8000, 11000, 22000]
-    assert len(history.warmups) == 2 and len(history.business) == 2
+    # 压缩后Stop钩子补回业务状态，多一次业务请求；未压缩的对照组不多发。
+    assert len(history.warmups) == 2
+    assert len(history.business) == (3 if variant == "full" else 2)
     assert runner.run(travel.read_request(context)) == before

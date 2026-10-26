@@ -77,14 +77,20 @@ async def other_session(travel: TravelService, context: RunContext) -> RunContex
 
 
 async def model_context(travel: TravelService, context: RunContext) -> str:
-    """worker 拼进系统提示的就是 DatabaseTools.context_snapshot 的这段文本。"""
+    """worker 拼在本轮用户消息前的就是 DatabaseTools.context_snapshot 的这段前置块。"""
     tools = DatabaseTools(asyncio.get_running_loop(), travel.database)
     return (await tools.context_snapshot(context))[0]
 
 
+def state_of(text: str) -> dict[str, object]:
+    """前置块里状态是单独一行JSON，位于标题行与</server_state>之间。"""
+    state = json.loads(next(line for line in text.splitlines() if line.startswith("{")))
+    assert isinstance(state, dict)
+    return state
+
+
 def memory_of(text: str) -> list[dict[str, object]]:
-    state = json.loads(text.split("服务端业务状态与有界回顾（以当前revision为准）：\n", 1)[1])
-    memory = state["memory"]
+    memory = state_of(text)["memory"]
     assert isinstance(memory, list)
     return memory
 
@@ -188,11 +194,10 @@ def test_forgetting_one_fact_moves_the_boundary_but_keeps_other_facts_in_context
         )
         await MemoryService(travel.database).delete(context.user_id, facts["pace"].fact_id, version)
         later = await run_of(travel, replace(fresh, run_id=None))  # type: ignore[arg-type]
-        state = json.loads(
-            (await model_context(travel, later)).split("（以当前revision为准）：\n", 1)[1]
-        )
+        text = await model_context(travel, later)
+        state = state_of(text)
         # 边界只截断删除前的对话回顾，不隐藏其余仍有效的事实
-        assert {f["key"] for f in state["memory"]} == {"transport", "wake_time", "evening_end"}
+        assert {f["key"] for f in memory_of(text)} == {"transport", "wake_time", "evening_end"}
         assert state["recent_dialogue"] == []
 
     runner.run(exercise())

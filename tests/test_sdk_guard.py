@@ -12,6 +12,7 @@ from backend.limits import ProbeError, Settings, price_for
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.guard import Guard, serve
 from backend.providers.claude_agent.request import TOOL_NAME, validate_request
+from backend.providers.claude_agent.response import cache_hit_rate
 from tests.model_bodies import request_body, response_body
 from tests.test_sdk_cli_offline import scripted_response
 
@@ -302,6 +303,10 @@ def test_success_logs_both_request_sizes_and_limit_without_private_text(
     assert received["req_bytes"] == sent["raw_bytes"] == len(body)
     assert sent["req_bytes"] == len(forwarded[0]) and sent["limit_bytes"] == 524288
     assert "private-sentinel" not in logged and guard.token not in logged
+    ended = next(row for row in rows if row["ev"] == "model_req_end")
+    observed = guard.observations[0]
+    assert ended["cache_read_input_tokens"] == observed["cache_read_input_tokens"]
+    assert ended["cache_hit_rate"] == cache_hit_rate(observed)
 
 
 def test_upstream_http_error_records_status_only_and_never_leaks_body(tmp_path: Path) -> None:

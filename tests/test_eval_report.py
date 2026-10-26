@@ -124,8 +124,12 @@ def test_unknown_tokens_and_request_counts_never_become_zero() -> None:
         "cache_creation_input_tokens": 0,
     }
     assert token_summary([{"tokens": tokens}])["totals"] == tokens
+    assert token_summary([{"tokens": tokens}])["cache_hit_rate"] == 0.0
+    cached = {**tokens, "input_tokens": 10, "cache_read_input_tokens": 90}
+    assert token_summary([{"tokens": cached}])["cache_hit_rate"] == 0.9
     for invalid in (None, {}, {**tokens, "output_tokens": True}, {**tokens, "input_tokens": -1}):
-        assert token_summary([{"tokens": tokens}, {"tokens": invalid}])["totals"] is None
+        summary = token_summary([{"tokens": tokens}, {"tokens": invalid}])
+        assert summary["totals"] is None and summary["cache_hit_rate"] is None
     report = measured_summary(
         [
             {"repeat": 1, "status": "passed", "http_attempts": 2},

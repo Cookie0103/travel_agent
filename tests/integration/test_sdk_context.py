@@ -22,7 +22,12 @@ from backend.services.runs import MessageInput, RunService
 from backend.services.travel import TravelService
 from tests.cli import requires_claude_cli
 from tests.fakes import FakeRuntime
-from tests.integration.sdk_helper import CompactionHistory, run_database_worker
+from tests.integration.sdk_helper import (
+    CompactionHistory,
+    run_database_worker,
+    server_state,
+    visible_text,
+)
 from tests.integration.test_planning import destinations, proposal
 from tests.integration.test_travel import evidence
 from tests.integration.test_travel import travel_setup as travel_setup
@@ -85,15 +90,19 @@ def test_native_auto_compaction_keeps_current_trip_and_paired_tool_results(
         i for i, e in enumerate(events) if e.kind == "tool_finished" and e.code is None
     ) < next(i for i, e in enumerate(events) if e.kind == "context_compacted")
     assert any(event.kind == "tool_finished" and event.code is None for event in events)
-    assert len(history.warmups) == 2 and len(history.business) == 2
+    assert len(history.warmups) == 2 and len(history.business) == 3
     assert history.summaries and len(history.requests) > 4
-    for request in history.requests:
-        system = request["system"]
-        assert isinstance(system, list)
-        text = "\n".join(block["text"] for block in system)
+    # 业务状态在本轮用户消息前置块；压缩紧挨着的那次请求只剩摘要（钩子无法插入），
+    # 模型想结束时Stop钩子补回最新状态再答一次。warmup/摘要是测试替身自建历史。
+    compacted = history.requests.index(history.summaries[0])
+    after = [r for r in history.business if history.requests.index(r) > compacted]
+    assert len(after) == 2 and '"revision": 1' not in visible_text(after[0])
+    for request in [r for r in history.business if r not in after[:1]]:
+        text = visible_text(request)
         assert '"revision": 1' in text
         assert "2026-11-03" in text
         assert str(valid.evidence_id) in text and str(expired.evidence_id) not in text
+    for request in history.requests:
         calls: set[str] = set()
         messages = request["messages"]
         assert isinstance(messages, list)
@@ -302,10 +311,10 @@ def test_each_database_user_round_refreshes_snapshot_and_resets_tool_scope(
     )
     events = TypeAdapter(list[RuntimeEvent]).validate_python(report["events"])
     assert sum(event.kind == "tool_finished" and event.code is None for event in events) == 2
+    systems = {json.dumps(request["system"]) for request in requests}
+    assert len(systems) == 1 and '"revision"' not in systems.pop()  # system跨轮不变、不含状态
     for request in requests[2:]:
-        system = request["system"]
-        assert isinstance(system, list)
-        text = "\n".join(block["text"] for block in system)
+        text = server_state(request)
         assert f'"revision": {2 if conditions_change else 1}' in text
         assert f'"rooms": {2 if conditions_change else 1}' in text
     assert runner.run(travel.read_request(context)).revision == (2 if conditions_change else 1)

@@ -16,7 +16,7 @@ from claude_agent_sdk import (
     TextBlock,
     ToolUseBlock,
 )
-from claude_agent_sdk.types import HookContext, HookInput, HookJSONOutput
+from claude_agent_sdk.types import HookContext, HookEvent, HookInput, HookJSONOutput
 
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeIdentity, RuntimeOutcome
@@ -52,12 +52,16 @@ class RuntimeConfig:
     cli: Path
     directory: Path
     system_prompt: str
+    # 逐轮业务状态前置块：拼在用户消息前，保持system跨轮不变以复用缓存前缀。
+    turn_prefix: str = ""
     max_turns: int | None = 6
     timeout_seconds: float = 90
     workflow: WorkflowName | None = None
     disable_auto_compaction: bool = False
     persist_session: bool = True
     stop_check: Callable[[RunContext, int], Awaitable[str | None]] | None = None
+    # 压缩会把本轮前置块摘要掉；读取最新业务状态，压缩后补回一次。
+    refresh_state: Callable[[RunContext], Awaitable[str]] | None = None
 
 
 class ClaudeRuntime:
@@ -75,6 +79,8 @@ class ClaudeRuntime:
         self.identity = config.identity
         self.stop_corrections = 0
         self.stop_failure: str | None = None
+        # 压缩后尚未补回业务状态；每次压缩只补一次，有界。
+        self.state_lost = False
 
     async def execute(
         self,
@@ -84,6 +90,7 @@ class ClaudeRuntime:
         emit: EventSink,
         cancelled: asyncio.Event,
     ) -> RuntimeOutcome:
+        prompt = self.config.turn_prefix + prompt
         if not literal_prompt_supported(prompt, self.identity.cli_version):
             return RuntimeOutcome(code="blocked", reason="cli_prompt_expansion")
         if cancelled.is_set():
@@ -236,9 +243,7 @@ class ClaudeRuntime:
             skills=[],
             plugins=[],
             permission_mode="dontAsk",
-            hooks={"Stop": [HookMatcher(hooks=[self.stop_hook(context)], timeout=5)]}
-            if self.config.stop_check
-            else None,
+            hooks=self.hooks(context),
             max_turns=self.config.max_turns,
             thinking={"type": "disabled"},
             verbatim_prompts=True,
@@ -247,13 +252,73 @@ class ClaudeRuntime:
             extra_args={} if self.config.persist_session else {"no-session-persistence": None},
         )
 
+    def hooks(self, context: RunContext) -> dict[HookEvent, list[HookMatcher]] | None:
+        hooks: dict[HookEvent, list[HookMatcher]] = {}
+        if self.config.stop_check or self.config.refresh_state:
+            hooks["Stop"] = [HookMatcher(hooks=[self.stop_hook(context)], timeout=5)]
+        if self.config.refresh_state:
+            hooks["PreCompact"] = [HookMatcher(hooks=[self.compact_hook()], timeout=5)]
+            hooks["PostToolUse"] = [HookMatcher(hooks=[self.restore_hook(context)], timeout=5)]
+        return hooks or None
+
+    def compact_hook(
+        self,
+    ) -> Callable[[HookInput, str | None, HookContext], Awaitable[HookJSONOutput]]:
+        async def mark(
+            data: HookInput, tool_id: str | None, hook_context: HookContext
+        ) -> HookJSONOutput:
+            if data["hook_event_name"] == "PreCompact":
+                self.state_lost = True
+            return {}
+
+        return mark
+
+    def restore_hook(
+        self, context: RunContext
+    ) -> Callable[[HookInput, str | None, HookContext], Awaitable[HookJSONOutput]]:
+        async def restore(
+            data: HookInput, tool_id: str | None, hook_context: HookContext
+        ) -> HookJSONOutput:
+            if data["hook_event_name"] != "PostToolUse" or not self.state_lost:
+                return {}
+            state = await self.restored_state(context)
+            if state is None:
+                return {}  # 读取失败留给Stop钩子再试，仍失败则不冒称完成
+            return {
+                "hookSpecificOutput": {"hookEventName": "PostToolUse", "additionalContext": state}
+            }
+
+        return restore
+
+    async def restored_state(self, context: RunContext) -> str | None:
+        assert self.config.refresh_state is not None
+        try:
+            state = await self.config.refresh_state(context)
+        except Exception:
+            return None
+        self.state_lost = False
+        trace("state_restored", context.run_id)
+        return state
+
     def stop_hook(
         self, context: RunContext
     ) -> Callable[[HookInput, str | None, HookContext], Awaitable[HookJSONOutput]]:
         async def check(
             data: HookInput, tool_id: str | None, hook_context: HookContext
         ) -> HookJSONOutput:
-            if data["hook_event_name"] != "Stop" or self.config.stop_check is None:
+            if data["hook_event_name"] != "Stop":
+                return {}
+            if self.state_lost and self.config.refresh_state:
+                # 压缩后没有工具调用可携带状态：拦一次结束，补回状态再答，不计入续跑提醒次数。
+                state = await self.restored_state(context)
+                if state is None:
+                    self.stop_failure = "conversation_state_unavailable"
+                    return {"continue_": False, "stopReason": "业务状态暂不可读取，请稍后重试"}
+                return {
+                    "decision": "block",
+                    "reason": "上下文刚被压缩，请按以下最新服务端状态核对后再回复用户：\n" + state,
+                }
+            if self.config.stop_check is None:
                 return {}
             try:
                 reason = await self.config.stop_check(context, self.stop_corrections + 1)

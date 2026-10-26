@@ -32,6 +32,9 @@ def test_worker_writes_only_when_payload_flag_is_true(
     snapshot_prompt({"prompt_snapshot": True}, context, "SYSTEM 慢节奏")
     written = tmp_path / f"system-prompt-{context.run_id}.txt"
     assert written.read_text(encoding="utf-8") == "SYSTEM 慢节奏"
+    # 业务状态在用户消息前置块；快照须一并落盘，L3记忆检查才看得到模型实际所见。
+    snapshot_prompt({"prompt_snapshot": True}, context, "SYSTEM", "<server_state>慢节奏")
+    assert written.read_text(encoding="utf-8") == "SYSTEM\n\n<server_state>慢节奏"
 
 
 @pytest.mark.parametrize(
