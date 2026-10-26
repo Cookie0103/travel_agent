@@ -3,6 +3,13 @@
 当前模式：**长程自主开发**（用户 2026-10-03 明确授权，替代逐任务人工关卡）。
 目标：先完成可运行、可验证的 Travel Agent，再由用户集中审阅、学习和练习面试。
 
+## 项目长期方法约定（用户 2026-10-21）
+
+- **本仓库所有对话均适用**：方案讨论、实现、排障、源码导学、评测解释、简历和面试，以 Anthropic 的 [Commerce Agents 架构](https://claude.com/resources/articles/the-anatomy-of-effective-commerce-agents)与[工具设计](https://www.anthropic.com/research/writing-tools-for-agents)为首要方法参考。
+- 开始或恢复时，先读[长期方法与代码映射](docs/guides/reuse.md#项目长期方法约定2026-10-21)；相关细节再查原文，不必每轮重读全文。未来会话必须沿用，不把它当作一次性阅读材料。
+- 回答先联系用户任务、工具与上下文、服务端约束、评测证据；区分“原文建议 / 本项目实现 / 已验证效果 / 尚存差距”。不把原文示例或收益写成项目事实。
+- 这是协作者的项目级持久约定，不是应用里的用户偏好记忆；不自动改业务设计、切换 runtime、扩大权限或发起付费调用。用户后续明确决定与现有安全边界继续有效。
+
 ## 开始或恢复时
 
 1. **当前批次计划** [docs/plans/2026-10-19-session-log.md](docs/plans/2026-10-19-session-log.md)：范围、待决事项、任务状态、每日进展、问题解决记录；按 [记录规则](docs/plans/README.md) 持续更新，全部批次见[批次索引](docs/plans/README.md#批次索引)。上一批次 [2026-10-18 完整性加固](docs/plans/2026-10-18-completeness-hardening.md)，基座批次 [交互、记忆与评测](docs/plans/2026-10-13-interaction-memory-eval.md)，上一批次见 [住宿段选择](docs/plans/2026-10-11-segment-hotel-selection.md)，此前见 [Product V2](docs/plans/2026-10-08-product-v2.md)，2026-10-08 前的历史见 [旧执行计划](docs/archive/execution/travel-agent.md)。

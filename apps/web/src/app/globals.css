@@ -686,6 +686,22 @@
   .run-steps ol {
     padding-left: 20px;
   }
+  .live-progress {
+    padding: 10px 12px;
+    border-left: 2px solid var(--primary);
+    background: var(--bg-subtle);
+  }
+  .live-progress .step {
+    margin: 0;
+  }
+  .live-progress ol {
+    margin: 6px 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text-muted);
+    font-size: var(--fs-sm);
+    overflow-wrap: anywhere;
+  }
   .hotel-image {
     width: 100%;
     aspect-ratio: 16 / 10;

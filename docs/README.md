@@ -27,6 +27,8 @@
 | 集中学习、面试案例、演示 | [review/README](review/README.md)、[cases/](review/cases/) | 批次内 P-条目全 done 后成案例 |
 | 阻塞（缺凭据/授权/环境） | [blocked/README](blocked/README.md) | 真实阻塞才记 |
 | 上游参考与协议实测 | [guides/reuse](guides/reuse.md)、[protocols/](protocols/protocol-agent-sdk.md)（[DeepSeek](protocols/protocol-deepseek.md)） | 阅读上游/做协议实测后 |
+| 本项目所有对话的长期方法约定 | [Anthropic 两篇参考与代码映射](guides/reuse.md#项目长期方法约定2026-10-21) | 方法偏好由用户明确变更时 |
+| 架构图、身份、Run、SSE、草稿与数据库字段看不懂 | [系统白话讲解](guides/system-walkthrough.md) | 实现语义变更时同步 |
 | 提案与调研 | [PRODUCT-V2-PLAN](proposals/PRODUCT-V2-PLAN.md)、[论文调研](proposals/2026-10-15-planning-repair-research.md)、[测评重设计](proposals/eval-redesign/README.md) | 动手前的方案 |
 | 已被取代的历史（旧执行计划、M0 日志…） | [archive/README](archive/README.md) | 只迁入，不改写 |
 

@@ -3,89 +3,67 @@
 import type { AppEvent } from "@/lib/api";
 import { toolLabel } from "./tool-names";
 import { errorExplanation } from "@/lib/error-explanation";
-import { toolCompletionState } from "@/lib/external-status";
+import { activityEntries, progressMessage } from "@/lib/run-progress";
 
-type Entry =
-  | {
-      type: "tool";
-      key: string;
-      name: string | null;
-      keys: string[];
-      state: "running" | "ok" | "failed" | "correcting";
-      code: string | null;
-      reason: string | null;
-      external?: AppEvent["external"];
-    }
-  | { type: "compacted"; key: string }
-  | { type: "presentation"; key: string };
-
-function activityEntries(events: AppEvent[]): Entry[] {
-  const entries: Entry[] = [];
-  const open = new Map<string, Extract<Entry, { type: "tool" }>>();
-  for (const event of [...events].sort((a, b) => a.sequence - b.sequence)) {
-    if (event.kind === "tool_started") {
-      const entry: Extract<Entry, { type: "tool" }> = {
-        type: "tool",
-        key: `s${event.sequence}`,
-        name: event.tool_name,
-        keys: event.argument_keys,
-        state: "running",
-        code: null,
-        reason: null,
-      };
-      entries.push(entry);
-      if (event.tool_call_id) open.set(event.tool_call_id, entry);
-    } else if (event.kind === "tool_finished") {
-      const entry = event.tool_call_id
-        ? open.get(event.tool_call_id)
-        : undefined;
-      const state = toolCompletionState(event.code, event.external);
-      if (entry)
-        Object.assign(entry, {
-          state,
-          code: event.code,
-          reason: event.reason ?? null,
-          external: event.external,
-        });
-      else
-        entries.push({
-          type: "tool",
-          key: `f${event.sequence}`,
-          name: event.tool_name,
-          keys: event.argument_keys,
-          state,
-          code: event.code,
-          reason: event.reason ?? null,
-          external: event.external,
-        });
-    } else if (event.kind === "context_compacted")
-      entries.push({ type: "compacted", key: `c${event.sequence}` });
-    else if (event.kind === "presentation")
-      entries.push({ type: "presentation", key: `p${event.sequence}` });
-  }
-  return entries;
-}
-
-const toolCallCount = (events: AppEvent[]) =>
-  events.filter((event) => event.kind === "tool_started").length;
-
-export function RunSteps({ events }: { events: AppEvent[] }) {
-  const entries = activityEntries(events);
-  if (!entries.length) return null;
+export function RunSteps({
+  events,
+  status,
+}: {
+  events: AppEvent[];
+  status: string;
+}) {
+  const entries = activityEntries(events, status);
+  const message = progressMessage(entries, status);
+  const tools = entries.filter((entry) => entry.type === "tool");
+  if (!entries.length && !message) return null;
   return (
-    <details className="run-steps">
-      <summary>执行了 {toolCallCount(events)} 步 ▸</summary>
-      <ol>
-        {entries.map((entry) => (
-          <li key={entry.key}>
-            {entry.type === "tool"
-              ? `${entry.state === "ok" ? "✓" : entry.state === "failed" ? "✗" : "●"} ${toolLabel(entry.name)}${entry.state === "failed" || entry.state === "correcting" ? ` — ${errorExplanation(entry.code, entry.reason, entry.external)}` : ""}`
-              : entry.type === "compacted"
-                ? "上下文已压缩"
-                : "已更新卡片"}
-          </li>
-        ))}
-      </ol>
-    </details>
+    <div className="run-progress" aria-label="执行进度">
+      {message && (
+        <div className="live-progress">
+          <p className="step">{message}</p>
+          <ol aria-label="最近执行步骤">
+            {tools.slice(-3).map((entry) => (
+              <li key={entry.key}>
+                <span aria-hidden="true">
+                  {entry.state === "ok"
+                    ? "✓"
+                    : entry.state === "failed"
+                      ? "✗"
+                      : "●"}{" "}
+                </span>
+                {toolLabel(entry.name)} ·{" "}
+                {entry.state === "ok"
+                  ? "已完成"
+                  : entry.state === "failed"
+                    ? "未完成"
+                    : entry.state === "correcting"
+                      ? "查询参数需调整"
+                      : status === "cancelling"
+                        ? "等待停止"
+                        : "进行中"}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+      {entries.length > 0 && (
+        <details className="run-steps">
+          <summary>
+            查看本轮执行记录（当前保留 {tools.length} 个工具步骤）
+          </summary>
+          <ol>
+            {entries.map((entry) => (
+              <li key={entry.key}>
+                {entry.type === "tool"
+                  ? `${entry.state === "ok" ? "✓" : entry.state === "failed" ? "✗" : "●"} ${toolLabel(entry.name)}${entry.state === "unknown" ? " — 未收到完成状态" : entry.state === "needs_adjustment" ? " — 该次查询参数需要调整" : entry.state === "failed" || entry.state === "correcting" ? ` — ${errorExplanation(entry.code, entry.reason, entry.external)}` : ""}`
+                  : entry.type === "compacted"
+                    ? "上下文已压缩"
+                    : "已更新卡片"}
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
+    </div>
   );
 }

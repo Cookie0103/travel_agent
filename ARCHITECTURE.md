@@ -3,6 +3,8 @@
 业务设计唯一来源：[design/02](docs/design/02-architecture.md)、[领域与工具](docs/design/03-data-tools.md)。
 当前实施/缺口看[当前批次](docs/plans/2026-10-19-session-log.md)。此处只帮助定位代码，不另定义业务。
 
+不熟悉术语时先看[架构白话讲解与逐表字段](docs/guides/system-walkthrough.md)：区分执行、进度和用户确认三条链。
+
 | 目录 | 职责与入口 |
 | --- | --- |
 | backend/api | HTTP、身份依赖和SSE；app.create_app调用应用服务 |

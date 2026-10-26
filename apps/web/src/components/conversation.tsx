@@ -2,7 +2,6 @@
 "use client";
 import { useEffect, useRef } from "react";
 import type { Workspace } from "./workbench";
-import { toolLabel } from "./tool-names";
 import type { MessageSelection } from "@/lib/api";
 import {
   hotelSelectionLive,
@@ -38,25 +37,6 @@ const examples = [
   "下雨天京都有哪些室内景点？",
   "帮我比较这几天京都的酒店",
 ];
-
-function currentStep(workspace: Workspace): string | undefined {
-  if (!workspace.run) return undefined;
-  const events = workspace.events.filter((event) =>
-    belongsToRun(event, workspace.run!),
-  );
-  const finished = new Set(
-    events
-      .filter((event) => event.kind === "tool_finished")
-      .map((event) => event.tool_call_id),
-  );
-  const open = events
-    .filter(
-      (event) =>
-        event.kind === "tool_started" && !finished.has(event.tool_call_id),
-    )
-    .at(-1);
-  return open ? toolLabel(open.tool_name) : undefined;
-}
 
 /** Keep the nearest scroll parent pinned to the end while the reader is already there; a new turn always jumps down (instantly). */
 function useStickyBottom(turnKey: string | undefined) {
@@ -128,7 +108,6 @@ export function Conversation({
   openPanel: () => void;
 }) {
   const { run } = workspace;
-  const step = currentStep(workspace);
   const running = ["running", "cancelling"].includes(run?.status ?? "");
   const currentPrompt = workspace.history.find(
     (row) => row.run_id === run?.run_id,
@@ -244,11 +223,12 @@ export function Conversation({
         <div className="bg-bg text-text">
           <div className="min-w-0 space-y-3">
             <p className="run-status">{running ? "处理中…" : runLabel(run)}</p>
-            {running && !run.answer && (
-              <p className="step">
-                {step ? `正在${step}…` : <span>思考中</span>}
-              </p>
-            )}
+            <RunSteps
+              status={run.status}
+              events={workspace.events.filter((event) =>
+                belongsToRun(event, run),
+              )}
+            />
             {running && !run.answer && <Skeleton />}
             {run.answer && !stageGuidance(run) && (
               <div className="answer">
@@ -267,11 +247,6 @@ export function Conversation({
               fill={fill}
               newTrip={newTrip}
               openPanel={openPanel}
-            />
-            <RunSteps
-              events={workspace.events.filter((event) =>
-                belongsToRun(event, run),
-              )}
             />
             {!workspace.events.some((event) => belongsToRun(event, run)) &&
               run.last_sequence > 0 && (

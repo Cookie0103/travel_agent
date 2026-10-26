@@ -16,6 +16,9 @@ const labels: Record<string, string> = {
   get_saved_plan: "读取已保存行程",
   present_travel_result: "整理结果卡片",
   load_skill: "载入技能",
+  propose_memory: "整理待确认偏好",
+  present_form: "整理需要确认的信息",
+  select_hotel_from_chat: "核对你选择的酒店",
 };
 
 export function toolLabel(name: string | null): string {

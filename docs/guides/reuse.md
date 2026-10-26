@@ -2,6 +2,52 @@
 
 本文件记录阅读与复用依据；下方旧批次说明仅代表当时的事实。未运行或复制上游应用。当前 SDK 验证见 [接入记录](../protocols/protocol-agent-sdk.md)，实施状态见 [执行计划](../archive/execution/travel-agent.md)。
 
+## 项目长期方法约定（2026-10-21）
+
+用户明确要求：Travel Agent 参考以下两篇文章建立；本项目后续新旧对话中的分析、开发、讲解和求职材料都以其方法为起点。本节是该偏好的持久记录，入口为根目录 [AGENTS.md](../../AGENTS.md)。它约束协作者，不是写入旅行应用的记忆库，也不是新的功能计划；业务设计唯一来源仍为 [docs/design](../design/README.md)。
+
+### 参考来源与边界
+
+- [A guide to the anatomy of effective commerce agents](https://claude.com/resources/articles/the-anatomy-of-effective-commerce-agents)：单主 Agent 与 Skills、业务工具、结构化展示、上下文、记忆、代码安全边界与评测。阅读核对日期：2026-10-21。
+- [Writing effective tools for agents — with agents](https://www.anthropic.com/research/writing-tools-for-agents)：围绕真实任务设计工具，以原型、运行记录和可核验评测迭代工具契约。阅读核对日期：2026-10-21；[engineering 入口](https://www.anthropic.com/engineering/writing-tools-for-agents)亦可访问同文。
+- 采用方法，不复制文章全文、上游应用代码或收益数字。具体 SDK、CLI、模型和 API 能力查锁定版本与当前官方接口；文章不是 DeepSeek 兼容性保证。
+- 用户后续明确决定优先；与既定产品目标、SDK 路线或安全不变量冲突时，说明冲突并按现有工作流处理。不得借“按文章做”自动重构、增加功能或放开付费调用。
+
+### 在本项目中如何运用
+
+**架构与上下文。** 优先沿用一个主 Agent 和按需业务 Skill；工具调用已有服务，通用循环复用 Claude Agent SDK。常用规则与低频步骤分开，稳定提示与每轮变化的业务快照分开；减少无用上下文。考虑预取、并行、缓存或更换模型前，先检查当前权限、依赖与实测瓶颈。当前执行器串行不是遗漏，不因文章提倡并行就擅自修改。
+
+**工具契约。** 从真实用户任务选择少量职责清晰的工具，不逐个包装所有接口。名称、参数、前置条件、对象引用和错误后的下一步要明确；schema 与执行检查共用定义。结果只返回下一步需要的事实，支持有界查询与必要的分页、摘要或详情；精简时保留后续操作所需 ID，不能再次截断局部改程需要的项目引用。
+
+**事实、展示与副作用。** 模型提出方案，服务端检查身份、证据、版本和限额；展示按已核验 ID 补齐数据。保存与模拟下单经真实确认入口。外部文字按不可信材料处理。主流程的强制发卡、酒店选择与本地修复是本项目实现，不把它们说成文章原样提供。
+
+**记忆。** 区分模型上下文与数据库事实，核对提取、确认、存储、读取和实际生效。文章中的异步提取方案不等于当前的用户确认式记忆；主流程的长期偏好范围也不等于所有通用入口已强制收紧。隐私、遗忘与来源检查以代码和既定决定为准。
+
+**评测与迭代。** 用真实任务、初始状态和正反例构造可核验终态，允许合理的不同解题路径；只在安全或明确契约需要时限定调用路径。保留故障、状态变化与跨会话场景，读实际对话、工具结果和 trace 定位失败，不能只信 Agent 自述或总分。调整工具描述、schema、返回内容后做相关回归；调优集与留出集分开，不能把当前无留出集的结果讲成泛化能力。
+
+### 回答、开发与审查时的固定检查
+
+1. 先说明用户要完成的任务，再定位实际调用链、状态和代码边界；不先堆框架或术语。
+2. 依次区分原文建议、项目已实现行为、运行验证与未证实推断。按问题自然解释，不要求每个短答机械套完整模板。
+3. 提建议时先找已有函数、SDK 公共能力和失败证据，再提出最小改动、取舍与验证方法。不为了“更像 Agent”增加工具、子 Agent 或另一套 runtime；这不禁止工作流中已授权的独立代码审查。
+4. 工具审查同时检查用途重叠、schema 与实现一致、参数语义、失败反馈、结果长度、必要引用及是否误报已提交写入为失败。
+5. 指标说明样本、分母、检查规则、统计单位和版本。任务成功率、稳定通过率、回答相关性、事实准确性与 judge 体验分分别解释；未测量或未校准的项不补造成绩。
+6. 耗时说明是模型 HTTP、单轮、首展示还是整个多轮 trial，是否包含评审，以及分位算法和样本数。成本区分保守预算记账与供应商实付；缓存、折扣和计费区间未对账时不推算实际单任务费用。
+7. 修复后的部分重跑、拼接、人工改判和已知短板必须披露。文章中的效果、缓存命中率或收入收益不能成为本项目指标；不上传私有正文、密钥或模型内部推理。
+
+### 现有代码与证据入口
+
+| 关注点 | 阅读入口 |
+| --- | --- |
+| SDK、工具接入与上下文 | [runtime](../../backend/providers/claude_agent/runtime.py)、[桥接](../../backend/mcp/bridge.py)、[业务快照](../../backend/providers/claude_agent/database_tools.py) |
+| 工具契约、结果与不可信文字 | [旅行工具](../../backend/tools/travel.py)、[工具契约](../../backend/tools/contracts.py)、[围栏](../../backend/tools/fencing.py) |
+| 流程、事实与保存 | [选择卡](../../backend/services/choices.py)、[证据](../../backend/domain/evidence.py)、[校验](../../backend/domain/validator.py)、[修复](../../backend/domain/repair.py)、[行程事务](../../backend/services/plans.py) |
+| 确认式记忆 | [记忆服务](../../backend/services/memory.py)、[记忆规则](../../backend/domain/memory.py) |
+| v3 评测与结果限定 | [运行器](../../eval/v3_run.py)、[评分](../../eval/v3_score.py)、[judge](../../eval/v3_judge.py)、[结果与拼接](../proposals/eval-redesign/results-2026-10-20.md) |
+| 时延统计与预算记账 | [分位统计](../../eval/report.py)、[usage 计价](../../backend/providers/claude_agent/response.py)、[预算账本](../../backend/providers/claude_agent/budget.py) |
+
+本节在仓库中可版本化共享。新会话须先读取；已打开的旧会话如果仍持有旧版指令，需要重新读取 AGENTS.md 和本节，不声称修改文件就能自动刷新所有运行中的上下文。其他电脑或 worktree 需同步包含本节的提交。
+
 ## 2026-10-03：SDK 优先、简洁复用
 
 再次阅读用户本地 commerce-agents 的 SDK 路径，并核对 [官方仓库](https://github.com/anthropics/commerce-agents)、[SDK Python 文档](https://code.claude.com/docs/en/agent-sdk/python)、[当前发行版 v0.2.163](https://github.com/anthropics/claude-agent-sdk-python/releases/tag/v0.2.163)。项目已锁定这一 SDK 版本；不因此替换已验证的 CLI。
