@@ -6,6 +6,9 @@ from dataclasses import dataclass
 from backend.domain.execution import RuntimeEvent
 from eval.cases import Case
 
+# 旧轨迹里模型的propose_memory与现行run后异步抽取(memory_extractor)都是记忆卡来源。
+MEMORY_SOURCES = frozenset({"propose_memory", "memory_extractor"})
+
 
 @dataclass(frozen=True)
 class Observation:
@@ -37,7 +40,7 @@ def memory_presentations_allowed(events: tuple[RuntimeEvent, ...]) -> bool:
         ):
             continue
         card = (event.context, str(data["choice_id"]))
-        if event.tool_name == "propose_memory":
+        if event.tool_name in MEMORY_SOURCES:
             proposed[card] = index
         elif event.tool_name == "present_travel_result" and call in displays and card in proposed:
             started = next(

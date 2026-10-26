@@ -1,6 +1,6 @@
 # ADR-024 经逐条确认的偏好事实与选择性遗忘
 
-日期：2026-10-14；状态：实施中。依据：[本批T5、D9](../plans/2026-10-13-interaction-memory-eval.md)。不新增依赖或记忆运行时。
+日期：2026-10-14；状态：实施中。依据：[本批T5、D9](../plans/2026-10-13-interaction-memory-eval.md)。不新增依赖或记忆运行时。提出方式已由[ADR-031](031-async-memory-extraction.md)改为run结束后的异步抽取。
 
 组合审查追加0020持久memory_forgotten_at：用户遗忘取得同一用户锁后更新边界，边界前仍running的旧来源不能再propose；后来的普通确认不能覆盖此边界。重复空DELETE保持旧公开revision幂等，但更新隐私边界，历史/待办读取使用两个截止时间的较晚者，SDK续接额外核对原PG run的时间和归属。确认卡只携带封闭待办元数据的safe_after证明，不恢复被截止的旧goal_prompt；后续删除仍裁掉待办。三个确认+两种删除迟到写入先红5项，再绿；原DELETE/SDK偏好断言保持。
 

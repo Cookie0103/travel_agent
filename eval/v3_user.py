@@ -388,6 +388,10 @@ class ScriptRunner:
             raise
         run_context = RunContext(context.user_id, context.session_id, view.run_id)
         abandoned = await self.wait(run_context)
+        # 记忆在轮次结束后异步抽取：等它落库(确认卡挂在本轮)再读本轮卡片和下一步页面。
+        extraction = await self.service.memory_settled(view.run_id)
+        if extraction is not None and extraction.events:
+            self.events.setdefault(view.run_id, []).extend(extraction.events)
         final = await self.service.get(context.user_id, view.run_id)
         async with transaction(self.business.sessions.database) as db:
             row = await runs.owned(db, context.user_id, view.run_id)

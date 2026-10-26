@@ -33,17 +33,17 @@ def test_compact_steps_keeps_only_closed_parameters_and_known_keys() -> None:
         ],
         "private-key": "private-body",
     }
-    facts = argument_facts("propose_memory", arguments)
+    facts = argument_facts("memory_extractor", arguments)
     context = RunContext(uuid4())
     event = RuntimeEvent(
         context,
-        "tool_started",
-        tool_name="propose_memory",
+        "tool_finished",
+        tool_name="memory_extractor",
         arguments=facts,
         argument_keys=("ops", "private-key"),
     )
     steps = compact_steps((event,))
-    assert steps[0]["argument_keys"] == ["ops"]
+    assert steps[0]["tool"] == "memory_extractor" and steps[0]["argument_keys"] == []
     assert "dietary" in str(steps) and "trip" in str(steps) and "ADD" in str(steps)
     assert "private" not in str(steps)
     assert argument_facts("search_hotel_offers", {"segment_arrive": "2026-11-03"}).segment_arrive
@@ -52,7 +52,7 @@ def test_compact_steps_keeps_only_closed_parameters_and_known_keys() -> None:
         is None
     )
     assert argument_facts("present_travel_result", {"kind": "private-kind"}).kind is None
-    assert "propose_memory" in SCHEMAS
+    assert "propose_memory" not in SCHEMAS  # 记忆改由run后异步抽取，模型没有记忆工具
 
 
 def test_choice_ids_and_malformed_free_values_do_not_enter_metadata() -> None:
@@ -77,7 +77,7 @@ def test_choice_ids_and_malformed_free_values_do_not_enter_metadata() -> None:
     assert steps[0]["choice_options"] == ["keep"]
     assert "private" not in str(steps)
     facts = argument_facts(
-        "propose_memory",
+        "memory_extractor",
         {
             "ops": [
                 {
@@ -93,44 +93,33 @@ def test_choice_ids_and_malformed_free_values_do_not_enter_metadata() -> None:
 
 
 def test_observed_argument_facts_survive_json_roundtrip_without_free_text() -> None:
-    import asyncio
-
     from pydantic import TypeAdapter
 
     from backend.domain.execution import event_metadata
-    from backend.tools.contracts import ToolResult
-    from backend.tools.execution import execute_observed
-    from backend.tools.travel import DEFINITIONS
-    from tests.test_external_tool_recovery import SyntheticExecutor
+    from backend.domain.tool_facts import argument_facts
 
-    async def exercise() -> None:
-        executor = SyntheticExecutor()
-        executor.responses = [ToolResult({})]
-        events: list[RuntimeEvent] = []
-        definition = next(d for d in DEFINITIONS if d.name == "propose_memory")
-        await execute_observed(
-            executor,
-            RunContext(uuid4()),
-            "propose_memory",
-            {
-                "ops": [
-                    {
-                        "key": "avoid",
-                        "op": "ADD",
-                        "scope": "trip",
-                        "value": "private-value",
-                        "quote": "private-quote",
-                    }
-                ],
-            },
-            events.append,
-            definition=definition,
-        )
-        adapter = TypeAdapter(tuple[RuntimeEvent, ...])
-        encoded = adapter.dump_json(tuple(event_metadata(e) for e in events))
-        decoded = adapter.validate_json(encoded)
-        assert "private" not in encoded.decode()
-        assert decoded[0].arguments and decoded[0].arguments.ops[0].key == "avoid"
-        assert "trip" in str(compact_steps(decoded))
-
-    asyncio.run(exercise())
+    facts = argument_facts(
+        "memory_extractor",
+        {
+            "ops": [
+                {
+                    "key": "avoid",
+                    "op": "ADD",
+                    "scope": "trip",
+                    "value": "private-value",
+                    "quote": "private-quote",
+                }
+            ],
+        },
+    )
+    events = (
+        RuntimeEvent(
+            RunContext(uuid4()), "tool_finished", tool_name="memory_extractor", arguments=facts
+        ),
+    )
+    adapter = TypeAdapter(tuple[RuntimeEvent, ...])
+    encoded = adapter.dump_json(tuple(event_metadata(e) for e in events))
+    decoded = adapter.validate_json(encoded)
+    assert "private" not in encoded.decode()
+    assert decoded[0].arguments and decoded[0].arguments.ops[0].key == "avoid"
+    assert "trip" in str(compact_steps(decoded))

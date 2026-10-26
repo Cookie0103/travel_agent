@@ -188,20 +188,6 @@ async def execute_observed(
         )
     )
     payload = None
-    if safe_name == "propose_memory" and result.code is None:
-        choices = result.data.get("choices")
-        if isinstance(choices, list):
-            for card in choices:
-                if isinstance(card, dict):
-                    emit(
-                        RuntimeEvent(
-                            context,
-                            "presentation",
-                            tool_name=name,
-                            tool_call_id=call_id,
-                            presentation={"status": "ok", "data": {"component": "choice", **card}},
-                        )
-                    )
     # 服务端新建的卡：聊天选酒店的归段确认卡、闸门代发的合并选择卡。
     if (
         (safe_name == "select_hotel_from_chat" and result.code is None)

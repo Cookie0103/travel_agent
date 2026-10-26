@@ -47,3 +47,8 @@ def test_memory_failures_distinguish_invalid_proposals_from_infrastructure() -> 
         for code in ("validation", "blocked", "conflict", "timeout", "unavailable")
     )
     assert proposal_failures(events) == {"invalid_attempts": 3, "unavailable_attempts": 2}
+    # 现行run后异步抽取的被拒提议按同一口径计数。
+    extracted = RuntimeEvent(
+        context, "tool_finished", tool_name="memory_extractor", code="validation"
+    )
+    assert proposal_failures((extracted,))["invalid_attempts"] == 1

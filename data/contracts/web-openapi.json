@@ -2809,6 +2809,17 @@
             ],
             "title": "Answer Truncated"
           },
+          "memory_pending": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Pending"
+          },
           "prompt": {
             "type": "string",
             "title": "Prompt",
@@ -5221,6 +5232,17 @@
               }
             ],
             "title": "Answer Truncated"
+          },
+          "memory_pending": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Memory Pending"
           }
         },
         "type": "object",

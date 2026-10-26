@@ -47,7 +47,7 @@ def _fields(
 
 def argument_facts(name: str, arguments: dict[str, object]) -> ToolArgumentFacts:
     data: dict[str, object] = {}
-    if name == "propose_memory" and isinstance(ops := arguments.get("ops"), list):
+    if name == "memory_extractor" and isinstance(ops := arguments.get("ops"), list):
         data["ops"] = tuple(
             MemoryArguments.model_validate(_fields(MemoryArguments, op, ("key", "scope", "op")))
             for op in ops[:5]

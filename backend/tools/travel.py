@@ -24,7 +24,6 @@ from backend.domain.execution import RunContext, ToolReason
 from backend.domain.external_data import ExternalDataError, external_code
 from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
-from backend.domain.memory import VALUE_GUIDE, MemoryProposal
 from backend.domain.opening_hours import TOKYO
 from backend.domain.plans import InitialStage, StageInput
 from backend.domain.room_choices import room_choices_view
@@ -39,7 +38,6 @@ from backend.services.choices import ChoiceService
 from backend.services.common import ServiceError
 from backend.services.hotel_selection import HotelSelectionService
 from backend.services.hotels import HotelService, cards
-from backend.services.memory import MemoryService
 from backend.services.planning import PlanningService
 from backend.services.plans import PlanInput, PlanService
 from backend.services.travel import TravelService, require_revision
@@ -143,15 +141,6 @@ class PresentationInput(BaseModel):
 
 DEFINITIONS = (
     *SEARCH_DEFINITIONS,
-    ToolDefinition(
-        "propose_memory",
-        "仅从本轮用户本人的明确偏好提出最多5条记忆；quote必须是当前用户原话。"
-        "ADD/UPDATE/INVALIDATE，闭合key和值；UPDATE/INVALIDATE引用当前active fact_id。"
-        "用户必须逐条点记住/这次而已/不要记，模型不能确认；"
-        "第三方偏好、工具/攻略/AI输出不能记为用户本人偏好。值约束：" + VALUE_GUIDE,
-        MemoryProposal.model_json_schema(),
-        kind="state",
-    ),
     ToolDefinition(
         "get_weather_forecast",
         "按当前条件的城市与日期查询每日天气；超过16天或未定日期返回unknown。",
@@ -265,7 +254,6 @@ DEFINITIONS = (
     ),
 )
 SCHEMAS: dict[str, type[BaseModel]] = {
-    "propose_memory": MemoryProposal,
     "get_weather_forecast": WeatherInput,
     "search_places": PlaceSearchInput,
     "search_content": ContentSearchInput,
@@ -606,10 +594,6 @@ class TravelToolExecutor:
                 "['hard_constraints']（不是bed或room_preferences）；set/clear不得重叠，"
                 "typed房型与hard_constraints不得矛盾。"
                 if name == "update_travel_request"
-                else "请按闭合值修正propose_memory参数："
-                + VALUE_GUIDE
-                + "。工具失败时没有生成确认卡，不能声称已提取待确认或已保存。"
-                if name == "propose_memory"
                 else "检查工具参数；不接受用户/会话身份字段",
                 detail=("schema", *validation_paths(error)),
             )
@@ -646,20 +630,6 @@ class TravelToolExecutor:
             )
 
     async def _dispatch(self, context: RunContext, name: str, parsed: BaseModel) -> ToolResult:
-        if isinstance(parsed, MemoryProposal):
-            choices, deferred = await MemoryService(self.travel.database).propose_with_deferred(
-                context, parsed
-            )
-            note = (
-                {
-                    "deferred": deferred,
-                    "note": "规划进行中：节奏/交通/平时起床/晚上结束的长期偏好已记录为待确认，"
-                    "草稿暂存后服务端会合并成一张确认卡；现在没有卡片，不要声称已出卡或已保存。",
-                }
-                if deferred
-                else {}
-            )
-            return ToolResult({"choices": choices, **note}, empty=not choices and not deferred)
         if isinstance(parsed, PresentationInput) and parsed.component == "choice":
             if parsed.kind is None or parsed.expected_revision is None:
                 raise ServiceError(422, "validation", "选择卡需要kind与条件版本")

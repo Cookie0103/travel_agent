@@ -29,16 +29,16 @@ def test_quote_source_applies_normalized_length_and_whole_message_exception(
     assert quote_source_valid(prompt, quote) is expected
 
 
-def test_model_visible_memory_schema_explains_key_specific_values() -> None:
-    definition = next(d for d in DEFINITIONS if d.name == "propose_memory")
-    definitions = definition.schema["$defs"]
-    assert isinstance(definitions, dict)
-    schema = definitions["MemoryOperation"]["properties"]["value"]
-    description = schema.get("description", "")
-    assert all(
-        word in description
-        for word in ("pace", "特种兵", "transport", "transit", "companion_pattern", "solo")
-    )
+def test_extractor_prompt_explains_key_specific_values() -> None:
+    from backend.agent.persona import evaluation_judge_prompt
+
+    schema = MemoryOperation.model_json_schema()["properties"]["value"]
+    for description in (schema.get("description", ""), evaluation_judge_prompt("memory")):
+        assert all(
+            word in description
+            for word in ("pace", "特种兵", "transport", "transit", "companion_pattern", "solo")
+        )
+    assert all(d.name != "propose_memory" for d in DEFINITIONS)
 
 
 @pytest.mark.parametrize(

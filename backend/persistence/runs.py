@@ -67,6 +67,9 @@ async def active(db: AsyncSession, session_id: UUID) -> bool:
     )
 
 
+MEMORY_EXTRACTOR = "memory_extractor"  # run后异步记忆抽取的事件来源名(不是模型工具)
+
+
 async def recent_completed(
     db: AsyncSession, context: RunContext, *, after: datetime | None = None
 ) -> list[TaskRunRow]:
@@ -141,15 +144,21 @@ async def events(db: AsyncSession, run_id: UUID, after: int) -> list[RunEventRow
 
 
 async def presentations(db: AsyncSession, run_id: UUID) -> tuple[dict[str, object], ...]:
+    shown = (RunEventRow.run_id == run_id) & (
+        RunEventRow.payload["kind"].as_string() == "presentation"
+    )
+    # run后异步抽取追加的记忆卡(最多5张)单独取，不挤掉本轮最后4个展示。
+    extracted = RunEventRow.payload["tool_name"].as_string() == MEMORY_EXTRACTOR
     rows = await db.scalars(
         select(RunEventRow)
-        .where(
-            RunEventRow.run_id == run_id, RunEventRow.payload["kind"].as_string() == "presentation"
-        )
+        .where(shown, extracted.is_not(True))
         .order_by(RunEventRow.sequence.desc())
         .limit(4)
     )
-    return tuple(row.payload for row in reversed(list(rows)))
+    cards = await db.scalars(
+        select(RunEventRow).where(shown, extracted).order_by(RunEventRow.sequence).limit(5)
+    )
+    return (*(row.payload for row in reversed(list(rows))), *(row.payload for row in cards))
 
 
 async def business_result(db: AsyncSession, row: TaskRunRow) -> BusinessResult | None:

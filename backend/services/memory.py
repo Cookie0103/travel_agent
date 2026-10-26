@@ -1,11 +1,11 @@
-"""用户原话提议、卡片确认与遗忘；不构造LLM调用或SDK缓存。"""
+"""用户原话提议、卡片确认与遗忘；不构造LLM调用或SDK缓存（异步抽取见memory_extractor）。"""
 
 from __future__ import annotations
 
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import func, or_, select
+from sqlalchemy import func, or_, select, true
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.choices import ChoiceCard, ChoiceOption
@@ -23,7 +23,13 @@ from backend.domain.memory import (
 from backend.domain.preferences import Preferences, PreferenceVersion
 from backend.persistence import memory, runs, sessions, travel
 from backend.persistence.database import Database
-from backend.persistence.models import ChoiceCardRow, MemoryFactRow, PlanDraftRow, UserRow
+from backend.persistence.models import (
+    ChoiceCardRow,
+    MemoryFactRow,
+    PlanDraftRow,
+    TaskRunRow,
+    UserRow,
+)
 from backend.persistence.user_profile import invalidate as invalidate_profile
 from backend.services.common import ServiceError, transaction
 from backend.services.conversation import (
@@ -35,6 +41,7 @@ from backend.services.conversation import (
 
 __all__ = ["MemoryService", "MemoryFactView", "MemoryProposal"]
 SCALAR_KEYS = set(KEY_LABELS) - {"interest", "avoid"}
+EXTRACTION_TURNS = 3  # 异步抽取读取/核验引用的最近已完成轮数（含来源轮）
 
 
 def fact_view(row: MemoryFactRow) -> MemoryFactView:
@@ -77,6 +84,32 @@ async def has_draft(db: AsyncSession, context: RunContext) -> bool:
         )
         is not None
     )
+
+
+async def extraction_runs(
+    db: AsyncSession, source: TaskRunRow, forgotten_at: datetime | None
+) -> list[TaskRunRow]:
+    """来源轮及其之前同会话、本人、已完成的最近几轮(旧→新)。
+
+    遗忘边界之前的轮次与回答选择卡的轮次(“记住/好的”等确认操作)不作为引用来源。"""
+    answered = select(ChoiceCardRow.answered_run_id).where(
+        ChoiceCardRow.session_id == source.session_id, ChoiceCardRow.answered_run_id.is_not(None)
+    )
+    rows = await db.scalars(
+        select(TaskRunRow)
+        .where(
+            TaskRunRow.user_id == source.user_id,
+            TaskRunRow.session_id == source.session_id,
+            TaskRunRow.status == "completed",
+            TaskRunRow.created_at <= source.created_at,
+            TaskRunRow.created_at >= forgotten_at if forgotten_at is not None else true(),
+            TaskRunRow.user_text.is_not(None),
+            TaskRunRow.id.not_in(answered),
+        )
+        .order_by(TaskRunRow.created_at.desc(), TaskRunRow.id)
+        .limit(EXTRACTION_TURNS)
+    )
+    return list(reversed(list(rows)))
 
 
 def erase(row: MemoryFactRow) -> None:
@@ -188,23 +221,35 @@ class MemoryService:
         return (await self.propose_with_deferred(context, proposal))[0]
 
     async def propose_with_deferred(
-        self, context: RunContext, proposal: MemoryProposal
+        self, context: RunContext, proposal: MemoryProposal, *, extracted: bool = False
     ) -> tuple[list[dict[str, object]], int]:
         """返回(立即展示的确认卡, 暂缓的提议数)。
 
         规划进行中(有行程目标、草稿尚未暂存)时，节奏/交通/起床/晚上结束的长期ADD/UPDATE
         照常校验并落成待确认事实，但卡片先不展示：草稿暂存后由服务端合并成一张确认卡。
+        extracted=True是run结束后的异步抽取：context.run_id为已完成的来源轮，引用可来自
+        extraction_runs的最近几轮用户原话；同一引用已有提议时不重复出卡。
         """
         async with transaction(self.database) as db:
             request = await travel.owned_request(db, context)
             if request is None:
                 raise ServiceError(404, "blocked", "会话不存在")
-            await require_current_run(db, context)
+            if not extracted:
+                await require_current_run(db, context)
             run = await runs.owned(db, context.user_id, context.run_id)
             user = await sessions.get_user(db, context.user_id, lock=True)
-            assert run and user
+            assert user
+            if run is None or run.session_id != context.session_id:
+                raise ServiceError(404, "blocked", "执行不存在")
+            if extracted and run.status != "completed":
+                raise ServiceError(409, "conflict", "只能从已完成的轮次抽取记忆")
             if user.memory_forgotten_at is not None and run.created_at < user.memory_forgotten_at:
                 raise ServiceError(409, "conflict", "用户已遗忘偏好，旧执行不能重新提出记忆")
+            sources = (
+                [row.user_text for row in await extraction_runs(db, run, user.memory_forgotten_at)]
+                if extracted
+                else [run.user_text]
+            )
             cards: list[dict[str, object]] = []
             deferred = 0
             planning = "itinerary" in stored_state(request).pending_tasks and not await has_draft(
@@ -217,7 +262,10 @@ class MemoryService:
                     and operation.scope == "long_term"
                     and operation.key in LONG_TERM_ELIGIBLE
                 )
-                if run.user_text is None or not quote_source_valid(run.user_text, operation.quote):
+                if not any(
+                    text is not None and quote_source_valid(text, operation.quote)
+                    for text in sources
+                ):
                     raise ServiceError(
                         422,
                         "validation",
@@ -250,8 +298,8 @@ class MemoryService:
                     .order_by((MemoryFactRow.status == "rejected").desc(), MemoryFactRow.created_at)
                 )
                 if previous:
-                    if previous.status == "rejected":
-                        continue
+                    if previous.status == "rejected" or extracted:
+                        continue  # 抽取重读前几轮：已提议过的引用不重复出卡
                     existing = await db.scalar(
                         select(ChoiceCardRow).where(
                             ChoiceCardRow.session_id == context.session_id,
