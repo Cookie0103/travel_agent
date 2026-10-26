@@ -90,7 +90,14 @@ def test_database_eval_separates_case_state_and_uses_actual_application_tools(
                     json.dumps([asdict(d) for d in DEFINITIONS], sort_keys=True).encode()
                 ).hexdigest()
                 assert metadata["schema_sha256"] == expected
-                assert metadata["skills"] == ["hotel-comparison", "itinerary-revision"]
+                assert metadata["skills"] == [
+                    "hotel-comparison",
+                    "itinerary-revision",
+                    "multi-city",
+                    "budget-relaxation",
+                    "external-errors",
+                    "repair-limit",
+                ]
                 assert metadata["catalog_sha256"] == business.catalog_sha256
                 assert business.catalog_sha256
                 assert "DATABASE_URL" not in str(metadata)

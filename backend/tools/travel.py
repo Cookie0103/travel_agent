@@ -70,7 +70,14 @@ class EntityInput(BaseModel):
 
 class SkillInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
-    name: Literal["hotel-comparison", "itinerary-revision"]
+    name: Literal[
+        "hotel-comparison",
+        "itinerary-revision",
+        "multi-city",
+        "budget-relaxation",
+        "external-errors",
+        "repair-limit",
+    ]
 
 
 class HotelSearchInput(BaseModel):
@@ -890,7 +897,7 @@ class TravelToolExecutor:
                 "立即调用stage_plan_change暂存（服务端会暂存冲突最少的候选并自动局部修复，"
                 "不增加修复次数；已有draft_id则直接用它），再present_travel_result展示。"
                 "回复必须如实写明：服务端自动去掉或调整的项目（草稿repairs）、"
-                "仍存的冲突与未知；不确认保存。"
+                "仍存的冲突与未知；不确认保存。尚未加载时先load_skill repair-limit。"
             )
             raise ServiceError(429, "blocked", message, "repair_limit")
         self.validations += 1

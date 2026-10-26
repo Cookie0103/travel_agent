@@ -2,6 +2,7 @@
 
 import json
 from pathlib import Path
+from typing import get_args
 
 import pytest
 from pydantic import ValidationError
@@ -86,11 +87,19 @@ def test_chinese_explanations_preserve_original_proper_names() -> None:
     assert "酒店、景点的日文专有名称保留原文" in prompt
 
 
+def skill_text(name: str) -> str:
+    return (Path(__file__).resolve().parents[1] / "backend/tools/skills" / f"{name}.md").read_text(
+        encoding="utf-8"
+    )
+
+
 def test_multi_city_prompt_uses_segments_and_labels_unqueried_transfer_suggestions() -> None:
     prompt = travel_prompt()
     assert "segment_arrive" in prompt and "hotel_stays" in prompt
-    assert "城市原文" in prompt and "转场建议" in prompt
-    assert "未查询的车次、耗时、票价" in prompt
+    assert "request.segments非空→multi-city" in prompt
+    skill = skill_text("multi-city")
+    assert "城市原文" in skill and "转场建议" in skill
+    assert "未查询的车次、耗时、票价" in skill
     assert "pace_too_sparse" in prompt and "visit_duration_range" in prompt
     hotel = next(tool for tool in DEFINITIONS if tool.name == "search_hotel_offers")
     assert "segment_arrive" in hotel.description and "hotel_stays" in hotel.description
@@ -106,7 +115,9 @@ def test_repair_cap_guidance_preserves_presentation_and_needed_candidate_search(
 
     prompt = travel_prompt()
     assert "达到修复上限就说明剩余冲突，不继续调用" not in prompt
-    assert "额度用完后" in prompt and "已暂存的草稿" in prompt
+    assert "→repair-limit" in prompt
+    skill = skill_text("repair-limit")
+    assert "额度用完后" in skill and "已暂存的草稿" in skill
     assert "候选数量不足" in NEXT_STEPS["itinerary"]
     assert "stage_plan_change" in NEXT_STEPS["itinerary"]
 
@@ -146,3 +157,16 @@ def test_prompt_asks_once_then_waits_for_the_user_to_select_hotels() -> None:
     ):
         assert gone not in prompt
     assert "绝不为此追问或发卡阻塞查询" not in prompt
+
+
+def test_low_frequency_rules_live_in_skills_with_prompt_triggers() -> None:
+    from backend.tools.travel import SkillInput
+
+    prompt = travel_prompt()
+    names = ("multi-city", "budget-relaxation", "external-errors", "repair-limit")
+    for name in names:
+        assert f"→{name}" in prompt
+        assert name in get_args(SkillInput.model_fields["name"].annotation)
+    assert "relaxation.declined=true" not in prompt
+    assert "relaxation.declined=true" in skill_text("budget-relaxation")
+    assert "auto_retried" in skill_text("external-errors") and "auto_retried" not in prompt

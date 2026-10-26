@@ -37,6 +37,7 @@ from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition
 from backend.tools.search import DEFINITIONS, SearchExecutor
 from backend.tools.travel import DEFINITIONS as TRAVEL_DEFINITIONS
+from backend.tools.travel import SkillInput
 from backend.tools.workflow import WORKFLOWS, WorkflowName
 from eval.business_metrics import BusinessMetrics
 from eval.cases import Case
@@ -527,7 +528,7 @@ def manifest(
         "pricing": (
             "backend/providers/claude_agent/limits.py; original-currency upper bound; hash above"
         ),
-        "skills": ["hotel-comparison", "itinerary-revision"]
+        "skills": list(get_args(SkillInput.model_fields["name"].annotation))
         if definitions == TRAVEL_DEFINITIONS
         else [],
         "runtime_versions": "recorded per case from actual worker identity",
