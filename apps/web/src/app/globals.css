@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./tokens.css";
 @import "./styles/hotel.css";
+@import "./styles/pages.css";
 
 @layer components {
   /* Chat-first travel assistant: calm surfaces, readable server evidence, responsive panel. */
