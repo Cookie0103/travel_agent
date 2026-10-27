@@ -1,0 +1,128 @@
+{
+  "scope": "one legacy dev case, three different code configurations; not three independent bad cases or statistical improvement",
+  "frozen_test_used": false,
+  "grant_attempts": 79,
+  "grant_cost_upper_cny": "2.074768",
+  "runs": [
+    {
+      "run": "20261003T113648Z-a696428b",
+      "case_id": "plan-complete-control",
+      "rules_status": "error",
+      "failed_checks": [
+        "completed",
+        "tool_selection",
+        "response_rule"
+      ],
+      "sdk_status": "error",
+      "sdk_reason": "invalid_assistant_message",
+      "trace_id": "62446960a0f25029a096badc78365728",
+      "http_attempts": 8,
+      "cost_upper_cny": "0.322942",
+      "guard_failures": [],
+      "tools": [
+        "update_travel_request",
+        "search_places",
+        "search_places",
+        "search_places",
+        "search_places",
+        "search_places",
+        "search_places",
+        "search_places",
+        "search_places",
+        "search_places",
+        "search_hotel_offers",
+        "search_places",
+        "search_places",
+        "search_places",
+        "search_places"
+      ],
+      "presentation_count": 0,
+      "cards_count": null,
+      "validation": null,
+      "hotel_selected": null,
+      "manifest_sha256": "8e02c47448fc87e00805a1296a301531465f638cca2d2650fbe4a3d6058126cb"
+    },
+    {
+      "run": "20261003T114222Z-6424d8e2",
+      "case_id": "plan-complete-control",
+      "rules_status": "failed",
+      "failed_checks": [
+        "tool_success"
+      ],
+      "sdk_status": "success",
+      "sdk_reason": null,
+      "trace_id": "8d2539ef9c5fd57bfb77cbd1cf01208f",
+      "http_attempts": 10,
+      "cost_upper_cny": "0.452110",
+      "guard_failures": [],
+      "tools": [
+        "update_travel_request",
+        "search_places",
+        "update_travel_request",
+        "search_places",
+        "search_places",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "estimate_routes",
+        "validate_itinerary",
+        "stage_plan_change",
+        "present_travel_result"
+      ],
+      "presentation_count": 0,
+      "cards_count": null,
+      "validation": null,
+      "hotel_selected": null,
+      "manifest_sha256": "908a3163ba6d34d05c6a06da008ca9d63e6993b03ba0e2fded389799fdaa2883"
+    },
+    {
+      "run": "20261003T114932Z-4e630873",
+      "case_id": "plan-complete-control",
+      "rules_status": "passed",
+      "failed_checks": [],
+      "sdk_status": "success",
+      "sdk_reason": null,
+      "trace_id": "1474ad2c4069be5aa7a0732d54e5febf",
+      "http_attempts": 10,
+      "cost_upper_cny": "0.365238",
+      "guard_failures": [],
+      "tools": [
+        "update_travel_request",
+        "search_places",
+        "search_places",
+        "search_places",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "get_place_facts",
+        "estimate_routes",
+        "validate_itinerary",
+        "stage_plan_change",
+        "present_travel_result"
+      ],
+      "presentation_count": 1,
+      "cards_count": 6,
+      "validation": {
+        "status": "partial",
+        "check_counts": {
+          "verified": 7,
+          "unknown": 13,
+          "conflict": 0
+        },
+        "truncated": true
+      },
+      "hotel_selected": false,
+      "manifest_sha256": "cb8d9018b1e99f30cbfe48a03bc6cb876192133bb4db60183c41e53d75daaec7"
+    }
+  ],
+  "limitations": [
+    "single development case",
+    "final validation partial with unknown opening hours/routes/costs and no hotel",
+    "no user confirmation or formal save in live experiment",
+    "earlier failures preserved; no automatic paid retry"
+  ]
+}

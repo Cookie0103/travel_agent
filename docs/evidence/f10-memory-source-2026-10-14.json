@@ -1,0 +1,24 @@
+{
+  "date": "2026-10-14",
+  "evidence": "VERIFIED",
+  "rule": "仅本轮run.user_text，NFKC去空白至少4字，或归一化后等于完整用户消息",
+  "schema": "非空/最多200字，整条短消息例外在服务上下文边界校验",
+  "tests": {"initial_pg_red": {"failed": 4, "passed": 6}, "whitespace_rejection_red": 1,
+            "pg_green": 30, "unit_green": 14, "native_offline_sdk_green": 1, "check_files": 386},
+  "cross_user_confirm": "本人会话与他人会话均404，拥有者事实/卡不变，未启动runtime",
+  "server_probe": {"legacy_isolation_probes": 3, "confirmation_isolation_probes": 1,
+                   "total": 4, "old_assertions": "保留原三个计数断言，新增字段独立计数"},
+  "original_e6_quote_audit": {
+    "raw_results_sha256": "c224949d07658290710190c44d8c10b6217bee5d275f91245052539c71ee43a4",
+    "cases": 20, "sdk_session_files_available": 19, "parsed_tool_calls": 12,
+    "quotes": 13, "shorter_than_four": 0, "parse_errors": 0,
+    "source_file_hash_manifest_sha256": "8f56317200e31757b1025a0a1439fe1ee471d4dd098e326b1e5ec3c6ba66efef",
+    "missing_raw_case": "v2-mem-poison-tool",
+    "missing_case_observation": "冻结工具事件只有search_places，没有propose_memory，原始predictions为空；不声称此案例SDK原文齐全",
+    "scope": "只读原20条对应config/projects SDK JSONL tool_use输入，按tool_use id去重；只输出计数，不公开引用正文"
+  },
+  "limits": ["服务不猜引用语义，逐条确认保持", "schema最短1是为了完整短回复例外，不等于长消息单字可以提议", "空白等价拒绝去重，存储引用仍可读", "旧E6未执行新增确认探针，不能冒称旧模型实测已覆盖四项"],
+  "new_model_http_attempts": 0,
+  "new_model_cost_cny": "0",
+  "cloud_upload": false
+}

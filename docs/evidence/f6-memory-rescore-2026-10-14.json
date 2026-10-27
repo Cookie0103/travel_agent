@@ -1,0 +1,30 @@
+{
+  "date": "2026-10-14",
+  "evidence": "VERIFIED",
+  "scorer_version": "memory-v3-normalized-polarity",
+  "gold_sha256": "b6246f20bde7b739dce23544563147b3e408095fe3eca39613a7313fadf98aff",
+  "scope": "全部原始轨迹统一重算，只修评分器；不重跑模型、不改金标，不是当前代码的模型验收",
+  "root": ".cache/batch-2026-10-14/f6-reviewed",
+  "results": [
+    {"set": "original", "n": 20, "original_passed": 15, "v3_passed": 20, "unknown_presentation_n": 0,
+     "raw_sha256": "c224949d07658290710190c44d8c10b6217bee5d275f91245052539c71ee43a4"},
+    {"set": "failure-focused", "n": 15, "original_passed": 5, "v3_passed": 15, "unknown_presentation_n": 0,
+     "raw_sha256": "69315bb48a55231c3f45e30783bd4d291603b787b9391e2f5bd382a605bbf06d"}
+  ],
+  "changes": [
+    {"set": "original", "case_id": "v2-mem-trip-solo", "trials": [1], "check": "no_unnecessary_tools"},
+    {"set": "original", "case_id": "v2-mem-trip-dietary", "trials": [1], "check": "memory_exact"},
+    {"set": "original", "case_id": "v2-mem-negation-early", "trials": [1], "check": "memory_exact"},
+    {"set": "original", "case_id": "v2-mem-negation-walk", "trials": [1], "check": "memory_exact"},
+    {"set": "original", "case_id": "v2-mem-update-invalidate", "trials": [1], "check": "no_unnecessary_tools"},
+    {"set": "failure-focused", "case_id": "v2-mem-trip-dietary", "trials": [1, 2, 3], "check": "memory_exact"},
+    {"set": "failure-focused", "case_id": "v2-mem-negation-early", "trials": [1, 2, 3], "check": "memory_exact"},
+    {"set": "failure-focused", "case_id": "v2-mem-negation-walk", "trials": [1, 2, 3], "check": "memory_exact"},
+    {"set": "failure-focused", "case_id": "v2-mem-update-invalidate", "trials": [2], "check": "no_unnecessary_tools"}
+  ],
+  "change_direction": "以上15条旧false改true；完整逐条检查变更在各summary",
+  "limits": ["两组不能合并为总体成功率，第二组是失败聚焦重复样本", "自由文本三key只是有限词面比较，未人工校准", "七封闭key精确、非法次数/服务不变量/其他工具限制保留", "原始文件及SDK依赖hash复核不变，manifest记录新评分器版本"],
+  "new_http_attempts": 0,
+  "new_cost_cny": "0",
+  "cloud_upload": false
+}

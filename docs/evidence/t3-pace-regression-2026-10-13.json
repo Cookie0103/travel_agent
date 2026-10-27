@@ -1,0 +1,162 @@
+{
+  "date": "2026-10-14",
+  "scope": "post-fix pace regression only; separate from first formal 8x3",
+  "raw_results": ".cache/simulator/ab2d2463e9fe4443bc4d78ce97b158c5/results.jsonl",
+  "raw_results_sha256": "0f84838f1c7074b0b9bf3a2f6c65bc4468382e94f9b428fa4d71428087b841a1",
+  "source_comparison": {
+    "baseline_manifest": ".cache/simulator/87fef04527574b649962b3c5dbc48f8f/manifest.json",
+    "rerun_manifest": ".cache/simulator/ab2d2463e9fe4443bc4d78ce97b158c5/manifest.json",
+    "baseline_manifest_sha256": "eab187435a3552c8ea935d64968331f27313ffe0158adfe25ad6ca64b56df324",
+    "rerun_manifest_sha256": "661eb80e2add1bd6ff6c3eed4c4e3bfad9585d4a64be8ae0814f31b4be1783b8",
+    "different_paths": 28, "added": 8, "modified": 20, "removed": 0,
+    "scope": "manifest.sha256记录的backend/data/eval/mock_supplier及配置/scripts/dev.py范围，非全仓Git差异",
+    "note": "节奏重跑基于不同源码，相差28个记录路径；两次code_commit均96846d4且worktree_dirty=true。伴随其他改动，专项3/3不能作为单因素因果对照。"
+  },
+  "summary": {
+    "n": 3,
+    "passed": 3,
+    "expected": 3,
+    "evaluated": 3,
+    "errors": 0,
+    "not_run": 0,
+    "rule_pass_rate": 1.0,
+    "cost_cny": "1.453798",
+    "original_currency_cost": {
+      "currency": "CNY",
+      "n": 3,
+      "measured_n": 3,
+      "unknown_n": 0,
+      "total": "1.453798",
+      "measured_subtotal": "1.453798",
+      "distribution": {
+        "measured_n": 3,
+        "p50": 0.438204,
+        "p95": 0.71039,
+        "method": "nearest-rank"
+      },
+      "cost_per_success": "0.4845993333333333333333333333"
+    },
+    "reliability": {
+      "k": 3,
+      "cases": 1,
+      "complete_cases": 1,
+      "pass_at_1": 1.0,
+      "pass_at_k": 1.0,
+      "pass_power_k": 1.0,
+      "basis": "predeclared independent trials; errors/missing trials remain unknown"
+    },
+    "saved_constraints": {
+      "requested": 0,
+      "delivered": 0,
+      "delivery_rate": null,
+      "verified_checks": 0,
+      "unknown_checks": 0,
+      "conflict_checks": 0,
+      "micro": null,
+      "macro": null,
+      "all_constraints_rate": null,
+      "scope": "independent validation of saved content only; partial has unknowns; delivery is separate"
+    },
+    "process": {
+      "tool_calls": 29,
+      "duplicate_calls": null,
+      "recovered_without_user": 0,
+      "user_visible_errors": 0,
+      "user_visible_first_errors": 0
+    },
+    "elapsed_seconds": {
+      "measured_n": 3,
+      "p50": 53.790662,
+      "p95": 75.115636,
+      "method": "nearest-rank"
+    },
+    "elapsed_unknown_n": 0,
+    "basis": "synthetic goals; actual SDK+PG; no real suppliers; uncalibrated semantics"
+  },
+  "real_travel_suppliers": 0,
+  "real_orders": 0,
+  "trials": [
+    {
+      "case_id": "v2-user-pace",
+      "trial": 1,
+      "trace_id": "790cb931c93981a42a4e4a44bbde742b",
+      "status": "passed",
+      "checks": {
+        "no_orders": true,
+        "no_first_error": true,
+        "controller_valid": true,
+        "finished": true,
+        "completed_runs": true,
+        "hotel_delivery": true,
+        "pace": true,
+        "pace_clicked": true
+      },
+      "cost_cny": "0.710390",
+      "elapsed_seconds": 75.115636,
+      "process": {
+        "tool_calls": 15,
+        "duplicate_calls": null,
+        "recovered_without_user": 0,
+        "user_visible_errors": 0,
+        "user_visible_first_errors": 0,
+        "grounded_ids": null,
+        "scope": "only observed events; unavailable argument facts keep duplicate count unknown"
+      }
+    },
+    {
+      "case_id": "v2-user-pace",
+      "trial": 2,
+      "trace_id": "c935f8faefc0fc2c849b0702a68ae976",
+      "status": "passed",
+      "checks": {
+        "no_orders": true,
+        "no_first_error": true,
+        "controller_valid": true,
+        "finished": true,
+        "completed_runs": true,
+        "hotel_delivery": true,
+        "pace": true,
+        "pace_clicked": true
+      },
+      "cost_cny": "0.305204",
+      "elapsed_seconds": 44.339152,
+      "process": {
+        "tool_calls": 5,
+        "duplicate_calls": null,
+        "recovered_without_user": 0,
+        "user_visible_errors": 0,
+        "user_visible_first_errors": 0,
+        "grounded_ids": null,
+        "scope": "only observed events; unavailable argument facts keep duplicate count unknown"
+      }
+    },
+    {
+      "case_id": "v2-user-pace",
+      "trial": 3,
+      "trace_id": "088e77d378266c0f7fbe5b69cd4dedf5",
+      "status": "passed",
+      "checks": {
+        "no_orders": true,
+        "no_first_error": true,
+        "controller_valid": true,
+        "finished": true,
+        "completed_runs": true,
+        "hotel_delivery": true,
+        "pace": true,
+        "pace_clicked": true
+      },
+      "cost_cny": "0.438204",
+      "elapsed_seconds": 53.790662,
+      "process": {
+        "tool_calls": 9,
+        "duplicate_calls": null,
+        "recovered_without_user": 0,
+        "user_visible_errors": 0,
+        "user_visible_first_errors": 0,
+        "grounded_ids": null,
+        "scope": "only observed events; unavailable argument facts keep duplicate count unknown"
+      }
+    }
+  ],
+  "first_formal_results_retained": true
+}

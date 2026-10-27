@@ -1,0 +1,192 @@
+{
+  "mode": "offline_database_fixture",
+  "case_count": 8,
+  "evaluated": 24,
+  "passed": 24,
+  "errors": 0,
+  "not_run": 0,
+  "rule_pass_rate": 1.0,
+  "repetitions": 3,
+  "expected_attempts": 24,
+  "per_repeat": [
+    {
+      "repeat": 1,
+      "expected": 8,
+      "evaluated": 8,
+      "passed": 8,
+      "errors": 0,
+      "not_run": 0,
+      "rule_pass_rate": 1.0
+    },
+    {
+      "repeat": 2,
+      "expected": 8,
+      "evaluated": 8,
+      "passed": 8,
+      "errors": 0,
+      "not_run": 0,
+      "rule_pass_rate": 1.0
+    },
+    {
+      "repeat": 3,
+      "expected": 8,
+      "evaluated": 8,
+      "passed": 8,
+      "errors": 0,
+      "not_run": 0,
+      "rule_pass_rate": 1.0
+    }
+  ],
+  "reliability": {
+    "k": 3,
+    "cases": 8,
+    "complete_cases": 8,
+    "pass_at_1": 1.0,
+    "pass_at_k": 1.0,
+    "pass_power_k": 1.0,
+    "basis": "predeclared independent trials; errors/missing trials remain unknown"
+  },
+  "rule_rate_range": {
+    "min": 1.0,
+    "max": 1.0
+  },
+  "latency_seconds": {
+    "measured_n": 24,
+    "p50": 0.062,
+    "p95": 0.715,
+    "method": "nearest-rank"
+  },
+  "latency_unknown_n": 0,
+  "first_progress_seconds": {
+    "measured_n": 24,
+    "p50": 0.001975,
+    "p95": 0.003032,
+    "method": "nearest-rank"
+  },
+  "first_progress_unknown_n": 0,
+  "tool_call_accuracy": {
+    "total": 36,
+    "correct": 0,
+    "incorrect": 0,
+    "unknown": 36,
+    "measured_subtotal": {
+      "total": 36,
+      "correct": 0,
+      "incorrect": 0,
+      "unknown": 36
+    },
+    "unknown_cases": 0,
+    "accuracy": null,
+    "scope": "all started calls; unknown semantic parameters remain unscored"
+  },
+  "original_currency_cost": {},
+  "currency_unknown_n": 24,
+  "runtime_identities": [
+    {
+      "provider": "fake",
+      "model": "fixture-demo",
+      "sdk_version": "none",
+      "cli_version": "none"
+    }
+  ],
+  "http_attempts": {
+    "total": 0,
+    "measured_subtotal": 0,
+    "unknown_n": 0
+  },
+  "tokens": {
+    "measured_n": 0,
+    "unknown_n": 24,
+    "totals": null
+  },
+  "semantic_fact_quality": null,
+  "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+  "business_metrics": {
+    "version": 1,
+    "records": 24,
+    "missing_observation_n": 0,
+    "constraints": {
+      "applicable_n": 0,
+      "observed_applicable_n": 0,
+      "validated_candidate_n": 0,
+      "states": {
+        "complete": 0,
+        "partial": 0,
+        "conflict": 0,
+        "no_candidate": 0,
+        "unavailable": 0
+      },
+      "check_counts": {
+        "verified": null,
+        "unknown": null,
+        "conflict": null
+      },
+      "candidate_coverage": null,
+      "observed_hard_constraint_pass_rate": null,
+      "hard_constraint_pass_rate": null,
+      "observed_candidate_no_conflict_rate": null,
+      "scope": "本轮最新草稿按当前条件重新校验；partial仍有unknown，非全部条件确定满足"
+    },
+    "booking": {
+      "applicable_n": 0,
+      "observed_applicable_n": 0,
+      "measured_n": 0,
+      "correct_n": 0,
+      "incorrect_n": 0,
+      "unavailable_n": 0,
+      "correctness_rate": null,
+      "scope": "模拟暂留/unknown保留/预期供应商故障及无新增订单；不测完整付款下单"
+    },
+    "recovery": {
+      "completion_rate": null,
+      "measured_n": 0,
+      "reason": "冻结套件未执行带原始目标的故障恢复；不能从故障解释推断恢复成功"
+    }
+  },
+  "data_version": "kyoto-snapshot-v1+hotel-fixture-v1+routes-fixture-v1",
+  "workflow": "autonomous",
+  "evaluation_variant": "full",
+  "limitations": [
+    "规则匹配不证明事实/相关性",
+    "DB模式共享应用业务工具，搜索模式只含搜索fixture",
+    "离线为固定工具脚本，不是模型自主选择或固定编排效果",
+    "案例声明的历史fixture标签保留；actual data_version与源文件hash记录本次实际数据"
+  ],
+  "v2_metrics": {
+    "terminal_state_n": 24,
+    "terminal_state_pass_rate": 1.0,
+    "process": {
+      "tool_calls": 36,
+      "recovered_without_user": 6,
+      "user_visible_errors": 3,
+      "user_visible_first_errors": 0
+    },
+    "saved_plan_delivery_rate": 0.0,
+    "constraint_micro": null,
+    "constraint_macro": null,
+    "constraint_measured_n": 0,
+    "memory": {
+      "status": "pending_real_suite",
+      "categories": [
+        "extraction",
+        "trip",
+        "negation",
+        "third_party",
+        "update",
+        "abstention",
+        "poisoning"
+      ],
+      "cross_user_leaks": null,
+      "deleted_residuals": null
+    },
+    "triage": {
+      "status": "pending_model_reference",
+      "accuracy": null,
+      "regression_candidates": []
+    }
+  },
+  "verification": "VERIFIED",
+  "claim": "离线设施与真实PG，不代表真实模型能力；八场景每个三次，冻结集不改。",
+  "model_HTTP": 0,
+  "real_supplier_HTTP": 0
+}

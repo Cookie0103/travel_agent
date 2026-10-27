@@ -1,0 +1,134 @@
+{
+  "revision": 7,
+  "conditions": {
+    "city": "大阪",
+    "rooms": 1,
+    "adults": 12,
+    "budget": null,
+    "currency": "JPY",
+    "end_date": "2026-11-05",
+    "timezone": "Asia/Tokyo",
+    "interests": [],
+    "transport": null,
+    "child_ages": [],
+    "start_date": "2026-11-03",
+    "departure_time": null,
+    "hard_constraints": [],
+    "soft_constraints": []
+  },
+  "request_details": {
+    "field_sources": {
+      "city": "conversation",
+      "rooms": "conversation",
+      "adults": "user_form",
+      "end_date": "conversation",
+      "child_ages": "conversation",
+      "start_date": "conversation",
+      "lodging_budget": "conversation"
+    },
+    "lodging_budget": {
+      "basis": "per_room_night",
+      "amount": {
+        "lower": "20000",
+        "upper": "30000"
+      },
+      "currency": "CNY"
+    },
+    "source_revision": 7
+  },
+  "relation": {
+    "status": "unknown",
+    "total_lower": "40000",
+    "total_upper": "60000",
+    "currency": "CNY",
+    "message": "全程预算未知或两个预算币种不同，无法判断；不估算、不换汇。"
+  },
+  "original_version_rows": 1,
+  "original_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+  "run_results": [
+    {
+      "run_id": "d7a859dc-e5b5-4dd2-acfa-6310e21e2dcf",
+      "status": "completed",
+      "error_code": null,
+      "tools": [
+        "update_travel_request"
+      ],
+      "panels": []
+    },
+    {
+      "run_id": "0ef8b4cb-4803-482f-a18b-4bc20733870b",
+      "status": "completed",
+      "error_code": null,
+      "tools": [
+        "update_travel_request"
+      ],
+      "panels": []
+    },
+    {
+      "run_id": "92d3cbcb-51ed-4001-b0fc-8db20bc92b06",
+      "status": "completed",
+      "error_code": null,
+      "tools": [
+        "update_travel_request"
+      ],
+      "panels": []
+    },
+    {
+      "run_id": "d782e1e4-12ae-433d-92a0-067d985affda",
+      "status": "completed",
+      "error_code": null,
+      "tools": [
+        "update_travel_request"
+      ],
+      "panels": []
+    },
+    {
+      "run_id": "619ebb60-b08e-45ba-b330-32d9b8fb4e6d",
+      "status": "completed",
+      "error_code": null,
+      "tools": [],
+      "panels": []
+    },
+    {
+      "run_id": "31be0c00-8971-420a-9bf8-a02091682cce",
+      "status": "completed",
+      "error_code": null,
+      "tools": [],
+      "panels": []
+    },
+    {
+      "run_id": "9358c458-976b-4f8e-a4ab-a51374df985c",
+      "status": "completed",
+      "error_code": null,
+      "tools": [
+        "update_travel_request"
+      ],
+      "panels": []
+    }
+  ],
+  "bookings": [],
+  "supplier_holds": 0,
+  "supplier_orders": 0,
+  "quote_count": 0,
+  "hotel_details": [],
+  "evidence_kinds": [],
+  "field_sources": {
+    "city": "conversation",
+    "start_date": "conversation",
+    "end_date": "conversation",
+    "timezone": "none",
+    "adults": "user_form",
+    "child_ages": "conversation",
+    "rooms": "conversation",
+    "budget": "none",
+    "currency": "none",
+    "lodging_budget": "conversation",
+    "transport": "none",
+    "departure_time": "none",
+    "interests": "none",
+    "hard_constraints": "none",
+    "soft_constraints": "none"
+  },
+  "soft_constraints": [],
+  "session_id": "7c7cd007-033b-4a27-bd87-af365e5965da"
+}

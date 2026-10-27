@@ -1,0 +1,44 @@
+{
+  "scope": "本地离线固定输入，不代表真实模型语言效果",
+  "input": "演示：未知",
+  "red": {
+    "banner": "执行失败：validation",
+    "current": "执行未完成：validation。请检查模型配置或调用额度。"
+  },
+  "green": {
+    "current_and_history_and_banner": "执行未完成：校验未通过：条件或修改不符合要求，请核对相关信息。",
+    "raw_banner_count": 0,
+    "wrong_credentials_blame_count": 0
+  },
+  "pg": {
+    "revision_before": 6,
+    "revision_after": 6,
+    "last_two_runs": [
+      {
+        "status": "failed",
+        "error_code": "validation",
+        "event_kinds": [
+          "started",
+          "failed"
+        ]
+      },
+      {
+        "status": "failed",
+        "error_code": "validation",
+        "event_kinds": [
+          "started",
+          "failed"
+        ]
+      }
+    ],
+    "evidence_kinds": [],
+    "formal_versions": 1,
+    "formal_sha_before": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+    "formal_sha_after": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f"
+  },
+  "proper_name_fixed_test": {
+    "hotel_name": "京都東急ホテル",
+    "room_type": "スタンダードツイン",
+    "unchanged": true
+  }
+}

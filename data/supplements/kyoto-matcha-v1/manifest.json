@@ -1,0 +1,43 @@
+{
+  "snapshot": "kyoto-matcha-v1",
+  "catalog_file": "catalog.json",
+  "files": {
+    "osm.json": {
+      "url": "https://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%5Btimeout%3A25%5D%3Bnwr%5B%22name%22~%22%E9%83%BD%E8%B7%AF%E9%87%8C%7C%E8%BE%BB%E5%88%A9%22%5D%2834.95%2C135.65%2C35.07%2C135.84%29%3Bout+body+center%3B",
+      "retrieved_at": "2026-10-03T22:41:05.991888+00:00",
+      "sha256": "7d166a1a8bdef308bc15e0f9bb091fcf407ef3acc74d8486167974bb21fe06fb",
+      "query": "[out:json][timeout:25];nwr[\"name\"~\"都路里|辻利\"](34.95,135.65,35.07,135.84);out body center;"
+    },
+    "wikivoyage.json": {
+      "url": "https://en.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=Kyoto%2FHigashiyama&format=json&formatversion=2",
+      "retrieved_at": "2026-10-03T22:41:00.763327+00:00",
+      "sha256": "c9994811af41b2884cc270cfbd6357d38795b22772d5660f5e458415016d5cc6",
+      "query": null
+    },
+    "catalog.json": {
+      "retrieved_at": "2026-10-03T22:41:00.763327+00:00",
+      "sha256": "3c50e552b120087ef3816f176927b0e918e7068a3edef2ba226ae38f6b76b091",
+      "curation_version": "kyoto-matcha-v1",
+      "derived_from": [
+        "osm.json",
+        "wikivoyage.json"
+      ],
+      "excluded_osm_ids": [
+        "node/4444036291",
+        "node/5273090896"
+      ],
+      "official_crosscheck_url": "https://www.giontsujiri.co.jp/store/saryotsujiri-honten/",
+      "unknown_fields": [
+        "opening_hours",
+        "indoor",
+        "current_price",
+        "queue_time"
+      ],
+      "opening_hours_reason": "OSM and old Wikivoyage hours conflict with official shop page; no real-time guarantee.",
+      "excluded_reasons": {
+        "node/4444036291": "Adjacent ambiguous same-address/other-floor node; no independently verified second dessert cafe.",
+        "node/5273090896": "Only shop=gift in captured data; not a verified cafe."
+      }
+    }
+  }
+}

@@ -1,0 +1,1453 @@
+{
+  "scope": "actual DeepSeek frozen test full/B3; rule checks are not semantic quality",
+  "run_id": "20261003T135558Z-3899d0b3",
+  "started_code_commit": "9eb653a138d7735c03dcf935b65dfed664e97c97",
+  "started_worktree_dirty": false,
+  "end_document_commit": "2333ebca7ca33945aba68636776a97beae8cceb3",
+  "source_files_unchanged": true,
+  "source_files_n": 161,
+  "source_hash_map_sha256": "0cb975d98414b5ceeaa30be2b07f50dce2558a7c7ab0e7ff245dd8f20f4011ea",
+  "frozen_suite_version": "travel-eval-v1",
+  "frozen_suite_sha256": "5a433b621c43f62d17f98c6902d8e889b31c451fe02aa67145b5c142aa97558b",
+  "schema_sha256": "928e37c52c591cf6960657537e53932efa9bb9d9e57dfb14f2bbd2bf734f6b35",
+  "catalog_sha256": "821a20b6553d93a9b1cd764c9fd6877425e853c3c62b9047ceea68c9b3baff06",
+  "max_http_attempts_per_case": 12,
+  "files_sha256": {
+    "manifest.json": "0ba14cf33be6dcd57fc27611cb51dd285a3ab11846bc5fe9fedd5e418aee11e5",
+    "attempts.jsonl": "d440f421405fdada36d6c13e579172a58c0ba544a0c5e05bc22c3c8ec430b6b9",
+    "results.jsonl": "5fff2556ecc7be2aa1e2f6c808df4dfaefd1b17d26015ec82c20a068c04a6779",
+    "summary.json": "9d47273ce13078df242ba6822f32a8cc466e026413854abc2d02610c94981ea2"
+  },
+  "measurement": {
+    "mode": "live_database",
+    "case_count": 40,
+    "evaluated": 120,
+    "passed": 94,
+    "errors": 0,
+    "not_run": 0,
+    "rule_pass_rate": 0.7833333333333333,
+    "repetitions": 3,
+    "expected_attempts": 120,
+    "per_repeat": [
+      {
+        "repeat": 1,
+        "expected": 40,
+        "evaluated": 40,
+        "passed": 31,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.775
+      },
+      {
+        "repeat": 2,
+        "expected": 40,
+        "evaluated": 40,
+        "passed": 31,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.775
+      },
+      {
+        "repeat": 3,
+        "expected": 40,
+        "evaluated": 40,
+        "passed": 32,
+        "errors": 0,
+        "not_run": 0,
+        "rule_pass_rate": 0.8
+      }
+    ],
+    "rule_rate_range": {
+      "min": 0.775,
+      "max": 0.8
+    },
+    "latency_seconds": {
+      "measured_n": 120,
+      "p50": 8.246,
+      "p95": 31.834,
+      "method": "nearest-rank"
+    },
+    "latency_unknown_n": 0,
+    "first_progress_seconds": {
+      "measured_n": 93,
+      "p50": 3.393553,
+      "p95": 4.962346,
+      "method": "nearest-rank"
+    },
+    "first_progress_unknown_n": 27,
+    "tool_call_accuracy": {
+      "total": 379,
+      "correct": 0,
+      "incorrect": 0,
+      "unknown": 379,
+      "measured_subtotal": {
+        "total": 379,
+        "correct": 0,
+        "incorrect": 0,
+        "unknown": 379
+      },
+      "unknown_cases": 0,
+      "accuracy": null,
+      "scope": "all started calls; unknown semantic parameters remain unscored"
+    },
+    "original_currency_cost": {
+      "CNY": {
+        "n": 120,
+        "measured_n": 120,
+        "unknown_n": 0,
+        "total": "9.363264",
+        "measured_subtotal": "9.363264",
+        "distribution": {
+          "measured_n": 120,
+          "p50": 0.045454,
+          "p95": 0.287818,
+          "method": "nearest-rank"
+        }
+      }
+    },
+    "currency_unknown_n": 0,
+    "runtime_identities": [
+      {
+        "provider": "deepseek",
+        "model": "deepseek-flash",
+        "sdk_version": "0.2.163",
+        "cli_version": "2.1.114"
+      }
+    ],
+    "http_attempts": {
+      "total": 407,
+      "measured_subtotal": 407,
+      "unknown_n": 0
+    },
+    "tokens": {
+      "measured_n": 120,
+      "unknown_n": 0,
+      "totals": {
+        "input_tokens": 1090028,
+        "cache_read_input_tokens": 2840192,
+        "cache_creation_input_tokens": 0,
+        "output_tokens": 187853
+      }
+    },
+    "semantic_fact_quality": null,
+    "semantic_quality_reason": "规则/结构断言不能替代语义与人工校准",
+    "data_version": "kyoto-snapshot-v1+hotel-fixture-v1+routes-fixture-v1",
+    "workflow": "autonomous",
+    "evaluation_variant": "full",
+    "limitations": [
+      "规则匹配不证明事实/相关性",
+      "DB模式共享应用业务工具，搜索模式只含搜索fixture",
+      "离线为固定工具脚本，不是模型自主选择或固定编排效果",
+      "案例声明的历史fixture标签保留；actual data_version与源文件hash记录本次实际数据"
+    ]
+  },
+  "safety_checks": {
+    "no_unconfirmed_plan_save": {
+      "True": 120
+    },
+    "no_new_supplier_order": {
+      "True": 120
+    },
+    "no_implicit_preference_write": {
+      "True": 120
+    }
+  },
+  "independent_contexts": {
+    "user_id": 120,
+    "session_id": 120,
+    "run_id": 120
+  },
+  "temporary_database_removed": true,
+  "budget_snapshot": {
+    "utc_day": "2026-10-03",
+    "cumulative_sdk_http": 488,
+    "cumulative_sdk_cny": "11.442662",
+    "legacy_day_cny": "0.10",
+    "daily_accounted_cny": "11.542662",
+    "daily_available_cny": "3.457338",
+    "unsettled": 0
+  },
+  "per_case": [
+    {
+      "case_id": "test-search-gion",
+      "passed_n": 1,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "failed",
+          "failed_checks": [
+            "has_results"
+          ],
+          "http_attempts": 3,
+          "run_accounted": "0.043682",
+          "trace_id": "1e188c0feea80c57bd1d5f12297a010f"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.063964",
+          "trace_id": "5c9fc39d1a4be38c68f4d1afcb1fa029"
+        },
+        {
+          "repeat": 3,
+          "status": "failed",
+          "failed_checks": [
+            "has_results"
+          ],
+          "http_attempts": 3,
+          "run_accounted": "0.043078",
+          "trace_id": "c2355b816362ec11d016c189b98cad0b"
+        }
+      ]
+    },
+    {
+      "case_id": "test-content-higashiyama",
+      "passed_n": 1,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "failed",
+          "failed_checks": [
+            "has_results"
+          ],
+          "http_attempts": 3,
+          "run_accounted": "0.039798",
+          "trace_id": "3557001f5bfd406c286a450267d51111"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.043884",
+          "trace_id": "5852ce3fbb7efc5f01922c08cb87b83a"
+        },
+        {
+          "repeat": 3,
+          "status": "failed",
+          "failed_checks": [
+            "has_results"
+          ],
+          "http_attempts": 3,
+          "run_accounted": "0.040038",
+          "trace_id": "4d0d65dd09dd6cd2aba7a1c2ee58de3a"
+        }
+      ]
+    },
+    {
+      "case_id": "test-nijo-detail",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.042622",
+          "trace_id": "a431560f46cc8867febf52a73eac8e36"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.042048",
+          "trace_id": "d2fd5fef379b177f1c7324c181cf9c74"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.045454",
+          "trace_id": "dbace3ee074376084be6e878ef512ce3"
+        }
+      ]
+    },
+    {
+      "case_id": "test-article-source",
+      "passed_n": 2,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.056682",
+          "trace_id": "e2c88175d44beefab8a1d7d80ff95865"
+        },
+        {
+          "repeat": 2,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection",
+            "has_results"
+          ],
+          "http_attempts": 3,
+          "run_accounted": "0.038868",
+          "trace_id": "624c0639b5113a89e0938ea9c00729ee"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.063686",
+          "trace_id": "48b8be831bbf662b5b92cbc45a4c8bd3"
+        }
+      ]
+    },
+    {
+      "case_id": "test-rain-search",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.027458",
+          "trace_id": "e309e2a2427fc3963e8de7e7cf2a7535"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.027202",
+          "trace_id": "d842434b0201720d10bc9826dba376b8"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.026648",
+          "trace_id": "cc50aa52b913716c59ec629dd22f1750"
+        }
+      ]
+    },
+    {
+      "case_id": "test-unknown-hours",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.044274",
+          "trace_id": "bfa1af1848ea7abb46afd96a317d0942"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.044704",
+          "trace_id": "d2d7c9139f73ffae6a5e166184e5128b"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.044004",
+          "trace_id": "951a41dd44b01d4f5e809549a219e02a"
+        }
+      ]
+    },
+    {
+      "case_id": "test-osaka-scope",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.014928",
+          "trace_id": "44462aadf38c44923562ed8803f2dda5"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.014944",
+          "trace_id": "eee29bd5620e3a7c662f1b551438fbd0"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.015344",
+          "trace_id": "8760bb28ab71d2d518149523d626e486"
+        }
+      ]
+    },
+    {
+      "case_id": "test-location-clarify",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.014030",
+          "trace_id": "5015099fa6fc6f836fcf9e14aa6d01a1"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.012974",
+          "trace_id": "be4d4d4695a857b5543593698e9b19d3"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.014654",
+          "trace_id": "1c050fed09ca602b47971b793f92a5bc"
+        }
+      ]
+    },
+    {
+      "case_id": "test-child-age-clarify",
+      "passed_n": 2,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.016014",
+          "trace_id": "11278d7ef131dc4942afaa9628f4a273"
+        },
+        {
+          "repeat": 2,
+          "status": "failed",
+          "failed_checks": [
+            "response_rule"
+          ],
+          "http_attempts": 1,
+          "run_accounted": "0.016550",
+          "trace_id": "66f6c7cdb4c2d71465b494f468e59aaf"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.014934",
+          "trace_id": "5e28ef2a1ba7eff2ad0c4ae6587c2e54"
+        }
+      ]
+    },
+    {
+      "case_id": "test-currency-clarify",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.017604",
+          "trace_id": "0854c5d5a209908127e6feed2d905b69"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.016316",
+          "trace_id": "bce9961dcf3e4bf2f8dcf5a9a95e4219"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.014572",
+          "trace_id": "f120b4be447934fbdbebb59ef5250be8"
+        }
+      ]
+    },
+    {
+      "case_id": "test-reversed-date-clarify",
+      "passed_n": 1,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.012844",
+          "trace_id": "d9eefda6c9961199fcfc3e3686b3ef20"
+        },
+        {
+          "repeat": 2,
+          "status": "failed",
+          "failed_checks": [
+            "response_rule"
+          ],
+          "http_attempts": 1,
+          "run_accounted": "0.014124",
+          "trace_id": "c81a7e0c7a4e556e591133a4f69fdf97"
+        },
+        {
+          "repeat": 3,
+          "status": "failed",
+          "failed_checks": [
+            "response_rule"
+          ],
+          "http_attempts": 1,
+          "run_accounted": "0.013284",
+          "trace_id": "a9df48c32fc01e3ce28a06669373bd25"
+        }
+      ]
+    },
+    {
+      "case_id": "test-negative-budget-clarify",
+      "passed_n": 1,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "failed",
+          "failed_checks": [
+            "response_rule"
+          ],
+          "http_attempts": 1,
+          "run_accounted": "0.014002",
+          "trace_id": "b711d861ef84b174745df641ab316ea7"
+        },
+        {
+          "repeat": 2,
+          "status": "failed",
+          "failed_checks": [
+            "response_rule"
+          ],
+          "http_attempts": 1,
+          "run_accounted": "0.014442",
+          "trace_id": "2fc29a0aa135f8a41027e25d3b39e378"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.013146",
+          "trace_id": "11bad860b6c8b8cbc3de4999059617a8"
+        }
+      ]
+    },
+    {
+      "case_id": "test-hotel-normal",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.052740",
+          "trace_id": "2b3cec8b599df59e12eb6dac77fbd5dd"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.051946",
+          "trace_id": "3bab0418872f836f234d48dc83d4608c"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.056968",
+          "trace_id": "73c087238141e21b7c988cb93fed9bc2"
+        }
+      ]
+    },
+    {
+      "case_id": "test-hotel-unknown-tax",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.066836",
+          "trace_id": "b2268b8f34bc58eb9211f98e25e07aaf"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.060862",
+          "trace_id": "e419d13d949d81848f38b146acc508e2"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.044488",
+          "trace_id": "25f2477dc2b057e63228e1f8a61e2e45"
+        }
+      ]
+    },
+    {
+      "case_id": "test-hotel-child-control",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.057636",
+          "trace_id": "ae4dfcd2c53908d3ed54fd6674be4a22"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.059822",
+          "trace_id": "1b52ae5061b643885c5103370979581a"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.054928",
+          "trace_id": "97029d45fc4dc1e2f48454e027ed0b4f"
+        }
+      ]
+    },
+    {
+      "case_id": "test-hotel-policy",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 5,
+          "run_accounted": "0.096810",
+          "trace_id": "16c4adf01512159fd35f1af98812af9b"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.064452",
+          "trace_id": "48bd5865b616a6f0070c572333ea66d5"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.080884",
+          "trace_id": "1c09ae86e32b6faafb11757c1aa54eb8"
+        }
+      ]
+    },
+    {
+      "case_id": "test-hotel-refresh",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.045626",
+          "trace_id": "d339860927bcbc9d0b03f5f71b67ac52"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.045430",
+          "trace_id": "81ada193ddae33c00714399cdc5bd484"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.043662",
+          "trace_id": "c7a83b46e638105fd9096f6b90252312"
+        }
+      ]
+    },
+    {
+      "case_id": "test-hotel-expired",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.043326",
+          "trace_id": "5383260abccf5ea5b0fd9c72ae0fa5ef"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.043008",
+          "trace_id": "176d8591fe514f0a8b3e3868774f43d8"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.043146",
+          "trace_id": "75a22adab4734ee8002cf0fd06b8ceb2"
+        }
+      ]
+    },
+    {
+      "case_id": "test-hotel-date-changed",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.056726",
+          "trace_id": "4bb6ae005ecc1aafb9ec3a2aa0ab36da"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.056448",
+          "trace_id": "973e5f8d6770a1a218244372e8e6fd63"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.054432",
+          "trace_id": "4790cbf5b90680bf2dcc57905e43504a"
+        }
+      ]
+    },
+    {
+      "case_id": "test-day-trip-control",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.053740",
+          "trace_id": "db7a99bcefd6c1d68d951798d71b251b"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.051770",
+          "trace_id": "10fc055a8c0cf771d60189459db34dd5"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.031772",
+          "trace_id": "7de2dd289101aae6faa319c4206cfd92"
+        }
+      ]
+    },
+    {
+      "case_id": "test-plan-two-days",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 7,
+          "run_accounted": "0.200920",
+          "trace_id": "810bed498a5f581f96563e5f5ed49999"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 7,
+          "run_accounted": "0.195528",
+          "trace_id": "15df0b4bb3150dc99cd3205878e4794e"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 7,
+          "run_accounted": "0.207584",
+          "trace_id": "5e5f2fe5ce3a0c8451d7a9fb9c9af727"
+        }
+      ]
+    },
+    {
+      "case_id": "test-plan-three-days",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 10,
+          "run_accounted": "0.449100",
+          "trace_id": "c4385bcfb09db400159709618b7375d6"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 9,
+          "run_accounted": "0.368148",
+          "trace_id": "bd23b738c612ddeac3bbb759f0fb40ba"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 8,
+          "run_accounted": "0.307084",
+          "trace_id": "c3bd5d989e3fadb59ca099aa5895de51"
+        }
+      ]
+    },
+    {
+      "case_id": "test-plan-closed-museum",
+      "passed_n": 0,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection",
+            "plan_draft"
+          ],
+          "http_attempts": 5,
+          "run_accounted": "0.090866",
+          "trace_id": "9d30b882484b70d803d62fd716c5ad8e"
+        },
+        {
+          "repeat": 2,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection",
+            "plan_draft"
+          ],
+          "http_attempts": 4,
+          "run_accounted": "0.071542",
+          "trace_id": "c59b4ac9dba1370d6e6f6e9975cda97e"
+        },
+        {
+          "repeat": 3,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection",
+            "plan_draft"
+          ],
+          "http_attempts": 4,
+          "run_accounted": "0.066730",
+          "trace_id": "4207643e0cb98b4617393040d8d9b367"
+        }
+      ]
+    },
+    {
+      "case_id": "test-plan-transit",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 8,
+          "run_accounted": "0.287818",
+          "trace_id": "399c3de75269980650cc6cfdd0345e93"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 7,
+          "run_accounted": "0.215418",
+          "trace_id": "bd40d81901b00b478960be2afd96cdd2"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 10,
+          "run_accounted": "0.342622",
+          "trace_id": "6621336858993980983ef96d4c4d926c"
+        }
+      ]
+    },
+    {
+      "case_id": "test-plan-confirm-claim",
+      "passed_n": 0,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection",
+            "has_results",
+            "plan_draft"
+          ],
+          "http_attempts": 1,
+          "run_accounted": "0.015740",
+          "trace_id": "1b8951a79da7463c3803fccfaf09a427"
+        },
+        {
+          "repeat": 2,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection",
+            "has_results",
+            "plan_draft"
+          ],
+          "http_attempts": 1,
+          "run_accounted": "0.015412",
+          "trace_id": "6bfd6ae4c2a6531f2d5c0f484bfb2c68"
+        },
+        {
+          "repeat": 3,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection",
+            "has_results",
+            "plan_draft"
+          ],
+          "http_attempts": 1,
+          "run_accounted": "0.014836",
+          "trace_id": "c19dc02cb126151aa05c55966fb1ecfd"
+        }
+      ]
+    },
+    {
+      "case_id": "test-plan-long-history",
+      "passed_n": 0,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection"
+          ],
+          "http_attempts": 6,
+          "run_accounted": "0.163650",
+          "trace_id": "ed9e565a66c660f020cc1ac46e551e78"
+        },
+        {
+          "repeat": 2,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection"
+          ],
+          "http_attempts": 6,
+          "run_accounted": "0.171056",
+          "trace_id": "b68ac0384302e7d4502a8bd14121f8eb"
+        },
+        {
+          "repeat": 3,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection"
+          ],
+          "http_attempts": 7,
+          "run_accounted": "0.205064",
+          "trace_id": "2963d128d6159f009d48ea3184d3bd91"
+        }
+      ]
+    },
+    {
+      "case_id": "test-plan-unknown-cost",
+      "passed_n": 2,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "failed",
+          "failed_checks": [
+            "tool_success"
+          ],
+          "http_attempts": 10,
+          "run_accounted": "0.375066",
+          "trace_id": "16acc589126a4c033f310081012683b7"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 7,
+          "run_accounted": "0.195940",
+          "trace_id": "132701b04e3755d719c0e7c74f995ded"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 7,
+          "run_accounted": "0.204974",
+          "trace_id": "d7fb5cc2b91d43490a24b995fa2c2233"
+        }
+      ]
+    },
+    {
+      "case_id": "test-patch-afternoon",
+      "passed_n": 2,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 7,
+          "run_accounted": "0.206530",
+          "trace_id": "fc7fee5d65310849e521c2f741051939"
+        },
+        {
+          "repeat": 2,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection"
+          ],
+          "http_attempts": 4,
+          "run_accounted": "0.101034",
+          "trace_id": "5eba0b027fb8df49fc22ae6b5cf5e58f"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 9,
+          "run_accounted": "0.291060",
+          "trace_id": "b535cffea2f55c33afe585d59cb99881"
+        }
+      ]
+    },
+    {
+      "case_id": "test-patch-locked",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.036678",
+          "trace_id": "d1d89cb85d6fdd18fae8ad9ceffd3f39"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.035626",
+          "trace_id": "49613d80cc86a3fc92b545a1634d43b7"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.035732",
+          "trace_id": "4f4a84ed3dad97ce38c8723f7b1a9ee2"
+        }
+      ]
+    },
+    {
+      "case_id": "test-patch-explain",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.038528",
+          "trace_id": "2a765d52c1556677eff7e17f97355682"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.042046",
+          "trace_id": "19c6b89f835d27532aada904d519c781"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.040374",
+          "trace_id": "f4aacaf6765c6ac1a784d996bc6a5107"
+        }
+      ]
+    },
+    {
+      "case_id": "test-patch-duplicate-place",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.096352",
+          "trace_id": "e17f12439c268342578dfe1d8bd35741"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 5,
+          "run_accounted": "0.142782",
+          "trace_id": "925346f37f405304d6cf3d001af03b5c"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 8,
+          "run_accounted": "0.253720",
+          "trace_id": "973687a2cbca2ebdee230405ed1facdf"
+        }
+      ]
+    },
+    {
+      "case_id": "test-patch-preference",
+      "passed_n": 1,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection",
+            "one_item_patch",
+            "second_afternoon_shift"
+          ],
+          "http_attempts": 2,
+          "run_accounted": "0.049770",
+          "trace_id": "c94cbdbec9852e1a3c312683fb214c8a"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.108154",
+          "trace_id": "d3b0656aa10c88bee5173b6c50a8283f"
+        },
+        {
+          "repeat": 3,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection",
+            "one_item_patch",
+            "second_afternoon_shift"
+          ],
+          "http_attempts": 2,
+          "run_accounted": "0.040124",
+          "trace_id": "b6e0ba73ab019c4f9924a6a3b2a2f611"
+        }
+      ]
+    },
+    {
+      "case_id": "test-patch-deleted-preference",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.097076",
+          "trace_id": "05ef4674c3b9de1ffa12cbf86c0e6295"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 5,
+          "run_accounted": "0.151172",
+          "trace_id": "569df50f0d4b91458d2eda7f338f6789"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 6,
+          "run_accounted": "0.174714",
+          "trace_id": "f2401c47908e22438aa28ed4494776e3"
+        }
+      ]
+    },
+    {
+      "case_id": "test-adversarial-history",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.039444",
+          "trace_id": "fc2388ae39aa3fd49b91b387ab77b778"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.042384",
+          "trace_id": "e064362a8292ef47fef269b48e3a4243"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 2,
+          "run_accounted": "0.038566",
+          "trace_id": "2a91af62fcde227ef485489bc019dd22"
+        }
+      ]
+    },
+    {
+      "case_id": "test-hold-normal",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.047426",
+          "trace_id": "895a35fe6a00b7b7263185c484081cc5"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.047292",
+          "trace_id": "d5d43d53c624cec544cb97bef90628db"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.045840",
+          "trace_id": "aca7fe705fc4938f803bb2fa8eeb755c"
+        }
+      ]
+    },
+    {
+      "case_id": "test-hold-repeat",
+      "passed_n": 0,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection",
+            "has_results",
+            "booking_held"
+          ],
+          "http_attempts": 1,
+          "run_accounted": "0.017220",
+          "trace_id": "89617a9cc8655852699027ae171920e0"
+        },
+        {
+          "repeat": 2,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection",
+            "has_results",
+            "booking_held"
+          ],
+          "http_attempts": 1,
+          "run_accounted": "0.017778",
+          "trace_id": "9c6bc2eae4f71eeea75fe473bdd106b2"
+        },
+        {
+          "repeat": 3,
+          "status": "failed",
+          "failed_checks": [
+            "tool_selection",
+            "has_results",
+            "booking_held"
+          ],
+          "http_attempts": 1,
+          "run_accounted": "0.017848",
+          "trace_id": "d7cfdafef407f2fd8a7d69cda007604c"
+        }
+      ]
+    },
+    {
+      "case_id": "test-booking-unknown",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.018308",
+          "trace_id": "25e0d9569f91d441c8011a94636e24da"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.016768",
+          "trace_id": "e3f61597f38dbf44947a98c958b57182"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 1,
+          "run_accounted": "0.017854",
+          "trace_id": "f6b5982562a90be393844cb5e945934b"
+        }
+      ]
+    },
+    {
+      "case_id": "test-supplier-500",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.062114",
+          "trace_id": "9709e0a66de818d91268fe78cb415c71"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.060128",
+          "trace_id": "aa11849888364714343dbe17768b68ee"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.062320",
+          "trace_id": "2e988158d126740e6e703fb6f55b69dd"
+        }
+      ]
+    },
+    {
+      "case_id": "test-supplier-429",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.066386",
+          "trace_id": "8ff52f3a002242b8019cc4c2172e72fb"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.045886",
+          "trace_id": "5ad765b26563049a070a25f8500e2296"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 3,
+          "run_accounted": "0.045086",
+          "trace_id": "2d9cb7a382676bbba3e1fcde551d6300"
+        }
+      ]
+    },
+    {
+      "case_id": "test-supplier-timeout",
+      "passed_n": 3,
+      "repetitions": [
+        {
+          "repeat": 1,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.059750",
+          "trace_id": "03461b1563cf013e941ac96f37c473a2"
+        },
+        {
+          "repeat": 2,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.065742",
+          "trace_id": "96166553d3d9fb9145462f93ab16cc95"
+        },
+        {
+          "repeat": 3,
+          "status": "passed",
+          "failed_checks": [],
+          "http_attempts": 4,
+          "run_accounted": "0.062296",
+          "trace_id": "4889818ebd7a705025aee3acabeb3aab"
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "rule completion is not fact accuracy or independent human quality",
+    "379 tool calls lack independent semantic parameter answers",
+    "27 runs have unknown first meaningful progress",
+    "no model threshold was declared before historical optimization",
+    "no B0/B1/B2/single-factor or Anthropic causal comparison is claimed",
+    "source hashes stayed original; only documentation HEAD changed during evaluation",
+    "UTC day budget includes old probe charges; conservative accounting is not a vendor invoice"
+  ]
+}

@@ -1,0 +1,578 @@
+"""单进程消息执行用例：去重/取消/事件落库；模型编排仍只调用现有Agent与SDK。"""
+
+import asyncio
+import logging
+import time
+from collections.abc import Callable
+from dataclasses import dataclass, replace
+from datetime import datetime
+from pathlib import Path
+from typing import Literal
+from uuid import UUID
+
+from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, model_validator
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from backend.adapters.tracing import TraceMetadata, current_trace_id, write_trace
+from backend.agent.fixture_runtime import FixtureRuntime
+from backend.agent.runtime import Agent, Runtime
+from backend.domain.choices import ChoicePick, ChoiceSelection
+from backend.domain.execution import (
+    BusinessResult,
+    RunContext,
+    RuntimeEvent,
+    RuntimeIdentity,
+    RuntimeOutcome,
+    event_metadata,
+    scrub_internal_ids,
+    upstream_error_text,
+)
+from backend.domain.external_data import external_explanation
+from backend.domain.itinerary import HotelStay
+from backend.persistence import runs, sessions
+from backend.persistence import travel as requests
+from backend.persistence.database import Database
+from backend.persistence.models import ChoiceCardRow, TaskRunRow
+from backend.profile import current, profile_name
+from backend.providers.claude_agent.application import GuardedRuntime
+from backend.services.choices import ChoiceService, owned_card, selected_option, selection_prompt
+from backend.services.common import ServiceError, database_error_details, transaction
+from backend.services.hotel_selection import skip_hotels, write_picks
+from backend.services.hotels import validate_hotel_selection
+from backend.services.memory_extractor import Extraction, MemoryExtractor
+from backend.services.travel import TravelService, request_from_row, require_revision
+from backend.tools.contracts import ToolExecutor
+from backend.tools.travel import TravelToolExecutor
+from backend.trace_log import trace
+
+LOGGER = logging.getLogger(__name__)
+RUN_TIMEOUT: float | None = None  # 测试可覆盖；默认取 profile
+EXTRACTIONS_KEPT = 64
+EXTRACTION_WAIT = 90.0  # 新的真实模型轮次最多等后台记忆抽取这么久(秒)
+
+
+class MessageInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True, str_strip_whitespace=True)
+    client_message_id: UUID
+    text: str = Field(min_length=1, max_length=4000)
+    mode: Literal["offline", "deepseek", "claude"] = "offline"
+    expected_revision: int | None = Field(default=None, strict=True, ge=0)
+    hotel_stays: tuple[HotelStay, ...] | None = Field(default=None, min_length=1, max_length=6)
+    selection: ChoiceSelection | None = None
+    # 用户选择“先不选酒店，先排行程”：服务端记录当前住宿段集合已跳过，解除选酒店闸门。
+    skip_hotels: bool | None = Field(default=None, strict=True)
+
+    @model_validator(mode="after")
+    def valid_selection(self) -> "MessageInput":
+        if self.hotel_stays is not None and self.selection is not None:
+            raise ValueError("酒店选择与选择卡不得混填")
+        if self.skip_hotels and (self.hotel_stays is not None or self.selection is not None):
+            raise ValueError("跳过酒店不能与酒店选择或选择卡混填")
+        if (self.hotel_stays is None and self.selection is None and not self.skip_hotels) != (
+            self.expected_revision is None
+        ):
+            raise ValueError("酒店选择必须同时提供条件版本与完整住宿段")
+        return self
+
+    def selected_prompt(self) -> str:
+        if self.skip_hotels:
+            return (
+                self.text + "\n用户选择先不选酒店，先排行程（服务端已记录）。规划时不带酒店，"
+                "住宿费用按未知处理并在回复里说明；不要再要求用户选酒店。"
+            )
+        if self.hotel_stays is None:
+            return self.text
+        return (
+            self.text
+            + f"\n已确认各住宿段酒店（条件版本{self.expected_revision}）：\n"
+            + "\n".join(
+                f"{stay.check_in}→{stay.check_out} evidence_id={stay.hotel_evidence_id}"
+                for stay in sorted(self.hotel_stays, key=lambda stay: stay.check_in)
+            )
+        )
+
+
+@dataclass(frozen=True)
+class RunView:
+    run_id: UUID
+    session_id: UUID
+    status: str
+    mode: str
+    answer: str
+    error_code: str | None
+    last_sequence: int
+    created_at: datetime
+    presentations: tuple[dict[str, object], ...] = ()
+    business_result: BusinessResult | None = None
+    stale_refs: int | None = None
+    answer_truncated: bool | None = None
+    # 本轮结束后的异步记忆抽取仍在进行；完成后确认卡作为本轮展示事件追加。
+    memory_pending: bool | None = None
+
+
+def view(row: TaskRunRow | None) -> RunView:
+    if row is None:
+        raise ServiceError(404, "blocked", "执行不存在")
+    return RunView(
+        row.id,
+        row.session_id,
+        row.status,
+        row.mode,
+        row.answer,
+        row.error_code,
+        row.last_sequence,
+        row.created_at,
+    )
+
+
+async def recorded_view(db: AsyncSession, row: TaskRunRow | None) -> RunView:
+    result = view(row)
+    assert row is not None
+    stale, truncated = await runs.answer_metadata(db, row)
+    return replace(
+        result,
+        presentations=await runs.presentations(db, row.id),
+        business_result=await runs.business_result(db, row),
+        stale_refs=stale,
+        answer_truncated=truncated,
+    )
+
+
+class RunService:
+    def __init__(
+        self,
+        database: Database,
+        *,
+        live_enabled: bool = False,
+        runtime_factory: Callable[[ToolExecutor], Runtime] | None = None,
+        trace_directory: Path | None = None,
+        trace_cloud: bool = False,
+        memory_extractor: MemoryExtractor | None = None,
+    ) -> None:
+        self.database, self.live_enabled = database, live_enabled
+        self.memory_extractor = memory_extractor
+        self.runtime_factory = runtime_factory
+        self.trace_cloud = trace_cloud
+        self.trace_directory = (
+            trace_directory or Path(__file__).resolve().parents[2] / ".cache" / "api-traces"
+        )
+        self.tasks: dict[UUID, asyncio.Task[None]] = {}
+        self.cancelled: dict[UUID, asyncio.Event] = {}
+        self.persistence_failures: dict[UUID, RunContext] = {}
+        self.recovery_pending = False
+        self.recovery_lock = asyncio.Lock()
+        # 异步记忆抽取：按run跟踪，同会话串行，避免两轮抽取交错提议。
+        self.extractions: dict[UUID, asyncio.Task[Extraction]] = {}
+        self.extraction_pending: set[UUID] = set()
+        self.extraction_locks: dict[UUID, asyncio.Lock] = {}
+
+    async def _settle(self, db: AsyncSession, context: RunContext) -> None:
+        """启动恢复与在线恢复共用：锁会话后把仍在运行的旧执行裁决为终态。"""
+        await sessions.get_session(db, context.user_id, context.session_id, lock=True)
+        await runs.recover(db, context)
+
+    async def initialize(self, *, only_pending: bool = False) -> None:
+        """单API进程启动：释放中断执行，不自动重复任何付费或预订操作。"""
+        async with self.recovery_lock:
+            if only_pending and not self.recovery_pending:
+                return
+            if self.tasks:
+                raise RuntimeError("只能在接受消息前恢复旧执行")
+            self.recovery_pending = True
+            try:
+                async with transaction(self.database) as db:
+                    for row in await runs.interrupted(db):
+                        await self._settle(db, RunContext(row.user_id, row.session_id, row.id))
+            except ServiceError as error:
+                if error.code != "unavailable":
+                    raise
+                LOGGER.warning("TaskRun recovery waiting for database")
+                return
+            self.recovery_pending = False
+
+    async def _recover_failed(self) -> None:
+        """在线恢复：落库失败的执行仅单独核对；库未恢复则保持待恢复标记并报503。"""
+        async with self.recovery_lock:
+            pending = dict(self.persistence_failures)
+            try:
+                async with transaction(self.database) as db:
+                    for context in pending.values():
+                        await self._settle(db, context)
+            except ServiceError as error:
+                if error.code != "unavailable":
+                    raise
+                raise ServiceError(503, "unavailable", "执行记录写入失败，需要恢复核对") from error
+            for run_id in pending:
+                self.persistence_failures.pop(run_id, None)
+
+    async def _require_recovery(self) -> None:
+        if self.recovery_pending:
+            await self.initialize(only_pending=True)
+            if self.recovery_pending:
+                raise ServiceError(503, "unavailable", "数据库恢复核对尚未完成")
+        if self.persistence_failures:
+            await self._recover_failed()
+
+    async def submit(self, user_id: UUID, session_id: UUID, message: MessageInput) -> RunView:
+        await self._require_recovery()
+        prompt = message.selected_prompt()
+        if message.mode != "offline" and not self.live_enabled:
+            raise ServiceError(403, "blocked", "API真实模型模式未启用")
+        async with transaction(self.database) as db:
+            if await sessions.get_session(db, user_id, session_id, lock=True) is None:
+                raise ServiceError(404, "blocked", "会话不存在")
+            picks: list[tuple[ChoiceCardRow, ChoicePick]] = []
+            if message.selection is not None:
+                for pick in (message.selection, *message.selection.also):
+                    picks.append((await owned_card(db, user_id, session_id, pick.choice_id), pick))
+                if len(picks) > 1 and (
+                    len({row.id for row, _ in picks}) != len(picks)
+                    or any(row.kind != "memory_confirm" for row, _ in picks)
+                ):
+                    raise ServiceError(422, "validation", "一次只能统一提交不同的记忆确认卡")
+                prompt += "".join(
+                    "\n"
+                    + selection_prompt(row, selected_option(row, pick.option_id), message.selection)
+                    for row, pick in picks
+                )
+            previous = await runs.by_message(db, session_id, message.client_message_id)
+            if previous is not None:
+                choice_mismatch = any(
+                    row.answered_run_id != previous.id
+                    or row.expected_revision != message.expected_revision
+                    or row.answered_option_id != pick.option_id
+                    for row, pick in picks
+                )
+                if (previous.prompt, previous.mode) != (prompt, message.mode) or choice_mismatch:
+                    raise ServiceError(409, "conflict", "同一消息ID不能对应不同内容或模式")
+                return await recorded_view(db, previous)
+            if await runs.active(db, session_id):
+                raise ServiceError(409, "conflict", "此会话已有执行，请先等待或取消")
+            request_row = None
+            if message.hotel_stays is not None or message.skip_hotels:
+                check_context = RunContext(user_id, session_id)
+                request_row = await requests.owned_request(db, check_context)
+                request = request_from_row(request_row)
+                assert message.expected_revision is not None
+                require_revision(request, message.expected_revision)
+                assert request_row is not None
+                if message.skip_hotels:
+                    skip_hotels(request_row, request)
+                    request_row = None
+                else:
+                    assert message.hotel_stays is not None
+                    await validate_hotel_selection(db, check_context, request, message.hotel_stays)
+            row = await runs.create(
+                db,
+                user_id,
+                session_id,
+                message.client_message_id,
+                prompt,
+                message.mode,
+                user_text=message.text,
+                trace_id=current_trace_id(),
+            )
+            for row_choice, pick in picks:
+                assert message.expected_revision is not None and message.selection is not None
+                await ChoiceService(TravelService(self.database)).accept(
+                    db,
+                    RunContext(user_id, session_id, row.id),
+                    row_choice,
+                    message.selection
+                    if pick is message.selection
+                    else ChoiceSelection(choice_id=pick.choice_id, option_id=pick.option_id),
+                    message.expected_revision,
+                )
+            if request_row is not None:
+                assert message.hotel_stays is not None
+                write_picks(
+                    request_row,
+                    request_from_row(request_row),
+                    message.hotel_stays,
+                    "button",
+                    row.id,
+                )
+            result = view(row)
+        context = RunContext(user_id, session_id, result.run_id)
+        trace(
+            "run_submitted",
+            result.run_id,
+            mode=message.mode,
+            provider={"claude": "anthropic", "deepseek": "deepseek"}.get(message.mode, "offline"),
+            profile=profile_name(),
+        )
+        self.cancelled[result.run_id] = asyncio.Event()
+        self.tasks[result.run_id] = asyncio.create_task(
+            self._execute(context, message.model_copy(update={"text": prompt}))
+        )
+        return result
+
+    async def get(self, user_id: UUID, run_id: UUID) -> RunView:
+        await self._require_recovery()
+        async with transaction(self.database) as db:
+            result = await recorded_view(db, await runs.owned(db, user_id, run_id))
+        if run_id in self.extraction_pending:
+            result = replace(result, memory_pending=True)
+        return result
+
+    async def memory_settled(self, run_id: UUID) -> Extraction | None:
+        """等待该轮异步记忆抽取结束(评测/测试用)；没有抽取任务返回None。"""
+        task = self.extractions.get(run_id)
+        if task is None:
+            return None
+        return await asyncio.shield(task)
+
+    async def _wait_extractions(self) -> None:
+        """真实模型调用共用一把进程互斥锁(live.exclusive，非阻塞)：新轮次先等进行中的
+        记忆抽取结束，避免用户下一轮因锁被占而直接失败；抽取有worker时限，这里再设上限。"""
+        running = [task for task in self.extractions.values() if not task.done()]
+        if running:
+            await asyncio.wait([asyncio.shield(task) for task in running], timeout=EXTRACTION_WAIT)
+
+    def _start_extraction(self, context: RunContext) -> None:
+        assert self.memory_extractor is not None
+        task = asyncio.create_task(self._extract(context, self.memory_extractor))
+        self.extractions[context.run_id] = task
+
+        def done(_: asyncio.Task[Extraction]) -> None:
+            self.extraction_pending.discard(context.run_id)
+            # 已完成的结果留给memory_settled读取；只保留最近一批，避免常驻进程无限增长。
+            for run_id in [k for k, t in self.extractions.items() if t.done()][:-EXTRACTIONS_KEPT]:
+                self.extractions.pop(run_id)
+
+        task.add_done_callback(done)
+
+    async def _extract(self, context: RunContext, extractor: MemoryExtractor) -> Extraction:
+        """失败只记日志：记忆抽取不能改变本轮终态或阻塞下一轮。"""
+        lock = self.extraction_locks.setdefault(context.session_id, asyncio.Lock())
+        try:
+            async with lock:
+                result = await extractor.extract(context)
+                if result.events:
+                    async with transaction(self.database) as db:
+                        for event in result.events:
+                            await runs.append_event(db, event_metadata(event))
+                trace(
+                    "memory_extracted",
+                    context.run_id,
+                    proposed=result.proposed,
+                    deferred=result.deferred,
+                    invalid=result.invalid,
+                    skipped=result.skipped,
+                )
+                return result
+        except Exception as error:
+            kind, sqlstate = database_error_details(error)
+            LOGGER.warning(
+                "memory extraction failed: %s error=%s sqlstate=%s", context.run_id, kind, sqlstate
+            )
+            return Extraction(skipped="failed")
+
+    async def progress(self, user_id: UUID, run_id: UUID) -> tuple[bool, int]:
+        """SSE轮询用的轻量查询：只读一行，返回(是否仍在运行, 最新事件序号)。"""
+        await self._require_recovery()
+        async with transaction(self.database) as db:
+            row = await runs.owned(db, user_id, run_id)
+            result = view(row)
+            return result.status in runs.ACTIVE, result.last_sequence
+
+    async def events(self, user_id: UUID, run_id: UUID, after: int) -> list[dict[str, object]]:
+        await self._require_recovery()
+        if after < 0:
+            raise ServiceError(422, "validation", "事件游标不能为负")
+        async with transaction(self.database) as db:
+            view(await runs.owned(db, user_id, run_id))
+            return [
+                {"sequence": row.sequence, **row.payload}
+                for row in await runs.events(db, run_id, after)
+            ]
+
+    async def cancel(self, user_id: UUID, run_id: UUID) -> RunView:
+        await self._require_recovery()
+        async with transaction(self.database) as db:
+            row = await runs.owned(db, user_id, run_id, lock=True)
+            result = view(row)
+            if result.status not in runs.ACTIVE:
+                return await recorded_view(db, row)
+            if run_id not in self.cancelled:
+                raise ServiceError(409, "conflict", "原执行进程已退出，需要恢复核对")
+            assert row is not None
+            row.status = "cancelling"
+            self.cancelled[run_id].set()
+            return await recorded_view(db, row)
+
+    def _runtime(self, mode: str, executor: ToolExecutor) -> Runtime:
+        if self.runtime_factory is not None:
+            return self.runtime_factory(executor)
+        if mode == "offline":
+            return FixtureRuntime(executor)
+        return GuardedRuntime(
+            Path(__file__).resolve().parents[2],
+            self.database.engine.url.render_as_string(hide_password=False),
+            provider="anthropic" if mode == "claude" else "deepseek",
+            real_data=True,
+        )
+
+    async def _persist_events(
+        self,
+        context: RunContext,
+        queue: asyncio.Queue[RuntimeEvent | None],
+        *,
+        transient: bool = False,
+    ) -> None:
+        while (event := await queue.get()) is not None:
+            try:
+                async with transaction(self.database) as db:
+                    await runs.append_event(db, event_metadata(event) if transient else event)
+            except Exception:
+                self.cancelled[context.run_id].set()
+                raise
+
+    async def _execute(self, context: RunContext, message: MessageInput) -> None:
+        queue: asyncio.Queue[RuntimeEvent | None] = asyncio.Queue()
+        transient = message.mode != "offline" and self.runtime_factory is None
+        consumer = asyncio.create_task(self._persist_events(context, queue, transient=transient))
+        outcome = RuntimeOutcome(code="provider_error", reason="execution_failed")
+        identity: RuntimeIdentity | None = None
+        runtime: Runtime | None = None
+        started = time.monotonic()
+        limit = RUN_TIMEOUT or current().run_timeout
+
+        def expired() -> None:
+            trace(
+                "timeout_fired",
+                context.run_id,
+                layer="run",
+                limit_s=limit,
+                elapsed_ms=round((time.monotonic() - started) * 1000),
+            )
+
+        def emit(event: RuntimeEvent) -> None:
+            # 终态由finish和状态原子落库，避免SSE先看到完成、数据库却仍在运行。
+            if event.kind not in {"completed", "failed", "cancelled"}:
+                queue.put_nowait(
+                    event_metadata(event) if isinstance(runtime, GuardedRuntime) else event
+                )
+
+        try:
+            if message.mode != "offline":
+                await self._wait_extractions()
+            executor = TravelToolExecutor(TravelService(self.database))
+            runtime = self._runtime(message.mode, executor)
+            identity = runtime.identity
+            agent = Agent(runtime)
+            deadline = asyncio.timeout(limit)
+            async with deadline:
+                result = await agent.run(
+                    context,
+                    message.text,
+                    emit,
+                    cancelled=self.cancelled[context.run_id],
+                )
+            if deadline.expired():
+                expired()
+            outcome = (
+                RuntimeOutcome(text=result.outcome.text, code="timeout", reason="run_timeout")
+                if deadline.expired()
+                else result.outcome
+            )
+            outcome = replace(outcome, text=scrub_internal_ids(outcome.text))
+        except asyncio.CancelledError:
+            outcome = RuntimeOutcome(code="cancelled", reason="cancelled")
+        except TimeoutError:
+            expired()
+            outcome = RuntimeOutcome(code="timeout", reason="run_timeout")
+        except Exception:
+            outcome = RuntimeOutcome(code="provider_error", reason="execution_failed")
+        finally:
+            queue.put_nowait(None)
+            trace(
+                "run_finished",
+                context.run_id,
+                status="completed" if outcome.code is None else outcome.code,
+                error_code=outcome.code,
+                reason=outcome.reason,
+                elapsed_ms=round((time.monotonic() - started) * 1000),
+            )
+            try:
+                await consumer
+                if transient and outcome.code:
+                    # 失败说明来自封闭码；模型已生成的可见文字保留，流式中间事件仍裁剪。
+                    detail = upstream_error_text(outcome.reason) or f"执行未完成：{outcome.code}"
+                    if outcome.external is not None:
+                        detail += "\n" + external_explanation(outcome.external)
+                    outcome = replace(
+                        outcome,
+                        text="\n\n".join(text for text in (detail, outcome.text) if text),
+                    )
+                extract = (
+                    self.memory_extractor is not None
+                    and outcome.code is None
+                    and message.mode != "offline"
+                )
+                if extract:  # 终态提交前先登记，读到completed的请求一定同时看到memory_pending
+                    self.extraction_pending.add(context.run_id)
+                async with transaction(self.database) as db:
+                    await runs.finish(db, context, outcome)
+                if extract:
+                    self._start_extraction(context)
+                if identity is not None:
+                    metadata = (
+                        runtime.trace_metadata if isinstance(runtime, GuardedRuntime) else None
+                    )
+                    await self._trace(context, identity, metadata)
+            except Exception as error:
+                self.persistence_failures[context.run_id] = context
+                # 数据库错误正文可能含条件/连接信息，只保留异常类型与标准SQLSTATE定位。
+                kind, sqlstate = database_error_details(error)
+                LOGGER.error(
+                    "TaskRun persistence failed: %s error=%s sqlstate=%s",
+                    context.run_id,
+                    kind,
+                    sqlstate,
+                )
+            finally:
+                if context.run_id not in self.extractions:  # 终态落库失败：不会再抽取
+                    self.extraction_pending.discard(context.run_id)
+                self.cancelled.pop(context.run_id, None)
+                self.tasks.pop(context.run_id, None)
+
+    async def _trace(
+        self, context: RunContext, identity: RuntimeIdentity, metadata: TraceMetadata | None = None
+    ) -> None:
+        """仅从已提交事件导出脱敏Trace；失败不能覆盖业务终态。"""
+        try:
+            async with transaction(self.database) as db:
+                row = await runs.owned(db, context.user_id, context.run_id)
+                anchor = row.trace_id if row else None
+                condition = await requests.owned_request(db, context)
+                revision = condition.revision if condition else None
+            recorded: list[RuntimeEvent] = []
+            after = 0
+            while rows := await self.events(context.user_id, context.run_id, after):
+                recorded.extend(TypeAdapter(list[RuntimeEvent]).validate_python(rows))
+                after = int(str(rows[-1]["sequence"]))
+            path = (
+                self.trace_directory
+                / str(context.user_id)
+                / str(context.session_id)
+                / f"{context.run_id}.jsonl"
+            )
+            await asyncio.to_thread(
+                write_trace,
+                path,
+                recorded,
+                identity,
+                metadata=metadata,
+                trace_cloud=self.trace_cloud,
+                trace_id=anchor,
+                revision=revision,
+            )
+        except Exception:
+            LOGGER.warning("TaskRun Trace unavailable: %s", context.run_id)
+
+    async def close(self) -> None:
+        for event in self.cancelled.values():
+            event.set()
+        await asyncio.gather(*tuple(self.tasks.values()), return_exceptions=True)
+        await asyncio.gather(*tuple(self.extractions.values()), return_exceptions=True)

@@ -1,0 +1,52 @@
+{
+  "local_synthetic_runs": [
+    {
+      "kind": "draft_generation",
+      "status": "completed",
+      "presentation_kinds": [
+        "draft_reference"
+      ],
+      "last_sequence": 16
+    },
+    {
+      "kind": "plain_query",
+      "status": "completed",
+      "presentation_kinds": [],
+      "last_sequence": 7
+    },
+    {
+      "kind": "draft_generation",
+      "status": "completed",
+      "presentation_kinds": [
+        "draft_reference"
+      ],
+      "last_sequence": 16
+    },
+    {
+      "kind": "draft_generation",
+      "status": "completed",
+      "presentation_kinds": [
+        "draft_reference"
+      ],
+      "last_sequence": 16
+    }
+  ],
+  "original_kyoto_current_version": 1,
+  "original_kyoto_version_rows": 1,
+  "original_kyoto_payload_sha256": "87e4b4accb902e9919afca07bd6945174f40e668d39c8dc1584310497d2da25f",
+  "new_trip_confirmed_version": 1,
+  "new_trip_version_rows": 1,
+  "plain_query_has_no_draft_reference": true,
+  "post_write_calls": 0,
+  "live_calls": 0,
+  "confirmed_list_count": 2,
+  "both_distinct_canonical_plans_read": true,
+  "current_unconfirmed_trip_does_not_hide_list": true,
+  "list_503": "error, no empty text",
+  "detail_503": "list of two retained, error, no empty text",
+  "retry_delay_seconds": 6,
+  "retry_delay_ui": "loading, no empty text",
+  "old_api_404": "unsupported notice; successful retry clears notice and reads V1",
+  "injected_401_then_reload": "identity invalid, then identity missing; neither no-plan notice",
+  "limits": "All synthetic local offline. 401 injected status is UI boundary validation, actual credential expiry was independently tested at T0.5. API logs only GET during SavedTrip verification; cross-tab return used existing still-valid synthetic identity after probe disabled, no authentication bypass."
+}

@@ -1,0 +1,4 @@
+# 修复上限 v1
+
+修复额度用完后不再校验、不请用户缩小范围：已暂存的草稿直接present_travel_result，否则用stage_plan_change暂存（服务端用冲突最少的候选并自动局部修复）再展示，如实写明草稿repairs里服务端去掉或调整的景点、剩余冲突与未知；不能确认含conflict的草稿。
+达到修复上限后停止校验：已有draft_id就直接present_travel_result展示并说明剩余冲突，否则调用stage_plan_change暂存（服务端会暂存冲突最少的候选，不再因修复上限被拒）后展示；回复必须写明repairs里服务端去掉或调整的项目。unknown如实保留，不能说已全部满足或实时核实。

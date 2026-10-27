@@ -1,0 +1,12 @@
+{
+  "scope": "F9 readable blind annotation, no model/network calls",
+  "rows": 24,
+  "original_answers_exact": true,
+  "human_fields_nonempty": 0,
+  "source_sha256": "d4ba4e20105da675f1b5d00c7929d0607afb121bfaac45869829ded8e1974781",
+  "final_csv_sha256": "f3e0ebd61827befa9f71d219335c6278c1a1cea047a8e0864c03877e5585559b",
+  "tests": 41,
+  "check_source_files": 374,
+  "independent_review": "No remaining P1/P2",
+  "human_calibration": "pending"
+}

@@ -1,0 +1,132 @@
+{
+  "date": "2026-10-14",
+  "scope": "synthetic Chrome/DeepSeek local acceptance; no production change",
+  "session_ids": [
+    "1698c2c4-8432-45b2-8997-e266b89d157b",
+    "5d9d57fd-a167-4cf9-8941-2aa59d2ac33e"
+  ],
+  "runs": [
+    {
+      "run_id": "eb82d1fc-0b00-4e14-acff-a1a4ea11d8f5",
+      "trace_id": "c42c7dda573c480db03d68f1a83e7077",
+      "status": "completed",
+      "http_attempts": 3,
+      "cost_CNY": "0.083180"
+    },
+    {
+      "run_id": "f66dda9e-2df8-4f5e-915b-86604f0802dd",
+      "trace_id": "aa27e055dd5c41f283d39a51bd47e647",
+      "status": "completed",
+      "http_attempts": 2,
+      "cost_CNY": "0.057852"
+    },
+    {
+      "run_id": "a102d046-15d6-4574-a623-a7b6e5f15539",
+      "trace_id": "34a1fcac92e441ae8960eb20b4abc963",
+      "status": "completed",
+      "http_attempts": 1,
+      "cost_CNY": "0.026806"
+    },
+    {
+      "run_id": "93008874-b8a8-4c39-9144-27532edc3710",
+      "trace_id": "58dd35e60a19436ebf85a5ee4a97b01e",
+      "status": "completed",
+      "http_attempts": 1,
+      "cost_CNY": "0.027186"
+    },
+    {
+      "run_id": "7bde5266-0170-4643-ac93-b4f260a6bfb1",
+      "trace_id": "19854b827dc54a769bb25c6a40f7cf71",
+      "status": "completed",
+      "http_attempts": 1,
+      "cost_CNY": "0.027068"
+    },
+    {
+      "run_id": "bc7cf840-b5d0-4212-8513-4bfb08a940a9",
+      "trace_id": "eb657b6ab05943f494c051c419b5e5b7",
+      "status": "completed",
+      "http_attempts": 1,
+      "cost_CNY": "0.027006"
+    },
+    {
+      "run_id": "188342bd-0058-4b6d-a758-37ffcdf080b0",
+      "trace_id": "8608f0e6351e4d1fa6eef73d6bcbbb48",
+      "status": "completed",
+      "http_attempts": 1,
+      "cost_CNY": "0.026684"
+    }
+  ],
+  "total_model_http": 10,
+  "model_cost_CNY": "0.275782",
+  "confirmed_choices": [
+    {
+      "kind": "memory_confirm",
+      "option": "remember",
+      "fact_id": "5a440abd-b403-4d11-b8e4-07a3f08c5523"
+    },
+    {
+      "kind": "memory_confirm",
+      "option": "remember",
+      "fact_id": "b4d4a04b-254d-4ddc-b9be-989b4d0e3628"
+    },
+    {
+      "kind": "memory_confirm",
+      "option": "trip",
+      "fact_id": "c96b6c4a-8277-44b2-bcff-ba1ce5a98a3c"
+    }
+  ],
+  "first_failure": {
+    "run_id": "eb82d1fc-0b00-4e14-acff-a1a4ea11d8f5",
+    "cards_generated": 0,
+    "facts_created": 0,
+    "cause": "key-specific value constraints absent from model-visible schema; corrected and retested"
+  },
+  "facts_after_forgetting": [
+    {
+      "fact_id": "c96b6c4a-8277-44b2-bcff-ba1ce5a98a3c",
+      "key": "companion_pattern",
+      "scope": "trip",
+      "status": "deleted",
+      "value_erased": true,
+      "quote_erased": true
+    },
+    {
+      "fact_id": "5a440abd-b403-4d11-b8e4-07a3f08c5523",
+      "key": "pace",
+      "scope": "long_term",
+      "status": "deleted",
+      "value_erased": true,
+      "quote_erased": true
+    },
+    {
+      "fact_id": "b4d4a04b-254d-4ddc-b9be-989b4d0e3628",
+      "key": "transport",
+      "scope": "long_term",
+      "status": "deleted",
+      "value_erased": true,
+      "quote_erased": true
+    }
+  ],
+  "preference_revision": 6,
+  "formal_plans": 0,
+  "bookings": 0,
+  "screenshots": [
+    "t5-memory-confirm-cards.jpg",
+    "t5-memory-cross-session.jpg",
+    "t5-memory-forgotten.jpg"
+  ],
+  "observed_before_forgetting": {
+    "pace": "long_term",
+    "transport": "long_term",
+    "companion_pattern": "trip"
+  },
+  "cross_session_reply": {
+    "pace_recalled": true,
+    "transport_recalled": true,
+    "companion_unknown": true
+  },
+  "refresh_restored_all_three_answered_cards": true,
+  "memory_after_forgetting": [],
+  "old_preference_tokens_in_recent_dialogue": false,
+  "real_supplier_calls_during_memory_acceptance": 0
+}

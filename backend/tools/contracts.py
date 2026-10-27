@@ -1,0 +1,134 @@
+"""工具契约的唯一来源；MCP 只注册此定义，业务执行入口不依赖 SDK。"""
+
+from dataclasses import dataclass, replace
+from typing import Literal, Protocol
+from uuid import UUID
+
+from pydantic import ValidationError
+
+from backend.domain.execution import ErrorCode, RunContext
+from backend.domain.external_data import DataMode, ExternalAttempt
+
+RESULT_LIMIT = 8000
+# present_travel_result的整个展示就是工具结果：5-6张带停留条件/链接/地址/坐标/证据的酒店卡
+# 约2.9k字/张(5张约14k，6张约17k；脱敏样本实测5张11.7k/6张13.9k)。按8000会让首次展示必被拒；
+# 24000留约40%余量，其余工具仍用RESULT_LIMIT。
+PRESENTATION_RESULT_LIMIT = 24000
+
+
+DEFAULT_REPAIR_ROUNDS = 3  # 静态文本的基准修复轮数(=DEFAULT/RELAXED的max_validations-1)
+
+
+def repair_rounds(max_validations: int | None) -> int | None:
+    """模型可见的修复轮数=首次校验之外的轮数；评测单因素(1)另有专门文案，仍按基准。"""
+    if max_validations is None:
+        return None
+    if max_validations > DEFAULT_REPAIR_ROUNDS + 1:
+        return max_validations - 1
+    return DEFAULT_REPAIR_ROUNDS
+
+
+def with_repair_rounds(text: str, max_validations: int | None) -> str:
+    """把静态文本里的“最多修复3轮”换成当前档位的实际轮数；基准档位字节不变。"""
+    rounds = repair_rounds(max_validations)
+    replacement = "按校验反馈修复" if rounds is None else f"最多修复{rounds}轮"
+    return text.replace(f"最多修复{DEFAULT_REPAIR_ROUNDS}轮", replacement)
+
+
+@dataclass(frozen=True)
+class ToolDefinition:
+    name: str
+    description: str
+    schema: dict[str, object]
+    kind: Literal["read", "state", "draft", "presentation", "side_effect"] = "read"
+    timeout_seconds: float = 5
+    max_result_chars: int = RESULT_LIMIT
+
+
+def validation_paths(error: ValidationError, limit: int = 6) -> tuple[str, ...]:
+    """pydantic错误 -> 'loc.path:error_type'；不含输入值和消息；extra字段名不原样记录。"""
+    paths: list[str] = []
+    for item in error.errors(include_input=False, include_context=False, include_url=False):
+        loc = [str(part) for part in item["loc"]]
+        if item["type"] == "extra_forbidden" and loc:
+            loc[-1] = "<extra>"
+        paths.append((".".join(loc) + ":" + item["type"])[:60])
+        if len(paths) == limit:
+            break
+    return tuple(paths)
+
+
+@dataclass(frozen=True)
+class ToolResult:
+    data: dict[str, object]
+    code: ErrorCode | None = None
+    empty: bool = False
+    data_mode: DataMode = "fixture"
+    evidence_ids: tuple[str, ...] = ()
+    warnings: tuple[str, ...] = ()
+    suggestion: str = ""
+    detail: tuple[str, ...] = ()  # 仅供TRACE的脱敏诊断标签，不进入payload/模型
+    external: ExternalAttempt | None = None
+
+    def payload(self) -> dict[str, object]:
+        """正文状态是工具契约的一部分，兼容忽略 MCP is_error 的模型。"""
+        payload: dict[str, object] = {
+            "status": "error" if self.code else "empty" if self.empty else "ok",
+            "data": self.data,
+            "evidence_ids": list(self.evidence_ids),
+            "data_mode": self.data_mode,
+            "warnings": list(self.warnings),
+            "error": {"code": self.code, "suggestion": self.suggestion} if self.code else None,
+        }
+        if self.data_mode == "synthetic":
+            payload["source_label"] = "合成评测数据"
+        if self.external is not None:
+            payload["external"] = self.external.model_dump(mode="json")
+        return payload
+
+
+WRITE_KINDS = frozenset({"state", "draft", "side_effect"})  # 会提交业务写入的工具类别
+# 可与其他调用重叠执行的纯查询：只追加证据、不发卡/不推进会话。CLI仅对readOnlyHint工具并发分发，
+# 执行器也只对这些工具在锁外执行。酒店查询会发预算卡/完成任务，路线前置合并卡，均不在内。
+CONCURRENT_READS = frozenset(
+    {"search_places", "search_content", "get_article", "get_place_facts", "get_weather_forecast"}
+)
+_KEEP_KEYS = frozenset({"status", "version", "expires_at", "changed_fields", "skipped_fields"})
+COMMITTED_NOTE = (
+    "操作已提交成功，但完整结果未能返回，仅给出标识与版本；不要重复调用同一操作，"
+    "据此向用户说明并让其在页面查看。"
+)
+
+
+def _identifiers(value: object, key: str = "") -> object:
+    if isinstance(value, dict):
+        kept = {k: r for k, v in value.items() if (r := _identifiers(v, str(k))) is not None}
+        return kept or None
+    if isinstance(value, list | tuple):
+        items = [r for v in value if (r := _identifiers(v, key)) is not None]
+        return items or None
+    if key.endswith(("_id", "_ids", "_revision")) or key in _KEEP_KEYS:
+        if isinstance(value, UUID):
+            return str(value)
+        return value if isinstance(value, str | int) else None
+    return None
+
+
+def committed_confirmation(result: ToolResult) -> ToolResult:
+    """写工具已提交而结果无法完整展示：只留标识/版本，附不得重试的提示；失败结果不伪装成功。"""
+    if result.code is not None:
+        return ToolResult({}, code=result.code, suggestion=result.suggestion, detail=result.detail)
+    data = _identifiers(result.data)
+    return replace(
+        result,
+        data=data if isinstance(data, dict) else {},
+        empty=False,
+        warnings=(*result.warnings, COMMITTED_NOTE),
+        suggestion="",
+    )
+
+
+class ToolExecutor(Protocol):
+    async def execute(
+        self, context: RunContext, name: str, arguments: dict[str, object]
+    ) -> ToolResult: ...

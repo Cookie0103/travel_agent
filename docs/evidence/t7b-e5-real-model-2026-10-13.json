@@ -1,0 +1,157 @@
+{
+  "scope": "actual DeepSeek with isolated fake suppliers; no real supplier requests",
+  "cases": 8,
+  "trials": 24,
+  "passed": 24,
+  "errors": 0,
+  "not_run": 0,
+  "http_attempts": 69,
+  "model_cost_CNY": "2.138688",
+  "reliability": {
+    "k": 3,
+    "cases": 8,
+    "complete_cases": 8,
+    "pass_at_1": 1.0,
+    "pass_at_k": 1.0,
+    "pass_power_k": 1.0,
+    "basis": "predeclared independent trials; errors/missing trials remain unknown"
+  },
+  "terminal_state_n": 24,
+  "terminal_state_pass_rate": 1.0,
+  "process": {
+    "tool_calls": 48,
+    "recovered_without_user": 6,
+    "user_visible_errors": 6,
+    "user_visible_first_errors": 0
+  },
+  "saved_plan_delivery_rate": 0.0,
+  "constraint_micro": null,
+  "constraint_macro": null,
+  "scores_pushed": 24,
+  "traces": [
+    {
+      "case_id": "v2-429-ok",
+      "trial": 1,
+      "trace_id": "305f66c2beb84b02b2fa8e5f23f45a54"
+    },
+    {
+      "case_id": "v2-timeout-ok",
+      "trial": 1,
+      "trace_id": "45861cad37824bc6ba23f116bb024c3d"
+    },
+    {
+      "case_id": "v2-429-twice",
+      "trial": 1,
+      "trace_id": "44de96d64ba2465d8b92db3e87df7aab"
+    },
+    {
+      "case_id": "v2-400",
+      "trial": 1,
+      "trace_id": "9403a88fcc294c29b72161577b026810"
+    },
+    {
+      "case_id": "v2-empty",
+      "trial": 1,
+      "trace_id": "1d03704dc69f432ba528858cb73c479d"
+    },
+    {
+      "case_id": "v2-coverage",
+      "trial": 1,
+      "trace_id": "f4a24ac61152424ab7ed8d68d1664c2b"
+    },
+    {
+      "case_id": "v2-budget-double",
+      "trial": 1,
+      "trace_id": "7092c89e625c465ea2ee8bd61d065075"
+    },
+    {
+      "case_id": "v2-budget-none",
+      "trial": 1,
+      "trace_id": "7a4ff555995b44b69eedd7c0e2d280da"
+    },
+    {
+      "case_id": "v2-429-ok",
+      "trial": 2,
+      "trace_id": "ec9341f2fb964049b9c60447098b4b07"
+    },
+    {
+      "case_id": "v2-timeout-ok",
+      "trial": 2,
+      "trace_id": "877346591395449485627e7692f1e7b7"
+    },
+    {
+      "case_id": "v2-429-twice",
+      "trial": 2,
+      "trace_id": "1a77cb04de654246bd4bf7b24d287822"
+    },
+    {
+      "case_id": "v2-400",
+      "trial": 2,
+      "trace_id": "ba272ed0fad2407fa375d6e08017a68a"
+    },
+    {
+      "case_id": "v2-empty",
+      "trial": 2,
+      "trace_id": "02e1bb4702b34061a355f3897487caef"
+    },
+    {
+      "case_id": "v2-coverage",
+      "trial": 2,
+      "trace_id": "87ce72dfcf8e400cb5ab3b4fcaf58651"
+    },
+    {
+      "case_id": "v2-budget-double",
+      "trial": 2,
+      "trace_id": "5cfe82e381ae42468cd508aa20d0954e"
+    },
+    {
+      "case_id": "v2-budget-none",
+      "trial": 2,
+      "trace_id": "6e1440cbea594108a4c68e724e683f78"
+    },
+    {
+      "case_id": "v2-429-ok",
+      "trial": 3,
+      "trace_id": "234b9437b06647fab37dc79840013e11"
+    },
+    {
+      "case_id": "v2-timeout-ok",
+      "trial": 3,
+      "trace_id": "c66820b1f80142d39a0d381372510b02"
+    },
+    {
+      "case_id": "v2-429-twice",
+      "trial": 3,
+      "trace_id": "4a29764d49a8436cbb84011492f6012e"
+    },
+    {
+      "case_id": "v2-400",
+      "trial": 3,
+      "trace_id": "17d7f7f3b0294a0081bba1b454ed0dc5"
+    },
+    {
+      "case_id": "v2-empty",
+      "trial": 3,
+      "trace_id": "3689168f886b42e985eb937d9d88c130"
+    },
+    {
+      "case_id": "v2-coverage",
+      "trial": 3,
+      "trace_id": "0c36beed88f048f3ab3edb955d68e69c"
+    },
+    {
+      "case_id": "v2-budget-double",
+      "trial": 3,
+      "trace_id": "b90b740b1b3841f78cdee8a597adb5d8"
+    },
+    {
+      "case_id": "v2-budget-none",
+      "trial": 3,
+      "trace_id": "291d45186e064d0fa63f7070635f8867"
+    }
+  ],
+  "limitations": [
+    "synthetic task/fault dev suite; no semantic or human calibration",
+    "saved-plan constraints remain unmeasured because these are hotel comparisons"
+  ]
+}

@@ -1,0 +1,4318 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-06-01T08:52:28Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "node",
+  "id": 335664991,
+  "lat": 35.0279007,
+  "lon": 135.7211489,
+  "tags": {
+    "KSJ2:LIN": "北野線",
+    "KSJ2:STN": "龍安寺",
+    "light_rail": "yes",
+    "name": "龍安寺",
+    "name:en": "Ryōanji",
+    "name:ja": "龍安寺",
+    "name:ja-Hira": "りょうあんじ",
+    "name:ja_rm": "Ryōanji",
+    "name:ko": "료안지",
+    "note": "National-Land Numerical Information (Railway) 2007, MLIT Japan",
+    "note:ja": "国土数値情報（鉄道データ）平成19年 国土交通省",
+    "public_transport": "stop_position",
+    "railway": "stop",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-N02-v1_1.html",
+    "station_number": "B7",
+    "url": "http://randen.keifuku.co.jp/map/19.html",
+    "wikidata": "Q11679223",
+    "wikipedia": "ja:龍安寺駅"
+  }
+},
+{
+  "type": "node",
+  "id": 1058638426,
+  "lat": 35.0328680,
+  "lon": 135.7453938,
+  "tags": {
+    "name": "織成館(Orinasu-kan)",
+    "source": "http://orinasukan.skr.jp/",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1180840647,
+  "lat": 35.0299042,
+  "lon": 135.7496545,
+  "tags": {
+    "fee": "no",
+    "name": "京都市立考古資料館",
+    "source": "Bing, 2007-12",
+    "tourism": "museum",
+    "website": "https://www.kyoto-arc.or.jp/siryoukan01.html"
+  }
+},
+{
+  "type": "node",
+  "id": 1422959988,
+  "lat": 34.9847910,
+  "lon": 135.8363540,
+  "tags": {
+    "KSJ2:ADS": "小山小川町2",
+    "KSJ2:AdminArea": "京都府京都市山科区",
+    "KSJ2:PubFacAdmin": "民間",
+    "name": "京の田舎民具資料館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422960064,
+  "lat": 35.0324180,
+  "lon": 135.7589600,
+  "tags": {
+    "name": "京菓子資料館",
+    "name:de": "Süsswaren-Museum",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422960069,
+  "lat": 35.0487963,
+  "lon": 135.7715007,
+  "tags": {
+    "name": "京都ギリシアローマ美術館",
+    "name:en": "Kyoto Greek & Roman Museum",
+    "name:fr": "Musée Grec et Romain de Kyoto",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q18336820"
+  }
+},
+{
+  "type": "node",
+  "id": 1422960588,
+  "lat": 35.0273566,
+  "lon": 135.7792615,
+  "tags": {
+    "name": "京都大学総合博物館",
+    "name:de": "Musuem der Universität Kyōto",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2 ; knowledge",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422960940,
+  "lat": 35.0185672,
+  "lon": 135.6760276,
+  "tags": {
+    "name": "京都嵐山オルゴール博物館",
+    "name:en": "The Kyoto Arashiyama Orgel Museum",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422960943,
+  "lat": 35.0124300,
+  "lon": 135.6886670,
+  "tags": {
+    "name": "嵯峨美術大学・嵯峨美術短期大学附属博物館",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422960948,
+  "lat": 35.0494546,
+  "lon": 135.7811510,
+  "tags": {
+    "addr:city": "京都市",
+    "addr:neighbourhood": "橋上町",
+    "addr:province": "京都府",
+    "addr:quarter": "松ヶ崎",
+    "addr:suburb": "左京区",
+    "museum": "art",
+    "name": "京都工芸繊維大学美術工芸資料館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "website": "https://www.museum.kit.ac.jp/index.html",
+    "wikidata": "Q127503199"
+  }
+},
+{
+  "type": "node",
+  "id": 1422961100,
+  "lat": 35.0007007,
+  "lon": 135.7657254,
+  "tags": {
+    "name": "京都市学校歴史博物館",
+    "name:en": "Kyoto Municipal Museum of School History",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q11375001",
+    "wikipedia": "ja:京都市学校歴史博物館"
+  }
+},
+{
+  "type": "node",
+  "id": 1422961228,
+  "lat": 35.0191504,
+  "lon": 135.7676014,
+  "tags": {
+    "name": "京都市歴史資料館",
+    "name:de": "Museum für Stadtgeschichte",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q6452125"
+  }
+},
+{
+  "type": "node",
+  "id": 1422961307,
+  "lat": 34.9867719,
+  "lon": 135.7639168,
+  "tags": {
+    "museum": "art",
+    "name": "京都芸大附属芸術資料館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "operator": "公立大学法人京都市立芸術大学",
+    "operator:type": "university",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "website": "https://libmuse.kcua.ac.jp/muse/"
+  }
+},
+{
+  "type": "node",
+  "id": 1422961323,
+  "lat": 35.0300060,
+  "lon": 135.7496730,
+  "tags": {
+    "name": "京都市考古資料館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q11375124",
+    "wikipedia": "ja:京都市考古資料館"
+  }
+},
+{
+  "type": "node",
+  "id": 1422961473,
+  "lat": 35.0351660,
+  "lon": 135.7260550,
+  "tags": {
+    "name": "堂本印象美術館",
+    "name:en": "Insho-Domoto museum of fine arts",
+    "name:fr": "Musée Insho Domoto",
+    "name:ja": "堂本印象美術館",
+    "name:ja-Hira": "どうもといんしょうびじゅつかん",
+    "name:ja_rm": "Dōmoto inshō myūziamu",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年 国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "url": "http://www2.ocn.ne.jp/~domoto/",
+    "wikidata": "Q11375242",
+    "wikipedia": "ja:京都府立堂本印象美術館"
+  }
+},
+{
+  "type": "node",
+  "id": 1422961787,
+  "lat": 35.0054370,
+  "lon": 135.7582688,
+  "tags": {
+    "name": "京都芸術センター",
+    "name:en": "Kyoto art center",
+    "name:fr": "Centre artistique de Kyoto",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q6452114"
+  }
+},
+{
+  "type": "node",
+  "id": 1422961845,
+  "lat": 35.0374601,
+  "lon": 135.7927481,
+  "tags": {
+    "addr:block_number": "116",
+    "addr:city": "京都市",
+    "addr:neighbourhood": "2丁目",
+    "addr:province": "京都府",
+    "addr:quarter": "北白川瓜生山",
+    "addr:suburb": "左京区",
+    "name": "京都芸術大学芸術館",
+    "tourism": "museum",
+    "website": "https://kyoto-geijutsu-kan.com/",
+    "wikidata": "Q127597163"
+  }
+},
+{
+  "type": "node",
+  "id": 1422962103,
+  "lat": 35.0040072,
+  "lon": 135.7754288,
+  "tags": {
+    "name": "何必館・京都現代美術館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q136472115"
+  }
+},
+{
+  "type": "node",
+  "id": 1422962447,
+  "lat": 35.0241671,
+  "lon": 135.6687428,
+  "tags": {
+    "check_date": "2026-05-29",
+    "name": "博物館さがの人形の家",
+    "name:en": "Sagano Doll Museum",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422962861,
+  "lat": 35.0084203,
+  "lon": 135.7557561,
+  "tags": {
+    "KSJ2:ADS": "三条新町西入ル釜座町18",
+    "KSJ2:AdminArea": "京都府京都市中京区",
+    "KSJ2:PubFacAdmin": "民間",
+    "check_date": "2025-04-12",
+    "name": "大西清右衛門美術館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q127602236"
+  }
+},
+{
+  "type": "node",
+  "id": 1422962863,
+  "lat": 35.0418350,
+  "lon": 135.7584860,
+  "tags": {
+    "KSJ2:ADS": "小山上総町",
+    "KSJ2:AdminArea": "京都府京都市北区",
+    "KSJ2:PubFacAdmin": "民間",
+    "name": "大谷大学博物館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q21190901",
+    "wikipedia": "en:Ōtani University Museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422964771,
+  "lat": 34.9990590,
+  "lon": 135.7827170,
+  "tags": {
+    "name": "幕末維新ミュージアム霊山歴史館",
+    "name:en": "Ryozen Museum of History",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q3329667"
+  }
+},
+{
+  "type": "node",
+  "id": 1422965148,
+  "lat": 35.0127156,
+  "lon": 135.7810163,
+  "tags": {
+    "addr:street": "Okasai Seishojicho9",
+    "name": "FUREAIKAN ART & CRAFTS 日図デザイン博物館",
+    "name:de": "Museum für Bildhauerei",
+    "name:en": "Kyoto Museum of Traditional Crafts",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "phone": "+81757622670",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "website": "https://kmtc.jp/"
+  }
+},
+{
+  "type": "node",
+  "id": 1422966440,
+  "lat": 35.0256760,
+  "lon": 135.7532700,
+  "tags": {
+    "KSJ2:ADS": "油小路中立売上ル",
+    "KSJ2:AdminArea": "京都府京都市上京区",
+    "KSJ2:PubFacAdmin": "民間",
+    "name": "樂美術館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q125002905"
+  }
+},
+{
+  "type": "node",
+  "id": 1422966559,
+  "lat": 34.9921150,
+  "lon": 135.6855030,
+  "tags": {
+    "KSJ2:ADS": "松尾万石町57",
+    "KSJ2:AdminArea": "京都府京都市西京区",
+    "KSJ2:PubFacAdmin": "民間",
+    "name": "池大雅美術館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422967954,
+  "lat": 35.0270223,
+  "lon": 135.7930398,
+  "tags": {
+    "name": "白沙村荘橋本関雪記念館",
+    "name:en": "Hakusa-sonso Museum",
+    "name:fr": "Musee de Hakusa-sonso",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422970994,
+  "lat": 35.0137793,
+  "lon": 135.7796211,
+  "tags": {
+    "name": "細見美術館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q11606115"
+  }
+},
+{
+  "type": "node",
+  "id": 1422971804,
+  "lat": 35.0173250,
+  "lon": 135.7265670,
+  "tags": {
+    "KSJ2:ADS": "西ノ京壺ノ内町8-1",
+    "KSJ2:AdminArea": "京都府京都市中京区",
+    "KSJ2:PubFacAdmin": "民間",
+    "name": "花園大学歴史博物館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422971835,
+  "lat": 35.0347064,
+  "lon": 135.7518151,
+  "tags": {
+    "name": "茶道資料館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422971893,
+  "lat": 35.0116305,
+  "lon": 135.7812083,
+  "tags": {
+    "name": "藤井斉成会有鄰館",
+    "name:en": "Yurinkan museum",
+    "name:fr": "Musée Yurinkan",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q11622794",
+    "wikipedia": "ja:藤井斉成会有鄰館"
+  }
+},
+{
+  "type": "node",
+  "id": 1422972202,
+  "lat": 34.9909730,
+  "lon": 135.7725110,
+  "tags": {
+    "KSJ2:ADS": "大和大路正面茶屋町530",
+    "KSJ2:AdminArea": "京都府京都市東山区",
+    "KSJ2:PubFacAdmin": "民間",
+    "name": "豊国神社宝物館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422972380,
+  "lat": 34.9996930,
+  "lon": 135.7508570,
+  "tags": {
+    "KSJ2:ADS": "猪熊通高辻下ル",
+    "KSJ2:AdminArea": "京都府京都市下京区",
+    "KSJ2:PubFacAdmin": "民間",
+    "name": "遠藤剛キ美術館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422972572,
+  "lat": 35.0000310,
+  "lon": 135.7761610,
+  "tags": {
+    "KSJ2:ADS": "東大路松原上ル下弁天町70",
+    "KSJ2:AdminArea": "京都府京都市東山区",
+    "KSJ2:PubFacAdmin": "民間",
+    "name": "金比羅絵馬館・ガラスの部屋",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422972907,
+  "lat": 34.9932260,
+  "lon": 135.7532750,
+  "tags": {
+    "KSJ2:ADS": "西中筋六条下ル住吉町42",
+    "KSJ2:AdminArea": "京都府京都市下京区",
+    "KSJ2:PubFacAdmin": "民間",
+    "name": "風俗博物館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q11665410",
+    "wikipedia": "ja:風俗博物館"
+  }
+},
+{
+  "type": "node",
+  "id": 1422972931,
+  "lat": 35.0266150,
+  "lon": 135.7345090,
+  "tags": {
+    "KSJ2:ADS": "今出川天神筋下ル大上之町61",
+    "KSJ2:AdminArea": "京都府京都市上京区",
+    "KSJ2:PubFacAdmin": "民間",
+    "name": "高津古文化会館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 1422972974,
+  "lat": 35.0543369,
+  "lon": 135.7508317,
+  "tags": {
+    "alt_name:en": "Goryeo Museum of Art",
+    "description": "Korean art museum in Kyoto Prefecture, Japan",
+    "name": "高麗美術館",
+    "name:en": "Koryo Museum of Art",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q21019672"
+  }
+},
+{
+  "type": "node",
+  "id": 1422973103,
+  "lat": 34.9827350,
+  "lon": 135.7329520,
+  "tags": {
+    "addr:city": "京都市",
+    "addr:neighbourhood": "103",
+    "addr:province": "京都府",
+    "addr:quarter": "七条御所ノ内南町",
+    "addr:suburb": "下京区",
+    "museum": "art",
+    "name": "ＫＣＩギャラリー",
+    "name:en": "KCI Gallery",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "website": "https://www.kci.or.jp/"
+  }
+},
+{
+  "type": "node",
+  "id": 1494857741,
+  "lat": 34.9875524,
+  "lon": 135.7593295,
+  "tags": {
+    "contact:phone": "+81 75-361-3215",
+    "fee": "yes",
+    "height": "100",
+    "name": "京都タワー",
+    "name:en": "Kyoto Tower",
+    "name:fr": "Tour de Kyoto",
+    "name:ja": "京都タワー",
+    "name:ja-Hira": "きょうとタワー",
+    "name:ja-Latn": "Kyōto-tawā",
+    "name:zh": "京都观光塔",
+    "opening_hours": "Mo-Su 10:00-21:00",
+    "source": "Bing",
+    "tourism": "viewpoint",
+    "wikidata": "Q1201304",
+    "wikipedia": "ja:京都タワー"
+  }
+},
+{
+  "type": "node",
+  "id": 1977407608,
+  "lat": 35.0006240,
+  "lon": 135.7798039,
+  "tags": {
+    "contact:tripadvisor": "7279559",
+    "contact:website": "https://www.kodaiji.com/museum/",
+    "museum": "art",
+    "name": "高台寺掌美術館",
+    "name:en": "Kōdai-ji Shō Art Museum",
+    "name:fr": "Musée d'art Shō",
+    "name:ja": "高台寺掌美術館",
+    "name:ja-Hira": "こうたいじ しょう びじゅつかん",
+    "name:ja-Latn": "Kōdai-ji Shō bijutsukan",
+    "source": "Survey",
+    "start_date": "1998",
+    "tourism": "museum",
+    "wikidata": "Q3959661",
+    "wikimedia_commons": "Category:Shō Museum"
+  }
+},
+{
+  "type": "node",
+  "id": 2925674896,
+  "lat": 35.0126264,
+  "lon": 135.7806273,
+  "tags": {
+    "name": "京都伝統産業ふれあい館",
+    "name:de": "Museum für das traditionelle Handwerk",
+    "source": "survey",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 3259188761,
+  "lat": 35.0179100,
+  "lon": 135.6763180,
+  "tags": {
+    "museum": "art",
+    "name": "UN MOMENT POOR SOI 矢田作十路記念館",
+    "name:en": "Arashiyama Gyokurin The Yata sakujuro Memorial Museum",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 3860845128,
+  "lat": 35.0341262,
+  "lon": 135.7186285,
+  "tags": {
+    "board_type": "history",
+    "check_date": "2025-10-26",
+    "information": "board",
+    "name": "龍安寺",
+    "name:en": "Ryoanji Temple",
+    "source": "survey",
+    "tourism": "information"
+  }
+},
+{
+  "type": "node",
+  "id": 3875394678,
+  "lat": 35.0320344,
+  "lon": 135.7162058,
+  "tags": {
+    "historic": "boundary_stone",
+    "name": "龍安寺"
+  }
+},
+{
+  "type": "node",
+  "id": 3875394679,
+  "lat": 35.0320398,
+  "lon": 135.7161980,
+  "tags": {
+    "historic": "boundary_stone",
+    "name": "龍安寺"
+  }
+},
+{
+  "type": "node",
+  "id": 3875394680,
+  "lat": 35.0320404,
+  "lon": 135.7161847,
+  "tags": {
+    "historic": "boundary_stone",
+    "name": "龍安寺"
+  }
+},
+{
+  "type": "node",
+  "id": 3875394681,
+  "lat": 35.0320406,
+  "lon": 135.7161964,
+  "tags": {
+    "historic": "boundary_stone",
+    "name": "龍安寺"
+  }
+},
+{
+  "type": "node",
+  "id": 3875394682,
+  "lat": 35.0320431,
+  "lon": 135.7161881,
+  "tags": {
+    "historic": "boundary_stone",
+    "name": "龍安寺"
+  }
+},
+{
+  "type": "node",
+  "id": 4045618965,
+  "lat": 34.9861652,
+  "lon": 135.7647494,
+  "tags": {
+    "addr:block_number": "6",
+    "addr:housenumber": "3",
+    "addr:postcode": "600-8206",
+    "addr:quarter": "下之町",
+    "addr:suburb": "下京区",
+    "museum": "local",
+    "name": "柳原銀行記念資料館",
+    "name:en": "Yanagihara Bank Memorial Museum",
+    "name:fr": "Musée en mémoire de la banque de Yanagihara",
+    "tourism": "museum",
+    "wikidata": "Q11534162",
+    "wikipedia": "ja:柳原銀行"
+  }
+},
+{
+  "type": "node",
+  "id": 4426733135,
+  "lat": 34.9798508,
+  "lon": 135.7525817,
+  "tags": {
+    "name": "東寺",
+    "name:en": "Toji",
+    "name:ja": "東寺",
+    "name:ja_rm": "Tōji",
+    "name:ko": "도지",
+    "public_transport": "station",
+    "railway": "station",
+    "ref": "B02",
+    "website": "https://www.kintetsu.co.jp/station/station_info/station05006.html",
+    "wikidata": "Q7862666",
+    "wikipedia": "ja:東寺駅"
+  }
+},
+{
+  "type": "node",
+  "id": 4782783521,
+  "lat": 35.0014634,
+  "lon": 135.7446225,
+  "tags": {
+    "addr:housenumber": "46-1",
+    "addr:street": "Mibukayougosho-cho",
+    "name": "Kyoto Seishu Netsuke Art Museum",
+    "name:fr": "Musée artistique de Kyoto Seishu Netsuke",
+    "name:ja": "Kyoto Seishu Netsuke Art Museum",
+    "tourism": "museum",
+    "wikidata": "Q118145425",
+    "wikipedia": "ja:京都清宗根付館 (旧神先家住宅)"
+  }
+},
+{
+  "type": "node",
+  "id": 5207499323,
+  "lat": 35.0644415,
+  "lon": 135.8093954,
+  "tags": {
+    "name": "ルイ・イカール美術館",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 5309600324,
+  "lat": 35.0071011,
+  "lon": 135.7744005,
+  "tags": {
+    "name": "中山美術館",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 5474437421,
+  "lat": 34.9961506,
+  "lon": 135.7807414,
+  "tags": {
+    "fee": "no",
+    "name": "Studios Ghibli shop",
+    "name:ja": "Studios Ghibli s hop",
+    "name:zh": "宮崎駿",
+    "opening_hours": "Mo-Su 10:00-17:00",
+    "phone": "0755257170",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 5490442621,
+  "lat": 35.0169388,
+  "lon": 135.7851754,
+  "tags": {
+    "name": "ALC Gallery",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 5511285118,
+  "lat": 35.0139198,
+  "lon": 135.6853332,
+  "tags": {
+    "name": "八坂神社"
+  }
+},
+{
+  "type": "node",
+  "id": 5755521721,
+  "lat": 35.0048435,
+  "lon": 135.7667948,
+  "tags": {
+    "addr:city": "京都市",
+    "addr:province": "京都府",
+    "addr:suburb": "中京区",
+    "email": "samurai@mai-ko.com",
+    "fee": "yes",
+    "museum": "history",
+    "name": "京都サムライ忍者体験ミュージアム",
+    "name:en": "Samurai and Ninja Museum",
+    "opening_hours": "Mo-Su 10:00-19:00",
+    "phone": "+81-075-585-5410",
+    "tourism": "museum",
+    "website": "https://mai-ko.com/samurai/"
+  }
+},
+{
+  "type": "node",
+  "id": 5936885886,
+  "lat": 34.9837651,
+  "lon": 135.7546664,
+  "tags": {
+    "name": "松下資料館",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 6126022593,
+  "lat": 35.0231604,
+  "lon": 135.7614492,
+  "tags": {
+    "name": "京都御所",
+    "name:zh": "京都御所",
+    "tourism": "viewpoint"
+  }
+},
+{
+  "type": "node",
+  "id": 6540969790,
+  "lat": 35.0098276,
+  "lon": 135.6817689,
+  "tags": {
+    "name": "嵐山ハイブリッド美術館",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 6578053381,
+  "lat": 35.0679725,
+  "lon": 135.7942309,
+  "tags": {
+    "name": "絵馬展示資料館",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 6578080296,
+  "lat": 35.0679807,
+  "lon": 135.7942661,
+  "tags": {
+    "name": "絵馬展示資料館",
+    "operator": "三宅八幡神社",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 6796435487,
+  "lat": 35.0325304,
+  "lon": 135.7456853,
+  "tags": {
+    "name": "天",
+    "name:ja": "天鷲絨美術館",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 6798251160,
+  "lat": 35.0366951,
+  "lon": 135.7616522,
+  "tags": {
+    "historic": "wayside_shrine",
+    "name": "八坂神社",
+    "religion": "shinto"
+  }
+},
+{
+  "type": "node",
+  "id": 6865347485,
+  "lat": 34.9669830,
+  "lon": 135.7747604,
+  "tags": {
+    "alt_name:en": "1000 torii gates;10000 torii gates",
+    "direction": "120;300",
+    "name": "伏見稲荷大社",
+    "name:de": "Torii Gabelung „1000 Torii“",
+    "name:en": "Senbon Torii (Thousand Torii Gates)",
+    "name:it": "Santuario di Fushimi Inari-taisha",
+    "tourism": "viewpoint"
+  }
+},
+{
+  "type": "node",
+  "id": 7056457712,
+  "lat": 35.0110907,
+  "lon": 135.7925106,
+  "tags": {
+    "board_type": "history",
+    "information": "board",
+    "name": "南禅寺",
+    "tourism": "information"
+  }
+},
+{
+  "type": "node",
+  "id": 7126885961,
+  "lat": 35.0278873,
+  "lon": 135.7211904,
+  "tags": {
+    "KSJ2:LIN": "北野線",
+    "KSJ2:STN": "龍安寺",
+    "light_rail": "yes",
+    "name": "龍安寺",
+    "name:en": "Ryōanji",
+    "name:ja": "龍安寺",
+    "name:ja-Hira": "りょうあんじ",
+    "name:ja_rm": "Ryōanji",
+    "name:ko": "료안지",
+    "note": "National-Land Numerical Information (Railway) 2007, MLIT Japan",
+    "note:ja": "国土数値情報（鉄道データ）平成19年 国土交通省",
+    "public_transport": "station",
+    "railway": "station",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-N02-v1_1.html",
+    "station": "light_rail",
+    "station_number": "B7",
+    "tram": "yes",
+    "url": "http://randen.keifuku.co.jp/map/19.html",
+    "wikidata": "Q11679223",
+    "wikipedia": "ja:龍安寺駅"
+  }
+},
+{
+  "type": "node",
+  "id": 7126885962,
+  "lat": 35.0278680,
+  "lon": 135.7213031,
+  "tags": {
+    "KSJ2:LIN": "北野線",
+    "KSJ2:STN": "龍安寺",
+    "light_rail": "yes",
+    "name": "龍安寺",
+    "name:en": "Ryōanji",
+    "name:ja": "龍安寺",
+    "name:ja-Hira": "りょうあんじ",
+    "name:ja_rm": "Ryōanji",
+    "name:ko": "료안지",
+    "note": "National-Land Numerical Information (Railway) 2007, MLIT Japan",
+    "note:ja": "国土数値情報（鉄道データ）平成19年 国土交通省",
+    "public_transport": "stop_position",
+    "railway": "stop",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-N02-v1_1.html",
+    "station_number": "B7",
+    "url": "http://randen.keifuku.co.jp/map/19.html",
+    "wikidata": "Q11679223",
+    "wikipedia": "ja:龍安寺駅"
+  }
+},
+{
+  "type": "node",
+  "id": 7319933585,
+  "lat": 35.0102889,
+  "lon": 135.7675663,
+  "tags": {
+    "name": "本能寺大寶殿宝物館",
+    "name:en": "Honnoji Temple Treasure Hall",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 7639949020,
+  "lat": 35.0127140,
+  "lon": 135.7509321,
+  "tags": {
+    "board_type": "history",
+    "information": "board",
+    "name": "二条城",
+    "tourism": "information"
+  }
+},
+{
+  "type": "node",
+  "id": 8175882768,
+  "lat": 34.9798278,
+  "lon": 135.7525581,
+  "tags": {
+    "local_ref": "2",
+    "name": "東寺",
+    "name:en": "Toji",
+    "name:ja": "東寺",
+    "name:ja_rm": "Tōji",
+    "name:ko": "도지",
+    "public_transport": "stop_position",
+    "railway": "stop",
+    "ref": "B02",
+    "train": "yes",
+    "wikidata": "Q7862666",
+    "wikipedia": "ja:東寺駅"
+  }
+},
+{
+  "type": "node",
+  "id": 8175882769,
+  "lat": 34.9798289,
+  "lon": 135.7526017,
+  "tags": {
+    "local_ref": "1",
+    "name": "東寺",
+    "name:en": "Toji",
+    "name:ja": "東寺",
+    "name:ja_rm": "Tōji",
+    "name:ko": "도지",
+    "public_transport": "stop_position",
+    "railway": "stop",
+    "ref": "B02",
+    "train": "yes",
+    "wikidata": "Q7862666",
+    "wikipedia": "ja:東寺駅"
+  }
+},
+{
+  "type": "node",
+  "id": 8993816198,
+  "lat": 35.0218664,
+  "lon": 135.6680985,
+  "tags": {
+    "historic": "wayside_shrine",
+    "name": "八坂神社",
+    "religion": "shinto"
+  }
+},
+{
+  "type": "node",
+  "id": 9342783969,
+  "lat": 35.0096386,
+  "lon": 135.7613759,
+  "tags": {
+    "check_date": "2023-10-04",
+    "fee": "yes",
+    "museum": "art",
+    "name": "京都万華鏡ミュージアム",
+    "operator": "NPO法人京都万華鏡こう房",
+    "tourism": "museum",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 10099337517,
+  "lat": 35.0099553,
+  "lon": 135.7826315,
+  "tags": {
+    "addr:housenumber": "374-2",
+    "addr:postcode": "605-0038",
+    "addr:street": "堀池町",
+    "fee": "no",
+    "name": "京都写真美術館 ギャラリー・ジャパネスク",
+    "name:en": "KYOTO MUSEUM OF PHOTOGRAPHY Gallery Japanesque",
+    "tourism": "museum",
+    "website": "https://kyoto-muse.jp/japanesque/"
+  }
+},
+{
+  "type": "node",
+  "id": 11174591021,
+  "lat": 34.9689370,
+  "lon": 135.7630093,
+  "tags": {
+    "historic": "memorial",
+    "inscription": "伏見稲荷大社",
+    "material": "granite",
+    "memorial": "stele",
+    "name": "伏見稲荷大社"
+  }
+},
+{
+  "type": "node",
+  "id": 11289610453,
+  "lat": 35.0331011,
+  "lon": 135.7727003,
+  "tags": {
+    "name": "鴨社資料館",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 11778213202,
+  "lat": 34.9672445,
+  "lon": 135.7729905,
+  "tags": {
+    "board_type": "history",
+    "description": "歴史",
+    "information": "board",
+    "material": "wood",
+    "name": "伏見稲荷大社",
+    "operator": "京都市",
+    "tourism": "information"
+  }
+},
+{
+  "type": "node",
+  "id": 11810261530,
+  "lat": 34.9978412,
+  "lon": 135.7771061,
+  "tags": {
+    "bench": "no",
+    "bin": "no",
+    "bus": "yes",
+    "highway": "bus_stop",
+    "lit": "yes",
+    "name": "清水寺",
+    "name:en": "Kiyomizu-dera Temple",
+    "network": "京都観光ループバスK'LOOP",
+    "operator": "ケイルック",
+    "public_transport": "platform",
+    "shelter": "no",
+    "tactile_paving": "yes"
+  }
+},
+{
+  "type": "node",
+  "id": 12135100167,
+  "lat": 35.0295928,
+  "lon": 135.7537533,
+  "tags": {
+    "air_conditioning": "yes",
+    "contact:facebook": "https://www.facebook.com/tatekunmuseum",
+    "contact:instagram": "https://www.instagram.com/tatekunmuseum/",
+    "contact:twitter": "https://twitter.com/tatekunmuseum",
+    "description": "Museum dedicated to anime, manga, tokusatsu and kaiju-themed figure collection",
+    "fee": "yes",
+    "museum": "children",
+    "name": "たてくんミュージアム",
+    "name:en": "Tate-kun Museum",
+    "opening_hours": "Mo-Su 10:00-19:00",
+    "operator:type": "private",
+    "payment:cash": "yes",
+    "start_date": "2016",
+    "tourism": "museum",
+    "website": "https://tatekunmuseum.com/"
+  }
+},
+{
+  "type": "node",
+  "id": 12189675719,
+  "lat": 34.9890921,
+  "lon": 135.7594822,
+  "tags": {
+    "name": "シナリー金沢翔子美術館",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 12199097354,
+  "lat": 35.0035349,
+  "lon": 135.7531292,
+  "tags": {
+    "alt_name": "京都観光今昔展 TinToy&Doll Museum",
+    "level": "2",
+    "name": "TinToy&Doll Museum",
+    "phone": "+81 75 223 2146",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 12222822764,
+  "lat": 35.0035166,
+  "lon": 135.7539835,
+  "tags": {
+    "level": "1",
+    "name": "アートギャラリー メイジ",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 12324840064,
+  "lat": 35.0203131,
+  "lon": 135.6822746,
+  "tags": {
+    "membership": "yes",
+    "name": "天使の里霞中庵",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 12749348037,
+  "lat": 35.0092756,
+  "lon": 135.7582358,
+  "tags": {
+    "check_date": "2025-04-12",
+    "name": "細辻伊兵衛美術館",
+    "opening_hours": "Mo-Fr 10:00-19:00",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "node",
+  "id": 13321698501,
+  "lat": 35.0240969,
+  "lon": 135.7821815,
+  "tags": {
+    "name": "重森三玲庭園美術館",
+    "name:en": "Mirei Shigemori Garden Museum",
+    "tourism": "museum",
+    "website": "http://www.est.hi-ho.ne.jp/shigemori/association-jp.html"
+  }
+},
+{
+  "type": "way",
+  "id": 31842037,
+  "center": {
+    "lat": 34.9879926,
+    "lon": 135.7717834
+  },
+  "nodes": [
+    4997562604,
+    4997562602,
+    4997562603,
+    4997562601,
+    356508743,
+    4616412173,
+    5327402213,
+    4997562596,
+    4997562600,
+    4997562595,
+    4997562599,
+    4997562590,
+    4997562589,
+    4997562588,
+    4997562587,
+    5809697576,
+    4997562582,
+    4997562581,
+    4997562585,
+    4997562584,
+    4997562583,
+    4997562586,
+    4997562598,
+    4997562597,
+    4997562594,
+    5809697678,
+    4997562604
+  ],
+  "tags": {
+    "addr:full": "京都市東山区三十三間堂廻り町657",
+    "addr:housenumber": "657",
+    "addr:street": "京都市東山区三十三間堂迴り",
+    "amenity": "place_of_worship",
+    "contact:instagram": "sanjusangendo_temple",
+    "contact:phone": "+81-075-561-0467",
+    "contact:tripadvisor": "321411",
+    "contact:website": "https://www.sanjusangendo.jp/",
+    "fee": "yes",
+    "historic:period": "kamakura",
+    "name": "三十三間堂",
+    "name:en": "Sanjūsangen-dō",
+    "name:fr": "Pavillon des trente-trois intervalles",
+    "name:it": "Sanjusangen-do (Rengeo-in)",
+    "name:ja-Hira": "さんじゅうさんげんどう",
+    "name:ja-Latn": "Sanjūsangen-dō",
+    "name:zh": "三十三間堂",
+    "official_name": "蓮華王院",
+    "official_name:fr": "Temple Rengeō",
+    "official_name:ja-Hira": "れんげおういん",
+    "official_name:ja-Latn": "Rengeō-in",
+    "opening_hours": "Apr 01-Nov 15 Mo-Su 08:30-17:00; Nov 16-Mar 31 Mo-Su 09:00-16:00",
+    "religion": "buddhist",
+    "start_date": "1165",
+    "wheelchair": "yes",
+    "wikidata": "Q653319",
+    "wikimedia_commons": "Category:Sanjūsangen-dō",
+    "wikipedia": "ja:三十三間堂"
+  }
+},
+{
+  "type": "way",
+  "id": 31843043,
+  "center": {
+    "lat": 34.9900482,
+    "lon": 135.7729089
+  },
+  "nodes": [
+    356511309,
+    2367201320,
+    356511314,
+    2380063474,
+    1215101294,
+    356511318,
+    4997562374,
+    4997562371,
+    4997562373,
+    4997562372,
+    1215101332,
+    356511321,
+    4997545386,
+    4997545385,
+    4997545383,
+    4997545384,
+    356511309
+  ],
+  "tags": {
+    "contact:website": "http://www.kyohaku.go.jp/",
+    "fee": "yes",
+    "internet_access": "wlan",
+    "internet_access:fee": "no",
+    "loc_name": "京都国立博物館",
+    "name": "京都国立博物館",
+    "name:en": "Kyoto National Museum",
+    "name:fr": "Musée national de Kyoto",
+    "name:ja": "京都国立博物館",
+    "name:ja-Latn": "Kyōto Kokuritsu Hakubutsukan",
+    "payment:cash": "yes",
+    "payment:credit_cards": "yes",
+    "short_name": "京博",
+    "short_name:ja-Hira": "きょうはく",
+    "tourism": "museum",
+    "wheelchair": "yes",
+    "wikidata": "Q147286",
+    "wikimedia_commons": "Category:Kyoto_National_Museum",
+    "wikipedia": "ja:京都国立博物館"
+  }
+},
+{
+  "type": "way",
+  "id": 57111281,
+  "center": {
+    "lat": 35.0139647,
+    "lon": 135.7485092
+  },
+  "nodes": [
+    712635981,
+    1694670986,
+    712635984,
+    1697489288,
+    3815102614,
+    3815102597,
+    712635985,
+    3814967297,
+    3814967293,
+    7324514098,
+    712635986,
+    712635991,
+    3824768359,
+    3824768362,
+    3824768361,
+    3824768360,
+    712635992,
+    3824490381,
+    1694670983,
+    1694670985,
+    1694670968,
+    1244338160,
+    712635981
+  ],
+  "tags": {
+    "alt_name": "二条離宮",
+    "alt_name:en": "Nijō Imperial Villa",
+    "alt_name:fr": "Villa impérial de Nijō",
+    "alt_name:ja-Hira": "にじょうりきゅう",
+    "alt_name:ja-Latn": "Nijō-rikyū",
+    "castle_type": "shiro",
+    "contact:facebook": "461785290685078",
+    "contact:instagram": "nijojocastle",
+    "contact:tripadvisor": "321408",
+    "contact:website": "https://nijo-jocastle.city.kyoto.lg.jp/",
+    "description": "UNESCO heritage site",
+    "heritage": "1",
+    "heritage:operator": "whc",
+    "historic": "castle",
+    "name": "二条城",
+    "name:de": "Burg Nijō",
+    "name:en": "Nijō Castle",
+    "name:fr": "Château de Nijō",
+    "name:ja-Hira": "にじょうじょう",
+    "name:ja-Latn": "Nijō-jō",
+    "name:ru": "замок Нидзё",
+    "official_name": "元離宮二条城",
+    "official_name:en": "Former Imperial Villa Nijō",
+    "official_name:fr": "Ancienne Villa impériale de Nijō",
+    "official_name:ja-Hira": "もとりきゅうにじょうじょう",
+    "official_name:ja-Latn": "Motorikyu Nijojo",
+    "opening_hours": "Mo-Su 08:45-17:00",
+    "ref:whc": "688-017",
+    "start_date": "1601",
+    "toilets:wheelchair": "yes",
+    "tourism": "attraction",
+    "whc:criteria": "(ii),(iv)",
+    "whc:inscription_date": "1994",
+    "wheelchair": "limited",
+    "wikidata": "Q1013399",
+    "wikimedia_commons": "Category:Nijō Castle",
+    "wikipedia": "ja:二条城"
+  }
+},
+{
+  "type": "way",
+  "id": 96291583,
+  "center": {
+    "lat": 34.9675428,
+    "lon": 135.7794370
+  },
+  "nodes": [
+    1116131037,
+    3644796536,
+    5912935435,
+    5912935436,
+    5912935437,
+    5912935438,
+    5912935439,
+    5912935440,
+    3644796538,
+    5912935441,
+    5912935442,
+    5912935443,
+    5912935444,
+    5912935445,
+    5912935446,
+    5912935447,
+    3644796539,
+    3644796540,
+    3644796541,
+    3644796542,
+    3644796543,
+    5912935423,
+    5912935422,
+    5912935421,
+    3644796544,
+    3644796545,
+    3644796537,
+    1116131072,
+    5912935420,
+    5912935419,
+    5912935413,
+    5912935412,
+    5912935411,
+    5912935410,
+    5912935409,
+    5912935408,
+    5912935071,
+    7022860671,
+    7022860672,
+    7022860670,
+    7022860669,
+    5912935399,
+    7022860645,
+    7022860639,
+    7022860638,
+    7022860636,
+    7022860629,
+    7022860635,
+    7022860633,
+    7022860634,
+    7022860632,
+    7022860631,
+    7022860625,
+    7022860624,
+    7022860623,
+    7022860622,
+    7022860621,
+    7022860620,
+    7022860619,
+    7022860618,
+    7022860617,
+    7022860616,
+    7022860614,
+    7022860615,
+    5634113746,
+    5634113747,
+    7022860060,
+    7022860061,
+    7022860062,
+    7022860071,
+    7022860070,
+    7022860067,
+    5634113748,
+    7022860068,
+    7022860069,
+    5912935398,
+    5634113749,
+    7022860103,
+    7022860102,
+    7022860101,
+    7022860348,
+    7022860076,
+    7022860100,
+    7022860104,
+    7022860099,
+    7022860098,
+    7022860105,
+    7022860106,
+    7022860097,
+    7022860096,
+    7022860107,
+    7022860094,
+    7022860095,
+    7022860108,
+    7022860093,
+    7022860109,
+    7022860255,
+    7022860260,
+    7022860256,
+    7022860257,
+    7022860259,
+    7022860258,
+    7022860261,
+    7022860262,
+    7022860263,
+    7022860264,
+    7022860266,
+    7022860265,
+    7022860268,
+    7022860267,
+    7022860269,
+    7022860271,
+    7022860272,
+    7022860273,
+    5912935425,
+    7022860274,
+    7022860275,
+    7022860277,
+    7022860276,
+    7022860278,
+    7022860283,
+    7022860279,
+    7022860281,
+    7022860280,
+    7022860282,
+    5912935427,
+    5634113750,
+    7022860351,
+    7022860350,
+    7022860347,
+    5912935428,
+    1116130994,
+    5912935429,
+    7022860349,
+    5912935430,
+    5912935431,
+    5912935432,
+    1214631144,
+    8818048768,
+    8818048769,
+    1214631030,
+    1214630950,
+    5912935433,
+    5912935434,
+    1116131037
+  ],
+  "tags": {
+    "addr:block_number": "68",
+    "addr:city": "京都市",
+    "addr:country": "JP",
+    "addr:postcode": "612-0882",
+    "addr:province": "京都府",
+    "addr:quarter": "深草藪之内町",
+    "addr:suburb": "伏見区",
+    "alt_name:fr": "Grand sanctuaire Inari de Fushimi",
+    "contact:fax": "+81 75 642 2153",
+    "contact:phone": "+81 75 641 7331",
+    "contact:tripadvisor": "321456",
+    "contact:website": "https://inari.jp/",
+    "denomination": "shinto",
+    "fee": "no",
+    "heritage": "2",
+    "heritage:operator": "文部科学省",
+    "heritage:type": "重要文化財",
+    "landuse": "religious",
+    "name": "伏見稲荷大社",
+    "name:ar": "فوشيمي إناري",
+    "name:en": "Fushimi Inari-taisha",
+    "name:es": "Fushimi Inari-taisha",
+    "name:fa": "معبد فوشیمی‌ایناری",
+    "name:fr": "Fushimi Inari-taisha",
+    "name:it": "Fushimi Inari Taisha",
+    "name:ja-Hira": "ふしみいなりたいしゃ",
+    "name:ja-Latn": "Fushimi Inari taisha",
+    "name:ka": "ფუშიმი ინარი-ტაიშა",
+    "name:ko": "후시미 이나리 신사",
+    "name:pt": "Fushimi Inari-taisha",
+    "name:sv": "Fushimi Inari-taisha",
+    "name:th": "ศาลเจ้าฟุชิมิอินะริ",
+    "name:tr": "Fushimi inari tapınağı",
+    "name:vi": "Fushimi Inari-taisha",
+    "name:zh": "伏见稻荷大社",
+    "name:zh-Hans": "伏见稻荷大社",
+    "name:zh-Hant": "伏見稻荷大社",
+    "religion": "shinto",
+    "short_name": "伏見稲荷",
+    "short_name:zh": "伏见稻荷",
+    "start_date": "711",
+    "tourism": "yes",
+    "wheelchair": "limited",
+    "wikidata": "Q714828",
+    "wikimedia_commons": "Category:Fushimi Inari-taisha",
+    "wikipedia": "ja:伏見稲荷大社"
+  }
+},
+{
+  "type": "way",
+  "id": 98103477,
+  "center": {
+    "lat": 35.0334933,
+    "lon": 135.7180571
+  },
+  "nodes": [
+    1135325739,
+    1135325780,
+    1135325732,
+    1135325758,
+    2015007289,
+    1135325761,
+    3874616025,
+    3874616023,
+    3874615983,
+    3874615976,
+    3874615975,
+    3874615973,
+    3874615972,
+    3874615951,
+    3874615968,
+    3874615979,
+    3874615986,
+    3874615996,
+    2015007273,
+    2015007275,
+    2015007277,
+    1135325772,
+    2015007279,
+    2015007283,
+    2015007285,
+    3872812245,
+    2015007281,
+    3872812191,
+    1135325756,
+    3858861679,
+    3858861672,
+    3858861663,
+    3858861657,
+    2015011430,
+    3872812189,
+    2015011435,
+    2015011434,
+    2015011436,
+    2015011437,
+    2015011431,
+    2015011432,
+    2015011433,
+    2015011438,
+    2015011439,
+    2015011440,
+    2015011441,
+    2015011442,
+    2015011443,
+    1135325739
+  ],
+  "tags": {
+    "alt_name:de": "Tempel des zur Ruhe gekommenen Drachen",
+    "alt_name:fr": "Temple du repos du dragon",
+    "amenity": "place_of_worship",
+    "denomination": "rinzai",
+    "denomination:ja": "臨済宗",
+    "heritage": "1",
+    "heritage:operator": "whc",
+    "historic": "heritage",
+    "landuse": "religious",
+    "name": "龍安寺",
+    "name:de": "Ryōan-ji",
+    "name:en": "Ryōan-ji",
+    "name:fr": "Ryōan-ji",
+    "name:ja": "龍安寺",
+    "name:ja-Hira": "りょうあんじ",
+    "name:ja_rm": "Ryōan-ji",
+    "name:ko": "료안지",
+    "name:ru": "Рёандзи",
+    "opening_hours": "Mo-Su 08:00-17:00",
+    "ref:whc": "688-015",
+    "religion": "buddhist",
+    "start_date": "1450",
+    "toilets:wheelchair": "yes",
+    "tourism": "attraction",
+    "url": "http://www.ryoanji.jp/",
+    "whc:criteria": "(ii),(iv)",
+    "whc:inscription_date": "1994",
+    "wheelchair": "limited",
+    "wikidata": "Q587371",
+    "wikipedia": "ja:龍安寺"
+  }
+},
+{
+  "type": "way",
+  "id": 98115917,
+  "center": {
+    "lat": 35.0395853,
+    "lon": 135.7295062
+  },
+  "nodes": [
+    1135469166,
+    1135469139,
+    676480140,
+    5337223472,
+    5337223473,
+    5337223470,
+    5336796109,
+    676480116,
+    5337223471,
+    676480122,
+    1135469019,
+    1135468952,
+    5336821948,
+    5336821949,
+    5336821950,
+    2014938003,
+    1135468593,
+    1135468690,
+    2014937998,
+    1135468839,
+    1135469305,
+    1135469001,
+    2014937995,
+    1135469153,
+    2014938005,
+    3532073270,
+    1135469069,
+    2014938012,
+    1135469244,
+    1333417576,
+    1333417266,
+    3532118782,
+    1135469166
+  ],
+  "tags": {
+    "addr:block_number": "1",
+    "addr:city": "京都市",
+    "addr:country": "JP",
+    "addr:postcode": "603-8361",
+    "addr:province": "京都府",
+    "addr:quarter": "金閣寺町",
+    "addr:suburb": "北区",
+    "alt_name:de": "Rehgarten-Tempel",
+    "alt_name:en": "Golden Pavilion Temple",
+    "alt_name:fr": "Temple du Pavillon d’or",
+    "amenity": "place_of_worship",
+    "charge:adult": "500 JPY",
+    "charge:child": "300 JPY",
+    "contact:instagram": "rokuonji_kinkakuji",
+    "contact:tripadvisor": "321400",
+    "contact:website": "https://www.shokoku-ji.jp/kinkakuji/",
+    "denomination": "rinzai",
+    "denomination:ja": "臨済宗",
+    "fee": "yes",
+    "heritage": "1",
+    "heritage:operator": "whc",
+    "heritage:since": "1994",
+    "historic": "heritage",
+    "landuse": "religious",
+    "name": "金閣寺",
+    "name:de": "Goldener-Pavillon-Tempel (Kinkaku-ji)",
+    "name:en": "Kinkaku-ji",
+    "name:es": "Kinkaku-ji",
+    "name:fr": "Kinkaku-ji",
+    "name:he": "המקדש המוזהב",
+    "name:ja-Hira": "きんかくじ",
+    "name:ja-Latn": "Kinkaku-ji",
+    "name:ko": "금각사",
+    "name:pl": "Złoty Pawilon",
+    "name:ru": "Кинкаку-дзи",
+    "name:th": "วัดทอง",
+    "name:uk": "Монастир Кінкаку",
+    "name:vi": "Kinkakuji",
+    "name:zh": "鹿苑寺",
+    "nickname": "北山殿;北山第",
+    "nickname:ja-Hira": "きたやま どの;きたやま だい",
+    "nickname:ja-Latn": "Kitayama-dono;Kitayama-dai",
+    "official_name": "鹿苑寺",
+    "official_name:de": "Rokuon-ji",
+    "official_name:en": "Rokuon-ji",
+    "official_name:fr": "Temple Rokuon",
+    "official_name:ja-Hira": "ろくおんじ",
+    "official_name:ja-Latn": "Rokuon-ji",
+    "opening_hours": "Mo-Su 09:00-17:00",
+    "ref:whc": "688-013",
+    "religion": "buddhist",
+    "start_date": "1397",
+    "whc:criteria": "(ii),(iv)",
+    "whc:inscription_date": "1994",
+    "wikidata": "Q270983",
+    "wikimedia_commons": "Category:Kinkaku-ji",
+    "wikipedia": "ja:鹿苑寺"
+  }
+},
+{
+  "type": "way",
+  "id": 99019168,
+  "center": {
+    "lat": 35.0141909,
+    "lon": 135.7509427
+  },
+  "nodes": [
+    1145541386,
+    1145541781,
+    12999814656,
+    1145542365,
+    3818752463,
+    3733905075,
+    1145541386
+  ],
+  "tags": {
+    "building": "yes",
+    "fee": "yes",
+    "name": "展示・収蔵館",
+    "name:en": "Exhibition and collection hall",
+    "name:ja": "展示・収蔵館",
+    "opening_hours": "Mo-Su 09:00-16:45",
+    "source": "Bing, 2007-12;GSImaps/std",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "way",
+  "id": 99285530,
+  "center": {
+    "lat": 35.0305859,
+    "lon": 135.7356157
+  },
+  "nodes": [
+    1148546859,
+    1148546761,
+    1148546814,
+    1148546992,
+    1148547035,
+    1148547254,
+    1148547332,
+    1148546862,
+    1148546913,
+    1148547089,
+    1148547131,
+    1148547408,
+    1148546778,
+    1148546957,
+    1148547004,
+    1148547192,
+    1148546859
+  ],
+  "tags": {
+    "alt_name": "寶物殿",
+    "building": "shrine",
+    "charge": "1000 JPY",
+    "charge:child": "500 JPY;250 JPY",
+    "contact:website": "https://kitanotenmangu.or.jp/guidance/houmotsuden/",
+    "fee": "yes",
+    "name": "宝物殿",
+    "name:en": "Treasure Hall",
+    "name:fr": "Pavillon du Trésor",
+    "name:ja-Hira": "ほうもつでん",
+    "name:ja-Latn": "Hōmotsuden",
+    "opening_hours": "Jan-Mar Mo-Su 09:00-16:00; Apr-Dec off",
+    "source": "Bing, 2007-12",
+    "start_date": "1928",
+    "tourism": "museum",
+    "wikidata": "Q127588655",
+    "wikimedia_commons": "Category:Treasure House, Kitano-tenmangu"
+  }
+},
+{
+  "type": "way",
+  "id": 100398402,
+  "center": {
+    "lat": 35.0123542,
+    "lon": 135.7819587
+  },
+  "nodes": [
+    1160540110,
+    1160539591,
+    1160539505,
+    1160539385,
+    1160539280,
+    1160540174,
+    1160540091,
+    1160539793,
+    1160539817,
+    1160539729,
+    4321302936,
+    1160540110
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "京都国立近代美術館",
+    "name:de": "Nationalmuseum der modernen Künste",
+    "name:en": "The National Museum of Modern Art, Kyoto",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "website": "https://www.momak.go.jp/",
+    "wikidata": "Q1055628",
+    "wikipedia": "ja:京都国立近代美術館"
+  }
+},
+{
+  "type": "way",
+  "id": 102298936,
+  "center": {
+    "lat": 35.0337016,
+    "lon": 135.7273413
+  },
+  "nodes": [
+    1180840640,
+    1180840641,
+    1180840642,
+    1180840644,
+    1180840640
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "立命館大学国際平和ミュージアム",
+    "name:ja": "立命館大学国際平和ミュージアム",
+    "name:ja-Hira": "りつめいかんだいがくこくさいへいわミュージアム",
+    "name:ja_rm": "ritsumeikan daigaku kokusai heiwa myūjiamu",
+    "source": "Bing, 2007-12",
+    "tourism": "museum",
+    "wikidata": "Q6452177"
+  }
+},
+{
+  "type": "way",
+  "id": 105817561,
+  "center": {
+    "lat": 35.0269122,
+    "lon": 135.7984287
+  },
+  "nodes": [
+    1218396059,
+    1218396036,
+    3606930416,
+    3606930417,
+    3606930426,
+    1218395992,
+    1218396034,
+    1218396055,
+    1218396045,
+    1218396027,
+    1218396040,
+    1218396038,
+    4084933489,
+    1218395994,
+    9819226476,
+    9819226477,
+    9819226478,
+    1218396051,
+    1218396057,
+    1218396078,
+    1218396092,
+    1218396042,
+    1218396069,
+    1218396079,
+    1218395998,
+    1218396066,
+    1218396016,
+    1218396011,
+    4084926490,
+    4084926493,
+    4084926498,
+    4084926500,
+    4084926503,
+    4084926506,
+    1218396053,
+    1218396020,
+    1218396025,
+    1218396028,
+    1218396076,
+    1218396080,
+    1218396022,
+    1218396075,
+    3606915645,
+    3606915660,
+    1218396058,
+    1218396059
+  ],
+  "tags": {
+    "addr:block_number": "2",
+    "addr:city": "京都市",
+    "addr:country": "JP",
+    "addr:postcode": "606-8402",
+    "addr:province": "京都府",
+    "addr:quarter": "銀閣寺町",
+    "addr:suburb": "左京区",
+    "alt_name": "Higashiyama Jisho-ji",
+    "amenity": "place_of_worship",
+    "contact:phone": "+81 0757715725",
+    "contact:tripadvisor": "321398",
+    "contact:website": "http://www.shokoku-ji.jp/g_about.html",
+    "denomination": "rinzai",
+    "denomination:ja": "臨済宗",
+    "heritage": "1",
+    "heritage:operator": "whc",
+    "historic": "heritage",
+    "landuse": "religious",
+    "name": "銀閣寺",
+    "name:en": "Ginkakuji",
+    "name:es": "Ginkaku-ji",
+    "name:fr": "Temple du pavillon d'argent",
+    "name:ja-Hira": "ぎんかくじ",
+    "name:ja-Latn": "Ginkaku-ji",
+    "name:ko": "지쇼지",
+    "name:pl": "Srebrny Pawilon",
+    "name:ru": "Гинкакудзи",
+    "name:th": "วัดกิงกะกุ",
+    "name:vi": "Ginkakuji",
+    "name:zh": "慈照寺",
+    "note": "創建1490年 足利義政",
+    "official_name": "慈照寺",
+    "official_name:en": "Jishō Temple",
+    "official_name:fr": "Temple Jishō",
+    "official_name:ja-Hira": "じゅしょうじ",
+    "official_name:ja-Latn": "Jishō-ji",
+    "official_name:ru": "Дзисёдзи",
+    "ref:whc": "688-014",
+    "religion": "buddhist",
+    "whc:criteria": "(ii),(iv)",
+    "whc:inscription_date": "1994",
+    "wikidata": "Q257473",
+    "wikimedia_commons": "Category:Ginkaku-ji",
+    "wikipedia": "ja:慈照寺"
+  }
+},
+{
+  "type": "way",
+  "id": 116697368,
+  "center": {
+    "lat": 35.0526707,
+    "lon": 135.7378422
+  },
+  "nodes": [
+    1314949396,
+    1314950474,
+    1314950174,
+    1314949463,
+    1314950351,
+    1314949396
+  ],
+  "tags": {
+    "amenity": "place_of_worship",
+    "name": "八坂神社",
+    "religion": "shinto"
+  }
+},
+{
+  "type": "way",
+  "id": 159817560,
+  "center": {
+    "lat": 35.0385310,
+    "lon": 135.7327486
+  },
+  "nodes": [
+    1719172707,
+    1719172709,
+    1719172706,
+    1719172708,
+    1719172702,
+    1719172701,
+    2674782826,
+    2674782828,
+    1719172700,
+    1719172707
+  ],
+  "tags": {
+    "access": "yes",
+    "amenity": "parking",
+    "fee": "yes",
+    "name": "金閣寺",
+    "source": "survey"
+  }
+},
+{
+  "type": "way",
+  "id": 181049955,
+  "center": {
+    "lat": 35.0175751,
+    "lon": 135.7928271
+  },
+  "nodes": [
+    1915022254,
+    1915022257,
+    1915022256,
+    10246347919,
+    1915022253,
+    1915022254
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "泉屋博古館",
+    "source": "Bing",
+    "tourism": "museum",
+    "wikidata": "Q3478488"
+  }
+},
+{
+  "type": "way",
+  "id": 183905436,
+  "center": {
+    "lat": 35.0184324,
+    "lon": 135.6804667
+  },
+  "nodes": [
+    4754809800,
+    1943229990,
+    1943230199,
+    4754809804,
+    1943230237,
+    4754809801,
+    4754809802,
+    4754809803,
+    4754809800
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "19世紀ホール",
+    "source": "image,Bing,2007-12",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "way",
+  "id": 187657227,
+  "center": {
+    "lat": 34.9821434,
+    "lon": 135.7473149
+  },
+  "nodes": [
+    1982863665,
+    1982863597,
+    3687626239,
+    1982863616,
+    1982863680,
+    1982863665
+  ],
+  "tags": {
+    "addr:full": "京都府京都市南区九条町1番地",
+    "building": "museum",
+    "contact:website": "https://toji.or.jp/guide/houmotsukan/",
+    "name": "東寺 宝物館",
+    "name:en": "Toji Treasure Museum",
+    "name:fr": "Musée du trésor du temple de l'Est",
+    "name:ja-Hira": "とうじ ほうもつかん",
+    "name:ja-Latn": "Tō-ji Hōmotsukan",
+    "roof:orientation": "along",
+    "roof:shape": "flat",
+    "source": "Bing",
+    "start_date": "1965",
+    "tourism": "museum",
+    "wikidata": "Q104721143",
+    "wikimedia_commons": "Category:Homotsukan, Toji"
+  }
+},
+{
+  "type": "way",
+  "id": 190551080,
+  "center": {
+    "lat": 35.0128829,
+    "lon": 135.7702431
+  },
+  "nodes": [
+    2012001935,
+    2012001931,
+    2012001932,
+    2012001933,
+    2012001934,
+    2012001936,
+    2012001935
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "島津製作所創業記念資料館",
+    "name:en": "Shimadzu Foundation Memorial Museum",
+    "opening_hours": "9:30-17:00",
+    "tourism": "museum",
+    "website": "https://www.shimadzu.co.jp/visionary/memorial-hall/",
+    "wikidata": "Q11476799",
+    "wikipedia": "ja:島津創業記念資料館"
+  }
+},
+{
+  "type": "way",
+  "id": 193115898,
+  "center": {
+    "lat": 35.0040105,
+    "lon": 135.7405759
+  },
+  "nodes": [
+    2036335727,
+    2036335726,
+    3448802313,
+    2036335730,
+    2036335731,
+    2036335742,
+    3449066578,
+    2036335741,
+    3449066568,
+    2036335705,
+    3449066559,
+    2036335706,
+    2036335727
+  ],
+  "tags": {
+    "building": "yes",
+    "building:levels": "2",
+    "museum": "history",
+    "name": "NISSHA印刷歴史館",
+    "old_name": "本館",
+    "source": "GSImaps/std;GSImaps/ort;Image;Survey",
+    "source_ref": "http://wiki.osm.org/wiki/GSI_KIBAN",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "way",
+  "id": 205015553,
+  "center": {
+    "lat": 34.9534198,
+    "lon": 135.6941925
+  },
+  "nodes": [
+    2149933861,
+    2149933875,
+    2149933876,
+    2149933859,
+    2149933860,
+    2149933861
+  ],
+  "tags": {
+    "name": "寿恵更紗 ミュージアム",
+    "name:en": "SUE SARASA MUSEUM of ART",
+    "source": "survey, Bing 4/4/2011",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "way",
+  "id": 219968173,
+  "center": {
+    "lat": 35.0119470,
+    "lon": 135.7882106
+  },
+  "nodes": [
+    2290961724,
+    2290961726,
+    2290961720,
+    2290961722,
+    2290961718,
+    2290961716,
+    2290961714,
+    3127335477,
+    3127335481,
+    3127335480,
+    2290961711,
+    3127335486,
+    3127335487,
+    3127335489,
+    3127335492,
+    3127335491,
+    3127335494,
+    3127335493,
+    3127335499,
+    3127335500,
+    3127335502,
+    3049940913,
+    2290961724
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "琵琶湖疏水記念館",
+    "name:en": "Lake Biwa Canal Museum of Kyoto",
+    "name:ja": "琵琶湖疏水記念館",
+    "source": "GSI/KIBAN 2500;NARO",
+    "source_ref": "http://wiki.osm.org/wiki/GSI_KIBAN",
+    "tourism": "museum",
+    "wikidata": "Q18339063",
+    "wikipedia": "ja:琵琶湖疏水記念館"
+  }
+},
+{
+  "type": "way",
+  "id": 221326822,
+  "center": {
+    "lat": 34.9948904,
+    "lon": 135.8279250
+  },
+  "nodes": [
+    2303607530,
+    11164335747,
+    11164335744,
+    2303607517,
+    11164335743,
+    11164335741,
+    11164335740,
+    11164335742,
+    2303607510,
+    2303607523,
+    2303607530
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "一燈園資料館「香倉院」",
+    "source": "Bing",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "way",
+  "id": 222769384,
+  "center": {
+    "lat": 34.9554077,
+    "lon": 135.7664352
+  },
+  "nodes": [
+    2315903670,
+    2317055476,
+    2317055474,
+    2317055432,
+    2317055418,
+    2317055202,
+    2315903361,
+    2315903670
+  ],
+  "tags": {
+    "name": "京都市青少年科学センター",
+    "tourism": "museum",
+    "wikidata": "Q30266176",
+    "wikipedia": "ja:京都市青少年科学センター"
+  }
+},
+{
+  "type": "way",
+  "id": 222769387,
+  "center": {
+    "lat": 34.9554307,
+    "lon": 135.7664302
+  },
+  "nodes": [
+    2317055423,
+    2317055438,
+    2317055440,
+    2317055444,
+    2317055446,
+    2317055467,
+    2317055468,
+    2317055469,
+    2317055464,
+    2317055463,
+    2317055460,
+    2317055459,
+    2317055458,
+    2317055453,
+    2317055450,
+    2317055449,
+    2317055447,
+    2317055445,
+    2317055448,
+    2317055441,
+    2317055439,
+    2317055424,
+    2317055425,
+    2317055428,
+    2317055427,
+    2317055443,
+    2317055442,
+    2317055457,
+    2317055456,
+    2317055451,
+    2317055452,
+    2317055421,
+    2317055420,
+    2317055409,
+    2317055408,
+    2317055401,
+    2317055400,
+    2317055392,
+    2317055391,
+    2317055360,
+    2317055361,
+    2317055342,
+    2317055343,
+    2317055359,
+    2317055358,
+    2317055365,
+    2317055364,
+    2317055301,
+    2317055300,
+    2317055295,
+    2317055297,
+    2317055316,
+    2317055313,
+    2317055314,
+    2317055319,
+    2317055325,
+    2317055333,
+    2317055339,
+    2317055345,
+    2317055347,
+    2317055350,
+    2317055353,
+    2317055354,
+    2317055352,
+    2317055349,
+    2317055346,
+    2317055344,
+    2317055341,
+    2317055338,
+    2317055330,
+    2317055329,
+    2317055334,
+    2317055335,
+    2317055369,
+    2317055371,
+    2317055389,
+    2317055388,
+    2317055379,
+    2317055377,
+    2317055376,
+    2317055372,
+    2317055367,
+    2317055363,
+    2317055366,
+    2317055370,
+    2317055373,
+    2317055374,
+    2317055382,
+    2317055383,
+    2317055394,
+    2317055411,
+    2317055414,
+    2317055415,
+    2317055416,
+    2317055417,
+    2317055412,
+    2317055413,
+    2317055430,
+    2317055429,
+    2317055422,
+    2317055423
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "青少年科学センター",
+    "source": "Bing",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "way",
+  "id": 222769394,
+  "center": {
+    "lat": 34.9559956,
+    "lon": 135.7661511
+  },
+  "nodes": [
+    2317055473,
+    2317055472,
+    2317055467,
+    2317055446,
+    2317055434,
+    2317055435,
+    2317055473
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "京エコロジーセンター",
+    "source": "Bing",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "way",
+  "id": 257933558,
+  "center": {
+    "lat": 34.9953004,
+    "lon": 135.7411387
+  },
+  "nodes": [
+    2633764891,
+    2633764894,
+    12014786264,
+    12014786265,
+    2633764834,
+    2633764832,
+    12014786266,
+    12014786267,
+    2633764891
+  ],
+  "tags": {
+    "building": "yes",
+    "building:levels": "9",
+    "name": "京の食文化ミュージアムあじわい館",
+    "tourism": "museum",
+    "website": "https://www.kyo-ajiwaikan.com/",
+    "wheelchair": "yes"
+  }
+},
+{
+  "type": "way",
+  "id": 258953632,
+  "center": {
+    "lat": 34.9957604,
+    "lon": 135.7445740
+  },
+  "nodes": [
+    2642578891,
+    2642578890,
+    2642578881,
+    2642578882,
+    2642578891
+  ],
+  "tags": {
+    "addr:city": "下京区 (Shimogyo Ward)",
+    "addr:housenumber": "8",
+    "addr:street": "坊城通",
+    "building": "yes",
+    "name": "新選組記念館",
+    "source": "GSI/KIBAN 2500;NARO",
+    "source_ref": "http://wiki.osm.org/wiki/GSI_KIBAN",
+    "tourism": "museum",
+    "website": "http://kanko.city.kyoto.lg.jp/detail.php?InforKindCode=1&ManageCode=5000148"
+  }
+},
+{
+  "type": "way",
+  "id": 259136406,
+  "center": {
+    "lat": 34.9923277,
+    "lon": 135.7431649
+  },
+  "nodes": [
+    2644788996,
+    2644788997,
+    2644788995,
+    2644788994,
+    2644788985,
+    2644788987,
+    2644788993,
+    2644788992,
+    2644788983,
+    2644788984,
+    2644788979,
+    2644788978,
+    2644788947,
+    2644788945,
+    2644788948,
+    2644788949,
+    2644788964,
+    2644788963,
+    2644788951,
+    2644788952,
+    2644788954,
+    2644788953,
+    2644788958,
+    2644788959,
+    2644788960,
+    2644788962,
+    2644788956,
+    2644788957,
+    2644788965,
+    2644788967,
+    2644788968,
+    2644788969,
+    2644788976,
+    2644788975,
+    2644788970,
+    2644788972,
+    2644788974,
+    2644788973,
+    2644788982,
+    2644788980,
+    2644788991,
+    2644788990,
+    2644788988,
+    2644788989,
+    2644788996
+  ],
+  "tags": {
+    "addr:housenumber": "32",
+    "addr:street": "京都市下京区西新屋敷揚屋町",
+    "building": "yes",
+    "building:levels": "2",
+    "name": "角屋もてなしの文化美術館",
+    "opening_hours": "Tu-Su 10:00-16:00",
+    "source": "GSI/KIBAN 2500; NARO",
+    "source_ref": "http://wiki.osm.org/wiki/GSI_KIBAN",
+    "tourism": "museum",
+    "wikidata": "Q11630696",
+    "wikipedia": "ja:角屋"
+  }
+},
+{
+  "type": "way",
+  "id": 275176319,
+  "center": {
+    "lat": 35.0035249,
+    "lon": 135.7766055
+  },
+  "nodes": [
+    2798339397,
+    4612016718,
+    4612016714,
+    2798339395,
+    4612016726,
+    4612016725,
+    2798339397
+  ],
+  "tags": {
+    "building": "yes",
+    "building:levels": "3",
+    "contact:facebook": "https://www.facebook.com/kanjimuseum.kyoto/",
+    "contact:website": "https://www.kanjimuseum.kyoto/",
+    "name": "漢検 漢字博物館・図書館 漢字ミュージアム",
+    "tourism": "museum",
+    "wikidata": "Q53737773",
+    "wikipedia": "fr:Musée des kanjis"
+  }
+},
+{
+  "type": "way",
+  "id": 290375264,
+  "center": {
+    "lat": 34.9864950,
+    "lon": 135.7427119
+  },
+  "nodes": [
+    2939131937,
+    5357889776,
+    10831310487,
+    4156658767,
+    4156658768,
+    4156658769,
+    4156658770,
+    4156658771,
+    2939131938,
+    2939131942,
+    4156658772,
+    4156658773,
+    4156658774,
+    4156658775,
+    2939131943,
+    4156658776,
+    4156658777,
+    4156658778,
+    4156658779,
+    4156658780,
+    4156658781,
+    4156658782,
+    4156658783,
+    4156658784,
+    4156658785,
+    2939131948,
+    2939131949,
+    2939131950,
+    2939131939,
+    10831368469,
+    3740823981,
+    10831368488,
+    2939131940,
+    2939131941,
+    2939131937
+  ],
+  "tags": {
+    "addr:city": "京都市",
+    "addr:postcode": "600-8835",
+    "addr:province": "京都府",
+    "addr:quarter": "観喜寺町",
+    "addr:suburb": "下京区",
+    "charge:adult": "1500 JPY",
+    "charge:child": "300 JPY",
+    "charge:student": "1300 JPY;500 JPY",
+    "contact:facebook": "kyototeppaku.umekoji",
+    "contact:instagram": "kyotorailway_museum",
+    "contact:tripadvisor": "10251298",
+    "contact:twitter": "KyotoUmetetsu",
+    "contact:website": "https://www.kyotorailwaymuseum.jp/",
+    "fee": "yes",
+    "museum": "railway",
+    "name": "京都鉄道博物館",
+    "name:en": "Kyoto Railway Museum",
+    "name:fr": "Musée ferroviaire de Kyoto",
+    "name:ja-Hira": "きょうとてつどうはくぶつかん",
+    "name:ja-Latn": "Kyōto Tetsudō Hakubutsukan",
+    "name:ko": "교토철도박물관",
+    "name:zh": "京都鐵道博物館",
+    "name:zh-Hans": "京都铁道博物馆",
+    "opening_hours": "Th-Tu 10:00-16:30; We off; Dec 30-Jan 01 off",
+    "operator": "交通文化振興財団",
+    "operator:wikidata": "Q11374008",
+    "start_date": "2016-04-29",
+    "tourism": "museum",
+    "wheelchair": "yes",
+    "wikidata": "Q24014029",
+    "wikimedia_commons": "Category:Kyoto Railway Museum",
+    "wikipedia": "ja:京都鉄道博物館"
+  }
+},
+{
+  "type": "way",
+  "id": 291548873,
+  "center": {
+    "lat": 35.0129566,
+    "lon": 135.7933336
+  },
+  "nodes": [
+    2950159688,
+    2964269227,
+    2950159686,
+    2964269221,
+    2950159677,
+    2950159675,
+    2950159673,
+    2950159674,
+    2950159672,
+    2950159676,
+    2950159680,
+    2950159679,
+    2950159687,
+    2950159685,
+    2950159688
+  ],
+  "tags": {
+    "building": "yes",
+    "museum": "art",
+    "name": "野村美術館",
+    "name:en": "Nomura Art Museum",
+    "name:fr": "Nomura Art Museum",
+    "name:ja": "野村美術館",
+    "name:ja-Hira": "のむらびじゅつかん",
+    "name:ja_rm": "Nomura Bijutsukan",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年 国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "website": "https://nomura-museum.or.jp/",
+    "wikidata": "Q11645680",
+    "wikipedia": "ja:野村美術館"
+  }
+},
+{
+  "type": "way",
+  "id": 292364258,
+  "center": {
+    "lat": 35.0099628,
+    "lon": 135.7813522
+  },
+  "nodes": [
+    2959198352,
+    2959198349,
+    2959198212,
+    2959198214,
+    2959198197,
+    2959198198,
+    2959198223,
+    2959198224,
+    2959198352
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "並河靖之七宝記念館",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年　国土交通省",
+    "source": "Survey;GSI/KIBAN 2500;NARO;Survey",
+    "source_ref": "http://wiki.osm.org/wiki/GSI_KIBAN",
+    "tourism": "museum",
+    "wikidata": "Q18337620"
+  }
+},
+{
+  "type": "way",
+  "id": 302283151,
+  "center": {
+    "lat": 35.0128571,
+    "lon": 135.7835481
+  },
+  "nodes": [
+    2373104468,
+    1160539796,
+    1160539707,
+    1160540067,
+    3065367807,
+    3065367810,
+    3065367811,
+    3065367812,
+    3065367813,
+    3065367814,
+    3065367808,
+    1160539531,
+    2905066552,
+    2905066541,
+    1160540014,
+    1160539920,
+    4318255913,
+    4318255900,
+    1160539816,
+    4318255893,
+    1160539618,
+    4318255834,
+    4318255818,
+    4318255817,
+    4318255815,
+    4318255814,
+    4318255833,
+    1160539509,
+    1160539415,
+    1160539296,
+    2373104461,
+    11311341532,
+    2373104468
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "京都市美術館",
+    "name:de": "Städtisches Kunstmuseum",
+    "name:en": "Kyoto Municipal Museum of Art",
+    "source": "KSJ2",
+    "tourism": "museum",
+    "website": "http://www.city.kyoto.jp/bunshi/kmma/",
+    "wikidata": "Q3330657",
+    "wikipedia": "ja:京都市美術館"
+  }
+},
+{
+  "type": "way",
+  "id": 314446153,
+  "center": {
+    "lat": 35.0116781,
+    "lon": 135.7591763
+  },
+  "nodes": [
+    3204940349,
+    3204940350,
+    3204940351,
+    3204940352,
+    3204940353,
+    3204940354,
+    3204940349
+  ],
+  "tags": {
+    "addr:city": "京都市",
+    "addr:neighbourhood": "452",
+    "addr:postcode": "604-0846",
+    "addr:quarter": "金吹町",
+    "addr:suburb": "中京区",
+    "charge:adult": "1200 JPY",
+    "charge:child": "400 JPY;200 JPY",
+    "contact:fax": "+81 75-254-7424",
+    "contact:instagram": "kyotomm1125",
+    "contact:phone": "+81 75-254-7414",
+    "contact:tripadvisor": "1490962",
+    "contact:twitter": "kyotomm",
+    "contact:website": "https://www.kyotomm.jp/",
+    "contact:youtube": "UC8Tdwn5Mt2it6QAv5U8rrbA",
+    "fee": "yes",
+    "museum": "art",
+    "name": "京都国際マンガミュージアム",
+    "name:de": "Internationales Manga-Museum Kyoto",
+    "name:en": "Kyoto International Manga Museum",
+    "name:fr": "Musée international du manga de Kyōto",
+    "name:ja-Hira": "きょうとこくさいマンガミュージアム",
+    "name:ja-Latn": "Kyōto kusai manga myūjiamu",
+    "opening_hours": "Th-Mo 10:00-17:00; We off",
+    "operator": "京都精華大学",
+    "operator:wikidata": "Q858343",
+    "start_date": "2006-11-25",
+    "tourism": "museum",
+    "wheelchair": "yes",
+    "wikidata": "Q783923",
+    "wikimedia_commons": "Category:Kyoto International Manga Museum",
+    "wikipedia": "ja:京都国際マンガミュージアム"
+  }
+},
+{
+  "type": "way",
+  "id": 319185032,
+  "center": {
+    "lat": 35.0137878,
+    "lon": 135.6761857
+  },
+  "nodes": [
+    3255952375,
+    3255952380,
+    3255952330,
+    3255952328,
+    3255952375
+  ],
+  "tags": {
+    "architect": "安田幸一",
+    "architect:wikidata": "Q11451039",
+    "building": "public",
+    "building:levels": "2",
+    "charge:adult": "1400 JPY",
+    "charge:child": "800 JPY;400 JPY",
+    "contact:email": "info@fukuda-art-museum.jp",
+    "contact:facebook": "fukudaartmuseum",
+    "contact:fax": "+81 75-863-0607",
+    "contact:instagram": "fukuda_art_museum",
+    "contact:phone": "+81 75-863-0606",
+    "contact:tripadvisor": "16955333",
+    "contact:twitter": "ArtFukuda",
+    "contact:website": "https://fukuda-art-museum.jp",
+    "contact:youtube": "UCeWN3vK9d9MrQioNTBSKoTw",
+    "fee": "yes",
+    "museum": "art",
+    "name": "福田美術館",
+    "name:en": "Fukuda Art Museum",
+    "name:etymology": "福田吉孝",
+    "name:etymology:wikidata": "Q8056280",
+    "name:fr": "Musée d'art Fukuda",
+    "name:ja-Hira": "ふくだびじゅつかん",
+    "name:ja-Latn": "Fukuda-bijutsukan",
+    "opening_hours": "Mo-Su 10:00-17:00",
+    "roof:orientation": "along",
+    "roof:shape": "gabled",
+    "source_ref": "http://wiki.osm.org/wiki/GSI_KIBAN",
+    "start_date": "2019-10-01",
+    "tourism": "museum",
+    "wikidata": "Q102045484",
+    "wikimedia_commons": "Category:Fukuda Art Museum",
+    "wikipedia": "ja:福田美術館"
+  }
+},
+{
+  "type": "way",
+  "id": 319185081,
+  "center": {
+    "lat": 35.0137042,
+    "lon": 135.6737952
+  },
+  "nodes": [
+    3255952360,
+    3255952349,
+    3255951239,
+    3255951244,
+    3255952360
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "嵯峨嵐山文華館",
+    "name:en": "Saga Arashiyama Museum of Arts and Culture",
+    "name:ja": "嵯峨嵐山文華館",
+    "operator": "小倉百人一首文化財団",
+    "operator:type": "ngo",
+    "source": "GSI/KIBAN 2500;NARO",
+    "source_ref": "http://wiki.osm.org/wiki/GSI_KIBAN",
+    "tourism": "museum",
+    "website": "https://www.www.samac.jp/",
+    "wikidata": "Q60987195",
+    "wikipedia": "ja:嵯峨嵐山文華館"
+  }
+},
+{
+  "type": "way",
+  "id": 328903218,
+  "center": {
+    "lat": 35.0034854,
+    "lon": 135.7783870
+  },
+  "nodes": [
+    3357255553,
+    3357255601,
+    4612016311,
+    4612016308,
+    4612016306,
+    4612016310,
+    3357255609,
+    683277453,
+    3357255349,
+    3357255358,
+    3357255273,
+    5551939420,
+    3357255263,
+    5551939419,
+    3357251682,
+    10696154628,
+    10696154630,
+    10696154627,
+    3357251683,
+    4612016363,
+    4612016362,
+    3357255363,
+    4612016351,
+    3357255372,
+    3357255491,
+    3357255553
+  ],
+  "tags": {
+    "amenity": "place_of_worship",
+    "contact:facebook": "kyotogionyasakasan",
+    "contact:fax": "+81 75-531-1126",
+    "contact:instagram": "kyotogionyasaka",
+    "contact:phone": "+81 75-561-6155",
+    "contact:tripadvisor": "1174912",
+    "contact:website": "https://www.yasaka-jinja.or.jp/",
+    "contact:youtube": "UCvd9mAIrz7_QZXwL_8dZHwQ",
+    "fee": "no",
+    "landuse": "religious",
+    "name": "八坂神社",
+    "name:en": "Yasaka Shrine",
+    "name:fr": "Sanctuaire de Yasaka",
+    "name:ja-Hira": "やさかじんじゃ",
+    "name:ja-Latn": "Yasaka-jinja",
+    "name:ko": "아사카 신사",
+    "name:zh": "八坂神社",
+    "old_name": "祇園神社;祇園社;祇園感神院",
+    "old_name:ja-Hira": "ぎおんじんじゃ;ぎおんしゃ;ぎおんかんしんいん",
+    "old_name:ja-Latn": "Gion-jinja;Gion-sha;Gion Kanshin-in",
+    "opening_hours": "24/7",
+    "religion": "shinto",
+    "start_date": "656",
+    "wheelchair": "yes",
+    "wikidata": "Q692714",
+    "wikimedia_commons": "Category:Yasaka-jinja (Kyoto)",
+    "wikipedia": "ja:八坂神社"
+  }
+},
+{
+  "type": "way",
+  "id": 334329723,
+  "center": {
+    "lat": 34.9617760,
+    "lon": 135.7050825
+  },
+  "nodes": [
+    3414413557,
+    3414413556,
+    3414413545,
+    3414413546,
+    3414413557
+  ],
+  "tags": {
+    "building": "yes",
+    "building:levels": "3",
+    "name": "cocochi",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "way",
+  "id": 336641107,
+  "center": {
+    "lat": 34.9944239,
+    "lon": 135.7844825
+  },
+  "nodes": [
+    3436872909,
+    3436872908,
+    3436872906,
+    3436872912,
+    5468698278,
+    5468698277,
+    5468683806,
+    5368055203,
+    5368055200,
+    3436872910,
+    3436872902,
+    3436872897,
+    4085879510,
+    13288438552,
+    3436872192,
+    669266678,
+    5457281944,
+    5457176314,
+    5457281632,
+    3436872190,
+    5457281634,
+    5457281679,
+    3436872191,
+    3436872893,
+    3436872894,
+    3436872895,
+    3436872896,
+    2328071377,
+    3436872898,
+    5505895887,
+    5505895886,
+    5505895827,
+    3464136469,
+    3464136468,
+    5505895837,
+    3436872900,
+    3436872899,
+    3436872909
+  ],
+  "tags": {
+    "alt_name:fr": "Temple de l'eau pure",
+    "amenity": "place_of_worship",
+    "charge": "500 JPY",
+    "charge:disabled": "0 JPY",
+    "contact:facebook": "Kiyomizudera.Kyoto",
+    "contact:instagram": "feel_kiyomizudera",
+    "contact:phone": "+81-75-551-1234",
+    "contact:tripadvisor": "https://www.tripadvisor.com/Attraction_Review-g298564-d321401-Reviews-Kiyomizu_dera_Temple-Kyoto_Kyoto_Prefecture_Kinki.html",
+    "contact:website": "https://www.kiyomizudera.or.jp/",
+    "contact:youtube": "https://www.youtube.com/channel/UCBFW3Al5zoKJOVJaLcDUL9Q",
+    "denomination": "yogacara",
+    "denomination:ja": "北法相宗",
+    "fee": "yes",
+    "heritage": "1",
+    "heritage:operator": "whc",
+    "historic": "yes",
+    "landuse": "religious",
+    "name": "清水寺",
+    "name:cs": "Chrám Kijomizu-dera",
+    "name:de": "Kiyomizu-dera",
+    "name:en": "Kiyomizu-dera",
+    "name:es": "Kiyomizu-dera",
+    "name:fr": "Temple Kiyomizu",
+    "name:ja-Hira": "きよみずでら",
+    "name:ja-Latn": "Kiyomizu-dera",
+    "name:ko": "기요미즈데라",
+    "name:ru": "Киёмидзу-дэра",
+    "name:th": "วัดน้ำใส",
+    "name:zh": "清水寺",
+    "opening_hours": "Mo-Su 06:00-18:00",
+    "ref:whc": "688-004",
+    "religion": "buddhist",
+    "source": "Bing, 2007-12",
+    "tourism": "attraction",
+    "whc:criteria": "(ii),(iv)",
+    "whc:inscription_date": "1994",
+    "wheelchair": "yes",
+    "wikidata": "Q221716",
+    "wikimedia_commons": "Category:Kiyomizu-dera",
+    "wikipedia": "ja:清水寺"
+  }
+},
+{
+  "type": "way",
+  "id": 352013907,
+  "center": {
+    "lat": 35.0116224,
+    "lon": 135.7926827
+  },
+  "nodes": [
+    3577967255,
+    4754152976,
+    3577967256,
+    3577967257,
+    4754152977,
+    4754152982,
+    4754152983,
+    4754152984,
+    4754152985,
+    3577967258,
+    4754152986,
+    6497096575,
+    6497096576,
+    4754152937,
+    3577967260,
+    6497096574,
+    6497096573,
+    11449741879,
+    11449741878,
+    6497096572,
+    6497096571,
+    4754152938,
+    6497096570,
+    4754152939,
+    6497096568,
+    6497096569,
+    11449741871,
+    10651047306,
+    4754152963,
+    10689396595,
+    4754152964,
+    4754152966,
+    4754152965,
+    3577967261,
+    4754152974,
+    4754152975,
+    4754152973,
+    4754152972,
+    4754152970,
+    4754152971,
+    4754152978,
+    3577967255
+  ],
+  "tags": {
+    "alt_name:en": "Southern Zen Temple",
+    "alt_name:fr": "Temple Zen du Sud",
+    "amenity": "place_of_worship",
+    "contact:facebook": "KyotoNanzenji",
+    "contact:instagram": "daihonzan_nanzenji",
+    "contact:phone": "+81-75-771-0365",
+    "contact:tripadvisor": "321091",
+    "contact:twitter": "nanzenji_kyoto",
+    "contact:website": "http://nanzenji.com/",
+    "denomination": "rinzai",
+    "name": "南禅寺",
+    "name:en": "Nanzen-ji",
+    "name:es": "Nanzen-ji",
+    "name:fr": "Temple Nanzen",
+    "name:ja-Hira": "なんぜんじ",
+    "name:ja-Latn": "Nanzen-ji",
+    "opening_hours": "Mar-Nov Mo-Su 08:40-17:00; Dec-Feb Mo-Su 08:40-16:30; Dec 28-Dec 31 off",
+    "religion": "buddhist",
+    "start_date": "1291",
+    "wikidata": "Q1089767",
+    "wikimedia_commons": "Category:Nanzenji",
+    "wikipedia": "ja:南禅寺"
+  }
+},
+{
+  "type": "way",
+  "id": 352042994,
+  "center": {
+    "lat": 35.0092219,
+    "lon": 135.7622478
+  },
+  "nodes": [
+    3578195209,
+    3578195210,
+    3578195214,
+    4711890777,
+    3578195212,
+    3578195211,
+    3578195209
+  ],
+  "tags": {
+    "name": "京都府京都文化博物館",
+    "name:en": "The Museum of Kyoto",
+    "tourism": "museum",
+    "wikidata": "Q11375592"
+  }
+},
+{
+  "type": "way",
+  "id": 356602541,
+  "center": {
+    "lat": 35.0000874,
+    "lon": 135.7755156
+  },
+  "nodes": [
+    5297602883,
+    3620200615,
+    3620200616,
+    5297602881,
+    5297602880,
+    5297602882,
+    3620200625,
+    4769052051,
+    4769052053,
+    3620200629,
+    3620200628,
+    5297602890,
+    5297602883
+  ],
+  "tags": {
+    "building": "yes",
+    "fee": "yes",
+    "name": "井伊美術館",
+    "name:en": "Ii Clan Museum (Armor Museum)",
+    "name:ja": "井伊美術館",
+    "name:ja-Latn": "Ii Bijitsukan",
+    "old_name": "中村甲刀修史館 (Nakamura Kofu Sword Museum)",
+    "source": "survey",
+    "tourism": "museum",
+    "website": "https://www.ii-museum.jp/"
+  }
+},
+{
+  "type": "way",
+  "id": 357067732,
+  "center": {
+    "lat": 35.0649532,
+    "lon": 135.8297017
+  },
+  "nodes": [
+    3624434579,
+    3624475071,
+    3624475075,
+    3624475074,
+    3624475059,
+    3624475049,
+    3624475041,
+    3624475032,
+    3624475034,
+    3624475029,
+    3624475028,
+    3624475025,
+    3624475022,
+    3624475018,
+    3624475013,
+    3624475019,
+    3624475016,
+    3624475009,
+    3624474998,
+    3624474999,
+    3624474995,
+    3624474993,
+    3624474994,
+    3624474996,
+    3624474997,
+    3624475000,
+    3624475001,
+    3624475002,
+    3624475003,
+    3624475004,
+    3624475006,
+    3624475005,
+    3624475007,
+    3624475008,
+    3624475010,
+    3624475011,
+    3624475012,
+    3624475014,
+    3624475015,
+    3624475017,
+    3624475020,
+    3624475023,
+    3624475024,
+    3624434503,
+    3624434505,
+    3624434515,
+    3624434531,
+    3624434552,
+    3624434570,
+    3624434577,
+    3624434581,
+    3624434583,
+    3624434587,
+    3624434589,
+    3624434591,
+    3624434590,
+    3624434588,
+    3624434582,
+    3624434579
+  ],
+  "tags": {
+    "contact:facebook": "https://www.facebook.com/gmhiei2001/",
+    "contact:instagram": "https://www.instagram.com/gardenmuseum_gardener/",
+    "contact:twitter": "https://twitter.com/garden_museum",
+    "fee": "yes",
+    "name": "ガーデン ミュージアム 比叡",
+    "name:en": "Garden Museum Hiei",
+    "name:ja": "ガーデン ミュージアム 比叡",
+    "opening_hours": "10:00-17:30; Dec 7-Apr 17 off",
+    "tourism": "museum",
+    "website": "https://gmhiei.jp/"
+  }
+},
+{
+  "type": "way",
+  "id": 359896810,
+  "center": {
+    "lat": 34.9811890,
+    "lon": 135.7477100
+  },
+  "nodes": [
+    3645258254,
+    3679070163,
+    3645258255,
+    3677609304,
+    3645258252,
+    3677532890,
+    3677532887,
+    3645258253,
+    3645258251,
+    3677215034,
+    3645258250,
+    3645258249,
+    3645258248,
+    3645258247,
+    3645258246,
+    3645258245,
+    3645258244,
+    3645258243,
+    3682587438,
+    4609417572,
+    3645258241,
+    3645258242,
+    3679070155,
+    3645258254
+  ],
+  "tags": {
+    "addr:full": "京都市南区九条町1番地",
+    "amenity": "place_of_worship",
+    "charge:adult": "500 JPY",
+    "charge:child": "400 JPY;300 JPY",
+    "contact:fax": "+81 75-662-0250",
+    "contact:phone": "+81 75-691-3325",
+    "contact:tripadvisor": "1310392",
+    "contact:website": "https://toji.or.jp/",
+    "denomination": "shingon_shu",
+    "denomination:ja": "真言宗",
+    "fee": "yes",
+    "heritage": "1",
+    "heritage:operator": "whc",
+    "historic": "heritage",
+    "landuse": "religious",
+    "name": "東寺",
+    "name:en": "East Temple",
+    "name:fr": "Temple de l'Est",
+    "name:ja-Hira": "とうじ",
+    "name:ja-Latn": "Tō-ji",
+    "name:lzh": "東寺",
+    "name:pl": "Świątynia Wschodnia",
+    "name:ru": "Тодзи",
+    "name:zh": "东寺",
+    "name:zh-Hans": "东寺",
+    "name:zh-Hant": "東寺",
+    "official_name": "教王護国寺",
+    "official_name:en": "Kyōōgokoku-ji",
+    "official_name:ja-Hira": "きょうおうごこくじ",
+    "official_name:ja-Latn": "Kyō-ō-gokoku-ji",
+    "official_name:ru": "Кёогококу-дзи",
+    "opening_hours": "Mo-Su 05:00-17:00",
+    "ref:whc": "688-003",
+    "religion": "buddhist",
+    "source": "Bing",
+    "start_date": "796",
+    "whc:criteria": "(ii),(iv)",
+    "whc:inscription_date": "1994",
+    "wheelchair": "limited",
+    "wikidata": "Q1046403",
+    "wikimedia_commons": "Category:Toji",
+    "wikipedia": "ja:東寺"
+  }
+},
+{
+  "type": "way",
+  "id": 377440460,
+  "center": {
+    "lat": 34.9892575,
+    "lon": 135.7793719
+  },
+  "nodes": [
+    5017505223,
+    5017504219,
+    4995022480,
+    4889031986,
+    3808100058,
+    4535341789,
+    4535341792,
+    4535341791,
+    4535341790,
+    3808100057,
+    4995022481,
+    4995022482,
+    5332772725,
+    5332772723,
+    5332772722,
+    5332772724,
+    3808096755,
+    5332770411,
+    5332770410,
+    5332770408,
+    5332770409,
+    5332770412,
+    4995022470,
+    5332772729,
+    4995022471,
+    5332772730,
+    5017505222,
+    5332772728,
+    5332772731,
+    5332772727,
+    4995022477,
+    5332772726,
+    5017505223
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "錦華殿",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "way",
+  "id": 390069718,
+  "center": {
+    "lat": 34.9509637,
+    "lon": 135.8193246
+  },
+  "nodes": [
+    3932236719,
+    3932236718,
+    3932236716,
+    3932236653,
+    3932236658,
+    3932236719
+  ],
+  "tags": {
+    "building": "musuem",
+    "name": "霊宝館",
+    "name:en": "Treasure Hall",
+    "name:fr": "Pavillon du Trésor",
+    "name:ja-Hira": "れいほうかん",
+    "name:ja-Latn": "Reihō-kan",
+    "note": "National-Land Numerical Information (Public Facility) 2006, MLIT Japan",
+    "note:ja": "国土数値情報（公共施設データ）平成19年 国土交通省",
+    "source": "KSJ2",
+    "source_ref": "http://nlftp.mlit.go.jp/ksj/jpgis/datalist/KsjTmplt-P02-v2_0.html",
+    "tourism": "museum",
+    "wikidata": "Q133289013"
+  }
+},
+{
+  "type": "way",
+  "id": 485674597,
+  "center": {
+    "lat": 35.0080365,
+    "lon": 135.7601072
+  },
+  "nodes": [
+    4784479211,
+    11771319769,
+    4784479210,
+    4784479209,
+    5312937046,
+    5312937050,
+    5312937048,
+    5312937049,
+    5318548231,
+    5318548230,
+    5312937047,
+    5318548228,
+    5318548229,
+    11771319770,
+    4784479211
+  ],
+  "tags": {
+    "addr:block_number": "595",
+    "addr:city": "京都市",
+    "addr:postcode": "604-8161",
+    "addr:province": "京都府",
+    "addr:quarter": "饅頭屋町",
+    "addr:suburb": "中京区",
+    "building": "public",
+    "building:levels": "13",
+    "contact:website": "https://www.ikenobo.jp/rokkakudo/highlight/ikebana.html",
+    "fee": "no",
+    "museum": "art",
+    "name": "いけばな資料館",
+    "name:en": "Ikebana Museum",
+    "name:fr": "Musée de l'Ikebana",
+    "name:ja-Hira": "いけばな しりょうかん",
+    "name:ja-Latn": "Ikebana-shiryōkan",
+    "opening_hours": "Mo-Fr 09:00-16:00; Sa-Su off; PH off",
+    "operator": "華道家元池坊",
+    "operator:type": "council",
+    "source": "Bing",
+    "tourism": "museum",
+    "wikidata": "Q132529351"
+  }
+},
+{
+  "type": "way",
+  "id": 547434224,
+  "center": {
+    "lat": 34.9935687,
+    "lon": 135.7743837
+  },
+  "nodes": [
+    5289634846,
+    5289634845,
+    5289634844,
+    5289634843,
+    5289634846
+  ],
+  "tags": {
+    "alt_name:en": "Kawai Kanjirō's House",
+    "alt_name:fr": "Maison de Kanjirō Kawai",
+    "building": "house",
+    "building:levels": "2",
+    "charge:adult": "900 JPY",
+    "charge:child": "300 JPY;500 JPY",
+    "fee": "yes",
+    "name": "河井寛次郎記念館",
+    "name:en": "Kanjirō Kawai Memorial Museum",
+    "name:fr": "Musée commémoratif Kanjirō Kawai",
+    "name:ja-Hira": "かわい かんじろう きねんかん",
+    "name:ja-Latn": "Kawai Kanjirō kinen-kan",
+    "opening_hours": "Mo off; Tu-Su 10:00-17:00; Aug 10-20, Dec 24-Jan 07 off",
+    "start_date": "1973-02-01",
+    "subject:wikidata": "Q6379524",
+    "subject:wikipedia": "ja:河井寛次郎",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "way",
+  "id": 550360162,
+  "center": {
+    "lat": 34.9974031,
+    "lon": 135.7813222
+  },
+  "nodes": [
+    5315778286,
+    5315778285,
+    5315778289,
+    5315778288,
+    5315778287,
+    5315778286
+  ],
+  "tags": {
+    "name": "清水三年坂美術館",
+    "opening_hours": "Tu-Su 10:00-16:30",
+    "payment:coins": "yes",
+    "payment:notes": "yes",
+    "tourism": "museum",
+    "wikidata": "Q17213428"
+  }
+},
+{
+  "type": "way",
+  "id": 551634923,
+  "center": {
+    "lat": 35.0507816,
+    "lon": 135.7654529
+  },
+  "nodes": [
+    5327211909,
+    5327211895,
+    5327211894,
+    5327211852,
+    5327211887,
+    5327211893,
+    5327211859,
+    5327211892,
+    5327211908,
+    5327211888,
+    5327211907,
+    12457209931,
+    5327211906,
+    5327211905,
+    5327211904,
+    5327211903,
+    5327211899,
+    5327211898,
+    5327211890,
+    5327211891,
+    5327211889,
+    5327211897,
+    5327211896,
+    5327211902,
+    5327211901,
+    5327211900,
+    5327211909
+  ],
+  "tags": {
+    "architect": "安藤忠雄",
+    "architect:wikidata": "Q208220",
+    "building": "public",
+    "building:levels": "0",
+    "building:levels:underground": "2",
+    "charge:adult": "100 JPY",
+    "charge:child": "0 JPY",
+    "contact:fax": "+81 75-724-2189",
+    "contact:phone": "+81 75-724-2188",
+    "contact:tripadvisor": "545979",
+    "contact:website": "http://kyoto-toban-hp.or.jp/",
+    "fee": "yes",
+    "material": "concrete",
+    "name": "京都府立陶板名画の庭",
+    "name:en": "Garden of Fine Arts Kyoto",
+    "name:fr": "Jardin des beaux-arts de Kyoto",
+    "name:ja-Hira": "きょうとふりつとうばんめいがのにわ",
+    "name:ja-Latn": "Kyōto-fu ritsu tōban meiga no niwa",
+    "opening_hours": "Mo-Su 09:00-17:00; Dec 28-Jan 04 off",
+    "source": "bing",
+    "start_date": "1994-03",
+    "tourism": "museum",
+    "wikidata": "Q11375286",
+    "wikipedia": "ja:京都府立陶板名画の庭"
+  }
+},
+{
+  "type": "way",
+  "id": 554879249,
+  "center": {
+    "lat": 35.0252650,
+    "lon": 135.7623489
+  },
+  "nodes": [
+    4000585628,
+    5554739834,
+    1150297569,
+    1150297776,
+    5554739858,
+    5554739857,
+    4000585623,
+    5554739855,
+    5354595722,
+    5354594019,
+    5554739853,
+    5354595723,
+    5354595728,
+    1150298502,
+    5354595725,
+    5354595724,
+    5354593978,
+    5354593982,
+    1150298155,
+    5354593979,
+    5354593977,
+    4000585614,
+    5554739842,
+    5354593989,
+    1150297836,
+    5354593986,
+    5554739841,
+    4000585634,
+    4000585635,
+    4000585636,
+    5554739837,
+    1150297709,
+    5554739824,
+    1150298668,
+    5554739836,
+    4000585628
+  ],
+  "tags": {
+    "addr:city": "上京区",
+    "addr:county": "京都市",
+    "addr:full": "京都府京都市上京区京都御苑3",
+    "addr:housenumber": "3",
+    "addr:postcode": "602-0881",
+    "addr:province": "京都府",
+    "addr:quarter": "京都御苑",
+    "alt_name:zh": "皇宫",
+    "castle_type": "palace",
+    "contact:phone": "+81 75 211 1215",
+    "contact:tripadvisor": "321088",
+    "contact:website": "https://sankan.kunaicho.go.jp/",
+    "fee": "yes",
+    "historic": "castle",
+    "name": "京都御所",
+    "name:de": "Kaiserpalast Kioto",
+    "name:en": "Kyoto Imperial Palace",
+    "name:fr": "Palais impérial de Kyōto",
+    "name:it": "Palazzo Imperiale di Kyoto",
+    "name:ja-Hira": "きょうとごしょ",
+    "name:ja-Latn": "Kyōto-gosho",
+    "name:pl": "Pałac Cesarski",
+    "name:ru": "Императорский дворец",
+    "name:zh": "京都御所",
+    "opening_hours": "Mo-Su 09:00-21:00",
+    "operator": "宮内庁",
+    "operator:wikidata": "Q1143602",
+    "reservation": "yes",
+    "start_date": "1337",
+    "wikidata": "Q1202239",
+    "wikimedia_commons": "Category:Kyoto Imperial Palace",
+    "wikipedia": "ja:京都御所"
+  }
+},
+{
+  "type": "way",
+  "id": 569708632,
+  "center": {
+    "lat": 34.9910474,
+    "lon": 135.7535029
+  },
+  "nodes": [
+    5478459552,
+    5478459549,
+    5478459550,
+    11510395484,
+    11510395483,
+    5478459551,
+    11510395487,
+    11510395488,
+    11510395489,
+    11510395490,
+    11510395494,
+    11510395493,
+    11510395492,
+    11510395491,
+    11510395486,
+    11510395485,
+    11510395481,
+    11510395482,
+    5478459552
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "龍谷ミュージアム",
+    "name:en": "Ryukoku Museum",
+    "name:ja": "龍谷ミュージアム",
+    "tourism": "museum",
+    "wikidata": "Q30933052",
+    "wikipedia": "ja:龍谷ミュージアム"
+  }
+},
+{
+  "type": "way",
+  "id": 579761964,
+  "center": {
+    "lat": 35.0101665,
+    "lon": 135.7537349
+  },
+  "nodes": [
+    5551752794,
+    5551752793,
+    5551752792,
+    5551752791,
+    5551752794
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "Kyoto Shibori Museum",
+    "tourism": "museum",
+    "wikidata": "Q132529270"
+  }
+},
+{
+  "type": "way",
+  "id": 606502878,
+  "center": {
+    "lat": 35.0270970,
+    "lon": 135.7354488
+  },
+  "nodes": [
+    5750316661,
+    5750316660,
+    12135246485,
+    5750316656,
+    12135246481,
+    12135246479,
+    12135246478,
+    12135246480,
+    5750316655,
+    12135246484,
+    5750316659,
+    5750316658,
+    12135246482,
+    5750316664,
+    5750316665,
+    12135246483,
+    5750316661
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "京都 佛立ミュージアム",
+    "tourism": "museum",
+    "wikidata": "Q22118562",
+    "wikipedia": "ja:京都佛立ミュージアム"
+  }
+},
+{
+  "type": "way",
+  "id": 619903245,
+  "center": {
+    "lat": 35.0161710,
+    "lon": 135.7828996
+  },
+  "nodes": [
+    5857478893,
+    5857478892,
+    5857478891,
+    5857478890,
+    5857478889,
+    5857478888,
+    5857478887,
+    5857478886,
+    5857478885,
+    10748226204,
+    10748234905,
+    10748234906,
+    10748234909,
+    10748234907,
+    5857469580,
+    5857469579,
+    251121302,
+    5857478893
+  ],
+  "tags": {
+    "addr:city": "京都市",
+    "addr:country": "JP",
+    "addr:postcode": "606-8341",
+    "addr:province": "京都府",
+    "addr:quarter": "岡崎西天王町",
+    "addr:suburb": "左京区",
+    "amenity": "place_of_worship",
+    "architect": "伊東忠太;木子清敬",
+    "architect:wikidata": "Q1050457;Q11518290",
+    "contact:email": "info@heianjingu.or.jp",
+    "contact:fax": "+81 75 761 0225",
+    "contact:instagram": "heianjingu_official",
+    "contact:phone": "+81 75 761 0221",
+    "contact:tripadvisor": "1386117",
+    "contact:twitter": "kyotoheianjingu",
+    "contact:website": "https://www.heianjingu.or.jp/",
+    "contact:whatsapp": "https://www.city.kyoto.lg.jp/kensetu/page/0000082743.html",
+    "contact:youtube": "UCJ05kJz8XF_30RrY0-dVsnw",
+    "denomination": "shinto",
+    "fee": "no",
+    "heritage": "2",
+    "heritage:operator": "文部科学省",
+    "heritage:type": "重要文化財",
+    "heritage:wikidata": "Q858308",
+    "name": "平安神宮",
+    "name:de": "Heian-Schrein",
+    "name:en": "Heian Shrine",
+    "name:fr": "Sanctuaire Heian",
+    "name:ja-Hira": "へいあんじんぐう",
+    "name:ja-Latn": "Heian-jingū",
+    "name:ko": "헤이안 신궁",
+    "name:ms": "Heian Jingū",
+    "name:pt": "Heian Jingū",
+    "name:ru": "Храм Хэйан",
+    "name:th": "ศาลเจ้าเฮอัง",
+    "name:zh": "平安神宮",
+    "opening_hours": "Mar 15-Sep 30 Mo-Su 06:00-18:00; Oct 01-Oct 31 Mo-Su 06:00-17:30; Nov 01-Feb 14 Mo-Su 06:00-17:00; Feb 15-Mar 14 Mo-Su 06:00-17:30",
+    "religion": "shinto",
+    "start_date": "1895-03-15",
+    "wikidata": "Q385141",
+    "wikimedia_commons": "Category:Heian Shrine",
+    "wikipedia": "ja:平安神宮"
+  }
+},
+{
+  "type": "way",
+  "id": 851443537,
+  "center": {
+    "lat": 35.0090535,
+    "lon": 135.7593299
+  },
+  "nodes": [
+    7941584477,
+    7941584460,
+    7941584471,
+    7941586087,
+    7941584477
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "京都伝統工芸館",
+    "tourism": "museum",
+    "wikidata": "Q123124492"
+  }
+},
+{
+  "type": "way",
+  "id": 964977716,
+  "center": {
+    "lat": 35.0205297,
+    "lon": 135.6707980
+  },
+  "nodes": [
+    8926854787,
+    8926854786,
+    8926854785,
+    8926854784,
+    8926854787
+  ],
+  "tags": {
+    "fee": "yes",
+    "name": "落柿舎",
+    "name:en": "Rakushisha",
+    "name:fr": "Rakushisha",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "way",
+  "id": 1148963711,
+  "center": {
+    "lat": 35.0134331,
+    "lon": 135.7830456
+  },
+  "nodes": [
+    10689217541,
+    10689217542,
+    10689217540,
+    10689217541
+  ],
+  "tags": {
+    "building": "yes",
+    "name": "ザ・トライアングル",
+    "tourism": "museum"
+  }
+},
+{
+  "type": "relation",
+  "id": 5333011,
+  "center": {
+    "lat": 34.9875558,
+    "lon": 135.7593285
+  },
+  "members": [
+    {
+      "type": "way",
+      "ref": 238943686,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 238943692,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 238943693,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 238943689,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 238943687,
+      "role": ""
+    },
+    {
+      "type": "node",
+      "ref": 1494857741,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 238943691,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 238943690,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 238943688,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "architect": "山田守",
+    "architect:wikidata": "Q11470304",
+    "building": "yes",
+    "building:colour": "white",
+    "charge:adult": "900 JPY",
+    "charge:child": "700 JPY;600 JPY;200 JPY",
+    "contact:facebook": "kyototower",
+    "contact:instagram": "kyototowerhotel_official",
+    "contact:phone": "+81 75-361-3215",
+    "contact:tripadvisor": "548249",
+    "contact:twitter": "kyototower_1228",
+    "contact:website": "https://www.keihanhotels-resorts.co.jp/kyoto-tower/",
+    "contact:youtube": "UC34sHC8-z4Ec3u3cy9GZn6g",
+    "fee": "yes",
+    "height": "46.6",
+    "man_made": "tower",
+    "min_height": "38",
+    "name": "京都タワー",
+    "name:en": "Kyoto Tower",
+    "name:fr": "Tour de Kyoto",
+    "name:ja": "京都タワー",
+    "name:ja-Hira": "きょうとタワー",
+    "name:ja-Latn": "Kyōto-tawā",
+    "name:ja_rm": "Kyōto-tawā",
+    "name:ko": "교토 타워",
+    "opening_hours": "Mo-Su 10:00-21:00",
+    "payment:alipay": "yes",
+    "payment:apple_pay": "yes",
+    "payment:au_pay": "yes",
+    "payment:dc_card": "yes",
+    "payment:google_pay": "yes",
+    "payment:jcb": "yes",
+    "payment:line_pay": "yes",
+    "payment:mastercard": "yes",
+    "payment:mufg_card": "yes",
+    "payment:nicos": "yes",
+    "payment:paypay": "yes",
+    "payment:rakuten_pay": "yes",
+    "payment:ufj_card": "yes",
+    "payment:unionpay": "yes",
+    "payment:visa": "yes",
+    "payment:wechat": "yes",
+    "roof:colour": "white",
+    "roof:shape": "flat",
+    "start_date": "1964-12-28",
+    "tourism": "attraction",
+    "tower:construction": "freestanding",
+    "tower:type": "observation",
+    "type": "site",
+    "wikidata": "Q1201304",
+    "wikimedia_commons": "Category:Kyoto Tower",
+    "wikipedia": "ja:京都タワー"
+  }
+},
+{
+  "type": "relation",
+  "id": 5539480,
+  "center": {
+    "lat": 35.0293027,
+    "lon": 135.7145861
+  },
+  "members": [
+    {
+      "type": "way",
+      "ref": 372535164,
+      "role": "inner"
+    },
+    {
+      "type": "way",
+      "ref": 188840029,
+      "role": "outer"
+    }
+  ],
+  "tags": {
+    "building": "public",
+    "charge:adult": "500 JPY",
+    "charge:child": "0 JPY",
+    "contact:website": "https://ninnaji.jp/reiho/",
+    "fee": "yes",
+    "name": "霊宝館",
+    "name:en": "Treasure Hall",
+    "name:fr": "Pavillon du Trésor",
+    "name:ja-Hira": "れいほうかん",
+    "name:ja-Latn": "Reihō-kan",
+    "tourism": "museum",
+    "type": "multipolygon",
+    "wikidata": "Q133288972",
+    "wikimedia_commons": "Category:Reihō-kan, Ninnaji"
+  }
+},
+{
+  "type": "relation",
+  "id": 10579843,
+  "center": {
+    "lat": 35.0278857,
+    "lon": 135.7212229
+  },
+  "members": [
+    {
+      "type": "node",
+      "ref": 7126885961,
+      "role": ""
+    },
+    {
+      "type": "node",
+      "ref": 335664991,
+      "role": ""
+    },
+    {
+      "type": "node",
+      "ref": 7126885962,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 407472656,
+      "role": ""
+    },
+    {
+      "type": "way",
+      "ref": 407472657,
+      "role": ""
+    }
+  ],
+  "tags": {
+    "name": "龍安寺",
+    "public_transport": "stop_area",
+    "type": "public_transport"
+  }
+},
+{
+  "type": "relation",
+  "id": 11958599,
+  "center": {
+    "lat": 34.9802865,
+    "lon": 135.7525789
+  },
+  "members": [
+    {
+      "type": "node",
+      "ref": 4426733135,
+      "role": ""
+    },
+    {
+      "type": "node",
+      "ref": 8175882768,
+      "role": "stop"
+    },
+    {
+      "type": "node",
+      "ref": 8175882769,
+      "role": "stop"
+    },
+    {
+      "type": "way",
+      "ref": 1098310210,
+      "role": "platform"
+    },
+    {
+      "type": "way",
+      "ref": 1098310211,
+      "role": "platform"
+    }
+  ],
+  "tags": {
+    "name": "東寺",
+    "name:en": "Toji",
+    "name:ja": "東寺",
+    "public_transport": "stop_area",
+    "ref": "B02",
+    "type": "public_transport"
+  }
+}
+
+  ]
+}
