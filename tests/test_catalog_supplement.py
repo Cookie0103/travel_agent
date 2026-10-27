@@ -38,7 +38,7 @@ def test_curated_matcha_entries_match_raw_sources_and_preserve_unknowns() -> Non
     assert search(rows, ContentSearchInput(city="京都", query="抹茶")) == [rows[1]]
     assert search([rows[0]], PlaceSearchInput(city="京都", query="都路里"))
     assert not search([rows[0]], PlaceSearchInput(city="京都", query="抹茶"))
-    assert len(load_snapshot()) == 166
+    assert len(load_snapshot()) == 428
 
 
 @pytest.mark.parametrize("filename", ["osm.json", "wikivoyage.json", "catalog.json"])

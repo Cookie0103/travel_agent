@@ -1,5 +1,5 @@
 {
-  "snapshot": "kyoto-2026-10-03",
+  "snapshot": "japan-cities-2026-10-27",
   "files": {
     "osm.json": {
       "url": "https://overpass.private.coffee/api/interpreter?data=%5Bout%3Ajson%5D%5Btimeout%3A25%5D%3B%28nwr%5B%22tourism%22%3D%22museum%22%5D%5B%22name%22%5D%2834.95%2C135.65%2C35.07%2C135.84%29%3Bnwr%5B%22name%22~%22%5E%28%E6%B8%85%E6%B0%B4%E5%AF%BA%7C%E9%87%91%E9%96%A3%E5%AF%BA%7C%E9%8A%80%E9%96%A3%E5%AF%BA%7C%E4%BA%8C%E6%9D%A1%E5%9F%8E%7C%E4%BC%8F%E8%A6%8B%E7%A8%B2%E8%8D%B7%E5%A4%A7%E7%A4%BE%7C%E4%B8%89%E5%8D%81%E4%B8%89%E9%96%93%E5%A0%82%7C%E5%B9%B3%E5%AE%89%E7%A5%9E%E5%AE%AE%7C%E5%8D%97%E7%A6%85%E5%AF%BA%7C%E5%85%AB%E5%9D%82%E7%A5%9E%E7%A4%BE%7C%E6%9D%B1%E5%AF%BA%7C%E9%BE%8D%E5%AE%89%E5%AF%BA%7C%E4%BA%AC%E9%83%BD%E3%82%BF%E3%83%AF%E3%83%BC%7C%E4%BA%AC%E9%83%BD%E5%BE%A1%E6%89%80%29%24%22%5D%2834.95%2C135.65%2C35.07%2C135.84%29%3B%29%3Bout+body+center%3B",
@@ -11,6 +11,71 @@
       "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E4%BA%AC%E9%83%BD&format=json&formatversion=2",
       "retrieved_at": "2026-10-03T05:49:48.775287+00:00",
       "sha256": "7b3c002168894b1f45f97adeb85f2f9a495ea908239ef0a02f3530decc811ffe"
+    },
+    "wikivoyage-tokyo.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E6%9D%B1%E4%BA%AC&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:53:58.427720+00:00",
+      "sha256": "31ed9fee3d6d0eb036aab1789b41debe9e4f54bd8b6570ed31f55de524b17c71"
+    },
+    "wikivoyage-osaka.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E5%A4%A7%E9%98%AA&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:54:00.582298+00:00",
+      "sha256": "d25d6aed42d2a4c74b80e5fedf17f81f6689963d0db7e092bbf174d6d9dbee91"
+    },
+    "wikivoyage-nara.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E5%A5%88%E8%89%AF&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:54:02.763656+00:00",
+      "sha256": "f65ca9605a01efe85c1c35ae367917f6d6ee7ea459259e5ef58e82beeff45452"
+    },
+    "wikivoyage-kobe.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E7%A5%9E%E6%88%B6&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:54:04.839376+00:00",
+      "sha256": "515d34763df75531214963692fb26ac30a91dd79cfee44e98aac72a5dd6b13aa"
+    },
+    "wikivoyage-sapporo.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E6%9C%AD%E5%B9%8C&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:54:06.987541+00:00",
+      "sha256": "ccb86b9fe42cf1e341f4af98ba348e6400005b1c8a517cf9e6c1a45be531a84a"
+    },
+    "wikivoyage-nagoya.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E5%90%8D%E5%8F%A4%E5%B1%8B&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:54:09.100528+00:00",
+      "sha256": "cb946df9d3cfae9829595275c694b00d39509bbe6b410f8f26aea96271bcbd66"
+    },
+    "wikivoyage-kanazawa.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E9%87%91%E6%B3%BD&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:54:11.339520+00:00",
+      "sha256": "c09f380fd01047e9883ada3633533e07b0b39cd92196766b8aa623cd98b94131"
+    },
+    "wikivoyage-hakone.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E7%AE%B1%E6%A0%B9&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:54:13.946879+00:00",
+      "sha256": "0754fa07671faa1db232c6f4d12a75dec7034c8e335dc172b4a880f810fce5ec"
+    },
+    "wikivoyage-kamakura.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E9%95%B0%E4%BB%93&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:54:16.013113+00:00",
+      "sha256": "ac3038db929ae33dd8285aca11ab7a3465ac656968fde801431ece0f031f20bc"
+    },
+    "wikivoyage-hiroshima.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E5%BB%A3%E5%B3%B6&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:54:18.909621+00:00",
+      "sha256": "1ef8ff8f4dccaed00747917f17ad3c62f4f6fa4af6af9b3945e0e3b2bdc9d561"
+    },
+    "wikivoyage-fukuoka.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E7%A6%8F%E5%B2%A1&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:54:21.746034+00:00",
+      "sha256": "3520660e56e5610086213a47a34408f43d52c5dd297bf654a3c74b5b9e1104bd"
+    },
+    "wikivoyage-nagasaki.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E9%95%B7%E5%B4%8E&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:54:23.843855+00:00",
+      "sha256": "dde0983b66dbb3bca60431b202aca00eb6dfde865fd3f024c35363cdb6e5ae61"
+    },
+    "wikivoyage-naha.json": {
+      "url": "https://zh.wikivoyage.org/w/api.php?action=query&prop=extracts%7Crevisions&explaintext=1&rvprop=ids%7Ctimestamp&titles=%E9%82%A3%E9%9C%B8&format=json&formatversion=2",
+      "retrieved_at": "2026-10-27T11:54:26.155436+00:00",
+      "sha256": "0f4805d56f82439c8dc51ba7209aae4fc0695d40174549e012b725421123c97e"
     }
   }
 }
