@@ -92,7 +92,10 @@ def test_actual_sdk_advertises_variant_and_keeps_trip_and_preferences_unchanged(
         sdk_tool_name(d.name) for d in evaluation_definitions(variant, database=True)
     }
     system = json.dumps(requests[0]["system"])
-    assert ("private-preference-marker" in system) is (
+    messages = json.dumps(requests[0]["messages"], ensure_ascii=False)
+    # 偏好随<server_state>放在用户消息前，system只留稳定规则以命中prompt cache。
+    assert "private-preference-marker" not in system
+    assert ("private-preference-marker" in messages) is (
         variant not in {"no_tools", "no_preferences", "baseline_b2"}
     )
     if variant == "no_tools":
