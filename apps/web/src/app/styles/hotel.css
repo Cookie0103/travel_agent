@@ -22,7 +22,7 @@
     grid-auto-columns: clamp(
       min(272px, 85vw),
       calc((100% - 2 * var(--space-4)) / 3),
-      340px
+      360px
     );
     /* media / details / price / actions — shared rows keep prices aligned. */
     grid-template-rows: auto auto auto auto;
@@ -45,7 +45,7 @@
     grid-auto-columns: clamp(
       min(256px, 85vw),
       calc((100% - 2 * var(--space-3)) / 3),
-      320px
+      360px
     );
     gap: var(--space-3);
   }
