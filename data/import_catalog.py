@@ -1,4 +1,4 @@
-"""将固定的Wikivoyage/OSM公开快照验证、切段并幂等导入；运行时不联网。"""
+"""将固定的Wikivoyage(多城市)/OSM公开快照验证、切段并幂等导入；运行时不联网。"""
 
 import argparse
 import asyncio
@@ -47,7 +47,9 @@ class WikiSnapshot(BaseModel):
     revision: int = Field(validation_alias=AliasPath("query", "pages", 0, "revisions", 0, "revid"))
 
 
-def _source(file: SnapshotFile, provider: str, ref: str, version: str) -> Source:
+def _source(
+    file: SnapshotFile, provider: str, ref: str, version: str, page: str = "京都"
+) -> Source:
     osm = provider == "osm"
     return Source(
         provider="osm" if osm else "wikivoyage",
@@ -60,7 +62,7 @@ def _source(file: SnapshotFile, provider: str, ref: str, version: str) -> Source
         else "https://creativecommons.org/licenses/by-sa/4.0/",
         attribution="© OpenStreetMap contributors"
         if osm
-        else "Wikivoyage contributors（京都条目，作者见来源页历史）",
+        else f"Wikivoyage contributors（{page}条目，作者见来源页历史）",
     )
 
 
@@ -124,6 +126,7 @@ def articles(raw: str, file: SnapshotFile) -> list[Article]:
         "wikivoyage",
         f"https://zh.wikivoyage.org/w/index.php?oldid={snapshot.revision}",
         str(snapshot.revision),
+        snapshot.title,
     )
     result: list[Article] = []
     section = "概览"
@@ -140,6 +143,7 @@ def articles(raw: str, file: SnapshotFile) -> list[Article]:
         result.append(
             Article(
                 article_id=f"wv:{snapshot.revision}:{digest}",
+                city=snapshot.title,
                 title=f"{snapshot.title} · {section}",
                 text=text,
                 source=source,
@@ -153,9 +157,9 @@ def articles(raw: str, file: SnapshotFile) -> list[Article]:
 def load_snapshot(folder: Path = SNAPSHOT) -> list[Place | Article]:
     manifest = Manifest.model_validate_json((folder / "manifest.json").read_text(encoding="utf-8"))
     raw: dict[str, str] = {}
-    names = ("osm.json", "wikivoyage.json") + (
-        (manifest.catalog_file,) if manifest.catalog_file else ()
-    )
+    # 其他城市各占一个wikivoyage-<城市>.json，结构与京都原文件相同，按manifest顺序导入。
+    pages = ("wikivoyage.json", *(n for n in manifest.files if n.startswith("wikivoyage-")))
+    names = ("osm.json", *pages) + ((manifest.catalog_file,) if manifest.catalog_file else ())
     for name in names:
         content = (folder / name).read_bytes()
         file = manifest.files.get(name)
@@ -172,7 +176,7 @@ def load_snapshot(folder: Path = SNAPSHOT) -> list[Place | Article]:
         return entries
     return [
         *places(raw["osm.json"], manifest.files["osm.json"]),
-        *articles(raw["wikivoyage.json"], manifest.files["wikivoyage.json"]),
+        *(article for name in pages for article in articles(raw[name], manifest.files[name])),
     ]
 
 

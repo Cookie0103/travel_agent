@@ -7,7 +7,7 @@
 **核心 Demo 已通过最终代码的本地验证，可运行网页工作台、旅行工具和模拟预订。** 默认离线演示使用固定脚本与真实 PostgreSQL；真实模式使用 Claude Agent SDK，已有 DeepSeek 真实工具/规划证据。任意需求的完整规划效果、剩余研究对照和人工校准仍未完成；免费演示不能当模型能力证明。
 当前批次与验收见 [计划索引](docs/plans/README.md)；未完成的研究评测不阻塞工程交付。历史记录从 [文档目录](docs/README.md) 进入，恢复记录见 [执行计划](docs/archive/execution/travel-agent.md)。
 
-CLI默认仍用人工 fixtures。数据库已导入 [Wikivoyage](https://en.wikivoyage.org/)（CC BY-SA 4.0）20段攻略与 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）146个地点对象；快照有历史和缺失信息，不能当实时事实。酒店与预订均为模拟。
+CLI默认仍用人工 fixtures。数据库已导入 [中文Wikivoyage](https://zh.wikivoyage.org/)（CC BY-SA 4.0）14个日本城市的282段攻略与 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）146个京都地点对象；快照有历史和缺失信息，不能当实时事实。酒店与预订均为模拟。
 
 ## 运行最小查询
 

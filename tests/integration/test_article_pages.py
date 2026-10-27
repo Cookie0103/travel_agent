@@ -46,7 +46,8 @@ def test_public_article_list_detail_preserve_source_and_create_no_private_state(
         before = client.portal.call(seed_and_counts, True)
         result = client.get("/articles")
         assert result.status_code == 200
-        assert len(result.json()) == len(expected) == 20
+        assert len(result.json()) == len(expected) == 282
+        assert len({row["city"] for row in result.json()}) == 14
         for row in result.json():
             article = Article.model_validate(row)
             assert article == expected[article.article_id]
