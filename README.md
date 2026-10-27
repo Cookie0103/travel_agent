@@ -1,148 +1,98 @@
 # 旅行规划 Agent
 
-从攻略出发，通过对话比较酒店、生成并修改京都 2–3 天行程，确认后模拟预订。模型负责理解需求和编排工具，后端负责事实校验、约束检查和失败恢复。
+面向日本旅行的对话式规划助手：用户用聊天描述需求，Agent 比较乐天酒店、查询 Google 景点/路线和天气，生成一份经过校验的行程草稿，用户在页面确认后保存。确认过的偏好会跨会话记住。
 
-目标技术栈：Python / FastAPI / PostgreSQL / Next.js；Claude Agent SDK 负责 runtime，自写旅行 tools 与业务规则；DeepSeek 兼容线路与 Claude 原生线路分别验证；MCP；OpenTelemetry + Langfuse。
+**在线演示：** <https://web-production-0aaac.up.railway.app>　（Railway 部署：web / api / 模拟供应商 / PostgreSQL）
 
-**核心 Demo 已通过最终代码的本地验证，可运行网页工作台、旅行工具和模拟预订。** 默认离线演示使用固定脚本与真实 PostgreSQL；真实模式使用 Claude Agent SDK，已有 DeepSeek 真实工具/规划证据。任意需求的完整规划效果、剩余研究对照和人工校准仍未完成；免费演示不能当模型能力证明。
-当前批次与验收见 [计划索引](docs/plans/README.md)；未完成的研究评测不阻塞工程交付。历史记录从 [文档目录](docs/README.md) 进入，恢复记录见 [执行计划](docs/archive/execution/travel-agent.md)。
+**设计原则：模型负责理解需求和编排工具；事实、金额、时间、归属、版本和任何副作用，都由确定性代码裁决。**
 
-CLI默认仍用人工 fixtures。数据库已导入 [Wikivoyage](https://en.wikivoyage.org/)（CC BY-SA 4.0）20段攻略与 [OpenStreetMap](https://www.openstreetmap.org/copyright)（© OpenStreetMap contributors, ODbL）146个地点对象；快照有历史和缺失信息，不能当实时事实。酒店与预订均为模拟。
+## 解决什么问题
 
-## 运行最小查询
+规划一次日本旅行要在酒店、景点营业时间、交通耗时和预算之间反复权衡，改一处常常牵动全局。通用聊天模型能给建议，但会编造价格和营业时间，也不保证行程可执行。这个项目让模型负责“对话和调度”，让后端负责“可信和可执行”。
 
-```text
-uv run python -m backend.cli "京都有哪些室内景点？"
+## 架构
+
+```mermaid
+flowchart LR
+    U[Next.js 工作台] -->|消息| API[FastAPI]
+    API --> RS[RunService<br/>去重 / 事务 / 事件]
+    RS --> G[预算与限额守卫]
+    G --> W[隔离的 Claude Agent SDK worker]
+    W -->|MCP| TE[工具执行器<br/>校验 / 并发控制 / 限次]
+    TE --> SV[业务服务]
+    SV --> PG[(PostgreSQL<br/>业务事实唯一来源)]
+    SV --> EX[乐天 / Google / Open-Meteo]
+    U -->|用户点确认| API -->|独立事务| SV
+    RS -->|已提交事件| SSE[SSE 进度流] --> U
 ```
 
-默认不联网、不产生模型费用。完成授权且 .env 配好后，才使用真实模式：
+- **模型可用 18 个工具**（查景点、比价、估路线、校验行程等），但没有“保存行程”或“下单”工具；保存只能由用户在页面点确认，走独立的 API 和数据库事务。
+- **模型只传 ID**，价格、名称和来源由服务端按 ID 填入，模型无法编造报价。
+- **旅行条件每轮从数据库重读**（带版本号），不依赖聊天记录；过期报价或旧版本的确认会被拒绝。
+- **生成 → 校验 → 修复**：行程由纯代码校验（35+ 检查项：营业时间、路线间隔、预算、重复景点等）。冲突先由服务端做有界修复（最多 12 步，冲突数必须严格下降），修不掉再交还模型，轮数有上限。
+- **服务端驱动交互**：条件齐全后由服务端发确认卡，而不是让模型自己决定怎么追问。
+- **长期记忆**：后台抽取器只能提议，必须引用用户原话，用户点选才生效；只有 4 类偏好可长期保存。
+- **Prompt 缓存**：system 只放稳定规则，每轮业务状态放在用户消息前，以提高前缀缓存命中率。
+- **攻略库**：14 个日本城市、282 段中文 Wikivoyage 攻略（CC BY-SA 4.0，固定修订版本），供页面浏览和 Agent 检索引用。
 
-```text
-uv run --env-file .env python -m backend.cli --live "京都有哪些室内景点？"
-```
+技术栈：Python 3.12 / FastAPI / PostgreSQL / SQLAlchemy + Alembic / Next.js 16 + React 19 / Claude Agent SDK（DeepSeek 兼容线路）/ MCP / OpenTelemetry + Langfuse / GitHub Actions / Railway
 
-真实模式遵守最新授权：DeepSeek 每日最多15 CNY，同时取`.env`更低日预算，无累计金额/次数上限；每run HTTP/工具/修复次数仍有限。其他计费线路未授权。旧 CLI 暂拒绝 @/行首斜杠输入，避免文件展开。
+## 质量、权限与监控
 
-每次查询默认保存本地 OTel Trace：离线在 `.cache/traces/`，真实模式在私有 `.cache/sessions/`。
-配置 Langfuse 的 BASE_URL、PUBLIC_KEY、SECRET_KEY 后，可显式追加 `--trace-cloud` 导出摘要；不上传完整对话或工具结果。当前Japan项目已实际通过认证/上传/读回核对，已登录Chrome页面显示也通过核验；见[真实接入证据](docs/evidence/m05-langfuse-cloud-2026-10-04.json)。
-网页/API也支持：`uv run --env-file .env python -m backend.server --trace-cloud`。该开关只上传观测摘要，不启用真实模型；默认仍离线。OpenTelemetry无需独立API key，Langfuse的三项配置来自你自己的项目。云导出失败保留本地Trace和已提交业务结果，详细说明见[观测配置](docs/blocked/langfuse.md)。
-
-## 目录放什么
-
-下表是各目录的职责。
-
-| 目录 | 用途 |
+| 方面 | 做法 |
 | --- | --- |
-| apps/web | 前端页面：聊天、酒店卡片、行程展示和确认按钮 |
-| backend | 整个后端：HTTP 接口、Agent、工具、业务规则、模型连接和数据库访问 |
-| data | 景点和攻略数据文件、测试样本、导入程序；数据库表定义和读写放 backend/persistence |
-| scripts | 开发辅助命令：安装环境、检查代码、启动测试、下载参考代码 |
-| tests| 自动测试代码；scripts/dev.py 只是帮你启动这些测试 |
-| mock_supplier | 模拟酒店供应商：正常查询/下单，以及超时、重复请求等故障 |
-| eval | 评测 Agent 工具选择和结果，保存改编用例；私有运行结果在.cache/eval |
-| docs | 实际工作的说明、报告和操作日志 |
-| docs/plans | 批次计划、每日进展与问题记录（设计见 docs/design） |
-| vendor | 下载的上游参考代码，不属于我们实现的业务代码，也不提交到 Git |
+| **端到端评测** | 自建 30 道多轮任务（主流程、澄清、中途变更、9 种故障注入、越界、对抗、长期记忆），调用真实 DeepSeek / 乐天 / Google，每题跑 3 次。成败由代码检查数据库终态和工具轨迹，不靠模型自评 |
+| **权限** | API 密钥只在父进程；SDK 子进程只拿本地回环令牌，按白名单继承环境变量。工具输入经 schema 校验，外部文本加围栏，防止注入扩权 |
+| **成本与限额** | 每次模型请求先预占预算再结算；每次运行限制工具次数、轮数、HTTP 次数和超时；外部 API 有单次和每日配额 |
+| **失败处理** | 429 / 超时 / 5xx 只在调用所属的那一层重试一次，失败如实报告真实尝试次数。模拟预订带幂等键，响应丢失进入 `unknown` 状态并先对账，不盲目重发 |
+| **监控** | OpenTelemetry 记录每次运行、工具调用和模型请求；评测结果以数值分数推送 Langfuse（不上传对话正文）；Railway 上输出单行 TRACE 日志 |
+| **工程** | ~2,470 条自动化测试（含真实 PostgreSQL 集成测试）、11 条分层导入契约、3 个 CI job；main 只能通过 PR 合入，Railway 等 CI 通过后才自动部署 |
 
-backend 中只有 api 负责 HTTP；agent 负责旅行上下文与执行策略，providers 接 Claude Agent SDK 承担循环，domain 放业务对象和规则，persistence 放数据库访问。见 [后端目录说明](backend/README.md)。
+## 结果
 
-## 根目录的配置为什么保留
+在自建的 30 题评测集上（DeepSeek flash，90 次真实运行，2026-10-20）：
 
-- pyproject.toml、uv.lock、.python-version：Python 版本、依赖和检查规则。
-- .pre-commit-config.yaml：提交前检查的配置，工具默认从根目录读取；它不是报告。
-- .gitignore、.gitattributes：Git 忽略规则和文本换行方式。
-- .env.example：本地配置的空模板；docker-compose.yml：启动数据库的配置。
-- AGENTS.md：AI 在本仓库的执行规则；LICENSE：仓库许可。
+| 指标 | 结果 |
+| --- | --- |
+| 任务成功率 | **96.7%**（87/90） |
+| 稳定通过率（同一题 3 次全过） | **93.3%**（28/30） |
+| 长期记忆 / 工具故障恢复 / 越界与对抗 | 18/18、15/15、15/15 |
+| 单轮耗时 | 中位 8.0 秒，p95 32.9 秒 |
+| 单次运行成本 | 中位 ¥0.15，p95 ¥0.96 |
 
-点开头的本地目录可以隐藏，但不是都可以删除：.git 保存版本历史；本机 .cache/python 装有 Python，.venv 引用了它。隐藏不会影响运行。
+需要说明的是：首轮原始成绩为 84.4% / 80%，修复评测脚本自身的问题并收紧判定后，重跑部分题目得到上表。这是系统（模型 + 服务端）在自建题集上的完成度，没有留出集，也不代表模型的通用能力。
 
-## 现在能运行的开发命令
+## 失败如何变成防护
 
-使用 uv 与 Python 3.12，在项目根目录运行（PowerShell / macOS / Linux 通用）：
+- **模型谎称“请在卡片里确认”，但卡片其实没发出。** → 改为条件齐全时由服务端一定发卡，并把卡片状态（已发 / 待提交 / 无）返回给模型，模型只能据此描述。
+- **评测判定过松，把只有 1 个景点的“完整行程”判为成功。** → 补上“草稿无冲突”和“每个完整游玩日至少 2 个景点”的硬检查。之后每道题都会反问一句：如果 Agent 什么都没做对，这道题会失败吗？
+- **一个本应离线的测试意外发起了真实付费调用。** → 在 pytest 环境下一律拒绝 `--live`，不再依赖“缺参数就会报错”这种隐含前提。
+- **DeepSeek 偶发调用不存在的工具名。** → 守卫直接终止本轮，宁可让用户多发一句话，也不放宽这条安全边界。
 
-```text
-uv run python scripts/dev.py setup
-uv run python scripts/dev.py check
-uv run python scripts/dev.py test
-uv run python scripts/fetch_upstream.py
-```
+## 已知不足
 
-这些命令用于开发准备，不是启动旅行助手。setup 按 uv.lock 安装依赖并安装本地提交钩子；每次提交执行同一套 check 与离线 test。
-默认测试排除 live，不需要 API key。SDK 接入证据见 docs/protocols/protocol-agent-sdk.md。
-`dev eval-dev` 跑30条历史用例并输出规则分；默认固定工具脚本，分数不代表模型能力。真实基线需显式 `--live`，入口及结果说明见 [eval](eval/README.md)。
+- 局部修改已有草稿不稳定（“只改第二天下午”只有 1/3 成功），规划完整度也有波动。
+- 酒店预订是模拟的：线上只提供乐天链接，幂等和对账只针对模拟供应商。
+- 只验证了 DeepSeek 线路，Claude 原生线路没有做真实验证。
+- 2026-10-26 的优化（prompt 缓存、只读工具并发、skill 拆分、异步记忆抽取）已通过离线测试，但还没有重跑真实评测。
 
-本机的 Python 3.12 已装入被忽略的 .cache/python，.venv 已绑定该解释器。
-普通新环境由 uv 根据 .python-version 准备解释器；不要把本机 .venv 复制到其他电脑。
-uv 缓存放 .cache/uv；dev 脚本统一设置 UTF-8 与子进程缓存，不要求手工设置 shell 环境变量。
-dev test 每次使用新的 .cache/pytest-runs/run-* 保存临时文件和缓存，避免终端与 AI 沙箱共用无权限的 pytest 目录；不需要先激活虚拟环境。M1 起集成测试需要下述项目 PostgreSQL，测试自动创建和清理本次专用随机库，不清空开发库。
+## 本地运行
 
-## 工作台启动
+需要 [uv](https://docs.astral.sh/uv/) 和 Docker Desktop。离线演示不需要任何 API key：
 
-在项目PostgreSQL已启动/迁移/导入快照后，分别运行`uv run python scripts/dev.py api`与`uv run python scripts/dev.py web`，打开http://127.0.0.1:3000。首次需`dev web-setup`安装前端依赖；完整命令见[工作台说明](apps/web/README.md)。默认免费离线演示，真实模式必须显式启用并通过预算。
-
-也可以使用独立容器演示，需 uv 和已启动的 Docker Desktop：
-
-```text
-uv run python scripts/dev.py stack-up
-uv run python scripts/dev.py stack-status
-uv run python -m scripts.smoke_demo
+```bash
+uv run python scripts/dev.py stack-up      # 构建并启动 API / 供应商 / PostgreSQL / 前端
+uv run python -m scripts.smoke_demo        # 跑一遍端到端烟测
+# 打开 http://127.0.0.1:3100
 uv run python scripts/dev.py stack-down
 ```
 
-打开 http://127.0.0.1:3100，创建演示会话、保存条件，再比较酒店或生成行程。专用 API/供应商/PG 端口为8100/8101/5544，均仅本机；与原开发数据库隔离。首次构建需下载锁定依赖；自动迁移/导入快照。停止保留演示数据，再次启动后可运行 `uv run python -m scripts.smoke_demo --verify` 只读检查上次烟测结果。
-专用密码在忽略的.cache/demo.env生成，不需要配置模型key；镜像没有启用真实模型或安装Claude CLI。当前容器用于离线业务演示，真实SDK走已核定宿主入口与原预算账本。不要删除专用密码后继续复用原卷。Langfuse沿用Cloud方案，真实上传/读回已验，宿主API显式启用；容器默认不传密钥，浏览器UI已验证。详见[容器交付记录](docs/review/M4.md)。
+开发环境、真实模型配置和预算设置见 [开发与运行手册](docs/guides/development.md)。
 
-## 模型预算配置
+## 延伸阅读
 
-在本地 .env 配置密钥与预算；.env.example 只保留空变量名，不填写真实密钥。
-现有 Messages 探针通过 DEEPSEEK_MODEL 明确选择模型，当前支持 deepseek-flash 或 deepseek-v4-pro；这次最小实测选 deepseek-flash。换模型时按该模型人民币单价计费，未知模型拒绝调用，不会偷偷使用默认模型或 claude-* 映射。
+- [架构与效果复盘](docs/review/architecture-retrospective.md)：设计取舍、详细结果和教训
+- [代码架构地图](ARCHITECTURE.md) · [系统白话讲解](docs/guides/system-walkthrough.md) · [架构决策记录](docs/adr/)
+- [评测结果与方法](docs/proposals/eval-redesign/results-2026-10-20.md)
 
-| 配置 | 用途 | 单位 |
-| --- | --- | --- |
-| DAILY_BUDGET_CNY | DeepSeek 每日预算 | 人民币元 |
-| DAILY_BUDGET_USD | Anthropic每日预算；当前无美元调用授权 | 美元 |
-
-两条线路独立记账，不自动换汇或借用余额；兼容 API 的 SDK 名称不改变计费来源。
-0 表示禁用该线路；空白、非法或缺少预算时拒绝真实调用。预算不能替代用户授权，最新DeepSeek每日15 CNY硬限及未授权USD0见执行计划；未结预占与旧费继续计入，日界沿用UTC。
-`uv --env-file .env`加载配置；`LLM_PROVIDER`默认deepseek，也可显式anthropic。DeepSeek使用DEEPSEEK_MODEL；Claude使用ANTHROPIC_MODEL，当前仅核定固定claude-haiku-4-5-20251001。共用Claude Agent SDK、旅行工具与费用守卫；原币种报告和账本隔离，USD累计授权0金额/0次数会在SDK启动前拦截。真实SDK/CLI本地脚本已验证，Anthropic真实服务与最新Sonnet协议未验，不因填key/每日预算自动调用。
-旧Messages探针的最小实测与有限授权记录保留；不要删除.cache账本重复获得额度。当前SDK接入与业务验证见[SDK实测](docs/protocols/protocol-agent-sdk.md)，旧探针[实测矩阵](docs/protocols/protocol-deepseek.md)不能代替当前runtime验收。
-旧探针两请求授权已用完；本轮长程开发的 DeepSeek 整体额度见执行计划，同时遵守 .env 每日预算。SDK 美元估算不能代替人民币预算。新接入验收与费用边界见 [ADR-003](docs/adr/003-claude-agent-sdk-runtime.md)。
-历史批次限制见 [M0.2 准备记录](docs/archive/operations/2026-10-03-m02-preparation.md)。
-
-## PostgreSQL 配置
-
-项目使用 Docker PostgreSQL 17，默认仅绑定 127.0.0.1:5434；不占用本机已安装服务的 5432/5433。
-新环境复制 .env.example 为 .env，填写 POSTGRES_PASSWORD；POSTGRES_USER / POSTGRES_DB 默认 travel_agent。
-DATABASE_URL 可留空，由这些字段安全组合；如果填写则优先使用，需为 PostgreSQL psycopg 连接。
-本机已填写数据库配置并启动容器；密码只存本地 .env。启动 Docker Desktop 后执行：
-
-```text
-uv run python scripts/dev.py db-up
-uv run python scripts/dev.py db-migrate
-uv run python -m data.import_catalog
-uv run python -m backend.server
-```
-
-API 在 http://127.0.0.1:8000/docs 展示接口；/health 只检查进程存活，迁移与数据库就绪看 /health/ready。
-本地 .env 的 DEMO_MODE=true 启用 POST /demo/login，返回一次性展示的演示令牌；后续 /sessions 请求带 Authorization: Bearer <token>。
-演示身份用于本机开发，不是生产登录。令牌仅保存摘要，默认 30 天过期（`DEMO_TOKEN_DAYS` 可配 1–365；公网部署请设为 1）；不能指定他人的 user_id 登录。
-Windows 服务入口使用兼容 psycopg 的事件循环。数据库迁移在 backend/persistence/migrations/versions（当前 0001–0023，含身份、会话、目录、旅行条件、Evidence、TaskRun/事件等）。
-check 不连接数据库；test 会检查真实事务和用户隔离。CI 配置了 PostgreSQL 服务，已在 PR #9 上远端运行并通过。
-
-发消息：`POST /sessions/{id}/messages`，传 `client_message_id`（UUID）、`text`；默认 `mode=offline`。
-查询 `/runs/{id}`，进度读 `/runs/{id}/events`（SSE，可带 `Last-Event-ID`），取消用 `POST /runs/{id}/cancel`。
-重复消息ID返回原执行；新一轮需新UUID。离线固定流程用于检查工具和数据，不代表模型自主规划。
-需要真实模型时，显式用 `uv run --env-file .env python -m backend.server --live` 启动，并把该条消息的mode设为live；DeepSeek遵守每日15 CNY/更低配置及每run保护，USD仍未授权，不自动切换供应商。
-手动试用可加 `--relaxed`（工具40次/模型30轮/超时约300秒及更大的外部API次数；每日15 CNY等费用上限不变），默认档位不变。人工长时间手测可设 `TRAVEL_PROFILE=human`（default/relaxed/human；单轮工具、模型HTTP/轮次及供应商查询次数不设上限，整轮超时约900秒，HUMAN无每日CNY上限，以API账户余额为实际止损，上游HTTP错误如402会显示在对话；default/relaxed仍为每日15 CNY，要恢复上限设 `TRAVEL_PROFILE=relaxed`；机器与评测保持default）。HUMAN另有：酒店报价/路线估算证据有效期30分钟（default/relaxed 15）、校验修复次数不设上限（default/relaxed 4），酒店报价不再绑定请求revision（预算/交通/兴趣等无关修改不使报价失效；日期/人数/房间/币种/城市变化或过期仍需重新查询）。
-
-## 审阅与中断恢复
-
-从[源码学习索引](docs/review/learning.md)顺着入口理解关键模块，再按[三段演示](docs/review/demos.md)复现业务与失败恢复。真实模型规划和外部验收缺口仍以执行计划为准。
-
-- [SDK 路线调整与恢复点](docs/archive/operations/2026-10-03-agent-sdk-docs.md)：本轮文档修改、核查和验证。
-- [修复与环境核对记录](docs/archive/operations/2026-10-03-development-errors.md)：从这里判断现在的检查结果。
-- [M0.1 审阅材料](docs/archive/review/M0.1.md)：阅读顺序、失败证据和理解问题。
-- [修复批次总结](docs/archive/review/batch/2026-10-03-m0-repair.md)、[首次批次记录](docs/archive/review/batch/2026-10-02-m0-core.md)。
-- [文档汇总](docs/README.md)、[阻塞记录汇总](docs/blocked/README.md)、[待审阅决定](docs/adr/decisions-pending.md)、[上游复用清单](docs/guides/reuse.md)。
-
-恢复前先检查 Git 状态；日志“开始”不代表成功。工程修复与旧探针增量已由 batch/2026-10-03-travel-autonomous 承接，按执行计划持续推进；旧批次和审阅记录保留作历史证据。
+本项目为个人项目，开发中使用了 AI 编码助手（Claude Code、Codex、Cursor）。架构取舍、评测设计、问题定位与验收由我负责。

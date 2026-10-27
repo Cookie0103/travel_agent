@@ -1,6 +1,7 @@
 """R01/R03/R15/R16：真实数据库旅行工具的参数、归属、串行与受控Skill边界。"""
 
 import asyncio
+import json
 from uuid import UUID, uuid4
 
 import pytest
@@ -41,7 +42,10 @@ def test_catalog_tools_return_snapshot_with_owned_evidence(
         assert facts.code is None and facts.evidence_ids
         missing = await executor.execute(context, "get_place_facts", {"entity_id": "fake"})
         assert missing.code == "blocked"
-        empty = await executor.execute(context, "search_content", {"city": "大阪"})
+        osaka = await executor.execute(context, "search_content", {"city": "大阪", "limit": 1})
+        assert osaka.code is None and not osaka.empty and len(osaka.evidence_ids) == 1
+        assert [row["city"] for row in json.loads(json.dumps(osaka.data))["articles"]] == ["大阪"]
+        empty = await executor.execute(context, "search_content", {"city": "仙台"})
         assert empty.empty and empty.code is None and empty.data_mode == "snapshot"
 
     runner.run(exercise())

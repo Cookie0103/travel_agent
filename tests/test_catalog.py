@@ -8,9 +8,9 @@ from pathlib import Path
 import pytest
 from pydantic import ValidationError
 
-from backend.domain.catalog import Place, Source
+from backend.domain.catalog import Article, Place, Source
 from backend.domain.opening_hours import opening_state
-from backend.tools.search import PlaceSearchInput, search
+from backend.tools.search import ContentSearchInput, PlaceSearchInput, search
 from data.import_catalog import SNAPSHOT, load_snapshot
 
 
@@ -27,6 +27,43 @@ def test_snapshot_has_real_attribution_and_alias_search() -> None:
     assert any(p.opening_hours is None for p in places)
     with pytest.raises(ValidationError):
         Source.model_validate({"provider": "osm", "source_ref": "unknown"})
+
+
+def test_each_city_page_keeps_its_own_revision_and_attribution() -> None:
+    """每城一页：城市取条目原标题，来源固定到该页版本；简体/英文写法经有限别名检索。"""
+    articles = [e for e in load_snapshot() if isinstance(e, Article)]
+    pages = json.loads((SNAPSHOT / "manifest.json").read_text(encoding="utf-8"))["files"]
+    revisions: dict[str, int] = {}
+    for name in pages:
+        if name.startswith("wikivoyage"):
+            page = json.loads((SNAPSHOT / name).read_text(encoding="utf-8"))["query"]["pages"][0]
+            revisions[page["title"]] = page["revisions"][0]["revid"]
+    assert len(revisions) == 14 and {a.city for a in articles} == revisions.keys()
+    for article in articles:
+        revision = revisions[article.city]
+        assert article.title.startswith(article.city + " · ")
+        assert article.article_id.startswith(f"wv:{revision}:")
+        assert (
+            article.source.source_ref == f"https://zh.wikivoyage.org/w/index.php?oldid={revision}"
+        )
+        assert article.source.content_version == str(revision)
+        assert f"（{article.city}条目" in article.source.attribution
+    assert len({a.article_id for a in articles}) == len(articles)
+    assert sum(a.city == "京都" for a in articles) == 20
+    rows = [a.model_dump(mode="json") for a in articles]
+    aliases = (("东京", "東京"), ("Hiroshima", "廣島"), ("神户", "神戶"), ("镰仓", "镰仓"))
+    for city, title in aliases:
+        found = search(rows, ContentSearchInput(city=city, limit=8))
+        assert found and {row["city"] for row in found} == {title}
+    assert not search(rows, ContentSearchInput(city="仙台"))
+
+
+def test_modified_city_page_is_rejected_before_import(tmp_path: Path) -> None:
+    for name in ("manifest.json", "osm.json", *(p.name for p in SNAPSHOT.glob("wikivoyage*"))):
+        shutil.copyfile(SNAPSHOT / name, tmp_path / name)
+    (tmp_path / "wikivoyage-osaka.json").write_bytes(b"{}")
+    with pytest.raises(ValueError, match="校验和"):
+        load_snapshot(tmp_path)
 
 
 def test_modified_snapshot_is_rejected_before_import(tmp_path: Path) -> None:

@@ -1,5 +1,7 @@
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./styles/hotel.css";
+@import "./styles/pages.css";
 
 @layer components {
   /* Chat-first travel assistant: calm surfaces, readable server evidence, responsive panel. */
@@ -25,7 +27,7 @@
   }
   body {
     margin: 0;
-    background: var(--bg);
+    background: var(--bg-subtle);
     color: var(--text);
     font-family: var(--font-sans);
     font-size: var(--fs-body);
@@ -94,27 +96,38 @@
     gap: 20px;
     height: 68px;
     padding: 0 24px;
-    background: var(--bg);
+    background: color-mix(in srgb, var(--bg) 92%, transparent);
+    backdrop-filter: saturate(1.4) blur(8px);
     border-bottom: 1px solid var(--border);
   }
   .site-nav a {
     color: var(--text-muted);
-    font-size: 16px;
+    font-size: 15px;
     text-decoration: none;
-    padding: 8px 4px;
-    border-bottom: 2px solid transparent;
+    padding: 6px 12px;
+    border-radius: 999px;
+    transition:
+      background-color 0.15s,
+      color 0.15s;
+  }
+  .site-nav a:hover {
+    color: var(--text);
+    background: var(--chip-bg);
   }
   .site-nav a[aria-current="page"] {
-    color: var(--text);
+    color: var(--accent);
     font-weight: 600;
-    border-bottom-color: var(--primary);
+    background: var(--primary-soft);
   }
-  .site-nav .brand {
+  .site-nav .brand,
+  .site-nav .brand:hover {
     color: var(--accent);
     font-weight: 700;
     font-size: 20px;
     margin-right: 12px;
-    border-bottom: 0;
+    padding: 6px 0;
+    background: transparent;
+    letter-spacing: 0.01em;
   }
 
   /* Controls */
@@ -153,34 +166,42 @@
     border: 1px solid var(--border);
     padding: 8px 16px;
     border-radius: var(--radius-sm);
+    transition:
+      background-color 0.15s,
+      border-color 0.15s,
+      color 0.15s;
   }
   button:hover {
-    background: var(--bg-subtle);
+    background: var(--primary-soft);
+    border-color: var(--primary);
   }
   button:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
+  /* Solid purple primary; a plain <button> is the outline secondary. */
   .primary {
-    background: var(--primary);
-    color: var(--primary-ink);
-    border-color: var(--primary);
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
   }
   .primary:hover {
-    background: color-mix(in srgb, var(--primary) 80%, var(--bg));
+    background: var(--primary-strong);
+    border-color: var(--primary-strong);
   }
   .tag {
-    font-size: var(--fs-sm);
+    font-size: 13px;
     color: var(--accent);
-    background: var(--bg-subtle);
-    border-radius: var(--radius-sm);
-    padding: 4px 8px;
+    background: var(--primary-soft);
+    border-radius: 999px;
+    padding: 2px 10px;
     white-space: nowrap;
   }
   .chip {
-    border-radius: var(--radius-sm);
+    border-radius: 999px;
     padding: 8px 16px;
     text-align: left;
+    background: var(--bg);
   }
   .chips {
     display: flex;
@@ -234,7 +255,7 @@
     font-size: 16px;
   }
   .warning {
-    background: var(--bg-subtle);
+    background: color-mix(in srgb, var(--warning) 7%, var(--bg));
     color: var(--warning);
     padding: 8px 12px;
     border-radius: var(--radius-sm);
@@ -251,20 +272,32 @@
     grid-template-columns: minmax(0, 1fr) 520px;
     height: 100%;
   }
+  @media (min-width: 1600px) {
+    .chat-layout {
+      grid-template-columns: minmax(0, 1fr) 592px;
+    }
+  }
   .chat-layout:has(.trip-panel.is-collapsed) {
     grid-template-columns: minmax(0, 1fr);
   }
+  /* The pane is a size container: the scroll area spans its full width (scrollbar at
+     the pane edge) while padding centres an ~820px reading column; wide strips may
+     bleed out to ~1040px. */
   .chat-pane {
     display: flex;
     flex-direction: column;
     min-width: 0;
     min-height: 0;
+    background: var(--bg);
+    container-type: inline-size;
+    --chat-gutter: max(24px, calc((100cqw - 820px) / 2));
+    --chat-bleed: clamp(0px, calc((100cqw - 868px) / 2), 110px);
   }
   .chat-toolbar {
     display: flex;
     justify-content: flex-end;
     gap: 8px;
-    padding: 12px 24px 0;
+    padding: 12px var(--chat-gutter) 0;
     flex-wrap: wrap;
     align-items: center;
   }
@@ -283,9 +316,11 @@
     min-height: 0;
     overflow-y: auto;
     width: 100%;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 16px 24px;
+    padding: 16px var(--chat-gutter);
+    scrollbar-gutter: stable;
+  }
+  .chat-scroll .hotel-strip-wrap {
+    margin-inline: calc(-1 * var(--chat-bleed));
   }
   .mobile-tabs {
     display: none;
@@ -331,18 +366,20 @@
   }
 
   /* Composer */
+  /* Same reserved scrollbar gutter as .chat-scroll so the composer lines up with the
+     message column. */
   .composer-wrap {
     width: 100%;
-    max-width: 900px;
-    margin: 0 auto;
-    padding: 0 24px 16px;
+    padding: 4px var(--chat-gutter) 16px;
+    overflow: hidden;
+    scrollbar-gutter: stable;
   }
   .composer {
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     background: var(--bg);
     padding: 12px;
-    border-color: var(--border);
+    box-shadow: var(--shadow-card);
   }
   .composer textarea {
     border: 0;
@@ -355,8 +392,9 @@
     outline: none;
   }
   .composer:focus-within {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
+    border-color: var(--accent);
+    outline: 3px solid var(--primary-soft);
+    outline-offset: 0;
   }
   .composer button:focus-visible,
   .composer summary:focus-visible {
@@ -396,14 +434,14 @@
     margin-bottom: 8px;
     padding: 12px 16px;
     border: 1px solid var(--border);
-    border-radius: var(--radius-sm);
+    border-radius: var(--radius);
     background: var(--bg);
   }
 
   /* Trip panel */
   .trip-panel {
     overflow-y: auto;
-    padding: 0 20px 20px;
+    padding: 0 16px 20px;
     background: var(--bg-subtle);
     border-left: 1px solid var(--border);
     font-size: var(--fs-sm);
@@ -418,12 +456,77 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 0 8px;
+    padding: 16px 4px 12px;
     background: var(--bg-subtle);
   }
-  .panel-block {
-    padding: 12px 0;
-    border-top: 1px solid var(--border);
+  .panel-head button {
+    padding: 2px 12px;
+    font-size: 18px;
+    line-height: 1.4;
+    border-color: transparent;
+    background: transparent;
+    color: var(--text-muted);
+  }
+  /* Panel sections are white cards on the light purple-grey panel. */
+  .panel-block,
+  .trip-panel .results-section {
+    margin-bottom: 12px;
+    padding: 16px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-card);
+  }
+  .trip-panel .section-heading button {
+    padding: 2px 12px;
+    font-size: var(--fs-sm);
+  }
+  details.panel-block > summary {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .cond-title {
+    margin: 0 0 8px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+  }
+  .cond-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0 0 8px;
+    padding: 0;
+    list-style: none;
+  }
+  .cond-chips li {
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--chip-bg);
+    font-size: 13px;
+    line-height: 1.7;
+  }
+  .cond-chips li.is-set {
+    background: var(--primary-soft);
+    color: var(--primary-ink);
+  }
+  .cond-chips li.is-muted {
+    color: var(--text-muted);
+  }
+  .cond-segments {
+    margin: 0 0 8px;
+    padding-left: 18px;
+  }
+  .fold-muted {
+    margin-top: 4px;
+  }
+  .fold-muted > summary {
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+  .fold-muted > p {
+    margin: 4px 0 0;
   }
   .panel-block > p {
     margin: 4px 0;
@@ -438,68 +541,81 @@
     padding: 12px 0;
     border-top: 1px solid var(--border);
   }
-  .hotel-strip-wrap {
-    margin-top: 12px;
-  }
-  .hotel-strip-nav {
+  /* Plan header: compact summary with the calendar export aligned to it. */
+  .plan-head {
     display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-  .hotel-strip-nav button {
-    padding: 4px 12px;
-    min-width: 44px;
-    min-height: 36px;
-  }
-  .hotel-strip {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: min(288px, 85vw);
-    grid-template-rows: auto auto auto auto;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
     gap: 12px;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
-    padding-bottom: 8px;
+    padding: 12px 14px;
+    margin: 8px 0;
+    border-radius: var(--radius);
+    background: var(--bg-subtle);
   }
-  .hotel-strip > .hotel-card {
-    display: grid;
-    grid-row: span 4;
-    grid-template-rows: subgrid;
-    width: auto;
+  .plan-head-main {
+    min-width: 0;
+    flex: 1 1 200px;
   }
-  .hotel-strip > .hotel-more {
+  .plan-stats {
     display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 4px 12px;
+    margin: 4px 0 0;
   }
-  .hotel-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
+  .plan-stats strong {
+    font-size: 18px;
+    font-variant-numeric: tabular-nums;
   }
-  .hotel-strip:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
+  .plan-head .status-bar {
+    display: inline-block;
+    margin: 0;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--bg);
+    font-size: 13px;
   }
-  @media (prefers-reduced-motion: no-preference) {
-    .hotel-strip {
-      scroll-behavior: smooth;
-    }
+  .plan-head .calendar-export {
+    text-align: right;
   }
-  .hotel-card {
-    display: flex;
-    flex-direction: column;
-    flex: 0 0 auto;
-    width: 288px;
-    max-width: 85vw;
-    box-sizing: border-box;
-    scroll-snap-align: start;
+  .plan-head .calendar-export p {
+    margin: 4px 0 0;
+    font-size: 12px;
+  }
+  /* Validation: unknowns folded and neutral; conflicts stay visible in warning colour. */
+  .checks-fold {
+    margin: 8px 0;
+    padding: 8px 12px;
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 16px;
+    color: var(--text-muted);
+  }
+  .checks-fold > summary {
+    color: var(--text);
+    font-weight: 500;
+  }
+  .checks-fold ul,
+  .checks-conflict ul {
+    margin: 2px 0 8px;
+    padding-left: 18px;
+  }
+  .check-group {
+    margin: 8px 0 0;
+    font-weight: 600;
+    color: var(--text);
+  }
+  .checks-conflict {
+    margin: 8px 0;
+    padding: 8px 12px;
+    border-radius: var(--radius);
+    border: 1px solid color-mix(in srgb, var(--error) 30%, var(--border));
+    background: color-mix(in srgb, var(--error) 5%, var(--bg));
+    color: var(--error);
     font-size: var(--fs-sm);
-    overflow-wrap: anywhere;
-    background: var(--bg);
+  }
+  .checks-conflict .check-group {
+    color: var(--error);
   }
   .price {
     font-size: var(--fs-h2);
@@ -542,8 +658,9 @@
   .guide-card {
     padding: 20px;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     background: var(--bg);
+    box-shadow: var(--shadow-card);
   }
   .guide-text {
     white-space: pre-wrap;
@@ -585,9 +702,10 @@
       flex: 1;
     }
     .mobile-tabs [aria-selected="true"] {
-      background: var(--primary);
-      color: var(--primary-ink);
+      background: var(--primary-soft);
+      color: var(--accent);
       border-color: var(--primary);
+      font-weight: 600;
     }
     .chat-pane {
       grid-row: 2;
@@ -614,10 +732,8 @@
       gap: 12px;
       padding: 0 12px;
     }
-    .chat-scroll,
-    .composer-wrap {
-      padding-left: 12px;
-      padding-right: 12px;
+    .chat-pane {
+      --chat-gutter: 12px;
     }
   }
 
@@ -630,23 +746,16 @@
     margin-top: 12px;
     padding: 12px 16px;
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    border-radius: var(--radius-lg);
     background: var(--bg);
+    box-shadow: var(--shadow-card);
   }
   .status-chip {
     display: inline-block;
-    font-size: var(--fs-sm);
-    padding: 4px 12px;
-    border-radius: var(--radius-sm);
-    background: var(--bg-subtle);
-  }
-  .is-compact .hotel-strip {
-    grid-auto-columns: min(240px, 85vw);
-    gap: 8px;
-  }
-  .is-compact .hotel-card {
-    flex-basis: 240px;
-    padding: 12px;
+    font-size: 13px;
+    padding: 2px 10px;
+    border-radius: 999px;
+    background: var(--chip-bg);
   }
   .is-compact .price {
     font-size: var(--fs-h2);
@@ -664,14 +773,18 @@
     display: inline-block;
     padding: 8px 16px;
     border-radius: var(--radius-sm);
-    background: var(--primary);
-    color: var(--primary-ink);
+    background: var(--accent);
+    color: #fff;
     text-decoration: none;
+  }
+  .button-link:hover {
+    background: var(--primary-strong);
   }
   .page .results-section {
     background: var(--bg);
     border: 1px solid var(--border);
-    border-radius: var(--radius);
+    box-shadow: var(--shadow-card);
+    border-radius: var(--radius-lg);
     padding: 16px;
     margin-top: 16px;
   }
@@ -702,58 +815,8 @@
     font-size: var(--fs-sm);
     overflow-wrap: anywhere;
   }
-  .hotel-image {
-    width: 100%;
-    aspect-ratio: 16 / 10;
-    object-fit: cover;
-    border-radius: var(--radius-sm);
-    flex: 0 0 auto;
-  }
-  .hotel-image-empty {
-    background: var(--bg-subtle);
-    border: 1px solid var(--border);
-    box-sizing: border-box;
-  }
-  .hotel-top {
-    flex: 1 0 auto;
-  }
-  .hotel-bottom {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-top: 8px;
-  }
-  .hotel-bottom p {
-    margin: 0;
-  }
-  .hotel-basis {
-    margin: 0;
-  }
-  .hotel-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .hotel-more {
-    justify-content: center;
-    gap: 8px;
-    text-decoration: none;
-    color: var(--text);
-  }
-  .hotel-more:hover,
-  .hotel-more:focus-visible {
-    border-color: var(--primary);
-  }
   .trip-panel h3 {
     font-size: var(--fs-h2);
-  }
-  .hotel-card h3 {
-    font-size: 16px;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow: hidden;
   }
   .trip-panel .conditions label {
     font-size: 14px;
@@ -781,8 +844,10 @@
   .status-expired {
     color: var(--error);
   }
+  .status-bar-partial {
+    color: var(--text-muted);
+  }
   .banner-warning,
-  .status-bar-partial,
   .status-confirmed,
   .status-quoted {
     color: var(--warning);

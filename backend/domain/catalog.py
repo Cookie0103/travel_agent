@@ -4,6 +4,8 @@ from typing import Literal
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
 
+from backend.domain.travel_request import same_city
+
 
 class Source(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -175,11 +177,10 @@ class PlaceSearchInput(ContentSearchInput):
 
 
 def search(rows: list[dict[str, object]], arguments: ContentSearchInput) -> list[dict[str, object]]:
-    city = "京都" if arguments.city.casefold() in {"kyoto", "京都", "京都市"} else arguments.city
     query = arguments.query.casefold()
     found: list[dict[str, object]] = []
     for row in rows:
-        if str(row.get("city", "")).casefold() != city.casefold():
+        if not same_city(str(row.get("city", "")), arguments.city):
             continue
         if arguments.category and row.get("category") != arguments.category:
             continue

@@ -44,7 +44,7 @@ export function CalendarButton({
     }
   }
   return (
-    <div>
+    <div className="calendar-export">
       <Button
         variant="outline"
         disabled={disabled || loading}

@@ -10,8 +10,9 @@ const variants = cva(
     variants: {
       variant: {
         default:
-          "border-primary bg-primary text-primary-ink hover:bg-primary/80",
-        outline: "border-border bg-bg text-text hover:bg-bg-subtle",
+          "border-accent bg-accent text-white hover:border-primary-strong hover:bg-primary-strong",
+        outline:
+          "border-border bg-bg text-text hover:border-primary hover:bg-primary-soft",
         ghost:
           "border-transparent bg-transparent text-text-muted hover:bg-bg-subtle hover:text-text",
       },

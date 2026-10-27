@@ -1,6 +1,6 @@
 # 文档入口：按用途找
 
-370 多个文件按“用途”分目录。**先看下面“现在在哪”，再用“我想知道…”表跳转**；历史材料在 [archive/](archive/README.md)，不是现状。代码目录说明见[项目首页](../README.md)，模块依赖见 [ARCHITECTURE](../ARCHITECTURE.md)。
+370 多个文件按“用途”分目录。**先看下面“现在在哪”，再用“我想知道…”表跳转**；历史材料在 [archive/](archive/README.md)，不是现状。对外介绍见[项目首页](../README.md)，开发运行与目录说明见[开发与运行手册](guides/development.md)，模块依赖见 [ARCHITECTURE](../ARCHITECTURE.md)。
 
 ## 现在在哪、怎么恢复
 
