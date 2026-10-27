@@ -18,6 +18,14 @@ test("sections group by city field, falling back to the title prefix", () => {
       ["其他", 1],
     ],
   );
+  assert.deepEqual(
+    groupByCity([
+      { city: "镰仓", title: "镰仓 · 抵达" },
+      { city: "其他城", title: "其他城 · 概览" },
+      { city: "東京", title: "東京 · 概览" },
+    ]).map((g) => g.city),
+    ["東京", "镰仓", "其他城"],
+  );
   assert.equal(sectionTitle({ city: "京都", title: "京都 · 巴士" }), "巴士");
   assert.equal(sectionTitle({ city: "京都", title: "伏见" }), "伏见");
 });
