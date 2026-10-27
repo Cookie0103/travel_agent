@@ -177,7 +177,7 @@ export function Conversation({
         .filter((row) => row.run_id !== run?.run_id)
         .map((row) => (
           <section className="conversation-turn" key={row.run_id}>
-            <div className="ml-auto w-fit max-w-[85%] rounded-xl bg-primary px-4 py-3 text-base whitespace-pre-wrap text-primary-ink wrap-anywhere">
+            <div className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-primary-soft px-4 py-3 text-base whitespace-pre-wrap text-text wrap-anywhere">
               {row.prompt}
             </div>
             <div className="bg-bg text-text">
@@ -215,7 +215,7 @@ export function Conversation({
           </section>
         ))}
       {currentPrompt && (
-        <div className="ml-auto w-fit max-w-[85%] rounded-xl bg-primary px-4 py-3 text-base whitespace-pre-wrap text-primary-ink wrap-anywhere">
+        <div className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-primary-soft px-4 py-3 text-base whitespace-pre-wrap text-text wrap-anywhere">
           {currentPrompt}
         </div>
       )}
@@ -270,7 +270,7 @@ export function Conversation({
         </div>
       )}
       {workspace.identity?.pending_message && (
-        <div className="ml-auto w-fit max-w-[85%] rounded-xl bg-primary px-4 py-3 text-base whitespace-pre-wrap text-primary-ink wrap-anywhere">
+        <div className="ml-auto w-fit max-w-[85%] rounded-2xl rounded-br-md bg-primary-soft px-4 py-3 text-base whitespace-pre-wrap text-text wrap-anywhere">
           {workspace.identity.pending_message.text}
         </div>
       )}
