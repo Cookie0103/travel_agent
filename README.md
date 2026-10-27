@@ -2,7 +2,7 @@
 
 面向日本旅行的对话式规划助手：用户用聊天描述需求，Agent 比较乐天酒店、查询 Google 景点/路线和天气，生成一份经过校验的行程草稿，用户在页面确认后保存。确认过的偏好会跨会话记住。
 
-**在线演示：** <https://web-production-0aaac.up.railway.app>　（Railway 部署：web / api / 模拟供应商 / PostgreSQL）
+**在线演示：** <https://web-production-0aaac.up.railway.app>
 
 **设计原则：模型负责理解需求和编排工具；事实、金额、时间、归属、版本和任何副作用，都由确定性代码裁决。**
 

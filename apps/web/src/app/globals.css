@@ -266,6 +266,8 @@
   .chat-main {
     height: calc(100vh - 68px);
     min-height: 420px;
+    /* 对话页只允许对话区和右侧面板各自滚动，整页不滚。 */
+    overflow: hidden;
   }
   .chat-layout {
     display: grid;
@@ -281,8 +283,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
   /* The pane is a size container: the scroll area spans its full width (scrollbar at
-     the pane edge) while padding centres an ~820px reading column; wide strips may
-     bleed out to ~1040px. */
+     the pane edge) while padding centres one column that holds both text and hotel
+     strips. The column is 86% of the pane, capped at 1120px for readable lines. */
   .chat-pane {
     display: flex;
     flex-direction: column;
@@ -290,8 +292,7 @@
     min-height: 0;
     background: var(--bg);
     container-type: inline-size;
-    --chat-gutter: max(24px, calc((100cqw - 820px) / 2));
-    --chat-bleed: clamp(0px, calc((100cqw - 868px) / 2), 110px);
+    --chat-gutter: max(24px, calc((100cqw - min(86cqw, 1120px)) / 2));
   }
   .chat-toolbar {
     display: flex;
@@ -318,9 +319,8 @@
     width: 100%;
     padding: 16px var(--chat-gutter);
     scrollbar-gutter: stable;
-  }
-  .chat-scroll .hotel-strip-wrap {
-    margin-inline: calc(-1 * var(--chat-bleed));
+    /* 绝对定位的后代（读屏文字、图片角标）以滚动区为包含块，否则会撑高整页。 */
+    position: relative;
   }
   .mobile-tabs {
     display: none;
@@ -440,6 +440,7 @@
 
   /* Trip panel */
   .trip-panel {
+    position: relative;
     overflow-y: auto;
     padding: 0 16px 20px;
     background: var(--bg-subtle);
