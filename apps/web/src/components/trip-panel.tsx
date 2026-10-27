@@ -42,6 +42,12 @@ export function TripPanel({
     `${workspace.run?.run_id ?? ""}:${workspace.run?.status ?? ""}`,
   );
   if (!identity) return null;
+  const party =
+    request && (request.adults || request.child_ages != null)
+      ? partyLabel(request)
+      : request?.rooms
+        ? `${request.rooms} 间房`
+        : "";
   return (
     <aside
       id={id}
@@ -64,23 +70,23 @@ export function TripPanel({
               {editing ? "收起" : "编辑"}
             </button>
           </div>
-          {!editing && (
-            <>
-              {request.city ||
-              request.hotel_search_location ||
-              request.start_date ||
-              request.end_date ||
-              request.adults ||
-              request.rooms ||
-              request.child_ages != null ||
-              request.budget ||
-              request.lodging_budget ||
-              request.lodging_budget_unlimited ||
-              request.transport ||
-              request.departure_time ||
-              pace ? (
-                <>
-                  <p>
+          {!editing &&
+            (request.city ||
+            request.hotel_search_location ||
+            request.start_date ||
+            request.end_date ||
+            request.adults ||
+            request.rooms ||
+            request.child_ages != null ||
+            request.budget ||
+            request.lodging_budget ||
+            request.lodging_budget_unlimited ||
+            request.transport ||
+            request.departure_time ||
+            pace ? (
+              <>
+                {(request.city || request.start_date || request.end_date) && (
+                  <p className="cond-title">
                     {[
                       request.city,
                       (request.start_date || request.end_date) &&
@@ -89,40 +95,54 @@ export function TripPanel({
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
-                  <p>
-                    {[
-                      request.adults || request.child_ages != null
-                        ? partyLabel(request)
-                        : request.rooms && `${request.rooms} 间房`,
-                      request.budget &&
-                        moneyLabel(request.budget, request.currency),
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
-                  <p>
-                    {[
-                      transportLabels[request.transport ?? ""],
-                      request.departure_time &&
-                        `${request.departure_time.slice(0, 5)} 出发`,
-                    ]
-                      .filter(Boolean)
-                      .join(" · ")}
-                  </p>
-                  <p className={pace || longTerm ? undefined : "muted"}>
+                )}
+                <ul className="cond-chips" aria-label="其他条件">
+                  {party && <li className="is-set">{party}</li>}
+                  {request.budget && (
+                    <li>
+                      全程预算 {moneyLabel(request.budget, request.currency)}
+                    </li>
+                  )}
+                  {(request.transport || request.departure_time) && (
+                    <li>
+                      {[
+                        transportLabels[request.transport ?? ""],
+                        request.departure_time &&
+                          `${request.departure_time.slice(0, 5)} 出发`,
+                      ]
+                        .filter(Boolean)
+                        .join(" · ")}
+                    </li>
+                  )}
+                  <li className={pace || longTerm ? undefined : "is-muted"}>
                     {paceLine(pace, longTerm)}
-                  </p>
-                </>
-              ) : (
-                <p className="muted">还没有设定条件，直接在对话里告诉我</p>
-              )}
-            </>
-          )}
-          {!editing && request.hotel_search_location && (
-            <p>住宿查询地点：{request.hotel_search_location}</p>
-          )}
+                  </li>
+                  {request.hotel_search_location && (
+                    <li>住宿查询地点：{request.hotel_search_location}</li>
+                  )}
+                  {request.lodging_budget_unlimited && <li>每晚预算：不限</li>}
+                  {request.lodging_budget && (
+                    <li>
+                      住宿预算：
+                      {moneyRangeLabel(
+                        request.lodging_budget.amount.lower,
+                        request.lodging_budget.amount.upper,
+                        request.lodging_budget.currency,
+                        { lower: "下限未填", upper: "上限未填" },
+                      )}{" "}
+                      ·{" "}
+                      {request.lodging_budget.basis === "per_room_night"
+                        ? "每房每晚"
+                        : "住宿总额"}
+                    </li>
+                  )}
+                </ul>
+              </>
+            ) : (
+              <p className="muted">还没有设定条件，直接在对话里告诉我</p>
+            ))}
           {!editing && request.segments?.length && (
-            <ul aria-label="城市段">
+            <ul className="cond-segments small" aria-label="城市段">
               {request.segments.map((segment) => (
                 <li key={segment.arrive}>
                   {segment.city} · {segment.arrive}—{segment.depart}
@@ -132,41 +152,26 @@ export function TripPanel({
               ))}
             </ul>
           )}
-          {!editing && request.lodging_budget_unlimited && (
-            <p>每晚预算：不限</p>
-          )}
-          {!editing && request.lodging_budget && (
-            <p>
-              住宿预算：
-              {moneyRangeLabel(
-                request.lodging_budget.amount.lower,
-                request.lodging_budget.amount.upper,
-                request.lodging_budget.currency,
-                { lower: "下限未填", upper: "上限未填" },
-              )}{" "}
-              ·{" "}
-              {request.lodging_budget.basis === "per_room_night"
-                ? "每房每晚"
-                : "住宿总额"}
-            </p>
-          )}
-          {!editing && sourceRows(request.field_sources).length > 0 && (
-            <p className="small muted">
-              {sourceRows(request.field_sources).join("；")}
-            </p>
-          )}
           {request.lodging_budget_unlimited ? null : request.budget_relation ? (
             <p
               className={
                 request.budget_relation.status === "conflict"
-                  ? "error"
-                  : "warning"
+                  ? "error small"
+                  : "muted small"
               }
             >
               {request.budget_relation.message}
             </p>
           ) : (
-            <p className="warning">服务版本暂不支持住宿预算关系校验。</p>
+            <p className="muted small">服务版本暂不支持住宿预算关系校验。</p>
+          )}
+          {!editing && sourceRows(request.field_sources).length > 0 && (
+            <details className="fold-muted">
+              <summary>来源</summary>
+              <p className="small muted">
+                {sourceRows(request.field_sources).join("；")}
+              </p>
+            </details>
           )}
           {editing && (
             <Conditions

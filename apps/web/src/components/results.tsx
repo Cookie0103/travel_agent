@@ -705,6 +705,35 @@ export function PlanResults({
   const blocked = stale || plan.validation.status === "conflict";
   const checkPrefix = useId();
   const groups = validationGroups(plan.validation.checks);
+  const conflictCount = plan.validation.check_counts.conflict ?? 0;
+  const unknownCount = plan.validation.check_counts.unknown ?? 0;
+  const conflictGroups = groups.filter((group) => group.status === "conflict");
+  const unknownGroups = groups.filter((group) => group.status !== "conflict");
+  const truncatedNote = (
+    <p className="muted small">
+      下列分类计数仅含当前明细；其余校验未展开，上方为完整总数。
+    </p>
+  );
+  const renderGroup = (group: (typeof groups)[number], index: number) => (
+    <div key={index}>
+      <p className="check-group small">
+        {group.status === "conflict" ? "冲突" : "未知"} · {group.label} ·{" "}
+        {group.checks.length}条
+      </p>
+      <ul className="small">
+        {group.checks.map((check, position) => (
+          <li key={position}>
+            {check.message}{" "}
+            {checkTargets(check.subject, plan.cards).map((target) => (
+              <a key={target} href={`#${checkPrefix}-item-${target}`}>
+                第{target + 1}项：{plan.cards[target].name}{" "}
+              </a>
+            ))}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
   const days = planDays(plan);
   return (
     <section className="results-section">
@@ -712,60 +741,59 @@ export function PlanResults({
         <h2>{plan.draft_id ? "待确认行程" : `正式行程 · V${plan.version}`}</h2>
         <span className="tag">条件版本 {plan.request_revision}</span>
       </div>
+      <div className="plan-head">
+        <div className="plan-head-main">
+          <p className={`status-bar status-bar-${plan.validation.status}`}>
+            {plan.validation.status === "conflict"
+              ? "有硬冲突，不能确认"
+              : plan.validation.status === "partial"
+                ? "部分可校验；仍有未知项"
+                : "已通过当前范围校验"}
+          </p>
+          <p className="plan-stats">
+            <span>
+              已知费用{" "}
+              <strong>{moneyLabel(plan.validation.known_cost, "JPY")}</strong>
+            </span>
+            <span className="muted small">
+              估算 {moneyLabel(plan.validation.estimated_cost, "JPY")}
+            </span>
+            {unknownCount > 0 && (
+              <span className="muted small">{unknownCount} 项待确认</span>
+            )}
+          </p>
+        </div>
+        {!plan.draft_id && token && (
+          <CalendarButton
+            planId={plan.plan_id}
+            token={token}
+            disabled={disabled}
+          />
+        )}
+      </div>
       <p className="muted small">行程简介由 AI 整理，游玩时间为建议安排。</p>
-      {!plan.draft_id && token && (
-        <CalendarButton
-          planId={plan.plan_id}
-          token={token}
-          disabled={disabled}
-        />
-      )}
-      <p className={`status-bar status-bar-${plan.validation.status}`}>
-        {plan.validation.status === "conflict"
-          ? "有硬冲突，不能确认"
-          : plan.validation.status === "partial"
-            ? "部分可校验；仍有未知项"
-            : "已通过当前范围校验"}{" "}
-        · 已知 {moneyLabel(plan.validation.known_cost, "JPY")} / 估算{" "}
-        {moneyLabel(plan.validation.estimated_cost, "JPY")}
-      </p>
       {refreshNotice && (
         <p role="alert" className={plan.draft_id ? "error" : "warning"}>
           {refreshNotice}
         </p>
       )}
-      {!!groups.length && (
-        <div className="checks">
-          <p className="small">
-            校验提醒 · 冲突 {plan.validation.check_counts.conflict ?? 0} · 未知{" "}
-            {plan.validation.check_counts.unknown ?? 0}
+      {(conflictCount > 0 || !!conflictGroups.length) && (
+        <div className="checks-conflict" role="alert">
+          <p className="check-group">
+            校验提醒 · 冲突 {conflictCount} · 未知 {unknownCount}
           </p>
-          {plan.validation.truncated && (
-            <p className="muted small">
-              下列分类计数仅含当前明细；其余校验未展开，上方为完整总数。
-            </p>
-          )}
-          {groups.map((group, index) => (
-            <details key={index}>
-              <summary>
-                {group.status === "conflict" ? "冲突" : "未知"} · {group.label}{" "}
-                · {group.checks.length}条
-              </summary>
-              <ul>
-                {group.checks.map((check, position) => (
-                  <li key={position}>
-                    {check.message}{" "}
-                    {checkTargets(check.subject, plan.cards).map((target) => (
-                      <a key={target} href={`#${checkPrefix}-item-${target}`}>
-                        第{target + 1}项：{plan.cards[target].name}{" "}
-                      </a>
-                    ))}
-                  </li>
-                ))}
-              </ul>
-            </details>
-          ))}
+          {conflictGroups.map(renderGroup)}
+          {plan.validation.truncated && !unknownGroups.length && truncatedNote}
         </div>
+      )}
+      {!!unknownGroups.length && (
+        <details className="checks-fold">
+          <summary>
+            {unknownCount} 项信息待确认（冲突 {conflictCount}）
+          </summary>
+          {plan.validation.truncated && truncatedNote}
+          {unknownGroups.map(renderGroup)}
+        </details>
       )}
       {!!plan.changes?.length && (
         <details>
