@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./styles/hotel.css";
 
 @layer components {
   /* Chat-first travel assistant: calm surfaces, readable server evidence, responsive panel. */
@@ -438,69 +439,6 @@
     padding: 12px 0;
     border-top: 1px solid var(--border);
   }
-  .hotel-strip-wrap {
-    margin-top: 12px;
-  }
-  .hotel-strip-nav {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-bottom: 8px;
-  }
-  .hotel-strip-nav button {
-    padding: 4px 12px;
-    min-width: 44px;
-    min-height: 36px;
-  }
-  .hotel-strip {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: min(288px, 85vw);
-    grid-template-rows: auto auto auto auto;
-    gap: 12px;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x proximity;
-    padding-bottom: 8px;
-  }
-  .hotel-strip > .hotel-card {
-    display: grid;
-    grid-row: span 4;
-    grid-template-rows: subgrid;
-    width: auto;
-  }
-  .hotel-strip > .hotel-more {
-    display: flex;
-  }
-  .hotel-actions {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-  .hotel-strip:focus-visible {
-    outline: 2px solid var(--accent);
-    outline-offset: 2px;
-  }
-  @media (prefers-reduced-motion: no-preference) {
-    .hotel-strip {
-      scroll-behavior: smooth;
-    }
-  }
-  .hotel-card {
-    display: flex;
-    flex-direction: column;
-    flex: 0 0 auto;
-    width: 288px;
-    max-width: 85vw;
-    box-sizing: border-box;
-    scroll-snap-align: start;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    padding: 16px;
-    font-size: var(--fs-sm);
-    overflow-wrap: anywhere;
-    background: var(--bg);
-  }
   .price {
     font-size: var(--fs-h2);
     font-weight: 700;
@@ -640,14 +578,6 @@
     border-radius: var(--radius-sm);
     background: var(--bg-subtle);
   }
-  .is-compact .hotel-strip {
-    grid-auto-columns: min(240px, 85vw);
-    gap: 8px;
-  }
-  .is-compact .hotel-card {
-    flex-basis: 240px;
-    padding: 12px;
-  }
   .is-compact .price {
     font-size: var(--fs-h2);
   }
@@ -702,58 +632,8 @@
     font-size: var(--fs-sm);
     overflow-wrap: anywhere;
   }
-  .hotel-image {
-    width: 100%;
-    aspect-ratio: 16 / 10;
-    object-fit: cover;
-    border-radius: var(--radius-sm);
-    flex: 0 0 auto;
-  }
-  .hotel-image-empty {
-    background: var(--bg-subtle);
-    border: 1px solid var(--border);
-    box-sizing: border-box;
-  }
-  .hotel-top {
-    flex: 1 0 auto;
-  }
-  .hotel-bottom {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-top: 8px;
-  }
-  .hotel-bottom p {
-    margin: 0;
-  }
-  .hotel-basis {
-    margin: 0;
-  }
-  .hotel-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-  }
-  .hotel-more {
-    justify-content: center;
-    gap: 8px;
-    text-decoration: none;
-    color: var(--text);
-  }
-  .hotel-more:hover,
-  .hotel-more:focus-visible {
-    border-color: var(--primary);
-  }
   .trip-panel h3 {
     font-size: var(--fs-h2);
-  }
-  .hotel-card h3 {
-    font-size: 16px;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    line-clamp: 2;
-    overflow: hidden;
   }
   .trip-panel .conditions label {
     font-size: 14px;
