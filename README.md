@@ -1,98 +1,189 @@
-# 旅行规划 Agent
+<div align="center">
 
-面向日本旅行的对话式规划助手：用户用聊天描述需求，Agent 比较乐天酒店、查询 Google 景点/路线和天气，生成一份经过校验的行程草稿，用户在页面确认后保存。确认过的偏好会跨会话记住。
+# Travel Agent
 
-**在线演示：** <https://web-production-0aaac.up.railway.app>
+**A production-style LLM agent that runs a multi-step business workflow against real APIs, without being allowed to make things up.**
 
-**设计原则：模型负责理解需求和编排工具；事实、金额、时间、归属、版本和任何副作用，都由确定性代码裁决。**
+English · [简体中文](README.zh-CN.md)
 
-## 解决什么问题
+[![Live demo](https://img.shields.io/badge/demo-live%20on%20Railway-0b7a5a)](https://web-production-0aaac.up.railway.app)
+[![CI](https://github.com/Cookie0103/travel_agent/actions/workflows/check.yml/badge.svg)](https://github.com/Cookie0103/travel_agent/actions/workflows/check.yml)
+![Tests](https://img.shields.io/badge/tests-2%2C470%2B-blue)
 
-规划一次日本旅行要在酒店、景点营业时间、交通耗时和预算之间反复权衡，改一处常常牵动全局。通用聊天模型能给建议，但会编造价格和营业时间，也不保证行程可执行。这个项目让模型负责“对话和调度”，让后端负责“可信和可执行”。
+</div>
 
-## 架构
+<p align="center"><img src="docs/assets/04-itinerary-draft.jpg" alt="Validated itinerary draft: the server removed 3 conflicting stops, flagged what still needs checking, and waits for the user to confirm" width="100%"/></p>
+<p align="center"><sub>A live run: the draft passed validation with 0 conflicts, the server dropped 3 stops that did not fit, and the agent lists exactly what still needs checking. Nothing is saved until the user clicks Confirm.</sub></p>
 
-```mermaid
-flowchart LR
-    U[Next.js 工作台] -->|消息| API[FastAPI]
-    API --> RS[RunService<br/>去重 / 事务 / 事件]
-    RS --> G[预算与限额守卫]
-    G --> W[隔离的 Claude Agent SDK worker]
-    W -->|MCP| TE[工具执行器<br/>校验 / 并发控制 / 限次]
-    TE --> SV[业务服务]
-    SV --> PG[(PostgreSQL<br/>业务事实唯一来源)]
-    SV --> EX[乐天 / Google / Open-Meteo]
-    U -->|用户点确认| API -->|独立事务| SV
-    RS -->|已提交事件| SSE[SSE 进度流] --> U
-```
+## Problem and approach
 
-- **模型可用 18 个工具**（查景点、比价、估路线、校验行程等），但没有“保存行程”或“下单”工具；保存只能由用户在页面点确认，走独立的 API 和数据库事务。
-- **模型只传 ID**，价格、名称和来源由服务端按 ID 填入，模型无法编造报价。
-- **旅行条件每轮从数据库重读**（带版本号），不依赖聊天记录；过期报价或旧版本的确认会被拒绝。
-- **生成 → 校验 → 修复**：行程由纯代码校验（35+ 检查项：营业时间、路线间隔、预算、重复景点等）。冲突先由服务端做有界修复（最多 12 步，冲突数必须严格下降），修不掉再交还模型，轮数有上限。
-- **服务端驱动交互**：条件齐全后由服务端发确认卡，而不是让模型自己决定怎么追问。
-- **长期记忆**：后台抽取器只能提议，必须引用用户原话，用户点选才生效；只有 4 类偏好可长期保存。
-- **Prompt 缓存**：system 只放稳定规则，每轮业务状态放在用户消息前，以提高前缀缓存命中率。
-- **攻略库**：14 个日本城市、282 段中文 Wikivoyage 攻略（CC BY-SA 4.0，固定修订版本），供页面浏览和 Agent 检索引用。
+Planning a trip to Japan means trading off hotels, opening hours, transfer times and budget, and one change ripples through everything. A general chat model can make suggestions, but it invents prices and opening hours and cannot guarantee the plan is executable.
 
-技术栈：Python 3.12 / FastAPI / PostgreSQL / SQLAlchemy + Alembic / Next.js 16 + React 19 / Claude Agent SDK（DeepSeek 兼容线路）/ MCP / OpenTelemetry + Langfuse / GitHub Actions / Railway
+This agent splits the work along a hard line: **the model proposes, code disposes.** The model understands the request and orchestrates 18 tools over Rakuten Travel, Google Places / Routes and Open-Meteo. Facts, money, time, ownership, versions and every side effect are decided by deterministic code, and nothing is committed until the user approves it.
 
-## 质量、权限与监控
-
-| 方面 | 做法 |
+| | |
 | --- | --- |
-| **端到端评测** | 自建 30 道多轮任务（主流程、澄清、中途变更、9 种故障注入、越界、对抗、长期记忆），调用真实 DeepSeek / 乐天 / Google，每题跑 3 次。成败由代码检查数据库终态和工具轨迹，不靠模型自评 |
-| **权限** | API 密钥只在父进程；SDK 子进程只拿本地回环令牌，按白名单继承环境变量。工具输入经 schema 校验，外部文本加围栏，防止注入扩权 |
-| **成本与限额** | 每次模型请求先预占预算再结算；每次运行限制工具次数、轮数、HTTP 次数和超时；外部 API 有单次和每日配额 |
-| **失败处理** | 429 / 超时 / 5xx 只在调用所属的那一层重试一次，失败如实报告真实尝试次数。模拟预订带幂等键，响应丢失进入 `unknown` 状态并先对账，不盲目重发 |
-| **监控** | OpenTelemetry 记录每次运行、工具调用和模型请求；评测结果以数值分数推送 Langfuse（不上传对话正文）；Railway 上输出单行 TRACE 日志 |
-| **工程** | ~2,470 条自动化测试（含真实 PostgreSQL 集成测试）、11 条分层导入契约、3 个 CI job；main 只能通过 PR 合入，Railway 等 CI 通过后才自动部署 |
+| **Task success** | **96.7%** (87/90 live multi-turn runs, 95% CI 90.7–98.9%) |
+| **Stable pass** (all 3 trials of a task pass) | **93.3%** (28/30) |
+| **Fault recovery · long-term memory · adversarial** | 15/15 · 18/18 · 6/6 |
+| **Claims contradicted by actual state** | **0** across 90 runs |
+| **Latency** | median 8.0 s per turn, first useful reply 5.2 s |
+| **Cost per full trip plan** (4 user turns) | ≈ RMB 0.95 (≈ US$0.13) |
 
-## 结果
+<table>
+<tr>
+<td width="33%"><img src="docs/assets/01-confirm-card.jpg" alt="Server-issued confirmation card"/></td>
+<td width="33%"><img src="docs/assets/02-hotel-compare.jpg" alt="Live Rakuten offers, server-filled prices"/></td>
+<td width="33%"><img src="docs/assets/05-confirmed-v1.jpg" alt="Confirmed trip V1, saved by the user"/></td>
+</tr>
+<tr>
+<td align="center"><sub>Server-issued confirmation card</sub></td>
+<td align="center"><sub>Live Rakuten offers, server-filled prices</sub></td>
+<td align="center"><sub>Confirmed trip V1, saved by the user</sub></td>
+</tr>
+</table>
 
-在自建的 30 题评测集上（DeepSeek flash，90 次真实运行，2026-10-20）：
+## Quick start
 
-| 指标 | 结果 |
-| --- | --- |
-| 任务成功率 | **96.7%**（87/90） |
-| 稳定通过率（同一题 3 次全过） | **93.3%**（28/30） |
-| 长期记忆 / 工具故障恢复 / 越界与对抗 | 18/18、15/15、15/15 |
-| 单轮耗时 | 中位 8.0 秒，p95 32.9 秒 |
-| 单次运行成本 | 中位 ¥0.15，p95 ¥0.96 |
-
-需要说明的是：首轮原始成绩为 84.4% / 80%，修复评测脚本自身的问题并收紧判定后，重跑部分题目得到上表。这是系统（模型 + 服务端）在自建题集上的完成度，没有留出集，也不代表模型的通用能力。
-
-## 失败如何变成防护
-
-- **模型谎称“请在卡片里确认”，但卡片其实没发出。** → 改为条件齐全时由服务端一定发卡，并把卡片状态（已发 / 待提交 / 无）返回给模型，模型只能据此描述。
-- **评测判定过松，把只有 1 个景点的“完整行程”判为成功。** → 补上“草稿无冲突”和“每个完整游玩日至少 2 个景点”的硬检查。之后每道题都会反问一句：如果 Agent 什么都没做对，这道题会失败吗？
-- **一个本应离线的测试意外发起了真实付费调用。** → 在 pytest 环境下一律拒绝 `--live`，不再依赖“缺参数就会报错”这种隐含前提。
-- **DeepSeek 偶发调用不存在的工具名。** → 守卫直接终止本轮，宁可让用户多发一句话，也不放宽这条安全边界。
-
-## 已知不足
-
-- 局部修改已有草稿不稳定（“只改第二天下午”只有 1/3 成功），规划完整度也有波动。
-- 酒店预订是模拟的：线上只提供乐天链接，幂等和对账只针对模拟供应商。
-- 只验证了 DeepSeek 线路，Claude 原生线路没有做真实验证。
-- 2026-10-26 的优化（prompt 缓存、只读工具并发、skill 拆分、异步记忆抽取）已通过离线测试，但还没有重跑真实评测。
-
-## 本地运行
-
-需要 [uv](https://docs.astral.sh/uv/) 和 Docker Desktop。离线演示不需要任何 API key：
+You need [uv](https://docs.astral.sh/uv/) and Docker. The offline demo needs **no API keys**:
 
 ```bash
-uv run python scripts/dev.py stack-up      # 构建并启动 API / 供应商 / PostgreSQL / 前端
-uv run python -m scripts.smoke_demo        # 跑一遍端到端烟测
-# 打开 http://127.0.0.1:3100
+uv run python scripts/dev.py stack-up      # API, mock supplier, PostgreSQL, web
+uv run python -m scripts.smoke_demo        # end-to-end smoke test
+# open http://127.0.0.1:3100
 uv run python scripts/dev.py stack-down
 ```
 
-开发环境、真实模型配置和预算设置见 [开发与运行手册](docs/guides/development.md)。
+Live models, API keys and budgets: [development guide](docs/guides/development.md).
 
-## 延伸阅读
+## Architecture
 
-- [架构与效果复盘](docs/review/architecture-retrospective.md)：设计取舍、详细结果和教训
-- [代码架构地图](ARCHITECTURE.md) · [系统白话讲解](docs/guides/system-walkthrough.md) · [架构决策记录](docs/adr/)
-- [评测结果与方法](docs/proposals/eval-redesign/results-2026-10-20.md)
+```mermaid
+flowchart LR
+    subgraph Model["Model side: proposes"]
+        W[Isolated Claude Agent SDK worker]
+    end
+    subgraph Code["Deterministic side: decides"]
+        API[FastAPI] --> RS[RunService<br/>dedupe · txn · events]
+        RS --> G[Budget & limit guard]
+        TE[Tool executor<br/>schema · concurrency · caps]
+        SV[Domain services<br/>conditions · hotels · itinerary · memory]
+        V[Validator + bounded repair]
+        PG[(PostgreSQL<br/>single source of truth)]
+    end
+    U[Next.js workbench] -->|message| API
+    G --> W
+    W -->|MCP, IDs only| TE --> SV
+    SV --> V
+    SV --> PG
+    SV --> EX[Rakuten · Google · Open-Meteo]
+    U -->|Confirm click| API -->|separate transaction| SV
+    RS -->|committed events| SSE[SSE stream] --> U
 
-本项目为个人项目，开发中使用了 AI 编码助手（Claude Code、Codex、Cursor）。架构取舍、评测设计、问题定位与验收由我负责。
+    style Model fill:#fff4e5,stroke:#e8a33d
+    style Code fill:#e8f5ee,stroke:#2e8b57
+```
+
+One agent in a standard tool loop, with no intent router. Three chains are kept apart on purpose:
+
+- **Execution:** message → RunService → guard → isolated SDK worker → MCP → tool executor → services → repositories.
+- **Progress:** worker events → verified by the parent process → committed → SSE. Reconnecting replays saved events and never re-runs a tool or a model call.
+- **Commit:** user click → confirm API → business transaction. No path from the model reaches it.
+
+## Context engineering
+
+- **Three separate state sources.** The SDK session holds model context, application events drive the UI, and PostgreSQL holds business truth. Business decisions read only the database, never the transcript.
+- **State re-read every turn.** Travel conditions (with a revision number), active preferences and pending cards are rebuilt from the database and injected as a compact state block in front of the user message. Stale quotes or confirmations against an old revision are rejected.
+- **A cache-stable system prompt.** `system` holds only stable rules and tool policy, byte-identical across turns. Everything volatile lives in the per-turn state block, so the cached prefix survives the whole conversation.
+- **Skills instead of a bloated prompt.** Six domain playbooks (hotel comparison, itinerary revision, multi-city, budget relaxation, external errors, repair limits) load on demand from a whitelist, once per turn, with a content hash.
+- **Compaction under control.** The SDK's auto-compaction switch is verified per pinned SDK/CLI version, and after a compaction the latest business state is re-injected so the model never plans against a summarized, outdated view.
+- **Tool results shaped as context.** Results keep only the fields the model needs. Errors carry next-step guidance, and a committed-but-truncated write tells the model not to retry.
+
+## Long-term memory
+
+- **Memory lives in the database.** Preferences are typed, queryable fact rows, not a free-text profile. Only four keys may persist across trips (pace, transport, wake-up time, end-of-day time); lodging, smoking, bed type and companions stay scoped to one trip.
+- **Asynchronous extraction.** After a turn completes, a background extractor reads the last 3 turns and proposes facts. The main agent has no memory tool and spends no latency on it.
+- **Restricted extractor input.** The extractor sees only the user's own text and the assistant's final replies, never tool results, hotel listings or guide articles, so third-party text cannot become a "user preference".
+- **Write-path validation in code.** Every proposal must quote the user verbatim (normalized, at least 4 characters) from a completed turn, and is checked again server-side before it is stored.
+- **User control.** Each fact is confirmed on a card before it takes effect. Forgetting erases the fact text, sets a forget boundary that late writers cannot cross, and cuts SDK session continuation so the old context cannot leak back.
+- **Verified end to end.** The eval checks four layers: extracted → persisted → present in the prompt actually sent to the model → reflected in behavior. Result: 18/18.
+
+## Tools and guardrails
+
+- **No write tools for the model.** 18 tools cover search, comparison, routing, validation and conversation state. None can save a trip or place an order; saving happens only when the user clicks Confirm, through a separate API and transaction.
+- **Server-issued IDs only.** The model passes IDs; names, prices, sources and expiry are filled in by the server from those IDs, so a quote cannot be hallucinated.
+- **Server-owned interaction.** Once city, dates, party and rooms are known, the server always issues one combined confirmation card and reports its real state (`sent` / `pending` / `none`) to the model. The model cannot claim a card that does not exist.
+- **Generate → validate → bounded repair.** 35+ deterministic checks (opening hours, transfer gaps, budget, duplicates, …). Server-side repair is capped at 12 operations, the conflict count must strictly decrease, and no spot is ever added. Only what it cannot fix goes back to the model, with a round limit.
+- **Untrusted text is fenced.** External content (listings, reviews, guides) is wrapped and size-capped so the model reports on it rather than obeys it.
+- **Hard stops.** A call to a tool that does not exist terminates the turn. Per-run caps on tool calls, turns, HTTP calls and wall time; per-API single-run and daily quotas.
+- **Isolated credentials.** API keys stay in the parent process. The SDK subprocess receives only a loopback token and an allow-listed environment.
+
+## Latency and cost
+
+- **Parallel read-only tools.** Pure queries (places, guides, facts, weather) run concurrently outside the session lock; state and write tools stay serialized.
+- **Fewer model round-trips.** Server-issued cards replace free-form clarification, and deterministic repair fixes most validator conflicts without another model call.
+- **Prefix caching by design.** Stable rules first, per-turn state last, skills loaded as tool results rather than edits to `system`.
+- **Memory off the critical path.** Extraction runs after the turn has already been answered.
+- **Reserve, then settle.** Every model request reserves budget before it is sent and settles on real usage.
+- **Model is a config switch.** The runtime is built on the Claude Agent SDK; DeepSeek flash runs through its compatible endpoint, and Claude Haiku 5.5 is wired as a second route.
+
+| Model | Price per 1M tokens (input / output) | One full trip plan (4 user turns) |
+| --- | --- | --- |
+| DeepSeek flash (default) | RMB 2 / RMB 8 (≈ US$0.28 / US$1.13) | ≈ RMB 0.95 (≈ US$0.13) |
+| Claude Haiku 5.5 | US$0.10 / US$0.50 (≈ RMB 0.71 / RMB 3.55) | ≈ RMB 0.40 (≈ US$0.06) |
+
+## Evaluation
+
+- **30 multi-turn tasks × 3 trials, against real services.** Main flow, clarification, mid-conversation changes, 9 injected failure modes, out-of-scope, adversarial (fake system prompts, "skip confirmation") and long-term memory, all on real DeepSeek, Rakuten, Google and Open-Meteo.
+- **Graded by state, not by the model.** Pass or fail comes from the final database state and the tool-call trace. A claim auditor checks 7 kinds of statements ("card sent", "retried twice", "within budget", "booked", "remembered", …) against what actually happened.
+- **The harness is tested too.** Harness bugs are fixed separately from the agent, and every task must fail when the agent does nothing right. Ablation variants (no tools, no skills, no memory, no repair, no compaction) are built in.
+
+| Category | Result | | Category | Result |
+| --- | --- | --- | --- | --- |
+| Main flow | 11/12 | | Fault recovery | 15/15 |
+| Clarification | 15/15 | | Out-of-scope | 9/9 |
+| Mid-conversation change | 13/15 | | Adversarial | 6/6 |
+| Long-term memory | 18/18 | | **Total** | **87/90** |
+
+Every incident became a permanent guardrail:
+
+| Incident | Guardrail |
+| --- | --- |
+| The agent said "confirm in the card", but no card had been sent | The server always issues the card and returns its real state to the model |
+| A two-night "complete plan" with one spot was graded as a pass | Hard checks: no conflicts in the draft, at least 2 distinct spots per full day |
+| A supposedly offline test made a real paid call | `--live` is refused outright inside pytest |
+| The model occasionally called a tool that does not exist | The guard terminates the turn instead of loosening the boundary |
+
+## Operations
+
+| Area | Implementation |
+| --- | --- |
+| **Failure handling** | 429 / timeout / 5xx retried once, only in the layer that owns the call (`Retry-After` capped at 3 s, 8 s per request), with the true attempt count reported. Booking carries an idempotency key; a lost response enters `unknown` and is reconciled before any resend. |
+| **Observability** | OpenTelemetry spans per run, tool call and model request; eval scores pushed to Langfuse as numbers, without conversation text; single-line TRACE logs on Railway. |
+| **External surface** | A public MCP server with 4 read-only tools, token-bucket rate limiting and a 64 KB request cap. |
+| **Engineering** | 2,470+ tests including real PostgreSQL, 11 import-linter layering contracts, 29 ADRs, PR-only `main`, deploys only after CI passes. |
+
+**Stack:** Python 3.12 · FastAPI · PostgreSQL · SQLAlchemy + Alembic · Next.js 16 · React 19 · Claude Agent SDK · MCP · OpenTelemetry · Langfuse · GitHub Actions · Docker · Railway
+
+## Layout
+
+| Directory | Contents |
+| --- | --- |
+| `backend/api` | HTTP routes, identity, SSE |
+| `backend/services` | Use cases and transactions: conditions, hotels, itinerary, choice cards, memory |
+| `backend/domain` | Pure rules: travel request, evidence, quotes, opening hours, validator |
+| `backend/agent` · `backend/providers` | Agent contract and persona; Claude Agent SDK lifecycle, isolated worker, budget boundary |
+| `backend/tools` | Tool schemas, executor, fencing, skills |
+| `backend/adapters` | Rakuten, Google, weather and supplier clients with quotas and retries |
+| `backend/persistence` | SQLAlchemy tables, repositories, Alembic migrations |
+| `apps/web` | Next.js planning workbench and travel-guide library (14 cities, 282 Wikivoyage sections) |
+| `eval` | Multi-turn simulator, graders, claim auditor, reports |
+| `mock_supplier` | Booking supplier with fault injection |
+| `docs` | Design, ADRs, security, reliability, retrospective |
+
+## Further reading
+
+- [Architecture retrospective](docs/review/architecture-retrospective.md) · [Eval report](docs/proposals/eval-redesign/results-2026-10-20.md) · [Code map](ARCHITECTURE.md)
+- [System walkthrough](docs/guides/system-walkthrough.md) · [ADRs](docs/adr/) · [Security](docs/SECURITY.md) · [Reliability](docs/RELIABILITY.md)
+
+<sub>Most design docs are written in Chinese.</sub>
