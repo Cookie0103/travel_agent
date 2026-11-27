@@ -63,7 +63,7 @@ from eval.grading.memory_metrics import memory_scores, proposal_failures
 from eval.v3.cases import DEFAULT_CASES, ROOT, V3Case, load_cases
 from eval.v3.judge import JudgeCall, judge_scores, judge_trial, write_transcript
 from eval.v3.report import write_reports
-from eval.v3.score import DbFacts, Observation, Score, TurnObs, score_trial
+from eval.v3.score import DbFacts, Observation, Score, TurnObs, rule_gate, score_trial
 from eval.v3.user import ScriptResult, ScriptRunner, StructuredCall
 
 PROFILES = ("human", "default", "relaxed")
@@ -588,6 +588,7 @@ def trial_row(
         "turn_ttfua_s": [round(t.ttfua_s, 3) for t in turns],
         "claim_violations": list(score.claim_violations),
         "claim_unknown": score.claim_unknown,
+        "rule_gate": rule_gate(observation.validation),
         "checks": [
             {"id": c.id, "tier": c.tier, "outcome": c.outcome, "detail": c.detail}
             for c in score.checks

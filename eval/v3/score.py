@@ -321,6 +321,17 @@ def auto_validator_results(
     return results
 
 
+def rule_gate(validation: Sequence[Mapping[str, object]] | None) -> dict[str, object]:
+    """只记录终态服务端拦截项，沿用 v3 原有题目判定。"""
+    violations = [
+        {"code": entry["code"], "subject": entry.get("subject")}
+        for entry in validation or ()
+        if entry.get("status") == "conflict"
+        and VALIDATOR_TIER.get(str(entry.get("code"))) == "hard"
+    ]
+    return {"passed": not violations, "violations": violations}
+
+
 def memory_layers(case: V3Case, obs: Observation) -> dict[str, bool]:
     """只返回该题声明了的层；未声明的层不出现（Langfuse也不推）。"""
     layers: dict[str, bool] = {}

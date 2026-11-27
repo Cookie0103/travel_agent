@@ -212,3 +212,23 @@ def test_candidate_skills_require_evaluation_and_isolated_database(tmp_path: Pat
         with pytest.raises(ValueError, match="专用本地评测库"):
             skills.authorize(evaluation=evaluation, dsn=dsn)
     skills.authorize(evaluation=True, dsn=evaluation_dsn)
+
+
+def test_trial_row_reports_terminal_rule_gate() -> None:
+    from eval.v3.run import trial_row
+    from eval.v3.score import Observation, score_trial
+    from tests.integration.eval.test_eval_v3_smoke import make
+
+    case = make(case_id="gate-row", user_script=[{"say": "继续看行程。"}])
+    observation = Observation(
+        validation=(
+            {"code": "arrival_boundary", "subject": "day:1", "status": "conflict"},
+            {"code": "hotel_return", "subject": "day:1", "status": "conflict"},
+            {"code": "opening_hours", "subject": "item:2", "status": "unknown"},
+        )
+    )
+    row = trial_row(case, 1, None, score_trial(case, observation), observation, 0.0)
+    assert row["rule_gate"] == {
+        "passed": False,
+        "violations": [{"code": "arrival_boundary", "subject": "day:1"}],
+    }
