@@ -1,15 +1,16 @@
 """v3评分：分级表覆盖validator全部code；success只由确定性检查决定；失败原因按优先级。"""
 
+import ast
 import hashlib
-import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Any
+from typing import Any, get_args
 from uuid import uuid4
 
 import pytest
 
 from backend.domain.execution import RunContext, RuntimeEvent
+from backend.domain.travel_request import BudgetRelation
 from eval.grading.claims import ClaimFacts
 from eval.v3.cases import V3Case
 from eval.v3.score import (
@@ -70,17 +71,41 @@ def turn(
     )
 
 
+def validator_code_values(expression: ast.expr) -> set[str]:
+    match expression:
+        case ast.Constant(value=str(value)):
+            return {value}
+        case ast.IfExp(body=body, orelse=alternative):
+            return validator_code_values(body) | validator_code_values(alternative)
+        case ast.BinOp(
+            left=ast.Constant(value="lodging_budget_"),
+            op=ast.Add(),
+            right=ast.Attribute(value=ast.Name(id="relation"), attr="status"),
+        ):
+            statuses = get_args(BudgetRelation.model_fields["status"].annotation)
+            assert statuses, "住宿预算关系缺失封闭状态"
+            return {"lodging_budget_" + status for status in statuses}
+        case _:
+            pytest.fail(f"validator code 无法静态枚举: {ast.unparse(expression)}")
+
+
 def test_every_validator_code_is_tiered() -> None:
     source = Path("backend/domain/validator.py").read_text(encoding="utf-8")
-    codes = set(
-        re.findall(
-            r'check\(\s*(?:"[a-z_]+"|f?"[^"]*"|[\w.\[\]]+(?:\([^()]*\))?)\s*,\s*'
-            r'(?:"(?:verified|unknown|conflict)"|[\w.]+(?:\s+if[^,]*)?)\s*,\s*"([a-z_]+)"',
-            source,
-        )
-    )
-    assert codes, "没有解析到validator code"
-    assert codes <= set(VALIDATOR_TIER), sorted(codes - set(VALIDATOR_TIER))
+    codes: set[str] = set()
+    for node in ast.walk(ast.parse(source)):
+        if (
+            isinstance(node, ast.Call)
+            and isinstance(node.func, ast.Name)
+            and node.func.id == "check"
+        ):
+            expression = (
+                node.args[2]
+                if len(node.args) >= 3
+                else next(item.value for item in node.keywords if item.arg == "code")
+            )
+            codes.update(validator_code_values(expression))
+    assert codes, "没有解析到 validator code"
+    assert codes == set(VALIDATOR_TIER)
     assert {
         "trip_dates",
         "hotel_stay_scope",

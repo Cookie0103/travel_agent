@@ -24,8 +24,14 @@ VALIDATOR_TIER: dict[str, Tier] = {
             "hotel_missing",
             "hotel_over_budget_unaccepted",
             "hotel_over_nightly_budget",
+            "hotel_stay_missing",
+            "hotel_stay_skipped",
             "hotel_total",
             "known_cost_over_budget",
+            "lodging_budget_conflict",
+            "lodging_budget_unknown",
+            "lodging_budget_warning",
+            "lodging_budget_within",
             "meal_time",
             "opening_hours",
             "other_costs",
@@ -44,6 +50,7 @@ VALIDATOR_TIER: dict[str, Tier] = {
             "route_source",
             "route_unexpected",
             "visit_duration",
+            "visit_duration_range",
         )
     },
 }
