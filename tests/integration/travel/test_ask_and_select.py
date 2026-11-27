@@ -34,7 +34,7 @@ from backend.tools.travel import TravelToolExecutor
 from tests.integration.api.test_runs import WaitingRuntime
 from tests.integration.travel.test_travel import travel_setup as travel_setup
 
-pytestmark = [pytest.mark.integration, pytest.mark.usefixtures("fixed_today")]
+pytestmark = pytest.mark.integration
 
 Setup = tuple[asyncio.Runner, TravelService, RunContext]
 

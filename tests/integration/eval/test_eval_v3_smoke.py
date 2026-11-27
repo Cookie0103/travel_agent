@@ -34,7 +34,7 @@ from eval.v3.score import score_trial
 from eval.v3.user import ScriptResult, ScriptRunner
 from tests.support.runner import selector_runner
 
-pytestmark = [pytest.mark.integration, pytest.mark.usefixtures("fixed_today")]
+pytestmark = pytest.mark.integration
 
 REQUEST = {
     "city": "京都",

@@ -154,7 +154,7 @@ D4 的估算。单价取自 2026-10-20 的 30 题实测：全部题平均 0.26 �
 
 | ID | 做什么 | 位置与依据 | 验收条件 | 依赖 | 状态 | 证据 |
 | --- | --- | --- | --- | --- | --- | --- |
-| A1 | 修测试的时间炸弹：夹具里的行程日期写死在 2026-11-03，过了这天就全部报“旅行日期不能早于今天” | P-201，做法见 §3.6。`TravelService` 已有时钟注入口（`backend/services/travel.py:141`），集成测试已有 `fixed_today` 夹具（`tests/integration/conftest.py`）但不是默认生效 | 不带任何插件的 `dev test`，日期类失败为 0；新增一条测试：把“今天”拨到 2030 年，夹具行程仍然有效；业务的日期校验逻辑不改 | — | todo | |
+| A1 | 修测试的时间炸弹：夹具里的行程日期写死在 2026-11-03，过了这天就全部报“旅行日期不能早于今天” | P-201，做法见 §3.6。`TravelService` 已有时钟注入口（`backend/services/travel.py:141`），集成测试已有 `fixed_today` 夹具（`tests/integration/conftest.py`）但不是默认生效 | 不带任何插件的 `dev test`，日期类失败为 0；新增一条测试：把“今天”拨到 2030 年，夹具行程仍然有效；业务的日期校验逻辑不改 | — | doing | |
 | A2 | 逐条定性 P-202 列出的既有失败（12 条稳定或抖动的，加 1 条偶发的并发抢占），能修的修，属于本机环境的登记到[测试总览 §4](../../handbook/testing/README.md) | P-202，做法见 §3.6 | 每条各有结论（真缺陷 / 时钟 / 本机环境 / 抖动）与处置；并发抢占那条要给出是测试时序问题还是产品竞态的证据；`dev test` 在本机通过；不带 `--no-verify` 的 `git commit` 能通过 | A1 | todo | |
 | A3 | 运行事件补三样：① `load_skill` 的 Skill 名和内容哈希；② 修复轮次；③ 多轮评测每次运行的结果行里带上展示过的酒店卡明细和所选酒店 | ① `backend/domain/tool_facts.py:23-65` 的 `ToolArgumentFacts` 加封闭枚举字段，哈希加在 tool_finished 上（盘点 D2）；② 现在只进 TRACE 日志，`eval/v3/score.py` 的 `repair_rounds` 因此恒为 0（盘点 A6、G15）；③ 结果行现在没有酒店卡（盘点 B5） | v3 离线冒烟后，`trials.jsonl` 每行能读到三样；各有单元测试；不外泄内部 ID 的现有约束不破 | — | todo | |
 | A4 | 多轮评测支持变体、单个 Skill 开关、Skill 候选目录 | 现有消融变体只支持单条 prompt（`backend/providers/claude_agent/worker.py:105`，盘点 C8）；候选目录见 §3.3 | v3 运行器可带 `no_skills`、关掉指定的一个 Skill、指定候选目录各跑通一次离线冒烟；非评测配置下指定候选目录被拒绝，有测试 | A3 | todo | |
@@ -233,6 +233,7 @@ D4 的估算。单价取自 2026-10-20 的 30 题实测：全部题平均 0.26 �
 - 期望分的参数冻结后不随评测结果调整；要改走设计 §2.7 的流程。自进化不调参数。
 - 留出题：开发过程中不看内容；整个对照实验只跑三次；题目内容不进提示词、文档示例和自进化输入。
 - 自进化产生的修改只进候选目录；人工审核同意才合并到 `backend/tools/skills/`。
+- 2026-11-28 执行补充：每次真实运行前检查第二阶段 DeepSeek 累计账本。达 25 元即停止付费运行并报告已花金额、剩余任务和估算，等用户决定；总上限仍为 30 元。
 - 付费接口只有 DeepSeek flash（被测 Agent）；出题和反思走 Codex；软性打分用本机模型。DeepSeek 的总花费不超过 30 元人民币（按账本计），不另设每日上限；快到上限时停下并报告，不自行超支，是否充值由用户定；乐天只做 D6 授权的那一次录制。不因为有 key 自动放开。
 - 第一阶段的边界全部继续有效：见 [AGENTS.md](../../../AGENTS.md)、[SECURITY](../../handbook/SECURITY.md)、[RELIABILITY](../../handbook/RELIABILITY.md)。
 - `archive/` 只迁入不改写。
@@ -257,6 +258,13 @@ D4 的估算。单价取自 2026-10-20 的 30 题实测：全部题平均 0.26 �
 - 用户要换设备继续，要求把现有内容全部推送：这一轮的文档修改（只有两个 Markdown 文件）已提交并推送到 `origin/batch/2026-11-27-judge-evolution`，提交时同样跳过了钩子。
 - 下一步：Codex 从 A1、A2 开始修钩子，接着做 A7。真实跑量要等规则、打分器、评测集做完；大型号的本机模型要等换到 Mac。
 
+**Mac 开发接续（Codex）**
+
+- 计划：准备本机环境、记录告警基线，修复 A1，再处理 A2。
+- 完成：目标分支工作树已就绪，`setup`、`doctor`、`db-up` 通过。Mac 原始失败及 A1 对照见 P-201、P-202。
+- 未完成及原因：A7 的实机模型验证等具体权重下载授权，见 P-203。本次未发起任何付费请求。
+- 下一步：走正常提交钩子，处理 A2 已知时序问题和跨平台路径。
+
 ### 2026-11-27
 
 - 计划：读 Notion「Agent更新3」与代码，整理仓库，定第二阶段框架。
@@ -275,10 +283,22 @@ D4 的估算。单价取自 2026-10-20 的 30 题实测：全部题平均 0.26 �
   2. ✗ 数据库或迁移问题。证据：同一次运行里不涉及日期的集成测试通过。
 - 根因：VERIFIED（见假设 1 的对照）。`TravelService` 默认用真实的东京日期；集成测试的 `fixed_today` 夹具只在部分测试里使用。
 - 方案对比：A 测试统一注入固定时钟（推荐，不动业务逻辑）；B 把夹具日期改成相对今天的偏移（会让依赖具体星期几、节假日的断言变得不稳定）；C 放宽业务的日期校验（不采用，改的是产品行为）。
-- 实现 / 测试 / 结果：待 A1。
+- Mac 补证（VERIFIED）：`test_trip_fixture_survives_2030_host_clock` 将真实读取点模拟到 2030-01-01，修复前触发行程日期过期。固定离线测试旅行日历后，日期专项 68 passed。API、恢复、SDK 集成子进程继承同一测试日期，业务入口仍使用真实时钟。
+- 天气专项（VERIFIED）：初次固定旅行日期后 3 failed，天气测试请求日期用 UTC 墙钟构造，落在测试预报窗口之外。改为从 `tokyo_today()` 计算预报日；实际缓存有效期仍使用 UTC 墙钟。
+- Mac A1 全量（VERIFIED）：`dev check` 通过（478 个源文件 × 3 平台、11 条分层契约、18 份文档入口）；正常 `dev test` 为 2477 passed / 2 skipped / 4 deselected，444.42 秒，0 日期失败。2030 回归与 3 个天气用例均通过。独立只读审查未发现需修问题。
 - 影响：这台机器上提交钩子里的 `dev test` 过不了，所有提交被挡。R0 按 D8 跳过钩子提交了一次；修法见 §3.6。
 
 ### P-202 [计划外] 时钟冻结后仍有 12 个既有失败，另有 1 条偶发   状态：todo   关联：A2
+
+**Mac 基线（2026-11-28，`f7517a2`）**
+
+- VERIFIED：Apple Silicon 64 GB，Python 3.12.13，Claude CLI 2.1.295，Docker PostgreSQL 17。`dev check` 通过（11 条分层契约、18 份文档入口）。`dev test` 未冻结：38 failed / 2056 passed / 2 skipped / 4 deselected / 382 errors，177.50 秒。
+- 失败按文件归类：`test_eval_state` 18，`test_simulator` 4，`test_booking_concurrency` 4，`test_conversation_conditions` 3，`test_eval_content` 2，`test_history`、`test_sessions`、`test_workbench`、`test_bookings`、`test_synthetic_data`、`test_three_city_fixture`、`test_travel_request` 各 1。382 个错误发生于集成测试准备阶段。
+- 堆栈中有 398 条日期过期记录。详单在工作树本地 `.cache/phase2/baseline-mac-test.log` 的 pytest 汇总。A1 修复后再以未被日期阻断的 Mac 结果定性 A2。
+
+- A1 后 Mac 对照（VERIFIED）：2477 passed / 2 skipped / 4 deselected；未观察到 Windows 清单里的失败。偶发暂留仍按独立时序证据定性。
+
+**Windows 历史基线（保留对照）**
 
 - 现象：时钟固定到 2026-10-10 后直接跑 pytest，整理前后都是 12 failed。名单（整理后的路径）：
   - `tests/unit/eval/test_eval_v3_judge.py::test_transcript_is_written_to_the_private_run_dir`
@@ -295,6 +315,13 @@ D4 的估算。单价取自 2026-10-20 的 30 题实测：全部题平均 0.26 �
   4. 两条互换的用例是依赖真实 CLI 子进程的抖动。
   5. 并发抢占那条可能只是高负载下的测试时序问题，也可能是落败请求的失败记录没有写入的产品竞态；两种都还没有证据，不能当抖动放过。
 - 下一步：A2 逐条用 `dev test --path` 复现并定性。
+
+### P-203 [计划外] 本地模型权重下载待授权   状态：blocked   关联：A7
+
+- 现象（VERIFIED）：Ollama 0.40.16 已在 Mac 用关闭云功能的模式监听回环 `127.0.0.1:11528`。自动审批拒绝从 Ollama 官方库下载 `qwen3.8:27b-q4_K_M`，理由为约 18 GB 的下载需要对具体权重的批准。
+- 证据：[官方权重页](https://ollama.com/library/qwen3.8:27b-q4_K_M)和 [Anthropic Messages 兼容说明](https://docs.ollama.com/api/anthropic-compatibility)。模型十题实测待下载后验证，兼容文档只证明接口声明。
+- 取舍：等待具体授权，先做离线任务。下载许可与模型可用性分开记录，此项不触发 DeepSeek 小样本退回。
+- 下一步：获批后缓存到工作树的忽略目录、核对本地 digest，按 A7 验收。
 
 ## 9. 验证与交付
 

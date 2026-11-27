@@ -16,7 +16,7 @@ from backend.adapters.open_meteo import forecast
 from backend.adapters.rakuten import Rakuten
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError, GeoPoint
-from backend.domain.travel_request import RequestPatch, TravelRequest
+from backend.domain.travel_request import RequestPatch, TravelRequest, tokyo_today
 from backend.persistence.catalog import import_catalog
 from backend.persistence.models import EvidenceRow, WeatherForecastRow
 from backend.services.catalog import CatalogService
@@ -38,7 +38,7 @@ def test_weather_empty_or_wrong_dates_are_not_cached(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext], times: list[str]
 ) -> None:
     runner, travel, _ = travel_setup
-    today = datetime.now(UTC).date() + timedelta(days=2)
+    today = tokyo_today() + timedelta(days=2)
     request = TravelRequest(city="合成空天气", start_date=today, end_date=today)
     point = GeoPoint(name="合成空天气", latitude=35, longitude=135)
     payload = {
@@ -71,7 +71,7 @@ def test_weather_cache_survives_new_run_and_expires_after_three_hours(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:
     runner, travel, _ = travel_setup
-    today = datetime.now(UTC).date() + timedelta(days=1)
+    today = tokyo_today() + timedelta(days=1)
     request = TravelRequest(city="京都", start_date=today, end_date=today + timedelta(days=1))
     point = GeoPoint(name="京都", latitude=35, longitude=135)
     payload = {

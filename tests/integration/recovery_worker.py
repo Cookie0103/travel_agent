@@ -16,6 +16,7 @@ from backend.services.bookings import BookingService
 from backend.services.plans import PlanService
 from backend.services.travel import TravelService
 from mock_supplier.service import SupplierService
+from tests.support.clock import fixture_travel_calendar
 from tests.support.runner import selector_runner
 
 
@@ -51,5 +52,5 @@ async def execute(payload: dict[str, object]) -> None:
 
 if __name__ == "__main__":
     payload = json.loads(sys.stdin.readline())
-    with selector_runner() as runner:
+    with fixture_travel_calendar(), selector_runner() as runner:
         runner.run(execute(payload))

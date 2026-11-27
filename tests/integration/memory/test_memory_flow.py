@@ -36,7 +36,7 @@ from tests.integration.travel.test_ask_and_select import (
 )
 from tests.integration.travel.test_travel import travel_setup as travel_setup
 
-pytestmark = [pytest.mark.integration, pytest.mark.usefixtures("fixed_today")]
+pytestmark = pytest.mark.integration
 
 Setup = tuple[asyncio.Runner, TravelService, RunContext]
 PREFS = "我平时喜欢特种兵节奏，常用公共交通，七点半起床，晚上十点结束"

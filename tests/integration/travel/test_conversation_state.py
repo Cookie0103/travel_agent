@@ -18,7 +18,7 @@ from backend.tools.contracts import PRESENTATION_RESULT_LIMIT
 from backend.tools.travel import TravelToolExecutor
 from tests.integration.travel.test_travel import travel_setup as travel_setup
 
-pytestmark = [pytest.mark.integration, pytest.mark.usefixtures("fixed_today")]
+pytestmark = pytest.mark.integration
 
 
 async def create_run(travel: TravelService, context: RunContext, prompt: str) -> RunContext:
