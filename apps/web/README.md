@@ -20,7 +20,7 @@ uv run python scripts/dev.py web
 预算和供应商授权仍由服务端检查，页面不会接触供应商密钥。
 
 验证：dev web-check（类型/lint/Node原生测试/build）；契约变化时dev web-generate。
-每次build替换.next；本地standalone需补当前.next/static到.next/standalone/.next/static并重启，再查脚本200和Chrome工作台；命令见docs/operations/product-v2.md的P73。
+每次build替换.next；本地standalone需补当前.next/static到.next/standalone/.next/static并重启，再查脚本200和Chrome工作台；命令见archive/phase1/docs/operations/product-v2.md的P73。
 缓存由pnpm-workspace.yaml限定项目.cache；不执行unrs-resolver安装脚本。
 金额使用服务端字符串；模型不能代替确认。刷新恢复当前标签页身份/执行/正式行程。
 未知响应的消息保留原client_message_id，用户明确重试；重连只读事件，不重发消息。

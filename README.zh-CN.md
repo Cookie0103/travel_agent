@@ -49,12 +49,12 @@
 
 ```bash
 uv run python scripts/dev.py stack-up      # 启动 API / 模拟供应商 / PostgreSQL / 前端
-uv run python -m scripts.smoke_demo        # 端到端烟测
+uv run python -m scripts.demo.smoke_demo        # 端到端烟测
 # 打开 http://127.0.0.1:3100
 uv run python scripts/dev.py stack-down
 ```
 
-真实模型、API key 和预算配置见[开发与运行手册](docs/guides/development.md)。
+真实模型、API key 和预算配置见[开发与运行手册](docs/handbook/guides/development.md)。
 
 ## 架构
 
@@ -183,5 +183,5 @@ flowchart LR
 
 ## 延伸阅读
 
-- [架构与效果复盘](docs/review/architecture-retrospective.md) · [评测报告](docs/proposals/eval-redesign/results-2026-10-20.md) · [代码架构地图](ARCHITECTURE.md)
-- [系统白话讲解](docs/guides/system-walkthrough.md) · [架构决策记录](docs/adr/) · [安全](docs/SECURITY.md) · [可靠性](docs/RELIABILITY.md)
+- [架构与效果复盘](archive/phase1/docs/review/architecture-retrospective.md) · [评测报告](archive/phase1/docs/proposals/eval-redesign/results-2026-10-20.md) · [代码架构地图](ARCHITECTURE.md)
+- [系统白话讲解](docs/handbook/guides/system-walkthrough.md) · [架构决策记录](docs/handbook/adr/) · [安全](docs/handbook/SECURITY.md) · [可靠性](docs/handbook/RELIABILITY.md)

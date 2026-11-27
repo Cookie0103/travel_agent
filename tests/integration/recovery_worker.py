@@ -16,7 +16,7 @@ from backend.services.bookings import BookingService
 from backend.services.plans import PlanService
 from backend.services.travel import TravelService
 from mock_supplier.service import SupplierService
-from tests.runner import selector_runner
+from tests.support.runner import selector_runner
 
 
 async def execute(payload: dict[str, object]) -> None:

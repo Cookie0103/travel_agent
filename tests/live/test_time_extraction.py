@@ -16,7 +16,7 @@ from backend.providers.claude_agent.live import run_live
 from backend.services.sessions import DemoLogin, SessionService
 from backend.services.travel import TravelService
 from scripts.dev import ROOT
-from tests.runner import selector_runner
+from tests.support.runner import selector_runner
 
 pytestmark = pytest.mark.live
 

@@ -65,7 +65,7 @@ class CompactionHistory:
         self.event_path: Path | None = None
 
     def __call__(self, body: bytes) -> tuple[int, bytes]:
-        from tests.test_sdk_cli_offline import scripted_response
+        from tests.unit.providers.test_sdk_cli_offline import scripted_response
 
         request = json.loads(body)
         self.requests.append(request)

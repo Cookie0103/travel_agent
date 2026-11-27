@@ -1,7 +1,7 @@
 """枚举型列加CHECK，task_runs加(session_id, created_at)索引；只加约束/索引，不改数据。
 
 取值是写迁移时从domain Literal冻结的快照（迁移不得随代码漂移）；
-tests/integration/test_schema_constraints.py 断言这些CHECK与当前代码枚举一致。
+tests/integration/schema/test_schema_constraints.py 断言这些CHECK与当前代码枚举一致。
 先查既有数据，有未知取值就报错中止并指出表列，不静默改写；再NOT VALID加约束+VALIDATE
 （VALIDATE只取SHARE UPDATE EXCLUSIVE锁）。索引不用CONCURRENTLY：表小，且迁移在事务中。
 """

@@ -92,7 +92,7 @@ forbidden_modules = [
 allow_indirect_imports = true
 
 # 以下分层契约按 ARCHITECTURE.md 声明的方向收紧；allow_indirect_imports 只约束直接导入。
-# ignore_imports 里的每一条都是已知债务，清单与消除方式见 docs/execution/layering-debt.md。
+# ignore_imports 里的每一条都是已知债务，清单与消除方式见 docs/handbook/execution/layering-debt.md。
 [[tool.importlinter.contracts]]
 name = "Persistence sits below services adapters tools agent providers and API"
 type = "forbidden"

@@ -15,8 +15,8 @@ from backend.domain.travel_request import RequestPatch
 from backend.services.runs import RunService
 from backend.services.sessions import SessionService
 from backend.services.travel import TravelService
-from tests.fakes import FakeRuntime
-from tests.runner import selector_runner
+from tests.support.fakes import FakeRuntime
+from tests.support.runner import selector_runner
 
 
 class InterruptedRuntime(FakeRuntime):

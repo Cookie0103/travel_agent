@@ -2,10 +2,10 @@
 
 | 文件 | 状态 | 条数 | 谁在用 |
 | --- | --- | --- | --- |
-| `v3.jsonl` | **现行**（v3 测评题库，持续扩充） | 30 | `eval/v3_run.py` 默认加载（`scripts/dev.py eval-v3`）；格式与出题规范见 `docs/proposals/eval-redesign/question-generation-spec.md` |
-| `frozen_v1.jsonl` + `frozen_v1.json` | **冻结**（内容/划分由 sha256 校验，变更须另建版本） | 20 dev + 40 test | `eval/suites.py:load_suite("frozen")`；`frozen_v1.json` 同时绑着下面 legacy 两文件的哈希，改动任一都会触发完整性报错 |
-| `datamind_adapted.jsonl` + `travel_m1.jsonl` | **历史**（legacy 套件，仍是 `eval/run.py` 的默认入口） | 21 + 9 | `eval/suites.py:load_suite("legacy")` 及多个测试；同时被 `frozen_v1.json` 哈希引用，不能单独移动或修改 |
-| `v2_interaction.jsonl` / `v2_memory.jsonl` | **历史**（v2 机制开发集，未冻结） | 8 / 20 | `dev.py eval-v2` / `eval-memory`、`eval/suites.py:load_suite("v2" / "v2-memory")` 及记忆相关测试 |
+| `v3.jsonl` | **现行**（v3 测评题库，持续扩充） | 30 | `eval/v3/run.py` 默认加载（`scripts/dev.py eval-v3`）；格式与出题规范见 `archive/phase1/docs/proposals/eval-redesign/question-generation-spec.md` |
+| `frozen_v1.jsonl` + `frozen_v1.json` | **冻结**（内容/划分由 sha256 校验，变更须另建版本） | 20 dev + 40 test | `eval/core/suites.py:load_suite("frozen")`；`frozen_v1.json` 同时绑着下面 legacy 两文件的哈希，改动任一都会触发完整性报错 |
+| `datamind_adapted.jsonl` + `travel_m1.jsonl` | **历史**（legacy 套件，仍是 `eval/v1v2/run.py` 的默认入口） | 21 + 9 | `eval/core/suites.py:load_suite("legacy")` 及多个测试；同时被 `frozen_v1.json` 哈希引用，不能单独移动或修改 |
+| `v2_interaction.jsonl` / `v2_memory.jsonl` | **历史**（v2 机制开发集，未冻结） | 8 / 20 | `dev.py eval-v2` / `eval-memory`、`eval/core/suites.py:load_suite("v2" / "v2-memory")` 及记忆相关测试 |
 
 归档约定（2026-10-20 决定）：在 v3 跑通全量并成为默认套件之前，旧文件原地保留、不移动不改名——`suites.py`、冻结哈希和测试都按现路径引用。v3 成为默认后再统一移到 `archive/` 并同步改引用。
 

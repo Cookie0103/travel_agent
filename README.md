@@ -49,12 +49,12 @@ You need [uv](https://docs.astral.sh/uv/) and Docker. The offline demo needs **n
 
 ```bash
 uv run python scripts/dev.py stack-up      # API, mock supplier, PostgreSQL, web
-uv run python -m scripts.smoke_demo        # end-to-end smoke test
+uv run python -m scripts.demo.smoke_demo        # end-to-end smoke test
 # open http://127.0.0.1:3100
 uv run python scripts/dev.py stack-down
 ```
 
-Live models, API keys and budgets: [development guide](docs/guides/development.md).
+Live models, API keys and budgets: [development guide](docs/handbook/guides/development.md).
 
 ## Architecture
 
@@ -183,7 +183,7 @@ Every incident became a permanent guardrail:
 
 ## Further reading
 
-- [Architecture retrospective](docs/review/architecture-retrospective.md) · [Eval report](docs/proposals/eval-redesign/results-2026-10-20.md) · [Code map](ARCHITECTURE.md)
-- [System walkthrough](docs/guides/system-walkthrough.md) · [ADRs](docs/adr/) · [Security](docs/SECURITY.md) · [Reliability](docs/RELIABILITY.md)
+- [Architecture retrospective](archive/phase1/docs/review/architecture-retrospective.md) · [Eval report](archive/phase1/docs/proposals/eval-redesign/results-2026-10-20.md) · [Code map](ARCHITECTURE.md)
+- [System walkthrough](docs/handbook/guides/system-walkthrough.md) · [ADRs](docs/handbook/adr/) · [Security](docs/handbook/SECURITY.md) · [Reliability](docs/handbook/RELIABILITY.md)
 
 <sub>Most design docs are written in Chinese.</sub>
