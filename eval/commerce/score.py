@@ -3,6 +3,7 @@
 import math
 from collections.abc import Mapping, Sequence
 from dataclasses import dataclass
+from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -172,4 +173,43 @@ def score(
         inversions=inversions,
         comparable_pairs=pairs,
         total_jpy=revenue * discount if not violations else 0.0,
+    )
+
+
+def rescore(
+    sheet: Mapping[str, Any],
+    registry: Registry,
+    *,
+    apply_trust: bool = True,
+    soft: Mapping[str, Mapping[str, float]] | None = None,
+) -> float:
+    if any(
+        code not in {"partner_share", "partner_relevance"} for code in sheet.get("violations", ())
+    ):
+        return 0.0
+
+    def candidate(raw: dict[str, Any]) -> Candidate:
+        values = {
+            name: probability
+            for name, probability in (soft or {}).get(raw["id"], {}).items()
+            if name in registry.soft_items
+        }
+        return (
+            Candidate.model_validate({**raw, "soft_probabilities": values})
+            if soft
+            else (Candidate.model_validate(raw))
+        )
+
+    cards = [
+        score(
+            [candidate(hotel) for hotel in group["inputs"]],
+            group["budget_jpy"],
+            group["persona"],
+            registry,
+            apply_trust=apply_trust,
+        )
+        for group in sheet["groups"]
+    ]
+    return (
+        math.fsum(card.total_jpy for card in cards) if all(card.passed for card in cards) else 0.0
     )

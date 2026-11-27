@@ -38,3 +38,4 @@
 | [030](030-generic-choice-form.md) | 通用服务端校验表单取代写死的组合卡 |
 | [031](031-async-memory-extraction.md) | 记忆改为run结束后的异步抽取 |
 | [033](033-hotel-evaluation-data.md) | 酒店评测世界的数据来源 |
+| [034](034-local-decision-evaluation.md) | 本机决策模型评估软性条目 |
