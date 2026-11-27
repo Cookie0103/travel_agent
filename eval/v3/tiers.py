@@ -38,6 +38,7 @@ VALIDATOR_TIER: dict[str, Tier] = {
             "overlap",
             "pace_too_sparse",
             "pace_warning",
+            "recognized_constraint",
             "repeated_place_warning",
             "route_departure",
             "route_duration",

@@ -6,6 +6,7 @@ from typing import Literal
 from uuid import UUID
 
 from backend.domain.catalog import SIGHTSEEING_CATEGORIES, VISIT_DURATION_RANGES, Place
+from backend.domain.choices import recognized_constraint_group
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.hotel_recovery import nightly_price, nightly_upper
 from backend.domain.hotels import HotelOffer
@@ -80,17 +81,9 @@ def validate_itinerary(
         )
     checks.extend(sightseeing_checks(request, proposal, places))
     checks.extend(meal_checks(request, proposal))
-    known, estimated, costs = budget_checks(request, proposal, evidence, now)
+    known, estimated, costs = budget_checks(request, proposal, evidence, now, places=places)
     checks.extend(costs)
-    if request.hard_constraints:
-        checks.append(
-            check(
-                "request",
-                "unknown",
-                "free_text_constraints",
-                "自由文本硬条件尚不能全部机械核查，需保留并明确未验证",
-            )
-        )
+    checks.extend(constraint_checks(request))
     states = {entry.status for entry in checks}
     status: Literal["complete", "partial", "conflict"] = (
         "conflict" if "conflict" in states else "partial" if "unknown" in states else "complete"
@@ -98,6 +91,40 @@ def validate_itinerary(
     return ValidationReport(
         status=status, checks=tuple(checks), known_cost=known, estimated_cost=estimated
     )
+
+
+def constraint_checks(request: TravelRequest) -> list[ValidationCheck]:
+    checks: list[ValidationCheck] = []
+    hard = set(request.hard_constraints)
+    for index, text in enumerate(
+        dict.fromkeys((*request.hard_constraints, *request.soft_constraints))
+    ):
+        if (group := recognized_constraint_group(text)) is not None:
+            pending = (
+                text in hard
+                and group in {"arrival", "departure", "lodging", "smoking", "bed"}
+                and not text.endswith("无要求")
+            )
+            checks.append(
+                check(
+                    f"constraint:{group}",
+                    "unknown" if pending else "verified",
+                    "recognized_constraint",
+                    "已识别结构化硬条件，实际时段或房型仍需核对。"
+                    if pending
+                    else "已识别结构化条件。",
+                )
+            )
+        elif text in hard:
+            checks.append(
+                check(
+                    f"constraint:{index}",
+                    "unknown",
+                    "free_text_constraints",
+                    "该项自由文本硬条件未核实，需保留并明确说明。",
+                )
+            )
+    return checks
 
 
 def sightseeing_checks(
@@ -116,18 +143,10 @@ def sightseeing_checks(
         by_day.setdefault(day, []).append(place.place_id)
         by_place.setdefault(place.place_id, []).append((day, place.name))
     limits = {"慢节奏": 3, "标准": 5, "特种兵": 8}
-    pace = (
-        pace_of(request) or ""
-        if request.segments
-        else next(
-            (s.removeprefix("节奏：") for s in request.soft_constraints if s.startswith("节奏：")),
-            "",
-        )
-    )
+    pace = pace_of(request) or ""
     limit = limits.get(pace, 5)
     checks: list[ValidationCheck] = []
-    if request.segments:
-        assert request.start_date is not None and request.end_date is not None
+    if request.start_date is not None and request.end_date is not None:
         incomplete = {request.start_date, request.end_date} | {
             segment.arrive for segment in trip_segments(request)[1:]
         }
@@ -163,28 +182,28 @@ def sightseeing_checks(
                         "首末日和转场日已放宽，不按未查询的航班/车次时刻推算。",
                     )
                 )
-        for index in range(1, len(proposal.items)):
-            previous, current = proposal.items[index - 1 : index + 1]
-            previous_place, current_place = places[index - 1 : index + 1]
-            day = current.start.astimezone(TOKYO).date()
-            if (
-                previous.start.astimezone(TOKYO).date() == day
-                and previous.end.astimezone(TOKYO).date() == day
-                and previous_place is not None
-                and current_place is not None
-                and same_city(previous_place.city, current_place.city)
-                and current.start - previous.end > timedelta(hours=3)
-            ):
-                checks.append(
-                    check(
-                        f"day:{day.isoformat()}",
-                        "unknown",
-                        "day_gap",
-                        f"安排提醒：{day.isoformat()}同城相邻两项之间"
-                        f"{hhmm(previous.end)}—{hhmm(current.start)}空白超过3小时；"
-                        "请补充安排或说明休息，不将空白解释成已查询交通耗时。",
-                    )
+    for index in range(1, len(proposal.items)):
+        previous, current = proposal.items[index - 1 : index + 1]
+        previous_place, current_place = places[index - 1 : index + 1]
+        day = current.start.astimezone(TOKYO).date()
+        if (
+            previous.start.astimezone(TOKYO).date() == day
+            and previous.end.astimezone(TOKYO).date() == day
+            and previous_place is not None
+            and current_place is not None
+            and same_city(previous_place.city, current_place.city)
+            and current.start - previous.end > timedelta(hours=3)
+        ):
+            checks.append(
+                check(
+                    f"day:{day.isoformat()}",
+                    "unknown",
+                    "day_gap",
+                    f"安排提醒：{day.isoformat()}同城相邻两项之间"
+                    f"{hhmm(previous.end)}—{hhmm(current.start)}空白超过3小时；"
+                    "请补充安排或说明休息，不将空白解释成已查询交通耗时。",
                 )
+            )
     for day, visits in by_day.items():
         if len(visits) > limit:
             guidance = (
@@ -275,7 +294,7 @@ def visit_checks(
     checks: list[ValidationCheck] = []
     if end <= start:
         return [check(subject, "conflict", "visit_duration", "停留结束必须晚于开始")]
-    if request.segments and place is not None:
+    if place is not None:
         bounds = VISIT_DURATION_RANGES.get(place.category.strip().casefold())
         if bounds:
             lower, upper = (timedelta(minutes=minutes) for minutes in bounds)
@@ -470,21 +489,34 @@ def route_checks(
     ]
 
 
+TRANSIT_STOPS = frozenset({"station", "train_station", "subway_station", "bus_station", "airport"})
+
+
 def budget_checks(
     request: TravelRequest,
     proposal: ItineraryProposal,
     evidence: dict[UUID, EvidenceRecord],
     now: datetime,
+    *,
+    places: list[Place | None] | None = None,
 ) -> tuple[Decimal, Decimal, list[ValidationCheck]]:
     known, estimated = Decimal(0), Decimal(0)
-    checks = [
-        check(
-            "budget",
-            "unknown",
-            "other_costs",
-            "景点门票、餐饮等未获得完整费用证据，不能认定全程预算满足",
+    checks: list[ValidationCheck] = []
+    # 纯换乘停靠已有路段费用口径。景点、未核实地点及其他活动仍有未核实费用。
+    if places is None or any(
+        place is None
+        or place.category.strip().casefold() not in TRANSIT_STOPS
+        or (item.note and item.note.strip())
+        for item, place in zip(proposal.items, places, strict=True)
+    ):
+        checks.append(
+            check(
+                "budget",
+                "unknown",
+                "other_costs",
+                "景点门票、餐饮等未获得完整费用证据，不能认定全程预算满足",
+            )
         )
-    ]
     relation = lodging_budget_relation(request)
     checks.append(
         check(

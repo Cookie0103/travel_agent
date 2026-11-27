@@ -72,7 +72,7 @@ def test_unknown_pace_does_not_claim_a_lower_target() -> None:
 def test_day_gap_warns_only_above_three_hours_between_same_city_items(
     cross_city: bool, gap_hours: int, warn: bool
 ) -> None:
-    current, _, _ = multi_city_example()
+    current = request().model_copy(update={"city": "大阪"})
     start = datetime.fromisoformat("2026-11-04T12:00+09:00")
     first = ProposedItem(
         place_evidence_id=UUID("00000000-0000-0000-0000-000000000001"),
@@ -107,9 +107,9 @@ def test_confirmed_pace_alias_resolves_conversation_and_fixture_question(alias: 
     assert pace_of(updated) == ("标准" if alias in ("正常", "标准节奏") else "慢节奏")
 
 
-def test_legacy_single_city_keeps_soft_only_pace_and_no_new_sparse_checks() -> None:
-    assert density_checks(4, 2, "标准", segmented=False) == []
-    assert density_checks(4, 4, "轻松", segmented=False) == []
+def test_single_city_checks_sparse_day_and_pace_alias() -> None:
+    assert ("pace_too_sparse", "unknown") in density_checks(4, 2, "标准", segmented=False)
+    assert ("pace_warning", "unknown") in density_checks(4, 4, "轻松", segmented=False)
 
 
 @pytest.mark.parametrize("text", ["酒店正常营业", "查询佛系咖啡馆"])

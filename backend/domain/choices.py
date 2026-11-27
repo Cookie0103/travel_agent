@@ -7,7 +7,12 @@ from uuid import UUID, uuid4
 
 from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
-from backend.domain.room_choices import CHOICE_VALUES, ROOM_CHOICES, recognized_room_choices
+from backend.domain.room_choices import (
+    CHOICE_VALUES,
+    ROOM_CHOICES,
+    canonical_choice,
+    recognized_room_choices,
+)
 from backend.domain.travel_request import (
     PACE_ALIASES,
     RequestPatch,
@@ -470,6 +475,25 @@ PREFIXES = {
 }
 PACE_BY_OPTION = {option.option_id: option.value for option in pace_options()}
 _TIME = re.compile(r"\d[:：]\d{2}|\d\s*[点時时]")
+_CLOCK_LABEL = re.compile(r"(?:[01]?\d|2[0-3])[:：][0-5]\d")
+
+
+def recognized_constraint_group(text: str) -> str | None:
+    """复用卡片及房型词表识别结构化约束。"""
+    text = text.strip()
+    if text.removeprefix("节奏：").strip() in PACE_ALIASES:
+        return "pace"
+    if (room := canonical_choice(text)) is not None:
+        return next(group for group, values in ROOM_CHOICES.items() if room in values)
+    for group, (prefix, _) in PREFIXES.items():
+        if text.startswith(prefix):
+            label = text.removeprefix(prefix).strip()
+            options = TRIP_ASK_SPECS[group][1]
+            if any(option.option_id != "any" and option.label == label for option in options):
+                return group
+            if group != "companion" and _CLOCK_LABEL.fullmatch(label):
+                return group
+    return None
 
 
 def _has_prefix(request: TravelRequest, prefix: str) -> bool:

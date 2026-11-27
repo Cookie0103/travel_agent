@@ -59,7 +59,7 @@ def test_missing_place_does_not_invent_a_category_duration() -> None:
     )
 
 
-def test_legacy_single_city_extreme_duration_keeps_original_checks() -> None:
+def test_single_city_extreme_duration_is_a_conflict() -> None:
     current, proposal, _ = multi_city_example()
     current = current.model_copy(update={"segments": None})
     target = proposal.items[0].model_copy(
@@ -67,6 +67,7 @@ def test_legacy_single_city_extreme_duration_keeps_original_checks() -> None:
     )
     proposal = proposal.model_copy(update={"items": (target,)})
     destination = place().model_copy(update={"city": "大阪", "category": "museum"})
-    assert not any(
-        c.code == "visit_duration_range" for c in visit_checks(current, proposal, 0, destination)
+    assert any(
+        c.code == "visit_duration_range" and c.status == "conflict"
+        for c in visit_checks(current, proposal, 0, destination)
     )

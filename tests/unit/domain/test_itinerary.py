@@ -16,7 +16,7 @@ from backend.domain.itinerary import (
     RouteEstimate,
     ValidationReport,
 )
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import LodgingBudget, TravelRequest
 from backend.domain.validator import validate_itinerary
 from backend.providers.hotel_fixture import load_rates
 from backend.providers.routes_fixture import estimate, load_routes
@@ -385,7 +385,7 @@ def route_report(
         ),
     )
     report = validate_itinerary(current, proposal, (first, second, stored), NOW)
-    assert report.status != "complete"  # other_costs 永远未知
+    assert report.status != "complete"  # 未选酒店且景点费用未知
     return [(c.status, c.code, c.message) for c in report.checks]
 
 
@@ -683,3 +683,73 @@ def test_meal_time_checks_breakfast_lunch_dinner_and_relaxes_first_and_last_days
 ) -> None:
     messages = [c.message for c in meal_report(*spans, day=day).checks if c.code == "meal_time"]
     assert (not messages) if missing is None else (len(messages) == 1 and missing in messages[0])
+
+
+@pytest.mark.parametrize(
+    "note,hard,expected_status",
+    [
+        (None, (), "complete"),
+        ("站内吃午饭", (), "partial"),
+        (None, ("第一天抵达：中午 12:00 左右",), "partial"),
+    ],
+)
+def test_transit_and_hotel_report_retains_unverified_activities_and_hard_constraints(
+    note: str | None,
+    hard: tuple[str, ...],
+    expected_status: str,
+) -> None:
+    lodging = LodgingBudget.model_validate(
+        {"amount": {"upper": "40000"}, "basis": "total", "currency": "JPY"}
+    )
+    current = request().model_copy(update={"lodging_budget": lodging, "hard_constraints": hard})
+    station = place().model_copy(update={"category": "train_station", "opening_hours": "24/7"})
+    rates, _ = load_rates()
+    offer = quote(rates[0], current, NOW)
+    assert offer is not None and offer.total is not None
+    destination, hotel = record(station, current), record(offer, current)
+    proposal = ItineraryProposal(
+        expected_revision=1,
+        items=(item(destination).model_copy(update={"note": note}),),
+        hotel_evidence_id=hotel.evidence_id,
+    )
+    report = validate_itinerary(current, proposal, (destination, hotel), NOW)
+    assert report.status == expected_status
+    assert any(c.code == "other_costs" for c in report.checks) is (note is not None)
+    if hard:
+        assert any(
+            c.subject == "constraint:arrival" and c.status == "unknown" for c in report.checks
+        )
+
+
+def test_nine_known_constraint_groups_are_reported_individually() -> None:
+    current = request().model_copy(
+        update={
+            "hard_constraints": (
+                "节奏：标准",
+                "第一天抵达：中午 12:00 左右",
+                "最后一天离开：中午前",
+                "住宿：独立房间",
+                "房型：禁烟",
+                "床型：双床",
+                "不要爬山",
+            ),
+            "soft_constraints": ("平时起床：7:30 左右", "晚上结束：21:00 左右", "同行：家人"),
+        }
+    )
+    destination = record(place(), current)
+    proposal = ItineraryProposal(expected_revision=1, items=(item(destination),))
+    report = validate_itinerary(current, proposal, (destination,), NOW)
+    parsed = [c.subject for c in report.checks if c.code == "recognized_constraint"]
+    assert set(parsed) == {
+        "constraint:pace",
+        "constraint:arrival",
+        "constraint:departure",
+        "constraint:lodging",
+        "constraint:smoking",
+        "constraint:bed",
+        "constraint:wake",
+        "constraint:evening",
+        "constraint:companion",
+    }
+    assert len(parsed) == 9
+    assert [c.status for c in report.checks if c.code == "free_text_constraints"] == ["unknown"]
