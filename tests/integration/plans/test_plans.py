@@ -732,6 +732,61 @@ async def version_count(travel: TravelService, plan_id: UUID) -> int:
         )
 
 
+def test_limited_edit_reuses_previous_draft_and_blocks_confirmation_after_replay(
+    travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
+) -> None:
+    runner, travel, context = travel_setup
+
+    async def exercise() -> None:
+        first, second = await destinations(travel, context)
+        original = proposal(first)
+        day_three = proposal(second).items[0]
+        two_days = timedelta(days=2)
+        day_three = day_three.model_copy(
+            update={"start": day_three.start + two_days, "end": day_three.end + two_days}
+        )
+        old_items = (*original.items, day_three)
+        service = PlanService(travel)
+
+        def arguments(items: tuple[ProposedItem, ...]) -> StageInput:
+            return StageInput.model_validate(
+                {
+                    "change": {
+                        "kind": "initial",
+                        "proposal": original.model_copy(update={"items": items}),
+                    }
+                }
+            )
+
+        base = await service.stage(context, arguments(old_items))
+        assert base.validation.status != "conflict", [
+            c for c in base.validation.checks if c.status == "conflict"
+        ]
+        editing = await start_turn(travel, context, "只改第三天，其他不动")
+        inside = day_three.model_copy(update={"note": "计划内调整"})
+        outside = old_items[0].model_copy(update={"note": "改了第一天"})
+        blocked = await service.stage(editing, arguments((outside, inside)))
+        replay = await service.stage(editing, arguments((outside, inside)))
+        assert replay.draft_id == blocked.draft_id
+        assert (
+            next(c for c in replay.validation.checks if c.code == "edit_scope").status == "conflict"
+        )
+        with pytest.raises(ServiceError) as failure:
+            await service.confirm(context.user_id, replay.draft_id)
+        assert_error(failure, 409, "conflict")
+
+        acceptable = await service.stage(editing, arguments((old_items[0], inside)))
+        assert acceptable.validation.status != "conflict", [
+            c for c in acceptable.validation.checks if c.status == "conflict"
+        ]
+        saved = await service.confirm(context.user_id, acceptable.draft_id)
+        assert (
+            next(c for c in saved.validation.checks if c.code == "edit_scope").status == "verified"
+        )
+
+    runner.run(exercise())
+
+
 def test_stage_does_not_save_and_parallel_confirm_returns_one_immutable_version(
     travel_setup: tuple[asyncio.Runner, TravelService, RunContext],
 ) -> None:

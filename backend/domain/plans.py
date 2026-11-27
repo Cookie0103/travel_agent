@@ -1,5 +1,6 @@
 """稳定行程项与局部patch规则；保留未改项，模型只暂存草稿，确认由业务事务完成。"""
 
+from datetime import timedelta
 from difflib import SequenceMatcher
 from typing import Annotated, Literal, Self
 from uuid import UUID, uuid4
@@ -137,6 +138,9 @@ class ItemDiff(BaseModel):
     op: Literal["add", "update", "remove"]
     before: PlanItem | None = None
     after: PlanItem | None = None
+
+
+DRAFT_TTL = timedelta(minutes=10)
 
 
 class PlanDraft(BaseModel):

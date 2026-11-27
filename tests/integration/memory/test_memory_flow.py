@@ -3,6 +3,7 @@
 import asyncio
 import json
 from dataclasses import replace
+from datetime import timedelta
 from uuid import UUID, uuid4
 
 import pytest
@@ -242,10 +243,17 @@ async def answered_trip(
 
 async def stage(travel: TravelService, run: RunContext):  # type: ignore[no-untyped-def]
     first, _ = await destinations(travel, run)
+    proposed = stage_proposal(first)
+    item = proposed.items[0]
+    # 记忆卡夹具选择了 15:00 抵达，活动需在抵达之后。
+    afternoon = item.model_copy(
+        update={"start": item.start + timedelta(hours=5), "end": item.end + timedelta(hours=5)}
+    )
+    proposed = proposed.model_copy(update={"items": (afternoon,)})
     return await TravelToolExecutor(travel).execute(
         run,
         "stage_plan_change",
-        {"change": {"kind": "initial", "proposal": stage_proposal(first).model_dump(mode="json")}},
+        {"change": {"kind": "initial", "proposal": proposed.model_dump(mode="json")}},
     )
 
 

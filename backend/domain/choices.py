@@ -474,6 +474,7 @@ PREFIXES = {
     "departure": ("最后一天离开：", "hard"),
 }
 PACE_BY_OPTION = {option.option_id: option.value for option in pace_options()}
+TIME_ROLES = {"arrival": r"抵达|到达", "departure": r"返程|离开|返回|回程"}
 _TIME = re.compile(r"\d[:：]\d{2}|\d\s*[点時时]")
 _CLOCK_LABEL = re.compile(r"(?:[01]?\d|2[0-3])[:：][0-5]\d")
 
@@ -502,9 +503,20 @@ def _has_prefix(request: TravelRequest, prefix: str) -> bool:
     )
 
 
-def _timed(request: TravelRequest, role: str, words: str) -> bool:
+def identifies_trip_boundary(text: str, role: str) -> bool:
+    if text.startswith(PREFIXES[role][0]):
+        return True
+    opposite = "departure" if role == "arrival" else "arrival"
+    return bool(
+        re.search(TIME_ROLES[role], text)
+        and not re.search(TIME_ROLES[opposite], text)
+        and not re.search("每天|每日", text)
+    )
+
+
+def _timed(request: TravelRequest, role: str) -> bool:
     return _has_prefix(request, PREFIXES[role][0]) or any(
-        re.search(words, text) and _TIME.search(text) and not re.search("每天|每日", text)
+        identifies_trip_boundary(text, role) and _TIME.search(text)
         for text in request.hard_constraints
     )
 
@@ -526,8 +538,8 @@ def trip_ask_form(
         "pace": itinerary and pace_of(request) is None,
         "wake": itinerary and not _has_prefix(request, PREFIXES["wake"][0]),
         "evening": itinerary and not _has_prefix(request, PREFIXES["evening"][0]),
-        "arrival": itinerary and not _timed(request, "arrival", "抵达|到达"),
-        "departure": itinerary and not _timed(request, "departure", "返程|离开|返回|回程"),
+        "arrival": itinerary and not _timed(request, "arrival"),
+        "departure": itinerary and not _timed(request, "departure"),
         "companion": itinerary and not _has_prefix(request, PREFIXES["companion"][0]),
         "transport": itinerary and request.transport is None,
         **{

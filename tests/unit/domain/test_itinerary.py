@@ -690,7 +690,7 @@ def test_meal_time_checks_breakfast_lunch_dinner_and_relaxes_first_and_last_days
     [
         (None, (), "complete"),
         ("站内吃午饭", (), "partial"),
-        (None, ("第一天抵达：中午 12:00 左右",), "partial"),
+        (None, ("第一天抵达：中午 12:00 左右",), "conflict"),
     ],
 )
 def test_transit_and_hotel_report_retains_unverified_activities_and_hard_constraints(
@@ -716,9 +716,7 @@ def test_transit_and_hotel_report_retains_unverified_activities_and_hard_constra
     assert report.status == expected_status
     assert any(c.code == "other_costs" for c in report.checks) is (note is not None)
     if hard:
-        assert any(
-            c.subject == "constraint:arrival" and c.status == "unknown" for c in report.checks
-        )
+        assert any(c.code == "arrival_boundary" and c.status == "conflict" for c in report.checks)
 
 
 def test_nine_known_constraint_groups_are_reported_individually() -> None:

@@ -52,6 +52,9 @@ class Article(BaseModel):
     source: Source
 
 
+TRANSIT_STOPS = frozenset({"station", "train_station", "subway_station", "bus_station", "airport"})
+
+
 SIGHTSEEING_CATEGORIES = {
     "museum",
     "castle",

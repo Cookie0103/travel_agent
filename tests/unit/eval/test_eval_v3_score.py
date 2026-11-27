@@ -90,20 +90,27 @@ def validator_code_values(expression: ast.expr) -> set[str]:
 
 
 def test_every_validator_code_is_tiered() -> None:
-    source = Path("backend/domain/validator.py").read_text(encoding="utf-8")
+    sources = {
+        "backend/domain/validator.py": "check",
+        "backend/domain/schedule_rules.py": "ValidationCheck",
+        "backend/domain/itinerary_revision.py": "ValidationCheck",
+        "backend/services/planning.py": "ValidationCheck",
+    }
     codes: set[str] = set()
-    for node in ast.walk(ast.parse(source)):
-        if (
-            isinstance(node, ast.Call)
-            and isinstance(node.func, ast.Name)
-            and node.func.id == "check"
-        ):
-            expression = (
-                node.args[2]
-                if len(node.args) >= 3
-                else next(item.value for item in node.keywords if item.arg == "code")
-            )
-            codes.update(validator_code_values(expression))
+    for filename, constructor in sources.items():
+        tree = ast.parse(Path(filename).read_text(encoding="utf-8"))
+        for node in ast.walk(tree):
+            if (
+                isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Name)
+                and node.func.id == constructor
+            ):
+                expression = (
+                    node.args[2]
+                    if len(node.args) >= 3
+                    else next(item.value for item in node.keywords if item.arg == "code")
+                )
+                codes.update(validator_code_values(expression))
     assert codes, "没有解析到 validator code"
     assert codes == set(VALIDATOR_TIER)
     assert {

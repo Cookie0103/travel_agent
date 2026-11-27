@@ -5,7 +5,12 @@ from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from backend.domain.catalog import SIGHTSEEING_CATEGORIES, VISIT_DURATION_RANGES, Place
+from backend.domain.catalog import (
+    SIGHTSEEING_CATEGORIES,
+    TRANSIT_STOPS,
+    VISIT_DURATION_RANGES,
+    Place,
+)
 from backend.domain.choices import recognized_constraint_group
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.hotel_recovery import nightly_price, nightly_upper
@@ -19,6 +24,17 @@ from backend.domain.itinerary import (
 )
 from backend.domain.opening_hours import TOKYO, opening_state
 from backend.domain.plans import stays_of
+from backend.domain.schedule_rules import (
+    DEFAULT_SCHEDULE_LIMITS,
+    ScheduleLimits,
+    condition_time,
+    daily_route_checks,
+    hotel_return_checks,
+    must_visit_checks,
+    required_places,
+    room_preference_checks,
+    time_checks,
+)
 from backend.domain.travel_request import (
     Transport,
     TravelRequest,
@@ -56,6 +72,7 @@ def validate_itinerary(
     now: datetime,
     *,
     transport_default: Transport | None = None,
+    schedule_limits: ScheduleLimits = DEFAULT_SCHEDULE_LIMITS,
 ) -> ValidationReport:
     """transport_default：request未写交通时，已确认的交通偏好作为路段应有的交通方式。"""
     evidence = {record.evidence_id: record for record in records}
@@ -83,7 +100,13 @@ def validate_itinerary(
     checks.extend(meal_checks(request, proposal))
     known, estimated, costs = budget_checks(request, proposal, evidence, now, places=places)
     checks.extend(costs)
-    checks.extend(constraint_checks(request))
+    measured = time_checks(request, proposal, schedule_limits)
+    measured.extend(must_visit_checks(request, places))
+    measured.extend(room_preference_checks(request, proposal, evidence))
+    measured.extend(daily_route_checks(proposal, places, evidence, schedule_limits))
+    measured.extend(hotel_return_checks(request, proposal, places, evidence))
+    checks.extend(measured)
+    checks.extend(constraint_checks(request, {entry.code for entry in measured}))
     states = {entry.status for entry in checks}
     status: Literal["complete", "partial", "conflict"] = (
         "conflict" if "conflict" in states else "partial" if "unknown" in states else "complete"
@@ -93,16 +116,34 @@ def validate_itinerary(
     )
 
 
-def constraint_checks(request: TravelRequest) -> list[ValidationCheck]:
+def constraint_checks(request: TravelRequest, measured: set[str]) -> list[ValidationCheck]:
+    covered = {
+        "arrival": "arrival_boundary",
+        "departure": "departure_boundary",
+        "lodging": "room_preference",
+        "smoking": "room_preference",
+        "bed": "room_preference",
+    }
     checks: list[ValidationCheck] = []
     hard = set(request.hard_constraints)
     for index, text in enumerate(
         dict.fromkeys((*request.hard_constraints, *request.soft_constraints))
     ):
-        if (group := recognized_constraint_group(text)) is not None:
+        group = recognized_constraint_group(text)
+        if group is None:
+            group = next(
+                (
+                    role
+                    for role in covered
+                    if role in {"arrival", "departure"} and condition_time(text, role) is not None
+                ),
+                None,
+            )
+        if group is not None:
             pending = (
                 text in hard
-                and group in {"arrival", "departure", "lodging", "smoking", "bed"}
+                and group in covered
+                and covered[group] not in measured
                 and not text.endswith("无要求")
             )
             checks.append(
@@ -115,7 +156,7 @@ def constraint_checks(request: TravelRequest) -> list[ValidationCheck]:
                     else "已识别结构化条件。",
                 )
             )
-        elif text in hard:
+        elif text in hard and not required_places(text):
             checks.append(
                 check(
                     f"constraint:{index}",
@@ -487,9 +528,6 @@ def route_checks(
             "路线时长仅估算，排程已留足表中时间，仍非实时路线保证",
         )
     ]
-
-
-TRANSIT_STOPS = frozenset({"station", "train_station", "subway_station", "bus_station", "airport"})
 
 
 def budget_checks(

@@ -1,8 +1,9 @@
 """行程/草稿的所有者过滤与不可变版本SQL；服务持有会话锁后执行写入。"""
 
+from datetime import datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import DateTime, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.domain.execution import RunContext
@@ -28,17 +29,26 @@ async def draft(db: AsyncSession, user_id: UUID, draft_id: UUID) -> PlanDraftRow
     )
 
 
-async def latest_draft(db: AsyncSession, context: RunContext) -> PlanDraftRow | None:
-    return await db.scalar(
-        select(PlanDraftRow)
-        .where(
-            PlanDraftRow.user_id == context.user_id,
-            PlanDraftRow.session_id == context.session_id,
-            PlanDraftRow.confirmed_version.is_(None),
-        )
-        .order_by(PlanDraftRow.payload["expires_at"].astext.desc(), PlanDraftRow.id)
-        .limit(1)
+async def latest_draft(
+    db: AsyncSession,
+    context: RunContext,
+    *,
+    expires_before: datetime | None = None,
+    base_version: int | None = None,
+) -> PlanDraftRow | None:
+    expiration = PlanDraftRow.payload["expires_at"].astext
+    statement = select(PlanDraftRow).where(
+        PlanDraftRow.user_id == context.user_id,
+        PlanDraftRow.session_id == context.session_id,
+        PlanDraftRow.confirmed_version.is_(None),
     )
+    if expires_before is not None:
+        statement = statement.where(expiration.cast(DateTime(timezone=True)) < expires_before)
+    if base_version is not None:
+        statement = statement.where(
+            PlanDraftRow.payload["base_version"].as_integer() == base_version
+        )
+    return await db.scalar(statement.order_by(expiration.desc(), PlanDraftRow.id).limit(1))
 
 
 async def version(db: AsyncSession, row: PlanRow, number: int | None = None) -> SavedPlan | None:
