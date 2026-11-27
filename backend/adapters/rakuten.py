@@ -33,6 +33,7 @@ class Basic(BaseModel):
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
     reviewCount: int | None = Field(default=None, ge=0)
+    evaluationPartner: bool = False
 
 
 class Detail(BaseModel):
@@ -411,6 +412,11 @@ class Rakuten:
                     longitude=item.hotel.longitude,
                     review_count=item.hotel.reviewCount,
                     price_basis=None if by_plan else SHOWN_PLAN_LABEL,
+                    partner=(
+                        True
+                        if self.data_mode == "synthetic" and item.hotel.evaluationPartner
+                        else None
+                    ),
                     search_total_found=None if by_plan else found,
                     more_url=more_url,
                     more_url_scope="destination" if more_url else None,

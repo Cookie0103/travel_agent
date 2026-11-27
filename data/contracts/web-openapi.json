@@ -3119,6 +3119,23 @@
             "format": "date-time",
             "title": "Expires At"
           },
+          "partner": {
+            "type": "boolean",
+            "title": "Partner",
+            "default": false
+          },
+          "partner_label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "合作酒店"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner Label"
+          },
           "room_tags": {
             "items": {
               "type": "string"
@@ -5664,6 +5681,17 @@
             ],
             "title": "Checkout Time"
           },
+          "partner": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner"
+          },
           "search_total_found": {
             "anyOf": [
               {
@@ -6792,6 +6820,24 @@
             "format": "date-time",
             "title": "Expires At",
             "type": "string"
+          },
+          "partner": {
+            "default": false,
+            "title": "Partner",
+            "type": "boolean"
+          },
+          "partner_label": {
+            "anyOf": [
+              {
+                "const": "合作酒店",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Partner Label"
           },
           "room_tags": {
             "default": [],

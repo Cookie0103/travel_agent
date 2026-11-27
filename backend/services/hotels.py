@@ -394,7 +394,9 @@ def cards(
 ) -> list[dict[str, object]]:
     return [
         {
-            **HotelOffer.model_validate(record.value).card(request),
+            **HotelOffer.model_validate(record.value)
+            .model_copy(update={"display_details": record.display_details})
+            .card(request),
             **(
                 {"request_revision": request.revision}
                 if selectable

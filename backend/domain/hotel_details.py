@@ -28,6 +28,7 @@ class StoredHotelDetails(HotelDisplayDetails):
     checkin_time: str | None = None
     latest_checkin_time: str | None = None
     checkout_time: str | None = None
+    partner: bool | None = None
     search_total_found: int | None = Field(default=None, ge=0)
     more_url: str | None = None
     more_url_scope: Literal["search", "destination"] | None = None

@@ -939,6 +939,11 @@ export interface components {
             breakfast: boolean | null;
             /** Refundable */
             refundable: boolean | null;
+            /**
+             * Partner
+             * @default false
+             */
+            partner: boolean;
             /** Image Url */
             image_url?: string | null;
             /** Review Average */
@@ -964,6 +969,8 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+            /** Partner Label */
+            partner_label?: "合作酒店" | null;
             /**
              * Room Tags
              * @default []
@@ -1032,6 +1039,11 @@ export interface components {
             breakfast: boolean | null;
             /** Refundable */
             refundable: boolean | null;
+            /**
+             * Partner
+             * @default false
+             */
+            partner: boolean;
             /** Image Url */
             image_url: string | null;
             /** Review Average */
@@ -2224,6 +2236,11 @@ export interface components {
             /** Refundable */
             refundable: boolean | null;
             /**
+             * Partner
+             * @default false
+             */
+            partner: boolean;
+            /**
              * Image Url
              * @default null
              */
@@ -2263,6 +2280,11 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+            /**
+             * Partner Label
+             * @default null
+             */
+            partner_label: "合作酒店" | null;
             /**
              * Room Tags
              * @default []

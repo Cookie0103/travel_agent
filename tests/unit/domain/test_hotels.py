@@ -143,3 +143,24 @@ def test_hotel_card_preserves_japanese_supplier_name_without_translation() -> No
     )
     assert value.card()["hotel_name"] == "京都東急ホテル"
     assert value.card()["room_type"] == "スタンダードツイン"
+
+
+def test_partner_disclosure_exposes_label_and_omits_commission() -> None:
+    from backend.domain.hotel_details import StoredHotelDetails
+    from backend.services.views import HotelCard
+    from tests.fixtures.legacy_hotel_offer_v1 import HotelOffer as LegacyOffer
+
+    ordinary = offer()
+    assert ordinary.card().get("partner_label") is None
+    partner = ordinary.model_copy(update={"display_details": StoredHotelDetails(partner=True)})
+    card = {
+        **partner.card(),
+        "evidence_id": ordinary.offer_id,
+        "source_ref": None,
+        "content_version": None,
+    }
+    assert HotelCard.model_validate(card).partner_label == "合作酒店"
+    assert "commission" not in card and "commission" not in partner.model_dump()
+    assert LegacyOffer.model_validate(partner.model_dump(mode="json")).offer_id == partner.offer_id
+    with pytest.raises(ValueError, match="合作状态与酒店标注不一致"):
+        HotelCard.model_validate({**card, "partner_label": None})

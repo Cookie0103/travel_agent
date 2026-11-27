@@ -139,6 +139,7 @@ function Hotel({
           <p className="hotel-fine">{card.room_tags.join(" · ")}</p>
         )}
         <ul className="hotel-facts">
+          {card.partner_label && <li>{card.partner_label}</li>}
           <li className={card.breakfast ? "is-yes" : undefined}>
             {card.breakfast === null
               ? "早餐未知"
