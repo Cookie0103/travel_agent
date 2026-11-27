@@ -1,7 +1,7 @@
 """供评测诊断的封闭参数事实；不记录自由文本、引用或业务ID。"""
 
 from datetime import date
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
@@ -17,6 +17,12 @@ SkillName = Literal[
     "repair-limit",
 ]
 
+ExperimentSkillName = Literal[
+    "evolution-candidate", "evolution-candidate-2", "evolution-candidate-3"
+]
+EvaluationSkillName = SkillName | ExperimentSkillName
+EXPERIMENTAL_SKILLS: tuple[ExperimentSkillName, ...] = get_args(ExperimentSkillName)
+
 ChoiceOptionId = Literal[
     "standard", "intensive", "relaxed", "accept", "keep", "remember", "trip", "reject", "confirm"
 ]
@@ -24,7 +30,7 @@ ChoiceOptionId = Literal[
 
 class SkillUse(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
-    name: SkillName
+    name: EvaluationSkillName
     sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
@@ -42,7 +48,7 @@ class ToolArgumentFacts(BaseModel):
     kind: ChoiceKind | None = None
     segment_arrive: date | None = None
     option_id: ChoiceOptionId | None = None
-    skill_name: SkillName | None = None
+    skill_name: EvaluationSkillName | None = None
 
 
 def _fields(

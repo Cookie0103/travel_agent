@@ -2868,11 +2868,8 @@ export interface components {
         };
         /** SkillUse */
         UiSkillUse: {
-            /**
-             * Name
-             * @enum {string}
-             */
-            name: "hotel-comparison" | "itinerary-revision" | "multi-city" | "budget-relaxation" | "external-errors" | "repair-limit";
+            /** Name */
+            name: ("hotel-comparison" | "itinerary-revision" | "multi-city" | "budget-relaxation" | "external-errors" | "repair-limit") | ("evolution-candidate" | "evolution-candidate-2" | "evolution-candidate-3");
             /** Sha256 */
             sha256: string;
         };
@@ -2906,7 +2903,7 @@ export interface components {
              * Skill Name
              * @default null
              */
-            skill_name: ("hotel-comparison" | "itinerary-revision" | "multi-city" | "budget-relaxation" | "external-errors" | "repair-limit") | null;
+            skill_name: ("hotel-comparison" | "itinerary-revision" | "multi-city" | "budget-relaxation" | "external-errors" | "repair-limit") | ("evolution-candidate" | "evolution-candidate-2" | "evolution-candidate-3") | null;
         };
         /** @enum {string} */
         UiToolReason: "tool_call_cap" | "repair_limit" | "repeat_blocked" | "result_too_long" | "unregistered_tool" | "context_reuse" | "evidence_missing" | "offer_unknown_id" | "not_found" | "live_hold_disabled" | "plan_exists" | "patch_invalid" | "revision_stale" | "lodging_budget_conflict" | "hotel_search_location_required" | "hotel_missing_fields" | "hotel_room_preferences_missing" | "hotel_external_validation" | "hotel_external_unavailable" | "hotel_api_unconfigured" | "hotel_selection_required" | "schema" | "other" | "conversation_incomplete" | "conversation_state_unavailable" | "max_turns" | "request_limit" | "request_too_large" | "budget_limit" | "local_guard";

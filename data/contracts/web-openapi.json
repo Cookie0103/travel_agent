@@ -8254,16 +8254,28 @@
         "additionalProperties": false,
         "properties": {
           "name": {
-            "enum": [
-              "hotel-comparison",
-              "itinerary-revision",
-              "multi-city",
-              "budget-relaxation",
-              "external-errors",
-              "repair-limit"
+            "anyOf": [
+              {
+                "enum": [
+                  "hotel-comparison",
+                  "itinerary-revision",
+                  "multi-city",
+                  "budget-relaxation",
+                  "external-errors",
+                  "repair-limit"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "evolution-candidate",
+                  "evolution-candidate-2",
+                  "evolution-candidate-3"
+                ],
+                "type": "string"
+              }
             ],
-            "title": "Name",
-            "type": "string"
+            "title": "Name"
           },
           "sha256": {
             "pattern": "^[0-9a-f]{64}$",
@@ -8373,6 +8385,14 @@
                   "budget-relaxation",
                   "external-errors",
                   "repair-limit"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "evolution-candidate",
+                  "evolution-candidate-2",
+                  "evolution-candidate-3"
                 ],
                 "type": "string"
               },

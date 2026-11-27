@@ -434,8 +434,11 @@ def test_v3_skill_variants_run_two_offline_turns(
     candidate.mkdir()
     candidate_text = "用于离线验证的酒店比较候选内容。"
     (candidate / "hotel-comparison.md").write_text(candidate_text, encoding="utf-8")
+    new_text = "触发：离线演示。\n\n本次用于核对候选说明确实可被读取。"
+    (candidate / "evolution-candidate.md").write_text(new_text, encoding="utf-8")
     case = make(user_script=[{"say": "第一轮"}, {"say": "第二轮"}])
     seen: list[tuple[str | None, str | None, object]] = []
+    extra: list[tuple[str | None, object]] = []
 
     async def load_skills(
         runtime: FixtureRuntime,
@@ -463,6 +466,15 @@ def test_v3_skill_variants_run_two_offline_turns(
             definition=definition,
         )
         seen.append((comparison.code, revision.code, comparison.data.get("instructions")))
+        novel = await execute_observed(
+            runtime.executor,
+            context,
+            "load_skill",
+            {"name": "evolution-candidate"},
+            emit,
+            definition=definition,
+        )
+        extra.append((novel.code, novel.data.get("instructions")))
         return RuntimeOutcome("离线验收完成", "fixture-skill-session")
 
     monkeypatch.setattr(FixtureRuntime, "execute", load_skills)
@@ -504,3 +516,4 @@ def test_v3_skill_variants_run_two_offline_turns(
         (None, None, candidate_text),
         (None, None, candidate_text),
     ]
+    assert extra == [("validation", None)] * 4 + [(None, new_text)] * 2

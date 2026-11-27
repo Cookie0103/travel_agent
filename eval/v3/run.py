@@ -38,7 +38,7 @@ from backend.domain.evidence import HOTEL_OFFER_FIELDS
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.hotel_flow import HotelPick, current_picks, flow_from_details
 from backend.domain.plans import PlanDraft
-from backend.domain.tool_facts import SkillName
+from backend.domain.tool_facts import EXPERIMENTAL_SKILLS, SkillName
 from backend.domain.travel_request import RequestPatch, city_key, pace_of
 from backend.limits import ProbeError
 from backend.persistence import travel as request_rows
@@ -905,7 +905,7 @@ def freeze_candidate(
 ) -> SkillConfig:
     snapshot = directory / "candidate-skills"
     snapshot.mkdir(exist_ok=True)
-    for name in get_args(SkillName):
+    for name in (*get_args(SkillName), *EXPERIMENTAL_SKILLS):
         if name not in versions:
             continue
         destination = snapshot / (name + ".md")

@@ -26,7 +26,7 @@ from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationRe
 from backend.domain.opening_hours import TOKYO
 from backend.domain.plans import InitialStage, StageInput
 from backend.domain.room_choices import room_choices_view
-from backend.domain.tool_facts import SkillName, SkillUse
+from backend.domain.tool_facts import EvaluationSkillName, SkillName, SkillUse
 from backend.domain.travel_request import (
     HOTEL_FIELD_LABELS,
     ConversationRequestPatch,
@@ -71,6 +71,11 @@ class EntityInput(BaseModel):
 class SkillInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
     name: SkillName
+
+
+class EvaluationSkillInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    name: EvaluationSkillName
 
 
 class HotelSearchInput(BaseModel):
@@ -303,6 +308,20 @@ def repair_definitions(
     )
 
 
+def skill_definitions(
+    definitions: tuple[ToolDefinition, ...], skills: SkillConfig
+) -> tuple[ToolDefinition, ...]:
+    names = skills.candidate_names()
+    if not names:
+        return definitions
+    schema = SkillInput.model_json_schema()
+    schema["properties"]["name"]["enum"].extend(names)
+    return tuple(
+        replace(definition, schema=schema) if definition.name == "load_skill" else definition
+        for definition in definitions
+    )
+
+
 def live_definitions(definitions: tuple[ToolDefinition, ...]) -> tuple[ToolDefinition, ...]:
     return tuple(
         replace(definition, timeout_seconds=LIVE_TOOL_TIMEOUT)
@@ -445,7 +464,7 @@ class TravelToolExecutor:
         self.last_validation: ItineraryProposal | None = None
         # 冲突最少的已校验候选；修复次数用完或暂存被拒时交出它
         self.best: tuple[ItineraryProposal, ValidationReport] | None = None
-        self.loaded_skills: set[SkillName] = set()
+        self.loaded_skills: set[EvaluationSkillName] = set()
         self.skill_config = SkillConfig()
         # 状态登记与写工具全程持锁串行；CONCURRENT_READS只在登记/结算时持锁，查询本身在锁外。
         self.lock = asyncio.Lock()
@@ -504,7 +523,7 @@ class TravelToolExecutor:
                     result = self._record(key, scope, result)
                 return self._with_signalled_skills(name, self._settle(name, arguments, result))
 
-    def _skill_text(self, name: SkillName) -> tuple[SkillUse, str]:
+    def _skill_text(self, name: EvaluationSkillName) -> tuple[SkillUse, str]:
         text = with_repair_rounds(
             self.skill_config.path(name).read_text(encoding="utf-8"), self.max_validations
         )
@@ -656,7 +675,12 @@ class TravelToolExecutor:
         definition: ToolDefinition,
     ) -> ToolResult:
         try:
-            parsed = SCHEMAS[name].model_validate(arguments)
+            schema = (
+                EvaluationSkillInput
+                if name == "load_skill" and self.skill_config.candidate_names()
+                else SCHEMAS[name]
+            )
+            parsed = schema.model_validate(arguments)
             live = self.travel.live
             observed: list[ExternalAttempt] = []
             deadline = REQUEST_DEADLINE.set(time.monotonic() + definition.timeout_seconds)
@@ -954,7 +978,7 @@ class TravelToolExecutor:
                 if unverified
                 else (),
             )
-        if isinstance(parsed, SkillInput):
+        if isinstance(parsed, SkillInput | EvaluationSkillInput):
             await self.travel.read_request(context)
             if not self.skill_config.enabled(parsed.name):
                 return ToolResult({}, code="validation", suggestion="当前评测未启用该 Skill")

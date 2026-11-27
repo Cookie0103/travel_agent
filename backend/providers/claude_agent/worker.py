@@ -39,7 +39,7 @@ from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition, ToolExecutor, repair_rounds
 from backend.tools.search import DEFINITIONS, SearchExecutor
 from backend.tools.skill_config import SkillConfig
-from backend.tools.travel import live_definitions, repair_definitions
+from backend.tools.travel import live_definitions, repair_definitions, skill_definitions
 from backend.tools.workflow import WorkflowName
 from backend.trace_log import trace
 
@@ -187,7 +187,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
                 context, include_preferences=include_preferences
             )
             rounds = executor.executor.max_validations
-            definitions = repair_definitions(definitions, rounds)
+            definitions = skill_definitions(repair_definitions(definitions, rounds), skills)
             system = travel_prompt(repair_rounds(rounds)) + executor.guidance()
             if skills.variant == "no_skills":
                 system = "\n".join(
@@ -197,6 +197,12 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
                 )
             elif skills.disabled is not None:
                 system += f"\n当前评测关闭 {skills.disabled}，本轮应用其余可用工具。"
+            for name in skills.candidate_names():
+                system += (
+                    f"\n评测候选 Skill {name} 的适用情形为"
+                    + skills.candidate_trigger(name)
+                    + f"。相关时用 load_skill 读取 {name} 的完整说明。"
+                )
             snapshot_prompt(payload, context, system, snapshot)
             return await run_prompts(
                 prompts,
