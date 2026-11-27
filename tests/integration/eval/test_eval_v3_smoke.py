@@ -275,7 +275,7 @@ def test_run_all_pushes_numeric_scores_only_and_stops_at_cost_cap(
     monkeypatch.setattr("eval.v3.run.push_scores", capture)
     monkeypatch.setattr("eval.v3.run.cloud_exporter", lambda environment: None)
     case = make(
-        user_script=[{"say": "演示：比较酒店"}],
+        user_script=[{"say": "演示：比较酒店"}, {"hotel_pick": {"rank": "first"}}],
         hard_checks=[{"id": "nothing-saved", "type": "db", "assert": "no_plan_saved"}],
     )
     other = make(case_id="smoke-two", user_script=[{"say": "你好"}])
@@ -291,6 +291,10 @@ def test_run_all_pushes_numeric_scores_only_and_stops_at_cost_cap(
     in_eval_db(postgres_url, body)
     assert budget.authorizations == 1  # 每个实际启动的trial前都复核授权
     assert len(rows) == 1 and rows[0]["case_id"] == "smoke" and rows[0]["cost_cny"] == "1"
+    presentations = rows[0]["hotel_presentations"]
+    picks = rows[0]["selected_hotels"]
+    assert isinstance(presentations, list) and isinstance(picks, list) and len(picks) == 1
+    assert picks[0]["quote_hash"] == presentations[0]["cards"][0]["quote_hash"]
     assert len(pushed) == 1
     trace_id, payload, batch = pushed[0]
     assert len(trace_id) == 32 and batch is True

@@ -1,6 +1,7 @@
 """共用的工具事件转换；SDK和离线演示走同一业务入口，不负责选择或调度工具。"""
 
 import json
+import re
 import time
 from dataclasses import replace
 from typing import Literal
@@ -156,6 +157,9 @@ async def execute_observed(
         external=result.external.model_dump(mode="json") if result.external else None,
     )
     revision = result.data.get("request_revision")
+    skill_hash = (
+        result.data.get("version") if safe_name == "load_skill" and not result.code else None
+    )
     diagnosis = None
     if isinstance((raw_diagnosis := result.data.get("relaxation")), dict):
         try:
@@ -171,6 +175,12 @@ async def execute_observed(
             code=result.code,
             reason=tool_reason(result.code, result.detail),
             result_empty=result.empty,
+            skill_hash=skill_hash
+            if isinstance(skill_hash, str) and re.fullmatch(r"[0-9a-f]{64}", skill_hash)
+            else None,
+            repair_round=(result.repair_round or 0)
+            if safe_name in {"validate_itinerary", "stage_plan_change"}
+            else None,
             request_revision=revision
             if isinstance(revision, int) and not isinstance(revision, bool)
             else None,

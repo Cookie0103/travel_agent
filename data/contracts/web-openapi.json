@@ -8201,6 +8201,26 @@
             ],
             "default": null,
             "title": "Option Id"
+          },
+          "skill_name": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hotel-comparison",
+                  "itinerary-revision",
+                  "multi-city",
+                  "budget-relaxation",
+                  "external-errors",
+                  "repair-limit"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Skill Name"
           }
         },
         "title": "ToolArgumentFacts",
@@ -8458,6 +8478,30 @@
               }
             ],
             "default": null
+          },
+          "skill_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Skill Hash"
+          },
+          "repair_round": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Repair Round"
           }
         },
         "required": [

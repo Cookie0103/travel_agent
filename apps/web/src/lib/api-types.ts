@@ -2845,6 +2845,11 @@ export interface components {
              * @default null
              */
             option_id: ("standard" | "intensive" | "relaxed" | "accept" | "keep" | "remember" | "trip" | "reject" | "confirm") | null;
+            /**
+             * Skill Name
+             * @default null
+             */
+            skill_name: ("hotel-comparison" | "itinerary-revision" | "multi-city" | "budget-relaxation" | "external-errors" | "repair-limit") | null;
         };
         /** @enum {string} */
         UiToolReason: "tool_call_cap" | "repair_limit" | "repeat_blocked" | "result_too_long" | "unregistered_tool" | "context_reuse" | "evidence_missing" | "offer_unknown_id" | "not_found" | "live_hold_disabled" | "plan_exists" | "patch_invalid" | "revision_stale" | "lodging_budget_conflict" | "hotel_search_location_required" | "hotel_missing_fields" | "hotel_room_preferences_missing" | "hotel_external_validation" | "hotel_external_unavailable" | "hotel_api_unconfigured" | "hotel_selection_required" | "schema" | "other" | "conversation_incomplete" | "conversation_state_unavailable" | "max_turns" | "request_limit" | "request_too_large" | "budget_limit" | "local_guard";
@@ -2928,6 +2933,16 @@ export interface components {
             data_mode: components["schemas"]["UiDataMode"] | null;
             /** @default null */
             arguments: components["schemas"]["UiToolArgumentFacts"] | null;
+            /**
+             * Skill Hash
+             * @default null
+             */
+            skill_hash: string | null;
+            /**
+             * Repair Round
+             * @default null
+             */
+            repair_round: number | null;
         };
     };
     responses: never;

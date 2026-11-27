@@ -1,5 +1,6 @@
 """v3评分：分级表覆盖validator全部code；success只由确定性检查决定；失败原因按优先级。"""
 
+import hashlib
 import re
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
@@ -401,3 +402,62 @@ def test_draft_completeness_and_conflict_asserts() -> None:
     )
     assert score_trial(case(hard_checks=checks), Observation(db=conflicted)).reason == "hard:c"
     assert not score_trial(case(hard_checks=checks), Observation(db=DbFacts())).success
+
+
+def test_trial_row_captures_decision_evidence_without_internal_card_ids() -> None:
+    from backend.domain.tool_facts import argument_facts
+    from eval.v3.run import trial_row
+
+    reference = str(uuid4())
+    digest = "e" * 64
+    call = uuid4()
+    events = (
+        event(
+            "tool_started",
+            0,
+            "load_skill",
+            tool_call_id=call,
+            arguments=argument_facts("load_skill", {"name": "multi-city"}),
+        ),
+        event("tool_finished", 1, "load_skill", tool_call_id=call, skill_hash=digest),
+        event("tool_finished", 2, "validate_itinerary", repair_round=2),
+        event("tool_finished", 3, "stage_plan_change", repair_round=2),
+        event(
+            "presentation",
+            4,
+            presentation={
+                "data": {
+                    "component": "hotel_comparison",
+                    "cards": [
+                        {
+                            "hotel_id": "kyoto-inn",
+                            "hotel_name": "京都宿",
+                            "total": "8500",
+                            "offer_id": reference,
+                            "evidence_id": reference,
+                        },
+                    ],
+                }
+            },
+        ),
+    )
+    observation = Observation(turns=(turn(events=events),))
+    result = score_trial(case(), observation)
+    row = trial_row(case(), 1, None, result, observation, 5)
+    assert result.metrics["repair_rounds"] == 2
+    assert row["skills"] == [{"turn": 1, "name": "multi-city", "sha256": digest}]
+    assert row["selected_hotels"] == []
+    assert row["hotel_presentations"] == [
+        {
+            "turn": 1,
+            "cards": [
+                {
+                    "hotel_id": "kyoto-inn",
+                    "hotel_name": "京都宿",
+                    "total": "8500",
+                    "quote_hash": hashlib.sha256(reference.encode("utf-8")).hexdigest(),
+                },
+            ],
+        },
+    ]
+    assert reference not in str(row["hotel_presentations"])

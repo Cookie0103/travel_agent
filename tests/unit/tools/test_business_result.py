@@ -69,6 +69,7 @@ def test_read_only_result_cannot_mark_confirmation_and_metadata_is_not_public_tr
     )
     staged = finished.business_result
     assert staged is not None and staged.kind == "draft_staged"
+    assert finished.repair_round == 0
     assert event_metadata(finished).business_result == staged
     path = tmp_path / "trace.jsonl"
     write_trace(
@@ -90,3 +91,35 @@ def test_business_result_cannot_claim_confirmation_without_a_positive_integer_ve
             TypeAdapter(BusinessResult).validate_python(
                 {"kind": "confirmed", "plan_id": str(uuid4()), "version": value}
             )
+
+
+def test_skill_event_records_closed_name_and_hash_without_text() -> None:
+    digest = "a" * 64
+    context = RunContext(uuid4())
+    definition = next(d for d in DEFINITIONS if d.name == "load_skill")
+
+    class Executor:
+        async def execute(self, *args: object) -> ToolResult:
+            return ToolResult(
+                {"name": "multi-city", "version": digest, "instructions": "fixture private text"}
+            )
+
+    events: list[RuntimeEvent] = []
+    asyncio.run(
+        execute_observed(
+            Executor(),
+            context,
+            "load_skill",
+            {"name": "multi-city"},
+            events.append,
+            definition=definition,
+        )
+    )
+    started, finished = events
+    assert started.arguments is not None and started.arguments.skill_name == "multi-city"
+    assert finished.skill_hash == digest
+    assert "fixture private text" not in str(events)
+
+    from backend.domain.tool_facts import argument_facts
+
+    assert argument_facts("load_skill", {"name": "fixture private name"}).skill_name is None

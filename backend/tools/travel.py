@@ -27,6 +27,7 @@ from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationRe
 from backend.domain.opening_hours import TOKYO
 from backend.domain.plans import InitialStage, StageInput
 from backend.domain.room_choices import room_choices_view
+from backend.domain.tool_facts import SkillName
 from backend.domain.travel_request import (
     HOTEL_FIELD_LABELS,
     ConversationRequestPatch,
@@ -69,14 +70,7 @@ class EntityInput(BaseModel):
 
 class SkillInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
-    name: Literal[
-        "hotel-comparison",
-        "itinerary-revision",
-        "multi-city",
-        "budget-relaxation",
-        "external-errors",
-        "repair-limit",
-    ]
+    name: SkillName
 
 
 class HotelSearchInput(BaseModel):
@@ -539,7 +533,9 @@ class TravelToolExecutor:
                 f"repair_round:{self.validations}",
                 f"max_validations:{self.max_validations}",
             )
-            result = replace(result, detail=(*result.detail, *rounds))
+            result = replace(
+                result, detail=(*result.detail, *rounds), repair_round=max(0, self.validations - 1)
+            )
         return hotel_search_facts(result, name)
 
     async def _execute(

@@ -8,6 +8,15 @@ from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 from backend.domain.choices import ChoiceKind
 from backend.domain.memory import MemoryKey, MemoryScope
 
+SkillName = Literal[
+    "hotel-comparison",
+    "itinerary-revision",
+    "multi-city",
+    "budget-relaxation",
+    "external-errors",
+    "repair-limit",
+]
+
 ChoiceOptionId = Literal[
     "standard", "intensive", "relaxed", "accept", "keep", "remember", "trip", "reject", "confirm"
 ]
@@ -27,6 +36,7 @@ class ToolArgumentFacts(BaseModel):
     kind: ChoiceKind | None = None
     segment_arrive: date | None = None
     option_id: ChoiceOptionId | None = None
+    skill_name: SkillName | None = None
 
 
 def _fields(
@@ -52,6 +62,10 @@ def argument_facts(name: str, arguments: dict[str, object]) -> ToolArgumentFacts
             MemoryArguments.model_validate(_fields(MemoryArguments, op, ("key", "scope", "op")))
             for op in ops[:5]
             if isinstance(op, dict)
+        )
+    if name == "load_skill":
+        data.update(
+            _fields(ToolArgumentFacts, {"skill_name": arguments.get("name")}, ("skill_name",))
         )
     if name == "present_travel_result":
         data.update(_fields(ToolArgumentFacts, arguments, ("component", "kind")))

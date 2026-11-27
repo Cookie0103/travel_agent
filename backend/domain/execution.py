@@ -231,6 +231,8 @@ class RuntimeEvent:
     choice_card: Literal["shown", "none", "declined"] | None = None
     data_mode: DataMode | None = None
     arguments: ToolArgumentFacts | None = None
+    skill_hash: str | None = None
+    repair_round: int | None = None
 
 
 @dataclass(frozen=True)

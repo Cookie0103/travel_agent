@@ -69,6 +69,7 @@ class ToolResult:
     suggestion: str = ""
     detail: tuple[str, ...] = ()  # 仅供TRACE的脱敏诊断标签，不进入payload/模型
     external: ExternalAttempt | None = None
+    repair_round: int | None = None
 
     def payload(self) -> dict[str, object]:
         """正文状态是工具契约的一部分，兼容忽略 MCP is_error 的模型。"""

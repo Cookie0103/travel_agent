@@ -93,6 +93,7 @@ class Observation:
     claim_facts: ClaimFacts = field(default_factory=ClaimFacts)
     step_unavailable: int | None = None
     infra_error: str | None = None
+    selected_hotels: tuple[dict[str, object], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -145,9 +146,16 @@ def validation_metrics(turns: Sequence[TurnObs]) -> dict[str, float]:
                 if begin is not None:
                     duration += max(0.0, (e.occurred_at - begin.occurred_at).total_seconds())
     rounds = len(started)
+    explicit_repairs = [
+        max(known)
+        for turn in turns
+        if (
+            known := [event.repair_round for event in turn.events if event.repair_round is not None]
+        )
+    ]
     return {
         "validation_rounds": float(rounds),
-        "repair_rounds": float(max(0, rounds - 1)),
+        "repair_rounds": float(sum(explicit_repairs) if explicit_repairs else max(0, rounds - 1)),
         "validation_time_s": duration,
     }
 
