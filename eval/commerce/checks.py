@@ -41,7 +41,7 @@ class Comparison(BaseModel):
     focus_id: str
 
 
-def _walking_minutes(hotel: Hotel, station: Station) -> float:
+def walking_minutes(hotel: Hotel, station: Station) -> float:
     north = math.radians(hotel.latitude - station.latitude)
     east = math.radians(hotel.longitude - station.longitude)
     a = math.sin(north / 2) ** 2 + (
@@ -58,7 +58,7 @@ def _candidate(hotel: Hotel, station: Station) -> Candidate:
         price_jpy=hotel.prices_jpy["weekday"][0],
         rating=hotel.rating,
         reviews=hotel.reviews,
-        station_minutes=_walking_minutes(hotel, station),
+        station_minutes=walking_minutes(hotel, station),
         breakfast=hotel.breakfast,
         partner=False,
         commission=0.10,
