@@ -12,7 +12,7 @@ from uuid import UUID, uuid4
 
 from pydantic import TypeAdapter
 
-from backend.adapters.evaluation_faults import EvaluationFault, validate_fault
+from backend.adapters.evaluation_faults import EvaluationFault, is_eval_database, validate_fault
 from backend.adapters.evaluation_world import EvaluationWorld
 from backend.agent.persona import JudgeKind, evaluation_judge_prompt, travel_prompt
 from backend.agent.runtime import Agent
@@ -98,6 +98,10 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         and not persona_judge
         and workflow is None
     )
+    if identity.provider == "ollama" and (
+        not v3_skills or not isinstance(dsn, str) or not is_eval_database(dsn)
+    ):
+        return {"status": "error", "code": "validation"}
     try:
         skills = SkillConfig.model_validate(payload.get("skill_config", {}))
         skills.authorize(evaluation=v3_skills, dsn=dsn if isinstance(dsn, str) else "")

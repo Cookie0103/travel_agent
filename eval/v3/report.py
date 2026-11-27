@@ -161,10 +161,17 @@ def render_markdown(manifest: dict[str, object], summary: dict[str, object]) -> 
     def pct(value: object) -> str:
         return "n/a" if value is None else f"{float(str(value)) * 100:.0f}%"
 
+    mode = (
+        "本机通义千问（不计费）"
+        if manifest.get("local_model")
+        else "DeepSeek（真实调用）"
+        if manifest.get("live")
+        else "离线夹具（只证明设施）"
+    )
     lines = [
         f"# v3评测报告 {manifest.get('run_name')}",
         "",
-        "- 模式：" + ("live（真实调用）" if manifest.get("live") else "离线夹具（只证明设施）"),
+        f"- 模式：{mode}",
         f"- profile：{manifest.get('profile')}；git：{str(manifest.get('git_sha'))[:10]}",
         f"- trial数：{summary['trials']}（repeat={summary['repeat']}）",
     ]

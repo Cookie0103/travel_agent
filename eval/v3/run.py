@@ -139,11 +139,13 @@ class V3Runtime(GuardedRuntime):
         usage: list[Mapping[str, object]] | None = None,
         skills: SkillConfig | None = None,
         world: EvaluationWorld | None = None,
+        *,
+        local_model: bool = False,
     ) -> None:
         super().__init__(
             ROOT,
             business.dsn(),
-            provider="deepseek",
+            provider="ollama" if local_model else "deepseek",
             evaluation_fault=case.fault or ("phase2-world" if world else None),
             evaluation_world=world,
             evaluation={
@@ -185,6 +187,7 @@ class TrialConfig:
     judge_call: JudgeCall | None = None
     scores_sink: list[dict[str, float]] = field(default_factory=list)
     skills: SkillConfig = field(default_factory=SkillConfig)
+    local_model: bool = False
 
 
 async def create_trial_context(
@@ -529,9 +532,20 @@ async def run_trial(
             trace_cloud=config.cloud,
             trace_directory=config.directory / "traces",
             runtime_factory=lambda _: V3Runtime(
-                business, case, repeat, events, usage, config.skills, world
+                business,
+                case,
+                repeat,
+                events,
+                usage,
+                config.skills,
+                world,
+                local_model=config.local_model,
             ),
-            memory_extractor=MemoryExtractor(business.sessions.database, call=phase2_memory_call),
+            memory_extractor=(
+                MemoryExtractor(business.sessions.database, call=phase2_memory_call)
+                if not config.local_model
+                else None
+            ),
         )
     else:
         service = RunService(
@@ -595,7 +609,6 @@ async def run_trial(
         transcript=transcript,
         cache=cache_totals(usage) if config.live else None,
     )
-
     if world is not None:
         gate = row["rule_gate"]
         assert isinstance(gate, dict)
@@ -778,7 +791,7 @@ async def run_all(
                     "langfuse.trace.tags": (
                         "v3",
                         case.category,
-                        "deepseek",
+                        config.meta.get("model_route", "fixture"),
                         config.meta["profile"],
                     ),
                     "langfuse.trace.metadata.suite": "v3",
@@ -859,7 +872,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawTextHelpFormatter
     )
-    parser.add_argument("--live", action="store_true")
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--live", action="store_true")
+    modes.add_argument("--local-model", action="store_true")
     parser.add_argument("--trace-cloud", action="store_true")
     parser.add_argument("--repeat", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--case-id", action="append", default=[])
@@ -964,6 +979,8 @@ def resume_command(args: argparse.Namespace, directory: PurePath) -> str:
     parts = ["uv run python scripts/dev.py eval-v3"]
     if args.live:
         parts.append("--live")
+    if args.local_model:
+        parts.append("--local-model")
     if args.trace_cloud:
         parts.append("--trace-cloud")
     parts += [
@@ -1002,7 +1019,7 @@ def _raise_interrupt(signum: int, frame: object) -> None:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
-    refuse_live_under_pytest(args.live)
+    refuse_live_under_pytest(args.live or args.local_model)
     if args.trace_cloud and not args.live:
         parser.error("--trace-cloud需要--live")
     if args.max_cny is not None and args.max_cny <= 0:
@@ -1048,6 +1065,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         except (OSError, json.JSONDecodeError):
             print(f"无法续跑：{directory}里没有可读的manifest.json")
             return 2
+        if bool(previous.get("local_model")) != args.local_model:
+            print("拒绝续跑：本机模型线路与原运行不同")
+            return 2
         if previous.get("skills", {}) != skill_manifest:
             print("拒绝续跑：Skill 变体或候选内容已变，请启动新的评测")
             return 2
@@ -1074,9 +1094,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(
             f"已完成 {total - pending}，待跑 {pending}（含需重跑的infra_error trial）", flush=True
         )
-    from scripts.dev import configure_environment
+    from scripts.dev import configure_environment, pinned_cli
 
     configure_environment()
+    if args.local_model:
+        pinned_cli()
     configure_profile(args.profile)
     budget = None
     if args.live:
@@ -1095,24 +1117,30 @@ def main(argv: Sequence[str] | None = None) -> int:
         except Phase2ReviewRequired as error:
             print(f"{error}。剩余 {pending} 次试验，等待预算决定。")
             return 1
+    if args.local_model and any(c.memory.l3.present or c.memory.l3.absent for c in cases):
+        os.environ[PROMPT_ENV] = "1"
+    real_model = args.live or args.local_model
     meta = {
         "git_sha": git_sha(),
         "run_name": run_name,
         "trial_group": run_name,
-        "profile": args.profile if args.live else "offline",
+        "profile": args.profile if real_model else "offline",
+        "model_route": "ollama" if args.local_model else "deepseek" if args.live else "fixture",
     }
     config = TrialConfig(
-        args.live,
+        real_model,
         args.trace_cloud,
         directory,
         meta,
         budget,
         skills=skills,
+        local_model=args.local_model,
     )
     manifest: dict[str, object] = {
         **previous,
         "run_name": run_name,
         "live": args.live,
+        "local_model": args.local_model,
         "profile": args.profile,
         "repeat": args.repeat,
         "cases": [c.case_id for c in cases],
@@ -1176,7 +1204,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
         try:
             dsn = url.render_as_string(hide_password=False)
-            require_snapshot_database(cases, args.live, dsn)
+            require_snapshot_database(cases, real_model, dsn)
             skills.authorize(evaluation=True, dsn=dsn)
         except ValueError as error:
             print(error)

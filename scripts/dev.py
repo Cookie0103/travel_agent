@@ -232,7 +232,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     rules = commands.add_parser("eval-rules")
     rules.add_argument("--out", type=Path)
     v3 = commands.add_parser("eval-v3")
-    v3.add_argument("--live", action="store_true")
+    v3_modes = v3.add_mutually_exclusive_group()
+    v3_modes.add_argument("--live", action="store_true")
+    v3_modes.add_argument("--local-model", action="store_true")
     v3.add_argument("--trace-cloud", action="store_true")
     v3.add_argument("--repeat", type=int, choices=range(1, 4), default=1)
     v3.add_argument("--case-id", action="append", default=[])
@@ -354,6 +356,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             ]
             if args.live:
                 command.append("--live")
+            if args.local_model:
+                command.append("--local-model")
             if args.trace_cloud:
                 command.append("--trace-cloud")
             if args.cases:

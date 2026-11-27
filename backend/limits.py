@@ -6,7 +6,10 @@ from decimal import Decimal, InvalidOperation
 from typing import Literal
 
 Currency = Literal["CNY", "USD"]
-Provider = Literal["deepseek", "anthropic"]
+Provider = Literal["deepseek", "anthropic", "ollama"]
+LOCAL_MODEL = "qwen3.8:27b-q4_K_M"
+LOCAL_HOST = "127.0.0.1"
+LOCAL_PORT = 11528
 
 
 class ProbeError(RuntimeError):
@@ -37,7 +40,7 @@ class Settings:
 
     @property
     def currency(self) -> Currency:
-        return "CNY" if self.provider == "deepseek" else "USD"
+        return "USD" if self.provider == "anthropic" else "CNY"
 
     @property
     def daily_limit(self) -> Decimal:
@@ -74,6 +77,7 @@ class Price:
 def price_for(model: str) -> Price:
     """拒绝未知/映射模型名，避免换模型后仍套用原来的单价。"""
     prices = {
+        LOCAL_MODEL: Price(Decimal(0), Decimal(0), 32_768),
         # 2026-11-28 DeepSeek 官方人民币高峰价，保守覆盖空闲时段（半价）。
         # https://api-docs.deepseek.com/zh-cn/quick_start/pricing/
         "deepseek-flash": Price(Decimal("2"), Decimal("8"), cache_read_per_million=Decimal("0.04")),

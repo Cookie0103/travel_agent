@@ -22,7 +22,7 @@ from backend.domain.execution import (
     error_code,
     event_metadata,
 )
-from backend.limits import ProbeError, Provider, Settings
+from backend.limits import LOCAL_MODEL, ProbeError, Provider, Settings
 from backend.mcp.bridge import sdk_tool_name
 from backend.profile import current
 from backend.providers.claude_agent import http as upstream
@@ -69,6 +69,16 @@ def phase2_checkout_root(root: Path) -> Path:
 
 
 def runtime_budget(root: Path, settings: Settings, *, phase2: bool = False) -> Budget:
+    if settings.provider == "ollama":
+        if phase2 and settings.model == LOCAL_MODEL:
+            cache = phase2_checkout_root(root) / ".cache" / "model-budget"
+            return Budget(
+                cache / "phase2-ollama.jsonl",
+                cache / "phase2-ollama-legacy.jsonl",
+                settings.daily_limit,
+                local=True,
+            )
+        raise ProbeError("blocked", "本地模型只允许第二阶段专用评测")
     if phase2 and (settings.provider, settings.model) != ("deepseek", "deepseek-flash"):
         raise ProbeError("blocked", "第二阶段付费评测只允许 deepseek-flash")
     cache = (phase2_checkout_root(root) if phase2 else root) / ".cache"
@@ -136,6 +146,7 @@ def run_live(
         raise ProbeError(
             "validation", "故障评测需要专用本地评测库；不能混用生产/评审路径"
         ) from None
+    phase2 = evaluation is not None and evaluation.get("suite") == "v3"
     v3_evaluation = (
         evaluation is not None
         and evaluation.get("suite") == "v3"
@@ -173,9 +184,17 @@ def run_live(
         or type(persona_judge) is not bool
     ):
         raise ProbeError("validation", f"对照需数据库工具；请求上限须为1至{current().max_attempts}")
+    local_evaluation = provider == "ollama"
+    if local_evaluation and (
+        not v3_evaluation or trace_cloud or not is_eval_database(database_dsn or "")
+    ):
+        raise ProbeError("blocked", "Ollama 仅允许无云跟踪、专用本地库的 v3 评测")
     exporter = cloud_exporter(os.environ) if trace_cloud else None
-    settings = load_runtime_settings(
-        {**os.environ, "LLM_PROVIDER": provider} if provider is not None else os.environ
+    model_env = {**os.environ, "LLM_PROVIDER": provider} if provider is not None else os.environ
+    settings = (
+        load_runtime_settings(model_env, local_evaluation=True)
+        if local_evaluation
+        else load_runtime_settings(model_env)
     )
     if persona_judge and settings.provider != "deepseek":
         raise ProbeError("blocked", "语气评审仅核验了DeepSeek固定温度线路")
@@ -198,7 +217,6 @@ def run_live(
     )
     if real_data:
         definitions = live_definitions(definitions)
-    phase2 = evaluation is not None and evaluation.get("suite") == "v3"
     budget = runtime_budget(root, settings, phase2=phase2)
     budget.check_authorization()
     cli = find_cli(os.environ)

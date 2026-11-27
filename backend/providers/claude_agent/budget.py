@@ -70,12 +70,16 @@ class Budget:
         currency: Currency = "CNY",
         *,
         phase2: bool = False,
+        local: bool = False,
     ) -> None:
         self.path, self.legacy, self.daily = path, legacy, daily
         self.currency = currency
         self.phase2 = phase2
+        self.local = local
 
     def check_authorization(self) -> None:
+        if self.local:
+            return
         check_authorization(self.currency)
         if self.phase2 and (cumulative := self.totals()[1]) >= PHASE2_REVIEW_AT:
             raise Phase2ReviewRequired(cumulative)
@@ -125,7 +129,7 @@ class Budget:
                     raise ValueError
                 datetime.strptime(entry.day, "%Y-%m-%d")
                 entries.append(entry)
-            _charges(entries)
+            _charges(entries, local=self.local)
         except (ValueError, TypeError, ProbeError, UnicodeError):
             raise ProbeError("blocked", "SDK 费用账本损坏；禁止清空重跑") from None
         return entries
@@ -140,8 +144,14 @@ class Budget:
     def reserve(self, amount: Decimal, now: datetime, run: object = None) -> str:
         self.check_authorization()
         entries = self.entries()
-        charges = _charges(entries)
+        charges = _charges(entries, local=self.local)
         day = now.astimezone(UTC).date().isoformat()
+        if self.local:
+            if amount != 0:
+                raise ProbeError("blocked", "本地评测的请求费用必须为零")
+            request_id = str(uuid4())
+            self.append(Entry(GRANT, request_id, "attempt", day, "0", self.currency))
+            return request_id
         total = sum((value for _, value in charges.values()), Decimal(0))
         daily = sum((v for d, v in charges.values() if d == day), Decimal(0))
         daily += sum(
@@ -205,22 +215,22 @@ class Budget:
         if attempt is None:
             raise ProbeError("blocked", "结算必须对应已预占的请求")
         candidate = Entry(GRANT, request_id, "settled", attempt.day, str(amount), self.currency)
-        _charges([*entries, candidate])
+        _charges([*entries, candidate], local=self.local)
         self.append(candidate)
 
     def totals(self) -> tuple[int, Decimal]:
-        charges = _charges(self.entries())
+        charges = _charges(self.entries(), local=self.local)
         return len(charges), sum((v for _, v in charges.values()), Decimal(0))
 
 
-def _charges(entries: list[Entry]) -> dict[str, tuple[str, Decimal]]:
+def _charges(entries: list[Entry], *, local: bool = False) -> dict[str, tuple[str, Decimal]]:
     charges: dict[str, tuple[str, Decimal]] = {}
     settled: set[str] = set()
     for entry in entries:
         amount = read_budget(entry.charge)
         previous = charges.get(entry.request_id)
         if entry.kind == "attempt":
-            if previous is not None or amount <= 0:
+            if previous is not None or (amount != 0 if local else amount <= 0):
                 raise ProbeError("blocked", "重复或非法预占")
         elif (
             previous is None
