@@ -297,12 +297,12 @@ def render_transcript(case: V3Case, obs: Observation) -> str:
 
 
 def write_transcript(directory: Path, case: V3Case, trial: int, obs: Observation) -> str:
-    """写入私有run目录（.cache）；返回相对路径。"""
+    """写入私有 run 目录；清单中的相对路径统一使用正斜杠。"""
     folder = directory / "transcripts"
     folder.mkdir(parents=True, exist_ok=True)
     path = folder / f"{case.case_id}-{trial}.txt"
     path.write_text(render_transcript(case, obs), encoding="utf-8")
-    return str(path.relative_to(directory))
+    return path.relative_to(directory).as_posix()
 
 
 SHEET_COLUMNS = (

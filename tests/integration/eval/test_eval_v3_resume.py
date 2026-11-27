@@ -6,7 +6,7 @@ run_trial被打桩，不跑模型也不碰真实接口；main()走真实的临�
 import json
 import os
 from collections.abc import Iterator
-from pathlib import Path
+from pathlib import Path, PurePath, PureWindowsPath
 from typing import Any
 
 import pytest
@@ -158,8 +158,8 @@ def test_interrupt_writes_reports_prints_resume_command_and_matches_uninterrupte
     assert start(interrupted, monkeypatch, env) == 130
     directory = next((tmp_path / "runs2").iterdir())
     out = capsys.readouterr().out
-    assert "接着跑：uv run python scripts/dev.py eval-v3 --resume " + str(directory) in out
-    assert f"--repeat 2 --profile human --cases {env}" in out
+    assert "接着跑：uv run python scripts/dev.py eval-v3 --resume " + directory.as_posix() in out
+    assert f"--repeat 2 --profile human --cases {env.as_posix()}" in out
     assert len(lines(directory)) == 2  # 在途trial不记录
     assert json.loads((directory / "manifest.json").read_text())["stopped"] == "interrupted"
     assert json.loads((directory / "summary.json").read_text())["trials"] == 2  # 已完成部分的报告
@@ -201,7 +201,7 @@ def test_two_consecutive_limit_errors_stop_the_run(
         "quota_suspected:rate_limited" in out
         and "接着跑：uv run python scripts/dev.py eval-v3" in out
     )
-    assert f"--resume {directory} --repeat 2 --profile relaxed" in out
+    assert f"--resume {directory.as_posix()} --repeat 2 --profile relaxed" in out
     assert (
         json.loads((directory / "manifest.json").read_text())["stopped"]
         == "quota_suspected:rate_limited"
@@ -225,14 +225,15 @@ def test_non_consecutive_or_non_limit_errors_do_not_stop(
     assert len(plain.calls) == 4
 
 
-def test_resume_command_carries_the_flags_that_matter() -> None:
+@pytest.mark.parametrize("directory", [Path("/d"), PureWindowsPath("/d")])
+def test_resume_command_carries_the_flags_that_matter(directory: PurePath) -> None:
     from eval.v3.run import build_parser
 
     args = build_parser().parse_args(
         ["--live", "--trace-cloud", "--repeat", "3", "--case-id", "x", "--case-id", "y",
          "--max-cny", "9", "--no-judge"]
     )  # fmt: skip
-    command = resume_command(args, Path("/d"))
+    command = resume_command(args, directory)
     assert command == (
         "uv run python scripts/dev.py eval-v3 --live --trace-cloud --resume /d --repeat 3 "
         "--profile human --case-id x --case-id y --max-cny 9.0 --no-judge"

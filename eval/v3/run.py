@@ -17,7 +17,7 @@ from contextlib import nullcontext
 from dataclasses import dataclass, field, replace
 from datetime import UTC, datetime, timedelta
 from decimal import Decimal
-from pathlib import Path
+from pathlib import Path, PurePath
 from time import perf_counter
 from typing import Any
 from uuid import UUID, uuid4
@@ -746,16 +746,20 @@ def resume_mismatch(
     return None
 
 
-def resume_command(args: argparse.Namespace, directory: Path) -> str:
+def resume_command(args: argparse.Namespace, directory: PurePath) -> str:
     parts = ["uv run python scripts/dev.py eval-v3"]
     if args.live:
         parts.append("--live")
     if args.trace_cloud:
         parts.append("--trace-cloud")
-    parts += [f"--resume {directory}", f"--repeat {args.repeat}", f"--profile {args.profile}"]
+    parts += [
+        f"--resume {directory.as_posix()}",
+        f"--repeat {args.repeat}",
+        f"--profile {args.profile}",
+    ]
     parts += [f"--case-id {c}" for c in args.case_id]
     if Path(args.cases) != DEFAULT_CASES:
-        parts.append(f"--cases {args.cases}")
+        parts.append(f"--cases {Path(args.cases).as_posix()}")
     if args.max_cny is not None:
         parts.append(f"--max-cny {args.max_cny}")
     if args.no_judge:

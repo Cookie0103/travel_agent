@@ -7,11 +7,12 @@ from datetime import date
 import pytest
 from sqlalchemy import URL, func, select
 
-from backend.domain.booking import Booking, HoldHotelInput
+from backend.domain.booking import Booking, HoldHotelInput, HoldInput, SupplierHold
 from backend.domain.execution import RunContext
 from backend.domain.hotels import HotelOffer
 from backend.domain.travel_request import RequestPatch
 from backend.persistence import bookings
+from backend.persistence.database import Database
 from backend.persistence.models import SupplierHoldRow, SupplierOrderRow
 from backend.services.bookings import BookingService
 from backend.services.common import ServiceError
@@ -101,8 +102,19 @@ def body(offer: HotelOffer, revision: int) -> HoldHotelInput:
     return HoldHotelInput(offer_id=offer.offer_id, expected_revision=revision)
 
 
+class PendingHolds(SupplierService):
+    def __init__(self, database: Database, participants: int) -> None:
+        super().__init__(database)
+        self.ready = asyncio.Barrier(participants)
+
+    async def hold(self, body: HoldInput) -> SupplierHold:
+        # 所有请求先通过会话前置检查，再让真实供应商创建暂留。
+        await asyncio.wait_for(self.ready.wait(), timeout=5)
+        return await super().hold(body)
+
+
 def test_overlapping_holds_of_different_hotels_have_exactly_one_winner(world: World) -> None:
-    """不同酒店、同日期：2~3路无人为延迟的并发，恰一个held，其余409。"""
+    """不同酒店同日期，2–3 路都已进入供应商阶段，恰一个 held，其余 409。"""
 
     async def exercise() -> None:
         for round_ in range(ROUNDS):
@@ -111,8 +123,12 @@ def test_overlapping_holds_of_different_hotels_have_exactly_one_winner(world: Wo
             distinct = list({o.hotel_id: o for o in offers}.values())
             assert len(distinct) >= 3
             picked = distinct[: 2 + round_ % 2]
+            supplier = PendingHolds(world.travel.database, len(picked))
             results = await asyncio.gather(
-                *(world.service().hold(context, body(o, revision)) for o in picked),
+                *(
+                    BookingService(world.travel, supplier).hold(context, body(o, revision))
+                    for o in picked
+                ),
                 return_exceptions=True,
             )
             held = [r for r in results if isinstance(r, Booking) and r.status == "held"]
@@ -184,8 +200,12 @@ def test_overlap_racing_an_adjacent_hold_only_blocks_the_overlap(world: World) -
             second, _ = await world.offers(context, date(2026, 11, 5), 3)
             a = list({o.hotel_id: o for o in first}.values())[:2]
             picked = [a[0], second[0], a[1]]
+            supplier = PendingHolds(world.travel.database, len(picked))
             results = await asyncio.gather(
-                *(world.service().hold(context, body(o, revision)) for o in picked),
+                *(
+                    BookingService(world.travel, supplier).hold(context, body(o, revision))
+                    for o in picked
+                ),
                 return_exceptions=True,
             )
             assert isinstance(results[1], Booking) and results[1].status == "held", results
