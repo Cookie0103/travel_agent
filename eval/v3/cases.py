@@ -31,7 +31,17 @@ TOOL_NAMES = frozenset(d.name for d in (*SEARCH_DEFINITIONS, *TRAVEL_DEFINITIONS
 DEFAULT_FORBIDDEN = ("hold_hotel",)
 
 type Category = Literal[
-    "main_flow", "ambiguous", "mid_change", "fault", "out_of_scope", "memory", "adversarial"
+    "main_flow",
+    "ambiguous",
+    "mid_change",
+    "fault",
+    "out_of_scope",
+    "memory",
+    "adversarial",
+    "commerce",
+    "rain_day",
+    "local_edit",
+    "reservation",
 ]
 type CardKind = Literal[
     "trip_ask", "form", "pace", "budget_relaxation", "memory_confirm", "hotel_assign"
@@ -303,6 +313,7 @@ class RubricItem(Strict):
 
 class V3Case(Strict):
     case_id: str = Field(pattern=CASE_ID)
+    seed_id: str | None = Field(default=None, pattern=CASE_ID)
     category: Category
     title: str = Field(min_length=1, max_length=200)
     setup: InitialState | None = None

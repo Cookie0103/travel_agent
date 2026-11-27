@@ -38,7 +38,7 @@ from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.hotel_flow import HotelPick, current_picks, flow_from_details
 from backend.domain.plans import PlanDraft
 from backend.domain.tool_facts import SkillName
-from backend.domain.travel_request import RequestPatch, pace_of
+from backend.domain.travel_request import RequestPatch, city_key, pace_of
 from backend.limits import ProbeError
 from backend.persistence import travel as request_rows
 from backend.persistence.models import BookingRow, MemoryFactRow, PlanDraftRow, SupplierOrderRow
@@ -387,8 +387,11 @@ async def collect(
         trip_dates = tuple(
             (request.start_date + timedelta(days=n)).isoformat() for n in range(span + 1)
         )
+    request_facts = {**request.model_dump(mode="json"), "pace": pace_of(request)}
+    if case.seed_id and request.city:
+        request_facts["city"] = city_key(request.city)
     state = {
-        "request": {**request.model_dump(mode="json"), "pace": pace_of(request)},
+        "request": request_facts,
         "saved_version": after.saved.version if after.saved else 0,
         "hotel_stays": [s.model_dump(mode="json") for s in after.saved.content.hotel_stays]
         if after.saved
