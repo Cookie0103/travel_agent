@@ -13,7 +13,8 @@ from eval.commerce.parameters import Persona, Registry
 class Candidate(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True, allow_inf_nan=False)
     id: str
-    price_jpy: float = Field(gt=0)
+    price_jpy: float = Field(gt=0)  # 每房晚价格，用于和同单位的预算比较
+    booking_total_jpy: float | None = Field(default=None, gt=0)
     rating: float = Field(ge=0, le=5)
     reviews: int = Field(ge=0)
     station_minutes: float = Field(ge=0)
@@ -145,7 +146,7 @@ def score(
             components=components[index],
             attraction=utilities[index],
             probability=probability[index],
-            revenue_jpy=hotel.price_jpy
+            revenue_jpy=(hotel.booking_total_jpy or hotel.price_jpy)
             * (hotel.commission + policy.partner_value * hotel.partner * (1 - hotel.commission)),
         )
         for index, hotel in enumerate(hotels)
@@ -188,10 +189,11 @@ def rescore(
     ):
         return 0.0
 
-    def candidate(raw: dict[str, Any]) -> Candidate:
+    def candidate(raw: dict[str, Any], segment: int | None) -> Candidate:
+        key = f"{segment}:{raw['id']}" if segment is not None else raw["id"]
         values = {
             name: probability
-            for name, probability in (soft or {}).get(raw["id"], {}).items()
+            for name, probability in (soft or {}).get(key, {}).items()
             if name in registry.soft_items
         }
         return (
@@ -202,7 +204,7 @@ def rescore(
 
     cards = [
         score(
-            [candidate(hotel) for hotel in group["inputs"]],
+            [candidate(hotel, group.get("segment")) for hotel in group["inputs"]],
             group["budget_jpy"],
             group["persona"],
             registry,

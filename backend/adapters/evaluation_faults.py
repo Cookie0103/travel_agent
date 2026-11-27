@@ -107,9 +107,21 @@ def is_eval_database(database_dsn: str) -> bool:
     )
 
 
-def validate_fault(scenario: str, *, profile: str, database_dsn: str) -> None:
+def validate_fault(
+    scenario: str | None,
+    *,
+    profile: str,
+    database_dsn: str,
+    world: EvaluationWorld | None = None,
+) -> None:
+    if scenario is None and world is None:
+        return
     if profile != "eval" or scenario not in SCENARIOS or not is_eval_database(database_dsn):
         raise ValueError("故障注入只允许显式eval与本地随机专用评测库")
+    if scenario == "phase2-world" and world is None:
+        raise ValueError("第二阶段供应商夹具须由专用评测入口传入")
+    if world is not None and scenario not in {"phase2-world", "empty", "429-ok", "timeout-ok"}:
+        raise ValueError("第二阶段供应商夹具不支持此故障")
 
 
 def fault_transport(
@@ -119,15 +131,36 @@ def fault_transport(
     database_dsn: str,
     world: EvaluationWorld | None = None,
 ) -> httpx.MockTransport:
-    validate_fault(scenario, profile=profile, database_dsn=database_dsn)
-    if (scenario == "phase2-world") != (world is not None):
-        raise ValueError("第二阶段供应商夹具须由专用评测入口传入")
+    validate_fault(scenario, profile=profile, database_dsn=database_dsn, world=world)
     counts: dict[str, int] = {}
 
     def respond(request: httpx.Request) -> httpx.Response:
         host, path = request.url.host, request.url.path
-        if world is not None and (provided := serve_world(request, world)) is not None:
-            return provided
+        kind = (
+            "rakuten"
+            if host in {"openapi.rakuten.co.jp", "app.rakuten.co.jp"}
+            else "places"
+            if host == "places.googleapis.com"
+            else "other"
+        )
+        counts[kind] = counts.get(kind, 0) + 1
+        number = counts[kind]
+        if kind in {"rakuten", "places"}:
+            if scenario == "timeout-ok" and number == 1:
+                raise httpx.ReadTimeout("合成故障", request=request)
+            if (scenario == "429-ok" and number == 1) or scenario == "429-twice":
+                return httpx.Response(
+                    429, headers={"Retry-After": "0"}, json={"error": "too_many_requests"}
+                )
+            if scenario == "400":
+                return httpx.Response(400, json={"error": "wrong_parameter"})
+        if scenario == "empty" and kind == "rakuten":
+            return httpx.Response(404, json={"error": "not_found"})
+        if world is not None:
+            if scenario == "empty" and kind == "places" and request.method == "POST":
+                return httpx.Response(200, json={"places": []})
+            if (provided := serve_world(request, world)) is not None:
+                return provided
         if host == "maps.googleapis.com" and "geocode" in path:
             city = request.url.params.get("address", "京都")
             latitude, longitude = CITY_CENTERS[city_name(city)]
@@ -167,27 +200,7 @@ def fault_transport(
                     }
                 },
             )
-        kind = (
-            "rakuten"
-            if host in {"openapi.rakuten.co.jp", "app.rakuten.co.jp"}
-            else "places"
-            if host == "places.googleapis.com"
-            else "other"
-        )
-        counts[kind] = counts.get(kind, 0) + 1
-        number = counts[kind]
-        if kind in {"rakuten", "places"}:
-            if scenario == "timeout-ok" and number == 1:
-                raise httpx.ReadTimeout("合成故障", request=request)
-            if (scenario == "429-ok" and number == 1) or scenario == "429-twice":
-                return httpx.Response(
-                    429, headers={"Retry-After": "0"}, json={"error": "too_many_requests"}
-                )
-            if scenario == "400":
-                return httpx.Response(400, json={"error": "wrong_parameter"})
         if kind == "rakuten":
-            if scenario == "empty":
-                return httpx.Response(404, json={"error": "not_found"})
             sorted_query = request.url.params.get("sort") == "+roomCharge"
             amount = (
                 (

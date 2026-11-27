@@ -14,6 +14,7 @@ from backend.tools.execution import execute_observed
 from backend.tools.travel import DEFINITIONS, TravelToolExecutor
 from eval.core.database import DatabaseEvaluation
 from eval.core.evaluation_world import phase2_world
+from eval.v3.report import write_reports
 from eval.v3.run import TrialConfig, run_all
 from tests.integration.eval.test_eval_v3_smoke import REQUEST, in_eval_db, make
 
@@ -100,11 +101,14 @@ def test_world_runs_ask_select_and_stage_in_all_six_cities(
         cases = [
             make(
                 case_id=f"world-city-{index}",
-                world="phase2",
+                seed_id="world-smoke" if index == 0 else None,
+                fault="429-ok" if index == 0 else None,
+                world=None if index == 0 else "phase2",
                 setup={
                     "request": {
                         **REQUEST,
                         "city": city.city,
+                        "child_ages": [5] if index == 0 else [],
                         "lodging_budget": None,
                         "lodging_budget_unlimited": True,
                     }
@@ -140,5 +144,11 @@ def test_world_runs_ask_select_and_stage_in_all_six_cities(
             (row["case_id"], row["reason"], row["infra_error"]) for row in rows
         ]
         assert all(row["hotel_presentations"] and row["selected_hotels"] for row in rows)
+        summary = write_reports(tmp_path, dict(config.meta), rows, 1, None)
+        sheets = [row["commerce"] for row in rows]
+        assert all(isinstance(sheet, dict) and sheet["groups"] for sheet in sheets), sheets
+        commerce = summary["commerce"]
+        assert isinstance(commerce, dict) and commerce["expected_score_jpy"] > 0
+        assert (tmp_path / "report.md").is_file()
 
     in_eval_db(postgres_url, exercise)

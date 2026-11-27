@@ -34,6 +34,7 @@ from backend.adapters.evaluation_faults import evaluation_data, is_eval_database
 from backend.adapters.evaluation_world import EvaluationWorld
 from backend.adapters.tracing import cloud_exporter, push_scores
 from backend.agent.fixture_runtime import FixtureRuntime
+from backend.domain.evidence import HOTEL_OFFER_FIELDS
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.hotel_flow import HotelPick, current_picks, flow_from_details
 from backend.domain.plans import PlanDraft
@@ -56,6 +57,8 @@ from backend.services.travel import TravelService, request_from_row
 from backend.tools.contracts import ToolExecutor
 from backend.tools.skill_config import SkillConfig
 from backend.tools.travel import TravelToolExecutor
+from eval.commerce.parameters import load_parameters
+from eval.commerce.trials import evaluate as evaluate_commerce
 from eval.core.database import DatabaseEvaluation, database_evaluation, selector_runner
 from eval.core.evaluation_world import phase2_world
 from eval.core.guard import refuse_live_under_pytest
@@ -141,7 +144,7 @@ class V3Runtime(GuardedRuntime):
             ROOT,
             business.dsn(),
             provider="deepseek",
-            evaluation_fault="phase2-world" if world else case.fault,
+            evaluation_fault=case.fault or ("phase2-world" if world else None),
             evaluation_world=world,
             evaluation={
                 "suite": "v3",
@@ -226,6 +229,8 @@ def hotel_card_facts(card: Mapping[str, object]) -> dict[str, object]:
     keys = (
         "hotel_id",
         "hotel_name",
+        "partner",
+        "partner_label",
         "room_type",
         "currency",
         "total",
@@ -239,9 +244,7 @@ def hotel_card_facts(card: Mapping[str, object]) -> dict[str, object]:
     )
     facts = {key: card[key] for key in keys if key in card}
     if isinstance(stay := card.get("stay"), dict):
-        facts["stay"] = {
-            key: stay[key] for key in ("city", "start_date", "end_date", "rooms") if key in stay
-        }
+        facts["stay"] = {key: stay[key] for key in sorted(HOTEL_OFFER_FIELDS) if key in stay}
     if isinstance(offer_id := card.get("offer_id"), str):
         facts["quote_hash"] = hashlib.sha256(offer_id.encode("utf-8")).hexdigest()
     return facts
@@ -500,9 +503,11 @@ async def run_trial(
     config.skills.authorize(evaluation=True, dsn=business.dsn())
     events: dict[UUID, list[RuntimeEvent]] = {}
     usage: list[Mapping[str, object]] = []
-    world = phase2_world() if case.world == "phase2" else None
+    world = phase2_world() if case.world == "phase2" or case.seed_id else None
     fixture = (
-        evaluation_data("phase2-world", business.sessions.database, business.dsn(), world)
+        evaluation_data(
+            case.fault or "phase2-world", business.sessions.database, business.dsn(), world
+        )
         if world is not None and not config.live
         else None
     )
@@ -574,7 +579,7 @@ async def run_trial(
         judge = await asyncio.to_thread(
             judge_trial, case, observation, config.judge_call, ROOT, check=config.judge_check
         )
-    return trial_row(
+    row = trial_row(
         case,
         repeat,
         trace_id,
@@ -585,6 +590,48 @@ async def run_trial(
         transcript=transcript,
         cache=cache_totals(usage) if config.live else None,
     )
+
+    if world is not None:
+        gate = row["rule_gate"]
+        assert isinstance(gate, dict)
+        violations = tuple(str(entry["code"]) for entry in gate["violations"])
+        if not score.success and not violations:
+            violations = (score.reason or "trial_failed",)
+        request = observation.state.get("request")
+        presentations = row["hotel_presentations"]
+        assert isinstance(presentations, list)
+        facts = request if isinstance(request, dict) else {}
+        commerce = evaluate_commerce(presentations, facts, load_parameters(), violations)
+        row["commerce"] = commerce
+        if commerce["passed"]:
+            turns_by_index = {turn.index: turn for turn in observation.turns}
+            by_hotel = {}
+            for group in commerce["groups"]:
+                source = turns_by_index.get(group["turn"])
+                for hotel in group["inputs"]:
+                    by_hotel[f"{group['segment']}:{hotel['id']}"] = {
+                        "住宿偏好": facts.get("hard_constraints"),
+                        "行程偏好": facts.get("soft_constraints"),
+                        "节奏": facts.get("pace"),
+                        "每日景点数": observation.db.draft_places_by_day,
+                        "可核对推荐事实": {
+                            key: hotel[key]
+                            for key in (
+                                "price_jpy",
+                                "rating",
+                                "reviews",
+                                "station_minutes",
+                                "breakfast",
+                            )
+                        },
+                        "本轮用户要求": source.user_text[:300] if source else None,
+                        "推荐理由": source.answer[:500] if source else None,
+                    }
+            if by_hotel:
+                row["soft_facts"] = by_hotel
+    if case.seed_id:
+        row["seed_id"] = case.seed_id
+    return row
 
 
 def trial_row(

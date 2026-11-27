@@ -192,6 +192,7 @@ def serve(request: httpx.Request, world: EvaluationWorld) -> httpx.Response | No
                                 "stayDate": day.isoformat(),
                                 "rakutenCharge": h.prices_jpy[demand][group],
                                 "chargeFlag": 1,
+                                "evaluationChildCharge": 2400,  # 合成世界每儿童每晚日元
                             }
                         },
                     ]

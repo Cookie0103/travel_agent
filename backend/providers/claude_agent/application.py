@@ -52,10 +52,11 @@ class GuardedRuntime:
         self.skill_config = skill_config
         self.evaluation_world = evaluation_world
         self.real_data = real_data
-        if evaluation_fault is not None:
-            validate_fault(evaluation_fault, profile="eval", database_dsn=database_dsn)
-            if real_data:
-                raise ValueError("故障评测不能混用真实供应商")
+        validate_fault(
+            evaluation_fault, profile="eval", database_dsn=database_dsn, world=evaluation_world
+        )
+        if evaluation_fault and real_data:
+            raise ValueError("故障评测不能混用真实供应商")
         self.evaluation_fault, self.evaluation = evaluation_fault, evaluation
         self.trace_metadata: TraceMetadata | None = None
         self.observed_events: tuple[RuntimeEvent, ...] = ()

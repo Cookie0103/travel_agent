@@ -56,6 +56,7 @@ class Charge(BaseModel):
     stayDate: date
     rakutenCharge: Money
     chargeFlag: int = Field(ge=0, le=1)
+    evaluationChildCharge: Money | None = None
 
 
 # 判断题：低于该每人每晚价格的套餐视为促销/测试价（实测出现过¥1、¥500），不当真实价格；
@@ -322,6 +323,13 @@ class Rakuten:
         reason = (
             "儿童计价未知"
             if request.child_ages
+            and (
+                self.data_mode != "synthetic"
+                or any(
+                    not item.charge or item.charge.evaluationChildCharge is None
+                    for item in selected
+                )
+            )
             else "超过7晚，不核算总价"
             if nights > 7
             else "成人无法平均分配到每间房"
@@ -329,7 +337,9 @@ class Rakuten:
             else None
         )
         totals: dict[str, Decimal | None] = {
-            item.key: self.price(item, request, request.start_date) if not reason else None
+            item.key: self.stay_nightly_price(item, request, request.start_date)
+            if not reason
+            else None
             for item in selected
         }
         if selected and not reason:
@@ -360,7 +370,7 @@ class Rakuten:
                 for item in selected:
                     # 后几晚同样不接受促销价，否则会把总价低估。
                     value = (
-                        self.price(nightly[item.key], request, day)
+                        self.stay_nightly_price(nightly[item.key], request, day)
                         if item.key in nightly
                         and not self.price_unreliable(nightly[item.key], request)
                         else None
@@ -532,6 +542,17 @@ class Rakuten:
         return (
             f"https://{DESTINATION_HOST}/yado/{detail.middleClassCode}/{detail.smallClassCode}.html"
         )
+
+    def stay_nightly_price(
+        self, item: Candidate, request: TravelRequest, day: date
+    ) -> Decimal | None:
+        base = self.price(item, request, day)
+        if base is None or not request.child_ages:
+            return base
+        charge = item.charge
+        if self.data_mode != "synthetic" or not charge or charge.evaluationChildCharge is None:
+            return None
+        return base + charge.evaluationChildCharge * len(request.child_ages)
 
     @staticmethod
     def price(item: Candidate, request: TravelRequest, day: date) -> Decimal | None:

@@ -122,18 +122,20 @@ def run_live(
     skill_config: SkillConfig | None = None,
     evaluation_world: EvaluationWorld | None = None,
 ) -> dict[str, object]:
-    if (evaluation_fault == "phase2-world") != (evaluation_world is not None):
-        raise ProbeError("validation", "第二阶段供应商夹具须由专用评测入口传入")
     snapshot_enabled = prompt_snapshot_enabled(prompt_snapshot, database_dsn, os.environ)
-    if evaluation_fault is not None:
-        try:
-            validate_fault(evaluation_fault, profile="eval", database_dsn=database_dsn or "")
-            if real_data or persona_judge:
-                raise ValueError
-        except ValueError:
-            raise ProbeError(
-                "validation", "故障评测需要专用本地评测库；不能混用生产/评审路径"
-            ) from None
+    try:
+        validate_fault(
+            evaluation_fault,
+            profile="eval",
+            database_dsn=database_dsn or "",
+            world=evaluation_world,
+        )
+        if evaluation_fault and (real_data or persona_judge):
+            raise ValueError
+    except ValueError:
+        raise ProbeError(
+            "validation", "故障评测需要专用本地评测库；不能混用生产/评审路径"
+        ) from None
     v3_evaluation = (
         evaluation is not None
         and evaluation.get("suite") == "v3"

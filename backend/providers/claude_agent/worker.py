@@ -147,14 +147,14 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         world: EvaluationWorld | None = TypeAdapter(EvaluationWorld | None).validate_python(
             payload.get("evaluation_world")
         )
-        if (evaluation_fault == "phase2-world") != (world is not None):
+        validate_fault(
+            evaluation_fault,
+            profile="eval",
+            database_dsn=dsn if isinstance(dsn, str) else "",
+            world=world,
+        )
+        if evaluation_fault and (real_data or persona_judge):
             raise ValueError
-        if evaluation_fault:
-            validate_fault(
-                evaluation_fault, profile="eval", database_dsn=dsn if isinstance(dsn, str) else ""
-            )
-            if real_data or persona_judge:
-                raise ValueError
     except ValueError:
         return {"status": "error", "code": "validation"}
     if real_data:

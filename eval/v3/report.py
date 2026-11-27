@@ -5,6 +5,7 @@ import json
 from collections import Counter
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
+from statistics import mean
 
 from backend.providers.claude_agent.response import cache_totals
 from eval.core.report import distribution, reliability
@@ -74,6 +75,28 @@ def cache_summary(rows: list[dict[str, object]]) -> dict[str, object]:
     }
 
 
+def commerce_summary(rows: list[dict[str, object]]) -> dict[str, object] | None:
+    sheets = [sheet for row in rows if isinstance(sheet := row.get("commerce"), dict)]
+    if not sheets:
+        return None
+    eligible = [sheet for sheet in sheets if sheet["passed"]]
+    revenue = sum(sheet["expected_revenue_jpy"] for sheet in sheets)
+    discounted = sum(sheet["expected_revenue_jpy"] * sheet["trust_discount"] for sheet in sheets)
+    return {
+        "trials": len(sheets),
+        "rule_pass_rate": mean(bool(sheet["passed"]) for sheet in sheets),
+        "expected_score_jpy": mean(sheet["total_jpy"] for sheet in sheets),
+        "passed_score_jpy": mean(sheet["total_jpy"] for sheet in eligible) if eligible else None,
+        "booking_probability": mean(sheet["booking_probability"] for sheet in sheets),
+        "revenue_before_discount_jpy": revenue / len(sheets),
+        "trust_discount": discounted / revenue if revenue else 1.0,
+        "soft_model": None,
+        "data_source": "synthetic",
+        "parameters": sorted({sheet["parameter_version"] for sheet in sheets}),
+        "stability": None,
+    }
+
+
 def summarize(
     rows: list[dict[str, object]], repeat: int, stopped: str | None = None
 ) -> dict[str, object]:
@@ -98,6 +121,7 @@ def summarize(
             for c in categories
         },
         "failures": failure_table(rows),
+        "commerce": commerce_summary(rows),
         "total_s": distribution([v for r in rows if (v := number(r.get("total_s"))) is not None]),
         "ttfua_s": distribution([v for r in rows if (v := number(r.get("ttfua_s"))) is not None]),
         "cost_cny": {
@@ -182,6 +206,21 @@ def render_markdown(manifest: dict[str, object], summary: dict[str, object]) -> 
         f"- 声明判定unknown：{unknown['count']}次（{unknown['trials_with_unknown']}个trial）",
         "",
     ]
+    commerce = summary.get("commerce")
+    if isinstance(commerce, dict):
+        lines += [
+            "## 商业期望分",
+            f"- 数据源 {commerce['data_source']}，参数 {', '.join(commerce['parameters'])}，"
+            "软性权重为零。价格吸引力按每房晚计算，佣金按整段住宿总价计算。",
+            f"- {commerce['trials']} 次试验，过关率 {pct(commerce['rule_pass_rate'])}，"
+            f"全体期望分 {commerce['expected_score_jpy']:.4f} 日元（未通过记零）。",
+            f"- 至少一处住宿的模拟下单概率 {pct(commerce['booking_probability'])}，"
+            f"折扣前收益 {commerce['revenue_before_discount_jpy']:.4f} 日元，"
+            f"按折扣前收益加权的信任折扣 {commerce['trust_discount']:.4f}。",
+            f"- 过关试验均分 {commerce['passed_score_jpy']} 日元。",
+            "- 结论稳定度需有同题同重复的两组结果，单组报告留空。",
+            "",
+        ]
     judge = summary["judge"]
     assert isinstance(judge, dict)
     lines.append("## Rubric评审（不参与success；yes率=yes/(yes+no)）")
