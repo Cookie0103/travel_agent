@@ -56,3 +56,9 @@ CI 不配置任何模型凭据，不跑 live 与评测。
 - “离线通过 / PG 集成 / 浏览器 / 真实 API / 独立审查”分别写，不合并；结论标 VERIFIED / REASONED / ASSUMED。
 - 评测对照的结论（冻结 40×3、同源码受控对照等）见 [QUALITY_SCORE](../guides/QUALITY_SCORE.md) 与 [evidence/](../../../archive/phase1/docs/evidence/README.md) 的 `m42-*`。
 - 新增环境相关失败：先在上表加一行（现象、原因、处理），再在批次计划记录。
+
+## 第二阶段回归入口
+
+`dev check` 和 `dev test` 是开发提交的质量入口。涉及前端卡片契约时，同步生成 OpenAPI 与 TypeScript 类型并运行 `dev web-check`。不依赖付费接口的规则评测可运行 `dev eval-rules`，多轮设施冒烟使用临时本机 PostgreSQL 评测库和合成供应商。
+
+规则断言复核服务端终态、事件和有版本的依据。离线夹具结果、真实 SDK 往返和本机模型效果各自保留各自的实测数字。第二阶段当前环境记录见[开发计划](../../phase2/plans/2026-11-27-judge-evolution.md)。
