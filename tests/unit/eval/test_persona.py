@@ -138,15 +138,20 @@ def test_prompt_asks_once_then_waits_for_the_user_to_select_hotels() -> None:
         "请在卡片里一次确认",
         "不要在文字里问卡片已覆盖的内容",
         "绝不自动替用户选酒店",
-        "select_hotel_from_chat",
-        "先不选酒店，先排行程",
-        "超出预算约X%",
-        "抵达/离开时间不确定按全天安排",
-        "也不写入hard_constraints",
-        "不要重复搜索，不要卡住流程",
     )
     for phrase in phrases:
         assert phrase in prompt
+    skills = Path(__file__).resolve().parents[3] / "backend/tools/skills"
+    comparison = (skills / "hotel-comparison.md").read_text(encoding="utf-8")
+    for phrase in (
+        "select_hotel_from_chat",
+        "先不选酒店，先排行程",
+        "超出预算约X%",
+        "不要重复搜索，不要卡住流程",
+    ):
+        assert phrase in comparison
+    stage = next(d.description for d in DEFINITIONS if d.name == "stage_plan_change")
+    assert "抵达/离开时间不确定按全天安排" in stage and "不写入hard_constraints" in stage
     # 撤销第2轮：不再自动选最便宜的一家、不再同一轮暂存草稿
     for gone in (
         "一轮做完",

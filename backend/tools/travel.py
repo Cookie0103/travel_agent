@@ -161,13 +161,20 @@ DEFINITIONS = (
     ToolDefinition(
         "update_travel_request",
         "只记录用户明确表达的条件；set/clear，必须检查expected_revision。"
-        "全程budget与lodging_budget原值同时保留；行程住宿仅问每间房每晚日元上限，明确不限写lodging_budget_unlimited并清除金额，有金额则清除不限。单独酒店比较预算可选，不主动追问全程预算/酒店总预算/币种。"
+        "全程budget与lodging_budget原值同时保留，不换汇、拆分或猜房晚。"
+        "完整行程有住宿且missing_fields含lodging_budget才问每间房每晚日元上限；0晚或单独比价不主动追问。"
+        "填金额用basis=per_room_night、currency=JPY并清除lodging_budget_unlimited；明确不限写true并清除金额，null不代表不限。"
+        "只有明确的每日开始时间写departure_time。抵达或返程写日期、时刻及航班/车次角色到hard_constraints；"
+        "仅改航班时保留每日开始值。明确纠正旧误填时clear departure_time并列入explicit_fields。"
         "每轮提取用户说出的目的地/日期/同行者/房间/两预算/节奏，不要求先填右侧。"
         "手填值优先；明确改成新值的字段列入explicit_fields，模糊提取不要列入。"
         "回执skipped_fields未更新，必须追问；实际更新向用户告知回执message。"
         "房型优先用room_preferences严格枚举：lodging=private/dorm/capsule/any，smoking=nonsmoking/any，bed=twin/double/any；无要求用any，未提项省略。"
         "hard_constraints保留未提项，只替换本次房型组；明确删除用remove_hard_constraints列出当前旧文本，并声明explicit_fields=hard_constraints。"
-        "省级目的地需要住宿地点时，set.hotel_search_location记录用户明确地点，保留city；机场起终点不等于住宿地点，不默认选择那霸。"
+        "房型组只有用户明确更改才写；短答“都可以”仅对应当前组。"
+        "原有同组值由服务端替换，保留未提及的房型、其他硬条件及手填值。"
+        "查询或刷新前missing_fields含hotel_search_location时，只追问具体住宿地点或城市。"
+        "set.hotel_search_location记录地点且保留city，机场起终点不能充作住宿地点；不重复询问已知字段。"
         "返回预算冲突时先追问以哪个为准，回答后只改用户指定字段，不比较酒店。",
         ConversationRequestPatch.model_json_schema(),
         kind="state",
@@ -195,6 +202,7 @@ DEFINITIONS = (
         "返回status：selected(已按相同服务端校验记录该住宿段，看all_selected/remaining_segments)；"
         "needs_confirmation(多城市未说城市，已发归段确认卡或填城市卡，等待用户点击)；"
         "need_link(名字对不上已展示候选，请用户贴乐天链接)；not_found(这些日期查不到该酒店)；"
+        "ambiguous(列出candidates请用户指明是哪一家)；selected但remaining_segments非空只提示剩余住宿段并等待；"
         "search_failed；nothing_to_select。",
         SelectHotelInput.model_json_schema(),
         kind="state",
@@ -221,7 +229,10 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "stage_plan_change",
-        "暂存初始行程或稳定item_id的局部patch，返回差异与校验；不保存正式版本，不接受锁定项改动。",
+        "暂存初始行程或稳定item_id的局部patch，返回差异与校验；不保存正式版本，不接受锁定项改动。"
+        "初稿按每日可用时段排：首日从已确认抵达起，末日结束在车站或机场，"
+        "从返程时间为交通和办理手续留缓冲，飞机至少2小时。抵达/离开时间不确定按全天安排，注明假设且不写入hard_constraints，"
+        "保留已明确的出行方式。只改一处的请求用稳定item_id并保留其他时段。",
         StageInput.model_json_schema(),
         kind="draft",
     ),
