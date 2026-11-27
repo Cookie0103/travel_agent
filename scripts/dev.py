@@ -241,6 +241,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     v3.add_argument("--resume-force", action="store_true")
     v3.add_argument("--no-judge", action="store_true")
     v3.add_argument("--judge-check", action="store_true")
+    v3.add_argument("--variant", choices=("full", "no_skills"), default="full")
+    v3.add_argument("--disable-skill")
+    v3.add_argument("--candidate-skills", type=Path)
     calibration = commands.add_parser("eval-calibration")
     calibration.add_argument("results", type=Path, nargs="+")
     calibration.add_argument("--live", action="store_true")
@@ -347,6 +350,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 command.append("--trace-cloud")
             if args.cases:
                 command.extend(["--cases", str(args.cases)])
+            if args.variant != "full":
+                command.extend(["--variant", args.variant])
+            if args.disable_skill:
+                command.extend(["--disable-skill", args.disable_skill])
+            if args.candidate_skills:
+                command.extend(["--candidate-skills", str(args.candidate_skills)])
             if args.max_cny is not None:
                 command.extend(["--max-cny", str(args.max_cny)])
             if args.resume:

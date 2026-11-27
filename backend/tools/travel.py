@@ -6,7 +6,6 @@ import json
 import time
 from dataclasses import replace
 from datetime import date, datetime
-from pathlib import Path
 from typing import Literal, get_args
 from uuid import UUID
 
@@ -57,6 +56,7 @@ from backend.tools.fencing import fence
 from backend.tools.grounding import grounded_fields
 from backend.tools.search import DEFINITIONS as SEARCH_DEFINITIONS
 from backend.tools.search import ContentSearchInput, PlaceSearchInput
+from backend.tools.skill_config import SkillConfig
 
 
 class EntityInput(BaseModel):
@@ -404,6 +404,7 @@ class TravelToolExecutor:
         # 冲突最少的已校验候选；修复次数用完或暂存被拒时交出它
         self.best: tuple[ItineraryProposal, ValidationReport] | None = None
         self.loaded_skills: set[str] = set()
+        self.skill_config = SkillConfig()
         # 状态登记与写工具全程持锁串行；CONCURRENT_READS只在登记/结算时持锁，查询本身在锁外。
         self.lock = asyncio.Lock()
         # 并发纯查询的门：相同调用(修正窗口内同一scope)排队，保证失败缓存和“只修正一次”。
@@ -414,6 +415,11 @@ class TravelToolExecutor:
         self.external_failures: dict[tuple[str, str], ToolResult] = {}
         self.corrections: set[tuple[str, str, str]] = set()
         self.failed_corrections: dict[tuple[str, str, str], ToolResult] = {}
+
+    def configure_skills(self, config: SkillConfig, *, evaluation: bool) -> None:
+        dsn = self.travel.database.engine.url.render_as_string(hide_password=False)
+        config.authorize(evaluation=evaluation, dsn=dsn)
+        self.skill_config = config
 
     async def execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
@@ -874,12 +880,12 @@ class TravelToolExecutor:
             )
         if isinstance(parsed, SkillInput):
             await self.travel.read_request(context)
+            if not self.skill_config.enabled(parsed.name):
+                return ToolResult({}, code="validation", suggestion="当前评测未启用该 Skill")
             if parsed.name in self.loaded_skills:
                 return ToolResult({"name": parsed.name, "already_loaded": True})
             text = with_repair_rounds(
-                (Path(__file__).resolve().parent / "skills" / (parsed.name + ".md")).read_text(
-                    encoding="utf-8"
-                ),
+                self.skill_config.path(parsed.name).read_text(encoding="utf-8"),
                 self.max_validations,
             )
             self.loaded_skills.add(parsed.name)
@@ -930,8 +936,10 @@ class TravelToolExecutor:
                 "立即调用stage_plan_change暂存（服务端会暂存冲突最少的候选并自动局部修复，"
                 "不增加修复次数；已有draft_id则直接用它），再present_travel_result展示。"
                 "回复必须如实写明：服务端自动去掉或调整的项目（草稿repairs）、"
-                "仍存的冲突与未知；不确认保存。尚未加载时先load_skill repair-limit。"
+                "仍存的冲突与未知；不确认保存。"
             )
+            if self.skill_config.enabled("repair-limit"):
+                message += "尚未加载时先load_skill repair-limit。"
             raise ServiceError(429, "blocked", message, "repair_limit")
         self.validations += 1
 

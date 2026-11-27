@@ -40,6 +40,7 @@ from backend.providers.claude_agent.ledger import exclusive
 from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.claude_agent.response import cache_totals
 from backend.providers.claude_agent.settings import load_runtime_settings
+from backend.tools.skill_config import SkillConfig
 from backend.tools.travel import live_definitions
 from backend.tools.workflow import WorkflowName
 from backend.trace_log import FILE_ENV, RUN_ENV, Tail, trace
@@ -117,6 +118,7 @@ def run_live(
     evaluation: Mapping[str, object] | None = None,
     trace_id: str | None = None,
     prompt_snapshot: bool = False,
+    skill_config: SkillConfig | None = None,
 ) -> dict[str, object]:
     snapshot_enabled = prompt_snapshot_enabled(prompt_snapshot, database_dsn, os.environ)
     if evaluation_fault is not None:
@@ -128,7 +130,18 @@ def run_live(
             raise ProbeError(
                 "validation", "故障评测需要专用本地评测库；不能混用生产/评审路径"
             ) from None
+    v3_evaluation = (
+        evaluation is not None
+        and evaluation.get("suite") == "v3"
+        and not real_data
+        and not persona_judge
+        and workflow is None
+    )
     try:
+        if skill_config is not None:
+            skill_config.authorize(evaluation=v3_evaluation, dsn=database_dsn or "")
+            if skill_config.variant != "full":
+                evaluation_variant = skill_config.variant
         validate_variant(
             evaluation_variant,
             database=database_dsn is not None,
@@ -228,6 +241,8 @@ def run_live(
                     "persona_judge": persona_judge,
                     "judge_kind": judge_kind,
                     "evaluation_variant": evaluation_variant,
+                    "v3_skill_evaluation": v3_evaluation,
+                    "skill_config": skill_config.model_dump(mode="json") if skill_config else {},
                     "real_data": real_data,
                     "evaluation_fault": evaluation_fault,
                     "prompt_snapshot": snapshot_enabled,

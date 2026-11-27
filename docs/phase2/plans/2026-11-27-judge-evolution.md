@@ -157,8 +157,8 @@ D4 的估算。单价取自 2026-10-20 的 30 题实测：全部题平均 0.26 �
 | A1 | 修测试的时间炸弹：夹具里的行程日期写死在 2026-11-03，过了这天就全部报“旅行日期不能早于今天” | P-201，做法见 §3.6。`TravelService` 已有时钟注入口（`backend/services/travel.py:141`），集成测试已有 `fixed_today` 夹具（`tests/integration/conftest.py`）但不是默认生效 | 不带任何插件的 `dev test`，日期类失败为 0；新增一条测试：把“今天”拨到 2030 年，夹具行程仍然有效；业务的日期校验逻辑不改 | — | done | `3c39fb5` · `dev check` 通过 · `dev test` 2477 passed、0 日期失败 · 正常提交钩子两项通过 |
 | A2 | 逐条定性 P-202 列出的既有失败（12 条稳定或抖动的，加 1 条偶发的并发抢占），能修的修，属于本机环境的登记到[测试总览 §4](../../handbook/testing/README.md) | P-202，做法见 §3.6 | 每条各有结论（真缺陷 / 时钟 / 本机环境 / 抖动）与处置；并发抢占那条要给出是测试时序问题还是产品竞态的证据；`dev test` 在本机通过；不带 `--no-verify` 的 `git commit` 能通过 | A1 | done | `bf9736c` · 恢复命令与真实 PostgreSQL 竞态专项 11 passed · 正常提交钩子两项通过，见 P-202 |
 | A3 | 运行事件补三样：① `load_skill` 的 Skill 名和内容哈希；② 修复轮次；③ 多轮评测每次运行的结果行里带上展示过的酒店卡明细和所选酒店 | ① `backend/domain/tool_facts.py:23-65` 的 `ToolArgumentFacts` 加封闭枚举字段，哈希加在 tool_finished 上（盘点 D2）；② 现在只进 TRACE 日志，`eval/v3/score.py` 的 `repair_rounds` 因此恒为 0（盘点 A6、G15）；③ 结果行现在没有酒店卡（盘点 B5） | v3 离线冒烟后，`trials.jsonl` 每行能读到三样；各有单元测试；不外泄内部 ID 的现有约束不破 | — | done | `c74c6c6` · 事件与结果行专项 20 passed，v3 离线酒店选择冒烟 1 passed · 正常提交钩子两项通过，见 P-204 |
-| A4 | 多轮评测支持变体、单个 Skill 开关、Skill 候选目录 | 现有消融变体只支持单条 prompt（`backend/providers/claude_agent/worker.py:105`，盘点 C8）；候选目录见 §3.3 | v3 运行器可带 `no_skills`、关掉指定的一个 Skill、指定候选目录各跑通一次离线冒烟；非评测配置下指定候选目录被拒绝，有测试 | A3 | todo | |
-| A6 | 被测模型与计价核对：评测固定用 DeepSeek flash；计价表里有实际模型名的条目；账本按缓存命中价计；对一次账 | §3.4。官方价表的来源和日期写进代码注释 | 用实际的模型名跑通一次最小的真实往返（1 次调用）；账本币种为人民币；有测试覆盖“命中缓存的输入按命中价计”；账本合计与后台实际扣费的差在 10% 以内，否则写明原因 | — | doing | 专项 39 passed · DeepSeek Flash 真实往返 1 次，账本 0.012082 元，见 P-206 |
+| A4 | 多轮评测支持变体、单个 Skill 开关、Skill 候选目录 | 现有消融变体只支持单条 prompt（`backend/providers/claude_agent/worker.py:105`，盘点 C8）；候选目录见 §3.3 | v3 运行器可带 `no_skills`、关掉指定的一个 Skill、指定候选目录各跑通一次离线冒烟；非评测配置下指定候选目录被拒绝，有测试 | A3 | doing | 真实 PostgreSQL 上三种配置各完成两轮离线夹具，评测隔离专项通过 |
+| A6 | 被测模型与计价核对：评测固定用 DeepSeek flash；计价表里有实际模型名的条目；账本按缓存命中价计；对一次账 | §3.4。官方价表的来源和日期写进代码注释 | 用实际的模型名跑通一次最小的真实往返（1 次调用）；账本币种为人民币；有测试覆盖“命中缓存的输入按命中价计”；账本合计与后台实际扣费的差在 10% 以内，否则写明原因 | — | done | `f55ca3f` · 专项 39 passed · DeepSeek Flash 真实往返 1 次，账本 0.012082 元 · 正常提交钩子两项通过，余额粒度限制见 P-206 |
 | A7 | 本机模型当 Agent 大脑的可行性验证（D9 方案乙的前提）：用通义千问起一个兼容 Anthropic 消息接口的本地服务，经现有的 Claude Agent SDK 线路跑 10 道多轮题。先在现在的 Windows 机器上用显存放得下的较小型号验证“能不能通”，换到 64 GB 的 Mac 后用较大型号跑量 | 先写 ADR：新增一条模型线路，不新增 runtime。现有线路对模型名和计价有硬检查（`backend/limits.py:63-101`），本机线路的计价为 0、不占 DeepSeek 的额度。本地服务用什么软件由 Codex 按“支持工具调用、兼容 Anthropic 消息接口”选定并写进 ADR | 10 道题里工具调用格式正确、能走到出草稿的不少于 8 道，且单题耗时可接受，方案乙成立；达不到就退回方案甲（见 D9），并把验证结果记成 P-条目。结论写进本文件 §3.5 取舍表 | A1、A2 | blocked | 等用户批准 Ollama 官方 `qwen3.8:27b-q4_K_M` 约 18 GB 权重，见 P-203 |
 | A5 | 评测分级表补上漏登记的 7 个校验 code，并让“漏登记就报红”的测试真的能抓到 | `eval/v3/tiers.py` 34 个，校验器 41 个；`tests/unit/eval/test_eval_v3_score.py` 的正则抓不到多行与拼接写法（盘点 G14） | 分级表与校验器的 code 集合相等，由测试保证 | — | done | `69dc1da` · 分级专项 16 passed，登记覆盖 41 个 code · 正常提交钩子两项通过，见 P-205 |
 
@@ -263,7 +263,7 @@ D4 的估算。单价取自 2026-10-20 的 30 题实测：全部题平均 0.26 �
 - 计划：准备本机环境、记录告警基线，修复 A1，再处理 A2。
 - 完成：目标分支工作树已就绪，`setup`、`doctor`、`db-up` 通过。Mac 原始失败及 A1 对照见 P-201、P-202。
 - 未完成及原因：A7 的实机模型验证等具体权重下载授权，见 P-203。环境准备阶段未发起付费请求。
-- 提交：A1 `3c39fb5`、A2 `bf9736c` 正常提交钩子通过。A7 权重待批期间推进独立离线任务。A3 `c74c6c6` 的运行事件及评测结果已落地，正常钩子两项通过。A5 的分级表覆盖 41 项，专项 16 passed。A6 只发起一次真实往返，阶段账本累计 0.012082 元。
+- 提交：A1 `3c39fb5`、A2 `bf9736c` 正常提交钩子通过。A7 权重待批期间推进独立离线任务。A3 `c74c6c6` 的运行事件及评测结果已落地，正常钩子两项通过。A5 的分级表覆盖 41 项，专项 16 passed。A6 只发起一次真实往返，阶段账本累计 0.012082 元。A4 的三种 Skill 配置完成离线多轮验证。
 
 ### 2026-11-27
 
@@ -351,6 +351,12 @@ D4 的估算。单价取自 2026-10-20 的 30 题实测：全部题平均 0.26 �
 - 根因与方案：锁定 `deepseek-flash`。按 2026-11-28 官方人民币高峰价预占，完整流式响应用实际命中量结算。缓存命中输入 0.04 元、未命中输入 2 元、输出 8 元，单位均为百万 token。25 元起暂停发起新请求，30 元为保守预占上限。开发用 linked worktree 共用同一阶段账本。[官方价格](https://api-docs.deepseek.com/zh-cn/quick_start/pricing/)
 - 先红后绿（VERIFIED）：补上真实别名、结算与累计额度用例。`dev test --path tests/unit/providers/test_sdk_budget.py --path tests/unit/providers/test_sdk_response.py --path tests/unit/eval/test_eval_v3_run.py` 39 passed，覆盖缓存价与预占后的硬上限。
 - 真实往返（VERIFIED）：固定 CLI 经现有 SDK 发出 1 次 Messages，输入 6037 token、输出 1、缓存命中 0。阶段账本累计 0.012082 CNY。官方余额接口前后差显示 0.00 CNY，只返回两位小数，本次额度较小，可能存在精度或刷新时差（REASONED），无法据此证实账本与实际扣费差在 10% 内。[官方余额接口](https://api-docs.deepseek.com/zh-cn/api/get-user-balance)
+
+### P-207 [A4] 多轮评测需要固定 Skill 对照条件
+
+- 现象（VERIFIED）：原有消融定义只在既有单轮 runner 生效；在 v3 走多轮时无法从运行清单得知启用的 Skill 或候选版本。
+- 根因与取舍：复用既有 SDK 与固定白名单。`--variant no_skills`、`--disable-skill`、`--candidate-skills` 只在专用本地评测库生效。v3 每轮保留相同配置和历史恢复。候选文件哈希进入运行清单，同一批次读取独立副本，避免文件更新影响结果。
+- 验证（VERIFIED）：`dev test --path tests/integration/eval/test_eval_v3_smoke.py --keyword v3_skill_variants` 通过。真实 PostgreSQL 上三个变体各跑两轮离线夹具，并核对关闭项与候选内容。非评测或普通库拒绝候选的单测通过。
 
 ## 9. 验证与交付
 

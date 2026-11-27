@@ -198,3 +198,17 @@ def test_live_is_refused_under_pytest_and_loads_no_cases(
     assert sim.value.code == 2
     # 非live的离线调用不受影响（simulator离线只打印准备数量）
     assert simulator.main([]) == 0
+
+
+def test_candidate_skills_require_evaluation_and_isolated_database(tmp_path: Path) -> None:
+    from backend.tools.skill_config import SkillConfig
+
+    skills = SkillConfig(directory=tmp_path)
+    evaluation_dsn = "postgresql://localhost/travel_agent_eval_" + "a" * 32
+    for evaluation, dsn in (
+        (False, evaluation_dsn),
+        (True, "postgresql://localhost/travel_agent"),
+    ):
+        with pytest.raises(ValueError, match="专用本地评测库"):
+            skills.authorize(evaluation=evaluation, dsn=dsn)
+    skills.authorize(evaluation=True, dsn=evaluation_dsn)

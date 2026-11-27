@@ -37,6 +37,7 @@ from backend.providers.claude_agent.runtime import ClaudeRuntime, RuntimeConfig
 from backend.services.common import ServiceError
 from backend.tools.contracts import ToolDefinition, ToolExecutor, repair_rounds
 from backend.tools.search import DEFINITIONS, SearchExecutor
+from backend.tools.skill_config import SkillConfig
 from backend.tools.travel import live_definitions, repair_definitions
 from backend.tools.workflow import WorkflowName
 from backend.trace_log import trace
@@ -90,7 +91,15 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         payload.get("workflow")
     )
     persona_judge = payload.get("persona_judge", False)
+    v3_skills = (
+        payload.get("v3_skill_evaluation") is True
+        and payload.get("real_data") is not True
+        and not persona_judge
+        and workflow is None
+    )
     try:
+        skills = SkillConfig.model_validate(payload.get("skill_config", {}))
+        skills.authorize(evaluation=v3_skills, dsn=dsn if isinstance(dsn, str) else "")
         judge_kind: JudgeKind = TypeAdapter(JudgeKind).validate_python(
             payload.get("judge_kind", "persona")
         )
@@ -102,7 +111,8 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         )
     except ValueError:
         return {"status": "error", "code": "validation"}
-    if variant != "full" and len(prompts) != 1:
+    # v3 多轮由外层逐轮调用，worker 在轮间恢复同一套评测参数和 SDK 引用。
+    if len(prompts) != 1 and (variant != "full" or skills != SkillConfig()):
         return {"status": "error", "code": "validation"}
     # 子进程不可信输入仍重新验证组合规则；provider/单prompt边界是worker特有。
     if (
@@ -162,6 +172,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
             real_data=real_data,
             evaluation_fault=evaluation_fault,
         ) as executor:
+            executor.executor.configure_skills(skills, evaluation=v3_skills)
             if variant == "no_repairs":
                 executor.executor.max_validations = 1
             include_preferences = variant not in {"no_preferences", "baseline_b2"}
@@ -171,6 +182,14 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
             rounds = executor.executor.max_validations
             definitions = repair_definitions(definitions, rounds)
             system = travel_prompt(repair_rounds(rounds)) + executor.guidance()
+            if skills.variant == "no_skills":
+                system = "\n".join(
+                    line
+                    for line in system.split("\n")
+                    if not line.startswith("低频场景先load_skill")
+                )
+            elif skills.disabled is not None:
+                system += f"\n当前评测关闭 {skills.disabled}，本轮应用其余可用工具。"
             snapshot_prompt(payload, context, system, snapshot)
             return await run_prompts(
                 prompts,
@@ -183,7 +202,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
                 turn_prefix=snapshot,
                 refresh_state=state_reader(executor, include_preferences=include_preferences),
                 checkpoints=Checkpoints(Path.cwd())
-                if variant == "full" and not real_data
+                if (variant == "full" or skills.variant == "no_skills") and not real_data
                 else None,
                 revision=revision,
                 preference_revision=preference_revision,

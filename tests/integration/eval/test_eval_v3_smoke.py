@@ -11,13 +11,16 @@ from uuid import UUID
 import pytest
 from sqlalchemy import URL
 
+from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.limits import ProbeError
 from backend.persistence.temporary import temporary_database
 from backend.services.choices import ChoiceService
 from backend.services.runs import RunService
-from backend.tools.travel import TravelToolExecutor
+from backend.tools.execution import execute_observed
+from backend.tools.skill_config import SkillConfig
+from backend.tools.travel import DEFINITIONS, TravelToolExecutor
 from eval.core.database import DatabaseEvaluation, database_evaluation
 from eval.simulator.run import page
 from eval.v3.cases import V3Case
@@ -422,3 +425,82 @@ def test_provider_rate_limit_is_an_infra_error_that_stops_the_script(postgres_ur
         assert score.reason == "infra_error" and score.infra_error == "rate_limited"
 
     in_eval_db(postgres_url, body)
+
+
+def test_v3_skill_variants_run_two_offline_turns(
+    postgres_url: URL, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    candidate = tmp_path / "candidate"
+    candidate.mkdir()
+    candidate_text = "用于离线验证的酒店比较候选内容。"
+    (candidate / "hotel-comparison.md").write_text(candidate_text, encoding="utf-8")
+    case = make(user_script=[{"say": "第一轮"}, {"say": "第二轮"}])
+    seen: list[tuple[str | None, str | None, object]] = []
+
+    async def load_skills(
+        runtime: FixtureRuntime,
+        context: RunContext,
+        prompt: str,
+        sdk_session_id: str | None,
+        emit: EventSink,
+        cancelled: asyncio.Event,
+    ) -> RuntimeOutcome:
+        definition = next(item for item in DEFINITIONS if item.name == "load_skill")
+        comparison = await execute_observed(
+            runtime.executor,
+            context,
+            "load_skill",
+            {"name": "hotel-comparison"},
+            emit,
+            definition=definition,
+        )
+        revision = await execute_observed(
+            runtime.executor,
+            context,
+            "load_skill",
+            {"name": "itinerary-revision"},
+            emit,
+            definition=definition,
+        )
+        seen.append((comparison.code, revision.code, comparison.data.get("instructions")))
+        return RuntimeOutcome("离线验收完成", "fixture-skill-session")
+
+    monkeypatch.setattr(FixtureRuntime, "execute", load_skills)
+
+    async def body(business: DatabaseEvaluation) -> None:
+        for index, skills in enumerate(
+            (
+                SkillConfig(variant="no_skills"),
+                SkillConfig(disabled="hotel-comparison"),
+                SkillConfig(directory=candidate),
+            )
+        ):
+            output = tmp_path / str(index)
+            output.mkdir()
+            config = TrialConfig(
+                False,
+                False,
+                output,
+                {
+                    "profile": "offline",
+                    "git_sha": "smoke",
+                    "run_name": "smoke",
+                    "trial_group": "smoke",
+                },
+                skills=skills,
+            )
+            rows: list[dict[str, object]] = []
+            assert (
+                await run_all(business, [case], 1, config, max_cny=None, on_row=rows.append) is None
+            )
+            assert len(rows) == 1 and rows[0]["infra_error"] is None
+
+    in_eval_db(postgres_url, body)
+    assert seen == [
+        ("validation", "validation", None),
+        ("validation", "validation", None),
+        ("validation", None, None),
+        ("validation", None, None),
+        (None, None, candidate_text),
+        (None, None, candidate_text),
+    ]

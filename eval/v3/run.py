@@ -9,6 +9,7 @@ import asyncio
 import hashlib
 import json
 import os
+import shlex
 import signal
 import subprocess
 from collections.abc import Callable, Iterator, Mapping, Sequence
@@ -19,7 +20,7 @@ from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path, PurePath
 from time import perf_counter
-from typing import Any
+from typing import Any, get_args
 from uuid import UUID, uuid4
 
 from opentelemetry.sdk.resources import Resource
@@ -35,6 +36,7 @@ from backend.agent.fixture_runtime import FixtureRuntime
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
 from backend.domain.hotel_flow import HotelPick, current_picks, flow_from_details
 from backend.domain.plans import PlanDraft
+from backend.domain.tool_facts import SkillName
 from backend.domain.travel_request import RequestPatch, pace_of
 from backend.limits import ProbeError
 from backend.persistence import travel as request_rows
@@ -50,6 +52,9 @@ from backend.services.memory_extractor import MemoryExtractor
 from backend.services.runs import RunService
 from backend.services.sessions import DemoLogin
 from backend.services.travel import request_from_row
+from backend.tools.contracts import ToolExecutor
+from backend.tools.skill_config import SkillConfig
+from backend.tools.travel import TravelToolExecutor
 from eval.core.database import DatabaseEvaluation, database_evaluation, selector_runner
 from eval.core.guard import refuse_live_under_pytest
 from eval.core.state import prepare_state, snapshot
@@ -96,7 +101,14 @@ class Recording:
 
 
 class OfflineRuntime(FixtureRuntime):
-    def __init__(self, executor: Any, store: dict[UUID, list[RuntimeEvent]]) -> None:
+    def __init__(
+        self,
+        executor: ToolExecutor,
+        store: dict[UUID, list[RuntimeEvent]],
+        skills: SkillConfig | None = None,
+    ) -> None:
+        if skills is not None and isinstance(executor, TravelToolExecutor):
+            executor.configure_skills(skills, evaluation=True)
         super().__init__(executor)
         self.recording = Recording(store)
 
@@ -118,6 +130,7 @@ class V3Runtime(GuardedRuntime):
         repeat: int,
         store: dict[UUID, list[RuntimeEvent]],
         usage: list[Mapping[str, object]] | None = None,
+        skills: SkillConfig | None = None,
     ) -> None:
         super().__init__(
             ROOT,
@@ -131,6 +144,7 @@ class V3Runtime(GuardedRuntime):
                 "category": case.category,
             },
             prompt_snapshot=True,
+            skill_config=skills,
         )
         self.recording = Recording(store)
         self.usage = usage
@@ -161,6 +175,7 @@ class TrialConfig:
     judge_check: bool = False
     judge_call: JudgeCall | None = None
     scores_sink: list[dict[str, float]] = field(default_factory=list)
+    skills: SkillConfig = field(default_factory=SkillConfig)
 
 
 async def create_trial_context(business: DatabaseEvaluation, case: V3Case) -> RunContext:
@@ -466,6 +481,7 @@ async def run_trial(
     config: TrialConfig,
     trace_id: str | None,
 ) -> dict[str, object]:
+    config.skills.authorize(evaluation=True, dsn=business.dsn())
     events: dict[UUID, list[RuntimeEvent]] = {}
     usage: list[Mapping[str, object]] = []
     if config.live:
@@ -474,14 +490,16 @@ async def run_trial(
             live_enabled=True,
             trace_cloud=config.cloud,
             trace_directory=config.directory / "traces",
-            runtime_factory=lambda _: V3Runtime(business, case, repeat, events, usage),
+            runtime_factory=lambda _: V3Runtime(
+                business, case, repeat, events, usage, config.skills
+            ),
             memory_extractor=MemoryExtractor(business.sessions.database, call=phase2_memory_call),
         )
     else:
         service = RunService(
             business.sessions.database,
             trace_directory=config.directory / "traces",
-            runtime_factory=lambda executor: OfflineRuntime(executor, events),
+            runtime_factory=lambda executor: OfflineRuntime(executor, events, config.skills),
         )
     started = perf_counter()
     result = ScriptResult()
@@ -764,6 +782,9 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--case-id", action="append", default=[])
     parser.add_argument("--cases", type=Path, default=DEFAULT_CASES)
     parser.add_argument("--profile", choices=PROFILES, default="human")
+    parser.add_argument("--variant", choices=("full", "no_skills"), default="full")
+    parser.add_argument("--disable-skill", choices=get_args(SkillName))
+    parser.add_argument("--candidate-skills", type=Path)
     parser.add_argument(
         "--max-cny",
         type=float,
@@ -793,6 +814,24 @@ def build_parser() -> argparse.ArgumentParser:
 
 def file_sha256(path: Path) -> str:
     return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def freeze_candidate(
+    skills: SkillConfig, directory: Path, versions: Mapping[str, str]
+) -> SkillConfig:
+    snapshot = directory / "candidate-skills"
+    snapshot.mkdir(exist_ok=True)
+    for name in get_args(SkillName):
+        if name not in versions:
+            continue
+        destination = snapshot / (name + ".md")
+        data = destination.read_bytes() if destination.is_file() else skills.path(name).read_bytes()
+        if hashlib.sha256(data).hexdigest() != versions[name]:
+            raise ValueError("Skill 候选内容与评测清单不一致")
+        if not destination.exists():
+            with destination.open("xb") as output:
+                output.write(data)
+    return skills.model_copy(update={"directory": snapshot.resolve()})
 
 
 def read_rows(directory: Path) -> list[dict[str, object]]:
@@ -853,6 +892,14 @@ def resume_command(args: argparse.Namespace, directory: PurePath) -> str:
         parts.append(f"--cases {Path(args.cases).as_posix()}")
     if args.max_cny is not None:
         parts.append(f"--max-cny {args.max_cny}")
+    if args.variant != "full":
+        parts.append(f"--variant {args.variant}")
+    if args.disable_skill:
+        parts.append(f"--disable-skill {args.disable_skill}")
+    if args.candidate_skills:
+        parts.append(
+            f"--candidate-skills {shlex.quote(args.candidate_skills.resolve().as_posix())}"
+        )
     if args.no_judge:
         parts.append("--no-judge")
     if args.judge_check:
@@ -878,6 +925,22 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("第二阶段评测不调用付费 rubric 模型")
     if args.resume_force and args.resume is None:
         parser.error("--resume-force需要--resume")
+    try:
+        skills = SkillConfig(
+            variant=args.variant,
+            disabled=args.disable_skill,
+            directory=args.candidate_skills.resolve() if args.candidate_skills else None,
+        )
+        if skills.variant == "no_skills" and (skills.disabled or skills.directory):
+            parser.error("--variant no_skills 不可与单项关闭或候选目录同时使用")
+        if skills.directory is not None and not skills.directory.is_dir():
+            parser.error("Skill 候选目录不存在")
+        skill_manifest = skills.model_dump(mode="json", exclude_defaults=True)
+        versions = skills.versions()
+        if versions:
+            skill_manifest["versions"] = versions
+    except (OSError, ValueError) as error:
+        parser.error(f"无法使用 Skill 配置：{error}")
     cases = [c for c in load_cases(args.cases) if not args.case_id or c.case_id in args.case_id]
     if args.case_id and len(cases) != len(set(args.case_id)):
         parser.error("有case-id不在题库里")
@@ -890,6 +953,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         except (OSError, json.JSONDecodeError):
             print(f"无法续跑：{directory}里没有可读的manifest.json")
             return 2
+        if previous.get("skills", {}) != skill_manifest:
+            print("拒绝续跑：Skill 变体或候选内容已变，请启动新的评测")
+            return 2
         mismatch = resume_mismatch(previous, args.cases, [c.case_id for c in cases], args.live)
         if mismatch and not args.resume_force:
             print(f"拒绝续跑：{mismatch}（确认无误可加 --resume-force）")
@@ -900,6 +966,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         run_name = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:6]
         directory = RUNS_DIR / run_name
         directory.mkdir(parents=True)
+    if versions:
+        try:
+            skills = freeze_candidate(skills, directory, versions)
+        except (OSError, ValueError) as error:
+            print(f"无法固定本次 Skill 候选：{error}")
+            return 2
     skip = completed_keys(old_rows, args.repeat) if args.resume is not None else set()
     total = len(cases) * args.repeat
     pending = sum((c.case_id, t) not in skip for c in cases for t in range(1, args.repeat + 1))
@@ -940,6 +1012,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         directory,
         meta,
         budget,
+        skills=skills,
     )
     manifest: dict[str, object] = {
         **previous,
@@ -953,6 +1026,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         "max_cny": args.max_cny,
         "judge": config.judge,
         "judge_check": config.judge_check,
+        "skills": skill_manifest,
         "git_sha": previous.get("git_sha", meta["git_sha"]),
         "started_at": previous.get("started_at", datetime.now(UTC).isoformat()),
         "prompt_snapshot_env": os.environ.get(PROMPT_ENV) == "1",
@@ -1006,7 +1080,9 @@ def main(argv: Sequence[str] | None = None) -> int:
                 )
 
         try:
-            require_snapshot_database(cases, args.live, url.render_as_string(hide_password=False))
+            dsn = url.render_as_string(hide_password=False)
+            require_snapshot_database(cases, args.live, dsn)
+            skills.authorize(evaluation=True, dsn=dsn)
         except ValueError as error:
             print(error)
             return 2
