@@ -229,6 +229,8 @@ def main(argv: Sequence[str] | None = None) -> int:
     simulator.add_argument("--trace-cloud", action="store_true")
     simulator.add_argument("--repeat", type=int, choices=range(1, 4), default=3)
     simulator.add_argument("--case-id", action="append", default=[])
+    rules = commands.add_parser("eval-rules")
+    rules.add_argument("--out", type=Path)
     v3 = commands.add_parser("eval-v3")
     v3.add_argument("--live", action="store_true")
     v3.add_argument("--trace-cloud", action="store_true")
@@ -332,6 +334,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             for case_id in args.case_id:
                 command.extend(["--case-id", case_id])
             return run_command(command, timeout=14400)
+        case "eval-rules":
+            command = [python, "-m", "eval.rules.report"]
+            if args.out:
+                command.extend(["--out", str(args.out)])
+            return run_command(command, timeout=60)
         case "eval-v3":
             if (args.trace_cloud and not args.live) or (args.judge_check and not args.live):
                 return 2
