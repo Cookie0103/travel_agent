@@ -64,3 +64,14 @@ def test_cache_hit_rate_counts_reads_over_all_inputs_and_keeps_unknown() -> None
     }
     # 任一请求缺用量就整体未知，不用部分样本冒充全量。
     assert cache_totals([row, {"unknown": True}]) is None and cache_totals([]) is None
+
+
+def test_deepseek_cache_read_tokens_settle_at_cache_hit_rate() -> None:
+    response = response_body(
+        usage={"input_tokens": 100, "cache_read_input_tokens": 800, "output_tokens": 0}
+    )
+    request = validate_request(request_body(), "deepseek-flash")
+    row = summarize(response, request, "deepseek-flash")
+    # 100 * 2 + 800 * 0.04 + 20 * 8, 按百万 token 折算。
+    assert row["usage_cost_upper_cny"] == "0.000392"
+    assert request.charge > 0

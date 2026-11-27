@@ -2,6 +2,7 @@
 
 import json
 import os
+import subprocess
 import time
 from collections.abc import Mapping
 from functools import partial
@@ -44,13 +45,38 @@ from backend.tools.workflow import WorkflowName
 from backend.trace_log import FILE_ENV, RUN_ENV, Tail, trace
 
 
-def runtime_budget(root: Path, settings: Settings) -> Budget:
-    cache = root / ".cache"
+def phase2_checkout_root(root: Path) -> Path:
+    """同仓库的 linked worktree 共享原工作树里的阶段账本。"""
+    if not (root / ".git").is_file():
+        return root
+    try:
+        resolved = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=root,
+            capture_output=True,
+            encoding="utf-8",
+            timeout=5,
+            check=True,
+        )
+        common = Path(resolved.stdout.strip())
+        if not common.is_absolute() or not common.is_dir():
+            raise ValueError
+    except (OSError, ValueError, subprocess.SubprocessError):
+        raise ProbeError("blocked", "无法定位共享阶段账本") from None
+    return common.parent
+
+
+def runtime_budget(root: Path, settings: Settings, *, phase2: bool = False) -> Budget:
+    if phase2 and (settings.provider, settings.model) != ("deepseek", "deepseek-flash"):
+        raise ProbeError("blocked", "第二阶段付费评测只允许 deepseek-flash")
+    cache = (phase2_checkout_root(root) if phase2 else root) / ".cache"
+    ledger_name = "phase2-deepseek.jsonl" if phase2 else f"{settings.provider}.jsonl"
     return Budget(
-        cache / "model-budget" / f"{settings.provider}.jsonl",
+        cache / "model-budget" / ledger_name,
         cache / "m02-protocol" / "ledger.jsonl",
         settings.daily_limit,
         settings.currency,
+        phase2=phase2,
     )
 
 
@@ -153,10 +179,11 @@ def run_live(
     )
     if real_data:
         definitions = live_definitions(definitions)
-    budget = runtime_budget(root, settings)
+    phase2 = evaluation is not None and evaluation.get("suite") == "v3"
+    budget = runtime_budget(root, settings, phase2=phase2)
     budget.check_authorization()
     cli = find_cli(os.environ)
-    with exclusive(cache / "model-budget" / "active.lock"):
+    with exclusive(budget.path.parent / "active.lock"):
         if event_path.exists():
             raise ProbeError("conflict", "此run已有执行记录，不能自动重复付费执行")
         _, before_charge = budget.totals()

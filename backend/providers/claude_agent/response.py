@@ -60,7 +60,9 @@ def summarize(
     weighted_inputs = inputs + int(
         tokens["cache_creation_input_tokens"] * (price.cache_write_multiplier - 1)
     )
-    estimate = price.usage_upper(weighted_inputs, tokens["output_tokens"])
+    estimate = price.usage_upper(
+        weighted_inputs, tokens["output_tokens"], cached_inputs=tokens["cache_read_input_tokens"]
+    )
     if estimate > request.charge or tokens["output_tokens"] > request.max_output:
         raise ProbeError("blocked", "上游 usage 超出预占上界，停止后续请求")
     result: dict[str, object] = {

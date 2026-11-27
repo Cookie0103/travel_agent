@@ -1,7 +1,7 @@
-"""v3评测入口：脚本化用户逐题多轮；离线夹具只证明设施，--live才调用真实模型与数据源。
+"""v3评测入口：脚本化用户逐题多轮。--live 使用真实被测模型和离线供应商数据。
 
 uv run python -m eval.v3.run                       # 离线冒烟（FixtureRuntime，零外部调用）
-uv run python -m eval.v3.run --live --case-id <id> # 真实DeepSeek/乐天/Google/Open-Meteo
+uv run python -m eval.v3.run --live --case-id <id> # DeepSeek Flash + 离线供应商数据
 """
 
 import argparse
@@ -41,6 +41,7 @@ from backend.persistence import travel as request_rows
 from backend.persistence.models import BookingRow, MemoryFactRow, PlanDraftRow, SupplierOrderRow
 from backend.persistence.temporary import temporary_database
 from backend.providers.claude_agent.application import GuardedRuntime
+from backend.providers.claude_agent.budget import Phase2ReviewRequired
 from backend.providers.claude_agent.response import cache_totals
 from backend.services.common import transaction
 from backend.services.hotels import cards as hotel_display_cards
@@ -108,7 +109,7 @@ class OfflineRuntime(FixtureRuntime):
 
 
 class V3Runtime(GuardedRuntime):
-    """live运行时：fault为空走真实数据，否则走合成故障数据（两者互斥）；开启prompt快照。"""
+    """付费评测只使用 DeepSeek Flash，供应商数据用本地夹具或合成故障。"""
 
     def __init__(
         self,
@@ -121,7 +122,7 @@ class V3Runtime(GuardedRuntime):
         super().__init__(
             ROOT,
             business.dsn(),
-            real_data=case.fault is None,
+            provider="deepseek",
             evaluation_fault=case.fault,
             evaluation={
                 "suite": "v3",
@@ -449,6 +450,15 @@ def prompt_reader_for(
     return read
 
 
+async def phase2_memory_call(payload: dict[str, object]) -> str:
+    from backend.providers.claude_agent.structured import structured_call
+
+    text, _ = await asyncio.to_thread(
+        structured_call, "memory", payload, ROOT, evaluation={"suite": "v3"}
+    )
+    return text
+
+
 async def run_trial(
     business: DatabaseEvaluation,
     case: V3Case,
@@ -465,7 +475,7 @@ async def run_trial(
             trace_cloud=config.cloud,
             trace_directory=config.directory / "traces",
             runtime_factory=lambda _: V3Runtime(business, case, repeat, events, usage),
-            memory_extractor=MemoryExtractor(business.sessions.database),
+            memory_extractor=MemoryExtractor(business.sessions.database, call=phase2_memory_call),
         )
     else:
         service = RunService(
@@ -639,7 +649,10 @@ async def run_all(
             if max_cny is not None and spent >= Decimal(str(max_cny)):
                 return f"max_cny_reached:{spent}"
             if config.budget is not None:
-                config.budget.check_authorization()  # 每个trial前复核授权（同v2模拟器）
+                try:
+                    config.budget.check_authorization()
+                except Phase2ReviewRequired as error:
+                    return f"phase2_review:{error.cumulative}"
             before = config.budget.totals()[1] if config.budget is not None else Decimal(0)
             provider = TracerProvider(
                 resource=Resource({"service.name": "travel-agent"}),
@@ -768,7 +781,7 @@ def build_parser() -> argparse.ArgumentParser:
         "--resume-force", action="store_true", help="题库或case-id与原运行不一致时仍然续跑"
     )
     parser.add_argument(
-        "--no-judge", action="store_true", help="--live默认开启rubric评审；加此项关闭"
+        "--no-judge", action="store_true", help="兼容旧续跑命令；第二阶段默认关闭付费评审"
     )
     parser.add_argument(
         "--judge-check",
@@ -861,8 +874,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         parser.error("--trace-cloud需要--live")
     if args.max_cny is not None and args.max_cny <= 0:
         parser.error("--max-cny必须为正数")
-    if args.judge_check and (args.no_judge or not args.live):
-        parser.error("--judge-check需要--live且不能与--no-judge同用")
+    if args.judge_check:
+        parser.error("第二阶段评测不调用付费 rubric 模型")
     if args.resume_force and args.resume is None:
         parser.error("--resume-force需要--resume")
     cases = [c for c in load_cases(args.cases) if not args.case_id or c.case_id in args.case_id]
@@ -899,20 +912,22 @@ def main(argv: Sequence[str] | None = None) -> int:
     configure_environment()
     configure_profile(args.profile)
     budget = None
-    structured: StructuredCall | None = None
     if args.live:
         from dotenv import load_dotenv
 
         from backend.providers.claude_agent.live import runtime_budget
         from backend.providers.claude_agent.settings import load_runtime_settings
-        from backend.providers.claude_agent.structured import structured_call
 
         load_dotenv(ROOT / ".env", override=False)
+        os.environ["LLM_PROVIDER"] = "deepseek"
         if any(c.memory.l3.present or c.memory.l3.absent for c in cases):
             os.environ[PROMPT_ENV] = "1"
-        budget = runtime_budget(ROOT, load_runtime_settings(os.environ))
-        budget.check_authorization()
-        structured = structured_call
+        budget = runtime_budget(ROOT, load_runtime_settings(os.environ), phase2=True)
+        try:
+            budget.check_authorization()
+        except Phase2ReviewRequired as error:
+            print(f"{error}。剩余 {pending} 次试验，等待预算决定。")
+            return 1
     meta = {
         "git_sha": git_sha(),
         "run_name": run_name,
@@ -925,10 +940,6 @@ def main(argv: Sequence[str] | None = None) -> int:
         directory,
         meta,
         budget,
-        structured,
-        judge=args.live and not args.no_judge,
-        judge_check=args.judge_check,
-        judge_call=structured if args.live else None,
     )
     manifest: dict[str, object] = {
         **previous,
@@ -1011,7 +1022,18 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(directory)
     if stopped[0] is None:
         return 0
-    if not str(stopped[0]).startswith("max_cny_reached"):
+    if stopped[0] is not None and stopped[0].startswith("phase2_review:"):
+        cumulative = stopped[0].split(":", 1)[1]
+        completed = completed_keys(rows, args.repeat)
+        remaining = sum(
+            (case.case_id, trial) not in completed
+            for case in cases
+            for trial in range(1, args.repeat + 1)
+        )
+        print(
+            f"第二阶段 DeepSeek 账本累计 {cumulative} 元。剩余 {remaining} 次试验，等待预算决定。"
+        )
+    elif not str(stopped[0]).startswith("max_cny_reached"):
         print(f"提前结束：{stopped[0]}")
     print(f"接着跑：{resume_command(args, directory)}")
     return 130 if stopped[0] == "interrupted" else (0 if "max_cny" in str(stopped[0]) else 1)

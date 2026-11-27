@@ -175,3 +175,20 @@ def test_daily_limit_blocks_when_spent_plus_reservation_exceeds_15(tmp_path: Pat
     budget.reserve(Decimal("1.133076"), NOW)  # 15.000000 允许恰好等于上限
     with pytest.raises(ProbeError, match="今日原币种余额不足"):
         budget.reserve(Decimal("0.000001"), NOW)
+
+
+def test_phase2_checks_review_line_and_caps_total_reservations(tmp_path: Path) -> None:
+    from backend.limits import Settings
+    from backend.providers.claude_agent.live import runtime_budget
+
+    settings = Settings("fixture", "deepseek-flash", Decimal(15), Decimal(0))
+    budget = runtime_budget(tmp_path, settings, phase2=True)
+    budget.reserve(Decimal("24.99"), NOW)
+    with pytest.raises(ProbeError, match="累计"):
+        budget.reserve(Decimal("5.02"), NOW)
+    budget.reserve(Decimal("0.01"), NOW)
+    resumed = runtime_budget(tmp_path, settings, phase2=True)
+    with pytest.raises(ProbeError, match="25 元"):
+        resumed.check_authorization()
+    assert resumed.totals() == (2, Decimal(25))
+    assert runtime_budget(tmp_path, settings).totals() == (0, Decimal(0))

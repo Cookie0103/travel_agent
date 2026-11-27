@@ -54,17 +54,32 @@ class Price:
     cache_write_multiplier: Decimal = Decimal(1)
     currency: Currency = "CNY"
 
-    def usage_upper(self, inputs: int, outputs: int) -> Decimal:
-        if inputs < 0 or outputs < 0:
-            raise ProbeError("provider_error", "响应中的 token 数不能为负")
-        return (inputs * self.input_per_million + outputs * self.output_per_million) / 1_000_000
+    cache_read_per_million: Decimal | None = None
+
+    def usage_upper(self, inputs: int, outputs: int, *, cached_inputs: int = 0) -> Decimal:
+        if not 0 <= cached_inputs <= inputs or outputs < 0:
+            raise ProbeError("provider_error", "响应中的 token 数无效")
+        cached_price = (
+            self.cache_read_per_million
+            if self.cache_read_per_million is not None
+            else self.input_per_million
+        )
+        return (
+            (inputs - cached_inputs) * self.input_per_million
+            + cached_inputs * cached_price
+            + outputs * self.output_per_million
+        ) / 1_000_000
 
 
 def price_for(model: str) -> Price:
     """拒绝未知/映射模型名，避免换模型后仍套用原来的单价。"""
     prices = {
-        "deepseek-flash": Price(Decimal("2"), Decimal("8")),
-        "deepseek-v4-pro": Price(Decimal("9"), Decimal("27")),
+        # 2026-11-28 DeepSeek 官方人民币高峰价，保守覆盖空闲时段（半价）。
+        # https://api-docs.deepseek.com/zh-cn/quick_start/pricing/
+        "deepseek-flash": Price(Decimal("2"), Decimal("8"), cache_read_per_million=Decimal("0.04")),
+        "deepseek-v4-pro": Price(
+            Decimal("9"), Decimal("27"), cache_read_per_million=Decimal("0.30")
+        ),
         "claude-haiku-4-5-20251001": Price(Decimal("1"), Decimal("5"), 200_000, Decimal(2), "USD"),
         # 2026-10-14：高于100k输入的最高档；网关折扣不作为费用保护依据。
         "claude-haiku-5-5": Price(Decimal("0.50"), Decimal("2.50"), 1_000_000, Decimal(2), "USD"),

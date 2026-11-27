@@ -16,10 +16,20 @@ from backend.trace_log import trace
 GRANT = "2026-10-03-travel-autonomous"
 # 用户新授权只限制每日15CNY；None表示没有累计上限，不用伪造大数。
 DAILY_CNY_AUTHORIZATION = Decimal("15.00")
+PHASE2_REVIEW_AT = Decimal("25")
+PHASE2_CNY_LIMIT = Decimal("30")
 LIMITS: dict[Currency, tuple[Decimal | None, int | None]] = {
     "CNY": (None, None),
     "USD": (Decimal(0), 0),
 }
+
+
+class Phase2ReviewRequired(ProbeError):
+    """阶段账本已到复核线，保留累计便于续跑和报告。"""
+
+    def __init__(self, cumulative: Decimal) -> None:
+        self.cumulative = cumulative
+        super().__init__("blocked", f"第二阶段 DeepSeek 账本累计 {cumulative} 元，达到 25 元复核线")
 
 
 def authorization_limits(
@@ -53,16 +63,27 @@ class Budget:
     """调用方须持有进程锁，守卫顺序服务请求，避免并发检查余额。"""
 
     def __init__(
-        self, path: Path, legacy: Path, daily: Decimal, currency: Currency = "CNY"
+        self,
+        path: Path,
+        legacy: Path,
+        daily: Decimal,
+        currency: Currency = "CNY",
+        *,
+        phase2: bool = False,
     ) -> None:
         self.path, self.legacy, self.daily = path, legacy, daily
         self.currency = currency
+        self.phase2 = phase2
 
     def check_authorization(self) -> None:
         check_authorization(self.currency)
+        if self.phase2 and (cumulative := self.totals()[1]) >= PHASE2_REVIEW_AT:
+            raise Phase2ReviewRequired(cumulative)
 
     def daily_limit(self) -> Decimal | None:
         """None仅表示获准日期无日限；零配置仍在预占前拒绝。"""
+        if self.phase2:
+            return None
         if self.currency == "CNY":
             if not current().daily_cny_cap:  # HUMAN档：以供应商账户余额为准，不设每日上限
                 return None
@@ -131,7 +152,7 @@ class Budget:
             ),
             Decimal(0),
         )
-        capped = self.currency != "CNY" or current().daily_cny_cap
+        capped = not self.phase2 and (self.currency != "CNY" or current().daily_cny_cap)
         daily_limit = self.daily_limit() if self.daily.is_finite() else None
         numbers = {  # 仅数字/日期，供TRACE判断是哪个额度触发
             "day": day,
@@ -151,11 +172,15 @@ class Budget:
         if (
             not amount.is_finite()
             or amount <= 0
-            or (capped and (not self.daily.is_finite() or self.daily <= 0))
+            or ((capped or self.phase2) and (not self.daily.is_finite() or self.daily <= 0))
         ):
             trace("budget_block", run, cause="invalid", **numbers)
             raise ProbeError("blocked", "日预算非法或已禁用")
         total_limit, request_limit = authorization_limits(self.currency)
+        if self.phase2:
+            total_limit = (
+                min(total_limit, PHASE2_CNY_LIMIT) if total_limit is not None else PHASE2_CNY_LIMIT
+            )
         if (request_limit is not None and len(charges) >= request_limit) or (
             total_limit is not None and total + amount > total_limit
         ):
