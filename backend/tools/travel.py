@@ -843,7 +843,7 @@ class TravelToolExecutor:
                 parsed.explicit_fields,
                 await self.travel.trusted_user_text(context),
                 await self.travel.read_request(context),
-                today=self.travel.today(),
+                today=self.travel.travel_today(),
             )
             update = await self.travel.patch_request(
                 context, parsed, source="conversation", explicit_fields=grounded

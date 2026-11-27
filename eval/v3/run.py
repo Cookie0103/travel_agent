@@ -30,7 +30,8 @@ from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.adapters.evaluation_faults import is_eval_database
+from backend.adapters.evaluation_faults import evaluation_data, is_eval_database
+from backend.adapters.evaluation_world import EvaluationWorld
 from backend.adapters.tracing import cloud_exporter, push_scores
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
@@ -51,11 +52,12 @@ from backend.services.memory import MemoryService
 from backend.services.memory_extractor import MemoryExtractor
 from backend.services.runs import RunService
 from backend.services.sessions import DemoLogin
-from backend.services.travel import request_from_row
+from backend.services.travel import TravelService, request_from_row
 from backend.tools.contracts import ToolExecutor
 from backend.tools.skill_config import SkillConfig
 from backend.tools.travel import TravelToolExecutor
 from eval.core.database import DatabaseEvaluation, database_evaluation, selector_runner
+from eval.core.evaluation_world import phase2_world
 from eval.core.guard import refuse_live_under_pytest
 from eval.core.state import prepare_state, snapshot
 from eval.grading.claims import ClaimFacts
@@ -131,12 +133,14 @@ class V3Runtime(GuardedRuntime):
         store: dict[UUID, list[RuntimeEvent]],
         usage: list[Mapping[str, object]] | None = None,
         skills: SkillConfig | None = None,
+        world: EvaluationWorld | None = None,
     ) -> None:
         super().__init__(
             ROOT,
             business.dsn(),
             provider="deepseek",
-            evaluation_fault=case.fault,
+            evaluation_fault="phase2-world" if world else case.fault,
+            evaluation_world=world,
             evaluation={
                 "suite": "v3",
                 "case_id": case.case_id,
@@ -178,7 +182,9 @@ class TrialConfig:
     skills: SkillConfig = field(default_factory=SkillConfig)
 
 
-async def create_trial_context(business: DatabaseEvaluation, case: V3Case) -> RunContext:
+async def create_trial_context(
+    business: DatabaseEvaluation, case: V3Case, world: EvaluationWorld | None = None
+) -> RunContext:
     identity = await business.sessions.create_demo_user(DemoLogin(display_name="v3评测用户"))
     session = await business.sessions.new_session(identity.user_id)
     context = RunContext(identity.user_id, session.session_id)
@@ -186,7 +192,12 @@ async def create_trial_context(business: DatabaseEvaluation, case: V3Case) -> Ru
     if state is not None:
         fields = state.request.model_dump(mode="json", exclude_unset=True, exclude_none=True)
         if fields:
-            await business.travel.patch_request(
+            travel = (
+                TravelService(business.sessions.database, today=lambda: world.today)
+                if world is not None
+                else business.travel
+            )
+            await travel.patch_request(
                 context, RequestPatch.model_validate({"expected_revision": 0, "set": fields})
             )
         await prepare_state(
@@ -484,6 +495,18 @@ async def run_trial(
     config.skills.authorize(evaluation=True, dsn=business.dsn())
     events: dict[UUID, list[RuntimeEvent]] = {}
     usage: list[Mapping[str, object]] = []
+    world = phase2_world() if case.world == "phase2" else None
+    fixture = (
+        evaluation_data("phase2-world", business.sessions.database, business.dsn(), world)
+        if world is not None and not config.live
+        else None
+    )
+
+    def offline_runtime(executor: ToolExecutor) -> OfflineRuntime:
+        if fixture is not None and isinstance(executor, TravelToolExecutor):
+            executor.travel.live = fixture
+        return OfflineRuntime(executor, events, config.skills)
+
     if config.live:
         service = RunService(
             business.sessions.database,
@@ -491,7 +514,7 @@ async def run_trial(
             trace_cloud=config.cloud,
             trace_directory=config.directory / "traces",
             runtime_factory=lambda _: V3Runtime(
-                business, case, repeat, events, usage, config.skills
+                business, case, repeat, events, usage, config.skills, world
             ),
             memory_extractor=MemoryExtractor(business.sessions.database, call=phase2_memory_call),
         )
@@ -499,13 +522,13 @@ async def run_trial(
         service = RunService(
             business.sessions.database,
             trace_directory=config.directory / "traces",
-            runtime_factory=lambda executor: OfflineRuntime(executor, events, config.skills),
+            runtime_factory=offline_runtime,
         )
     started = perf_counter()
     result = ScriptResult()
     orders_before = 0
     try:
-        context = await create_trial_context(business, case)
+        context = await create_trial_context(business, case, world)
         orders_before = await count_orders(business)
         runner = ScriptRunner(
             case,
@@ -526,6 +549,8 @@ async def run_trial(
             result.context = RunContext(uuid4(), uuid4())
     finally:
         await service.close()
+        if fixture is not None:
+            await fixture.close()
     try:
         observation = await collect(business, case, result, events, orders_before)
     except Exception as error:

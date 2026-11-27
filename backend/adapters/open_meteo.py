@@ -58,8 +58,9 @@ async def forecast(
     request: TravelRequest,
     *,
     data_mode: ProviderDataMode = "live",
+    today: date | None = None,
 ) -> dict[str, object]:
-    today = tokyo_today()
+    today = today or tokyo_today()
     if not request.start_date or not request.end_date:
         return {"status": "unknown", "reason": "旅行日期尚未确定"}
     start, end = max(request.start_date, today), min(request.end_date, today + timedelta(days=15))
@@ -170,7 +171,7 @@ async def city_forecast(live: LiveData, request: TravelRequest) -> dict[str, obj
 
     cities = []
     failures: list[ExternalDataError] = []
-    today = tokyo_today()
+    today = live.evaluation_today or tokyo_today()
     for segment in segments:
         if segment.depart < today or segment.arrive > today + timedelta(days=15):
             result: dict[str, object] = {"status": "unknown", "reason": "超出 16 天预报范围"}
@@ -183,6 +184,7 @@ async def city_forecast(live: LiveData, request: TravelRequest) -> dict[str, obj
                     point,
                     segment_request(request, segment),
                     data_mode=live.data_mode,
+                    today=today,
                 )
             except ExternalDataError as error:
                 failures.append(error)
@@ -200,12 +202,13 @@ async def city_forecast(live: LiveData, request: TravelRequest) -> dict[str, obj
 
 
 async def cached_rain(
-    db: AsyncSession, request: TravelRequest, now: datetime
+    db: AsyncSession, request: TravelRequest, now: datetime, today: date | None = None
 ) -> dict[tuple[str, date], int | None]:
     if request.start_date is None or request.end_date is None:
         return {}
-    start = max(request.start_date, tokyo_today())
-    end = min(request.end_date, tokyo_today() + timedelta(days=15))
+    today = today or tokyo_today()
+    start = max(request.start_date, today)
+    end = min(request.end_date, today + timedelta(days=15))
     if end < start:
         return {}
     cities = {city_key(segment.city) for segment in trip_segments(request)}

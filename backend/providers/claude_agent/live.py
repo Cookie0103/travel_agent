@@ -11,6 +11,7 @@ from threading import Event
 from typing import get_args
 
 from backend.adapters.evaluation_faults import EvaluationFault, is_eval_database, validate_fault
+from backend.adapters.evaluation_world import EvaluationWorld
 from backend.adapters.tracing import cloud_exporter, trace_report
 from backend.agent.persona import JudgeKind
 from backend.agent.runtime import EventSink
@@ -119,7 +120,10 @@ def run_live(
     trace_id: str | None = None,
     prompt_snapshot: bool = False,
     skill_config: SkillConfig | None = None,
+    evaluation_world: EvaluationWorld | None = None,
 ) -> dict[str, object]:
+    if (evaluation_fault == "phase2-world") != (evaluation_world is not None):
+        raise ProbeError("validation", "第二阶段供应商夹具须由专用评测入口传入")
     snapshot_enabled = prompt_snapshot_enabled(prompt_snapshot, database_dsn, os.environ)
     if evaluation_fault is not None:
         try:
@@ -245,6 +249,9 @@ def run_live(
                     "skill_config": skill_config.model_dump(mode="json") if skill_config else {},
                     "real_data": real_data,
                     "evaluation_fault": evaluation_fault,
+                    "evaluation_world": evaluation_world.model_dump(mode="json")
+                    if evaluation_world
+                    else None,
                     "prompt_snapshot": snapshot_enabled,
                 },
                 cancelled=cancelled,

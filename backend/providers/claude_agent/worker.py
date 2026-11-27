@@ -13,6 +13,7 @@ from uuid import UUID, uuid4
 from pydantic import TypeAdapter
 
 from backend.adapters.evaluation_faults import EvaluationFault, validate_fault
+from backend.adapters.evaluation_world import EvaluationWorld
 from backend.agent.persona import JudgeKind, evaluation_judge_prompt, travel_prompt
 from backend.agent.runtime import Agent
 from backend.domain.execution import (
@@ -143,6 +144,11 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
         evaluation_fault: EvaluationFault | None = TypeAdapter(
             EvaluationFault | None
         ).validate_python(payload.get("evaluation_fault"))
+        world: EvaluationWorld | None = TypeAdapter(EvaluationWorld | None).validate_python(
+            payload.get("evaluation_world")
+        )
+        if (evaluation_fault == "phase2-world") != (world is not None):
+            raise ValueError
         if evaluation_fault:
             validate_fault(
                 evaluation_fault, profile="eval", database_dsn=dsn if isinstance(dsn, str) else ""
@@ -171,6 +177,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
             supplier_url if isinstance(supplier_url, str) else None,
             real_data=real_data,
             evaluation_fault=evaluation_fault,
+            evaluation_world=world,
         ) as executor:
             executor.executor.configure_skills(skills, evaluation=v3_skills)
             if variant == "no_repairs":

@@ -307,6 +307,7 @@ class V3Case(Strict):
     title: str = Field(min_length=1, max_length=200)
     setup: InitialState | None = None
     fault: EvaluationFault | None = None
+    world: Literal["phase2"] | None = None
     # null=只记录延迟、不取消、不影响success；显式设置patience_s才会取消并记为放弃。
     patience_s: int | None = Field(default=None, ge=10, le=3600)
     ttfua_s: int | None = Field(default=None, ge=1, le=3600)
@@ -323,6 +324,8 @@ class V3Case(Strict):
 
     @model_validator(mode="after")
     def consistent(self) -> "V3Case":
+        if self.fault == "phase2-world" or (self.fault and self.world):
+            raise ValueError("phase2 使用 world 字段；故障和第二阶段世界目前独立配置")
         if (self.fallback.policy == "facts") != bool(self.user_facts):
             raise ValueError("user_facts仅在fallback.policy=facts时提供，且必须非空")
         if self.setup is not None and (self.setup.offer != "none" or self.setup.booking != "none"):

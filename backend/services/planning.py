@@ -248,7 +248,9 @@ async def validate_proposal(
             records,
             datetime.now(UTC),
             transport_default=default[0] if default else None,
-            weather=await cached_rain(db, request, now) if live is not None else None,
+            weather=await cached_rain(db, request, now, live.evaluation_today)
+            if live is not None
+            else None,
         )
         check = await _revision_check(db, context, request, proposal, records)
         if check is None:

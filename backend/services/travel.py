@@ -153,6 +153,10 @@ class TravelService:
         )
         return cls(database, live)
 
+    def travel_today(self) -> date:
+        evaluation_today = self.live.evaluation_today if self.live else None
+        return evaluation_today or self.today()
+
     async def close_data(self) -> None:
         if self.live:
             await self.live.close()
@@ -558,7 +562,7 @@ class TravelService:
                 }
             )
         try:
-            updated, changed = apply_request_patch(current, accepted, self.today())
+            updated, changed = apply_request_patch(current, accepted, self.travel_today())
         except RequestConflict as error:
             raise ServiceError(409, "conflict", str(error), "request_conflict") from None
         except RequestLimitError as error:

@@ -8,6 +8,8 @@ from typing import Literal
 import httpx
 from sqlalchemy import make_url
 
+from backend.adapters.evaluation_world import EvaluationWorld
+from backend.adapters.evaluation_world import serve as serve_world
 from backend.adapters.external_api import ApiUsage
 from backend.adapters.google_maps import GoogleMaps
 from backend.adapters.live_data import LiveData
@@ -24,6 +26,7 @@ type EvaluationFault = Literal[
     "budget-double",
     "budget-none",
     "memory-poison",
+    "phase2-world",
 ]
 SCENARIOS = {
     "429-ok",
@@ -35,6 +38,7 @@ SCENARIOS = {
     "budget-double",
     "budget-none",
     "memory-poison",
+    "phase2-world",
 }
 CITY_CENTERS = {
     "京都": (35.0116, 135.7681),
@@ -68,12 +72,19 @@ def synthetic_places(city: str, scenario: str) -> list[dict[str, object]]:
     ]
 
 
-def evaluation_data(scenario: str, database: Database, database_dsn: str) -> LiveData:
+def evaluation_data(
+    scenario: str,
+    database: Database,
+    database_dsn: str,
+    world: EvaluationWorld | None = None,
+) -> LiveData:
     http = httpx.AsyncClient(
-        transport=fault_transport(scenario, profile="eval", database_dsn=database_dsn)
+        transport=fault_transport(scenario, profile="eval", database_dsn=database_dsn, world=world)
     )
     usage = ApiUsage(
-        database, {"RAKUTEN_MIN_INTERVAL_SECONDS": "0", "GOOGLE_PLACES_DAILY_CAP": "60"}
+        database,
+        {"RAKUTEN_MIN_INTERVAL_SECONDS": "0", "GOOGLE_PLACES_DAILY_CAP": "60"},
+        run_limits=world is None,
     )
     return LiveData(
         GoogleMaps("synthetic", http, usage, data_mode="synthetic"),
@@ -82,6 +93,7 @@ def evaluation_data(scenario: str, database: Database, database_dsn: str) -> Liv
         http,
         {},
         data_mode="synthetic",
+        evaluation_today=world.today if world else None,
     )
 
 
@@ -100,12 +112,22 @@ def validate_fault(scenario: str, *, profile: str, database_dsn: str) -> None:
         raise ValueError("故障注入只允许显式eval与本地随机专用评测库")
 
 
-def fault_transport(scenario: str, *, profile: str, database_dsn: str) -> httpx.MockTransport:
+def fault_transport(
+    scenario: str,
+    *,
+    profile: str,
+    database_dsn: str,
+    world: EvaluationWorld | None = None,
+) -> httpx.MockTransport:
     validate_fault(scenario, profile=profile, database_dsn=database_dsn)
+    if (scenario == "phase2-world") != (world is not None):
+        raise ValueError("第二阶段供应商夹具须由专用评测入口传入")
     counts: dict[str, int] = {}
 
     def respond(request: httpx.Request) -> httpx.Response:
         host, path = request.url.host, request.url.path
+        if world is not None and (provided := serve_world(request, world)) is not None:
+            return provided
         if host == "maps.googleapis.com" and "geocode" in path:
             city = request.url.params.get("address", "京都")
             latitude, longitude = CITY_CENTERS[city_name(city)]
