@@ -8250,6 +8250,34 @@
         "title": "RunContext",
         "type": "object"
       },
+      "UiSkillUse": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "enum": [
+              "hotel-comparison",
+              "itinerary-revision",
+              "multi-city",
+              "budget-relaxation",
+              "external-errors",
+              "repair-limit"
+            ],
+            "title": "Name",
+            "type": "string"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "sha256"
+        ],
+        "title": "SkillUse",
+        "type": "object"
+      },
       "UiStageReason": {
         "enum": [
           "plan_exists",
@@ -8623,6 +8651,14 @@
             ],
             "default": null,
             "title": "Skill Hash"
+          },
+          "attached_skills": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/UiSkillUse"
+            },
+            "title": "Attached Skills",
+            "type": "array"
           },
           "repair_round": {
             "anyOf": [

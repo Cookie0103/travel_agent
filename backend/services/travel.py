@@ -411,7 +411,7 @@ class TravelService:
                 outcome = "none" if card is None else "issued" if created else "pending"
                 view["trip_ask_card"] = outcome
                 view["message"] = TRIP_ASK_MESSAGES[outcome]
-            return view
+            return {**view, "segmented": bool(current.segments)}
 
     async def complete_conversation_task(
         self, context: RunContext, task: Task, revision: int

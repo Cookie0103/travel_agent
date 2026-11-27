@@ -2,6 +2,7 @@
 
 import asyncio
 from typing import cast
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 from pydantic import BaseModel
@@ -16,7 +17,19 @@ from backend.tools.travel import DEFINITIONS, TravelToolExecutor
 
 class SyntheticExecutor(TravelToolExecutor):
     def __init__(self) -> None:
-        super().__init__(cast(TravelService, type("T", (), {"live": None})()))
+        super().__init__(
+            cast(
+                TravelService,
+                type(
+                    "T",
+                    (),
+                    {
+                        "live": None,
+                        "complete_conversation_task": AsyncMock(),
+                    },
+                )(),
+            )
+        )
         self.responses: list[ToolResult | ExternalDataError] = []
         self.sent = 0
 
@@ -208,5 +221,37 @@ def test_repeated_bad_parameters_become_final_without_sending_again() -> None:
         repeated = await executor.execute(context, "search_places", arguments)
         assert repeated.external and not repeated.external.provisional
         assert executor.stopping_error and executor.sent == 1
+
+    asyncio.run(exercise())
+
+
+def test_service_attaches_each_signalled_skill_once_and_keeps_only_hash_in_event() -> None:
+    async def exercise() -> None:
+        executor = SyntheticExecutor()
+        signals = ToolResult(
+            {"relaxation": {"declined": True}},
+            external=ExternalAttempt(kind="timeout", attempts=1),
+            empty=True,
+            detail=("repair_limit",),
+            segmented=True,
+        )
+        executor.responses = [signals, signals]
+        context = RunContext(uuid4())
+        events: list[RuntimeEvent] = []
+        name = "search_hotel_offers"
+        definition = next(tool for tool in DEFINITIONS if tool.name == name)
+        first = await execute_observed(
+            executor, context, name, {"expected_revision": 1}, events.append, definition=definition
+        )
+        expected = {"multi-city", "budget-relaxation", "external-errors", "repair-limit"}
+        assert {use.name for use, text in first.attached_skills if text} == expected
+        finished = next(event for event in events if event.kind == "tool_finished")
+        assert {use.name for use in finished.attached_skills} == expected
+        assert all(len(use.sha256) == 64 for use in finished.attached_skills)
+        assert first.payload()["skill_instructions"]
+        presentation = next(event.presentation for event in events if event.presentation)
+        assert "skill_instructions" not in presentation
+        second = await executor.execute(context, name, {"expected_revision": 1})
+        assert not second.attached_skills
 
     asyncio.run(exercise())

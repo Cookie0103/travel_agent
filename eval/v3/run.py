@@ -262,6 +262,11 @@ def loaded_skills(turns: Sequence[TurnObs]) -> list[dict[str, object]]:
             and event.arguments is not None
         }
         for event in turn.events:
+            if event.kind == "tool_finished":
+                result.extend(
+                    {"turn": turn.index, "name": skill.name, "sha256": skill.sha256}
+                    for skill in event.attached_skills
+                )
             if (
                 event.kind == "tool_finished"
                 and event.tool_name == "load_skill"

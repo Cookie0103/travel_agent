@@ -939,11 +939,6 @@ export interface components {
             breakfast: boolean | null;
             /** Refundable */
             refundable: boolean | null;
-            /**
-             * Partner
-             * @default false
-             */
-            partner: boolean;
             /** Image Url */
             image_url?: string | null;
             /** Review Average */
@@ -969,6 +964,11 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+            /**
+             * Partner
+             * @default false
+             */
+            partner: boolean;
             /** Partner Label */
             partner_label?: "合作酒店" | null;
             /**
@@ -1039,11 +1039,6 @@ export interface components {
             breakfast: boolean | null;
             /** Refundable */
             refundable: boolean | null;
-            /**
-             * Partner
-             * @default false
-             */
-            partner: boolean;
             /** Image Url */
             image_url: string | null;
             /** Review Average */
@@ -1885,6 +1880,8 @@ export interface components {
             latest_checkin_time?: string | null;
             /** Checkout Time */
             checkout_time?: string | null;
+            /** Partner */
+            partner?: boolean | null;
             /** Search Total Found */
             search_total_found?: number | null;
             /** More Url */
@@ -2236,11 +2233,6 @@ export interface components {
             /** Refundable */
             refundable: boolean | null;
             /**
-             * Partner
-             * @default false
-             */
-            partner: boolean;
-            /**
              * Image Url
              * @default null
              */
@@ -2280,6 +2272,11 @@ export interface components {
              * Format: date-time
              */
             expires_at: string;
+            /**
+             * Partner
+             * @default false
+             */
+            partner: boolean;
             /**
              * Partner Label
              * @default null
@@ -2869,6 +2866,16 @@ export interface components {
              */
             run_id?: string;
         };
+        /** SkillUse */
+        UiSkillUse: {
+            /**
+             * Name
+             * @enum {string}
+             */
+            name: "hotel-comparison" | "itinerary-revision" | "multi-city" | "budget-relaxation" | "external-errors" | "repair-limit";
+            /** Sha256 */
+            sha256: string;
+        };
         /** @enum {string} */
         UiStageReason: "plan_exists" | "patch_invalid" | "repair_limit" | "other";
         /** ToolArgumentFacts */
@@ -2988,6 +2995,11 @@ export interface components {
              * @default null
              */
             skill_hash: string | null;
+            /**
+             * Attached Skills
+             * @default []
+             */
+            attached_skills: components["schemas"]["UiSkillUse"][];
             /**
              * Repair Round
              * @default null

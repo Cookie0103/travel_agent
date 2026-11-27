@@ -26,7 +26,7 @@ from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationRe
 from backend.domain.opening_hours import TOKYO
 from backend.domain.plans import InitialStage, StageInput
 from backend.domain.room_choices import room_choices_view
-from backend.domain.tool_facts import SkillName
+from backend.domain.tool_facts import SkillName, SkillUse
 from backend.domain.travel_request import (
     HOTEL_FIELD_LABELS,
     ConversationRequestPatch,
@@ -362,6 +362,37 @@ def call_scope(name: str, arguments: dict[str, object]) -> tuple[str, str, str]:
 MAX_VALIDATIONS_CAP = 50  # 有限实验配置的构造上限；人工档用None
 
 
+def external_skill_signal(attempt: ExternalAttempt) -> bool:
+    return (
+        attempt.kind not in {None, "not_found_empty"} or attempt.attempts > 1 or attempt.provisional
+    )
+
+
+def signalled_skills(name: str, result: ToolResult) -> tuple[SkillName, ...]:
+    available: list[SkillName] = []
+    if result.segmented:
+        available.append("multi-city")
+    diagnosis = result.data.get("relaxation")
+    if name == "search_hotel_offers" and (
+        result.data.get("choice_card") in {"shown", "declined"}
+        or isinstance(diagnosis, dict)
+        and (
+            result.empty
+            or diagnosis.get("tier") is not None
+            or bool(diagnosis.get("steps"))
+            or diagnosis.get("skipped") is not None
+        )
+    ):
+        available.append("budget-relaxation")
+    if result.external_skill_needed or (
+        result.external is not None and external_skill_signal(result.external)
+    ):
+        available.append("external-errors")
+    if "repair_limit" in result.detail:
+        available.append("repair-limit")
+    return tuple(available)
+
+
 def hotel_search_facts(result: ToolResult, name: str) -> ToolResult:
     """工具事实由实际卡与HTTP观察决定；模型不能据诊断tier猜卡或累计重试。"""
     if name != "search_hotel_offers":
@@ -414,7 +445,7 @@ class TravelToolExecutor:
         self.last_validation: ItineraryProposal | None = None
         # 冲突最少的已校验候选；修复次数用完或暂存被拒时交出它
         self.best: tuple[ItineraryProposal, ValidationReport] | None = None
-        self.loaded_skills: set[str] = set()
+        self.loaded_skills: set[SkillName] = set()
         self.skill_config = SkillConfig()
         # 状态登记与写工具全程持锁串行；CONCURRENT_READS只在登记/结算时持锁，查询本身在锁外。
         self.lock = asyncio.Lock()
@@ -445,7 +476,7 @@ class TravelToolExecutor:
             result = self._cached(key, scope)
             if result is None:
                 result = self._record(key, scope, await self._execute(context, name, arguments))
-            return self._settle(name, arguments, result)
+            return self._with_signalled_skills(name, self._settle(name, arguments, result))
 
     async def _execute_concurrent(
         self, context: RunContext, name: str, arguments: dict[str, object]
@@ -471,7 +502,26 @@ class TravelToolExecutor:
             async with self.lock:
                 if attempted:
                     result = self._record(key, scope, result)
-                return self._settle(name, arguments, result)
+                return self._with_signalled_skills(name, self._settle(name, arguments, result))
+
+    def _skill_text(self, name: SkillName) -> tuple[SkillUse, str]:
+        text = with_repair_rounds(
+            self.skill_config.path(name).read_text(encoding="utf-8"), self.max_validations
+        )
+        self.loaded_skills.add(name)
+        return SkillUse(name=name, sha256=hashlib.sha256(text.encode()).hexdigest()), text
+
+    def _with_signalled_skills(self, name: str, result: ToolResult) -> ToolResult:
+        if name == "load_skill" or self.skill_config.variant == "no_skills":
+            return result
+        attachments = []
+        for skill in signalled_skills(name, result):
+            if self.skill_config.enabled(skill) and skill not in self.loaded_skills:
+                try:
+                    attachments.append(self._skill_text(skill))
+                except (ValueError, OSError):
+                    continue
+        return replace(result, attached_skills=tuple(attachments)) if attachments else result
 
     def _cached(self, key: tuple[str, str], scope: tuple[str, str, str]) -> ToolResult | None:
         result = self.external_failures.get(key) or self.failed_corrections.get(scope)
@@ -617,10 +667,21 @@ class TravelToolExecutor:
                 if live and observed:
                     # 优先保留已恢复的请求，逐晚正常核价不覆盖其重试证据。
                     info = next((o for o in observed if o.recovered_from), observed[-1])
-                    result = replace(result, external=info)
+                    result = replace(
+                        result,
+                        external=info,
+                        external_skill_needed=any(
+                            external_skill_signal(attempt) for attempt in observed
+                        ),
+                    )
             finally:
                 CALL_OBSERVATIONS.reset(own)
                 REQUEST_DEADLINE.reset(deadline)
+            if any(
+                isinstance(items := result.data.get(field), list) and len(items) > 1
+                for field in ("segments", "cities")
+            ):
+                result = replace(result, segmented=True)
             result = hotel_search_facts(result, name)
             result_limit = definition.max_result_chars
             if name == "present_travel_result" and result.data.get("segments"):
@@ -730,7 +791,8 @@ class TravelToolExecutor:
             )
             return ToolResult({"component": "choice", **card.model_dump(mode="json")})
         if isinstance(parsed, ConversationStateInput):
-            return ToolResult(await self.travel.update_conversation_state(context, parsed))
+            flow = await self.travel.update_conversation_state(context, parsed)
+            return ToolResult(flow, segmented=flow.pop("segmented", False) is True)
         if isinstance(parsed, SelectHotelInput):
             outcome = await HotelSelectionService(self.travel).from_chat(
                 context, parsed.expected_revision
@@ -846,7 +908,14 @@ class TravelToolExecutor:
                 detail=report_detail(report),
             )
         if isinstance(parsed, HotelSearchInput | RefreshOfferInput | PresentationInput):
-            return await self._hotel_result(context, parsed)
+            hotel_result = await self._hotel_result(context, parsed)
+            if (
+                isinstance(parsed, HotelSearchInput)
+                and parsed.segment_arrive
+                and not hotel_result.code
+            ):
+                return replace(hotel_result, segmented=True)
+            return hotel_result
         if isinstance(parsed, ConversationRequestPatch):
             # explicit_fields由模型自填：新值须在本轮用户原话里有出处，否则按未声明处理。
             grounded = grounded_fields(
@@ -876,6 +945,7 @@ class TravelToolExecutor:
                         update.request, update.changed_fields, update.skipped_fields, quote=fence
                     ),
                 },
+                segmented=bool(update.request.segments),
                 warnings=(
                     "声明为用户明确修改但新值未出现在本轮用户原话中，按未声明处理，不覆盖手填值："
                     + "、".join(unverified)
@@ -890,15 +960,11 @@ class TravelToolExecutor:
                 return ToolResult({}, code="validation", suggestion="当前评测未启用该 Skill")
             if parsed.name in self.loaded_skills:
                 return ToolResult({"name": parsed.name, "already_loaded": True})
-            text = with_repair_rounds(
-                self.skill_config.path(parsed.name).read_text(encoding="utf-8"),
-                self.max_validations,
-            )
-            self.loaded_skills.add(parsed.name)
+            usage, text = self._skill_text(parsed.name)
             return ToolResult(
                 {
                     "name": parsed.name,
-                    "version": hashlib.sha256(text.encode()).hexdigest(),
+                    "version": usage.sha256,
                     "instructions": text,
                 }
             )
@@ -944,8 +1010,6 @@ class TravelToolExecutor:
                 "回复必须如实写明：服务端自动去掉或调整的项目（草稿repairs）、"
                 "仍存的冲突与未知；不确认保存。"
             )
-            if self.skill_config.enabled("repair-limit"):
-                message += "尚未加载时先load_skill repair-limit。"
             raise ServiceError(429, "blocked", message, "repair_limit")
         self.validations += 1
 

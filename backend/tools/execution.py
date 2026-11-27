@@ -88,7 +88,7 @@ def empty_hotel_payload(result: ToolResult) -> dict[str, object]:
             "已记录的日期、人数和房型无需重复填写。"
         )
     return {
-        **result.payload(),
+        **result.payload(include_skills=False),
         "data": {
             "component": "hotel_comparison",
             "cards": [],
@@ -178,6 +178,7 @@ async def execute_observed(
             skill_hash=skill_hash
             if isinstance(skill_hash, str) and re.fullmatch(r"[0-9a-f]{64}", skill_hash)
             else None,
+            attached_skills=tuple(usage for usage, _ in result.attached_skills),
             repair_round=(result.repair_round or 0)
             if safe_name in {"validate_itinerary", "stage_plan_change"}
             else None,
@@ -227,7 +228,7 @@ async def execute_observed(
         presentation_diagnosis = result.data.get("relaxation")
         if isinstance(presentation_diagnosis, dict) and result.empty:
             payload = {
-                **result.payload(),
+                **result.payload(include_skills=False),
                 "data": {
                     "component": "hotel_comparison",
                     "cards": result.data.get("offers", []),
@@ -250,7 +251,7 @@ async def execute_observed(
         and result.code is None
         and not already_shown
     ):
-        payload = result.payload()
+        payload = result.payload(include_skills=False)
     elif (
         safe_name == "update_conversation_state"
         and result.code is None
@@ -294,7 +295,7 @@ async def execute_observed(
                 "presentation",
                 tool_name="present_travel_result",
                 tool_call_id=uuid4(),
-                presentation=shown.payload(),
+                presentation=shown.payload(include_skills=False),
             )
         )
         result = replace(

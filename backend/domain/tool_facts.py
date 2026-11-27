@@ -22,6 +22,12 @@ ChoiceOptionId = Literal[
 ]
 
 
+class SkillUse(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    name: SkillName
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+
+
 class MemoryArguments(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
     key: MemoryKey | None = None

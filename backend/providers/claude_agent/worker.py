@@ -193,7 +193,7 @@ async def run(payload: dict[str, object], cli: Path) -> dict[str, object]:
                 system = "\n".join(
                     line
                     for line in system.split("\n")
-                    if not line.startswith("低频场景先load_skill")
+                    if not line.startswith(("低频场景先load_skill", "比较已查到的酒店"))
                 )
             elif skills.disabled is not None:
                 system += f"\n当前评测关闭 {skills.disabled}，本轮应用其余可用工具。"
