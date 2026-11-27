@@ -38,6 +38,9 @@ class Basic(BaseModel):
 class Detail(BaseModel):
     middleClassCode: str | None = None
     smallClassCode: str | None = None
+    checkinTime: str | None = None
+    lastCheckinTime: str | None = None
+    checkoutTime: str | None = None
 
 
 class Room(BaseModel):
@@ -397,6 +400,9 @@ class Rakuten:
                 or item.hotel.planListUrl
                 or item.hotel.hotelInformationUrl,
                 display_details=StoredHotelDetails(
+                    checkin_time=item.detail.checkinTime if item.detail else None,
+                    latest_checkin_time=item.detail.lastCheckinTime if item.detail else None,
+                    checkout_time=item.detail.checkoutTime if item.detail else None,
                     hotel_info_url=item.hotel.hotelInformationUrl,
                     plan_list_url=item.hotel.planListUrl,
                     reservation_url=item.room.reserveUrl,

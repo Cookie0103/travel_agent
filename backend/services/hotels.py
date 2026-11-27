@@ -9,7 +9,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError, external_code
-from backend.domain.hotel_details import StoredHotelDetails
+from backend.domain.hotel_details import HotelDisplayDetails, StoredHotelDetails
 from backend.domain.hotel_flow import lodging_segments
 from backend.domain.hotel_recovery import (
     HotelSearchDiagnostics,
@@ -363,7 +363,7 @@ class HotelService:
         }
 
 
-SEARCH_FIELDS = {"search_total_found", "more_url", "more_url_scope", "search_diagnostics"}
+HOTEL_CARD_FIELDS = set(HotelDisplayDetails.model_fields)
 
 
 def search_summary(records: tuple[EvidenceRecord, ...]) -> dict[str, object]:
@@ -403,7 +403,7 @@ def cards(
                 else {}
             ),
             **(record.display_details or StoredHotelDetails()).model_dump(
-                mode="json", exclude=SEARCH_FIELDS
+                mode="json", include=HOTEL_CARD_FIELDS
             ),
             **room_assessment(
                 HotelOffer.model_validate(record.value).room_type, request

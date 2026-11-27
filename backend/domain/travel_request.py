@@ -462,12 +462,14 @@ CITY_ALIASES = {
 }
 
 
-def same_city(a: str, b: str) -> bool:
+def city_key(value: str) -> str:
     """只统一本项目已有城市的有限别名，不引入地名推断。"""
-    normalized = ["".join(value.split()).casefold().removesuffix("市") for value in (a, b)]
-    return CITY_ALIASES.get(normalized[0], normalized[0]) == CITY_ALIASES.get(
-        normalized[1], normalized[1]
-    )
+    normalized = "".join(value.split()).casefold().removesuffix("市")
+    return CITY_ALIASES.get(normalized, normalized)
+
+
+def same_city(a: str, b: str) -> bool:
+    return city_key(a) == city_key(b)
 
 
 def lodging_budget_relation(request: TravelRequest) -> BudgetRelation:

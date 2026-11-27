@@ -93,6 +93,8 @@ def test_every_validator_code_is_tiered() -> None:
     sources = {
         "backend/domain/validator.py": "check",
         "backend/domain/schedule_rules.py": "ValidationCheck",
+        "backend/domain/weather_rules.py": "ValidationCheck",
+        "backend/domain/regional_rules.py": "ValidationCheck",
         "backend/domain/itinerary_revision.py": "ValidationCheck",
         "backend/services/planning.py": "ValidationCheck",
     }

@@ -14,7 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from backend.adapters.external_api import CALL_OBSERVATIONS, REQUEST_DEADLINE
 from backend.adapters.live_data import LiveData
-from backend.adapters.open_meteo import forecast
+from backend.adapters.open_meteo import city_forecast
 from backend.domain.booking import HoldHotelInput
 from backend.domain.choices import ChoiceKind, FormInput
 from backend.domain.condition_labels import update_message
@@ -145,7 +145,7 @@ DEFINITIONS = (
     *SEARCH_DEFINITIONS,
     ToolDefinition(
         "get_weather_forecast",
-        "按当前条件的城市与日期查询每日天气；超过16天或未定日期返回unknown。",
+        "按当前行程各城市段查询每日天气。覆盖范围以日本当地当天起16天为限；缺失日期保持未知。",
         WeatherInput.model_json_schema(),
     ),
     ToolDefinition(
@@ -731,12 +731,7 @@ class TravelToolExecutor:
             live = self.travel.live
             if not live:
                 return ToolResult({}, code="unavailable", suggestion="离线模式不提供天气")
-            if not live.google or not request.city:
-                return ToolResult({}, code="validation", suggestion="请先指定城市并配置Google API")
-            point = await live.google.geocode(request.city)
-            return ToolResult(
-                await forecast(live.http, live.usage, point, request), data_mode=live.data_mode
-            )
+            return ToolResult(await city_forecast(live, request), data_mode=live.data_mode)
         if isinstance(parsed, HoldHotelInput):
             if self.travel.live:
                 raise ServiceError(

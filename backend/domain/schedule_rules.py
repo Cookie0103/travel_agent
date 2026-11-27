@@ -29,6 +29,7 @@ class ScheduleLimits:
     backtrack_return_km: float = 2
     child_max_stops: int = 4
     child_latest_end: time = time(20)
+    rain_threshold: int = 60
 
 
 DEFAULT_SCHEDULE_LIMITS = ScheduleLimits()

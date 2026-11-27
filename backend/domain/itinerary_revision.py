@@ -25,7 +25,7 @@ _DAY_PARTS = {
     "晚上": (timedelta(hours=18), timedelta(days=1)),
 }
 _CHINESE_ORDINAL = dict(zip("一二三四五六七八九十", range(1, 11), strict=True))
-type Slot = tuple[str, datetime, datetime, str | None]
+type Slot = tuple[str, datetime, datetime, str | None, str | None]
 
 
 def limited_edit_target(text: str) -> str | None:
@@ -66,7 +66,14 @@ def _name(value: str) -> str:
 
 def _slot(item: ProposedItem, identities: dict[UUID, str]) -> Slot:
     identity = identities.get(item.place_evidence_id, str(item.place_evidence_id))
-    return identity, item.start.astimezone(TOKYO), item.end.astimezone(TOKYO), item.note
+    backup = item.rain_alternative_place_evidence_id
+    return (
+        identity,
+        item.start.astimezone(TOKYO),
+        item.end.astimezone(TOKYO),
+        item.note,
+        identities.get(backup, str(backup)) if backup else None,
+    )
 
 
 def edit_scope_check(

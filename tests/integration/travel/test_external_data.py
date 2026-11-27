@@ -7,16 +7,17 @@ from uuid import uuid4
 
 import httpx
 import pytest
-from sqlalchemy import text
+from sqlalchemy import URL, text
 
+from backend.adapters.evaluation_faults import evaluation_data
 from backend.adapters.external_api import ApiUsage, request_json
 from backend.adapters.google_maps import GoogleMaps
 from backend.adapters.live_data import LiveData
-from backend.adapters.open_meteo import forecast
+from backend.adapters.open_meteo import cached_rain, city_forecast, forecast
 from backend.adapters.rakuten import Rakuten
 from backend.domain.execution import RunContext
 from backend.domain.external_data import ExternalDataError, GeoPoint
-from backend.domain.travel_request import RequestPatch, TravelRequest, tokyo_today
+from backend.domain.travel_request import RequestPatch, TravelRequest, TripSegment, tokyo_today
 from backend.persistence.catalog import import_catalog
 from backend.persistence.models import EvidenceRow, WeatherForecastRow
 from backend.services.catalog import CatalogService
@@ -25,6 +26,8 @@ from backend.services.plans import PlanService
 from backend.services.travel import TravelService
 from backend.tools.search import PlaceSearchInput
 from data.import_catalog import load_snapshot
+from eval.core.database import DatabaseEvaluation
+from tests.integration.eval.test_eval_v3_smoke import in_eval_db
 from tests.integration.plans.test_plans import initial_draft
 from tests.integration.travel.test_travel import travel_setup as travel_setup
 from tests.unit.adapters.test_external_data import sample
@@ -106,6 +109,41 @@ def test_weather_cache_survives_new_run_and_expires_after_three_hours(
             )
 
     runner.run(exercise())
+
+
+def test_multicity_weather_caches_by_city_and_leaves_out_of_range_dates_unknown(
+    postgres_url: URL,
+) -> None:
+    start = tokyo_today() + timedelta(days=14)
+    transfer = start + timedelta(days=1)
+    end = start + timedelta(days=3)
+    request = TravelRequest(
+        city="京都",
+        start_date=start,
+        end_date=end,
+        segments=(
+            TripSegment(city="京都", arrive=start, depart=transfer),
+            TripSegment(city="大阪", arrive=transfer, depart=end),
+        ),
+    )
+
+    async def exercise(business: DatabaseEvaluation) -> None:
+        database = business.sessions.database
+        local = evaluation_data("coverage", database, business.dsn())
+        try:
+            result = await city_forecast(local, request)
+            assert result["status"] == "partial" and local.usage.used["weather"] == 2
+            async with transaction(database) as db:
+                rain = await cached_rain(db, request, datetime.now(UTC))
+            assert rain == {
+                ("京都", start): 75,
+                ("京都", transfer): 75,
+                ("大阪", transfer): 25,
+            }
+        finally:
+            await local.close()
+
+    in_eval_db(postgres_url, exercise)
 
 
 def test_rakuten_two_night_totals_and_one_refresh_cap(

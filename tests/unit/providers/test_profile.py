@@ -14,7 +14,7 @@ def test_default_keeps_call_caps_with_bounded_planning_deadlines() -> None:
     assert (DEFAULT.worker_timeout, DEFAULT.process_timeout, DEFAULT.run_timeout) == (210, 220, 240)
     assert DEFAULT.max_output == 2048
     assert dict(DEFAULT.run_caps) == {
-        "geocode": 2, "places": 3, "routes": 30, "rakuten": 8, "weather": 1,
+        "geocode": 2, "places": 3, "routes": 30, "rakuten": 8, "weather": 2,
     }  # fmt: skip
     assert dict(DEFAULT.daily_defaults) == {
         "geocode": 50, "places": 25, "routes": 150, "rakuten": 150, "weather": 200,

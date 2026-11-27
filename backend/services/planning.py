@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.adapters.live_data import LiveData
+from backend.adapters.open_meteo import cached_rain
 from backend.domain.catalog import Place
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
@@ -247,6 +248,7 @@ async def validate_proposal(
             records,
             datetime.now(UTC),
             transport_default=default[0] if default else None,
+            weather=await cached_rain(db, request, now) if live is not None else None,
         )
         check = await _revision_check(db, context, request, proposal, records)
         if check is None:

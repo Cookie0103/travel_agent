@@ -25,6 +25,9 @@ class HotelDisplayDetails(HotelMetadata):
 class StoredHotelDetails(HotelDisplayDetails):
     """随证据保存的展示细节；比卡片多出本次搜索的整体信息，由present提到展示顶层，不进卡片。"""
 
+    checkin_time: str | None = None
+    latest_checkin_time: str | None = None
+    checkout_time: str | None = None
     search_total_found: int | None = Field(default=None, ge=0)
     more_url: str | None = None
     more_url_scope: Literal["search", "destination"] | None = None

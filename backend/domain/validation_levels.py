@@ -19,6 +19,8 @@ VALIDATION_LEVELS: dict[str, ValidationLevel] = {
             "hotel_stay_scope",
             "must_visit",
             "place_source",
+            "opening_hours",
+            "rain_plan",
             "room_preference",
             "trip_dates",
         )
@@ -39,6 +41,8 @@ VALIDATION_LEVELS: dict[str, ValidationLevel] = {
             "hotel_over_budget_unaccepted",
             "hotel_over_nightly_budget",
             "hotel_return",
+            "hotel_change_luggage",
+            "hotel_stay_time",
             "hotel_stay_missing",
             "hotel_stay_skipped",
             "hotel_total",
@@ -48,7 +52,6 @@ VALIDATION_LEVELS: dict[str, ValidationLevel] = {
             "lodging_budget_warning",
             "lodging_budget_within",
             "meal_time",
-            "opening_hours",
             "other_costs",
             "overlap",
             "pace_too_sparse",
@@ -66,9 +69,11 @@ VALIDATION_LEVELS: dict[str, ValidationLevel] = {
             "route_unexpected",
             "visit_duration",
             "visit_duration_range",
+            "travel_peak",
         )
     },
     "recognized_constraint": "note",
+    "reservation_required": "note",
 }
 
 

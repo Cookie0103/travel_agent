@@ -154,6 +154,30 @@ NON_SIGHTSEEING_CATEGORIES = {
 }
 
 
+# 2026-11-28。项目按 data/snapshots/osm.json 中的明确类型，以及 Google Places
+# 的地点类型分类取交集；混合型（城堡、寺庙、景区、主题乐园）保留未知。
+INDOOR_CATEGORIES = frozenset({"museum", "art_gallery", "gallery", "aquarium", "shopping_mall"})
+OUTDOOR_CATEGORIES = frozenset(
+    {
+        "viewpoint",
+        "park",
+        "garden",
+        "national_park",
+        "scenic_spot",
+        "natural_feature",
+        "ruins",
+        "zoo",
+    }
+)
+
+
+def inferred_indoor(category: str) -> bool | None:
+    normalized = category.strip().casefold()
+    if normalized in INDOOR_CATEGORIES:
+        return True
+    return False if normalized in OUTDOOR_CATEGORIES else None
+
+
 def place_category(categories: list[str]) -> str:
     """保留来源的具体用途；不因 Google 多类型顺序丢掉已知景点类别。"""
     normalized = [category.strip().casefold() for category in categories]

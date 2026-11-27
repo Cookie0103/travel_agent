@@ -4388,6 +4388,19 @@
             "title": "Note",
             "description": "一句话简介"
           },
+          "rain_alternative_place_evidence_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rain Alternative Place Evidence Id",
+            "description": "下雨时可改去的同城室内地点的当前地点证据，须在该时段营业"
+          },
           "item_id": {
             "type": "string",
             "format": "uuid",
@@ -4529,6 +4542,19 @@
             ],
             "title": "Note",
             "description": "一句话简介"
+          },
+          "rain_alternative_place_evidence_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rain Alternative Place Evidence Id",
+            "description": "下雨时可改去的同城室内地点的当前地点证据，须在该时段营业"
           },
           "item_id": {
             "type": "string",
@@ -5604,6 +5630,39 @@
               }
             ],
             "title": "Price Basis"
+          },
+          "checkin_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkin Time"
+          },
+          "latest_checkin_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Checkin Time"
+          },
+          "checkout_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkout Time"
           },
           "search_total_found": {
             "anyOf": [
@@ -7315,6 +7374,20 @@
             "description": "一句话简介",
             "title": "Note"
           },
+          "rain_alternative_place_evidence_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "下雨时可改去的同城室内地点的当前地点证据，须在该时段营业",
+            "title": "Rain Alternative Place Evidence Id"
+          },
           "item_id": {
             "format": "uuid",
             "title": "Item Id",
@@ -7419,6 +7492,20 @@
             "default": null,
             "description": "一句话简介",
             "title": "Note"
+          },
+          "rain_alternative_place_evidence_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "下雨时可改去的同城室内地点的当前地点证据，须在该时段营业",
+            "title": "Rain Alternative Place Evidence Id"
           },
           "item_id": {
             "format": "uuid",

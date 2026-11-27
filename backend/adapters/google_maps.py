@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 from sqlalchemy import text
 
 from backend.adapters.external_api import ApiUsage, parse_response, request_json
-from backend.domain.catalog import Place, Source, place_category
+from backend.domain.catalog import Place, Source, inferred_indoor, place_category
 from backend.domain.external_data import Coordinates, ExternalDataError, GeoPoint, ProviderDataMode
 from backend.domain.external_data import broad_region as broad_region
 from backend.domain.itinerary import RouteEstimate
@@ -102,6 +102,7 @@ def place_from_response(
     value: _GooglePlace, city: str, *, data_mode: ProviderDataMode = "live"
 ) -> Place:
     now = datetime.now(UTC)
+    category = place_category(value.types)
     return Place(
         place_id="gplace:" + value.id,
         city=city,
@@ -109,7 +110,8 @@ def place_from_response(
         latitude=value.location.latitude,
         longitude=value.location.longitude,
         coordinate_kind="node",
-        category=place_category(value.types),
+        category=category,
+        indoor=inferred_indoor(category),
         opening_hours=opening_hours(value.regularOpeningHours),
         field_sources={},
         source=Source(

@@ -22,8 +22,14 @@ from backend.domain.itinerary import (
     ValidationCheck,
     ValidationReport,
 )
-from backend.domain.opening_hours import TOKYO, opening_state
+from backend.domain.opening_hours import TOKYO
 from backend.domain.plans import stays_of
+from backend.domain.regional_rules import (
+    context_checks,
+    last_admission,
+    place_opening_state,
+    stay_timing_checks,
+)
 from backend.domain.schedule_rules import (
     DEFAULT_SCHEDULE_LIMITS,
     ScheduleLimits,
@@ -45,6 +51,7 @@ from backend.domain.travel_request import (
     segment_request,
     trip_segments,
 )
+from backend.domain.weather_rules import RainForecast, rain_checks
 
 
 def check(subject: str, status: CheckStatus, code: str, message: str) -> ValidationCheck:
@@ -73,6 +80,7 @@ def validate_itinerary(
     *,
     transport_default: Transport | None = None,
     schedule_limits: ScheduleLimits = DEFAULT_SCHEDULE_LIMITS,
+    weather: RainForecast | None = None,
 ) -> ValidationReport:
     """transport_default：request未写交通时，已确认的交通偏好作为路段应有的交通方式。"""
     evidence = {record.evidence_id: record for record in records}
@@ -105,7 +113,13 @@ def validate_itinerary(
     measured.extend(room_preference_checks(request, proposal, evidence))
     measured.extend(daily_route_checks(proposal, places, evidence, schedule_limits))
     measured.extend(hotel_return_checks(request, proposal, places, evidence))
+    if weather is not None:
+        measured.extend(
+            rain_checks(proposal, places, evidence, weather, schedule_limits.rain_threshold)
+        )
     checks.extend(measured)
+    checks.extend(context_checks(proposal, places))
+    checks.extend(stay_timing_checks(request, proposal, places, evidence))
     checks.extend(constraint_checks(request, {entry.code for entry in measured}))
     states = {entry.status for entry in checks}
     status: Literal["complete", "partial", "conflict"] = (
@@ -395,7 +409,8 @@ def visit_checks(
                 subject, "conflict", "overlap", "停留与前一项重叠或列表未按时间排序，不能重复安排"
             )
         )
-    state = opening_state(place.opening_hours, item.start, item.end) if place else "unknown"
+    state = place_opening_state(place, item.start, item.end) if place else "unknown"
+    last_entry = last_admission(place) if place else None
     opening_status: CheckStatus = (
         "verified" if state == "open" else "conflict" if state == "closed" else "unknown"
     )
@@ -404,7 +419,9 @@ def visit_checks(
         "closed": "快照营业时间不覆盖停留，请修改日期/时段或地点",
         "unknown": "营业时间缺失或语法未支持，不能认定营业",
     }[state]
-    if state == "closed":
+    if state == "closed" and last_entry and start.time() > last_entry:
+        message = f"已超过该景点 {last_entry:%H:%M} 的最晚入场时刻，请调整本项并更新受影响路段。"
+    elif state == "closed":
         assert place is not None and place.opening_hours is not None
         # 反馈使用同一来源快照，给出冲突时段；不计算或猜测新的营业时间。
         hours = place.opening_hours[:200] + (

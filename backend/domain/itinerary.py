@@ -41,6 +41,11 @@ class ProposedItem(BaseModel):
         "不要把出站路段挂到前一项，不用route_id代替evidence_id",
     )
     note: str | None = Field(default=None, max_length=80, description="一句话简介")
+    rain_alternative_place_evidence_id: UUID | None = Field(
+        default=None,
+        exclude_if=lambda value: value is None,
+        description="下雨时可改去的同城室内地点的当前地点证据，须在该时段营业",
+    )
 
 
 class ItineraryProposal(BaseModel):
@@ -66,6 +71,11 @@ class ItineraryProposal(BaseModel):
     def evidence_ids(self) -> tuple[UUID, ...]:
         ids = [item.place_evidence_id for item in self.items]
         ids.extend(item.route_evidence_id for item in self.items if item.route_evidence_id)
+        ids.extend(
+            item.rain_alternative_place_evidence_id
+            for item in self.items
+            if item.rain_alternative_place_evidence_id
+        )
         if self.hotel_evidence_id:
             ids.append(self.hotel_evidence_id)
         ids.extend(stay.hotel_evidence_id for stay in self.hotel_stays)
@@ -150,7 +160,12 @@ class ValidationReport(BaseModel):
         ordered = sorted(
             self.checks,
             key=lambda check: (
-                {"conflict": 0, "unknown": 1, "verified": 2}[check.status],
+                (
+                    1
+                    if check.status == "verified"
+                    and check.code in {"reservation_required", "rain_plan"}
+                    else {"conflict": 0, "unknown": 2, "verified": 3}[check.status]
+                ),
                 check.code not in ("pace_warning", "repeated_place_warning"),
             ),
         )

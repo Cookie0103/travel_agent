@@ -4,6 +4,11 @@ import type { components } from "./api-types";
 type Check = components["schemas"]["UiValidationCheck"];
 const labels: Record<string, string> = {
   opening_hours: "营业时间",
+  rain_plan: "雨天安排",
+  reservation_required: "预约提示",
+  travel_peak: "客流高峰",
+  hotel_change_luggage: "换酒店与行李",
+  hotel_stay_time: "入住与退房",
   route_missing: "路线信息",
   route_source: "路线来源",
   route_duration: "路线耗时",
@@ -37,7 +42,12 @@ export function validationGroups(checks: Check[]) {
     [];
   const byKey = new Map<string, (typeof groups)[number]>();
   for (const check of checks) {
-    if (check.status === "verified") continue;
+    if (
+      check.status === "verified" &&
+      check.code !== "reservation_required" &&
+      check.code !== "rain_plan"
+    )
+      continue;
     const key = `${check.status}:${check.code}`;
     let group = byKey.get(key);
     if (!group) {

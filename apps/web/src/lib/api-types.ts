@@ -1424,6 +1424,11 @@ export interface components {
              */
             note: string | null;
             /**
+             * Rain Alternative Place Evidence Id
+             * @description 下雨时可改去的同城室内地点的当前地点证据，须在该时段营业
+             */
+            rain_alternative_place_evidence_id?: string | null;
+            /**
              * Item Id
              * Format: uuid
              */
@@ -1483,6 +1488,11 @@ export interface components {
              * @description 一句话简介
              */
             note?: string | null;
+            /**
+             * Rain Alternative Place Evidence Id
+             * @description 下雨时可改去的同城室内地点的当前地点证据，须在该时段营业
+             */
+            rain_alternative_place_evidence_id?: string | null;
             /**
              * Item Id
              * Format: uuid
@@ -1857,6 +1867,12 @@ export interface components {
             reservation_url?: string | null;
             /** Price Basis */
             price_basis?: string | null;
+            /** Checkin Time */
+            checkin_time?: string | null;
+            /** Latest Checkin Time */
+            latest_checkin_time?: string | null;
+            /** Checkout Time */
+            checkout_time?: string | null;
             /** Search Total Found */
             search_total_found?: number | null;
             /** More Url */
@@ -2500,6 +2516,12 @@ export interface components {
              */
             note: string | null;
             /**
+             * Rain Alternative Place Evidence Id
+             * @description 下雨时可改去的同城室内地点的当前地点证据，须在该时段营业
+             * @default null
+             */
+            rain_alternative_place_evidence_id: string | null;
+            /**
              * Item Id
              * Format: uuid
              */
@@ -2552,6 +2574,12 @@ export interface components {
              * @default null
              */
             note: string | null;
+            /**
+             * Rain Alternative Place Evidence Id
+             * @description 下雨时可改去的同城室内地点的当前地点证据，须在该时段营业
+             * @default null
+             */
+            rain_alternative_place_evidence_id: string | null;
             /**
              * Item Id
              * Format: uuid
