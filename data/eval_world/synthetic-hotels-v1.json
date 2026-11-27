@@ -1,0 +1,2353 @@
+{
+  "hotels": [
+    {
+      "breakfast": false,
+      "city": "京都",
+      "hotel_id": "synthetic:1:01",
+      "latitude": 34.976974,
+      "longitude": 135.751494,
+      "name": "合成京都酒店01",
+      "prices_jpy": {
+        "event": [
+          9770,
+          13120
+        ],
+        "weekday": [
+          6870,
+          10220
+        ],
+        "weekend": [
+          8170,
+          11520
+        ]
+      },
+      "rating": 4.59,
+      "reviews": 695
+    },
+    {
+      "breakfast": true,
+      "city": "京都",
+      "hotel_id": "synthetic:1:02",
+      "latitude": 34.976096,
+      "longitude": 135.774553,
+      "name": "合成京都酒店02",
+      "prices_jpy": {
+        "event": [
+          11370,
+          14120
+        ],
+        "weekday": [
+          7960,
+          10710
+        ],
+        "weekend": [
+          9650,
+          12400
+        ]
+      },
+      "rating": 4.73,
+      "reviews": 674
+    },
+    {
+      "breakfast": true,
+      "city": "京都",
+      "hotel_id": "synthetic:1:03",
+      "latitude": 35.001987,
+      "longitude": 135.746506,
+      "name": "合成京都酒店03",
+      "prices_jpy": {
+        "event": [
+          12830,
+          14430
+        ],
+        "weekday": [
+          8910,
+          10510
+        ],
+        "weekend": [
+          10990,
+          12590
+        ]
+      },
+      "rating": 3.58,
+      "reviews": 2019
+    },
+    {
+      "breakfast": false,
+      "city": "京都",
+      "hotel_id": "synthetic:1:04",
+      "latitude": 34.969522,
+      "longitude": 135.77178,
+      "name": "合成京都酒店04",
+      "prices_jpy": {
+        "event": [
+          13270,
+          14820
+        ],
+        "weekday": [
+          8840,
+          10390
+        ],
+        "weekend": [
+          11310,
+          12860
+        ]
+      },
+      "rating": 4.08,
+      "reviews": 1135
+    },
+    {
+      "breakfast": true,
+      "city": "京都",
+      "hotel_id": "synthetic:1:05",
+      "latitude": 34.986495,
+      "longitude": 135.757737,
+      "name": "合成京都酒店05",
+      "prices_jpy": {
+        "event": [
+          15030,
+          16630
+        ],
+        "weekday": [
+          10090,
+          11690
+        ],
+        "weekend": [
+          12950,
+          14550
+        ]
+      },
+      "rating": 3.64,
+      "reviews": 704
+    },
+    {
+      "breakfast": true,
+      "city": "京都",
+      "hotel_id": "synthetic:1:06",
+      "latitude": 34.997297,
+      "longitude": 135.746183,
+      "name": "合成京都酒店06",
+      "prices_jpy": {
+        "event": [
+          15930,
+          18230
+        ],
+        "weekday": [
+          10480,
+          12780
+        ],
+        "weekend": [
+          11780,
+          14080
+        ]
+      },
+      "rating": 4.39,
+      "reviews": 575
+    },
+    {
+      "breakfast": false,
+      "city": "京都",
+      "hotel_id": "synthetic:1:07",
+      "latitude": 34.977745,
+      "longitude": 135.776103,
+      "name": "合成京都酒店07",
+      "prices_jpy": {
+        "event": [
+          17170,
+          19420
+        ],
+        "weekday": [
+          11210,
+          13460
+        ],
+        "weekend": [
+          12900,
+          15150
+        ]
+      },
+      "rating": 4.09,
+      "reviews": 1103
+    },
+    {
+      "breakfast": true,
+      "city": "京都",
+      "hotel_id": "synthetic:1:08",
+      "latitude": 34.978848,
+      "longitude": 135.743478,
+      "name": "合成京都酒店08",
+      "prices_jpy": {
+        "event": [
+          13950,
+          15850
+        ],
+        "weekday": [
+          11050,
+          12950
+        ],
+        "weekend": [
+          13130,
+          15030
+        ]
+      },
+      "rating": 3.52,
+      "reviews": 351
+    },
+    {
+      "breakfast": true,
+      "city": "京都",
+      "hotel_id": "synthetic:1:09",
+      "latitude": 34.998674,
+      "longitude": 135.770825,
+      "name": "合成京都酒店09",
+      "prices_jpy": {
+        "event": [
+          14990,
+          16540
+        ],
+        "weekday": [
+          11580,
+          13130
+        ],
+        "weekend": [
+          14050,
+          15600
+        ]
+      },
+      "rating": 4.37,
+      "reviews": 1227
+    },
+    {
+      "breakfast": false,
+      "city": "京都",
+      "hotel_id": "synthetic:1:10",
+      "latitude": 34.979509,
+      "longitude": 135.762986,
+      "name": "合成京都酒店10",
+      "prices_jpy": {
+        "event": [
+          16380,
+          18730
+        ],
+        "weekday": [
+          12460,
+          14810
+        ],
+        "weekend": [
+          15320,
+          17670
+        ]
+      },
+      "rating": 3.64,
+      "reviews": 392
+    },
+    {
+      "breakfast": true,
+      "city": "京都",
+      "hotel_id": "synthetic:1:11",
+      "latitude": 34.995137,
+      "longitude": 135.75816,
+      "name": "合成京都酒店11",
+      "prices_jpy": {
+        "event": [
+          17670,
+          19520
+        ],
+        "weekday": [
+          13240,
+          15090
+        ],
+        "weekend": [
+          14540,
+          16390
+        ]
+      },
+      "rating": 4.46,
+      "reviews": 1933
+    },
+    {
+      "breakfast": true,
+      "city": "京都",
+      "hotel_id": "synthetic:1:12",
+      "latitude": 34.982906,
+      "longitude": 135.772206,
+      "name": "合成京都酒店12",
+      "prices_jpy": {
+        "event": [
+          18720,
+          20770
+        ],
+        "weekday": [
+          13780,
+          15830
+        ],
+        "weekend": [
+          15470,
+          17520
+        ]
+      },
+      "rating": 3.66,
+      "reviews": 417
+    },
+    {
+      "breakfast": false,
+      "city": "京都",
+      "hotel_id": "synthetic:1:13",
+      "latitude": 35.000244,
+      "longitude": 135.766216,
+      "name": "合成京都酒店13",
+      "prices_jpy": {
+        "event": [
+          19870,
+          21470
+        ],
+        "weekday": [
+          14420,
+          16020
+        ],
+        "weekend": [
+          16500,
+          18100
+        ]
+      },
+      "rating": 3.71,
+      "reviews": 325
+    },
+    {
+      "breakfast": true,
+      "city": "京都",
+      "hotel_id": "synthetic:1:14",
+      "latitude": 34.994058,
+      "longitude": 135.775615,
+      "name": "合成京都酒店14",
+      "prices_jpy": {
+        "event": [
+          20660,
+          22310
+        ],
+        "weekday": [
+          14700,
+          16350
+        ],
+        "weekend": [
+          17170,
+          18820
+        ]
+      },
+      "rating": 4.17,
+      "reviews": 1109
+    },
+    {
+      "breakfast": true,
+      "city": "京都",
+      "hotel_id": "synthetic:1:15",
+      "latitude": 35.00331,
+      "longitude": 135.776592,
+      "name": "合成京都酒店15",
+      "prices_jpy": {
+        "event": [
+          18640,
+          21040
+        ],
+        "weekday": [
+          15740,
+          18140
+        ],
+        "weekend": [
+          18600,
+          21000
+        ]
+      },
+      "rating": 3.34,
+      "reviews": 1109
+    },
+    {
+      "breakfast": false,
+      "city": "京都",
+      "hotel_id": "synthetic:1:16",
+      "latitude": 34.981687,
+      "longitude": 135.742957,
+      "name": "合成京都酒店16",
+      "prices_jpy": {
+        "event": [
+          19200,
+          21900
+        ],
+        "weekday": [
+          15790,
+          18490
+        ],
+        "weekend": [
+          17090,
+          19790
+        ]
+      },
+      "rating": 4.74,
+      "reviews": 1924
+    },
+    {
+      "breakfast": false,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:01",
+      "latitude": 34.699503,
+      "longitude": 135.484064,
+      "name": "合成大阪酒店01",
+      "prices_jpy": {
+        "event": [
+          11570,
+          13170
+        ],
+        "weekday": [
+          8670,
+          10270
+        ],
+        "weekend": [
+          9970,
+          11570
+        ]
+      },
+      "rating": 3.52,
+      "reviews": 1501
+    },
+    {
+      "breakfast": true,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:02",
+      "latitude": 34.700338,
+      "longitude": 135.494192,
+      "name": "合成大阪酒店02",
+      "prices_jpy": {
+        "event": [
+          11800,
+          14750
+        ],
+        "weekday": [
+          8390,
+          11340
+        ],
+        "weekend": [
+          10080,
+          13030
+        ]
+      },
+      "rating": 4.46,
+      "reviews": 1810
+    },
+    {
+      "breakfast": true,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:03",
+      "latitude": 34.68931,
+      "longitude": 135.505526,
+      "name": "合成大阪酒店03",
+      "prices_jpy": {
+        "event": [
+          13200,
+          15900
+        ],
+        "weekday": [
+          9280,
+          11980
+        ],
+        "weekend": [
+          11360,
+          14060
+        ]
+      },
+      "rating": 4.67,
+      "reviews": 767
+    },
+    {
+      "breakfast": false,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:04",
+      "latitude": 34.714005,
+      "longitude": 135.509585,
+      "name": "合成大阪酒店04",
+      "prices_jpy": {
+        "event": [
+          14730,
+          17130
+        ],
+        "weekday": [
+          10300,
+          12700
+        ],
+        "weekend": [
+          12770,
+          15170
+        ]
+      },
+      "rating": 4.8,
+      "reviews": 1914
+    },
+    {
+      "breakfast": true,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:05",
+      "latitude": 34.689844,
+      "longitude": 135.496894,
+      "name": "合成大阪酒店05",
+      "prices_jpy": {
+        "event": [
+          14940,
+          16690
+        ],
+        "weekday": [
+          10000,
+          11750
+        ],
+        "weekend": [
+          12860,
+          14610
+        ]
+      },
+      "rating": 4.0,
+      "reviews": 601
+    },
+    {
+      "breakfast": true,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:06",
+      "latitude": 34.713067,
+      "longitude": 135.482045,
+      "name": "合成大阪酒店06",
+      "prices_jpy": {
+        "event": [
+          17040,
+          19390
+        ],
+        "weekday": [
+          11590,
+          13940
+        ],
+        "weekend": [
+          12890,
+          15240
+        ]
+      },
+      "rating": 4.8,
+      "reviews": 947
+    },
+    {
+      "breakfast": false,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:07",
+      "latitude": 34.710659,
+      "longitude": 135.494343,
+      "name": "合成大阪酒店07",
+      "prices_jpy": {
+        "event": [
+          18130,
+          21480
+        ],
+        "weekday": [
+          12170,
+          15520
+        ],
+        "weekend": [
+          13860,
+          17210
+        ]
+      },
+      "rating": 4.12,
+      "reviews": 1277
+    },
+    {
+      "breakfast": true,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:08",
+      "latitude": 34.703104,
+      "longitude": 135.493618,
+      "name": "合成大阪酒店08",
+      "prices_jpy": {
+        "event": [
+          15110,
+          18360
+        ],
+        "weekday": [
+          12210,
+          15460
+        ],
+        "weekend": [
+          14290,
+          17540
+        ]
+      },
+      "rating": 3.54,
+      "reviews": 2071
+    },
+    {
+      "breakfast": true,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:09",
+      "latitude": 34.692097,
+      "longitude": 135.498643,
+      "name": "合成大阪酒店09",
+      "prices_jpy": {
+        "event": [
+          16620,
+          18420
+        ],
+        "weekday": [
+          13210,
+          15010
+        ],
+        "weekend": [
+          15680,
+          17480
+        ]
+      },
+      "rating": 3.61,
+      "reviews": 200
+    },
+    {
+      "breakfast": false,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:10",
+      "latitude": 34.689815,
+      "longitude": 135.497864,
+      "name": "合成大阪酒店10",
+      "prices_jpy": {
+        "event": [
+          16940,
+          18840
+        ],
+        "weekday": [
+          13020,
+          14920
+        ],
+        "weekend": [
+          15880,
+          17780
+        ]
+      },
+      "rating": 3.36,
+      "reviews": 1906
+    },
+    {
+      "breakfast": true,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:11",
+      "latitude": 34.708485,
+      "longitude": 135.488336,
+      "name": "合成大阪酒店11",
+      "prices_jpy": {
+        "event": [
+          18070,
+          20620
+        ],
+        "weekday": [
+          13640,
+          16190
+        ],
+        "weekend": [
+          14940,
+          17490
+        ]
+      },
+      "rating": 3.81,
+      "reviews": 668
+    },
+    {
+      "breakfast": true,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:12",
+      "latitude": 34.686506,
+      "longitude": 135.493878,
+      "name": "合成大阪酒店12",
+      "prices_jpy": {
+        "event": [
+          18830,
+          20780
+        ],
+        "weekday": [
+          13890,
+          15840
+        ],
+        "weekend": [
+          15580,
+          17530
+        ]
+      },
+      "rating": 3.29,
+      "reviews": 1154
+    },
+    {
+      "breakfast": false,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:13",
+      "latitude": 34.701773,
+      "longitude": 135.486131,
+      "name": "合成大阪酒店13",
+      "prices_jpy": {
+        "event": [
+          20780,
+          23630
+        ],
+        "weekday": [
+          15330,
+          18180
+        ],
+        "weekend": [
+          17410,
+          20260
+        ]
+      },
+      "rating": 4.11,
+      "reviews": 1143
+    },
+    {
+      "breakfast": true,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:14",
+      "latitude": 34.701745,
+      "longitude": 135.49489,
+      "name": "合成大阪酒店14",
+      "prices_jpy": {
+        "event": [
+          21130,
+          23880
+        ],
+        "weekday": [
+          15170,
+          17920
+        ],
+        "weekend": [
+          17640,
+          20390
+        ]
+      },
+      "rating": 4.32,
+      "reviews": 849
+    },
+    {
+      "breakfast": true,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:15",
+      "latitude": 34.715441,
+      "longitude": 135.49136,
+      "name": "合成大阪酒店15",
+      "prices_jpy": {
+        "event": [
+          19010,
+          21760
+        ],
+        "weekday": [
+          16110,
+          18860
+        ],
+        "weekend": [
+          18970,
+          21720
+        ]
+      },
+      "rating": 4.38,
+      "reviews": 1276
+    },
+    {
+      "breakfast": false,
+      "city": "大阪",
+      "hotel_id": "synthetic:2:16",
+      "latitude": 34.705369,
+      "longitude": 135.482602,
+      "name": "合成大阪酒店16",
+      "prices_jpy": {
+        "event": [
+          19640,
+          22740
+        ],
+        "weekday": [
+          16230,
+          19330
+        ],
+        "weekend": [
+          17530,
+          20630
+        ]
+      },
+      "rating": 3.39,
+      "reviews": 1978
+    },
+    {
+      "breakfast": false,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:01",
+      "latitude": 34.682582,
+      "longitude": 135.821943,
+      "name": "合成奈良酒店01",
+      "prices_jpy": {
+        "event": [
+          12010,
+          14710
+        ],
+        "weekday": [
+          9110,
+          11810
+        ],
+        "weekend": [
+          10410,
+          13110
+        ]
+      },
+      "rating": 3.48,
+      "reviews": 477
+    },
+    {
+      "breakfast": true,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:02",
+      "latitude": 34.666355,
+      "longitude": 135.815009,
+      "name": "合成奈良酒店02",
+      "prices_jpy": {
+        "event": [
+          12410,
+          13910
+        ],
+        "weekday": [
+          9000,
+          10500
+        ],
+        "weekend": [
+          10690,
+          12190
+        ]
+      },
+      "rating": 4.11,
+      "reviews": 2052
+    },
+    {
+      "breakfast": true,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:03",
+      "latitude": 34.679794,
+      "longitude": 135.826685,
+      "name": "合成奈良酒店03",
+      "prices_jpy": {
+        "event": [
+          14140,
+          17590
+        ],
+        "weekday": [
+          10220,
+          13670
+        ],
+        "weekend": [
+          12300,
+          15750
+        ]
+      },
+      "rating": 3.9,
+      "reviews": 2039
+    },
+    {
+      "breakfast": false,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:04",
+      "latitude": 34.669729,
+      "longitude": 135.820911,
+      "name": "合成奈良酒店04",
+      "prices_jpy": {
+        "event": [
+          14390,
+          16140
+        ],
+        "weekday": [
+          9960,
+          11710
+        ],
+        "weekend": [
+          12430,
+          14180
+        ]
+      },
+      "rating": 4.24,
+      "reviews": 753
+    },
+    {
+      "breakfast": true,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:05",
+      "latitude": 34.697725,
+      "longitude": 135.807528,
+      "name": "合成奈良酒店05",
+      "prices_jpy": {
+        "event": [
+          15870,
+          17470
+        ],
+        "weekday": [
+          10930,
+          12530
+        ],
+        "weekend": [
+          13790,
+          15390
+        ]
+      },
+      "rating": 4.55,
+      "reviews": 991
+    },
+    {
+      "breakfast": true,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:06",
+      "latitude": 34.680931,
+      "longitude": 135.826083,
+      "name": "合成奈良酒店06",
+      "prices_jpy": {
+        "event": [
+          17330,
+          20730
+        ],
+        "weekday": [
+          11880,
+          15280
+        ],
+        "weekend": [
+          13180,
+          16580
+        ]
+      },
+      "rating": 3.42,
+      "reviews": 996
+    },
+    {
+      "breakfast": false,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:07",
+      "latitude": 34.689473,
+      "longitude": 135.836239,
+      "name": "合成奈良酒店07",
+      "prices_jpy": {
+        "event": [
+          18460,
+          20560
+        ],
+        "weekday": [
+          12500,
+          14600
+        ],
+        "weekend": [
+          14190,
+          16290
+        ]
+      },
+      "rating": 4.27,
+      "reviews": 606
+    },
+    {
+      "breakfast": true,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:08",
+      "latitude": 34.672698,
+      "longitude": 135.803746,
+      "name": "合成奈良酒店08",
+      "prices_jpy": {
+        "event": [
+          15870,
+          19270
+        ],
+        "weekday": [
+          12970,
+          16370
+        ],
+        "weekend": [
+          15050,
+          18450
+        ]
+      },
+      "rating": 4.14,
+      "reviews": 982
+    },
+    {
+      "breakfast": true,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:09",
+      "latitude": 34.680515,
+      "longitude": 135.824411,
+      "name": "合成奈良酒店09",
+      "prices_jpy": {
+        "event": [
+          17120,
+          20070
+        ],
+        "weekday": [
+          13710,
+          16660
+        ],
+        "weekend": [
+          16180,
+          19130
+        ]
+      },
+      "rating": 4.4,
+      "reviews": 112
+    },
+    {
+      "breakfast": false,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:10",
+      "latitude": 34.696493,
+      "longitude": 135.832956,
+      "name": "合成奈良酒店10",
+      "prices_jpy": {
+        "event": [
+          17860,
+          19660
+        ],
+        "weekday": [
+          13940,
+          15740
+        ],
+        "weekend": [
+          16800,
+          18600
+        ]
+      },
+      "rating": 3.88,
+      "reviews": 111
+    },
+    {
+      "breakfast": true,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:11",
+      "latitude": 34.671266,
+      "longitude": 135.837015,
+      "name": "合成奈良酒店11",
+      "prices_jpy": {
+        "event": [
+          18560,
+          21910
+        ],
+        "weekday": [
+          14130,
+          17480
+        ],
+        "weekend": [
+          15430,
+          18780
+        ]
+      },
+      "rating": 4.42,
+      "reviews": 369
+    },
+    {
+      "breakfast": true,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:12",
+      "latitude": 34.698553,
+      "longitude": 135.816247,
+      "name": "合成奈良酒店12",
+      "prices_jpy": {
+        "event": [
+          19680,
+          22580
+        ],
+        "weekday": [
+          14740,
+          17640
+        ],
+        "weekend": [
+          16430,
+          19330
+        ]
+      },
+      "rating": 3.71,
+      "reviews": 808
+    },
+    {
+      "breakfast": false,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:13",
+      "latitude": 34.666596,
+      "longitude": 135.832567,
+      "name": "合成奈良酒店13",
+      "prices_jpy": {
+        "event": [
+          21300,
+          22900
+        ],
+        "weekday": [
+          15850,
+          17450
+        ],
+        "weekend": [
+          17930,
+          19530
+        ]
+      },
+      "rating": 4.71,
+      "reviews": 1698
+    },
+    {
+      "breakfast": true,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:14",
+      "latitude": 34.697643,
+      "longitude": 135.8072,
+      "name": "合成奈良酒店14",
+      "prices_jpy": {
+        "event": [
+          22200,
+          24100
+        ],
+        "weekday": [
+          16240,
+          18140
+        ],
+        "weekend": [
+          18710,
+          20610
+        ]
+      },
+      "rating": 3.44,
+      "reviews": 1331
+    },
+    {
+      "breakfast": true,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:15",
+      "latitude": 34.674637,
+      "longitude": 135.80684,
+      "name": "合成奈良酒店15",
+      "prices_jpy": {
+        "event": [
+          20370,
+          22570
+        ],
+        "weekday": [
+          17470,
+          19670
+        ],
+        "weekend": [
+          20330,
+          22530
+        ]
+      },
+      "rating": 3.55,
+      "reviews": 154
+    },
+    {
+      "breakfast": false,
+      "city": "奈良",
+      "hotel_id": "synthetic:3:16",
+      "latitude": 34.694355,
+      "longitude": 135.821614,
+      "name": "合成奈良酒店16",
+      "prices_jpy": {
+        "event": [
+          21320,
+          24120
+        ],
+        "weekday": [
+          17910,
+          20710
+        ],
+        "weekend": [
+          19210,
+          22010
+        ]
+      },
+      "rating": 4.65,
+      "reviews": 707
+    },
+    {
+      "breakfast": false,
+      "city": "東京",
+      "hotel_id": "synthetic:4:01",
+      "latitude": 35.674439,
+      "longitude": 139.779504,
+      "name": "合成東京酒店01",
+      "prices_jpy": {
+        "event": [
+          12390,
+          14190
+        ],
+        "weekday": [
+          9490,
+          11290
+        ],
+        "weekend": [
+          10790,
+          12590
+        ]
+      },
+      "rating": 4.84,
+      "reviews": 312
+    },
+    {
+      "breakfast": true,
+      "city": "東京",
+      "hotel_id": "synthetic:4:02",
+      "latitude": 35.669065,
+      "longitude": 139.754074,
+      "name": "合成東京酒店02",
+      "prices_jpy": {
+        "event": [
+          13610,
+          15260
+        ],
+        "weekday": [
+          10200,
+          11850
+        ],
+        "weekend": [
+          11890,
+          13540
+        ]
+      },
+      "rating": 3.45,
+      "reviews": 717
+    },
+    {
+      "breakfast": true,
+      "city": "東京",
+      "hotel_id": "synthetic:4:03",
+      "latitude": 35.674307,
+      "longitude": 139.771169,
+      "name": "合成東京酒店03",
+      "prices_jpy": {
+        "event": [
+          14220,
+          16620
+        ],
+        "weekday": [
+          10300,
+          12700
+        ],
+        "weekend": [
+          12380,
+          14780
+        ]
+      },
+      "rating": 4.38,
+      "reviews": 441
+    },
+    {
+      "breakfast": false,
+      "city": "東京",
+      "hotel_id": "synthetic:4:04",
+      "latitude": 35.669692,
+      "longitude": 139.759514,
+      "name": "合成東京酒店04",
+      "prices_jpy": {
+        "event": [
+          15290,
+          16990
+        ],
+        "weekday": [
+          10860,
+          12560
+        ],
+        "weekend": [
+          13330,
+          15030
+        ]
+      },
+      "rating": 4.01,
+      "reviews": 1367
+    },
+    {
+      "breakfast": true,
+      "city": "東京",
+      "hotel_id": "synthetic:4:05",
+      "latitude": 35.667553,
+      "longitude": 139.764101,
+      "name": "合成東京酒店05",
+      "prices_jpy": {
+        "event": [
+          17350,
+          20200
+        ],
+        "weekday": [
+          12410,
+          15260
+        ],
+        "weekend": [
+          15270,
+          18120
+        ]
+      },
+      "rating": 4.12,
+      "reviews": 962
+    },
+    {
+      "breakfast": true,
+      "city": "東京",
+      "hotel_id": "synthetic:4:06",
+      "latitude": 35.681344,
+      "longitude": 139.754978,
+      "name": "合成東京酒店06",
+      "prices_jpy": {
+        "event": [
+          17820,
+          19320
+        ],
+        "weekday": [
+          12370,
+          13870
+        ],
+        "weekend": [
+          13670,
+          15170
+        ]
+      },
+      "rating": 3.36,
+      "reviews": 322
+    },
+    {
+      "breakfast": false,
+      "city": "東京",
+      "hotel_id": "synthetic:4:07",
+      "latitude": 35.672569,
+      "longitude": 139.77513,
+      "name": "合成東京酒店07",
+      "prices_jpy": {
+        "event": [
+          18830,
+          22080
+        ],
+        "weekday": [
+          12870,
+          16120
+        ],
+        "weekend": [
+          14560,
+          17810
+        ]
+      },
+      "rating": 4.2,
+      "reviews": 94
+    },
+    {
+      "breakfast": true,
+      "city": "東京",
+      "hotel_id": "synthetic:4:08",
+      "latitude": 35.695422,
+      "longitude": 139.778261,
+      "name": "合成東京酒店08",
+      "prices_jpy": {
+        "event": [
+          16600,
+          19600
+        ],
+        "weekday": [
+          13700,
+          16700
+        ],
+        "weekend": [
+          15780,
+          18780
+        ]
+      },
+      "rating": 4.5,
+      "reviews": 406
+    },
+    {
+      "breakfast": true,
+      "city": "東京",
+      "hotel_id": "synthetic:4:09",
+      "latitude": 35.691936,
+      "longitude": 139.780185,
+      "name": "合成東京酒店09",
+      "prices_jpy": {
+        "event": [
+          17730,
+          19780
+        ],
+        "weekday": [
+          14320,
+          16370
+        ],
+        "weekend": [
+          16790,
+          18840
+        ]
+      },
+      "rating": 4.32,
+      "reviews": 49
+    },
+    {
+      "breakfast": false,
+      "city": "東京",
+      "hotel_id": "synthetic:4:10",
+      "latitude": 35.690031,
+      "longitude": 139.751529,
+      "name": "合成東京酒店10",
+      "prices_jpy": {
+        "event": [
+          19100,
+          21050
+        ],
+        "weekday": [
+          15180,
+          17130
+        ],
+        "weekend": [
+          18040,
+          19990
+        ]
+      },
+      "rating": 4.19,
+      "reviews": 622
+    },
+    {
+      "breakfast": true,
+      "city": "東京",
+      "hotel_id": "synthetic:4:11",
+      "latitude": 35.68501,
+      "longitude": 139.767733,
+      "name": "合成東京酒店11",
+      "prices_jpy": {
+        "event": [
+          20200,
+          22750
+        ],
+        "weekday": [
+          15770,
+          18320
+        ],
+        "weekend": [
+          17070,
+          19620
+        ]
+      },
+      "rating": 3.35,
+      "reviews": 329
+    },
+    {
+      "breakfast": true,
+      "city": "東京",
+      "hotel_id": "synthetic:4:12",
+      "latitude": 35.684272,
+      "longitude": 139.75428,
+      "name": "合成東京酒店12",
+      "prices_jpy": {
+        "event": [
+          21240,
+          24190
+        ],
+        "weekday": [
+          16300,
+          19250
+        ],
+        "weekend": [
+          17990,
+          20940
+        ]
+      },
+      "rating": 3.46,
+      "reviews": 15
+    },
+    {
+      "breakfast": false,
+      "city": "東京",
+      "hotel_id": "synthetic:4:13",
+      "latitude": 35.669254,
+      "longitude": 139.781673,
+      "name": "合成東京酒店13",
+      "prices_jpy": {
+        "event": [
+          21770,
+          24070
+        ],
+        "weekday": [
+          16320,
+          18620
+        ],
+        "weekend": [
+          18400,
+          20700
+        ]
+      },
+      "rating": 3.43,
+      "reviews": 1505
+    },
+    {
+      "breakfast": true,
+      "city": "東京",
+      "hotel_id": "synthetic:4:14",
+      "latitude": 35.676732,
+      "longitude": 139.769898,
+      "name": "合成東京酒店14",
+      "prices_jpy": {
+        "event": [
+          23420,
+          26870
+        ],
+        "weekday": [
+          17460,
+          20910
+        ],
+        "weekend": [
+          19930,
+          23380
+        ]
+      },
+      "rating": 4.37,
+      "reviews": 1552
+    },
+    {
+      "breakfast": true,
+      "city": "東京",
+      "hotel_id": "synthetic:4:15",
+      "latitude": 35.667887,
+      "longitude": 139.755183,
+      "name": "合成東京酒店15",
+      "prices_jpy": {
+        "event": [
+          20660,
+          22910
+        ],
+        "weekday": [
+          17760,
+          20010
+        ],
+        "weekend": [
+          20620,
+          22870
+        ]
+      },
+      "rating": 4.48,
+      "reviews": 1903
+    },
+    {
+      "breakfast": false,
+      "city": "東京",
+      "hotel_id": "synthetic:4:16",
+      "latitude": 35.667053,
+      "longitude": 139.749326,
+      "name": "合成東京酒店16",
+      "prices_jpy": {
+        "event": [
+          22000,
+          24400
+        ],
+        "weekday": [
+          18590,
+          20990
+        ],
+        "weekend": [
+          19890,
+          22290
+        ]
+      },
+      "rating": 3.9,
+      "reviews": 459
+    },
+    {
+      "breakfast": false,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:01",
+      "latitude": 43.082928,
+      "longitude": 141.338545,
+      "name": "合成札幌酒店01",
+      "prices_jpy": {
+        "event": [
+          9780,
+          13130
+        ],
+        "weekday": [
+          6880,
+          10230
+        ],
+        "weekend": [
+          8180,
+          11530
+        ]
+      },
+      "rating": 4.03,
+      "reviews": 531
+    },
+    {
+      "breakfast": true,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:02",
+      "latitude": 43.080552,
+      "longitude": 141.345968,
+      "name": "合成札幌酒店02",
+      "prices_jpy": {
+        "event": [
+          11800,
+          14150
+        ],
+        "weekday": [
+          8390,
+          10740
+        ],
+        "weekend": [
+          10080,
+          12430
+        ]
+      },
+      "rating": 4.36,
+      "reviews": 1990
+    },
+    {
+      "breakfast": true,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:03",
+      "latitude": 43.051773,
+      "longitude": 141.351442,
+      "name": "合成札幌酒店03",
+      "prices_jpy": {
+        "event": [
+          12370,
+          14470
+        ],
+        "weekday": [
+          8450,
+          10550
+        ],
+        "weekend": [
+          10530,
+          12630
+        ]
+      },
+      "rating": 4.53,
+      "reviews": 410
+    },
+    {
+      "breakfast": false,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:04",
+      "latitude": 43.069132,
+      "longitude": 141.365488,
+      "name": "合成札幌酒店04",
+      "prices_jpy": {
+        "event": [
+          13730,
+          15630
+        ],
+        "weekday": [
+          9300,
+          11200
+        ],
+        "weekend": [
+          11770,
+          13670
+        ]
+      },
+      "rating": 4.26,
+      "reviews": 128
+    },
+    {
+      "breakfast": true,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:05",
+      "latitude": 43.081751,
+      "longitude": 141.344558,
+      "name": "合成札幌酒店05",
+      "prices_jpy": {
+        "event": [
+          14780,
+          16830
+        ],
+        "weekday": [
+          9840,
+          11890
+        ],
+        "weekend": [
+          12700,
+          14750
+        ]
+      },
+      "rating": 4.84,
+      "reviews": 365
+    },
+    {
+      "breakfast": true,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:06",
+      "latitude": 43.083982,
+      "longitude": 141.349509,
+      "name": "合成札幌酒店06",
+      "prices_jpy": {
+        "event": [
+          15930,
+          17630
+        ],
+        "weekday": [
+          10480,
+          12180
+        ],
+        "weekend": [
+          11780,
+          13480
+        ]
+      },
+      "rating": 3.72,
+      "reviews": 1877
+    },
+    {
+      "breakfast": false,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:07",
+      "latitude": 43.072749,
+      "longitude": 141.35043,
+      "name": "合成札幌酒店07",
+      "prices_jpy": {
+        "event": [
+          16990,
+          19890
+        ],
+        "weekday": [
+          11030,
+          13930
+        ],
+        "weekend": [
+          12720,
+          15620
+        ]
+      },
+      "rating": 3.46,
+      "reviews": 167
+    },
+    {
+      "breakfast": true,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:08",
+      "latitude": 43.05177,
+      "longitude": 141.364144,
+      "name": "合成札幌酒店08",
+      "prices_jpy": {
+        "event": [
+          14690,
+          17290
+        ],
+        "weekday": [
+          11790,
+          14390
+        ],
+        "weekend": [
+          13870,
+          16470
+        ]
+      },
+      "rating": 4.57,
+      "reviews": 1275
+    },
+    {
+      "breakfast": true,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:09",
+      "latitude": 43.064373,
+      "longitude": 141.354017,
+      "name": "合成札幌酒店09",
+      "prices_jpy": {
+        "event": [
+          15000,
+          16750
+        ],
+        "weekday": [
+          11590,
+          13340
+        ],
+        "weekend": [
+          14060,
+          15810
+        ]
+      },
+      "rating": 3.65,
+      "reviews": 775
+    },
+    {
+      "breakfast": false,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:10",
+      "latitude": 43.082679,
+      "longitude": 141.352358,
+      "name": "合成札幌酒店10",
+      "prices_jpy": {
+        "event": [
+          16360,
+          18060
+        ],
+        "weekday": [
+          12440,
+          14140
+        ],
+        "weekend": [
+          15300,
+          17000
+        ]
+      },
+      "rating": 3.69,
+      "reviews": 33
+    },
+    {
+      "breakfast": true,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:11",
+      "latitude": 43.071721,
+      "longitude": 141.363226,
+      "name": "合成札幌酒店11",
+      "prices_jpy": {
+        "event": [
+          17920,
+          20870
+        ],
+        "weekday": [
+          13490,
+          16440
+        ],
+        "weekend": [
+          14790,
+          17740
+        ]
+      },
+      "rating": 4.34,
+      "reviews": 16
+    },
+    {
+      "breakfast": true,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:12",
+      "latitude": 43.066019,
+      "longitude": 141.368724,
+      "name": "合成札幌酒店12",
+      "prices_jpy": {
+        "event": [
+          18630,
+          20230
+        ],
+        "weekday": [
+          13690,
+          15290
+        ],
+        "weekend": [
+          15380,
+          16980
+        ]
+      },
+      "rating": 4.38,
+      "reviews": 1983
+    },
+    {
+      "breakfast": false,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:13",
+      "latitude": 43.077596,
+      "longitude": 141.358638,
+      "name": "合成札幌酒店13",
+      "prices_jpy": {
+        "event": [
+          20000,
+          22200
+        ],
+        "weekday": [
+          14550,
+          16750
+        ],
+        "weekend": [
+          16630,
+          18830
+        ]
+      },
+      "rating": 4.82,
+      "reviews": 1289
+    },
+    {
+      "breakfast": true,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:14",
+      "latitude": 43.055091,
+      "longitude": 141.350874,
+      "name": "合成札幌酒店14",
+      "prices_jpy": {
+        "event": [
+          20740,
+          22640
+        ],
+        "weekday": [
+          14780,
+          16680
+        ],
+        "weekend": [
+          17250,
+          19150
+        ]
+      },
+      "rating": 4.25,
+      "reviews": 609
+    },
+    {
+      "breakfast": true,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:15",
+      "latitude": 43.061602,
+      "longitude": 141.365279,
+      "name": "合成札幌酒店15",
+      "prices_jpy": {
+        "event": [
+          18280,
+          20030
+        ],
+        "weekday": [
+          15380,
+          17130
+        ],
+        "weekend": [
+          18240,
+          19990
+        ]
+      },
+      "rating": 4.02,
+      "reviews": 1865
+    },
+    {
+      "breakfast": false,
+      "city": "札幌",
+      "hotel_id": "synthetic:5:16",
+      "latitude": 43.05524,
+      "longitude": 141.353241,
+      "name": "合成札幌酒店16",
+      "prices_jpy": {
+        "event": [
+          19510,
+          21260
+        ],
+        "weekday": [
+          16100,
+          17850
+        ],
+        "weekend": [
+          17400,
+          19150
+        ]
+      },
+      "rating": 3.44,
+      "reviews": 1061
+    },
+    {
+      "breakfast": false,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:01",
+      "latitude": 33.596005,
+      "longitude": 130.407712,
+      "name": "合成福岡酒店01",
+      "prices_jpy": {
+        "event": [
+          10880,
+          14280
+        ],
+        "weekday": [
+          7980,
+          11380
+        ],
+        "weekend": [
+          9280,
+          12680
+        ]
+      },
+      "rating": 4.48,
+      "reviews": 853
+    },
+    {
+      "breakfast": true,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:02",
+      "latitude": 33.592565,
+      "longitude": 130.404611,
+      "name": "合成福岡酒店02",
+      "prices_jpy": {
+        "event": [
+          12130,
+          13780
+        ],
+        "weekday": [
+          8720,
+          10370
+        ],
+        "weekend": [
+          10410,
+          12060
+        ]
+      },
+      "rating": 4.38,
+      "reviews": 1067
+    },
+    {
+      "breakfast": true,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:03",
+      "latitude": 33.588185,
+      "longitude": 130.411059,
+      "name": "合成福岡酒店03",
+      "prices_jpy": {
+        "event": [
+          12670,
+          14470
+        ],
+        "weekday": [
+          8750,
+          10550
+        ],
+        "weekend": [
+          10830,
+          12630
+        ]
+      },
+      "rating": 3.75,
+      "reviews": 1168
+    },
+    {
+      "breakfast": false,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:04",
+      "latitude": 33.579989,
+      "longitude": 130.421063,
+      "name": "合成福岡酒店04",
+      "prices_jpy": {
+        "event": [
+          14390,
+          17090
+        ],
+        "weekday": [
+          9960,
+          12660
+        ],
+        "weekend": [
+          12430,
+          15130
+        ]
+      },
+      "rating": 3.33,
+      "reviews": 206
+    },
+    {
+      "breakfast": true,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:05",
+      "latitude": 33.577932,
+      "longitude": 130.414388,
+      "name": "合成福岡酒店05",
+      "prices_jpy": {
+        "event": [
+          15710,
+          18560
+        ],
+        "weekday": [
+          10770,
+          13620
+        ],
+        "weekend": [
+          13630,
+          16480
+        ]
+      },
+      "rating": 4.41,
+      "reviews": 308
+    },
+    {
+      "breakfast": true,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:06",
+      "latitude": 33.587463,
+      "longitude": 130.423297,
+      "name": "合成福岡酒店06",
+      "prices_jpy": {
+        "event": [
+          16370,
+          18520
+        ],
+        "weekday": [
+          10920,
+          13070
+        ],
+        "weekend": [
+          12220,
+          14370
+        ]
+      },
+      "rating": 3.36,
+      "reviews": 616
+    },
+    {
+      "breakfast": false,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:07",
+      "latitude": 33.593758,
+      "longitude": 130.419858,
+      "name": "合成福岡酒店07",
+      "prices_jpy": {
+        "event": [
+          17830,
+          20580
+        ],
+        "weekday": [
+          11870,
+          14620
+        ],
+        "weekend": [
+          13560,
+          16310
+        ]
+      },
+      "rating": 3.6,
+      "reviews": 1375
+    },
+    {
+      "breakfast": true,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:08",
+      "latitude": 33.59002,
+      "longitude": 130.412678,
+      "name": "合成福岡酒店08",
+      "prices_jpy": {
+        "event": [
+          15440,
+          18140
+        ],
+        "weekday": [
+          12540,
+          15240
+        ],
+        "weekend": [
+          14620,
+          17320
+        ]
+      },
+      "rating": 4.81,
+      "reviews": 17
+    },
+    {
+      "breakfast": true,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:09",
+      "latitude": 33.581794,
+      "longitude": 130.42594,
+      "name": "合成福岡酒店09",
+      "prices_jpy": {
+        "event": [
+          16020,
+          17920
+        ],
+        "weekday": [
+          12610,
+          14510
+        ],
+        "weekend": [
+          15080,
+          16980
+        ]
+      },
+      "rating": 4.32,
+      "reviews": 103
+    },
+    {
+      "breakfast": false,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:10",
+      "latitude": 33.591023,
+      "longitude": 130.423413,
+      "name": "合成福岡酒店10",
+      "prices_jpy": {
+        "event": [
+          17470,
+          20920
+        ],
+        "weekday": [
+          13550,
+          17000
+        ],
+        "weekend": [
+          16410,
+          19860
+        ]
+      },
+      "rating": 4.76,
+      "reviews": 816
+    },
+    {
+      "breakfast": true,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:11",
+      "latitude": 33.595557,
+      "longitude": 130.415271,
+      "name": "合成福岡酒店11",
+      "prices_jpy": {
+        "event": [
+          18440,
+          20840
+        ],
+        "weekday": [
+          14010,
+          16410
+        ],
+        "weekend": [
+          15310,
+          17710
+        ]
+      },
+      "rating": 4.17,
+      "reviews": 250
+    },
+    {
+      "breakfast": true,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:12",
+      "latitude": 33.576049,
+      "longitude": 130.418615,
+      "name": "合成福岡酒店12",
+      "prices_jpy": {
+        "event": [
+          19300,
+          21850
+        ],
+        "weekday": [
+          14360,
+          16910
+        ],
+        "weekend": [
+          16050,
+          18600
+        ]
+      },
+      "rating": 4.06,
+      "reviews": 1821
+    },
+    {
+      "breakfast": false,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:13",
+      "latitude": 33.576034,
+      "longitude": 130.433933,
+      "name": "合成福岡酒店13",
+      "prices_jpy": {
+        "event": [
+          21060,
+          23260
+        ],
+        "weekday": [
+          15610,
+          17810
+        ],
+        "weekend": [
+          17690,
+          19890
+        ]
+      },
+      "rating": 3.28,
+      "reviews": 381
+    },
+    {
+      "breakfast": true,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:14",
+      "latitude": 33.601361,
+      "longitude": 130.425718,
+      "name": "合成福岡酒店14",
+      "prices_jpy": {
+        "event": [
+          21290,
+          24340
+        ],
+        "weekday": [
+          15330,
+          18380
+        ],
+        "weekend": [
+          17800,
+          20850
+        ]
+      },
+      "rating": 4.32,
+      "reviews": 333
+    },
+    {
+      "breakfast": true,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:15",
+      "latitude": 33.575721,
+      "longitude": 130.422871,
+      "name": "合成福岡酒店15",
+      "prices_jpy": {
+        "event": [
+          19180,
+          21580
+        ],
+        "weekday": [
+          16280,
+          18680
+        ],
+        "weekend": [
+          19140,
+          21540
+        ]
+      },
+      "rating": 4.13,
+      "reviews": 881
+    },
+    {
+      "breakfast": false,
+      "city": "福岡",
+      "hotel_id": "synthetic:6:16",
+      "latitude": 33.587176,
+      "longitude": 130.430818,
+      "name": "合成福岡酒店16",
+      "prices_jpy": {
+        "event": [
+          20700,
+          22300
+        ],
+        "weekday": [
+          17290,
+          18890
+        ],
+        "weekend": [
+          18590,
+          20190
+        ]
+      },
+      "rating": 3.97,
+      "reviews": 1239
+    }
+  ],
+  "source": "synthetic",
+  "stations": [
+    {
+      "city": "京都",
+      "latitude": 34.985556,
+      "longitude": 135.758611,
+      "name": "京都站",
+      "source": "https://www.wikidata.org/wiki/Q801046"
+    },
+    {
+      "city": "大阪",
+      "latitude": 34.7025,
+      "longitude": 135.496111,
+      "name": "大阪站",
+      "source": "https://www.wikidata.org/wiki/Q801694"
+    },
+    {
+      "city": "奈良",
+      "latitude": 34.680661,
+      "longitude": 135.819022,
+      "name": "奈良站",
+      "source": "https://www.wikidata.org/wiki/Q1150978"
+    },
+    {
+      "city": "東京",
+      "latitude": 35.680833,
+      "longitude": 139.766944,
+      "name": "东京站",
+      "source": "https://www.wikidata.org/wiki/Q283196"
+    },
+    {
+      "city": "札幌",
+      "latitude": 43.068611,
+      "longitude": 141.350778,
+      "name": "札幌站",
+      "source": "https://www.wikidata.org/wiki/Q801404"
+    },
+    {
+      "city": "福岡",
+      "latitude": 33.589995,
+      "longitude": 130.42056,
+      "name": "博多站",
+      "source": "https://www.wikidata.org/wiki/Q137752767"
+    }
+  ]
+}
