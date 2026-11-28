@@ -157,8 +157,7 @@ Every incident became a permanent guardrail:
 ### Phase 2 evaluation
 
 Phase 2 adds deterministic rule gates, a commercial expected-value score, and versioned Skill evaluations.
-The frozen 201-case suite separates reflection, validation, and holdout. DeepSeek Flash completed the 24-case pilot with 11 business passes.
-Each Skill experiment used 12 candidate trials and six endpoint trials. Both candidates stayed in isolated directories.
+The frozen 201-case suite separates reflection, validation, and holdout. The pilot predates the test-suite fixes. Its pass counts and Skill comparison remain historical records and are unsuitable for drawing performance conclusions. Both candidates stayed in isolated directories.
 Private hotel snapshots support local replay. External model trials use synthetic supplier data. [Phase 2 guide](docs/phase2/README.md) · [Pilot comparison](docs/phase2/evidence/evolution-comparison-small-v1.md)
 
 ## Operations
