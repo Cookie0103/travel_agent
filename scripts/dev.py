@@ -245,7 +245,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     v3.add_argument("--repeat", type=int, choices=range(1, 4), default=1)
     v3.add_argument("--case-id", action="append", default=[])
     v3.add_argument("--cases", type=Path)
-    v3.add_argument("--split", choices=("reflection", "validation", "holdout", "all"))
+    v3.add_argument("--split", choices=("reflection", "validation"))
     v3.add_argument("--private-world", type=Path)
     v3.add_argument(
         "--profile", choices=("human", "default", "relaxed", "a7-long"), default="human"

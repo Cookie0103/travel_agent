@@ -89,14 +89,14 @@ uv run python scripts/dev.py eval-simulator [--live] [--repeat 1..3]   # 模拟�
 | `uv run python scripts/dev.py eval-rules --out .cache/eval-rules/report.md` | 规则题与商业检查集，离线执行 |
 | `uv run python -m eval.commerce.calibrate` | 合成数据的口味参数样本、暂定结果与平台区 |
 | `uv run python -m eval.commerce.frontier --parameters .cache/eval-commerce/provisional-calibration/parameters-provisional.json` | 扫描政策网格，比较调参与验收的前沿 |
-| `uv run python scripts/dev.py eval-v3 --split reflection` | 加载冻结的反思集，离线模式验证评测设施 |
-| `uv run python -m eval.v3.local_probe` | 输出 A7 固定的十道反思题和 `--case-id` 参数 |
-| `uv run python scripts/dev.py eval-v3 --local-model --split reflection` | 本机 Agent 线路。A7 须加上固定十题参数，模型版本和启动条件见 ADR-032 |
+| `uv run python scripts/dev.py eval-v3` | 加载 p2v2 反思集，离线模式验证评测设施 |
+| `uv run python scripts/dev.py eval-v3 --split validation` | 显式加载 p2v2 验证集 |
+| `uv run python scripts/dev.py eval-v3 --local-model --split reflection` | 本机 Agent 线路，模型版本和启动条件见 ADR-032 |
 | `uv run python -m eval.v3.skill_health --trials <run>/trials.jsonl --out .cache/skill-health.md` | 从事件统计加载召回、误加载率及字符数 |
 
 配对报告用 `python -m eval.commerce.compare` 重算两组同题同重复结果。参数平台区来自校准命令。模拟下单的价格吸引力按每房晚计算，佣金按入住段总价计算。软性条目可通过 `python -m eval.commerce.soft_replay` 另存补算明细，两组的软性覆盖不完整时，配对统一计算硬分。决策服务与已通过项目的版本参见[本机体检](../../phase2/evidence/local-decision-health-v1.md)。
 
-第二阶段多轮题冻结为反思 61、验证 60、留出 80。选题和对照使用相同的划分、重复数与配置。留出集在实验结束时使用，反思材料只取反思集。商业评分用服务端终态、实际已展示报价和分数明细；软性服务缺席时权重为零。
+第二阶段 p2v2 冻结为反思 61、验证 60、留出 80。开发入口只运行反思与验证，两份各自校验题文件与清单。留出仅登记元数据，由后续独立验收使用。选题和对照使用相同的划分、重复数与配置。商业评分使用服务端终态、实际已展示报价和分数明细，软性服务缺席时权重为零。
 
 实时 DeepSeek 的费用按阶段账本统计，25 元进入人工确认，30 元为阶段硬上限。模型权重、正式酒店快照和当前实验进度以[开发计划](../../phase2/plans/2026-11-27-judge-evolution.md)为准。
 

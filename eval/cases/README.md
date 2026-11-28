@@ -2,7 +2,8 @@
 
 | 文件 | 状态 | 条数 | 谁在用 |
 | --- | --- | --- | --- |
-| `v3.jsonl` | **现行**（v3 测评题库，持续扩充） | 30 | `eval/v3/run.py` 默认加载（`scripts/dev.py eval-v3`）；格式与出题规范见 `archive/phase1/docs/proposals/eval-redesign/question-generation-spec.md` |
+| `p2v2/` | **现行冻结** | 61 反思 + 60 验证 | `dev eval-v3` 默认加载反思组，验证组需显式选择 |
+| `v3.jsonl` | **早期冒烟** | 30 | `dev eval-v3 --cases eval/cases/v3.jsonl` |
 | `frozen_v1.jsonl` + `frozen_v1.json` | **冻结**（内容/划分由 sha256 校验，变更须另建版本） | 20 dev + 40 test | `eval/core/suites.py:load_suite("frozen")`；`frozen_v1.json` 同时绑着下面 legacy 两文件的哈希，改动任一都会触发完整性报错 |
 | `datamind_adapted.jsonl` + `travel_m1.jsonl` | **历史**（legacy 套件，仍是 `eval/v1v2/run.py` 的默认入口） | 21 + 9 | `eval/core/suites.py:load_suite("legacy")` 及多个测试；同时被 `frozen_v1.json` 哈希引用，不能单独移动或修改 |
 | `v2_interaction.jsonl` / `v2_memory.jsonl` | **历史**（v2 机制开发集，未冻结） | 8 / 20 | `dev.py eval-v2` / `eval-memory`、`eval/core/suites.py:load_suite("v2" / "v2-memory")` 及记忆相关测试 |
@@ -22,21 +23,6 @@ allowed_tools只限制选择，不证明顺序/参数/语义。原规则默认�
 
 ## 第二阶段多轮题
 
-`p2_multiturn.jsonl` 经 Codex 编写的 33 道种子题扩为 201 道，使用六城合成世界。每个种子的变体替换城市、日期、人数与预算，108 道以产生草稿为预期。硬检查依据服务端终态、校验或工具事件。原有「对抗」分类沿用统计键名，新例采用普通确认场景。
+`p2v2/p2v2-reflection.jsonl` 和 `p2v2/p2v2-validation.jsonl` 分别保存 61 道反思题和 60 道验证题。`p2v2/split-manifest.json` 用交接时的原文件名登记三份的文件与逐题哈希、题号和种子身份，包含 80 道留出的元数据。加载指定分区时只打开该分区文件和清单，分别核对原始文件哈希。
 
-| 类别 | 反思 | 验证 | 留出 |
-| --- | ---: | ---: | ---: |
-| 主流程 | 6 | 6 | 8 |
-| 信息不全 | 6 | 6 | 8 |
-| 中途改需求 | 6 | 6 | 8 |
-| 供应商故障 | 6 | 6 | 7 |
-| 范围外 | 6 | 6 | 7 |
-| 记忆 | 6 | 5 | 7 |
-| 确认边界 | 5 | 5 | 7 |
-| 商业推荐 | 5 | 5 | 7 |
-| 雨天 | 5 | 5 | 7 |
-| 只改一处 | 5 | 5 | 7 |
-| 预约 | 5 | 5 | 7 |
-| 合计 | 61 | 60 | 80 |
-
-生成和加载校验通过 `uv run python -m eval.v3.phase2_cases`。该命令会重写生成文件，正式运行使用冻结划分入口。
+原第二阶段题已移入 [v1 归档](archive/phase2-v1/README.md)。其已保存的运行证据可用自进化入口显式复核。

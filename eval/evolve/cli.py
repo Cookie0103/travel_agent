@@ -7,7 +7,7 @@ from collections.abc import Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from statistics import mean
-from typing import Any, Literal
+from typing import Any
 
 from pydantic import TypeAdapter
 
@@ -21,10 +21,9 @@ from eval.evolve.guarded import Evaluation, GuardedEdit, classify, evaluate_cand
 from eval.evolve.round import first_round
 from eval.v3 import run
 from eval.v3.cases import ROOT
-from eval.v3.phase2_split import frozen_cases
+from eval.v3.phase2_split import Split, split_identity
 from eval.v3.skill_health import TRIGGERS
 
-type Split = Literal["reflection", "validation"]
 type Key = tuple[str, int]
 type Row = dict[str, Any]
 
@@ -36,23 +35,22 @@ class Evidence:
     rows: dict[Key, Row]
 
 
-def evidence(directory: Path, split: Split) -> Evidence:
+def evidence(directory: Path, split: Split, *, archived_v1: bool = False) -> Evidence:
     manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
     ids = set(manifest["cases"])
-    reflection = {case.case_id for case in frozen_cases("reflection")}
-    validation = {case.case_id for case in frozen_cases("validation")}
-    if not ids <= reflection | validation:
-        raise ValueError("自进化只读取反思与验证组的评测目录")
-    chosen = ids & (reflection if split == "reflection" else validation)
+    registered, sha256 = split_identity(split, archived_v1=archived_v1)
+    if not ids <= registered:
+        raise ValueError("自进化只读取所选反思或验证组的评测目录")
+    if manifest.get("cases_sha256") != sha256 or (
+        not archived_v1
+        and (manifest.get("case_suite"), manifest.get("case_split")) != ("p2v2", split)
+    ):
+        raise ValueError("自进化运行清单与已冻结的题库版本或分区不符")
     rounds = manifest["repeat"]
-    expected = {(case, repeat) for case in chosen for repeat in range(1, rounds + 1)}
+    expected = {(case, repeat) for case in ids for repeat in range(1, rounds + 1)}
     soft = directory / "trials-with-soft.jsonl"
     records = run.latest_rows(read_jsonl(soft if soft.is_file() else directory / "trials.jsonl"))
-    rows = {
-        (str(row["case_id"]), int(str(row["repeat"]))): row
-        for row in records
-        if row["case_id"] in chosen
-    }
+    rows = {(str(row["case_id"]), int(str(row["repeat"]))): row for row in records}
     if (
         not expected
         or rows.keys() != expected
@@ -88,7 +86,14 @@ def compare_provenance(
         raise ValueError("候选评测清单的 Skill 哈希与实际生成的候选不一致")
 
 
-def replay(source: Evidence, split: Split, directory: Path, candidate_run: Path | None) -> Evidence:
+def replay(
+    source: Evidence,
+    split: Split,
+    directory: Path,
+    candidate_run: Path | None,
+    *,
+    archived_v1: bool = False,
+) -> Evidence:
     if candidate_run is None:
         if source.manifest.get("live") or source.manifest.get("hotel_snapshot"):
             raise ValueError("历史在线或专有酒店快照结果须提供同来源的候选评测目录")
@@ -114,7 +119,7 @@ def replay(source: Evidence, split: Split, directory: Path, candidate_run: Path 
         if run.main(command, run_parent=parent):
             raise ValueError("候选本机回放失败")
         (candidate_run,) = parent.iterdir()
-    candidate = evidence(candidate_run, split)
+    candidate = evidence(candidate_run, split, archived_v1=archived_v1)
     compare_provenance(
         source,
         candidate,
@@ -186,12 +191,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     for command in (first, guarded):
         command.add_argument("--baseline", type=Path, required=True)
         command.add_argument("--candidate-run", type=Path)
+        command.add_argument(
+            "--archived-v1", action="store_true", help="复核已归档 v1 的同分区成对结果"
+        )
         command.add_argument("--output", type=Path, required=True)
         command.add_argument("--skills", type=Path)
         command.add_argument(
             "--parameters", type=Path, default=REGISTRY.with_name("parameters-rakuten-v1.json")
         )
     args = parser.parse_args(argv)
+    if args.archived_v1 and (args.candidate_run is None or getattr(args, "use_codex", False)):
+        parser.error("已归档 v1 只复核已有运行，须提供 --candidate-run 和已有提案")
     output = args.output.resolve()
     if not output.is_relative_to(ROOT / ".cache") or output.exists():
         parser.error("输出必须是项目 .cache 下的新目录")
@@ -199,7 +209,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         skills = SkillConfig(directory=args.skills)
         parameters = load_parameters(args.parameters)
         if args.version == "first":
-            baseline = evidence(args.baseline, "reflection")
+            baseline = evidence(args.baseline, "reflection", archived_v1=args.archived_v1)
             verify_start(baseline, skills)
             propose: Callable[[dict[str, object]], Proposal]
             if args.use_codex:
@@ -220,18 +230,25 @@ def main(argv: Sequence[str] | None = None) -> int:
                 texts,
                 parameters,
                 lambda directory, _tasks: list(
-                    replay(baseline, "reflection", directory, args.candidate_run).rows.values()
+                    replay(
+                        baseline,
+                        "reflection",
+                        directory,
+                        args.candidate_run,
+                        archived_v1=args.archived_v1,
+                    ).rows.values()
                 ),
                 propose=propose,
+                archived_v1=args.archived_v1,
             )
             print(f"审核页 {output / 'review.md'}，候选分数提高 {result.kept}")
         else:
-            anchor = evidence(args.reflection_run, "reflection")
+            anchor = evidence(args.reflection_run, "reflection", archived_v1=args.archived_v1)
             verify_start(anchor, skills)
             issue = classify([observation(row, parameters) for row in anchor.rows.values()])
             if issue is None:
                 raise ValueError("反思组缺少可归类的失败")
-            baseline = evidence(args.baseline, "validation")
+            baseline = evidence(args.baseline, "validation", archived_v1=args.archived_v1)
             verify_start(baseline, skills)
             target = issue.code.removeprefix("component:")
             target_cases = frozenset(
@@ -252,7 +269,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                 lambda directory: [
                     observation(row, parameters)
                     for row in replay(
-                        baseline, "validation", directory, args.candidate_run
+                        baseline,
+                        "validation",
+                        directory,
+                        args.candidate_run,
+                        archived_v1=args.archived_v1,
                     ).rows.values()
                 ],
             )

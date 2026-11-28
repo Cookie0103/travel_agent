@@ -1,7 +1,6 @@
 import json
 from dataclasses import asdict
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
@@ -13,17 +12,22 @@ from eval.evolve.codex import Proposal
 from eval.evolve.round import first_round
 from eval.v3.cases import V3Case
 from eval.v3.judge import render_transcript
-from eval.v3.phase2_split import frozen_cases
 from eval.v3.run import freeze_candidate
 from eval.v3.score import Observation
 
 
-def test_first_round_keeps_improvement_in_candidate_only(tmp_path: Path) -> None:
-    case = frozen_cases("reflection")[0]
+def test_first_round_keeps_improvement_in_candidate_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    case_id = "candidate-improvement"
+    monkeypatch.setattr(
+        "eval.evolve.round.split_identity",
+        lambda *_args, **_options: (frozenset({case_id}), "test-sha"),
+    )
     params = load_parameters()
     original = (BUILTIN_SKILLS / "hotel-comparison.md").read_text(encoding="utf-8")
     baseline = {
-        "case_id": case.case_id,
+        "case_id": case_id,
         "repeat": 1,
         "commerce": evaluate([], {}, params, ("missing_draft",)),
     }
@@ -56,7 +60,7 @@ def test_first_round_keeps_improvement_in_candidate_only(tmp_path: Path) -> None
     }
 
     def propose(data: dict[str, object]) -> Proposal:
-        assert data["reflection_transcripts"] == {case.case_id: "本轮酒店卡未展示。"}
+        assert data["reflection_transcripts"] == {case_id: "本轮酒店卡未展示。"}
         return Proposal(
             skill="comparison-with-context",
             markdown="# 候选\n",
@@ -65,7 +69,7 @@ def test_first_round_keeps_improvement_in_candidate_only(tmp_path: Path) -> None
         )
 
     def replay(candidate: Path, tasks: tuple[tuple[str, int], ...]) -> list[dict[str, object]]:
-        assert tasks == ((case.case_id, 1),)
+        assert tasks == ((case_id, 1),)
         config = SkillConfig(directory=candidate)
         assert config.candidate_names() == ("evolution-candidate", "evolution-candidate-2")
         captured = freeze_candidate(config, tmp_path, config.versions())
@@ -85,7 +89,7 @@ def test_first_round_keeps_improvement_in_candidate_only(tmp_path: Path) -> None
         tmp_path,
         SkillConfig(directory=previous),
         [baseline],
-        {case.case_id: "本轮酒店卡未展示。"},
+        {case_id: "本轮酒店卡未展示。"},
         params,
         replay,
         propose=propose,
@@ -108,8 +112,12 @@ def test_reflector_stdin_omits_private_commerce_fields(
         }
     )
     monkeypatch.setattr(
-        "eval.evolve.round.frozen_cases",
-        lambda split: (SimpleNamespace(case_id=case.case_id),) if split == "reflection" else (),
+        "eval.evolve.round.split_identity",
+        lambda split, **_options: (
+            (frozenset({case.case_id}), "test-sha")
+            if split == "reflection"
+            else (frozenset(), "test-sha")
+        ),
     )
     parameters = load_parameters()
     candidate = Candidate(

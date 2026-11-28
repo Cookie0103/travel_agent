@@ -3,7 +3,6 @@
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
@@ -28,6 +27,8 @@ def write_run(path: Path, rows: Sequence[cli.Row], skills: SkillConfig | None = 
     path.mkdir(parents=True)
     manifest = {
         "cases": [row["case_id"] for row in rows],
+        "case_suite": "p2v2",
+        "case_split": "reflection" if rows[0]["case_id"].startswith("reflect") else "validation",
         "repeat": 1,
         "profile": "human",
         "live": False,
@@ -43,19 +44,19 @@ def write_run(path: Path, rows: Sequence[cli.Row], skills: SkillConfig | None = 
 
 @pytest.fixture
 def split(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
-    def cases(name: str) -> tuple[SimpleNamespace, ...]:
+    def identity(name: str, *, archived_v1: bool = False) -> tuple[frozenset[str], str]:
         selected = {
             "reflection": ["reflect-a", "reflect-b"],
             "validation": ["validation-a", "validation-b", "validation-c", "validation-d"],
         }
-        return tuple(SimpleNamespace(case_id=case) for case in selected[name])
+        return frozenset(selected[name]), "legacy-test" if archived_v1 else "fixed-test"
 
     monkeypatch.setattr(cli, "ROOT", tmp_path)
-    monkeypatch.setattr(cli, "frozen_cases", cases)
-    monkeypatch.setattr("eval.evolve.round.frozen_cases", cases)
+    monkeypatch.setattr(cli, "split_identity", identity)
+    monkeypatch.setattr("eval.evolve.round.split_identity", identity)
 
 
-def test_first_reuses_archived_pairs_with_matching_candidate_hash(
+def test_first_reuses_existing_pairs_with_matching_candidate_hash(
     split: None, tmp_path: Path
 ) -> None:
     baseline = write_run(tmp_path / "baseline", [trial("reflect-a")])
@@ -165,9 +166,9 @@ def test_outside_cohort_is_rejected_before_trial_rows_are_opened(
     split: None, tmp_path: Path
 ) -> None:
     (tmp_path / "manifest.json").write_text(
-        json.dumps({"cases": ["outside"], "repeat": 1}), encoding="utf-8"
+        json.dumps({"cases": ["reflect-a", "validation-a"], "repeat": 1}), encoding="utf-8"
     )
-    with pytest.raises(ValueError, match="反思与验证组"):
+    with pytest.raises(ValueError, match="所选反思或验证组"):
         cli.evidence(tmp_path, "reflection")
 
 
@@ -176,3 +177,18 @@ def test_reflection_rejects_transcript_for_a_different_case(split: None, tmp_pat
     source = write_run(tmp_path / "reflection", [row])
     with pytest.raises(ValueError, match="同题同重复"):
         cli.transcripts(cli.evidence(source, "reflection"))
+
+
+def test_archived_v1_records_require_explicit_archive_selection(
+    split: None, tmp_path: Path
+) -> None:
+    runs = write_run(tmp_path / "old", [trial("reflect-a")])
+    manifest = runs / "manifest.json"
+    table = json.loads(manifest.read_text(encoding="utf-8"))
+    table["cases_sha256"] = "legacy-test"
+    table.pop("case_suite")
+    table.pop("case_split")
+    manifest.write_text(json.dumps(table), encoding="utf-8")
+    with pytest.raises(ValueError, match="题库版本或分区不符"):
+        cli.evidence(runs, "reflection")
+    assert set(cli.evidence(runs, "reflection", archived_v1=True).rows) == {("reflect-a", 1)}

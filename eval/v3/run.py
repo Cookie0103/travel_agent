@@ -65,11 +65,10 @@ from eval.core.jsonl import read_jsonl
 from eval.core.state import prepare_state, snapshot
 from eval.grading.claims import ClaimFacts
 from eval.grading.memory_metrics import memory_scores, proposal_failures
-from eval.v3.cases import DEFAULT_CASES, ROOT, V3Case, load_cases
+from eval.v3.cases import ROOT, V3Case, load_cases
 from eval.v3.facts import Snapshot, hotel_picks, hotel_presentations, selected_cards
 from eval.v3.judge import JudgeCall, judge_scores, judge_trial, write_transcript
-from eval.v3.phase2_split import CASES as PHASE2_CASES
-from eval.v3.phase2_split import frozen_cases
+from eval.v3.phase2_split import ARCHIVE, DIRECTORY, LEGACY_CASES, frozen_cases, public_path
 from eval.v3.report import write_reports
 from eval.v3.score import DbFacts, Observation, Score, TurnObs, rule_gate, score_trial
 from eval.v3.user import ScriptResult, ScriptRunner, StructuredCall
@@ -905,8 +904,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--trace-cloud", action="store_true")
     parser.add_argument("--repeat", type=int, choices=(1, 2, 3), default=1)
     parser.add_argument("--case-id", action="append", default=[])
-    parser.add_argument("--cases", type=Path, default=DEFAULT_CASES)
-    parser.add_argument("--split", choices=("reflection", "validation", "holdout", "all"))
+    parser.add_argument("--cases", type=Path)
+    parser.add_argument("--split", choices=("reflection", "validation"))
     parser.add_argument("--private-world", type=Path)
     parser.add_argument("--profile", choices=PROFILES, default="human")
     parser.add_argument("--variant", choices=("full", "no_skills"), default="full")
@@ -1011,10 +1010,10 @@ def resume_command(args: argparse.Namespace, directory: PurePath) -> str:
     parts += [f"--case-id {c}" for c in args.case_id]
     if args.split:
         parts.append(f"--split {args.split}")
+    elif args.cases:
+        parts.append(f"--cases {shlex.quote(Path(args.cases).as_posix())}")
     if args.private_world:
         parts.append(f"--private-world {shlex.quote(args.private_world.resolve().as_posix())}")
-    if Path(args.cases) != DEFAULT_CASES:
-        parts.append(f"--cases {Path(args.cases).as_posix()}")
     if args.max_cny is not None:
         parts.append(f"--max-cny {args.max_cny}")
     if args.variant != "full":
@@ -1041,6 +1040,8 @@ def _raise_interrupt(signum: int, frame: object) -> None:
 def main(argv: Sequence[str] | None = None, *, run_parent: Path | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.cases is None and args.split is None:
+        args.split = "reflection"
     if args.profile == A7_LONG_PROFILE and not args.local_model:
         parser.error("A7 长档需要 --local-model")
     if args.private_world and (args.live or args.trace_cloud or not args.split):
@@ -1076,15 +1077,22 @@ def main(argv: Sequence[str] | None = None, *, run_parent: Path | None = None) -
             skill_manifest["versions"] = versions
     except (OSError, ValueError) as error:
         parser.error(f"无法使用 Skill 配置：{error}")
-    if args.split:
-        if args.cases not in {DEFAULT_CASES, PHASE2_CASES} and args.cases.resolve() != PHASE2_CASES:
-            parser.error("--split 使用冻结的第二阶段题库")
-        args.cases = PHASE2_CASES
-        source = frozen_cases(args.split)
-    elif args.cases.resolve() == PHASE2_CASES:
-        parser.error("冻结的第二阶段题库需要显式 --split")
-    else:
-        source = load_cases(args.cases)
+    try:
+        if args.split:
+            selected = public_path(args.split)
+            if args.cases is not None and args.cases.resolve() != selected:
+                parser.error("--cases 与所选 v2 划分不一致")
+            args.cases = selected
+            source = frozen_cases(args.split)
+        else:
+            path = args.cases.resolve()
+            if path.is_relative_to(DIRECTORY):
+                parser.error("冻结的第二阶段 v2 题库需要显式 --split")
+            if path == LEGACY_CASES or path.is_relative_to(ARCHIVE):
+                parser.error("第二阶段 v1 题库已归档，已有成对结果可用 eval-evolve 复核")
+            source = load_cases(path)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
     cases = [c for c in source if not args.case_id or c.case_id in args.case_id]
     if args.case_id and len(cases) != len(set(args.case_id)):
         parser.error("有case-id不在题库里")
@@ -1190,6 +1198,8 @@ def main(argv: Sequence[str] | None = None, *, run_parent: Path | None = None) -
         "started_at": previous.get("started_at", datetime.now(UTC).isoformat()),
         "prompt_snapshot_env": os.environ.get(PROMPT_ENV) == "1",
     }
+    if args.split:
+        manifest.update(case_suite="p2v2", case_split=args.split)
     if private:
         manifest["hotel_snapshot"] = private.provenance
     if args.resume is not None:

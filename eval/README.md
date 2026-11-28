@@ -25,7 +25,7 @@ eval/
 
 V2 套件：`--suite v2`（交互/故障恢复）、`--suite v2-memory`（确认记忆），封装为 `dev.py eval-v2` / `eval-memory`；模拟用户评测 `dev.py eval-simulator`；报告含 pass@1 / pass@k / pass^k。用法与授权见 [V2 评测指南](../docs/handbook/guides/evaluation.md#v2-评测套件模拟用户与-passk入口)和 [操作手册](../archive/phase1/docs/operations/interaction-memory-eval.md#v2评测与恢复)。
 
-v3（脚本化用户、硬/软分级、pass^k与Success@T）：`uv run python scripts/dev.py eval-v3`（离线冒烟）/ `--live`（真实调用），题库 `eval/cases/v3.jsonl`，设计见 [archive/phase1/docs/proposals/eval-redesign](../archive/phase1/docs/proposals/eval-redesign/infra-plan.md)。
+v3 使用脚本化用户与分级检查。`uv run python scripts/dev.py eval-v3` 默认离线加载 [p2v2 反思题](cases/README.md#第二阶段多轮题)，以 `--split validation` 运行验证题。旧 30 道 v3 冒烟题仍可显式用 `--cases eval/cases/v3.jsonl` 加载。
 v3 注意：
 - 时间策略：`patience_s` / `ttfua_s` 默认 null，只记录延迟（TTFUA、每轮耗时、校验/修复轮次），不取消、不进 success；profile 自带的 run 超时仍生效（命中记 `infra_error:timeout`）。题目显式设 `patience_s` 才会超时取消并记 abandoned；设了 `ttfua_s`/`patience_s` 才会推 `within_time`。报告里的 Success@T 仅供参考（“若设上限 T 会怎样”）。
 - `--max-cny` 可选，默认不设上限；设了则是软上限，只在 trial 之间检查，最多超出一个 trial。每个 trial 前复核预算授权。成本取 trial 前后账本差，含 LLM 兜底和 rubric 评审调用（同一账本）。
@@ -41,6 +41,7 @@ v3 注意：
 - 第一版用 `dev eval-evolve first --baseline RUN --proposal PROPOSAL.json --output .cache/phase2/evolution-round-1`。提案包含 `skill`、`markdown`、`trigger`、`self_assessment`。获授权的反思可显式用 `--use-codex`，它从反思组读取投影后的对话和 Skill。
 - 第二版用 `dev eval-evolve guarded --reflection-run REFLECTION --baseline VALIDATION --edit EDIT.json --output .cache/phase2/evolution-guarded-1`。编辑包含 `skill`、`old`、`new`。新增 Skill 的触发条件、三个触发用例与无法复用现有 Skill 的原因见 `GuardedEdit`。
 - 两个命令沿用基线的题目、种子、重复次数和本机运行方式。需要复用已有成对数据时传 `--candidate-run RUN`，命令校验评测清单与实际候选内容。原始数据、候选和审核页留在指定的本机输出目录。提请用户审核的页面见[自进化候选审核](../docs/phase2/evolution/README.md)。
+- 已归档 v1 的成对结果用 `--archived-v1 --candidate-run RUN` 复核，输入使用已有的同一分区记录与提案。
 
 ## 评测边界
 

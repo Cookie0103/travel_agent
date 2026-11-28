@@ -12,7 +12,7 @@ from backend.tools.skill_config import SkillConfig
 from eval.commerce.parameters import Registry
 from eval.commerce.score import rescore
 from eval.evolve.codex import Proposal, reflect
-from eval.v3.phase2_split import frozen_cases
+from eval.v3.phase2_split import split_identity
 
 
 @dataclass(frozen=True)
@@ -56,8 +56,9 @@ def first_round(
     rerun: Callable[[Path, tuple[tuple[str, int], ...]], Sequence[Mapping[str, Any]]],
     *,
     propose: Callable[[dict[str, object]], Proposal] = reflect,
+    archived_v1: bool = False,
 ) -> Outcome:
-    reflection = frozenset(case.case_id for case in frozen_cases("reflection"))
+    reflection, _ = split_identity("reflection", archived_v1=archived_v1)
     previous = _index(baseline, reflection)
     if not transcripts.keys() <= {case for case, _ in previous}:
         raise ValueError("反思输入含未参与对照的题")

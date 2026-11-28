@@ -546,9 +546,10 @@ def parse_case(line: str) -> V3Case:
     return V3Case.model_validate_json(line)
 
 
-def load_cases(path: Path = DEFAULT_CASES) -> list[V3Case]:
+def load_cases(path: Path = DEFAULT_CASES, *, verified_text: str | None = None) -> list[V3Case]:
+    text = path.read_text(encoding="utf-8") if verified_text is None else verified_text
     cases: list[V3Case] = []
-    for number, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+    for number, line in enumerate(text.splitlines(), start=1):
         if not line.strip():
             continue
         try:
