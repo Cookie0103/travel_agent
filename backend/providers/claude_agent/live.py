@@ -24,7 +24,7 @@ from backend.domain.execution import (
 )
 from backend.limits import LOCAL_MODEL, ProbeError, Provider, Settings
 from backend.mcp.bridge import sdk_tool_name
-from backend.profile import current
+from backend.profile import A7_LONG, current
 from backend.providers.claude_agent import http as upstream
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
@@ -185,6 +185,8 @@ def run_live(
     ):
         raise ProbeError("validation", f"对照需数据库工具；请求上限须为1至{current().max_attempts}")
     local_evaluation = provider == "ollama"
+    if not local_evaluation and current() is A7_LONG:
+        raise ProbeError("blocked", "A7 长档仅用于 Ollama v3 评测")
     if local_evaluation and (
         not v3_evaluation or trace_cloud or not is_eval_database(database_dsn or "")
     ):

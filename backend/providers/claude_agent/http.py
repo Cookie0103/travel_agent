@@ -11,7 +11,7 @@ import time
 from pathlib import Path
 
 from backend.limits import LOCAL_HOST, LOCAL_PORT, ProbeError, Provider, StallError
-from backend.profile import current
+from backend.profile import LOCAL_EVAL_PROFILE_ENV, current
 from backend.providers.claude_agent.process import progress_hook, run_process, spawn_hook
 from backend.providers.claude_agent.response import message_stopped
 from backend.providers.claude_agent.settings import anthropic_host
@@ -102,6 +102,7 @@ def forward_messages(provider: Provider, api_key: str, body: bytes) -> tuple[int
             "SSL_CERT_FILE",
             "SSL_CERT_DIR",
             "TRAVEL_PROFILE",
+            LOCAL_EVAL_PROFILE_ENV,
             "ANTHROPIC_BASE_URL",
         }
     }

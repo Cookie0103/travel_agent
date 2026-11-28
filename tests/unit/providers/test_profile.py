@@ -1,10 +1,20 @@
 """限额档位：次数/预算保持原值，联网、SDK与整轮期限有序。"""
 
+from dataclasses import replace
 from pathlib import Path
 from typing import Any, cast
 
 from backend.adapters.external_api import ApiUsage
-from backend.profile import DEFAULT, HUMAN, RELAXED, current
+from backend.profile import (
+    A7_LONG,
+    A7_LONG_PROFILE,
+    DEFAULT,
+    HUMAN,
+    LOCAL_EVAL_PROFILE_ENV,
+    RELAXED,
+    current,
+    profile_name,
+)
 from backend.providers.claude_agent.environment import worker_environment
 
 
@@ -41,6 +51,28 @@ def test_relaxed_is_larger_and_timeouts_stay_ordered(tmp_path: Path) -> None:
         relaxed_cap = RELAXED.run_caps[api]
         assert relaxed_cap is not None and value is not None
         assert relaxed_cap > value and RELAXED.daily_defaults[api] > 0
+
+
+def test_a7_long_is_local_opt_in_and_only_extends_deadlines(tmp_path: Path) -> None:
+    source = {"TRAVEL_PROFILE": A7_LONG_PROFILE}
+    assert current(source) is DEFAULT
+    assert profile_name(source) == "default"
+    source[LOCAL_EVAL_PROFILE_ENV] = "1"
+    assert current(source) is A7_LONG
+    assert profile_name(source) == A7_LONG_PROFILE
+    assert current() is not A7_LONG
+    assert A7_LONG == replace(
+        RELAXED,
+        first_byte_timeout=600,
+        upstream_timeout=880,
+        worker_timeout=900,
+        process_timeout=910,
+        run_timeout=920,
+    )
+    env = worker_environment(source, tmp_path, Path.cwd(), "http://127.0.0.1:1", "t", "m")
+    assert current(env) is A7_LONG
+    sdk_timeout = int(env["API_TIMEOUT_MS"]) / 1000
+    assert 600 < A7_LONG.upstream_timeout < sdk_timeout < 900
 
 
 def test_external_caps_follow_profile_and_explicit_env_wins() -> None:

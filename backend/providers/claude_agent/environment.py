@@ -6,7 +6,7 @@ from collections.abc import Mapping
 from pathlib import Path
 
 from backend.limits import ProbeError
-from backend.profile import current
+from backend.profile import LOCAL_EVAL_PROFILE_ENV, current
 
 LIVE_SECRETS = frozenset(
     {"GOOGLE_MAPS_API_KEY", "RAKUTEN_APP_ID", "RAKUTEN_ACCESS_KEY", "RAKUTEN_AFFILIATE_ID"}
@@ -59,6 +59,7 @@ def worker_environment(
         "RAKUTEN_MIN_INTERVAL_SECONDS",
         "WEATHER_DAILY_CAP",
         "TRAVEL_PROFILE",
+        LOCAL_EVAL_PROFILE_ENV,
     }
     if live:
         names |= LIVE_SECRETS

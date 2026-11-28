@@ -44,6 +44,7 @@ from backend.limits import ProbeError
 from backend.persistence import travel as request_rows
 from backend.persistence.models import BookingRow, MemoryFactRow, PlanDraftRow, SupplierOrderRow
 from backend.persistence.temporary import temporary_database
+from backend.profile import A7_LONG_PROFILE, LOCAL_EVAL_PROFILE_ENV
 from backend.providers.claude_agent.application import GuardedRuntime
 from backend.providers.claude_agent.budget import Phase2ReviewRequired
 from backend.providers.claude_agent.response import cache_totals
@@ -75,7 +76,7 @@ from eval.v3.report import write_reports
 from eval.v3.score import DbFacts, Observation, Score, TurnObs, rule_gate, score_trial
 from eval.v3.user import ScriptResult, ScriptRunner, StructuredCall
 
-PROFILES = ("human", "default", "relaxed")
+PROFILES = ("human", "default", "relaxed", A7_LONG_PROFILE)
 PROMPT_ENV = "TRAVEL_EVAL_PROMPT_SNAPSHOT"
 # 表示“额度/限流”的infra_error：run的rate_limited(provider限流)与服务层429。
 # 其余(provider_error/timeout/harness:*)可能是偶发故障，不据此停止。
@@ -762,6 +763,10 @@ def trial_row(
 
 
 def configure_profile(profile: str) -> None:
+    if profile == A7_LONG_PROFILE:
+        os.environ[LOCAL_EVAL_PROFILE_ENV] = "1"
+    else:
+        os.environ.pop(LOCAL_EVAL_PROFILE_ENV, None)
     if profile == "default":
         os.environ.pop("TRAVEL_PROFILE", None)
     else:
@@ -1064,6 +1069,8 @@ def _raise_interrupt(signum: int, frame: object) -> None:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.profile == A7_LONG_PROFILE and not args.local_model:
+        parser.error("A7 长档需要 --local-model")
     if args.private_world and (args.live or args.trace_cloud or not args.split):
         parser.error("--private-world 只在使用冻结题库的本机评测中启用")
     refuse_live_under_pytest(args.live or args.local_model)
