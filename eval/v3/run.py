@@ -65,6 +65,7 @@ from eval.commerce.trials import evaluate as evaluate_commerce
 from eval.core.database import DatabaseEvaluation, database_evaluation, selector_runner
 from eval.core.evaluation_world import phase2_world
 from eval.core.guard import refuse_live_under_pytest
+from eval.core.jsonl import read_jsonl
 from eval.core.state import prepare_state, snapshot
 from eval.grading.claims import ClaimFacts
 from eval.grading.memory_metrics import memory_scores, proposal_failures
@@ -983,15 +984,7 @@ def freeze_candidate(
 
 def read_rows(directory: Path) -> list[dict[str, object]]:
     """读已有trials.jsonl；被中断写坏的最后一行直接忽略（该trial会重跑）。"""
-    path = directory / "trials.jsonl"
-    rows: list[dict[str, object]] = []
-    if path.exists():
-        for line in path.read_text(encoding="utf-8").splitlines():
-            try:
-                rows.append(json.loads(line))
-            except json.JSONDecodeError:
-                continue
-    return rows
+    return read_jsonl(directory / "trials.jsonl", recovery=True)
 
 
 def latest_rows(rows: Sequence[dict[str, object]]) -> list[dict[str, object]]:
@@ -1066,7 +1059,7 @@ def _raise_interrupt(signum: int, frame: object) -> None:
     raise KeyboardInterrupt
 
 
-def main(argv: Sequence[str] | None = None) -> int:
+def main(argv: Sequence[str] | None = None, *, run_parent: Path | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     if args.profile == A7_LONG_PROFILE and not args.local_model:
@@ -1142,7 +1135,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         run_name = str(previous.get("run_name", directory.name))
     else:
         run_name = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:6]
-        directory = RUNS_DIR / run_name
+        directory = (run_parent if run_parent is not None else RUNS_DIR) / run_name
         directory.mkdir(parents=True)
     if versions:
         try:

@@ -40,3 +40,4 @@
 | [032](032-local-evaluation-model.md) | 本地评测模型复用 Claude Agent SDK |
 | [033](033-hotel-evaluation-data.md) | 酒店评测世界的数据来源 |
 | [034](034-local-decision-evaluation.md) | 本机决策模型评估软性条目 |
+| [035](035-codex-skill-reflection.md) | 用受控 Codex 子进程生成 Skill 候选 |

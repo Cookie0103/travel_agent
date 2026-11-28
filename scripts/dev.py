@@ -258,6 +258,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     v3.add_argument("--variant", choices=("full", "no_skills"), default="full")
     v3.add_argument("--disable-skill")
     v3.add_argument("--candidate-skills", type=Path)
+    evolution = commands.add_parser("eval-evolve", help="生成、重跑并审核两版 Skill 候选")
+    evolution.add_argument("version", choices=("first", "guarded"))
+    evolution.add_argument("arguments", nargs=argparse.REMAINDER)
     calibration = commands.add_parser("eval-calibration")
     calibration.add_argument("results", type=Path, nargs="+")
     calibration.add_argument("--live", action="store_true")
@@ -401,6 +404,11 @@ def main(argv: Sequence[str] | None = None) -> int:
             for case_id in args.case_id:
                 command.extend(["--case-id", case_id])
             return run_command(command, timeout=14400)
+        case "eval-evolve":
+            return run_command(
+                [python, "-m", "eval.evolve.cli", args.version, *args.arguments],
+                timeout=14400,
+            )
         case "eval-calibration":
             command = [
                 python,

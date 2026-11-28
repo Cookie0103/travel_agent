@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from statistics import median
 
+from eval.core.jsonl import read_jsonl
+
 CASES = frozenset(
     [f"p2-main-flow-1-{index:02d}" for index in range(1, 7)]
     + [f"p2-commerce-1-{index:02d}" for index in range(1, 5)]
@@ -18,7 +20,7 @@ def main() -> int:
     if args.trials is None:
         print(" ".join(f"--case-id {case}" for case in sorted(CASES)))
         return 0
-    rows = [json.loads(raw) for raw in args.trials.read_text(encoding="utf-8").splitlines() if raw]
+    rows = read_jsonl(args.trials)
     if {row["case_id"] for row in rows} != CASES or len(rows) != 10:
         parser.error("需要 A7 固定十题的完整结果")
     passed = sum(

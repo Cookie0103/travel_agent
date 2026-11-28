@@ -26,6 +26,8 @@ phase2/
 
 [D9 小样本复核入口](operations/small-experiments.md)记录固定样本和运行方式，[面试案例](cases/2026-11-27-judge-evolution.md)收录已有证据的案例。
 
+[自进化候选审核](evolution/README.md)记录本地审核页位置和对外可提交的内容。
+
 ## 五条工作线
 
 | 工作线 | 一句话 | 设计 |

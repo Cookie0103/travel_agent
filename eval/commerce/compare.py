@@ -8,13 +8,13 @@ from statistics import mean
 
 from eval.commerce.parameters import Registry, load_parameters
 from eval.commerce.score import rescore
+from eval.core.jsonl import read_jsonl
 from eval.core.paired import Trial, compare, stability
 
 
 def load(path: Path) -> dict[tuple[str, int], dict[str, object]]:
     index = {}
-    for line in path.read_text(encoding="utf-8").splitlines():
-        row = json.loads(line)
+    for row in read_jsonl(path, skip_empty=False):
         if not isinstance(row.get("commerce"), dict) or row.get("infra_error"):
             continue
         key = (row["case_id"], row["repeat"])

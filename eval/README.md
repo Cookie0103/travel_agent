@@ -36,6 +36,14 @@ v3 注意：
 
 `eval.compare` / `eval.assess` / 分诊、重算分、重发分数入口已于2026-10-20移除（见git历史）。
 
+## 自进化候选
+
+- 第一版用 `dev eval-evolve first --baseline RUN --proposal PROPOSAL.json --output .cache/phase2/evolution-round-1`。提案包含 `skill`、`markdown`、`trigger`、`self_assessment`。获授权的反思可显式用 `--use-codex`，它从反思组读取投影后的对话和 Skill。
+- 第二版用 `dev eval-evolve guarded --reflection-run REFLECTION --baseline VALIDATION --edit EDIT.json --output .cache/phase2/evolution-guarded-1`。编辑包含 `skill`、`old`、`new`。新增 Skill 的触发条件、三个触发用例与无法复用现有 Skill 的原因见 `GuardedEdit`。
+- 两个命令沿用基线的题目、种子、重复次数和本机运行方式。需要复用已有成对数据时传 `--candidate-run RUN`，命令校验评测清单与实际候选内容。原始数据、候选和审核页留在指定的本机输出目录。提请用户审核的页面见[自进化候选审核](../docs/phase2/evolution/README.md)。
+
+## 评测边界
+
 调用链：load_suite → temporary_database → database_evaluation → prepare/observe/assess → grade → report。
 数据库、工具、规则与SDK复用业务入口；每轮身份独立，setup不计成绩。
 冻结test不用于调优；原始回答/附件/会话只留私有.cache，公共报告脱敏。

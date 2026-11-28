@@ -10,6 +10,7 @@ from backend.domain.tool_facts import SkillName
 from backend.tools.contracts import ToolResult
 from backend.tools.skill_config import SkillConfig
 from backend.tools.travel import signalled_skills
+from eval.core.jsonl import read_jsonl
 
 
 class Trigger(NamedTuple):
@@ -133,11 +134,7 @@ def service_report() -> list[str]:
 
 
 def report(result: Path | None) -> str:
-    rows = (
-        [json.loads(line) for line in result.read_text(encoding="utf-8").splitlines() if line]
-        if result
-        else []
-    )
+    rows = read_jsonl(result) if result else []
     manifest = result.with_name("manifest.json") if result else None
     recorded = (
         json.loads(manifest.read_text(encoding="utf-8")).get("started_at", "")[:10]

@@ -4,12 +4,12 @@ import re
 from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
-from math import asin, cos, radians, sin, sqrt
 from uuid import UUID
 
 from backend.domain.catalog import TRANSIT_STOPS, Place
 from backend.domain.choices import PREFIXES, identifies_trip_boundary
 from backend.domain.evidence import EvidenceRecord
+from backend.domain.geo import haversine_m
 from backend.domain.hotels import HotelOffer
 from backend.domain.itinerary import ItineraryProposal, RouteEstimate, ValidationCheck
 from backend.domain.opening_hours import TOKYO
@@ -264,11 +264,7 @@ def room_preference_checks(
 
 
 def _distance_km(start: Place, end: Place) -> float:
-    a_lat, b_lat = radians(start.latitude), radians(end.latitude)
-    d_lat = b_lat - a_lat
-    d_lon = radians(end.longitude - start.longitude)
-    angle = sin(d_lat / 2) ** 2 + cos(a_lat) * cos(b_lat) * sin(d_lon / 2) ** 2
-    return 12742 * asin(sqrt(min(1, angle)))
+    return haversine_m(start.latitude, start.longitude, end.latitude, end.longitude) / 1000
 
 
 def _backtracks(a: Place, b: Place, c: Place, limits: ScheduleLimits) -> bool:

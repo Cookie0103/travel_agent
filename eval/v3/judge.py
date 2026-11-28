@@ -15,6 +15,7 @@ from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from eval.core.jsonl import read_jsonl
 from eval.v3.cases import V3Case
 from eval.v3.score import Observation, TurnObs
 
@@ -318,8 +319,7 @@ SHEET_COLUMNS = (
 
 
 def load_rows(run_dir: Path) -> list[dict[str, object]]:
-    path = run_dir / "trials.jsonl"
-    return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line]
+    return read_jsonl(run_dir / "trials.jsonl")
 
 
 def export_sheet(run_dir: Path, out: Path | None = None) -> Path:

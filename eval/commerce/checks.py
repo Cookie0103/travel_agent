@@ -1,7 +1,6 @@
 """用冻结酒店组构造与评审模型无关的参数检查对。"""
 
 import json
-import math
 import random
 from itertools import batched
 from pathlib import Path
@@ -9,6 +8,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict
 
+from backend.domain.geo import haversine_m
 from data.eval_world.world import Hotel, Station, World, load_world
 from eval.commerce.parameters import Registry
 from eval.commerce.score import Candidate, score
@@ -42,14 +42,7 @@ class Comparison(BaseModel):
 
 
 def walking_minutes(hotel: Hotel, station: Station) -> float:
-    north = math.radians(hotel.latitude - station.latitude)
-    east = math.radians(hotel.longitude - station.longitude)
-    a = math.sin(north / 2) ** 2 + (
-        math.cos(math.radians(station.latitude))
-        * math.cos(math.radians(hotel.latitude))
-        * math.sin(east / 2) ** 2
-    )
-    return 2 * 6_371_000 * math.asin(math.sqrt(min(1.0, a))) / 80
+    return haversine_m(station.latitude, station.longitude, hotel.latitude, hotel.longitude) / 80
 
 
 def _candidate(hotel: Hotel, station: Station) -> Candidate:

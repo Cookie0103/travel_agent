@@ -23,6 +23,7 @@
 - **PostgreSQL**：`dev db-up` 用 `docker compose` 启动 `postgres:17`，仅监听 `127.0.0.1`，**宿主端口默认 5434**（`POSTGRES_PORT`），`.env` 必须提供 `POSTGRES_PASSWORD`。Docker 不可用时 `db-up` 返回非零并写入 [blocked/environment.md](../../blocked/environment.md)（该文件由脚本写，勿移动）。
 - **Node/pnpm**：Node 24+、pnpm 11（CI 固定 11.19.0）；`dev web-setup` 安装。
 - **Claude CLI**：SDK 路线测试需要本机 `claude`，可用 `TRAVEL_CLAUDE_CLI` 指定。关闭自动压缩的路径只接受白名单版本，见 `backend/providers/claude_agent/runtime.py`：SDK 0.2.163 配 CLI **2.1.114 / 2.1.294 / 2.1.295**，其他版本返回 `blocked: auto_compaction_capability`。CI 固定安装 2.1.295。
+- 第二阶段的 **2,550 passed** 使用 Claude CLI **2.1.295**。`dev test` 先采用进程环境中的 `TRAVEL_CLAUDE_CLI`，其次读取项目 `.env` 的同名配置，两者都未提供时从 PATH 查找 `claude`。
 - **live 测试**：显式 `--live`/环境变量、`.env` 密钥、每日预算（DeepSeek ≤15 CNY 等，见各批次授权）；不因有 key 自动放开。
 
 ## 3. CI（`.github/workflows/check.yml`，push 与 PR 触发）
