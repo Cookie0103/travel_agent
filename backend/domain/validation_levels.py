@@ -20,7 +20,7 @@ VALIDATION_LEVELS: dict[str, ValidationLevel] = {
             "must_visit",
             "place_source",
             "opening_hours",
-            "rain_plan",
+            "rain_plan_required",
             "room_preference",
             "trip_dates",
         )
@@ -56,6 +56,7 @@ VALIDATION_LEVELS: dict[str, ValidationLevel] = {
             "overlap",
             "pace_too_sparse",
             "pace_warning",
+            "rain_plan",
             "repeated_place_warning",
             "route_departure",
             "route_duration",

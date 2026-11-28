@@ -27,7 +27,7 @@ from tests.unit.domain.test_itinerary import NOW, item, place, record, request
 def test_rain_rule_uses_a_verified_indoor_alternative_at_the_sixty_percent_boundary(
     probability: int | None, alternative: bool, expected: str | None
 ) -> None:
-    current = request()
+    current = request().model_copy(update={"hard_constraints": ("雨天备选：需要",)})
     park = place().model_copy(update={"category": "park", "opening_hours": "24/7", "indoor": None})
     stop = record(park, current)
     records: tuple[EvidenceRecord, ...] = (stop,)
@@ -43,7 +43,9 @@ def test_rain_rule_uses_a_verified_indoor_alternative_at_the_sixty_percent_bound
     )
     weather = {(park.city, date(2026, 11, 3)): probability}
     result = validate_itinerary(current, proposal, records, NOW, weather=weather)
-    assert next((c.status for c in result.checks if c.code == "rain_plan"), None) == expected
+    assert (
+        next((c.status for c in result.checks if c.code == "rain_plan_required"), None) == expected
+    )
 
 
 @pytest.mark.parametrize(

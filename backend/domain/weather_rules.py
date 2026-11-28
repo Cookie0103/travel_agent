@@ -1,5 +1,6 @@
 """按所在地和日期核对降水与有证据的雨天备选。"""
 
+import re
 from collections.abc import Mapping
 from datetime import date
 from uuid import UUID
@@ -8,11 +9,27 @@ from backend.domain.catalog import SIGHTSEEING_CATEGORIES, Place, inferred_indoo
 from backend.domain.evidence import EvidenceRecord
 from backend.domain.itinerary import CheckStatus, ItineraryProposal, ValidationCheck
 from backend.domain.opening_hours import TOKYO
+from backend.domain.place_names import place_name_key
 from backend.domain.regional_rules import place_opening_state
 from backend.domain.travel_request import city_key, same_city
 from backend.domain.validation_levels import rule_status
 
 type RainForecast = Mapping[tuple[str, date], int | None]
+
+_RAIN_BACKUP = re.compile(
+    r"(?:遇雨|雨天|下雨|降雨)(?:的时候|时|日)?[，,:]*(?:就|则)?"
+    r"(?:一定要|必须|务必|要|需要|需|请)?"
+    r"(?:准备|提供|安排|换成|改成|保留|预留|留|改去|能换|有|可换|可改)"
+    r"(?:一个|一处|至少一个|可用的|就近的|同城的)?(?:室内|备选|替代)"
+)
+
+
+def is_rain_requirement(text: str) -> bool:
+    normalized = place_name_key(text)
+    label, _, value = normalized.partition(":")
+    if label in {"雨天备选", "下雨备选", "雨天室内备选"}:
+        return not value.startswith(("不", "无需", "无要求", "取消", "可选"))
+    return _RAIN_BACKUP.search(normalized) is not None
 
 
 def rain_checks(
@@ -21,7 +38,10 @@ def rain_checks(
     evidence: dict[UUID, EvidenceRecord],
     forecast: RainForecast,
     threshold: int,
+    *,
+    required: bool = False,
 ) -> list[ValidationCheck]:
+    code = "rain_plan_required" if required else "rain_plan"
     by_city = {(city_key(city), day): probability for (city, day), probability in forecast.items()}
     checks: list[ValidationCheck] = []
     unknown_days: set[tuple[str, date]] = set()
@@ -67,7 +87,7 @@ def rain_checks(
                 and item.end > item.start
                 and place_opening_state(backup, item.start, item.end) == "open"
             )
-            status = rule_status("rain_plan", valid)
+            status = rule_status(code, valid)
             message = (
                 f"降水概率 {probability}%，室内备选为「{backup.name}」，该时段营业。"
                 if valid and backup is not None
@@ -75,7 +95,10 @@ def rain_checks(
             )
         checks.append(
             ValidationCheck(
-                subject=f"item:{index}", status=status, code="rain_plan", message=message
+                subject=f"item:{index}",
+                status=status,
+                code="rain_plan_required" if required else "rain_plan",
+                message=message,
             )
         )
     return checks

@@ -1,6 +1,6 @@
 """第二阶段规则 4–11 的行程校验入口回归。"""
 
-from datetime import time
+from datetime import time, timedelta
 
 import pytest
 
@@ -14,7 +14,12 @@ from tests.unit.domain.test_itinerary import NOW, item, place, record, request
 
 
 def report_for_stop(
-    current: TravelRequest, start: str, end: str, *, room_type: str | None = None
+    current: TravelRequest,
+    start: str,
+    end: str,
+    *,
+    room_type: str | None = None,
+    place_catalog: tuple[tuple[str, ...], ...] = (),
 ) -> ValidationReport:
     destination = record(place().model_copy(update={"opening_hours": "24/7"}), current)
     records: tuple[EvidenceRecord, ...] = (destination,)
@@ -31,7 +36,7 @@ def report_for_stop(
         items=(item(destination, start, end),),
         hotel_evidence_id=hotel_id,
     )
-    return validate_itinerary(current, proposal, records, NOW)
+    return validate_itinerary(current, proposal, records, NOW, place_catalog=place_catalog)
 
 
 @pytest.mark.parametrize("start,violates", [("11:59", True), ("12:00", False), ("12:01", False)])
@@ -65,7 +70,12 @@ def test_explicit_must_visit_matches_catalog_name(named: str | None, violates: b
     current = request().model_copy(
         update={"hard_constraints": ("必须去：" + (named or place().name),)},
     )
-    result = report_for_stop(current, "2026-11-03T10:00+09:00", "2026-11-03T11:00+09:00")
+    result = report_for_stop(
+        current,
+        "2026-11-03T10:00+09:00",
+        "2026-11-03T11:00+09:00",
+        place_catalog=((named,),) if named else (),
+    )
     assert any(c.code == "must_visit" and c.status == "conflict" for c in result.checks) is violates
 
 
@@ -208,7 +218,14 @@ def test_day_limited_edit_checks_unmentioned_slots_and_hotels(
     updated = before.model_copy(
         update={
             "items": (
-                first.model_copy(update={"note": "更动首日"}) if outside_shift else first,
+                first.model_copy(
+                    update={
+                        "start": first.start + timedelta(minutes=31),
+                        "end": first.end + timedelta(minutes=31),
+                    }
+                )
+                if outside_shift
+                else first,
                 second.model_copy(update={"note": "调整第二天"}),
             ),
             "hotel_evidence_id": uuid4() if hotel_changed else None,
@@ -239,7 +256,12 @@ def test_limited_afternoon_edit_keeps_evening_and_uses_historical_place_identity
         (before.model_copy(update={"items": (inside, evening)}), "verified"),
         (
             before.model_copy(
-                update={"items": (inside, evening.model_copy(update={"note": "改了晚间"}))}
+                update={
+                    "items": (
+                        inside,
+                        evening.model_copy(update={"start": evening.start - timedelta(minutes=5)}),
+                    )
+                }
             ),
             "conflict",
         ),

@@ -406,3 +406,6 @@
 {"id":"rule17-flag-6","rule":17,"scenario":"flag","variant":6,"expected":"unknown"}
 {"id":"rule17-flag-7","rule":17,"scenario":"flag","variant":7,"expected":"unknown"}
 {"id":"rule17-flag-8","rule":17,"scenario":"flag","variant":8,"expected":"unknown"}
+{"id":"rule05-border-9","rule":5,"scenario":"border","variant":9,"expected":"verified"}
+{"id":"rule06-flag-9","rule":6,"scenario":"flag","variant":9,"expected":"unknown"}
+{"id":"rule12-flag-9","rule":12,"scenario":"flag","variant":9,"expected":"unknown"}

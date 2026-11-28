@@ -22,7 +22,7 @@ class Case(BaseModel):
     id: str
     rule: int = Field(ge=1, le=17)
     scenario: Mode
-    variant: int = Field(ge=1, le=8)
+    variant: int = Field(ge=1, le=9)
     expected: Expected
 
 
@@ -46,6 +46,11 @@ _EXPECTED: dict[int, tuple[Expected, Expected, Expected]] = {
     17: ("none", "none", "unknown"),
 }
 _MODES: tuple[Mode, ...] = ("clear", "border", "flag")
+_REVIEW_CASES = (
+    Case(id="rule05-border-9", rule=5, scenario="border", variant=9, expected="verified"),
+    Case(id="rule06-flag-9", rule=6, scenario="flag", variant=9, expected="unknown"),
+    Case(id="rule12-flag-9", rule=12, scenario="flag", variant=9, expected="unknown"),
+)
 
 
 def create_cases(path: Path) -> None:
@@ -62,7 +67,9 @@ def create_cases(path: Path) -> None:
         for variant in range(1, 9)
     )
     path.write_text(
-        "".join(row.model_dump_json() + "\n" for row in rows), encoding="utf-8", newline="\n"
+        "".join(row.model_dump_json() + "\n" for row in (*rows, *_REVIEW_CASES)),
+        encoding="utf-8",
+        newline="\n",
     )
 
 

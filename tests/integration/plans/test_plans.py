@@ -764,7 +764,10 @@ def test_limited_edit_reuses_previous_draft_and_blocks_confirmation_after_replay
         ]
         editing = await start_turn(travel, context, "只改第三天，其他不动")
         inside = day_three.model_copy(update={"note": "计划内调整"})
-        outside = old_items[0].model_copy(update={"note": "改了第一天"})
+        shift = timedelta(minutes=31)
+        outside = old_items[0].model_copy(
+            update={"start": old_items[0].start + shift, "end": old_items[0].end + shift}
+        )
         blocked = await service.stage(editing, arguments((outside, inside)))
         replay = await service.stage(editing, arguments((outside, inside)))
         assert replay.draft_id == blocked.draft_id

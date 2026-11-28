@@ -1,13 +1,13 @@
 """用前一版行程的已核实地点与时段检查用户明确限定的改动范围。"""
 
 import re
-from collections import Counter
 from datetime import date, datetime, time, timedelta
 from uuid import UUID
 
 from backend.domain.catalog import Place
 from backend.domain.itinerary import ItineraryProposal, ProposedItem, ValidationCheck
 from backend.domain.opening_hours import TOKYO
+from backend.domain.place_names import place_name_key
 from backend.domain.plans import stays_of
 from backend.domain.travel_request import TravelRequest
 from backend.domain.validation_levels import rule_status
@@ -25,7 +25,8 @@ _DAY_PARTS = {
     "晚上": (timedelta(hours=18), timedelta(days=1)),
 }
 _CHINESE_ORDINAL = dict(zip("一二三四五六七八九十", range(1, 11), strict=True))
-type Slot = tuple[str, datetime, datetime, str | None, str | None]
+_EDIT_TOLERANCE = timedelta(minutes=30)
+type Slot = tuple[str, datetime, datetime]
 
 
 def limited_edit_target(text: str) -> str | None:
@@ -60,20 +61,50 @@ def _scope_window(target: str, request: TravelRequest) -> tuple[datetime, dateti
     return midnight + start, midnight + end
 
 
-def _name(value: str) -> str:
-    return "".join(value.split()).casefold()
-
-
 def _slot(item: ProposedItem, identities: dict[UUID, str]) -> Slot:
-    identity = identities.get(item.place_evidence_id, str(item.place_evidence_id))
-    backup = item.rain_alternative_place_evidence_id
     return (
-        identity,
+        identities.get(item.place_evidence_id, str(item.place_evidence_id)),
         item.start.astimezone(TOKYO),
         item.end.astimezone(TOKYO),
-        item.note,
-        identities.get(backup, str(backup)) if backup else None,
     )
+
+
+def _day_part(value: datetime) -> tuple[date, int]:
+    return value.date(), 0 if value.hour < 12 else 1 if value.hour < 18 else 2
+
+
+def _same_slot(old: Slot, new: Slot) -> bool:
+    old_id, old_start, old_end = old
+    new_id, new_start, new_end = new
+    # 活动以半开区间计，恰好中午结束的活动仍属于上午。
+    epsilon = timedelta(microseconds=1)
+    unchanged = timedelta()
+    return (
+        old_id == new_id
+        and _day_part(old_start) == _day_part(new_start)
+        and _day_part(old_end - epsilon) == _day_part(new_end - epsilon)
+        and unchanged <= new_start - old_start <= _EDIT_TOLERANCE
+        and unchanged <= new_end - old_end <= _EDIT_TOLERANCE
+    )
+
+
+def _same_slots(old: list[Slot], new: list[Slot]) -> bool:
+    return len(old) == len(new) and all(
+        _same_slot(left, right) for left, right in zip(sorted(old), sorted(new), strict=True)
+    )
+
+
+def _kept_slots(old: list[Slot], new: list[Slot]) -> int:
+    unmatched = sorted(new)
+    kept = 0
+    for prior in sorted(old):
+        match = next(
+            (i for i, candidate in enumerate(unmatched) if _same_slot(prior, candidate)), None
+        )
+        if match is not None:
+            unmatched.pop(match)
+            kept += 1
+    return kept
 
 
 def edit_scope_check(
@@ -112,18 +143,19 @@ def edit_scope_check(
         changes = sum(
             old_stays.get(k) != new_stays.get(k) for k in old_stays.keys() | new_stays.keys()
         )
-        preserved = old == new and changes <= 1
+        preserved = _same_slots(old, new) and changes <= 1
     elif window := _scope_window(target, request):
         start, end = window
-        preserved = old_stays == new_stays and (
-            [slot for slot in old if slot[1] < start or slot[2] > end]
-            == [slot for slot in new if slot[1] < start or slot[2] > end]
+        preserved = old_stays == new_stays and _same_slots(
+            [slot for slot in old if slot[1] < start or slot[2] > end],
+            [slot for slot in new if slot[1] < start or slot[2] > end],
         )
     else:
         matching_sites = {
             place.place_id
             for place in places.values()
-            if _name(target) in {_name(name) for name in (place.name, *place.aliases)}
+            if place_name_key(target)
+            in {place_name_key(name) for name in (place.name, *place.aliases)}
         }
         matches = [i for i, slot in enumerate(old) if slot[0] in matching_sites]
         if len(matches) != 1:
@@ -134,14 +166,10 @@ def edit_scope_check(
                 message="请确认只修改的日期、景点或住宿，才能逐项核对保留范围。",
             )
         index = matches[0]
-        preserved = old_stays == new_stays and (
-            (
-                len(new) == len(old)
-                and old[:index] + old[index + 1 :] == new[:index] + new[index + 1 :]
-            )
-            or (len(new) == len(old) - 1 and old[:index] + old[index + 1 :] == new)
-        )
-    kept = sum((Counter(old) & Counter(new)).values())
+        old_other = old[:index] + old[index + 1 :]
+        new_other = new[:index] + new[index + 1 :] if len(new) == len(old) else new
+        preserved = old_stays == new_stays and _same_slots(old_other, new_other)
+    kept = _kept_slots(old, new)
     return ValidationCheck(
         subject="revision",
         status=rule_status("edit_scope", preserved),

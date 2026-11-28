@@ -1,6 +1,7 @@
 """第二阶段的行程边界与日程提醒，基于服务端条件和已核实证据。"""
 
 import re
+from collections.abc import Iterable
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from math import asin, cos, radians, sin, sqrt
@@ -12,6 +13,7 @@ from backend.domain.evidence import EvidenceRecord
 from backend.domain.hotels import HotelOffer
 from backend.domain.itinerary import ItineraryProposal, RouteEstimate, ValidationCheck
 from backend.domain.opening_hours import TOKYO
+from backend.domain.place_names import place_name_key
 from backend.domain.plans import stays_of
 from backend.domain.room_choices import recognized_room_choices
 from backend.domain.room_preferences import room_assessment
@@ -38,7 +40,7 @@ _CHINESE_CLOCK = re.compile(
     r"(?<!\d)(?:(凌晨|早上|上午|中午|下午|傍晚|晚上)\s*)?"
     r"([01]?\d|2[0-3])\s*[点时時](?:(半)|([0-5]?\d)分)?"
 )
-_MUST_VISIT = re.compile(r"^(?:一定要去|必须去|必去)[：:\s]*(.+)$")
+_MUST_VISIT = re.compile(r"^(?:一定要去|必[须須]去|必去)[：:\s]*(.+)$")
 _ROOM_QUALIFIERS = {
     "non_smoking": re.compile(r"禁煙|禁烟|\bnon[- ]?smoking\b", re.I),
     "smoking": re.compile(r"喫煙|吸烟|\bsmoking\b", re.I),
@@ -166,20 +168,39 @@ def _site_name(value: str) -> str:
     return "".join(value.split()).casefold()
 
 
-def must_visit_checks(request: TravelRequest, places: list[Place | None]) -> list[ValidationCheck]:
-    names = {_site_name(name) for place in places if place for name in (place.name, *place.aliases)}
-    required = dict.fromkeys(
-        name for text in request.hard_constraints for name in required_places(text)
-    )
-    return [
-        ValidationCheck(
-            subject=f"required_place:{index}",
-            status=rule_status("must_visit", _site_name(name) in names),
-            code="must_visit",
-            message=f"用户明确要求纳入的景点：{name}。",
+def must_visit_checks(
+    request: TravelRequest,
+    places: list[Place | None],
+    catalog: Iterable[tuple[str, ...]] = (),
+) -> list[ValidationCheck]:
+    requested: dict[str, str] = {}
+    for text in request.hard_constraints:
+        for name in required_places(text):
+            requested.setdefault(place_name_key(name), name)
+    if not requested:
+        return []
+    planned = {
+        place_name_key(name) for place in places if place for name in (place.name, *place.aliases)
+    }
+    known = [{place_name_key(name) for name in names} for names in catalog]
+    checks = []
+    for index, (key, name) in enumerate(requested.items(), 1):
+        matches = [names for names in known if key in names]
+        if key in planned or any(planned & names for names in matches):
+            status = rule_status("must_visit", True)
+            message = f"已安排用户明确要求的景点：{name}。"
+        elif matches:
+            status = rule_status("must_visit", False)
+            message = f"未安排用户明确要求且可核实的景点：{name}。"
+        else:
+            status = "unknown"
+            message = f"目录中未核实用户指定的景点：{name}。请确认名称或提供可核实来源。"
+        checks.append(
+            ValidationCheck(
+                subject=f"required_place:{index}", status=status, code="must_visit", message=message
+            )
         )
-        for index, name in enumerate(required, 1)
-    ]
+    return checks
 
 
 def room_preference_checks(

@@ -163,7 +163,7 @@ class ValidationReport(BaseModel):
                 (
                     1
                     if check.status == "verified"
-                    and check.code in {"reservation_required", "rain_plan"}
+                    and check.code in {"reservation_required", "rain_plan", "rain_plan_required"}
                     else {"conflict": 0, "unknown": 2, "verified": 3}[check.status]
                 ),
                 check.code not in ("pace_warning", "repeated_place_warning"),

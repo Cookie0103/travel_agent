@@ -8,6 +8,7 @@ from typing import Literal
 import httpx
 from sqlalchemy import make_url
 
+from backend.adapters.evaluation_places import city_places
 from backend.adapters.evaluation_world import EvaluationWorld
 from backend.adapters.evaluation_world import serve as serve_world
 from backend.adapters.external_api import ApiUsage
@@ -94,6 +95,15 @@ def evaluation_data(
         {},
         data_mode="synthetic",
         evaluation_today=world.today if world else None,
+        evaluation_place_names=(
+            tuple(
+                (city.city, (place.name, *place.aliases))
+                for city in world.cities
+                for place in city_places(city.city, city.latitude, city.longitude)
+            )
+            if world is not None
+            else ()
+        ),
     )
 
 

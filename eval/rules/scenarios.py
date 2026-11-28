@@ -29,7 +29,7 @@ from backend.domain.validator import (
     sightseeing_checks,
     visit_checks,
 )
-from backend.domain.weather_rules import rain_checks
+from backend.domain.weather_rules import is_rain_requirement, rain_checks
 
 type Expected = Literal["none", "unknown", "conflict", "verified"]
 type Mode = Literal["clear", "border", "flag"]
@@ -54,7 +54,7 @@ SOURCE = Source(
 class Rule:
     number: int
     title: str
-    level: Literal["block", "warning", "note"]
+    level: Literal["block", "warning", "note", "conditional"]
 
 
 RULES = (
@@ -69,7 +69,7 @@ RULES = (
     Rule(9, "同城折返与过夜返回酒店", "warning"),
     Rule(10, "每天移动时长与跨城次数", "warning"),
     Rule(11, "亲子日程容量", "warning"),
-    Rule(12, "高降水概率的室内安排", "block"),
+    Rule(12, "高降水概率的室内安排（默认提醒、硬要求拦截）", "conditional"),
     Rule(13, "来源已知的营业时段", "block"),
     Rule(14, "预约制项目标记", "note"),
     Rule(15, "高峰客流提醒", "warning"),
@@ -291,8 +291,17 @@ def observe(rule: int, mode: Mode, variant: int) -> tuple[str, Expected]:
             trip.add(0, FIRST, minute)
             trip.add(1, FIRST + timedelta(days=1), 13 * 60 + variant)
             before = trip.proposal()
-            edit = 0 if flag else 1
-            trip.items[edit] = trip.items[edit].model_copy(update={"note": f"换项目{variant}"})
+            edit = 0 if flag or variant == 9 else 1
+            stop = trip.items[edit]
+            # 旧触发题验证真正的范围变化，H6 新题覆盖 30 分钟和备注的允许边界。
+            delay = timedelta(minutes=31 if flag else 30 if variant == 9 else 0)
+            trip.items[edit] = stop.model_copy(
+                update={
+                    "start": stop.start + delay,
+                    "end": stop.end + delay,
+                    "note": f"补充介绍{variant}",
+                }
+            )
             target = "只改第二天下午的安排" if mode == "border" else "只改第二天"
             change = edit_scope_check(
                 target,
@@ -309,7 +318,8 @@ def observe(rule: int, mode: Mode, variant: int) -> tuple[str, Expected]:
         case 6:
             trip = Trip(hard_constraints=(f"一定要去：合成景点{variant}",))
             trip.add(variant if not flag else 0, FIRST, minute)
-            code, checks = "must_visit", must_visit_checks(trip.request, trip.places)
+            catalog = () if variant == 9 else ((_place(variant).name,),)
+            code, checks = "must_visit", must_visit_checks(trip.request, trip.places, catalog)
         case 7:
             trip = Trip(hard_constraints=("房型：禁烟", "床型：双床"))
             trip.add(0, FIRST, minute)
@@ -360,16 +370,20 @@ def observe(rule: int, mode: Mode, variant: int) -> tuple[str, Expected]:
                 trip.add(i, FIRST, minute + i * 60)
             code, checks = "child_day_limits", time_checks(trip.request, trip.proposal(), LIMITS)
         case 12:
+            if variant != 9:
+                trip = Trip(hard_constraints=("雨天备选：需要",))
             trip.add(0, FIRST, minute, place=_place(0, category="park"))
             probability = {"clear": 40 + variant, "border": 59, "flag": 60 + variant - 1}[mode]
+            required = any(is_rain_requirement(text) for text in trip.request.hard_constraints)
             code, checks = (
-                "rain_plan",
+                "rain_plan_required" if required else "rain_plan",
                 rain_checks(
                     trip.proposal(),
                     trip.places,
                     trip.evidence,
                     {("京都", FIRST): probability},
                     LIMITS.rain_threshold,
+                    required=required,
                 ),
             )
         case 13:

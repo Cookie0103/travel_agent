@@ -18,7 +18,8 @@ from backend.domain.itinerary import (
 )
 from backend.domain.itinerary_revision import edit_scope_check, limited_edit_target
 from backend.domain.plans import DRAFT_TTL, PlanDraft
-from backend.domain.travel_request import TravelRequest
+from backend.domain.schedule_rules import required_places
+from backend.domain.travel_request import TravelRequest, same_city, trip_segments
 from backend.domain.validator import (
     HOTEL_CONDITIONS_REASON,
     HOTEL_EXPIRED_REASON,
@@ -26,6 +27,7 @@ from backend.domain.validator import (
 )
 from backend.persistence import memory, plans, runs
 from backend.persistence import travel as requests
+from backend.persistence.catalog import load_catalog
 from backend.persistence.models import TaskRunRow
 from backend.profile import current
 from backend.providers.routes_fixture import RouteRate, estimate, load_routes
@@ -224,6 +226,29 @@ async def _revision_check(
     )
 
 
+async def _place_catalog(
+    db: AsyncSession, request: TravelRequest, live: LiveData | None
+) -> tuple[tuple[str, ...], ...]:
+    if not any(required_places(text) for text in request.hard_constraints):
+        return ()
+    cities = tuple(segment.city for segment in trip_segments(request))
+    if not cities and request.city:
+        cities = (request.city,)
+    if live and live.evaluation_place_names:
+        names = live.evaluation_place_names
+    else:
+        catalog = await load_catalog(db)
+        places = [Place.model_validate(row) for row in catalog["places"]]
+        if live and live.google:
+            places.extend(live.google.places.values())
+        names = tuple((place.city, (place.name, *place.aliases)) for place in places)
+    return tuple(
+        aliases
+        for city, aliases in names
+        if not cities or any(same_city(city, candidate) for candidate in cities)
+    )
+
+
 async def validate_proposal(
     db: AsyncSession,
     context: RunContext,
@@ -248,6 +273,7 @@ async def validate_proposal(
             records,
             datetime.now(UTC),
             transport_default=default[0] if default else None,
+            place_catalog=await _place_catalog(db, request, live),
             weather=await cached_rain(db, request, now, live.evaluation_today)
             if live is not None
             else None,

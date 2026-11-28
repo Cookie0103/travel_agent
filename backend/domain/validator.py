@@ -1,5 +1,6 @@
 """纯代码校验行程；区分已满足、未知与硬冲突，给SDK具体修复反馈而不代写模型循环。"""
 
+from collections.abc import Iterable
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Literal
@@ -51,7 +52,7 @@ from backend.domain.travel_request import (
     segment_request,
     trip_segments,
 )
-from backend.domain.weather_rules import RainForecast, rain_checks
+from backend.domain.weather_rules import RainForecast, is_rain_requirement, rain_checks
 
 
 def check(subject: str, status: CheckStatus, code: str, message: str) -> ValidationCheck:
@@ -81,6 +82,7 @@ def validate_itinerary(
     transport_default: Transport | None = None,
     schedule_limits: ScheduleLimits = DEFAULT_SCHEDULE_LIMITS,
     weather: RainForecast | None = None,
+    place_catalog: Iterable[tuple[str, ...]] = (),
 ) -> ValidationReport:
     """transport_default：request未写交通时，已确认的交通偏好作为路段应有的交通方式。"""
     evidence = {record.evidence_id: record for record in records}
@@ -109,13 +111,21 @@ def validate_itinerary(
     known, estimated, costs = budget_checks(request, proposal, evidence, now, places=places)
     checks.extend(costs)
     measured = time_checks(request, proposal, schedule_limits)
-    measured.extend(must_visit_checks(request, places))
+    measured.extend(must_visit_checks(request, places, place_catalog))
     measured.extend(room_preference_checks(request, proposal, evidence))
     measured.extend(daily_route_checks(proposal, places, evidence, schedule_limits))
     measured.extend(hotel_return_checks(request, proposal, places, evidence))
-    if weather is not None:
+    rain_required = any(is_rain_requirement(text) for text in request.hard_constraints)
+    if weather is not None or rain_required:
         measured.extend(
-            rain_checks(proposal, places, evidence, weather, schedule_limits.rain_threshold)
+            rain_checks(
+                proposal,
+                places,
+                evidence,
+                weather or {},
+                schedule_limits.rain_threshold,
+                required=rain_required,
+            )
         )
     checks.extend(measured)
     checks.extend(context_checks(proposal, places))
@@ -170,7 +180,7 @@ def constraint_checks(request: TravelRequest, measured: set[str]) -> list[Valida
                     else "已识别结构化条件。",
                 )
             )
-        elif text in hard and not required_places(text):
+        elif text in hard and not (required_places(text) or is_rain_requirement(text)):
             checks.append(
                 check(
                     f"constraint:{index}",
