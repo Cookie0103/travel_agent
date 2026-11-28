@@ -15,16 +15,19 @@ from sqlalchemy import select
 from backend.domain.choices import ChoiceSelection
 from backend.domain.execution import RunContext, RuntimeEvent
 from backend.domain.itinerary import HotelStay
+from backend.domain.travel_request import pace_of
 from backend.persistence import plans, runs
 from backend.persistence.models import ChoiceCardRow
 from backend.services.common import ServiceError, transaction
+from backend.services.hotel_selection import HotelSelectionService
 from backend.services.plans import PlanService
 from backend.services.runs import MessageInput, RunService
 from backend.services.sessions import DemoLogin
+from backend.services.views import RequestView
 from eval.core.database import DatabaseEvaluation
 from eval.grading.claims import ClaimFacts
 from eval.simulator.run import UserAction, page
-from eval.v3.cases import CardStep, HotelPickStep, Step, V3Case
+from eval.v3.cases import CardStep, HotelPickStep, ReplyCondition, Step, V3Case
 from eval.v3.score import CardObs, TurnObs
 
 IDK_TEXT = "不知道，你决定吧。"
@@ -220,6 +223,8 @@ class ScriptRunner:
         match action:
             case "say":
                 assert step.say is not None
+                if step.when is not None and not await self.condition_matches(step.when):
+                    return True
                 return await self.submit(step.say)
             case "card":
                 assert step.card is not None
@@ -235,6 +240,33 @@ class ScriptRunner:
             case "confirm_plan":
                 await self.confirm_plan()
         return True
+
+    async def condition_matches(self, condition: ReplyCondition) -> bool:
+        """只读当前会话服务端事实。助手文字不参与条件判定。"""
+        travel = self.business.travel
+        if condition.kind == "hotel_unselected":
+            index = condition.segment
+            assert index is not None
+            selection = await HotelSelectionService(travel).view(
+                self.context.user_id, self.context.session_id
+            )
+            return (
+                selection.state == "awaiting"
+                and index < len(selection.segments)
+                and selection.segments[index].selected is None
+            )
+        state = await travel.business_context(self.context)
+        if condition.kind == "draft_missing":
+            return state["pending_draft"] is None
+        request = RequestView.model_validate(state["request"])
+        if condition.kind == "pace_missing":
+            return pace_of(request) is None
+        conversation = state["conversation"]
+        assert isinstance(conversation, dict)
+        defaults = conversation.get("defaults")
+        return request.transport is None and (
+            not isinstance(defaults, dict) or "transport" not in defaults
+        )
 
     async def confirm_plan(self) -> None:
         async with transaction(self.business.sessions.database) as db:

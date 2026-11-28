@@ -83,6 +83,24 @@ class ScriptedRuntime(OfflineRuntime):
             await ChoiceService(travel).create(context, "pace", request.revision)
             tee(RuntimeEvent(context, "text", text="请选节奏"))
             return RuntimeOutcome("请选节奏", "sdk")
+        if prompt == "追问本次交通":
+            text = "这次旅行想用哪种交通方式？"
+            tee(RuntimeEvent(context, "text", text=text))
+            return RuntimeOutcome(text, "sdk")
+        if prompt == "这次步行，继续生成行程。":
+            assert isinstance(self.executor, TravelToolExecutor)
+            request = await self.executor.travel.read_request(context)
+            definition = next(d for d in DEFINITIONS if d.name == "update_travel_request")
+            result = await execute_observed(
+                self.executor,
+                context,
+                "update_travel_request",
+                {"expected_revision": request.revision, "set": {"transport": "walk"}},
+                tee,
+                definition=definition,
+            )
+            assert result.code is None
+            return await super().execute(context, "演示：生成行程", sdk_session_id, emit, cancelled)
         if prompt.startswith("追问"):
             tee(RuntimeEvent(context, "text", text="你们几个人出行？"))
             return RuntimeOutcome("你们几个人出行？", "sdk")
@@ -196,6 +214,36 @@ def test_missing_card_is_step_unavailable_unless_skippable(postgres_url: URL) ->
         )
         skipped, *_ = await play(business, soft)
         assert skipped.step_unavailable is None and len(skipped.turns) == 1
+
+    in_eval_db(postgres_url, body)
+
+
+def test_conditional_transport_reply_unblocks_an_offline_draft(postgres_url: URL) -> None:
+    case = make(
+        setup={"request": {**REQUEST, "transport": None}},
+        user_script=[
+            {"say": "追问本次交通"},
+            {
+                "say": "这次步行，继续生成行程。",
+                "when": {"kind": "transport_missing"},
+            },
+            {"say": "不应再补充交通。", "when": {"kind": "transport_missing"}},
+            {"say": "不应再要求草稿。", "when": {"kind": "draft_missing"}},
+        ],
+        hard_checks=[{"id": "draft", "type": "db", "assert": "draft_no_conflict"}],
+    )
+
+    async def body(business: DatabaseEvaluation) -> None:
+        result, events, orders = await play(business, case)
+        assert result.step_unavailable is None and result.infra_error is None
+        assert [turn.user_text for turn in result.turns] == [
+            "追问本次交通",
+            "这次步行，继续生成行程。",
+        ]
+        assert "哪种交通方式" in result.turns[0].answer
+        observation = await collect(business, case, result, events, orders)
+        assert observation.db.draft_exists and not observation.db.draft_conflicts
+        assert score_trial(case, observation).success
 
     in_eval_db(postgres_url, body)
 

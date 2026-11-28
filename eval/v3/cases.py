@@ -84,8 +84,20 @@ class HotelPickStep(Strict):
     segment: int = Field(default=0, ge=0, le=5)
 
 
+class ReplyCondition(Strict):
+    kind: Literal["transport_missing", "pace_missing", "draft_missing", "hotel_unselected"]
+    segment: int | None = Field(default=None, ge=0, le=5, strict=True)
+
+    @model_validator(mode="after")
+    def valid_segment(self) -> "ReplyCondition":
+        if (self.kind == "hotel_unselected") != (self.segment is not None):
+            raise ValueError("hotel_unselected条件需要segment，其余条件不接受segment")
+        return self
+
+
 class Step(Strict):
     say: str | None = Field(default=None, min_length=1, max_length=1000)
+    when: ReplyCondition | None = Field(default=None, exclude_if=lambda value: value is None)
     card: CardStep | None = None
     hotel_pick: HotelPickStep | None = None
     new_session: Literal[True] | None = None
@@ -103,6 +115,8 @@ class Step(Strict):
             raise ValueError("每步只能有一个动作")
         if not actions and self.say is None:
             raise ValueError("每步需要say或一个动作")
+        if self.when is not None and actions:
+            raise ValueError("条件回复when只能用于纯文本say步骤")
         if self.say is not None and actions and actions[0] != "card":
             raise ValueError("say只能与card同步骤出现")
         return self

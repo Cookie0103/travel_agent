@@ -46,6 +46,19 @@ def test_defaults() -> None:
     assert value.forbidden_tools == ("hold_hotel",) and set(value.forbidden_tools) <= TOOL_NAMES
 
 
+def test_conditional_reply_schema_and_legacy_serialization() -> None:
+    [step] = build(
+        user_script=[{"say": "我步行。", "when": {"kind": "transport_missing"}}]
+    ).user_script
+    assert step.action == "say"
+    assert step.model_dump(mode="json", exclude_defaults=True) == {
+        "say": "我步行。",
+        "when": {"kind": "transport_missing"},
+    }
+    [legacy] = build().user_script
+    assert legacy.model_dump(mode="json", exclude_defaults=True) == {"say": "你好"}
+
+
 @pytest.mark.parametrize(
     "changes",
     [
@@ -61,6 +74,15 @@ def test_defaults() -> None:
         {"user_script": [{"card": {"kind": "memory_confirm", "answers": {"x": ["y"]}}}]},
         {"user_script": [{"hotel_pick": {"rank": "middle"}}]},
         {"user_script": [{"switch_user": "bb"}]},
+        {"user_script": [{"say": "好", "when": {"kind": "assistant_asks"}}]},
+        {"user_script": [{"say": "好", "when": {"kind": "hotel_unselected"}}]},
+        {"user_script": [{"say": "好", "when": {"kind": "draft_missing", "segment": 0}}]},
+        {"user_script": [{"say": "好", "when": {"kind": "hotel_unselected", "segment": 6}}]},
+        {
+            "user_script": [
+                {"say": "好", "card": {"kind": "pace"}, "when": {"kind": "pace_missing"}}
+            ]
+        },
         {"required_tools": ["save_plan"]},
         {"forbidden_tools": ["no_such_tool"]},
         {"required_tools": ["hold_hotel"]},  # 与默认forbidden相交
