@@ -2,7 +2,7 @@
 
 import json
 import time
-from datetime import datetime
+from datetime import UTC, datetime, timedelta, tzinfo
 from decimal import Decimal
 from pathlib import Path
 
@@ -115,3 +115,44 @@ def test_budget_rejects_retry_without_claiming_second_request(
     assert guard.accept("/v1/messages", "Bearer " + guard.token, request_body())[0] == 400
     assert guard.attempts == 1 and guard.http_retries == guard.last_http_retries == 0
     assert budget.totals()[0] == 1
+
+
+def test_guard_settles_at_request_start_across_peak_boundary(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    reservation = datetime(2026, 11, 27, 1, tzinfo=UTC) - timedelta(seconds=1)
+    instant = reservation
+
+    class Clock:
+        @staticmethod
+        def now(tz: tzinfo | None = None) -> datetime:
+            return instant.astimezone(tz) if tz is not None else instant.replace(tzinfo=None)
+
+    monkeypatch.setattr("backend.providers.claude_agent.guard.datetime", Clock)
+    budget = Budget(tmp_path / "ledger", tmp_path / "legacy", Decimal(5))
+
+    reserve = budget.reserve
+    started = reservation + timedelta(seconds=2)
+
+    def reserve_then_cross_open(amount: Decimal, now: datetime, run: object = None) -> str:
+        nonlocal instant
+        request_id = reserve(amount, now, run)
+        instant = started
+        return request_id
+
+    def forward(_: bytes) -> tuple[int, bytes]:
+        nonlocal instant
+        assert instant == started
+        instant += timedelta(hours=3)
+        return 200, response_body()
+
+    monkeypatch.setattr(budget, "reserve", reserve_then_cross_open)
+
+    guard = Guard(Settings("private", "deepseek-flash", Decimal(5), Decimal(0)), budget, forward)
+    status, _ = guard.accept("/v1/messages", "Bearer " + guard.token, request_body())
+    assert status == 200
+    assert budget.totals() == (1, Decimal("0.00036"))
+    assert [entry.timestamp for entry in budget.entries()] == [
+        reservation.isoformat(),
+        started.isoformat(),
+    ]

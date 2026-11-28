@@ -2,8 +2,9 @@
 
 import json
 from collections.abc import Iterable, Mapping
+from datetime import datetime
 
-from backend.limits import LOCAL_MODEL, Currency, ProbeError, price_for
+from backend.limits import LOCAL_MODEL, Currency, ProbeError, price_for, settlement_price
 from backend.providers.claude_agent.request import Request
 
 
@@ -16,7 +17,12 @@ def message_stopped(frame: bytes) -> bool:
 
 
 def summarize(
-    content: bytes, request: Request, model: str, currency: Currency = "CNY"
+    content: bytes,
+    request: Request,
+    model: str,
+    currency: Currency = "CNY",
+    *,
+    requested_at: datetime | None = None,
 ) -> dict[str, object]:
     try:
         events = _events(content)
@@ -60,11 +66,14 @@ def summarize(
     weighted_inputs = inputs + int(
         tokens["cache_creation_input_tokens"] * (price.cache_write_multiplier - 1)
     )
-    estimate = price.usage_upper(
+    peak_estimate = price.usage_upper(
         weighted_inputs, tokens["output_tokens"], cached_inputs=tokens["cache_read_input_tokens"]
     )
-    if estimate > request.charge or tokens["output_tokens"] > request.max_output:
+    if peak_estimate > request.charge or tokens["output_tokens"] > request.max_output:
         raise ProbeError("blocked", "上游 usage 超出预占上界，停止后续请求")
+    estimate = settlement_price(model, requested_at).usage_upper(
+        weighted_inputs, tokens["output_tokens"], cached_inputs=tokens["cache_read_input_tokens"]
+    )
     result: dict[str, object] = {
         "model": model,
         "stop_reason": delta["stop_reason"],

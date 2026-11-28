@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pytest
 
-from backend.limits import Currency, ProbeError
+from backend.limits import Currency, ProbeError, price_for, settlement_price
 from backend.providers.claude_agent.budget import GRANT, LIMITS, Budget
 from backend.providers.claude_agent.budget import Entry as BudgetEntry
 
@@ -192,3 +192,49 @@ def test_phase2_checks_review_line_and_caps_total_reservations(tmp_path: Path) -
         resumed.check_authorization()
     assert resumed.totals() == (2, Decimal(25))
     assert runtime_budget(tmp_path, settings).totals() == (0, Decimal(0))
+
+
+@pytest.mark.parametrize(
+    ("day", "hour", "minute", "factor"),
+    [
+        (27, 0, 59, Decimal("0.5")),
+        (27, 1, 0, Decimal(1)),
+        (27, 4, 0, Decimal("0.5")),
+        (27, 6, 0, Decimal(1)),
+        (27, 10, 0, Decimal("0.5")),
+        (28, 1, 0, Decimal("0.5")),
+    ],
+)
+def test_deepseek_settlement_follows_beijing_time(
+    day: int, hour: int, minute: int, factor: Decimal
+) -> None:
+    when = datetime(2026, 11, day, hour, minute, tzinfo=UTC)
+    peak = price_for("deepseek-flash").usage_upper(500, 100, cached_inputs=200)
+    actual = settlement_price("deepseek-flash", when).usage_upper(500, 100, cached_inputs=200)
+    assert actual == peak * factor
+    assert price_for("deepseek-flash").usage_upper(500, 100, cached_inputs=200) == peak
+
+
+def test_phase2_reprices_only_settled_untimed_legacy_date_without_rewriting(
+    tmp_path: Path,
+) -> None:
+    budget = Budget(tmp_path / "phase2", tmp_path / "legacy", Decimal(30), phase2=True)
+    for reference, day, kind, charge in (
+        ("friday", "2026-11-27", "attempt", "3"),
+        ("friday", "2026-11-27", "settled", "2"),
+        ("saturday", "2026-11-28", "attempt", "3"),
+        ("saturday", "2026-11-28", "settled", "2"),
+        ("unknown", "2026-11-28", "attempt", "3"),
+    ):
+        budget.append(BudgetEntry(GRANT, reference, kind, day, charge, "CNY"))
+    requested = datetime(2026, 11, 28, 1, tzinfo=UTC)
+    rid = budget.reserve(Decimal(3), requested)
+    budget.settle(rid, Decimal(1))
+    original = budget.path.read_bytes()
+    assert budget.totals() == (4, Decimal(7))
+    assert Budget(budget.path, budget.legacy, budget.daily).totals() == (4, Decimal(8))
+    assert budget.path.read_bytes() == original
+    assert [e.timestamp for e in budget.entries() if e.request_id == rid] == [
+        requested.isoformat(),
+        requested.isoformat(),
+    ]
