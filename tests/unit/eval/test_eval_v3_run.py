@@ -13,9 +13,9 @@ import pytest
 from backend.domain.travel_request import Transport, TravelRequest
 from backend.services.common import ServiceError
 from backend.services.runs import RunService
-from backend.services.views import RequestView
 from eval.core.database import DatabaseEvaluation
 from eval.v3.cases import V3Case
+from eval.v3.facts import Snapshot
 from eval.v3.run import build_parser, l1_predictions, main, require_snapshot_database
 from eval.v3.user import ScriptRunner, choose_card, effective_answers
 
@@ -78,45 +78,30 @@ def test_effective_answers_use_card_defaults_and_script_overrides() -> None:
     assert effective_answers(bare, None) == {}
 
 
-@pytest.mark.parametrize(
-    ("transport", "defaults", "sent"),
-    [
-        (None, {}, ["这一段我步行。", "继续。"]),
-        ("walk", {}, ["继续。"]),
-        (None, {"transport": {"value": "transit"}}, ["继续。"]),
-    ],
-)
-def test_conditional_reply_uses_server_transport_even_when_text_disagrees(
-    monkeypatch: pytest.MonkeyPatch,
-    transport: Transport | None,
-    defaults: dict[str, object],
-    sent: list[str],
+@pytest.mark.parametrize("transport", [None, "walk"])
+def test_conditional_script_skips_without_calling_card_or_text(
+    monkeypatch: pytest.MonkeyPatch, transport: Transport | None
 ) -> None:
-    state = {
-        "request": RequestView.from_request(TravelRequest(transport=transport)).model_dump(),
-        "conversation": {"defaults": defaults},
-        # 助手文字同时有「步行」和问号，不能影响任一分支。
-        "recent_dialogue": [{"assistant": "已记录步行，你要查攻略吗？"}],
-    }
-    snapshot = AsyncMock(return_value=state)
-    business = cast(
-        DatabaseEvaluation, SimpleNamespace(travel=SimpleNamespace(business_context=snapshot))
-    )
+    snapshot = AsyncMock(return_value=Snapshot(TravelRequest(transport=transport)))
+    monkeypatch.setattr("eval.v3.user.read_snapshot", snapshot)
     runner = ScriptRunner(
         case(
             user_script=[
-                {"say": "这一段我步行。", "when": {"kind": "transport_missing"}},
+                {"card": {"kind": "trip_ask"}, "when": ["transport_unset", "city_unset"]},
+                {"say": "这一段我步行。", "when": ["transport_unset"]},
                 {"say": "继续。"},
             ]
         ),
-        business,
+        cast(DatabaseEvaluation, None),
         cast(RunService, None),
         {},
         mode="offline",
         root=Path("."),
         prompt_reader=AsyncMock(return_value=None),
     )
+    click = AsyncMock(return_value=True)
     submit = AsyncMock(return_value=True)
+    monkeypatch.setattr(runner, "click_card", click)
     monkeypatch.setattr(runner, "submit", submit)
 
     async def play() -> None:
@@ -125,12 +110,16 @@ def test_conditional_reply_uses_server_transport_even_when_text_disagrees(
         assert result.step_unavailable is None and result.infra_error is None
 
     asyncio.run(play())
-    assert [item.args[0] for item in submit.await_args_list] == sent
-    snapshot.assert_awaited_once_with(runner.context)
+    if transport is None:
+        click.assert_awaited_once()
+        assert [item.args[0] for item in submit.await_args_list] == ["这一段我步行。", "继续。"]
+    else:
+        click.assert_not_awaited()
+        assert [item.args[0] for item in submit.await_args_list] == ["继续。"]
+    assert snapshot.await_count == 2
 
 
 def test_l1_predictions_derive_update_from_superseded_by() -> None:
-    from types import SimpleNamespace
     from uuid import uuid4
 
     old_id, new_id = uuid4(), uuid4()

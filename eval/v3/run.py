@@ -16,7 +16,7 @@ from collections.abc import Callable, Iterator, Mapping, Sequence
 from collections.abc import Set as AbstractSet
 from contextlib import nullcontext
 from dataclasses import dataclass, field, replace
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from decimal import Decimal
 from pathlib import Path, PurePath
 from time import perf_counter
@@ -28,7 +28,6 @@ from opentelemetry.sdk.trace import TracerProvider
 from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
 from opentelemetry.sdk.trace.sampling import ALWAYS_ON
 from sqlalchemy import func, select
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.adapters.evaluation_faults import evaluation_data, is_eval_database
 from backend.adapters.evaluation_world import EvaluationWorld
@@ -36,12 +35,10 @@ from backend.adapters.tracing import cloud_exporter, push_scores
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.domain.evidence import HOTEL_OFFER_FIELDS
 from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
-from backend.domain.hotel_flow import HotelPick, current_picks, flow_from_details
 from backend.domain.plans import PlanDraft
 from backend.domain.tool_facts import EXPERIMENTAL_SKILLS, SkillName
 from backend.domain.travel_request import RequestPatch, city_key, pace_of
 from backend.limits import ProbeError
-from backend.persistence import travel as request_rows
 from backend.persistence.models import BookingRow, MemoryFactRow, PlanDraftRow, SupplierOrderRow
 from backend.persistence.temporary import temporary_database
 from backend.profile import A7_LONG_PROFILE, LOCAL_EVAL_PROFILE_ENV
@@ -49,12 +46,11 @@ from backend.providers.claude_agent.application import GuardedRuntime
 from backend.providers.claude_agent.budget import Phase2ReviewRequired
 from backend.providers.claude_agent.response import cache_totals
 from backend.services.common import transaction
-from backend.services.hotels import cards as hotel_display_cards
 from backend.services.memory import MemoryService
 from backend.services.memory_extractor import MemoryExtractor
 from backend.services.runs import RunService
 from backend.services.sessions import DemoLogin
-from backend.services.travel import TravelService, request_from_row
+from backend.services.travel import TravelService
 from backend.tools.contracts import ToolExecutor
 from backend.tools.skill_config import SkillConfig
 from backend.tools.travel import TravelToolExecutor
@@ -70,6 +66,7 @@ from eval.core.state import prepare_state, snapshot
 from eval.grading.claims import ClaimFacts
 from eval.grading.memory_metrics import memory_scores, proposal_failures
 from eval.v3.cases import DEFAULT_CASES, ROOT, V3Case, load_cases
+from eval.v3.facts import Snapshot, hotel_picks, hotel_presentations, selected_cards
 from eval.v3.judge import JudgeCall, judge_scores, judge_trial, write_transcript
 from eval.v3.phase2_split import CASES as PHASE2_CASES
 from eval.v3.phase2_split import frozen_cases
@@ -251,12 +248,10 @@ async def create_trial_context(
 
 def hotel_card_groups(turns: Sequence[TurnObs]) -> Iterator[tuple[int, list[dict[str, Any]]]]:
     for turn in turns:
-        for event in turn.events:
-            data = event.presentation.get("data") if event.presentation else None
-            if isinstance(data, dict) and data.get("component") == "hotel_comparison":
-                raw = data.get("cards")
-                if isinstance(raw, list) and (cards := [c for c in raw if isinstance(c, dict)]):
-                    yield turn.index, cards
+        for data in hotel_presentations(turn.events):
+            raw = data.get("cards")
+            if isinstance(raw, list) and (cards := [c for c in raw if isinstance(c, dict)]):
+                yield turn.index, cards
 
 
 def hotel_cards(turns: Sequence[TurnObs]) -> list[dict[str, Any]]:
@@ -316,31 +311,9 @@ def loaded_skills(turns: Sequence[TurnObs]) -> list[dict[str, object]]:
     return result
 
 
-async def hotel_picks(db: AsyncSession, context: RunContext) -> dict[date, HotelPick]:
-    row = await request_rows.owned_request(db, context)
-    if row is None:
-        return {}
-    return current_picks(flow_from_details(row.request_details), request_from_row(row))
-
-
 async def pick_count(business: DatabaseEvaluation, context: RunContext) -> int:
     async with transaction(business.sessions.database) as db:
         return len(await hotel_picks(db, context))
-
-
-async def selected_hotel_facts(
-    business: DatabaseEvaluation,
-    context: RunContext,
-) -> tuple[int, tuple[dict[str, object], ...]]:
-    async with transaction(business.sessions.database) as db:
-        picks = await hotel_picks(db, context)
-        ids = [pick.evidence_id for pick in picks.values()]
-        rows = await request_rows.find_evidence(db, context, ids) if ids else []
-    by_id = {
-        row.id: request_rows.evidence_from_row(row) for row in rows if row.kind == "hotel_offer"
-    }
-    records = tuple(by_id[id] for id in ids if id in by_id)
-    return len(picks), tuple(hotel_card_facts(card) for card in hotel_display_cards(records))
 
 
 async def booked_for(business: DatabaseEvaluation, context: RunContext) -> bool:
@@ -415,7 +388,9 @@ async def collect(
                 )
             )
         )
-    picks, selected_hotels = await selected_hotel_facts(business, final)
+        picked = await selected_cards(db, final, request)
+    picks = picked.count
+    selected_hotels = tuple(hotel_card_facts(card) for card in picked.recorded.values())
     latest = max(drafts, key=lambda d: str(d.payload.get("expires_at")), default=None)
     validation = (
         tuple(
@@ -502,6 +477,10 @@ async def collect(
             booked=await booked_for(business, final),
         ),
         selected_hotels=selected_hotels,
+        final_snapshot=Snapshot(request, draft, picked.available, after.saved is not None),
+        before_steps=result.before_steps,
+        step_requests=tuple(result.step_requests),
+        card_payloads=(*result.card_payloads, *picked.recorded.values()),
         step_unavailable=result.step_unavailable,
         infra_error=result.infra_error,
     )

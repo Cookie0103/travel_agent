@@ -11,6 +11,7 @@ from pydantic import (
     Field,
     JsonValue,
     ValidationError,
+    field_validator,
     model_validator,
 )
 
@@ -84,25 +85,48 @@ class HotelPickStep(Strict):
     segment: int = Field(default=0, ge=0, le=5)
 
 
-class ReplyCondition(Strict):
-    kind: Literal["transport_missing", "pace_missing", "draft_missing", "hotel_unselected"]
-    segment: int | None = Field(default=None, ge=0, le=5, strict=True)
+PREDICATES = frozenset(
+    {
+        "transport_unset",
+        "pace_unset",
+        "children_unset",
+        "dates_unset",
+        "city_unset",
+        "no_hotel_list",
+        "has_draft",
+        "no_draft",
+        "draft_stale",
+        "no_clean_draft",
+        "plan_unsaved",
+    }
+)
+SEGMENT_PREDICATES = frozenset({"hotel_list_shown", "hotel_unpicked"})
 
-    @model_validator(mode="after")
-    def valid_segment(self) -> "ReplyCondition":
-        if (self.kind == "hotel_unselected") != (self.segment is not None):
-            raise ValueError("hotel_unselected条件需要segment，其余条件不接受segment")
-        return self
+
+def split_predicate(predicate: str) -> tuple[str, int | None]:
+    name, separator, segment = predicate.partition(":")
+    if name in SEGMENT_PREDICATES and re.fullmatch(r"[0-5]", segment):
+        return name, int(segment)
+    if not separator and name in PREDICATES:
+        return name, None
+    raise ValueError(f"未知脚本谓词或住宿段：{predicate}")
 
 
 class Step(Strict):
     say: str | None = Field(default=None, min_length=1, max_length=1000)
-    when: ReplyCondition | None = Field(default=None, exclude_if=lambda value: value is None)
+    when: tuple[str, ...] | None = Field(default=None, exclude_if=lambda value: value is None)
     card: CardStep | None = None
     hotel_pick: HotelPickStep | None = None
     new_session: Literal[True] | None = None
     switch_user: str | None = Field(default=None, pattern=r"^[A-Z]$")
     confirm_plan: Literal[True] | None = None
+
+    @field_validator("when")
+    @classmethod
+    def valid_predicates(cls, value: tuple[str, ...] | None) -> tuple[str, ...] | None:
+        for predicate in value or ():
+            split_predicate(predicate)
+        return value
 
     @model_validator(mode="after")
     def one_action(self) -> "Step":
@@ -115,8 +139,6 @@ class Step(Strict):
             raise ValueError("每步只能有一个动作")
         if not actions and self.say is None:
             raise ValueError("每步需要say或一个动作")
-        if self.when is not None and actions:
-            raise ValueError("条件回复when只能用于纯文本say步骤")
         if self.say is not None and actions and actions[0] != "card":
             raise ValueError("say只能与card同步骤出现")
         return self
@@ -276,8 +298,113 @@ class TurnToolCheck(CheckBase):
         return self
 
 
+class HotelWhere(Strict):
+    breakfast: bool | None = None
+    max_station_m: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    max_per_night_jpy: float | None = Field(default=None, ge=0, allow_inf_nan=False)
+    partner: bool | None = None
+    room_tag: str | None = Field(default=None, min_length=1)
+    in_request_city: bool | None = None
+    stay_matches_dates: bool | None = None
+    min_rating: float | None = Field(default=None, ge=0, le=5)
+
+
+class HotelCheck(CheckBase):
+    type: Literal["hotel"]
+    scope: Literal["shown", "selected"]
+    segment: int = Field(default=0, ge=0, le=5)
+    turn: Literal["last", "any"] = "any"
+    min_offers: int | None = Field(default=None, ge=0)
+    max_offers: int | None = Field(default=None, ge=0)
+    min_matching: int | None = Field(default=None, ge=0)
+    first_n_match: int | None = Field(default=None, ge=0)
+    where: HotelWhere | None = None
+
+
+class ValidatorStatusCheck(CheckBase):
+    type: Literal["validator_status"]
+    code: str
+    expect: Literal["none_unresolved", "present"]
+
+    @field_validator("code")
+    @classmethod
+    def known_code(cls, value: str) -> str:
+        if value not in VALIDATOR_TIER:
+            raise ValueError(f"未知validator code：{value}")
+        return value
+
+
+class DraftDiffCheck(CheckBase):
+    type: Literal["draft_diff"]
+    after_step: int = Field(ge=1)
+    mode: Literal["changed", "only_part"]
+    day: int | None = Field(default=None, ge=1)
+    part: Literal["morning", "afternoon", "evening"] | None = None
+    require_change: bool = False
+
+    @model_validator(mode="after")
+    def valid_part(self) -> "DraftDiffCheck":
+        if self.mode == "only_part" and (self.day is None or self.part is None):
+            raise ValueError("only_part需要day和part")
+        if self.mode == "changed" and (self.day is not None or self.part is not None):
+            raise ValueError("day和part只用于only_part")
+        return self
+
+
+type UnsetField = Literal[
+    "transport", "pace", "child_ages", "start_date", "end_date", "city", "adults", "rooms"
+]
+type RequestField = UnsetField | Literal["lodging_budget_upper", "constraints"]
+
+
+class FieldUnsetThroughCheck(CheckBase):
+    type: Literal["field_unset_through"]
+    field: UnsetField
+    through_step: int = Field(ge=1)
+
+
+class RequestFieldCheck(CheckBase):
+    type: Literal["request_field"]
+    field: RequestField
+    op: Literal["equals", "not_equals", "set", "unset", "contains", "not_contains"]
+    value: JsonValue = None
+
+    @model_validator(mode="after")
+    def valid_op(self) -> "RequestFieldCheck":
+        if self.op in {"contains", "not_contains"} and (
+            self.field != "constraints" or not isinstance(self.value, str)
+        ):
+            raise ValueError("contains/not_contains只接受constraints及字符串")
+        return self
+
+
+class NoCommissionLeakCheck(CheckBase):
+    type: Literal["no_commission_leak"]
+
+
+class ToolOrderCheck(CheckBase):
+    type: Literal["tool_order"]
+    first: str
+    then: str
+
+    @model_validator(mode="after")
+    def known_tools(self) -> "ToolOrderCheck":
+        if {self.first, self.then} - TOOL_NAMES:
+            raise ValueError("tool_order只接受已注册的工具")
+        return self
+
+
+type V2Check = (
+    HotelCheck
+    | ValidatorStatusCheck
+    | DraftDiffCheck
+    | FieldUnsetThroughCheck
+    | RequestFieldCheck
+    | NoCommissionLeakCheck
+    | ToolOrderCheck
+)
 type Check = Annotated[
-    ValidatorCheck | StateCheck | DbCheck | ReplyCheck | CardCheck | TurnToolCheck,
+    ValidatorCheck | StateCheck | DbCheck | ReplyCheck | CardCheck | TurnToolCheck | V2Check,
     Field(discriminator="type"),
 ]
 
@@ -346,6 +473,16 @@ class V3Case(Strict):
     memory: MemorySpec = Field(default_factory=MemorySpec)
     rubric: tuple[RubricItem, ...] = Field(min_length=3, max_length=5)
     notes: str = ""
+    difficulty: Literal["routine", "moderate", "hard"] | None = Field(
+        default=None, exclude_if=lambda value: value is None
+    )
+    requires_draft: bool | None = Field(default=None, exclude_if=lambda value: value is None)
+    intent: JsonValue = Field(default=None, exclude_if=lambda value: value is None)
+    world_needs: JsonValue = Field(default=None, exclude_if=lambda value: value is None)
+
+    @property
+    def checks(self) -> tuple[Check, ...]:
+        return (*self.hard_checks, *self.soft_checks, *self.memory.l4)
 
     @model_validator(mode="after")
     def consistent(self) -> "V3Case":
@@ -373,7 +510,14 @@ class V3Case(Strict):
         # 上界：每个say/card/hotel_pick最多产生一轮run，再加兜底追加轮次。
         producing = sum(s.action in {"say", "card", "hotel_pick"} for s in self.user_script)
         limit = producing + self.fallback.max_extra_turns
-        for check in (*self.hard_checks, *self.soft_checks, *self.memory.l4):
+        for check in self.checks:
+            if (
+                isinstance(check, DraftDiffCheck)
+                and check.after_step > len(self.user_script)
+                or isinstance(check, FieldUnsetThroughCheck)
+                and check.through_step > len(self.user_script)
+            ):
+                raise ValueError(f"检查{check.id}引用了脚本外的步骤")
             if isinstance(check, (ReplyCheck, CardCheck, TurnToolCheck)) and isinstance(
                 check.turn, int
             ):
@@ -381,7 +525,7 @@ class V3Case(Strict):
                     raise ValueError(
                         f"检查{check.id}的turn={check.turn}超过脚本最多产生的{limit}轮run"
                     )
-        ids = [c.id for c in (*self.hard_checks, *self.soft_checks, *self.memory.l4)]
+        ids = [c.id for c in self.checks]
         if any(r.id.startswith("g-") for r in self.rubric):
             raise ValueError("rubric id不能以g-开头（保留给通用评审项）")
         ids += [r.id for r in self.rubric]

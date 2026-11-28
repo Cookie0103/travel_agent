@@ -7,6 +7,7 @@ from datetime import datetime
 from typing import Literal
 
 from backend.domain.execution import RuntimeEvent
+from backend.domain.travel_request import TravelRequest
 from eval.grading.claims import ClaimFacts, claim_consistency
 from eval.grading.memory_metrics import normalized_surface
 from eval.grading.metrics import subset_matches
@@ -21,7 +22,9 @@ from eval.v3.cases import (
     V3Case,
     ValidatorCheck,
 )
+from eval.v3.facts import Snapshot
 from eval.v3.tiers import DEFAULT_TIER, VALIDATOR_TIER, Tier
+from eval.v3.v2_checks import evaluate as evaluate_v2
 
 type Outcome = Literal["pass", "fail", "unknown"]
 
@@ -94,6 +97,10 @@ class Observation:
     step_unavailable: int | None = None
     infra_error: str | None = None
     selected_hotels: tuple[dict[str, object], ...] = ()
+    final_snapshot: Snapshot | None = None
+    before_steps: Mapping[int, Snapshot] = field(default_factory=dict)
+    step_requests: tuple[tuple[int, TravelRequest], ...] = ()
+    card_payloads: tuple[Mapping[str, object], ...] = ()
 
 
 @dataclass(frozen=True)
@@ -208,7 +215,8 @@ def run_check(check: Check, obs: Observation) -> tuple[Outcome, str]:
             check.not_matches is None or not hit(check.not_matches)
         )
         return ("pass" if ok else "fail"), ""
-    assert isinstance(check, CardCheck)
+    if not isinstance(check, CardCheck):
+        return evaluate_v2(check, obs)
     picked = last_turn(obs.turns, check.turn)
     if not picked:
         return "unknown", "该轮不存在"

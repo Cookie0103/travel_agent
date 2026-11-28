@@ -15,19 +15,32 @@ from sqlalchemy import select
 from backend.domain.choices import ChoiceSelection
 from backend.domain.execution import RunContext, RuntimeEvent
 from backend.domain.itinerary import HotelStay
-from backend.domain.travel_request import pace_of
+from backend.domain.travel_request import TravelRequest
 from backend.persistence import plans, runs
 from backend.persistence.models import ChoiceCardRow
 from backend.services.common import ServiceError, transaction
-from backend.services.hotel_selection import HotelSelectionService
 from backend.services.plans import PlanService
 from backend.services.runs import MessageInput, RunService
 from backend.services.sessions import DemoLogin
-from backend.services.views import RequestView
 from eval.core.database import DatabaseEvaluation
 from eval.grading.claims import ClaimFacts
 from eval.simulator.run import UserAction, page
-from eval.v3.cases import CardStep, HotelPickStep, ReplyCondition, Step, V3Case
+from eval.v3.cases import (
+    CardStep,
+    DraftDiffCheck,
+    FieldUnsetThroughCheck,
+    HotelPickStep,
+    NoCommissionLeakCheck,
+    Step,
+    V3Case,
+)
+from eval.v3.facts import (
+    Snapshot,
+    hotel_presentations,
+    hotel_segments,
+    predicate_matches,
+    read_snapshot,
+)
 from eval.v3.score import CardObs, TurnObs
 
 IDK_TEXT = "不知道，你决定吧。"
@@ -49,6 +62,9 @@ class ScriptResult:
     current_user: str = "A"
     context: RunContext | None = None
     sessions: list[RunContext] = field(default_factory=list)
+    before_steps: dict[int, Snapshot] = field(default_factory=dict)
+    step_requests: list[tuple[int, TravelRequest]] = field(default_factory=list)
+    card_payloads: list[dict[str, object]] = field(default_factory=list)
 
 
 class StepUnavailable(Exception):
@@ -67,32 +83,6 @@ def group_keys(row: ChoiceCardRow) -> tuple[str, ...]:
     if not isinstance(groups, list):
         return ()
     return tuple(str(g["key"]) for g in groups if isinstance(g, dict) and "key" in g)
-
-
-def latest_hotel_segments(
-    events: list[RuntimeEvent], fallback_range: tuple[str | None, str | None]
-) -> list[dict[str, object]]:
-    """最近一次酒店比较展示，按住宿段整理：[{check_in, check_out, cards}]。"""
-    for event in reversed(events):
-        data = event.presentation.get("data") if event.presentation else None
-        if not (isinstance(data, dict) and data.get("component") == "hotel_comparison"):
-            continue
-        cards = [c for c in data.get("cards") or [] if isinstance(c, dict)]
-        segments = data.get("segments")
-        if isinstance(segments, list) and segments:
-            return [
-                {
-                    "check_in": s.get("check_in"),
-                    "check_out": s.get("check_out"),
-                    "cards": [
-                        c for c in cards if c.get("evidence_id") in s.get("evidence_ids", [])
-                    ],
-                }
-                for s in segments
-                if isinstance(s, dict)
-            ]
-        return [{"check_in": fallback_range[0], "check_out": fallback_range[1], "cards": cards}]
-    return []
 
 
 def choose_card(cards: list[dict[str, object]], rank: str | int) -> dict[str, object] | None:
@@ -171,6 +161,19 @@ class ScriptRunner:
         self.result = ScriptResult()
         self.fresh = False
         self.picks: dict[int, HotelStay] = {}
+        self.before_steps = {
+            check.after_step for check in case.checks if isinstance(check, DraftDiffCheck)
+        }
+        self.through_step = max(
+            (
+                check.through_step
+                for check in case.checks
+                if isinstance(check, FieldUnsetThroughCheck)
+            ),
+            default=0,
+        )
+        self.step_number = 0
+        self.capture_cards = any(isinstance(check, NoCommissionLeakCheck) for check in case.checks)
 
     @property
     def context(self) -> RunContext:
@@ -205,6 +208,7 @@ class ScriptRunner:
     async def run(self) -> ScriptResult:
         try:
             for number, step in enumerate(self.case.user_script, start=1):
+                self.step_number = number
                 try:
                     if not await self.step(number, step.action, step):
                         break
@@ -212,6 +216,7 @@ class ScriptRunner:
                     self.result.step_unavailable = number
                     break
             if self.result.step_unavailable is None and self.result.infra_error is None:
+                self.step_number = 0
                 await self.extra_turns()
         except ServiceError as error:
             self.result.infra_error = f"service:{error.status}"
@@ -220,11 +225,19 @@ class ScriptRunner:
     async def step(self, number: int, action: str, step: object) -> bool:
         """返回False=脚本应停止（放弃/基础设施错误）。"""
         assert isinstance(step, Step)
+        if step.when or number in self.before_steps:
+            snapshot = await read_snapshot(self.business, self.context)
+            if number in self.before_steps:
+                self.result.before_steps[number] = snapshot
+            if step.when:
+                events = self.session_events()
+                if not all(
+                    predicate_matches(predicate, snapshot, events) for predicate in step.when
+                ):
+                    return True
         match action:
             case "say":
                 assert step.say is not None
-                if step.when is not None and not await self.condition_matches(step.when):
-                    return True
                 return await self.submit(step.say)
             case "card":
                 assert step.card is not None
@@ -241,31 +254,15 @@ class ScriptRunner:
                 await self.confirm_plan()
         return True
 
-    async def condition_matches(self, condition: ReplyCondition) -> bool:
-        """只读当前会话服务端事实。助手文字不参与条件判定。"""
-        travel = self.business.travel
-        if condition.kind == "hotel_unselected":
-            index = condition.segment
-            assert index is not None
-            selection = await HotelSelectionService(travel).view(
-                self.context.user_id, self.context.session_id
-            )
-            return (
-                selection.state == "awaiting"
-                and index < len(selection.segments)
-                and selection.segments[index].selected is None
-            )
-        state = await travel.business_context(self.context)
-        if condition.kind == "draft_missing":
-            return state["pending_draft"] is None
-        request = RequestView.model_validate(state["request"])
-        if condition.kind == "pace_missing":
-            return pace_of(request) is None
-        conversation = state["conversation"]
-        assert isinstance(conversation, dict)
-        defaults = conversation.get("defaults")
-        return request.transport is None and (
-            not isinstance(defaults, dict) or "transport" not in defaults
+    def session_events(self) -> list[RuntimeEvent]:
+        return sorted(
+            [
+                event
+                for run_events in self.events.values()
+                for event in run_events
+                if event.context.session_id == self.context.session_id
+            ],
+            key=lambda event: event.occurred_at,
         )
 
     async def confirm_plan(self) -> None:
@@ -318,19 +315,17 @@ class ScriptRunner:
 
     async def pick_hotel(self, step: HotelPickStep) -> bool:
         request = await self.business.travel.read_request(self.context)
-        flat = [
-            e
-            for run_events in self.events.values()
-            for e in run_events
-            if e.context.session_id == self.context.session_id
-        ]
-        flat.sort(key=lambda e: e.occurred_at)
-        segments = latest_hotel_segments(
-            flat,
-            (
-                request.start_date.isoformat() if request.start_date else None,
-                request.end_date.isoformat() if request.end_date else None,
-            ),
+        data = next(hotel_presentations(tuple(reversed(self.session_events()))), None)
+        segments = (
+            hotel_segments(
+                data,
+                (
+                    request.start_date.isoformat() if request.start_date else None,
+                    request.end_date.isoformat() if request.end_date else None,
+                ),
+            )
+            if data is not None
+            else []
         )
         if step.segment >= len(segments):
             raise StepUnavailable
@@ -433,6 +428,8 @@ class ScriptRunner:
                     select(ChoiceCardRow).where(ChoiceCardRow.source_run_id == view.run_id)
                 )
             )
+        if self.capture_cards:
+            self.result.card_payloads.extend(row.content for row in card_rows)
         prompt = await self.prompt_reader(run_context) if self.fresh else None
         turn = TurnObs(
             index=len(self.result.turns) + 1,
@@ -457,6 +454,10 @@ class ScriptRunner:
                 turn, claim_facts=await self.facts_reader(run_context, [*self.result.turns, turn])
             )
         self.result.turns.append(turn)
+        if 0 < self.step_number <= self.through_step:
+            self.result.step_requests.append(
+                (self.step_number, await self.business.travel.read_request(run_context))
+            )
         self.result.context = run_context
         if abandoned:
             return False

@@ -225,10 +225,10 @@ def test_conditional_transport_reply_unblocks_an_offline_draft(postgres_url: URL
             {"say": "追问本次交通"},
             {
                 "say": "这次步行，继续生成行程。",
-                "when": {"kind": "transport_missing"},
+                "when": ["transport_unset"],
             },
-            {"say": "不应再补充交通。", "when": {"kind": "transport_missing"}},
-            {"say": "不应再要求草稿。", "when": {"kind": "draft_missing"}},
+            {"say": "不应再补充交通。", "when": ["transport_unset"]},
+            {"say": "不应再要求草稿。", "when": ["no_draft"]},
         ],
         hard_checks=[{"id": "draft", "type": "db", "assert": "draft_no_conflict"}],
     )

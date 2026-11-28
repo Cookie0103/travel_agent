@@ -21,6 +21,7 @@ from backend.domain.itinerary import (
 )
 from backend.domain.plans import (
     DRAFT_TTL,
+    EVALUATION_DRAFT_SCOPE,
     InitialStage,
     PatchItemLocked,
     PlanContent,
@@ -28,6 +29,7 @@ from backend.domain.plans import (
     StageInput,
     apply_plan_patch,
     differences,
+    draft_request_scope,
     initial_content,
     stays_of,
 )
@@ -290,6 +292,14 @@ class PlanService:
                 db.add(row)
                 await db.flush()
             await plans.add_draft(db, context, draft)
+            if self.travel.live and self.travel.live.evaluation_today is not None:
+                operations.save(
+                    db,
+                    context.session_id,
+                    EVALUATION_DRAFT_SCOPE,
+                    str(draft.draft_id),
+                    dict(draft_request_scope(request)),
+                )
             payload = draft.model_dump(mode="json")
             if replay is None:
                 operations.save(db, context.session_id, "stage_plan", operation_key, payload)

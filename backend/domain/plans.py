@@ -5,7 +5,7 @@ from difflib import SequenceMatcher
 from typing import Annotated, Literal, Self
 from uuid import UUID, uuid4
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, JsonValue, model_validator
 
 from backend.domain.itinerary import (
     PLAN_ITEM_LIMIT,
@@ -14,7 +14,7 @@ from backend.domain.itinerary import (
     ProposedItem,
     ValidationReport,
 )
-from backend.domain.travel_request import TravelRequest
+from backend.domain.travel_request import TravelRequest, pace_of
 
 
 class PatchItemLocked(ValueError):
@@ -141,6 +141,26 @@ class ItemDiff(BaseModel):
 
 
 DRAFT_TTL = timedelta(minutes=10)
+
+EVALUATION_DRAFT_SCOPE = "evaluation_draft_scope"
+
+
+def draft_request_scope(request: TravelRequest) -> dict[str, JsonValue]:
+    """保存草稿对应的结构化条件，排除无关的条件修订号与备注。"""
+    fields = {
+        "city",
+        "start_date",
+        "end_date",
+        "adults",
+        "child_ages",
+        "rooms",
+        "transport",
+        "lodging_budget",
+        "lodging_budget_unlimited",
+        "segments",
+    }
+    scope: dict[str, JsonValue] = request.model_dump(mode="json", include=fields)
+    return {**scope, "pace": pace_of(request)}
 
 
 class PlanDraft(BaseModel):
