@@ -69,6 +69,8 @@ class _GooglePlace(BaseModel):
     types: list[str] = Field(default_factory=list)
     regularOpeningHours: _Hours | None = None
     googleMapsUri: str | None = None
+    evaluationIndoor: bool | None = None
+    evaluationAliases: tuple[str, ...] = ()
 
 
 class _Places(BaseModel):
@@ -107,11 +109,16 @@ def place_from_response(
         place_id="gplace:" + value.id,
         city=city,
         name=value.displayName.text,
+        aliases=value.evaluationAliases if data_mode == "synthetic" else (),
         latitude=value.location.latitude,
         longitude=value.location.longitude,
         coordinate_kind="node",
         category=category,
-        indoor=inferred_indoor(category),
+        indoor=(
+            value.evaluationIndoor
+            if data_mode == "synthetic" and value.evaluationIndoor is not None
+            else inferred_indoor(category)
+        ),
         opening_hours=opening_hours(value.regularOpeningHours),
         field_sources={},
         source=Source(

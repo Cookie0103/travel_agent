@@ -183,20 +183,22 @@ def fault_transport(
         if host == "api.open-meteo.com" and path == "/v1/forecast":
             start = date.fromisoformat(request.url.params["start_date"])
             end = date.fromisoformat(request.url.params["end_date"])
-            days = [
-                (start + timedelta(days=offset)).isoformat()
-                for offset in range((end - start).days + 1)
+            days = [start + timedelta(days=offset) for offset in range((end - start).days + 1)]
+            default_rain = 75 if float(request.url.params["latitude"]) >= 35 else 25
+            overrides = world.weather_by_date if world is not None else {}
+            rain = [
+                75 if weather == "rain" else 25 if weather == "sunny" else default_rain
+                for weather in (overrides.get(day) for day in days)
             ]
-            rain = 75 if float(request.url.params["latitude"]) >= 35 else 25
             return httpx.Response(
                 200,
                 json={
                     "daily": {
-                        "time": days,
-                        "weather_code": [61 if rain >= 60 else 0] * len(days),
+                        "time": [day.isoformat() for day in days],
+                        "weather_code": [61 if chance >= 60 else 0 for chance in rain],
                         "temperature_2m_max": [22] * len(days),
                         "temperature_2m_min": [13] * len(days),
-                        "precipitation_probability_max": [rain] * len(days),
+                        "precipitation_probability_max": rain,
                     }
                 },
             )

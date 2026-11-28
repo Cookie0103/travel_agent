@@ -2,29 +2,19 @@
 
 import json
 from datetime import date
+from math import cos, hypot, radians
 from typing import Literal
 
 import httpx
 from pydantic import BaseModel, ConfigDict, Field
 
+from backend.adapters.evaluation_places import city_places, search_places
+from backend.domain.external_data import Coordinates
 from backend.domain.travel_request import CITY_ALIASES, city_key
 
 type Demand = Literal["weekday", "weekend", "event"]
 
-PLACE_TYPES = (
-    "museum",
-    "park",
-    "art_gallery",
-    "garden",
-    "aquarium",
-    "viewpoint",
-    "shopping_mall",
-    "shrine",
-    "museum",
-    "zoo",
-    "art_gallery",
-    "national_park",
-)
+type EvaluationWeather = Literal["rain", "sunny"]
 
 
 class EvaluationHotel(BaseModel):
@@ -54,6 +44,7 @@ class EvaluationWorld(BaseModel):
     source: Literal["synthetic", "rakuten"] = "synthetic"
     today: date
     cities: tuple[EvaluationCity, ...] = Field(min_length=6, max_length=6)
+    weather_by_date: dict[date, EvaluationWeather] = Field(default_factory=dict)
 
 
 def _city(text: str, world: EvaluationWorld) -> EvaluationCity | None:
@@ -66,24 +57,21 @@ def _city(text: str, world: EvaluationWorld) -> EvaluationCity | None:
 
 
 def places(city: EvaluationCity) -> list[dict[str, object]]:
-    named = {"東京": "三鷹の森ジブリ美術館", "京都": "桂離宮"}.get(city.city)
-    return [
-        {
-            "id": f"phase2-{city.city}-{index + 1}",
-            "displayName": {
-                "text": named
-                if named and index == 2
-                else f"合成{city.city}{place_type}景点{index + 1}"
-            },
-            "location": {
-                "latitude": city.latitude + index * 0.00062,
-                "longitude": city.longitude - index * 0.00048,
-            },
-            "types": [place_type],
-            "regularOpeningHours": {"periods": [{"open": {"day": 0}}]},
-        }
-        for index, place_type in enumerate(PLACE_TYPES)
-    ]
+    return [place.response() for place in city_places(city.city, city.latitude, city.longitude)]
+
+
+def _route_seconds(request: httpx.Request) -> int:
+    payload = json.loads(request.content)
+    if payload.get("travelMode") != "WALK":
+        return 600
+    start = Coordinates.model_validate(payload["origin"]["location"]["latLng"])
+    end = Coordinates.model_validate(payload["destination"]["location"]["latLng"])
+    # 城市尺度的平面近似，按 80 米/分钟生成离线时长。
+    latitude = radians((start.latitude + end.latitude) / 2)
+    meters = 111_000 * hypot(
+        end.latitude - start.latitude, (end.longitude - start.longitude) * cos(latitude)
+    )
+    return max(60, round(meters * 60 / 80))
 
 
 def serve(request: httpx.Request, world: EvaluationWorld) -> httpx.Response | None:
@@ -128,11 +116,12 @@ def serve(request: httpx.Request, world: EvaluationWorld) -> httpx.Response | No
         payload = json.loads(request.content)
         query = str(payload.get("textQuery", ""))
         city = _city(query, world)
-        found = places(city) if city else []
-        if any(name in query for name in ("吉卜力", "ジブリ", "桂离宫", "桂離宮")) and found:
-            found.insert(0, found.pop(2))
-        limit = int(payload.get("maxResultCount", 8))
-        return httpx.Response(200, json={"places": found[:limit]})
+        if city is None:
+            return httpx.Response(200, json={"places": []})
+        catalog = city_places(city.city, city.latitude, city.longitude)
+        limit = int(payload.get("pageSize", payload.get("maxResultCount", 8)))
+        found = search_places(catalog, query, city.city)[:limit]
+        return httpx.Response(200, json={"places": [place.response() for place in found]})
     if host in {"openapi.rakuten.co.jp", "app.rakuten.co.jp"}:
         params = request.url.params
         wanted = set(params["hotelNo"].split(",")) if "hotelNo" in params else set()
@@ -218,5 +207,5 @@ def serve(request: httpx.Request, world: EvaluationWorld) -> httpx.Response | No
             200, json={"pagingInfo": {"recordCount": len(hotels)}, "hotels": hotels}
         )
     if host == "routes.googleapis.com":
-        return httpx.Response(200, json={"routes": [{"duration": "600s"}]})
+        return httpx.Response(200, json={"routes": [{"duration": f"{_route_seconds(request)}s"}]})
     return None

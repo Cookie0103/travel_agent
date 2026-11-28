@@ -2,17 +2,27 @@
 
 from datetime import date
 
-from backend.adapters.evaluation_world import EvaluationCity, EvaluationHotel, EvaluationWorld
+from backend.adapters.evaluation_world import (
+    EvaluationCity,
+    EvaluationHotel,
+    EvaluationWeather,
+    EvaluationWorld,
+)
 from data.eval_world.world import Commission, World, load_world
 
 type HotelDataset = tuple[World, dict[str, Commission]]
 
 
-def phase2_world(dataset: HotelDataset | None = None) -> EvaluationWorld:
+def phase2_world(
+    dataset: HotelDataset | None = None,
+    *,
+    weather_by_date: dict[date, EvaluationWeather] | None = None,
+) -> EvaluationWorld:
     world, commission = dataset if dataset is not None else load_world()
     return EvaluationWorld(
         source=world.source,
         today=date(2026, 10, 24),
+        weather_by_date=weather_by_date or {},
         cities=tuple(
             EvaluationCity(
                 city=station.city,
