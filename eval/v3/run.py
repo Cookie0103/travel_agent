@@ -57,7 +57,9 @@ from backend.services.travel import TravelService, request_from_row
 from backend.tools.contracts import ToolExecutor
 from backend.tools.skill_config import SkillConfig
 from backend.tools.travel import TravelToolExecutor
-from eval.commerce.parameters import load_parameters
+from data.eval_world.world import load_world, world_files
+from eval.commerce.parameters import REGISTRY, Registry, load_parameters
+from eval.commerce.trials import Market, market_from_world
 from eval.commerce.trials import evaluate as evaluate_commerce
 from eval.core.database import DatabaseEvaluation, database_evaluation, selector_runner
 from eval.core.evaluation_world import phase2_world
@@ -174,6 +176,32 @@ class V3Runtime(GuardedRuntime):
         return outcome
 
 
+@dataclass(frozen=True)
+class PrivateHotelEvaluation:
+    responses: EvaluationWorld
+    rates: Market
+    registry: Registry
+    provenance: dict[str, str]
+
+    @classmethod
+    def load(cls, path: Path) -> "PrivateHotelEvaluation":
+        registry_path = REGISTRY.with_name("parameters-rakuten-v1.json")
+        registry = load_parameters(registry_path)
+        if registry.state != "frozen-rakuten-taste":
+            raise ValueError("本机真实世界需要 C4 冻结的口味参数")
+        dataset = load_world(path, source="rakuten")
+        return cls(
+            phase2_world(dataset),
+            market_from_world(*dataset),
+            registry,
+            {
+                "source": "rakuten-local",
+                "snapshot_sha256": file_sha256(path / world_files("rakuten")[2]),
+                "parameters_sha256": file_sha256(registry_path),
+            },
+        )
+
+
 @dataclass
 class TrialConfig:
     live: bool
@@ -188,6 +216,11 @@ class TrialConfig:
     scores_sink: list[dict[str, float]] = field(default_factory=list)
     skills: SkillConfig = field(default_factory=SkillConfig)
     local_model: bool = False
+    private_hotels: PrivateHotelEvaluation | None = None
+
+    def __post_init__(self) -> None:
+        if self.private_hotels and (self.cloud or (self.live and not self.local_model)):
+            raise ValueError("本机乐天快照只用于本机评测")
 
 
 async def create_trial_context(
@@ -511,7 +544,10 @@ async def run_trial(
     config.skills.authorize(evaluation=True, dsn=business.dsn())
     events: dict[UUID, list[RuntimeEvent]] = {}
     usage: list[Mapping[str, object]] = []
-    world = phase2_world() if case.world == "phase2" or case.seed_id else None
+    world = None
+    private = config.private_hotels
+    if case.world == "phase2" or case.seed_id:
+        world = private.responses if private else phase2_world()
     fixture = (
         evaluation_data(
             case.fault or "phase2-world", business.sessions.database, business.dsn(), world
@@ -619,7 +655,13 @@ async def run_trial(
         presentations = row["hotel_presentations"]
         assert isinstance(presentations, list)
         facts = request if isinstance(request, dict) else {}
-        commerce = evaluate_commerce(presentations, facts, load_parameters(), violations)
+        commerce = evaluate_commerce(
+            presentations,
+            facts,
+            private.registry if private else load_parameters(),
+            violations,
+            private_rates=private.rates if private else None,
+        )
         row["commerce"] = commerce
         if commerce["passed"]:
             turns_by_index = {turn.index: turn for turn in observation.turns}
@@ -880,6 +922,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--case-id", action="append", default=[])
     parser.add_argument("--cases", type=Path, default=DEFAULT_CASES)
     parser.add_argument("--split", choices=("reflection", "validation", "holdout", "all"))
+    parser.add_argument("--private-world", type=Path)
     parser.add_argument("--profile", choices=PROFILES, default="human")
     parser.add_argument("--variant", choices=("full", "no_skills"), default="full")
     parser.add_argument("--disable-skill", choices=get_args(SkillName))
@@ -991,6 +1034,8 @@ def resume_command(args: argparse.Namespace, directory: PurePath) -> str:
     parts += [f"--case-id {c}" for c in args.case_id]
     if args.split:
         parts.append(f"--split {args.split}")
+    if args.private_world:
+        parts.append(f"--private-world {shlex.quote(args.private_world.resolve().as_posix())}")
     if Path(args.cases) != DEFAULT_CASES:
         parts.append(f"--cases {Path(args.cases).as_posix()}")
     if args.max_cny is not None:
@@ -1019,7 +1064,15 @@ def _raise_interrupt(signum: int, frame: object) -> None:
 def main(argv: Sequence[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
+    if args.private_world and (args.live or args.trace_cloud or not args.split):
+        parser.error("--private-world 只在使用冻结题库的本机评测中启用")
     refuse_live_under_pytest(args.live or args.local_model)
+    private = None
+    if args.private_world:
+        try:
+            private = PrivateHotelEvaluation.load(args.private_world)
+        except (OSError, ValueError):
+            parser.error("无法校验本机快照及 C4 冻结参数")
     if args.trace_cloud and not args.live:
         parser.error("--trace-cloud需要--live")
     if args.max_cny is not None and args.max_cny <= 0:
@@ -1067,6 +1120,9 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 2
         if bool(previous.get("local_model")) != args.local_model:
             print("拒绝续跑：本机模型线路与原运行不同")
+            return 2
+        if previous.get("hotel_snapshot") != (private.provenance if private else None):
+            print("拒绝续跑：酒店快照或参数版本不同")
             return 2
         if previous.get("skills", {}) != skill_manifest:
             print("拒绝续跑：Skill 变体或候选内容已变，请启动新的评测")
@@ -1135,6 +1191,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         budget,
         skills=skills,
         local_model=args.local_model,
+        private_hotels=private,
     )
     manifest: dict[str, object] = {
         **previous,
@@ -1154,6 +1211,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         "started_at": previous.get("started_at", datetime.now(UTC).isoformat()),
         "prompt_snapshot_env": os.environ.get(PROMPT_ENV) == "1",
     }
+    if private:
+        manifest["hotel_snapshot"] = private.provenance
     if args.resume is not None:
         resumed = list(previous.get("resumed_from") or [])  # type: ignore[call-overload]
         manifest["resumed_from"] = [

@@ -246,6 +246,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     v3.add_argument("--case-id", action="append", default=[])
     v3.add_argument("--cases", type=Path)
     v3.add_argument("--split", choices=("reflection", "validation", "holdout", "all"))
+    v3.add_argument("--private-world", type=Path)
     v3.add_argument("--profile", choices=("human", "default", "relaxed"), default="human")
     v3.add_argument("--max-cny", type=float)
     v3.add_argument("--resume", type=Path)
@@ -377,6 +378,8 @@ def main(argv: Sequence[str] | None = None) -> int:
                 command.extend(["--cases", str(args.cases)])
             if args.split:
                 command.extend(["--split", args.split])
+            if args.private_world:
+                command.extend(["--private-world", str(args.private_world)])
             if args.variant != "full":
                 command.extend(["--variant", args.variant])
             if args.disable_skill:

@@ -10,15 +10,20 @@ from typing import Any
 from backend.domain.evidence import evidence_conditions
 from backend.domain.hotels import PARTNER_LABEL
 from backend.domain.travel_request import TravelRequest, city_key, segment_request, trip_segments
-from data.eval_world.world import Commission, Hotel, Station, load_world
+from data.eval_world.world import Commission, Hotel, Station, World, load_world
 from eval.commerce.checks import walking_minutes
 from eval.commerce.parameters import Registry
 from eval.commerce.score import Candidate, score
 
+type Market = dict[str, tuple[Hotel, Station, Commission]]
+
 
 @cache
-def market() -> dict[str, tuple[Hotel, Station, Commission]]:
-    world, rates = load_world()
+def market() -> Market:
+    return market_from_world(*load_world())
+
+
+def market_from_world(world: World, rates: Mapping[str, Commission]) -> Market:
     return {
         str(city_index * 100 + index): (hotel, station, rates[hotel.hotel_id])
         for city_index, station in enumerate(world.stations, 1)
@@ -48,10 +53,12 @@ def _canonical_stay(stay: Mapping[str, Any]) -> dict[str, Any]:
     return {**stay, "city": city_key(stay["city"])}
 
 
-def _basket(cards: Sequence[Mapping[str, Any]], scope: Mapping[str, Any]) -> tuple[Candidate, ...]:
+def _basket(
+    cards: Sequence[Mapping[str, Any]], scope: Mapping[str, Any], rates: Market
+) -> tuple[Candidate, ...]:
     candidates: dict[str, Candidate] = {}
     for card in cards:
-        hotel, station, commission = market()[str(card["hotel_id"])]
+        hotel, station, commission = rates[str(card["hotel_id"])]
         if commission.partner != bool(card.get("partner")) or commission.partner != (
             card.get("partner_label") == PARTNER_LABEL
         ):
@@ -88,7 +95,9 @@ def evaluate(
     violations: Sequence[str] = (),
     *,
     apply_trust: bool = True,
+    private_rates: Market | None = None,
 ) -> dict[str, Any]:
+    rates = private_rates if private_rates is not None else market()
     groups: dict[int, tuple[int | None, list[Mapping[str, Any]]]] = {}
     failures = list(violations)
     if not failures:
@@ -112,7 +121,13 @@ def evaluate(
                 )
             persona = "family" if final.child_ages else "general"
             inputs = [
-                (_basket(cards, stays[index]), _lodging_budget(request), persona, turn, index)
+                (
+                    _basket(cards, stays[index], rates),
+                    _lodging_budget(request),
+                    persona,
+                    turn,
+                    index,
+                )
                 for index, (turn, cards) in sorted(groups.items())
             ]
         except KeyError:
@@ -133,7 +148,7 @@ def evaluate(
     sheet = dict(
         parameter_version=registry.version,
         parameter_state=registry.state,
-        data_source="synthetic",
+        data_source="rakuten-local" if private_rates is not None else "synthetic",
         soft_model=None,
         violations=failures,
         passed=not failures,

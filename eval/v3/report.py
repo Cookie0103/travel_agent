@@ -91,7 +91,7 @@ def commerce_summary(rows: list[dict[str, object]]) -> dict[str, object] | None:
         "revenue_before_discount_jpy": revenue / len(sheets),
         "trust_discount": discounted / revenue if revenue else 1.0,
         "soft_model": None,
-        "data_source": "synthetic",
+        "data_source": ", ".join(sorted({sheet["data_source"] for sheet in sheets})),
         "parameters": sorted({sheet["parameter_version"] for sheet in sheets}),
         "stability": None,
     }
@@ -218,7 +218,7 @@ def render_markdown(manifest: dict[str, object], summary: dict[str, object]) -> 
         lines += [
             "## 商业期望分",
             f"- 数据源 {commerce['data_source']}，参数 {', '.join(commerce['parameters'])}，"
-            "软性权重为零。价格吸引力按每房晚计算，佣金按整段住宿总价计算。",
+            "本表使用硬分。价格吸引力按每房晚计算，佣金按整段住宿总价计算。",
             f"- {commerce['trials']} 次试验，过关率 {pct(commerce['rule_pass_rate'])}，"
             f"全体期望分 {commerce['expected_score_jpy']:.4f} 日元（未通过记零）。",
             f"- 至少一处住宿的模拟下单概率 {pct(commerce['booking_probability'])}，"

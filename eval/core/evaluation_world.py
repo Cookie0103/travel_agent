@@ -3,12 +3,15 @@
 from datetime import date
 
 from backend.adapters.evaluation_world import EvaluationCity, EvaluationHotel, EvaluationWorld
-from data.eval_world.world import load_world
+from data.eval_world.world import Commission, World, load_world
+
+type HotelDataset = tuple[World, dict[str, Commission]]
 
 
-def phase2_world() -> EvaluationWorld:
-    world, commission = load_world()
+def phase2_world(dataset: HotelDataset | None = None) -> EvaluationWorld:
+    world, commission = dataset if dataset is not None else load_world()
     return EvaluationWorld(
+        source=world.source,
         today=date(2026, 10, 24),
         cities=tuple(
             EvaluationCity(

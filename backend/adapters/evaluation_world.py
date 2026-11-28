@@ -51,6 +51,7 @@ class EvaluationCity(BaseModel):
 
 class EvaluationWorld(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
+    source: Literal["synthetic", "rakuten"] = "synthetic"
     today: date
     cities: tuple[EvaluationCity, ...] = Field(min_length=6, max_length=6)
 
@@ -157,7 +158,10 @@ def serve(request: httpx.Request, world: EvaluationWorld) -> httpx.Response | No
         demand: Demand = (
             "event" if day.day in {1, 3, 23, 31} else "weekend" if day.weekday() >= 4 else "weekday"
         )
-        group = min(2, int(params.get("adultNum", "1"))) - 1
+        adults = int(params.get("adultNum", "1"))
+        if world.source == "rakuten" and adults not in (1, 2):
+            return httpx.Response(200, json={"pagingInfo": {"recordCount": 0}, "hotels": []})
+        group = min(2, adults) - 1
         hotels = [
             [
                 {
@@ -197,7 +201,11 @@ def serve(request: httpx.Request, world: EvaluationWorld) -> httpx.Response | No
                                 "stayDate": day.isoformat(),
                                 "rakutenCharge": h.prices_jpy[demand][group],
                                 "chargeFlag": 1,
-                                "evaluationChildCharge": 2400,  # 合成世界每儿童每晚日元
+                                **(
+                                    {"evaluationChildCharge": 2400}
+                                    if world.source == "synthetic"
+                                    else {}
+                                ),
                             }
                         },
                     ]
