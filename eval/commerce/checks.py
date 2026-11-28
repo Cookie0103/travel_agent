@@ -61,7 +61,8 @@ def _candidate(hotel: Hotel, station: Station) -> Candidate:
         price_jpy=price,
         rating=hotel.rating,
         reviews=hotel.reviews,
-        station_minutes=walking_minutes(hotel, station),
+        # The frozen JSONL must reproduce byte-for-byte across libm implementations.
+        station_minutes=round(walking_minutes(hotel, station), 9),
         breakfast=breakfast,
         partner=False,
         commission=0.10,

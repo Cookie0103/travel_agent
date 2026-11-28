@@ -4,6 +4,7 @@ import argparse
 import json
 import time
 import traceback
+from datetime import timedelta
 from uuid import UUID, uuid4
 
 import httpx
@@ -11,6 +12,7 @@ from pydantic import BaseModel, Field, TypeAdapter
 
 from backend.domain.booking import Booking
 from backend.domain.plans import SavedPlan
+from backend.domain.travel_request import tokyo_today
 from backend.services.runs import MessageInput, RunView
 from backend.services.sessions import DemoIdentity, SessionView
 from backend.services.travel import RequestUpdateView
@@ -66,6 +68,7 @@ def exercise(client: httpx.Client) -> State:
     client.headers["Authorization"] = "Bearer " + owner.token
     session = request(client, "POST", "/sessions", SessionView)
     path = f"/sessions/{session.session_id}"
+    arrival = tokyo_today() + timedelta(days=7)
     changed = request(
         client,
         "PATCH",
@@ -75,8 +78,8 @@ def exercise(client: httpx.Client) -> State:
             "expected_revision": 0,
             "set": {
                 "city": "京都",
-                "start_date": "2026-11-03",
-                "end_date": "2026-11-05",
+                "start_date": arrival.isoformat(),
+                "end_date": (arrival + timedelta(days=2)).isoformat(),
                 "adults": 2,
                 "child_ages": [],
                 "rooms": 1,
