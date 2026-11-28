@@ -9,7 +9,8 @@ from collections.abc import Sequence
 from pathlib import Path
 from statistics import mean
 
-from eval.commerce.checks import DEFAULT_CHECKS, Comparison, load_cases, passes
+from data.eval_world.world import WorldSource, load_world
+from eval.commerce.checks import DEFAULT_CHECKS, Comparison, generate, load_cases, passes
 from eval.commerce.parameters import Prior, Registry, load_parameters
 
 SEED = 20261129
@@ -71,6 +72,7 @@ def calibration(
     prior: Registry,
     *,
     size: int = SAMPLES,
+    source: WorldSource = "synthetic",
     platform: list[Registry] | None = None,
 ) -> tuple[Registry, dict[str, object]]:
     tune = tuple(case for case in cases if case.split == "tune")
@@ -119,7 +121,7 @@ def calibration(
         influence.append({"axis": "/".join(axis), "change_in_pass_rate": difference / len(tune)})
     influence.sort(key=lambda entry: abs(float(str(entry["change_in_pass_rate"]))), reverse=True)
     report: dict[str, object] = {
-        "source": "synthetic",
+        "source": source,
         "decision": selection,
         "draws": len(settings),
         "seed": SEED,
@@ -136,28 +138,67 @@ def calibration(
             for axis, item in dimensions.items()
         },
     }
-    return selected.model_copy(update={"state": "provisional-synthetic"}), report
+    state = "frozen-rakuten-taste" if source == "rakuten" else "provisional-synthetic"
+    return selected.model_copy(update={"state": state}), report
+
+
+def priors_for_private_world(registry: Registry) -> Registry:
+    approved = Prior(
+        value=0.5,
+        bounds=(0.25, 1.0),
+        source="通过 C5 中文体检项目等权起点，Intern-Decision-4B 38c9daf",
+        unit="是概率",
+    )
+    return registry.model_copy(
+        update={
+            "soft_items": {
+                "grounded_reason": approved,
+                "stay_fit": approved,
+                "pace_fit": Prior(
+                    value=0,
+                    bounds=(0, 0),
+                    source="C5 的 Intern-Decision-4B 节奏项未过体检",
+                    unit="是概率",
+                ),
+            }
+        }
+    )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--private-world", type=Path)
+    parser.add_argument("--out", type=Path)
     args = parser.parse_args()
-    params = load_parameters()
+    prior = load_parameters()
+    source: WorldSource = "rakuten" if args.private_world else "synthetic"
+    if args.private_world:
+        world, _ = load_world(args.private_world, source="rakuten")
+        cases = generate(world)
+        input_bytes = "".join(case.model_dump_json() + "\n" for case in cases).encode()
+        prior = priors_for_private_world(prior)
+        output = args.out or DEFAULT_OUTPUT.with_name("rakuten-calibration")
+    else:
+        cases = load_cases()
+        input_bytes = DEFAULT_CHECKS.read_bytes()
+        output = args.out or DEFAULT_OUTPUT
+
     platform: list[Registry] = []
-    selected, facts = calibration(load_cases(), params, platform=platform)
-    args.out.mkdir(parents=True, exist_ok=True)
-    facts["cases_sha256"] = hashlib.sha256(DEFAULT_CHECKS.read_bytes()).hexdigest()
+    selected, facts = calibration(cases, prior, source=source, platform=platform)
+    output.mkdir(parents=True, exist_ok=True)
+    case_hash = hashlib.sha256(input_bytes).hexdigest()
+    facts["cases_sha256"] = case_hash
     selected = selected.model_copy(
-        update={"version": "phase2-synthetic-calibration-" + str(facts["cases_sha256"])[:8]}
+        update={"version": f"phase2-{source}-calibration-{case_hash[:8]}"}
     )
-    (args.out / "parameters-provisional.json").write_text(
+    suffix = "frozen" if args.private_world else "provisional"
+    (output / f"parameters-{suffix}.json").write_text(
         selected.model_dump_json(indent=2) + "\n", encoding="utf-8"
     )
-    (args.out / "report.json").write_text(
+    (output / "report.json").write_text(
         json.dumps(facts, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
     )
-    (args.out / "platform-provisional.jsonl").write_text(
+    (output / f"platform-{suffix}.jsonl").write_text(
         "".join(registry.model_dump_json() + "\n" for registry in platform),
         encoding="utf-8",
     )

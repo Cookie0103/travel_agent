@@ -1,0 +1,158 @@
+{
+  "version": "phase2-rakuten-calibration-2de10405",
+  "state": "frozen-rakuten-taste",
+  "priors": {
+    "price_ratio": {
+      "value": -0.35,
+      "bounds": [
+        -0.7,
+        -0.175
+      ],
+      "source": "Greminger，arXiv:2210.16408v5 表2；100 USD 折 15,000 JPY 为比较基准，150 JPY/USD 是固定换算假设",
+      "unit": "每一倍每晚预算"
+    },
+    "rating": {
+      "value": 0.17,
+      "bounds": [
+        0.085,
+        0.34
+      ],
+      "source": "Greminger，arXiv:2210.16408v5 表2；按本项目研究记录映射五分制",
+      "unit": "每多一评分点"
+    },
+    "log_reviews": {
+      "value": 0.025,
+      "bounds": [
+        0.0125,
+        0.05
+      ],
+      "source": "手设小权重；优先反映已知评分，0 条评论用 ln(1)",
+      "unit": "每自然对数点"
+    },
+    "station_minutes": {
+      "value": -0.02065,
+      "bounds": [
+        -0.0413,
+        -0.010325
+      ],
+      "source": "Masiero 等的香港陈述偏好，5.9 USD/分钟乘 0.0035/美元；直线距离按 80 m/分钟换算",
+      "unit": "每估算步行分钟"
+    },
+    "breakfast": {
+      "value": 0.035,
+      "bounds": [
+        0.0175,
+        0.07
+      ],
+      "source": "手设早餐相当于 10 USD 或 1,500 JPY；应用 0.0035/美元",
+      "unit": "含早餐一次"
+    },
+    "rank": {
+      "value": -0.012,
+      "bounds": [
+        -0.024,
+        -0.006
+      ],
+      "source": "Ursu 第5章，位次主要影响点开，预订效应小，手设较低量级",
+      "unit": "每下移一位"
+    },
+    "soft": {
+      "value": 0.2,
+      "bounds": [
+        0.1,
+        0.4
+      ],
+      "source": "手设初始量级，未通过体检或服务缺席时所有相关概率缺席",
+      "unit": "每一概率分"
+    },
+    "outside": {
+      "value": 7.4,
+      "bounds": [
+        3.7,
+        14.8
+      ],
+      "source": "手设，三张中间档合成酒店预订概率总和约低于 1%，依实际检查集复核",
+      "unit": "无预订选项的吸引力"
+    }
+  },
+  "persona_multipliers": {
+    "family": {
+      "breakfast": {
+        "value": 1.6,
+        "bounds": [
+          0.8,
+          3.2
+        ],
+        "source": "手设，校验集检查亲子对早餐的相对重视",
+        "unit": "倍数"
+      }
+    },
+    "couple": {},
+    "business": {
+      "station_minutes": {
+        "value": 1.25,
+        "bounds": [
+          0.625,
+          2.5
+        ],
+        "source": "手设，短住和出行效率的相对重视",
+        "unit": "倍数"
+      }
+    },
+    "budget": {
+      "price_ratio": {
+        "value": 1.6,
+        "bounds": [
+          0.8,
+          3.2
+        ],
+        "source": "手设，使预算紧人群对价格更敏感，待检查集验证",
+        "unit": "倍数"
+      }
+    },
+    "general": {}
+  },
+  "soft_items": {
+    "grounded_reason": {
+      "value": 0.5,
+      "bounds": [
+        0.25,
+        1.0
+      ],
+      "source": "通过 C5 中文体检项目等权起点，Intern-Decision-4B 38c9daf",
+      "unit": "是概率"
+    },
+    "stay_fit": {
+      "value": 0.5,
+      "bounds": [
+        0.25,
+        1.0
+      ],
+      "source": "通过 C5 中文体检项目等权起点，Intern-Decision-4B 38c9daf",
+      "unit": "是概率"
+    },
+    "pace_fit": {
+      "value": 0.0,
+      "bounds": [
+        0.0,
+        0.0
+      ],
+      "source": "C5 的 Intern-Decision-4B 节奏项未过体检",
+      "unit": "是概率"
+    }
+  },
+  "policy": {
+    "top_count": 3,
+    "max_partner_share": 0.6666666666666666,
+    "min_partner_relevance": 0.7,
+    "gamma": 0.5,
+    "partner_value": 0.1
+  },
+  "policy_sources": {
+    "top_count": "第一屏 3 张，固定展示对照；张数",
+    "max_partner_share": "设计 §2.6 粗网格候选，待 C6；区间 [0,1]",
+    "min_partner_relevance": "设计 §2.6 粗网格候选，待 C6；概率比例 [0,1]",
+    "gamma": "设计 §2.6 粗网格候选，待 C6；折扣强度 [0,1]",
+    "partner_value": "设计 §2.6 粗网格候选，待 C6；合作利润价值倍率 [0,0.3]"
+  }
+}
