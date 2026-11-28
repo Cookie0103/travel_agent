@@ -12,6 +12,7 @@ from backend.domain.execution import RunContext
 from backend.limits import LOCAL_MODEL, ProbeError
 from backend.providers.claude_agent.live import run_live, runtime_budget
 from backend.providers.claude_agent.request import validate_request
+from backend.providers.claude_agent.response import summarize
 from backend.providers.claude_agent.settings import load_runtime_settings
 
 
@@ -41,3 +42,33 @@ def test_local_sdk_uses_pinned_model_zero_ledger_and_production_fence(tmp_path: 
             evaluation={"suite": "v3"},
             database_dsn="postgresql://localhost/travel_agent",
         )
+
+
+def test_ollama_accounts_for_measured_final_input_instead_of_opening_estimate() -> None:
+    request = validate_request(
+        json.dumps(
+            {"model": LOCAL_MODEL, "max_tokens": 200, "messages": [], "stream": True}
+        ).encode(),
+        LOCAL_MODEL,
+        frozenset(),
+    )
+    frames = (
+        {
+            "type": "message_start",
+            "message": {
+                "model": LOCAL_MODEL,
+                "usage": {"input_tokens": 17000, "output_tokens": 0},
+            },
+        },
+        {
+            "type": "message_delta",
+            "delta": {"stop_reason": "end_turn"},
+            "usage": {"input_tokens": 9140, "cache_read_input_tokens": 4000, "output_tokens": 30},
+        },
+        {"type": "message_stop"},
+    )
+    reply = "".join(f"data: {json.dumps(frame)}\n\n" for frame in frames).encode()
+    usage = summarize(reply, request, LOCAL_MODEL)
+    assert usage["input_tokens"] == 9140
+    assert usage["cache_read_input_tokens"] == 4000
+    assert usage["output_tokens"] == 30 and usage["usage_cost_upper_cny"] == "0"

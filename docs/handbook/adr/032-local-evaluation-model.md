@@ -1,7 +1,7 @@
 # ADR-032 本地评测模型经既有 Claude Agent SDK 接入
 
 日期：2026-11-28
-状态：隔离线路已准备，等待固定权重和 A7 实机十题验收
+状态：隔离线路经实测可调工具，A7 采用 D9 小样本
 
 ## 背景
 
@@ -23,3 +23,7 @@
 - [请求与费用边界](004-sdk-request-budget-boundary.md)
 
 本机模型验收题由 `python -m eval.v3.local_probe` 列出，来自反思划分。使用 `dev eval-v3 --local-model --split reflection` 和列出的题目，给汇总入口传入本次的 `trials.jsonl`。当前线路只用于 A7 工具调用与草稿可行性验证。本机记忆抽取和 D5 基线需要单独补齐实际证据。
+
+## 实测结论
+
+A7 的首字节与输入用量兼容问题已定位。实测有三题超时，已无法达到 8/10。当前大样本不采用本机线路。[实测记录](../../phase2/evidence/local-agent-a7-v1.md)

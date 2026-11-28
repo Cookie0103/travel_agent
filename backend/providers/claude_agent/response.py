@@ -3,7 +3,7 @@
 import json
 from collections.abc import Iterable, Mapping
 
-from backend.limits import Currency, ProbeError, price_for
+from backend.limits import LOCAL_MODEL, Currency, ProbeError, price_for
 from backend.providers.claude_agent.request import Request
 
 
@@ -47,7 +47,7 @@ def summarize(
         initial, final = start.get("usage"), end.get("usage")
         if not isinstance(initial, dict) or not isinstance(final, dict):
             raise ValueError
-        tokens = _tokens(initial, final)
+        tokens = _tokens(initial, final, local_estimate=model == LOCAL_MODEL)
     except (ValueError, TypeError, KeyError, StopIteration, UnicodeError, IndexError):
         raise ProbeError("provider_error", "上游 SSE 或最终 usage 不完整，保留全部预占") from None
     inputs = sum(v for k, v in tokens.items() if k != "output_tokens")
@@ -75,6 +75,8 @@ def summarize(
         "usage_cost_upper": str(estimate),
         "reserved": str(request.charge),
     }
+    if model == LOCAL_MODEL and type(opening := initial.get("input_tokens")) is int:
+        result["opening_input_tokens"] = opening
     if currency == "CNY":
         result.update(usage_cost_upper_cny=str(estimate), reserved_cny=str(request.charge))
     if request.temperature is not None:
@@ -120,7 +122,11 @@ def _events(content: bytes) -> list[dict[str, object]]:
     return events
 
 
-def _tokens(initial: dict[str, object], final: dict[str, object]) -> dict[str, int]:
+def _tokens(
+    initial: dict[str, object], final: dict[str, object], *, local_estimate: bool
+) -> dict[str, int]:
+    # Ollama 在起始帧可能给出估算，终止帧才有实测未缓存与缓存输入数。
+    input_usage = final if local_estimate else initial
     result: dict[str, int] = {}
     for key in (
         "input_tokens",
@@ -131,7 +137,7 @@ def _tokens(initial: dict[str, object], final: dict[str, object]) -> dict[str, i
         value = (
             final.get(key)
             if key == "output_tokens"
-            else initial.get(key, 0 if "cache" in key else None)
+            else input_usage.get(key, 0 if "cache" in key else None)
         )
         if type(value) is not int or value < 0:
             raise ValueError
@@ -140,7 +146,7 @@ def _tokens(initial: dict[str, object], final: dict[str, object]) -> dict[str, i
     if type(initial_output) is not int or not 0 <= initial_output <= result["output_tokens"]:
         raise ValueError
     for key in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"):
-        if key in final:
+        if key in final and not local_estimate:
             value = final[key]
             if type(value) is not int or value < result[key]:
                 raise ValueError
