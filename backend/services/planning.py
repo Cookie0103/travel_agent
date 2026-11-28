@@ -5,18 +5,30 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.adapters.live_data import LiveData
+from backend.adapters.open_meteo import cached_rain
 from backend.domain.catalog import Place
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.execution import RunContext
-from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationReport
-from backend.domain.travel_request import TravelRequest
+from backend.domain.hotels import HotelOffer
+from backend.domain.itinerary import (
+    ItineraryProposal,
+    RouteInput,
+    ValidationCheck,
+    ValidationReport,
+)
+from backend.domain.itinerary_revision import edit_scope_check, limited_edit_target
+from backend.domain.plans import DRAFT_TTL, PlanDraft
+from backend.domain.schedule_rules import required_places
+from backend.domain.travel_request import TravelRequest, same_city, trip_segments
 from backend.domain.validator import (
     HOTEL_CONDITIONS_REASON,
     HOTEL_EXPIRED_REASON,
     validate_itinerary,
 )
-from backend.persistence import memory, plans
+from backend.persistence import memory, plans, runs
 from backend.persistence import travel as requests
+from backend.persistence.catalog import load_catalog
+from backend.persistence.models import TaskRunRow
 from backend.profile import current
 from backend.providers.routes_fixture import RouteRate, estimate, load_routes
 from backend.services.common import ServiceError, transaction
@@ -149,6 +161,94 @@ class PlanningService:
             return await validate_proposal(db, context, request, proposal, self.travel.live)
 
 
+async def limited_edit_source(db: AsyncSession, context: RunContext) -> TaskRunRow | None:
+    source = await runs.owned(db, context.user_id, context.run_id)
+    if (
+        source
+        and source.session_id == context.session_id
+        and limited_edit_target(source.user_text or "")
+    ):
+        return source
+    return None
+
+
+async def _revision_check(
+    db: AsyncSession,
+    context: RunContext,
+    request: TravelRequest,
+    proposal: ItineraryProposal,
+    records: tuple[EvidenceRecord, ...],
+) -> ValidationCheck | None:
+    source = await limited_edit_source(db, context)
+    if source is None:
+        return None
+    plan = await plans.for_session(db, context)
+    draft = await plans.latest_draft(
+        db,
+        context,
+        expires_before=source.created_at + DRAFT_TTL,
+        base_version=plan.current_version if plan else 0,
+    )
+    if draft:
+        before = PlanDraft.model_validate(draft.payload).content
+    elif plan and (saved := await plans.version(db, plan)):
+        before = saved.content
+    else:
+        return ValidationCheck(
+            subject="revision",
+            status="unknown",
+            code="edit_scope",
+            message="没有前一版同会话的草稿或行程，暂无法核对修改范围。",
+        )
+    previous = before.proposal(request.revision)
+    historical = await requests.find_evidence(db, context, previous.evidence_ids())
+    compared = (*map(requests.evidence_from_row, historical), *records)
+    place_ids = {}
+    places = {}
+    hotels = {}
+    for record in compared:
+        if record.kind == "place" and record.status == "verified":
+            place_ids[record.evidence_id] = record.entity_id
+            # Google 的历史持久记录只有 ID 与城市；当前证据已按原路径水合。
+            if isinstance(record.value, dict) and "name" in record.value:
+                places[record.evidence_id] = Place.model_validate(record.value)
+        if record.kind == "hotel_offer" and record.status == "verified":
+            offer = HotelOffer.model_validate(record.value)
+            hotels[record.evidence_id] = (offer.hotel_id, offer.room_type)
+    return edit_scope_check(
+        source.user_text or "",
+        request,
+        previous,
+        proposal,
+        places,
+        historical_places=place_ids,
+        hotels=hotels,
+    )
+
+
+async def _place_catalog(
+    db: AsyncSession, request: TravelRequest, live: LiveData | None
+) -> tuple[tuple[str, ...], ...]:
+    if not any(required_places(text) for text in request.hard_constraints):
+        return ()
+    cities = tuple(segment.city for segment in trip_segments(request))
+    if not cities and request.city:
+        cities = (request.city,)
+    if live and live.evaluation_place_names:
+        names = live.evaluation_place_names
+    else:
+        catalog = await load_catalog(db)
+        places = [Place.model_validate(row) for row in catalog["places"]]
+        if live and live.google:
+            places.extend(live.google.places.values())
+        names = tuple((place.city, (place.name, *place.aliases)) for place in places)
+    return tuple(
+        aliases
+        for city, aliases in names
+        if not cities or any(same_city(city, candidate) for candidate in cities)
+    )
+
+
 async def validate_proposal(
     db: AsyncSession,
     context: RunContext,
@@ -167,13 +267,32 @@ async def validate_proposal(
     records = await hydrate_records(records, live)
     try:
         default = await memory.transport_default(db, context.user_id, context.session_id)
-        return validate_itinerary(
+        report = validate_itinerary(
             request,
             proposal,
             records,
             datetime.now(UTC),
             transport_default=default[0] if default else None,
+            place_catalog=await _place_catalog(db, request, live),
+            weather=await cached_rain(
+                db,
+                request,
+                now,
+                live.evaluation_today,
+                evaluation_calendar=live.evaluation_weather_calendar,
+            )
+            if live is not None
+            else None,
         )
+        check = await _revision_check(db, context, request, proposal, records)
+        if check is None:
+            return report
+        status = report.status
+        if check.status == "conflict":
+            status = "conflict"
+        elif check.status == "unknown" and status == "complete":
+            status = "partial"
+        return report.model_copy(update={"status": status, "checks": (*report.checks, check)})
     except ValueError as error:
         # 校验器的ValueError是固定中文文案(无插值)，可整体作reason；pydantic错误含输入值，只记类名。
         reason = str(error) if type(error) is ValueError else "evidence_model_invalid"

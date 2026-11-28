@@ -11,6 +11,7 @@ from threading import Event
 from pydantic import TypeAdapter, ValidationError
 
 from backend.adapters.evaluation_faults import EvaluationFault, validate_fault
+from backend.adapters.evaluation_world import EvaluationWorld
 from backend.adapters.tracing import TraceMetadata, report_metadata
 from backend.agent.runtime import EventSink
 from backend.domain.execution import (
@@ -27,6 +28,7 @@ from backend.limits import ProbeError, Provider
 from backend.profile import current
 from backend.providers.claude_agent.live import run_live
 from backend.providers.claude_agent.settings import model_name, provider_name
+from backend.tools.skill_config import SkillConfig
 
 LOGGER = logging.getLogger(__name__)
 
@@ -42,14 +44,19 @@ class GuardedRuntime:
         evaluation_fault: EvaluationFault | None = None,
         evaluation: Mapping[str, object] | None = None,
         prompt_snapshot: bool = False,
+        skill_config: SkillConfig | None = None,
+        evaluation_world: EvaluationWorld | None = None,
     ) -> None:
         self.root, self.database_dsn = root, database_dsn
         self.prompt_snapshot = prompt_snapshot
+        self.skill_config = skill_config
+        self.evaluation_world = evaluation_world
         self.real_data = real_data
-        if evaluation_fault is not None:
-            validate_fault(evaluation_fault, profile="eval", database_dsn=database_dsn)
-            if real_data:
-                raise ValueError("故障评测不能混用真实供应商")
+        validate_fault(
+            evaluation_fault, profile="eval", database_dsn=database_dsn, world=evaluation_world
+        )
+        if evaluation_fault and real_data:
+            raise ValueError("故障评测不能混用真实供应商")
         self.evaluation_fault, self.evaluation = evaluation_fault, evaluation
         self.trace_metadata: TraceMetadata | None = None
         self.observed_events: tuple[RuntimeEvent, ...] = ()
@@ -104,6 +111,8 @@ class GuardedRuntime:
                 evaluation_fault=self.evaluation_fault,
                 evaluation=self.evaluation,
                 prompt_snapshot=self.prompt_snapshot,
+                skill_config=self.skill_config,
+                evaluation_world=self.evaluation_world,
             )
         )
         watcher = asyncio.create_task(cancelled.wait())

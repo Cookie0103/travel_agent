@@ -1,15 +1,23 @@
 """Open-Meteo 的16天预报；超出范围保持未知，不以历史天气替代。"""
 
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import httpx
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.dialects.postgresql import insert
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.adapters.external_api import ApiUsage, parse_response, request_json
-from backend.domain.external_data import ExternalDataError, GeoPoint
-from backend.domain.travel_request import TravelRequest, tokyo_today
+from backend.adapters.live_data import LiveData
+from backend.domain.external_data import ExternalDataError, GeoPoint, ProviderDataMode
+from backend.domain.travel_request import (
+    TravelRequest,
+    city_key,
+    segment_request,
+    tokyo_today,
+    trip_segments,
+)
 from backend.persistence.models import WeatherForecastRow
 
 
@@ -43,27 +51,52 @@ def description(code: int | None) -> str:
     return "未知"
 
 
+def _forecast_end(today: date, requested: date, evaluation_calendar: bool) -> date:
+    # 隔离夹具已经拥有完整合成日历；线上及旧快照继续遵守 16 天窗口。
+    return requested if evaluation_calendar else min(requested, today + timedelta(days=15))
+
+
 async def forecast(
-    http: httpx.AsyncClient, usage: ApiUsage, point: GeoPoint, request: TravelRequest
+    http: httpx.AsyncClient,
+    usage: ApiUsage,
+    point: GeoPoint,
+    request: TravelRequest,
+    *,
+    data_mode: ProviderDataMode = "live",
+    today: date | None = None,
+    evaluation_calendar: bool = False,
 ) -> dict[str, object]:
-    today = tokyo_today()
+    today = today or tokyo_today()
     if not request.start_date or not request.end_date:
         return {"status": "unknown", "reason": "旅行日期尚未确定"}
-    if request.start_date < today or request.end_date > today + timedelta(days=15):
-        return {"status": "unknown", "reason": "旅行日期超出16天预报范围，临近出行再查询"}
+    start = max(request.start_date, today)
+    end = _forecast_end(today, request.end_date, evaluation_calendar)
+    if end < start:
+        reason = (
+            "旅行日期早于合成评测基准日"
+            if evaluation_calendar
+            else "旅行日期超出16天预报范围，临近出行再查询"
+        )
+        return {"status": "unknown", "reason": reason}
+    partial = start != request.start_date or end != request.end_date
+
+    def cover(payload: dict[str, object]) -> dict[str, object]:
+        reason = "未列日期早于合成评测基准日" if evaluation_calendar else "未列日期超出16天预报范围"
+        return {**payload, "status": "partial", "reason": reason} if partial else payload
+
     now = datetime.now(UTC)
-    city = (request.city or point.name).strip().casefold()
+    city = city_key(request.city or point.name)
     async with usage.database.sessions() as db:
         cached = await db.scalar(
             select(WeatherForecastRow).where(
                 WeatherForecastRow.city == city,
-                WeatherForecastRow.start_date == request.start_date,
-                WeatherForecastRow.end_date == request.end_date,
+                WeatherForecastRow.start_date == start,
+                WeatherForecastRow.end_date == end,
                 WeatherForecastRow.fetched_at > now - timedelta(hours=3),
             )
         )
         if cached:
-            return dict(cached.payload)
+            return cover(dict(cached.payload))
     data = parse_response(
         Forecast,
         await request_json(
@@ -78,8 +111,8 @@ async def forecast(
                 "daily": "weather_code,temperature_2m_max,temperature_2m_min,"
                 "precipitation_probability_max",
                 "timezone": "Asia/Tokyo",
-                "start_date": request.start_date.isoformat(),
-                "end_date": request.end_date.isoformat(),
+                "start_date": start.isoformat(),
+                "end_date": end.isoformat(),
             },
         ),
     ).daily
@@ -90,8 +123,7 @@ async def forecast(
         data.precipitation_probability_max,
     )
     expected_days = [
-        (request.start_date + timedelta(days=offset)).isoformat()
-        for offset in range((request.end_date - request.start_date).days + 1)
+        (start + timedelta(days=offset)).isoformat() for offset in range((end - start).days + 1)
     ]
     if data.time != expected_days:
         raise ExternalDataError("天气响应为空或日期范围不匹配")
@@ -116,15 +148,17 @@ async def forecast(
                 strict=True,
             )
         ],
-        "source_ref": "https://open-meteo.com/",
-        "attribution": "Open-Meteo.com (CC BY 4.0)",
+        "source_ref": "synthetic:weather"
+        if data_mode == "synthetic"
+        else "https://open-meteo.com/",
+        "attribution": "合成评测数据" if data_mode == "synthetic" else "Open-Meteo.com (CC BY 4.0)",
         "retrieved_at": now.isoformat(),
     }
     async with usage.database.sessions.begin() as db:
         statement = insert(WeatherForecastRow).values(
             city=city,
-            start_date=request.start_date,
-            end_date=request.end_date,
+            start_date=start,
+            end_date=end,
             payload=result,
             fetched_at=now,
         )
@@ -134,4 +168,94 @@ async def forecast(
                 set_={"payload": result, "fetched_at": now},
             )
         )
-    return result
+    return cover(result)
+
+
+async def city_forecast(live: LiveData, request: TravelRequest) -> dict[str, object]:
+    segments = trip_segments(request)
+    if not segments:
+        return {"status": "unknown", "reason": "旅行城市或日期尚未确定"}
+    if live.google is None:
+        raise ExternalDataError("未配置 Google 地理编码", validation=True)
+
+    cities = []
+    failures: list[ExternalDataError] = []
+    today = live.evaluation_today or tokyo_today()
+    for segment in segments:
+        calendar = live.evaluation_weather_calendar
+        if segment.depart < today or segment.arrive > _forecast_end(
+            today, segment.depart, calendar
+        ):
+            reason = "旅行日期早于合成评测基准日" if calendar else "超出 16 天预报范围"
+            result: dict[str, object] = {"status": "unknown", "reason": reason}
+        else:
+            try:
+                point = await live.google.geocode(segment.city)
+                result = await forecast(
+                    live.http,
+                    live.usage,
+                    point,
+                    segment_request(request, segment),
+                    data_mode=live.data_mode,
+                    today=today,
+                    evaluation_calendar=calendar,
+                )
+            except ExternalDataError as error:
+                failures.append(error)
+                result = {"status": "unknown", "reason": "该城天气暂不可用"}
+        cities.append({"city": segment.city, **result})
+    if len(failures) == len(segments):
+        raise failures[0]
+    if len(cities) == 1:
+        return cities[0]
+    states = {city["status"] for city in cities}
+    state = (
+        "verified" if states == {"verified"} else "unknown" if states == {"unknown"} else "partial"
+    )
+    return {"status": state, "cities": cities}
+
+
+async def cached_rain(
+    db: AsyncSession,
+    request: TravelRequest,
+    now: datetime,
+    today: date | None = None,
+    *,
+    evaluation_calendar: bool = False,
+) -> dict[tuple[str, date], int | None]:
+    if request.start_date is None or request.end_date is None:
+        return {}
+    today = today or tokyo_today()
+    start = max(request.start_date, today)
+    end = _forecast_end(today, request.end_date, evaluation_calendar)
+    if end < start:
+        return {}
+    cities = {city_key(segment.city) for segment in trip_segments(request)}
+    rows = await db.scalars(
+        select(WeatherForecastRow)
+        .where(
+            WeatherForecastRow.city.in_(cities),
+            WeatherForecastRow.start_date <= end,
+            WeatherForecastRow.end_date >= start,
+            WeatherForecastRow.fetched_at > now - timedelta(hours=3),
+        )
+        .order_by(WeatherForecastRow.fetched_at)
+    )
+    rain: dict[tuple[str, date], int | None] = {}
+    for row in rows:
+        days = row.payload.get("days")
+        if not isinstance(days, list):
+            continue
+        for item in days:
+            if not isinstance(item, dict) or not isinstance(item.get("date"), str):
+                continue
+            try:
+                day = date.fromisoformat(item["date"])
+            except ValueError:
+                continue
+            chance = item.get("rain_probability")
+            if start <= day <= end:
+                rain[(row.city, day)] = (
+                    chance if type(chance) is int and 0 <= chance <= 100 else None
+                )
+    return rain

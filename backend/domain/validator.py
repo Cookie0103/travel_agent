@@ -1,11 +1,18 @@
 """纯代码校验行程；区分已满足、未知与硬冲突，给SDK具体修复反馈而不代写模型循环。"""
 
+from collections.abc import Iterable
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from typing import Literal
 from uuid import UUID
 
-from backend.domain.catalog import SIGHTSEEING_CATEGORIES, VISIT_DURATION_RANGES, Place
+from backend.domain.catalog import (
+    SIGHTSEEING_CATEGORIES,
+    TRANSIT_STOPS,
+    VISIT_DURATION_RANGES,
+    Place,
+)
+from backend.domain.choices import recognized_constraint_group
 from backend.domain.evidence import EvidenceRecord, evidence_conditions
 from backend.domain.hotel_recovery import nightly_price, nightly_upper
 from backend.domain.hotels import HotelOffer
@@ -16,8 +23,25 @@ from backend.domain.itinerary import (
     ValidationCheck,
     ValidationReport,
 )
-from backend.domain.opening_hours import TOKYO, opening_state
+from backend.domain.opening_hours import TOKYO
 from backend.domain.plans import stays_of
+from backend.domain.regional_rules import (
+    context_checks,
+    last_admission,
+    place_opening_state,
+    stay_timing_checks,
+)
+from backend.domain.schedule_rules import (
+    DEFAULT_SCHEDULE_LIMITS,
+    ScheduleLimits,
+    condition_time,
+    daily_route_checks,
+    hotel_return_checks,
+    must_visit_checks,
+    required_places,
+    room_preference_checks,
+    time_checks,
+)
 from backend.domain.travel_request import (
     Transport,
     TravelRequest,
@@ -28,6 +52,7 @@ from backend.domain.travel_request import (
     segment_request,
     trip_segments,
 )
+from backend.domain.weather_rules import RainForecast, is_rain_requirement, rain_checks
 
 
 def check(subject: str, status: CheckStatus, code: str, message: str) -> ValidationCheck:
@@ -55,6 +80,9 @@ def validate_itinerary(
     now: datetime,
     *,
     transport_default: Transport | None = None,
+    schedule_limits: ScheduleLimits = DEFAULT_SCHEDULE_LIMITS,
+    weather: RainForecast | None = None,
+    place_catalog: Iterable[tuple[str, ...]] = (),
 ) -> ValidationReport:
     """transport_default：request未写交通时，已确认的交通偏好作为路段应有的交通方式。"""
     evidence = {record.evidence_id: record for record in records}
@@ -80,17 +108,29 @@ def validate_itinerary(
         )
     checks.extend(sightseeing_checks(request, proposal, places))
     checks.extend(meal_checks(request, proposal))
-    known, estimated, costs = budget_checks(request, proposal, evidence, now)
+    known, estimated, costs = budget_checks(request, proposal, evidence, now, places=places)
     checks.extend(costs)
-    if request.hard_constraints:
-        checks.append(
-            check(
-                "request",
-                "unknown",
-                "free_text_constraints",
-                "自由文本硬条件尚不能全部机械核查，需保留并明确未验证",
+    measured = time_checks(request, proposal, schedule_limits)
+    measured.extend(must_visit_checks(request, places, place_catalog))
+    measured.extend(room_preference_checks(request, proposal, evidence))
+    measured.extend(daily_route_checks(proposal, places, evidence, schedule_limits))
+    measured.extend(hotel_return_checks(request, proposal, places, evidence))
+    rain_required = any(is_rain_requirement(text) for text in request.hard_constraints)
+    if weather is not None or rain_required:
+        measured.extend(
+            rain_checks(
+                proposal,
+                places,
+                evidence,
+                weather or {},
+                schedule_limits.rain_threshold,
+                required=rain_required,
             )
         )
+    checks.extend(measured)
+    checks.extend(context_checks(proposal, places))
+    checks.extend(stay_timing_checks(request, proposal, places, evidence))
+    checks.extend(constraint_checks(request, {entry.code for entry in measured}))
     states = {entry.status for entry in checks}
     status: Literal["complete", "partial", "conflict"] = (
         "conflict" if "conflict" in states else "partial" if "unknown" in states else "complete"
@@ -98,6 +138,58 @@ def validate_itinerary(
     return ValidationReport(
         status=status, checks=tuple(checks), known_cost=known, estimated_cost=estimated
     )
+
+
+def constraint_checks(request: TravelRequest, measured: set[str]) -> list[ValidationCheck]:
+    covered = {
+        "arrival": "arrival_boundary",
+        "departure": "departure_boundary",
+        "lodging": "room_preference",
+        "smoking": "room_preference",
+        "bed": "room_preference",
+    }
+    checks: list[ValidationCheck] = []
+    hard = set(request.hard_constraints)
+    for index, text in enumerate(
+        dict.fromkeys((*request.hard_constraints, *request.soft_constraints))
+    ):
+        group = recognized_constraint_group(text)
+        if group is None:
+            group = next(
+                (
+                    role
+                    for role in covered
+                    if role in {"arrival", "departure"} and condition_time(text, role) is not None
+                ),
+                None,
+            )
+        if group is not None:
+            pending = (
+                text in hard
+                and group in covered
+                and covered[group] not in measured
+                and not text.endswith("无要求")
+            )
+            checks.append(
+                check(
+                    f"constraint:{group}",
+                    "unknown" if pending else "verified",
+                    "recognized_constraint",
+                    "已识别结构化硬条件，实际时段或房型仍需核对。"
+                    if pending
+                    else "已识别结构化条件。",
+                )
+            )
+        elif text in hard and not (required_places(text) or is_rain_requirement(text)):
+            checks.append(
+                check(
+                    f"constraint:{index}",
+                    "unknown",
+                    "free_text_constraints",
+                    "该项自由文本硬条件未核实，需保留并明确说明。",
+                )
+            )
+    return checks
 
 
 def sightseeing_checks(
@@ -116,18 +208,10 @@ def sightseeing_checks(
         by_day.setdefault(day, []).append(place.place_id)
         by_place.setdefault(place.place_id, []).append((day, place.name))
     limits = {"慢节奏": 3, "标准": 5, "特种兵": 8}
-    pace = (
-        pace_of(request) or ""
-        if request.segments
-        else next(
-            (s.removeprefix("节奏：") for s in request.soft_constraints if s.startswith("节奏：")),
-            "",
-        )
-    )
+    pace = pace_of(request) or ""
     limit = limits.get(pace, 5)
     checks: list[ValidationCheck] = []
-    if request.segments:
-        assert request.start_date is not None and request.end_date is not None
+    if request.start_date is not None and request.end_date is not None:
         incomplete = {request.start_date, request.end_date} | {
             segment.arrive for segment in trip_segments(request)[1:]
         }
@@ -163,28 +247,28 @@ def sightseeing_checks(
                         "首末日和转场日已放宽，不按未查询的航班/车次时刻推算。",
                     )
                 )
-        for index in range(1, len(proposal.items)):
-            previous, current = proposal.items[index - 1 : index + 1]
-            previous_place, current_place = places[index - 1 : index + 1]
-            day = current.start.astimezone(TOKYO).date()
-            if (
-                previous.start.astimezone(TOKYO).date() == day
-                and previous.end.astimezone(TOKYO).date() == day
-                and previous_place is not None
-                and current_place is not None
-                and same_city(previous_place.city, current_place.city)
-                and current.start - previous.end > timedelta(hours=3)
-            ):
-                checks.append(
-                    check(
-                        f"day:{day.isoformat()}",
-                        "unknown",
-                        "day_gap",
-                        f"安排提醒：{day.isoformat()}同城相邻两项之间"
-                        f"{hhmm(previous.end)}—{hhmm(current.start)}空白超过3小时；"
-                        "请补充安排或说明休息，不将空白解释成已查询交通耗时。",
-                    )
+    for index in range(1, len(proposal.items)):
+        previous, current = proposal.items[index - 1 : index + 1]
+        previous_place, current_place = places[index - 1 : index + 1]
+        day = current.start.astimezone(TOKYO).date()
+        if (
+            previous.start.astimezone(TOKYO).date() == day
+            and previous.end.astimezone(TOKYO).date() == day
+            and previous_place is not None
+            and current_place is not None
+            and same_city(previous_place.city, current_place.city)
+            and current.start - previous.end > timedelta(hours=3)
+        ):
+            checks.append(
+                check(
+                    f"day:{day.isoformat()}",
+                    "unknown",
+                    "day_gap",
+                    f"安排提醒：{day.isoformat()}同城相邻两项之间"
+                    f"{hhmm(previous.end)}—{hhmm(current.start)}空白超过3小时；"
+                    "请补充安排或说明休息，不将空白解释成已查询交通耗时。",
                 )
+            )
     for day, visits in by_day.items():
         if len(visits) > limit:
             guidance = (
@@ -275,7 +359,7 @@ def visit_checks(
     checks: list[ValidationCheck] = []
     if end <= start:
         return [check(subject, "conflict", "visit_duration", "停留结束必须晚于开始")]
-    if request.segments and place is not None:
+    if place is not None:
         bounds = VISIT_DURATION_RANGES.get(place.category.strip().casefold())
         if bounds:
             lower, upper = (timedelta(minutes=minutes) for minutes in bounds)
@@ -335,7 +419,8 @@ def visit_checks(
                 subject, "conflict", "overlap", "停留与前一项重叠或列表未按时间排序，不能重复安排"
             )
         )
-    state = opening_state(place.opening_hours, item.start, item.end) if place else "unknown"
+    state = place_opening_state(place, item.start, item.end) if place else "unknown"
+    last_entry = last_admission(place) if place else None
     opening_status: CheckStatus = (
         "verified" if state == "open" else "conflict" if state == "closed" else "unknown"
     )
@@ -344,7 +429,9 @@ def visit_checks(
         "closed": "快照营业时间不覆盖停留，请修改日期/时段或地点",
         "unknown": "营业时间缺失或语法未支持，不能认定营业",
     }[state]
-    if state == "closed":
+    if state == "closed" and last_entry and start.time() > last_entry:
+        message = f"已超过该景点 {last_entry:%H:%M} 的最晚入场时刻，请调整本项并更新受影响路段。"
+    elif state == "closed":
         assert place is not None and place.opening_hours is not None
         # 反馈使用同一来源快照，给出冲突时段；不计算或猜测新的营业时间。
         hours = place.opening_hours[:200] + (
@@ -475,16 +562,26 @@ def budget_checks(
     proposal: ItineraryProposal,
     evidence: dict[UUID, EvidenceRecord],
     now: datetime,
+    *,
+    places: list[Place | None] | None = None,
 ) -> tuple[Decimal, Decimal, list[ValidationCheck]]:
     known, estimated = Decimal(0), Decimal(0)
-    checks = [
-        check(
-            "budget",
-            "unknown",
-            "other_costs",
-            "景点门票、餐饮等未获得完整费用证据，不能认定全程预算满足",
+    checks: list[ValidationCheck] = []
+    # 纯换乘停靠已有路段费用口径。景点、未核实地点及其他活动仍有未核实费用。
+    if places is None or any(
+        place is None
+        or place.category.strip().casefold() not in TRANSIT_STOPS
+        or (item.note and item.note.strip())
+        for item, place in zip(proposal.items, places, strict=True)
+    ):
+        checks.append(
+            check(
+                "budget",
+                "unknown",
+                "other_costs",
+                "景点门票、餐饮等未获得完整费用证据，不能认定全程预算满足",
+            )
         )
-    ]
     relation = lodging_budget_relation(request)
     checks.append(
         check(

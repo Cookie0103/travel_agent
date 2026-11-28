@@ -1,0 +1,1305 @@
+"""v3评测入口：脚本化用户逐题多轮。--live 使用真实被测模型和离线供应商数据。
+
+uv run python -m eval.v3.run                       # 离线冒烟（FixtureRuntime，零外部调用）
+uv run python -m eval.v3.run --live --case-id <id> # DeepSeek Flash + 离线供应商数据
+"""
+
+import argparse
+import asyncio
+import hashlib
+import json
+import os
+import shlex
+import signal
+import subprocess
+from collections.abc import Callable, Iterator, Mapping, Sequence
+from collections.abc import Set as AbstractSet
+from contextlib import nullcontext
+from dataclasses import dataclass, field, replace
+from datetime import UTC, datetime, timedelta
+from decimal import Decimal
+from pathlib import Path, PurePath
+from time import perf_counter
+from typing import Any, get_args
+from uuid import UUID, uuid4
+
+from opentelemetry.sdk.resources import Resource
+from opentelemetry.sdk.trace import TracerProvider
+from opentelemetry.sdk.trace.export import ConsoleSpanExporter, SimpleSpanProcessor
+from opentelemetry.sdk.trace.sampling import ALWAYS_ON
+from sqlalchemy import func, select
+
+from backend.adapters.evaluation_faults import evaluation_data, is_eval_database
+from backend.adapters.evaluation_world import EvaluationWorld
+from backend.adapters.tracing import cloud_exporter, push_scores
+from backend.agent.fixture_runtime import FixtureRuntime
+from backend.domain.evidence import HOTEL_OFFER_FIELDS
+from backend.domain.execution import RunContext, RuntimeEvent, RuntimeOutcome
+from backend.domain.plans import PlanDraft
+from backend.domain.tool_facts import EXPERIMENTAL_SKILLS, SkillName
+from backend.domain.travel_request import RequestPatch, city_key, pace_of
+from backend.limits import ProbeError
+from backend.persistence.models import BookingRow, MemoryFactRow, PlanDraftRow, SupplierOrderRow
+from backend.persistence.temporary import temporary_database
+from backend.profile import A7_LONG_PROFILE, LOCAL_EVAL_PROFILE_ENV
+from backend.providers.claude_agent.application import GuardedRuntime
+from backend.providers.claude_agent.budget import Phase2ReviewRequired
+from backend.providers.claude_agent.response import cache_totals
+from backend.services.common import transaction
+from backend.services.memory import MemoryService
+from backend.services.memory_extractor import MemoryExtractor
+from backend.services.runs import RunService
+from backend.services.sessions import DemoLogin
+from backend.services.travel import TravelService
+from backend.tools.contracts import ToolExecutor
+from backend.tools.skill_config import SkillConfig
+from backend.tools.travel import TravelToolExecutor
+from data.eval_world.world import load_world, world_files
+from eval.commerce.parameters import REGISTRY, Registry, load_parameters
+from eval.commerce.trials import Market, market_from_world
+from eval.commerce.trials import evaluate as evaluate_commerce
+from eval.core.database import DatabaseEvaluation, database_evaluation, selector_runner
+from eval.core.evaluation_world import phase2_world
+from eval.core.guard import refuse_live_under_pytest
+from eval.core.jsonl import read_jsonl
+from eval.core.state import prepare_state, snapshot
+from eval.grading.claims import ClaimFacts
+from eval.grading.memory_metrics import memory_scores, proposal_failures
+from eval.v3.cases import ROOT, V3Case, load_cases
+from eval.v3.facts import Snapshot, hotel_picks, hotel_presentations, selected_cards
+from eval.v3.judge import JudgeCall, judge_scores, judge_trial, write_transcript
+from eval.v3.phase2_split import ARCHIVE, DIRECTORY, LEGACY_CASES, frozen_cases, public_path
+from eval.v3.report import write_reports
+from eval.v3.score import DbFacts, Observation, Score, TurnObs, rule_gate, score_trial
+from eval.v3.user import ScriptResult, ScriptRunner, StructuredCall
+
+PROFILES = ("human", "default", "relaxed", A7_LONG_PROFILE)
+PROMPT_ENV = "TRAVEL_EVAL_PROMPT_SNAPSHOT"
+# 表示“额度/限流”的infra_error：run的rate_limited(provider限流)与服务层429。
+# 其余(provider_error/timeout/harness:*)可能是偶发故障，不据此停止。
+LIMIT_ERRORS = frozenset({"rate_limited", "service:429"})
+QUOTA_STREAK = 2
+RUNS_DIR = ROOT / ".cache" / "eval-v3"
+SCORE_FLAGS = (
+    "success",
+    "hard_pass",
+    "false_claim",
+    "within_time",
+    "tool_ok",
+    "memory_ok",
+    "abandoned",
+)
+
+
+class Recording:
+    """把runtime事件旁路记录到按run分组的表里；其余编排/取消/计费沿用被包装的运行时。"""
+
+    def __init__(self, store: dict[UUID, list[RuntimeEvent]]) -> None:
+        self.store = store
+
+    def tee(
+        self, context: RunContext, emit: Callable[[RuntimeEvent], None]
+    ) -> Callable[[RuntimeEvent], None]:
+        def forward(event: RuntimeEvent) -> None:
+            self.store.setdefault(context.run_id, []).append(event)
+            emit(event)
+
+        return forward
+
+
+class OfflineRuntime(FixtureRuntime):
+    def __init__(
+        self,
+        executor: ToolExecutor,
+        store: dict[UUID, list[RuntimeEvent]],
+        skills: SkillConfig | None = None,
+    ) -> None:
+        if skills is not None and isinstance(executor, TravelToolExecutor):
+            executor.configure_skills(skills, evaluation=True)
+        super().__init__(executor)
+        self.recording = Recording(store)
+
+    async def execute(  # type: ignore[no-untyped-def]
+        self, context, prompt, sdk_session_id, emit, cancelled
+    ) -> RuntimeOutcome:
+        return await super().execute(
+            context, prompt, sdk_session_id, self.recording.tee(context, emit), cancelled
+        )
+
+
+class V3Runtime(GuardedRuntime):
+    """付费评测只使用 DeepSeek Flash，供应商数据用本地夹具或合成故障。"""
+
+    def __init__(
+        self,
+        business: DatabaseEvaluation,
+        case: V3Case,
+        repeat: int,
+        store: dict[UUID, list[RuntimeEvent]],
+        usage: list[Mapping[str, object]] | None = None,
+        skills: SkillConfig | None = None,
+        world: EvaluationWorld | None = None,
+        *,
+        local_model: bool = False,
+    ) -> None:
+        super().__init__(
+            ROOT,
+            business.dsn(),
+            provider="ollama" if local_model else "deepseek",
+            evaluation_fault=case.fault or ("phase2-world" if world else None),
+            evaluation_world=world,
+            evaluation={
+                "suite": "v3",
+                "case_id": case.case_id,
+                "trial": repeat,
+                "category": case.category,
+            },
+            prompt_snapshot=True,
+            skill_config=skills,
+        )
+        self.recording = Recording(store)
+        self.usage = usage
+
+    async def execute(  # type: ignore[no-untyped-def]
+        self, context, prompt, sdk_session_id, emit, cancelled
+    ) -> RuntimeOutcome:
+        outcome = await super().execute(
+            context, prompt, sdk_session_id, self.recording.tee(context, emit), cancelled
+        )
+        # 每轮模型请求用量汇入trial供缓存命中率统计；报告不可读的一轮记为未知，不按0计。
+        if self.usage is not None:
+            self.usage.extend(
+                self.trace_metadata.requests if self.trace_metadata else [{"unknown": True}]
+            )
+        return outcome
+
+
+@dataclass(frozen=True)
+class PrivateHotelEvaluation:
+    responses: EvaluationWorld
+    rates: Market
+    registry: Registry
+    provenance: dict[str, str]
+
+    @classmethod
+    def load(cls, path: Path) -> "PrivateHotelEvaluation":
+        registry_path = REGISTRY.with_name("parameters-rakuten-v1.json")
+        registry = load_parameters(registry_path)
+        if registry.state != "frozen-rakuten-taste":
+            raise ValueError("本机真实世界需要 C4 冻结的口味参数")
+        dataset = load_world(path, source="rakuten")
+        return cls(
+            phase2_world(dataset),
+            market_from_world(*dataset),
+            registry,
+            {
+                "source": "rakuten-local",
+                "snapshot_sha256": file_sha256(path / world_files("rakuten")[2]),
+                "parameters_sha256": file_sha256(registry_path),
+            },
+        )
+
+
+@dataclass
+class TrialConfig:
+    live: bool
+    cloud: bool
+    directory: Path
+    meta: Mapping[str, str]
+    budget: Any = None  # live: 提供totals()->(…, Decimal)
+    structured: StructuredCall | None = None
+    judge: bool = False  # live默认开；离线只有测试注入judge_call时才评审
+    judge_check: bool = False
+    judge_call: JudgeCall | None = None
+    scores_sink: list[dict[str, float]] = field(default_factory=list)
+    skills: SkillConfig = field(default_factory=SkillConfig)
+    local_model: bool = False
+    private_hotels: PrivateHotelEvaluation | None = None
+
+    def __post_init__(self) -> None:
+        if self.private_hotels and (self.cloud or (self.live and not self.local_model)):
+            raise ValueError("本机乐天快照只用于本机评测")
+
+
+async def create_trial_context(
+    business: DatabaseEvaluation, case: V3Case, world: EvaluationWorld | None = None
+) -> RunContext:
+    identity = await business.sessions.create_demo_user(DemoLogin(display_name="v3评测用户"))
+    session = await business.sessions.new_session(identity.user_id)
+    context = RunContext(identity.user_id, session.session_id)
+    state = case.setup
+    if state is not None:
+        fields = state.request.model_dump(mode="json", exclude_unset=True, exclude_none=True)
+        if fields:
+            travel = (
+                TravelService(business.sessions.database, today=lambda: world.today)
+                if world is not None
+                else business.travel
+            )
+            await travel.patch_request(
+                context, RequestPatch.model_validate({"expected_revision": 0, "set": fields})
+            )
+        await prepare_state(
+            business.travel, context, state, business.supplier_url or "http://127.0.0.1:8001"
+        )
+    return context
+
+
+def hotel_card_groups(turns: Sequence[TurnObs]) -> Iterator[tuple[int, list[dict[str, Any]]]]:
+    for turn in turns:
+        for data in hotel_presentations(turn.events):
+            raw = data.get("cards")
+            if isinstance(raw, list) and (cards := [c for c in raw if isinstance(c, dict)]):
+                yield turn.index, cards
+
+
+def hotel_cards(turns: Sequence[TurnObs]) -> list[dict[str, Any]]:
+    return [card for _, cards in hotel_card_groups(turns) for card in cards]
+
+
+def hotel_card_facts(card: Mapping[str, object]) -> dict[str, object]:
+    keys = (
+        "hotel_id",
+        "hotel_name",
+        "partner",
+        "partner_label",
+        "room_type",
+        "currency",
+        "total",
+        "breakfast",
+        "review_average",
+        "review_count",
+        "latitude",
+        "longitude",
+        "data_mode",
+        "price_basis",
+    )
+    facts = {key: card[key] for key in keys if key in card}
+    if isinstance(stay := card.get("stay"), dict):
+        facts["stay"] = {key: stay[key] for key in sorted(HOTEL_OFFER_FIELDS) if key in stay}
+    if isinstance(offer_id := card.get("offer_id"), str):
+        facts["quote_hash"] = hashlib.sha256(offer_id.encode("utf-8")).hexdigest()
+    return facts
+
+
+def loaded_skills(turns: Sequence[TurnObs]) -> list[dict[str, object]]:
+    result: list[dict[str, object]] = []
+    for turn in turns:
+        by_call = {
+            event.tool_call_id: event.arguments.skill_name
+            for event in turn.events
+            if event.kind == "tool_started"
+            and event.tool_name == "load_skill"
+            and event.tool_call_id is not None
+            and event.arguments is not None
+        }
+        for event in turn.events:
+            if event.kind == "tool_finished":
+                result.extend(
+                    {"turn": turn.index, "name": skill.name, "sha256": skill.sha256}
+                    for skill in event.attached_skills
+                )
+            if (
+                event.kind == "tool_finished"
+                and event.tool_name == "load_skill"
+                and event.tool_call_id is not None
+                and event.skill_hash
+            ):
+                if (name := by_call.get(event.tool_call_id)) is not None:
+                    result.append({"turn": turn.index, "name": name, "sha256": event.skill_hash})
+    return result
+
+
+async def pick_count(business: DatabaseEvaluation, context: RunContext) -> int:
+    async with transaction(business.sessions.database) as db:
+        return len(await hotel_picks(db, context))
+
+
+async def booked_for(business: DatabaseEvaluation, context: RunContext) -> bool:
+    """该用户是否已有 status=booked 的预订；held/confirmed 不算“已订好”。"""
+    async with transaction(business.sessions.database) as db:
+        payloads = list(
+            await db.scalars(
+                select(BookingRow.payload).where(BookingRow.user_id == context.user_id)
+            )
+        )
+    return any(isinstance(p, dict) and p.get("status") == "booked" for p in payloads)
+
+
+async def facts_at(
+    business: DatabaseEvaluation, context: RunContext, turns: Sequence[TurnObs]
+) -> ClaimFacts:
+    """某轮刚结束时的服务端事实：到此为止展示过的酒店卡、当前会话的选择、当前用户已生效的记忆。"""
+    cards = hotel_cards(turns)
+    facts = await MemoryService(business.sessions.database).facts(context.user_id)
+    return ClaimFacts(
+        within_budget_cards=(not any(c.get("budget_excess") for c in cards)) if cards else None,
+        hotel_selected=await pick_count(business, context) > 0,
+        memory_active=any(f.status == "active" for f in facts),
+        booked=await booked_for(business, context),
+    )
+
+
+def l1_predictions(facts: Sequence[MemoryFactRow]) -> list[dict[str, object]]:
+    """落库事实 → L1 预测：被某条旧事实的 superseded_by 指向的新事实记 UPDATE，其余记 ADD。
+
+    旧事实若不在同一批（例如跨 trial 更新）则指向关系看不见，退化为 ADD；
+    本题库的更新题都在同一 trial 内先建后改，不受影响。
+    """
+    superseded_targets = {f.superseded_by for f in facts if f.superseded_by is not None}
+    return [
+        {
+            "key": f.key,
+            "value": f.value,
+            "scope": f.scope,
+            "op": "UPDATE" if f.id in superseded_targets else "ADD",
+        }
+        for f in facts
+    ]
+
+
+async def count_orders(business: DatabaseEvaluation) -> int:
+    async with transaction(business.sessions.database) as db:
+        return int(await db.scalar(select(func.count()).select_from(SupplierOrderRow)) or 0)
+
+
+async def collect(
+    business: DatabaseEvaluation,
+    case: V3Case,
+    result: ScriptResult,
+    events: dict[UUID, list[RuntimeEvent]],
+    orders_before: int,
+) -> Observation:
+    """脚本结束后的终态事实；不调用inspect_memory（它会删除偏好）。"""
+    turns = tuple(result.turns)
+    final = result.context
+    assert final is not None
+    first_user = result.users["A"]
+    after = await snapshot(business.travel, final)
+    request = await business.travel.read_request(final)
+    memory = MemoryService(business.sessions.database)
+    async with transaction(business.sessions.database) as db:
+        drafts = list(
+            await db.scalars(
+                select(PlanDraftRow).where(
+                    PlanDraftRow.user_id == final.user_id,
+                    PlanDraftRow.session_id == final.session_id,
+                )
+            )
+        )
+        picked = await selected_cards(db, final, request)
+    picks = picked.count
+    selected_hotels = tuple(hotel_card_facts(card) for card in picked.recorded.values())
+    latest = max(drafts, key=lambda d: str(d.payload.get("expires_at")), default=None)
+    validation = (
+        tuple(
+            c.model_dump(mode="json")
+            for c in PlanDraft.model_validate(latest.payload).validation.checks
+        )
+        if latest is not None
+        else None
+    )
+    draft = PlanDraft.model_validate(latest.payload) if latest is not None else None
+    places_by_day: dict[str, set[UUID]] = {}
+    for item in draft.content.items if draft else ():
+        places_by_day.setdefault(item.start.date().isoformat(), set()).add(item.place_evidence_id)
+    trip_dates: tuple[str, ...] = ()
+    if request.start_date and request.end_date:
+        span = (request.end_date - request.start_date).days
+        trip_dates = tuple(
+            (request.start_date + timedelta(days=n)).isoformat() for n in range(span + 1)
+        )
+    request_facts = {**request.model_dump(mode="json"), "pace": pace_of(request)}
+    if case.seed_id and request.city:
+        request_facts["city"] = city_key(request.city)
+    state = {
+        "request": request_facts,
+        "saved_version": after.saved.version if after.saved else 0,
+        "hotel_stays": [s.model_dump(mode="json") for s in after.saved.content.hotel_stays]
+        if after.saved
+        else [],
+        "bookings": [b.card() for b in after.bookings],
+        "memory": await memory.snapshot(final),
+    }
+    current_facts = tuple(
+        f.model_dump(mode="json") for f in await memory.facts(final.user_id, include_history=True)
+    )
+    owner_facts = (
+        current_facts
+        if first_user == final.user_id
+        else tuple(
+            f.model_dump(mode="json") for f in await memory.facts(first_user, include_history=True)
+        )
+    )
+    flat = [e for t in turns for e in t.events]
+    layer1: Mapping[str, object] | None = None
+    if case.memory.l1:
+        run_ids = {UUID(t.run_id) for t in turns}
+        async with transaction(business.sessions.database) as db:
+            facts = list(
+                await db.scalars(
+                    select(MemoryFactRow).where(MemoryFactRow.source_run_id.in_(run_ids))
+                )
+            )
+        predictions = l1_predictions(facts)
+        layer1 = memory_scores(
+            [e.model_dump(mode="json") for e in case.memory.l1],
+            predictions,
+            invalid_attempts=proposal_failures(tuple(flat))["invalid_attempts"],
+        )
+    return Observation(
+        turns=turns,
+        validation=validation,
+        state=state,
+        db=DbFacts(
+            draft_exists=bool(drafts),
+            draft_conflicts=sum(1 for c in draft.validation.checks if c.status == "conflict")
+            if draft
+            else 0,
+            draft_places_by_day=(
+                {day: len(ids) for day, ids in places_by_day.items()} if draft else None
+            ),
+            draft_trip_dates=trip_dates,
+            plan_saved=after.saved is not None,
+            new_orders=max(0, await count_orders(business) - orders_before),
+            hotel_selected_segments=picks,
+            memory_current=current_facts,
+            memory_owner=owner_facts,
+        ),
+        memory_l1=layer1,
+        claim_facts=ClaimFacts(
+            within_budget_cards=(not any(c.get("budget_excess") for c in cards))
+            if (cards := hotel_cards(turns))
+            else None,
+            hotel_selected=picks > 0,
+            memory_active=any(f.get("status") == "active" for f in current_facts),
+            booked=await booked_for(business, final),
+        ),
+        selected_hotels=selected_hotels,
+        final_snapshot=Snapshot(request, draft, picked.available, after.saved is not None),
+        before_steps=result.before_steps,
+        step_requests=tuple(result.step_requests),
+        card_payloads=(*result.card_payloads, *picked.recorded.values()),
+        conditional_reply_predicates=tuple(result.conditional_reply_predicates),
+        step_unavailable=result.step_unavailable,
+        infra_error=result.infra_error,
+    )
+
+
+def prompt_reader_for(
+    business: DatabaseEvaluation, config: TrialConfig
+) -> Callable[[RunContext], Any]:
+    async def read(context: RunContext) -> str | None:
+        if config.live:
+            path = (
+                ROOT
+                / ".cache"
+                / "sessions"
+                / str(context.user_id)
+                / str(context.session_id)
+                / f"system-prompt-{context.run_id}.txt"
+            )
+            return path.read_text(encoding="utf-8") if path.exists() else None
+        snap = await MemoryService(business.sessions.database).snapshot(context)
+        return json.dumps(snap, ensure_ascii=False)
+
+    return read
+
+
+async def phase2_memory_call(payload: dict[str, object]) -> str:
+    from backend.providers.claude_agent.structured import structured_call
+
+    text, _ = await asyncio.to_thread(
+        structured_call, "memory", payload, ROOT, evaluation={"suite": "v3"}
+    )
+    return text
+
+
+async def run_trial(
+    business: DatabaseEvaluation,
+    case: V3Case,
+    repeat: int,
+    config: TrialConfig,
+    trace_id: str | None,
+) -> dict[str, object]:
+    config.skills.authorize(evaluation=True, dsn=business.dsn())
+    events: dict[UUID, list[RuntimeEvent]] = {}
+    usage: list[Mapping[str, object]] = []
+    world = None
+    private = config.private_hotels
+    if case.world == "phase2" or case.seed_id:
+        world = private.responses if private else phase2_world()
+    fixture = (
+        evaluation_data(
+            case.fault or "phase2-world", business.sessions.database, business.dsn(), world
+        )
+        if world is not None and not config.live
+        else None
+    )
+
+    def offline_runtime(executor: ToolExecutor) -> OfflineRuntime:
+        if fixture is not None and isinstance(executor, TravelToolExecutor):
+            executor.travel.live = fixture
+        return OfflineRuntime(executor, events, config.skills)
+
+    if config.live:
+        service = RunService(
+            business.sessions.database,
+            live_enabled=True,
+            trace_cloud=config.cloud,
+            trace_directory=config.directory / "traces",
+            runtime_factory=lambda _: V3Runtime(
+                business,
+                case,
+                repeat,
+                events,
+                usage,
+                config.skills,
+                world,
+                local_model=config.local_model,
+            ),
+            memory_extractor=(
+                MemoryExtractor(business.sessions.database, call=phase2_memory_call)
+                if not config.local_model
+                else None
+            ),
+        )
+    else:
+        service = RunService(
+            business.sessions.database,
+            trace_directory=config.directory / "traces",
+            runtime_factory=offline_runtime,
+        )
+    started = perf_counter()
+    result = ScriptResult()
+    runner: ScriptRunner | None = None
+    orders_before = 0
+    try:
+        context = await create_trial_context(business, case, world)
+        orders_before = await count_orders(business)
+        runner = ScriptRunner(
+            case,
+            business,
+            service,
+            events,
+            mode="live" if config.live else "offline",
+            root=ROOT,
+            prompt_reader=prompt_reader_for(business, config),
+            facts_reader=lambda ctx, turns: facts_at(business, ctx, turns),
+            structured=config.structured if config.live else None,
+        )
+        await runner.start(context.user_id, context.session_id)
+        result = await runner.run()
+    except Exception as error:  # 设施故障：该trial记infra_error，不拖垮整批
+        result.infra_error = f"harness:{type(error).__name__}"
+        if runner is not None:
+            result.conditional_reply_predicates = runner.result.conditional_reply_predicates
+        if result.context is None:
+            result.context = RunContext(uuid4(), uuid4())
+    finally:
+        await service.close()
+        if fixture is not None:
+            await fixture.close()
+    try:
+        observation = await collect(business, case, result, events, orders_before)
+    except Exception as error:
+        observation = Observation(
+            turns=tuple(result.turns),
+            infra_error=result.infra_error or f"collect:{type(error).__name__}",
+            conditional_reply_predicates=tuple(result.conditional_reply_predicates),
+        )
+    observation = replace(
+        observation, l3_source="prompt_snapshot" if config.live else "service_snapshot"
+    )
+    score = score_trial(case, observation)
+    transcript = write_transcript(config.directory, case, repeat, observation)
+    judge = None
+    if config.judge and config.judge_call is not None and observation.turns:
+        # 评审与被测运行同处trial前后账本窗口内，成本计入cost_cny；任何失败只记judge_error。
+        judge = await asyncio.to_thread(
+            judge_trial, case, observation, config.judge_call, ROOT, check=config.judge_check
+        )
+    row = trial_row(
+        case,
+        repeat,
+        trace_id,
+        score,
+        observation,
+        perf_counter() - started,
+        judge=judge,
+        transcript=transcript,
+        cache=cache_totals(usage) if config.live else None,
+    )
+    if world is not None:
+        gate = row["rule_gate"]
+        assert isinstance(gate, dict)
+        violations = tuple(str(entry["code"]) for entry in gate["violations"])
+        if not score.success and not violations:
+            violations = (score.reason or "trial_failed",)
+        request = observation.state.get("request")
+        presentations = row["hotel_presentations"]
+        assert isinstance(presentations, list)
+        facts = request if isinstance(request, dict) else {}
+        commerce = evaluate_commerce(
+            presentations,
+            facts,
+            private.registry if private else load_parameters(),
+            violations,
+            private_rates=private.rates if private else None,
+        )
+        row["commerce"] = commerce
+        if commerce["passed"]:
+            turns_by_index = {turn.index: turn for turn in observation.turns}
+            by_hotel = {}
+            for group in commerce["groups"]:
+                source = turns_by_index.get(group["turn"])
+                for hotel in group["inputs"]:
+                    by_hotel[f"{group['segment']}:{hotel['id']}"] = {
+                        "住宿偏好": facts.get("hard_constraints"),
+                        "行程偏好": facts.get("soft_constraints"),
+                        "节奏": facts.get("pace"),
+                        "每日景点数": observation.db.draft_places_by_day,
+                        "可核对推荐事实": {
+                            key: hotel[key]
+                            for key in (
+                                "price_jpy",
+                                "rating",
+                                "reviews",
+                                "station_minutes",
+                                "breakfast",
+                            )
+                        },
+                        "本轮用户要求": source.user_text[:300] if source else None,
+                        "推荐理由": source.answer[:500] if source else None,
+                    }
+            if by_hotel:
+                row["soft_facts"] = by_hotel
+    if case.seed_id:
+        row["seed_id"] = case.seed_id
+    return row
+
+
+def trial_row(
+    case: V3Case,
+    repeat: int,
+    trace_id: str | None,
+    score: Score,
+    observation: Observation,
+    elapsed: float,
+    *,
+    judge: dict[str, object] | None = None,
+    transcript: str | None = None,
+    cache: dict[str, object] | None = None,
+) -> dict[str, object]:
+    turns: list[TurnObs] = list(observation.turns)
+    return {
+        "case_id": case.case_id,
+        "category": case.category,
+        "trial": repeat,
+        "repeat": repeat,
+        "status": "passed" if score.success else "failed",
+        "success": score.success,
+        "reason": score.reason,
+        "trace_id": trace_id,
+        "flags": {name: getattr(score, name) for name in SCORE_FLAGS},
+        "soft_score": score.soft_score,
+        "metrics": score.metrics,
+        "total_s": round(elapsed, 3),
+        "max_turn_s": score.metrics.get("turn_latency_max_s", 0.0),
+        "ttfua_s": score.metrics.get("ttfua_s", 0.0),
+        "turn_ttfua_s": [round(t.ttfua_s, 3) for t in turns],
+        "claim_violations": list(score.claim_violations),
+        "claim_unknown": score.claim_unknown,
+        "rule_gate": rule_gate(observation.validation),
+        "checks": [
+            {"id": c.id, "tier": c.tier, "outcome": c.outcome, "detail": c.detail}
+            for c in score.checks
+        ],
+        "memory_layers": score.memory_layers,
+        "l3_source": score.l3_source,
+        "tools": score.tool_summary,
+        "judge_yes_rate": judge.get("yes_rate") if judge else None,
+        "judge": judge,
+        "transcript_path": transcript,
+        "cache": cache,
+        "skills": loaded_skills(turns),
+        "hotel_presentations": [
+            {"turn": index, "cards": [hotel_card_facts(card) for card in cards]}
+            for index, cards in hotel_card_groups(turns)
+        ],
+        "selected_hotels": list(observation.selected_hotels),
+        "infra_error": score.infra_error,
+        "step_unavailable": observation.step_unavailable,
+        "conditional_reply_count": len(observation.conditional_reply_predicates),
+        "conditional_reply_predicates": [
+            list(predicates) for predicates in observation.conditional_reply_predicates
+        ],
+        "turns": [
+            {
+                "index": t.index,
+                "user": t.user,
+                "status": t.status,
+                "error_code": t.error_code,
+                "latency_s": round(t.latency_s, 3),
+                "ttfua_s": round(t.ttfua_s, 3),
+                "abandoned": t.abandoned,
+                "answer": t.answer[:2000],
+            }
+            for t in turns
+        ],
+    }
+
+
+def configure_profile(profile: str) -> None:
+    if profile == A7_LONG_PROFILE:
+        os.environ[LOCAL_EVAL_PROFILE_ENV] = "1"
+    else:
+        os.environ.pop(LOCAL_EVAL_PROFILE_ENV, None)
+    if profile == "default":
+        os.environ.pop("TRAVEL_PROFILE", None)
+    else:
+        os.environ["TRAVEL_PROFILE"] = profile
+
+
+def git_sha() -> str:
+    try:
+        return subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=ROOT,
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=True,
+        ).stdout.strip()
+    except (OSError, subprocess.SubprocessError):
+        return "unknown"
+
+
+async def run_all(
+    business: DatabaseEvaluation,
+    cases: list[V3Case],
+    repeat: int,
+    config: TrialConfig,
+    *,
+    max_cny: float | None,
+    on_row: Callable[[dict[str, object]], None],
+    skip: AbstractSet[tuple[str, int]] = frozenset(),
+) -> str | None:
+    """顺序执行所有trial；返回提前停止的原因（费用上限/疑似额度耗尽）或None。
+
+    skip：断点续跑时已完成的(case_id, trial)。连续QUOTA_STREAK个trial以限额类
+    infra_error结束时停止，避免把剩余trial都烧成infra_error。"""
+    spent = Decimal(0)
+    streak: list[str] = []
+    for case in cases:
+        for trial in range(1, repeat + 1):
+            if (case.case_id, trial) in skip:
+                continue
+            if max_cny is not None and spent >= Decimal(str(max_cny)):
+                return f"max_cny_reached:{spent}"
+            if config.budget is not None:
+                try:
+                    config.budget.check_authorization()
+                except Phase2ReviewRequired as error:
+                    return f"phase2_review:{error.cumulative}"
+            before = config.budget.totals()[1] if config.budget is not None else Decimal(0)
+            provider = TracerProvider(
+                resource=Resource({"service.name": "travel-agent"}),
+                sampler=ALWAYS_ON,
+                shutdown_on_exit=False,
+            )
+            root_file = config.directory / f"{case.case_id}-{trial}-root.jsonl"
+            with root_file.open("w", encoding="utf-8") if config.live else nullcontext() as handle:
+                if handle is not None:
+                    provider.add_span_processor(
+                        SimpleSpanProcessor(ConsoleSpanExporter(out=handle))
+                    )
+                if config.cloud:
+                    exporter = cloud_exporter(os.environ)
+                    if exporter:
+                        provider.add_span_processor(SimpleSpanProcessor(exporter))
+                attributes: dict[str, Any] = {
+                    "eval_case_id": case.case_id,
+                    "trial": trial,
+                    "suite": "v3",
+                    "langfuse.observation.type": "chain",
+                    "langfuse.trace.tags": (
+                        "v3",
+                        case.category,
+                        config.meta.get("model_route", "fixture"),
+                        config.meta["profile"],
+                    ),
+                    "langfuse.trace.metadata.suite": "v3",
+                    "langfuse.trace.metadata.eval_case_id": case.case_id,
+                    "langfuse.trace.metadata.eval_trial": trial,
+                    "langfuse.trace.metadata.category": case.category,
+                    "langfuse.trace.metadata.git_sha": config.meta["git_sha"],
+                    "langfuse.trace.metadata.run_name": config.meta["run_name"],
+                    "langfuse.trace.metadata.trial_group": config.meta["trial_group"],
+                    "langfuse.trace.metadata.fault": case.fault or "none",
+                }
+                with provider.get_tracer("travel-agent").start_as_current_span(
+                    "evaluation.trial", attributes=attributes
+                ) as span:
+                    trace_id = format(span.get_span_context().trace_id, "032x")
+                    row = await run_trial(business, case, trial, config, trace_id)
+                    span.set_attribute("rule_pass", bool(row["success"]))
+                provider.shutdown()
+            after = config.budget.totals()[1] if config.budget is not None else Decimal(0)
+            cost = after - before
+            spent += cost
+            row["cost_cny"] = str(cost)
+            finish_trial(row, config)
+            on_row(row)
+            code = row.get("infra_error")
+            streak = [*streak, str(code)] if code in LIMIT_ERRORS else []
+            if len(streak) >= QUOTA_STREAK:
+                return f"quota_suspected:{streak[-1]}"
+    return None
+
+
+def finish_trial(row: dict[str, object], config: TrialConfig) -> None:
+    """所有分数在trial结束时一次性批量推送，且只推数值。"""
+    flags = row["flags"]
+    metrics = row["metrics"]
+    assert isinstance(flags, dict) and isinstance(metrics, dict)
+    # within_time为None=题目没设时限：不适用就不推（延迟数值始终推送）。
+    payload: dict[str, float] = {k: float(v) for k, v in flags.items() if v is not None}
+    if row["soft_score"] is not None:
+        payload["soft_score"] = float(row["soft_score"])  # type: ignore[arg-type]
+    payload.update({k: float(v) for k, v in metrics.items()})
+    tools = row["tools"]
+    assert isinstance(tools, dict)
+    payload["required_tools_ok"] = float(not tools["missing_required"])
+    payload["forbidden_tools_ok"] = float(not tools["forbidden_used"])
+    payload["hallucinated_tool"] = float(bool(tools["hallucinated"]))
+    payload["blocked_run"] = float(bool(tools["blocked"]))
+    layers = row["memory_layers"]
+    assert isinstance(layers, dict)
+    names = {
+        "l1": "mem_l1_exact",
+        "l2": "mem_l2_persisted",
+        "l3": "mem_l3_in_prompt",
+        "l4": "mem_l4_behavior",
+    }
+    payload.update({names[k]: float(v) for k, v in layers.items()})
+    payload.update(judge_scores(row.get("judge")))  # type: ignore[arg-type]
+    payload["cost_cny"] = float(str(row.get("cost_cny", "0")))
+    config.scores_sink.append(payload)
+    trace_id = row.get("trace_id")
+    if config.cloud and isinstance(trace_id, str):
+        push_scores(trace_id, payload, batch=True)
+
+
+def require_snapshot_database(cases: Sequence[V3Case], live: bool, dsn: str) -> None:
+    """live且有题声明L3时，评测库必须过is_eval_database，否则prompt快照不会落盘。"""
+    if (
+        live
+        and not is_eval_database(dsn)
+        and any(c.memory.l3.present or c.memory.l3.absent for c in cases)
+    ):
+        raise ValueError(
+            "声明了memory.l3的题需要专用评测库(travel_agent_eval_<hex>)才能写prompt快照；已中止"
+        )
+
+
+def build_parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawTextHelpFormatter
+    )
+    modes = parser.add_mutually_exclusive_group()
+    modes.add_argument("--live", action="store_true")
+    modes.add_argument("--local-model", action="store_true")
+    parser.add_argument("--trace-cloud", action="store_true")
+    parser.add_argument("--repeat", type=int, choices=(1, 2, 3), default=1)
+    parser.add_argument("--case-id", action="append", default=[])
+    parser.add_argument("--cases", type=Path)
+    parser.add_argument("--split", choices=("reflection", "validation"))
+    parser.add_argument("--private-world", type=Path)
+    parser.add_argument("--profile", choices=PROFILES, default="human")
+    parser.add_argument("--variant", choices=("full", "no_skills"), default="full")
+    parser.add_argument("--disable-skill", choices=get_args(SkillName))
+    parser.add_argument("--candidate-skills", type=Path)
+    parser.add_argument(
+        "--max-cny",
+        type=float,
+        default=None,
+        help="可选的软上限（默认不限）：只在两个trial之间检查累计花费，最多可超出一个trial。",
+    )
+    parser.add_argument(
+        "--resume",
+        type=Path,
+        default=None,
+        metavar="RUN_DIR",
+        help="接着跑被中断的运行：跳过已完成的trial，重跑缺失/infra_error的trial",
+    )
+    parser.add_argument(
+        "--resume-force", action="store_true", help="题库或case-id与原运行不一致时仍然续跑"
+    )
+    parser.add_argument(
+        "--no-judge", action="store_true", help="兼容旧续跑命令；第二阶段默认关闭付费评审"
+    )
+    parser.add_argument(
+        "--judge-check",
+        action="store_true",
+        help="用另一套措辞重评通用项，报告翻转率（评审成本约翻倍）",
+    )
+    return parser
+
+
+def file_sha256(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+def freeze_candidate(
+    skills: SkillConfig, directory: Path, versions: Mapping[str, str]
+) -> SkillConfig:
+    snapshot = directory / "candidate-skills"
+    snapshot.mkdir(exist_ok=True)
+    for name in (*get_args(SkillName), *EXPERIMENTAL_SKILLS):
+        if name not in versions:
+            continue
+        destination = snapshot / (name + ".md")
+        data = destination.read_bytes() if destination.is_file() else skills.path(name).read_bytes()
+        if hashlib.sha256(data).hexdigest() != versions[name]:
+            raise ValueError("Skill 候选内容与评测清单不一致")
+        if not destination.exists():
+            with destination.open("xb") as output:
+                output.write(data)
+    return skills.model_copy(update={"directory": snapshot.resolve()})
+
+
+def read_rows(directory: Path) -> list[dict[str, object]]:
+    """读已有trials.jsonl；被中断写坏的最后一行直接忽略（该trial会重跑）。"""
+    return read_jsonl(directory / "trials.jsonl", recovery=True)
+
+
+def latest_rows(rows: Sequence[dict[str, object]]) -> list[dict[str, object]]:
+    """每个(case_id, trial)只保留最后一行（重跑infra_error后以新行为准），保持首次出现的顺序。"""
+    latest: dict[tuple[str, int], dict[str, object]] = {}
+    for row in rows:
+        latest[(str(row["case_id"]), int(str(row["trial"])))] = row
+    return list(latest.values())
+
+
+def completed_keys(rows: Sequence[dict[str, object]], repeat: int) -> set[tuple[str, int]]:
+    """已完成=最新一行没有infra_error（成功或真实失败都算）；缺失或infra_error的要重跑。"""
+    return {
+        (str(r["case_id"]), int(str(r["trial"])))
+        for r in latest_rows(rows)
+        if r.get("infra_error") is None and int(str(r["trial"])) <= repeat
+    }
+
+
+def resume_mismatch(
+    manifest: Mapping[str, object], cases_file: Path, case_ids: Sequence[str], live: bool
+) -> str | None:
+    if manifest.get("cases_sha256") != file_sha256(cases_file):
+        return "题库文件内容与原运行不同"
+    if sorted(map(str, manifest.get("cases", []))) != sorted(case_ids):  # type: ignore[call-overload]
+        return "所选case-id与原运行不同"
+    if bool(manifest.get("live")) != live:
+        return "live/离线模式与原运行不同"
+    return None
+
+
+def resume_command(args: argparse.Namespace, directory: PurePath) -> str:
+    parts = ["uv run python scripts/dev.py eval-v3"]
+    if args.live:
+        parts.append("--live")
+    if args.local_model:
+        parts.append("--local-model")
+    if args.trace_cloud:
+        parts.append("--trace-cloud")
+    parts += [
+        f"--resume {directory.as_posix()}",
+        f"--repeat {args.repeat}",
+        f"--profile {args.profile}",
+    ]
+    parts += [f"--case-id {c}" for c in args.case_id]
+    if args.split:
+        parts.append(f"--split {args.split}")
+    elif args.cases:
+        parts.append(f"--cases {shlex.quote(Path(args.cases).as_posix())}")
+    if args.private_world:
+        parts.append(f"--private-world {shlex.quote(args.private_world.resolve().as_posix())}")
+    if args.max_cny is not None:
+        parts.append(f"--max-cny {args.max_cny}")
+    if args.variant != "full":
+        parts.append(f"--variant {args.variant}")
+    if args.disable_skill:
+        parts.append(f"--disable-skill {args.disable_skill}")
+    if args.candidate_skills:
+        parts.append(
+            f"--candidate-skills {shlex.quote(args.candidate_skills.resolve().as_posix())}"
+        )
+    if args.no_judge:
+        parts.append("--no-judge")
+    if args.judge_check:
+        parts.append("--judge-check")
+    if args.resume_force:
+        parts.append("--resume-force")
+    return " ".join(parts)
+
+
+def _raise_interrupt(signum: int, frame: object) -> None:
+    raise KeyboardInterrupt
+
+
+def main(argv: Sequence[str] | None = None, *, run_parent: Path | None = None) -> int:
+    parser = build_parser()
+    args = parser.parse_args(argv)
+    if args.cases is None and args.split is None:
+        args.split = "reflection"
+    if args.profile == A7_LONG_PROFILE and not args.local_model:
+        parser.error("A7 长档需要 --local-model")
+    if args.private_world and (args.live or args.trace_cloud or not args.split):
+        parser.error("--private-world 只在使用冻结题库的本机评测中启用")
+    refuse_live_under_pytest(args.live or args.local_model)
+    private = None
+    if args.private_world:
+        try:
+            private = PrivateHotelEvaluation.load(args.private_world)
+        except (OSError, ValueError):
+            parser.error("无法校验本机快照及 C4 冻结参数")
+    if args.trace_cloud and not args.live:
+        parser.error("--trace-cloud需要--live")
+    if args.max_cny is not None and args.max_cny <= 0:
+        parser.error("--max-cny必须为正数")
+    if args.judge_check:
+        parser.error("第二阶段评测不调用付费 rubric 模型")
+    if args.resume_force and args.resume is None:
+        parser.error("--resume-force需要--resume")
+    try:
+        skills = SkillConfig(
+            variant=args.variant,
+            disabled=args.disable_skill,
+            directory=args.candidate_skills.resolve() if args.candidate_skills else None,
+        )
+        if skills.variant == "no_skills" and (skills.disabled or skills.directory):
+            parser.error("--variant no_skills 不可与单项关闭或候选目录同时使用")
+        if skills.directory is not None and not skills.directory.is_dir():
+            parser.error("Skill 候选目录不存在")
+        skill_manifest = skills.model_dump(mode="json", exclude_defaults=True)
+        versions = skills.versions()
+        if versions:
+            skill_manifest["versions"] = versions
+    except (OSError, ValueError) as error:
+        parser.error(f"无法使用 Skill 配置：{error}")
+    try:
+        if args.split:
+            selected = public_path(args.split)
+            if args.cases is not None and args.cases.resolve() != selected:
+                parser.error("--cases 与所选 v2 划分不一致")
+            args.cases = selected
+            source = frozen_cases(args.split)
+        else:
+            path = args.cases.resolve()
+            if path.is_relative_to(DIRECTORY):
+                parser.error("冻结的第二阶段 v2 题库需要显式 --split")
+            if path == LEGACY_CASES or path.is_relative_to(ARCHIVE):
+                parser.error("第二阶段 v1 题库已归档，已有成对结果可用 eval-evolve 复核")
+            source = load_cases(path)
+    except (OSError, ValueError) as error:
+        parser.error(str(error))
+    cases = [c for c in source if not args.case_id or c.case_id in args.case_id]
+    if args.case_id and len(cases) != len(set(args.case_id)):
+        parser.error("有case-id不在题库里")
+    old_rows: list[dict[str, object]] = []
+    previous: dict[str, object] = {}
+    if args.resume is not None:
+        directory = Path(args.resume)
+        try:
+            previous = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError):
+            print(f"无法续跑：{directory}里没有可读的manifest.json")
+            return 2
+        if bool(previous.get("local_model")) != args.local_model:
+            print("拒绝续跑：本机模型线路与原运行不同")
+            return 2
+        if previous.get("hotel_snapshot") != (private.provenance if private else None):
+            print("拒绝续跑：酒店快照或参数版本不同")
+            return 2
+        if previous.get("skills", {}) != skill_manifest:
+            print("拒绝续跑：Skill 变体或候选内容已变，请启动新的评测")
+            return 2
+        mismatch = resume_mismatch(previous, args.cases, [c.case_id for c in cases], args.live)
+        if mismatch and not args.resume_force:
+            print(f"拒绝续跑：{mismatch}（确认无误可加 --resume-force）")
+            return 2
+        old_rows = read_rows(directory)
+        run_name = str(previous.get("run_name", directory.name))
+    else:
+        run_name = datetime.now(UTC).strftime("%Y%m%dT%H%M%SZ") + "-" + uuid4().hex[:6]
+        directory = (run_parent if run_parent is not None else RUNS_DIR) / run_name
+        directory.mkdir(parents=True)
+    if versions:
+        try:
+            skills = freeze_candidate(skills, directory, versions)
+        except (OSError, ValueError) as error:
+            print(f"无法固定本次 Skill 候选：{error}")
+            return 2
+    skip = completed_keys(old_rows, args.repeat) if args.resume is not None else set()
+    total = len(cases) * args.repeat
+    pending = sum((c.case_id, t) not in skip for c in cases for t in range(1, args.repeat + 1))
+    if args.resume is not None:
+        print(
+            f"已完成 {total - pending}，待跑 {pending}（含需重跑的infra_error trial）", flush=True
+        )
+    from scripts.dev import configure_environment, pinned_cli
+
+    configure_environment()
+    if args.local_model:
+        pinned_cli()
+    configure_profile(args.profile)
+    budget = None
+    if args.live:
+        from dotenv import load_dotenv
+
+        from backend.providers.claude_agent.live import runtime_budget
+        from backend.providers.claude_agent.settings import load_runtime_settings
+
+        load_dotenv(ROOT / ".env", override=False)
+        os.environ["LLM_PROVIDER"] = "deepseek"
+        if any(c.memory.l3.present or c.memory.l3.absent for c in cases):
+            os.environ[PROMPT_ENV] = "1"
+        budget = runtime_budget(ROOT, load_runtime_settings(os.environ), phase2=True)
+        try:
+            budget.check_authorization()
+        except Phase2ReviewRequired as error:
+            print(f"{error}。剩余 {pending} 次试验，等待预算决定。")
+            return 1
+    if args.local_model and any(c.memory.l3.present or c.memory.l3.absent for c in cases):
+        os.environ[PROMPT_ENV] = "1"
+    real_model = args.live or args.local_model
+    meta = {
+        "git_sha": git_sha(),
+        "run_name": run_name,
+        "trial_group": run_name,
+        "profile": args.profile if real_model else "offline",
+        "model_route": "ollama" if args.local_model else "deepseek" if args.live else "fixture",
+    }
+    config = TrialConfig(
+        real_model,
+        args.trace_cloud,
+        directory,
+        meta,
+        budget,
+        skills=skills,
+        local_model=args.local_model,
+        private_hotels=private,
+    )
+    manifest: dict[str, object] = {
+        **previous,
+        "run_name": run_name,
+        "live": args.live,
+        "local_model": args.local_model,
+        "profile": args.profile,
+        "repeat": args.repeat,
+        "cases": [c.case_id for c in cases],
+        "cases_file": str(args.cases),
+        "cases_sha256": file_sha256(args.cases),
+        "max_cny": args.max_cny,
+        "judge": config.judge,
+        "judge_check": config.judge_check,
+        "skills": skill_manifest,
+        "git_sha": previous.get("git_sha", meta["git_sha"]),
+        "started_at": previous.get("started_at", datetime.now(UTC).isoformat()),
+        "prompt_snapshot_env": os.environ.get(PROMPT_ENV) == "1",
+    }
+    if args.split:
+        manifest.update(case_suite="p2v2", case_split=args.split)
+    if private:
+        manifest["hotel_snapshot"] = private.provenance
+    if args.resume is not None:
+        resumed = list(previous.get("resumed_from") or [])  # type: ignore[call-overload]
+        manifest["resumed_from"] = [
+            *resumed,
+            {"at": datetime.now(UTC).isoformat(), "completed": total - pending, "pending": pending},
+        ]
+    rows = list(old_rows)
+    stopped: list[str | None] = [None]
+
+    def save_manifest() -> None:
+        manifest["stopped"] = stopped[0]
+        (directory / "manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+        )
+
+    save_manifest()
+
+    def record(row: dict[str, object]) -> None:
+        rows.append(row)
+        with (directory / "trials.jsonl").open("a", encoding="utf-8") as out:
+            out.write(json.dumps(row, ensure_ascii=False, default=str) + "\n")
+        print(
+            row["case_id"],
+            row["trial"],
+            row["status"],
+            row["reason"],
+            row.get("cost_cny"),
+            flush=True,
+        )
+
+    signal.signal(signal.SIGTERM, _raise_interrupt)
+    with (
+        temporary_database(_database_url(), "eval") as url,
+        selector_runner() as runner,
+    ):
+
+        async def execute() -> None:
+            async with database_evaluation(url) as business:
+                stopped[0] = await run_all(
+                    business,
+                    cases,
+                    args.repeat,
+                    config,
+                    max_cny=args.max_cny,
+                    on_row=record,
+                    skip=skip,
+                )
+
+        try:
+            dsn = url.render_as_string(hide_password=False)
+            require_snapshot_database(cases, real_model, dsn)
+            skills.authorize(evaluation=True, dsn=dsn)
+        except ValueError as error:
+            print(error)
+            return 2
+        try:
+            runner.run(execute())
+        except KeyboardInterrupt:
+            stopped[0] = "interrupted"  # 在途trial不记录，续跑时重跑
+        except ProbeError as error:
+            stopped[0] = f"authorization_failed:{error.code}"
+    save_manifest()
+    # 报告用全部行（旧+新）；同一(case, trial)以最新一行为准。
+    write_reports(directory, manifest, latest_rows(rows), args.repeat, stopped[0])
+    print(directory)
+    if stopped[0] is None:
+        return 0
+    if stopped[0] is not None and stopped[0].startswith("phase2_review:"):
+        cumulative = stopped[0].split(":", 1)[1]
+        completed = completed_keys(rows, args.repeat)
+        remaining = sum(
+            (case.case_id, trial) not in completed
+            for case in cases
+            for trial in range(1, args.repeat + 1)
+        )
+        print(
+            f"第二阶段 DeepSeek 账本累计 {cumulative} 元。剩余 {remaining} 次试验，等待预算决定。"
+        )
+    elif not str(stopped[0]).startswith("max_cny_reached"):
+        print(f"提前结束：{stopped[0]}")
+    print(f"接着跑：{resume_command(args, directory)}")
+    return 130 if stopped[0] == "interrupted" else (0 if "max_cny" in str(stopped[0]) else 1)
+
+
+def _database_url() -> Any:
+    from backend.persistence.database import configuration, database_url
+
+    return database_url(configuration())
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

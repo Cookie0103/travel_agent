@@ -2,8 +2,9 @@
 
 import json
 from collections.abc import Iterable, Mapping
+from datetime import datetime
 
-from backend.limits import Currency, ProbeError, price_for
+from backend.limits import LOCAL_MODEL, Currency, ProbeError, price_for, settlement_price
 from backend.providers.claude_agent.request import Request
 
 
@@ -16,7 +17,12 @@ def message_stopped(frame: bytes) -> bool:
 
 
 def summarize(
-    content: bytes, request: Request, model: str, currency: Currency = "CNY"
+    content: bytes,
+    request: Request,
+    model: str,
+    currency: Currency = "CNY",
+    *,
+    requested_at: datetime | None = None,
 ) -> dict[str, object]:
     try:
         events = _events(content)
@@ -47,7 +53,7 @@ def summarize(
         initial, final = start.get("usage"), end.get("usage")
         if not isinstance(initial, dict) or not isinstance(final, dict):
             raise ValueError
-        tokens = _tokens(initial, final)
+        tokens = _tokens(initial, final, local_estimate=model == LOCAL_MODEL)
     except (ValueError, TypeError, KeyError, StopIteration, UnicodeError, IndexError):
         raise ProbeError("provider_error", "上游 SSE 或最终 usage 不完整，保留全部预占") from None
     inputs = sum(v for k, v in tokens.items() if k != "output_tokens")
@@ -60,9 +66,14 @@ def summarize(
     weighted_inputs = inputs + int(
         tokens["cache_creation_input_tokens"] * (price.cache_write_multiplier - 1)
     )
-    estimate = price.usage_upper(weighted_inputs, tokens["output_tokens"])
-    if estimate > request.charge or tokens["output_tokens"] > request.max_output:
+    peak_estimate = price.usage_upper(
+        weighted_inputs, tokens["output_tokens"], cached_inputs=tokens["cache_read_input_tokens"]
+    )
+    if peak_estimate > request.charge or tokens["output_tokens"] > request.max_output:
         raise ProbeError("blocked", "上游 usage 超出预占上界，停止后续请求")
+    estimate = settlement_price(model, requested_at).usage_upper(
+        weighted_inputs, tokens["output_tokens"], cached_inputs=tokens["cache_read_input_tokens"]
+    )
     result: dict[str, object] = {
         "model": model,
         "stop_reason": delta["stop_reason"],
@@ -73,6 +84,8 @@ def summarize(
         "usage_cost_upper": str(estimate),
         "reserved": str(request.charge),
     }
+    if model == LOCAL_MODEL and type(opening := initial.get("input_tokens")) is int:
+        result["opening_input_tokens"] = opening
     if currency == "CNY":
         result.update(usage_cost_upper_cny=str(estimate), reserved_cny=str(request.charge))
     if request.temperature is not None:
@@ -118,7 +131,11 @@ def _events(content: bytes) -> list[dict[str, object]]:
     return events
 
 
-def _tokens(initial: dict[str, object], final: dict[str, object]) -> dict[str, int]:
+def _tokens(
+    initial: dict[str, object], final: dict[str, object], *, local_estimate: bool
+) -> dict[str, int]:
+    # Ollama 在起始帧可能给出估算，终止帧才有实测未缓存与缓存输入数。
+    input_usage = final if local_estimate else initial
     result: dict[str, int] = {}
     for key in (
         "input_tokens",
@@ -129,7 +146,7 @@ def _tokens(initial: dict[str, object], final: dict[str, object]) -> dict[str, i
         value = (
             final.get(key)
             if key == "output_tokens"
-            else initial.get(key, 0 if "cache" in key else None)
+            else input_usage.get(key, 0 if "cache" in key else None)
         )
         if type(value) is not int or value < 0:
             raise ValueError
@@ -138,7 +155,7 @@ def _tokens(initial: dict[str, object], final: dict[str, object]) -> dict[str, i
     if type(initial_output) is not int or not 0 <= initial_output <= result["output_tokens"]:
         raise ValueError
     for key in ("input_tokens", "cache_read_input_tokens", "cache_creation_input_tokens"):
-        if key in final:
+        if key in final and not local_estimate:
             value = final[key]
             if type(value) is not int or value < result[key]:
                 raise ValueError

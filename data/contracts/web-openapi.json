@@ -3119,6 +3119,23 @@
             "format": "date-time",
             "title": "Expires At"
           },
+          "partner": {
+            "type": "boolean",
+            "title": "Partner",
+            "default": false
+          },
+          "partner_label": {
+            "anyOf": [
+              {
+                "type": "string",
+                "const": "合作酒店"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner Label"
+          },
           "room_tags": {
             "items": {
               "type": "string"
@@ -4388,6 +4405,19 @@
             "title": "Note",
             "description": "一句话简介"
           },
+          "rain_alternative_place_evidence_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rain Alternative Place Evidence Id",
+            "description": "下雨时可改去的同城室内地点的当前地点证据，须在该时段营业"
+          },
           "item_id": {
             "type": "string",
             "format": "uuid",
@@ -4529,6 +4559,19 @@
             ],
             "title": "Note",
             "description": "一句话简介"
+          },
+          "rain_alternative_place_evidence_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uuid"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rain Alternative Place Evidence Id",
+            "description": "下雨时可改去的同城室内地点的当前地点证据，须在该时段营业"
           },
           "item_id": {
             "type": "string",
@@ -5604,6 +5647,50 @@
               }
             ],
             "title": "Price Basis"
+          },
+          "checkin_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkin Time"
+          },
+          "latest_checkin_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latest Checkin Time"
+          },
+          "checkout_time": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Checkout Time"
+          },
+          "partner": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Partner"
           },
           "search_total_found": {
             "anyOf": [
@@ -6734,6 +6821,24 @@
             "title": "Expires At",
             "type": "string"
           },
+          "partner": {
+            "default": false,
+            "title": "Partner",
+            "type": "boolean"
+          },
+          "partner_label": {
+            "anyOf": [
+              {
+                "const": "合作酒店",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Partner Label"
+          },
           "room_tags": {
             "default": [],
             "items": {
@@ -7315,6 +7420,20 @@
             "description": "一句话简介",
             "title": "Note"
           },
+          "rain_alternative_place_evidence_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "下雨时可改去的同城室内地点的当前地点证据，须在该时段营业",
+            "title": "Rain Alternative Place Evidence Id"
+          },
           "item_id": {
             "format": "uuid",
             "title": "Item Id",
@@ -7419,6 +7538,20 @@
             "default": null,
             "description": "一句话简介",
             "title": "Note"
+          },
+          "rain_alternative_place_evidence_id": {
+            "anyOf": [
+              {
+                "format": "uuid",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "description": "下雨时可改去的同城室内地点的当前地点证据，须在该时段营业",
+            "title": "Rain Alternative Place Evidence Id"
           },
           "item_id": {
             "format": "uuid",
@@ -8117,6 +8250,46 @@
         "title": "RunContext",
         "type": "object"
       },
+      "UiSkillUse": {
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hotel-comparison",
+                  "itinerary-revision",
+                  "multi-city",
+                  "budget-relaxation",
+                  "external-errors",
+                  "repair-limit"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "evolution-candidate",
+                  "evolution-candidate-2",
+                  "evolution-candidate-3"
+                ],
+                "type": "string"
+              }
+            ],
+            "title": "Name"
+          },
+          "sha256": {
+            "pattern": "^[0-9a-f]{64}$",
+            "title": "Sha256",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "sha256"
+        ],
+        "title": "SkillUse",
+        "type": "object"
+      },
       "UiStageReason": {
         "enum": [
           "plan_exists",
@@ -8201,6 +8374,34 @@
             ],
             "default": null,
             "title": "Option Id"
+          },
+          "skill_name": {
+            "anyOf": [
+              {
+                "enum": [
+                  "hotel-comparison",
+                  "itinerary-revision",
+                  "multi-city",
+                  "budget-relaxation",
+                  "external-errors",
+                  "repair-limit"
+                ],
+                "type": "string"
+              },
+              {
+                "enum": [
+                  "evolution-candidate",
+                  "evolution-candidate-2",
+                  "evolution-candidate-3"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Skill Name"
           }
         },
         "title": "ToolArgumentFacts",
@@ -8458,6 +8659,38 @@
               }
             ],
             "default": null
+          },
+          "skill_hash": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Skill Hash"
+          },
+          "attached_skills": {
+            "default": [],
+            "items": {
+              "$ref": "#/components/schemas/UiSkillUse"
+            },
+            "title": "Attached Skills",
+            "type": "array"
+          },
+          "repair_round": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Repair Round"
           }
         },
         "required": [

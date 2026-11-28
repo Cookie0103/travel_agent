@@ -2,6 +2,7 @@
 
 import json
 import os
+import subprocess
 import time
 from collections.abc import Mapping
 from functools import partial
@@ -10,6 +11,7 @@ from threading import Event
 from typing import get_args
 
 from backend.adapters.evaluation_faults import EvaluationFault, is_eval_database, validate_fault
+from backend.adapters.evaluation_world import EvaluationWorld
 from backend.adapters.tracing import cloud_exporter, trace_report
 from backend.agent.persona import JudgeKind
 from backend.agent.runtime import EventSink
@@ -20,9 +22,9 @@ from backend.domain.execution import (
     error_code,
     event_metadata,
 )
-from backend.limits import ProbeError, Provider, Settings
+from backend.limits import LOCAL_MODEL, ProbeError, Provider, Settings
 from backend.mcp.bridge import sdk_tool_name
-from backend.profile import current
+from backend.profile import A7_LONG, current
 from backend.providers.claude_agent import http as upstream
 from backend.providers.claude_agent.budget import Budget
 from backend.providers.claude_agent.environment import find_cli, worker_environment
@@ -39,18 +41,54 @@ from backend.providers.claude_agent.ledger import exclusive
 from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.providers.claude_agent.response import cache_totals
 from backend.providers.claude_agent.settings import load_runtime_settings
+from backend.tools.skill_config import SkillConfig
 from backend.tools.travel import live_definitions
 from backend.tools.workflow import WorkflowName
 from backend.trace_log import FILE_ENV, RUN_ENV, Tail, trace
 
 
-def runtime_budget(root: Path, settings: Settings) -> Budget:
-    cache = root / ".cache"
+def phase2_checkout_root(root: Path) -> Path:
+    """同仓库的 linked worktree 共享原工作树里的阶段账本。"""
+    if not (root / ".git").is_file():
+        return root
+    try:
+        resolved = subprocess.run(
+            ["git", "rev-parse", "--path-format=absolute", "--git-common-dir"],
+            cwd=root,
+            capture_output=True,
+            encoding="utf-8",
+            timeout=5,
+            check=True,
+        )
+        common = Path(resolved.stdout.strip())
+        if not common.is_absolute() or not common.is_dir():
+            raise ValueError
+    except (OSError, ValueError, subprocess.SubprocessError):
+        raise ProbeError("blocked", "无法定位共享阶段账本") from None
+    return common.parent
+
+
+def runtime_budget(root: Path, settings: Settings, *, phase2: bool = False) -> Budget:
+    if settings.provider == "ollama":
+        if phase2 and settings.model == LOCAL_MODEL:
+            cache = phase2_checkout_root(root) / ".cache" / "model-budget"
+            return Budget(
+                cache / "phase2-ollama.jsonl",
+                cache / "phase2-ollama-legacy.jsonl",
+                settings.daily_limit,
+                local=True,
+            )
+        raise ProbeError("blocked", "本地模型只允许第二阶段专用评测")
+    if phase2 and (settings.provider, settings.model) != ("deepseek", "deepseek-flash"):
+        raise ProbeError("blocked", "第二阶段付费评测只允许 deepseek-flash")
+    cache = (phase2_checkout_root(root) if phase2 else root) / ".cache"
+    ledger_name = "phase2-deepseek.jsonl" if phase2 else f"{settings.provider}.jsonl"
     return Budget(
-        cache / "model-budget" / f"{settings.provider}.jsonl",
+        cache / "model-budget" / ledger_name,
         cache / "m02-protocol" / "ledger.jsonl",
         settings.daily_limit,
         settings.currency,
+        phase2=phase2,
     )
 
 
@@ -91,18 +129,36 @@ def run_live(
     evaluation: Mapping[str, object] | None = None,
     trace_id: str | None = None,
     prompt_snapshot: bool = False,
+    skill_config: SkillConfig | None = None,
+    evaluation_world: EvaluationWorld | None = None,
 ) -> dict[str, object]:
     snapshot_enabled = prompt_snapshot_enabled(prompt_snapshot, database_dsn, os.environ)
-    if evaluation_fault is not None:
-        try:
-            validate_fault(evaluation_fault, profile="eval", database_dsn=database_dsn or "")
-            if real_data or persona_judge:
-                raise ValueError
-        except ValueError:
-            raise ProbeError(
-                "validation", "故障评测需要专用本地评测库；不能混用生产/评审路径"
-            ) from None
     try:
+        validate_fault(
+            evaluation_fault,
+            profile="eval",
+            database_dsn=database_dsn or "",
+            world=evaluation_world,
+        )
+        if evaluation_fault and (real_data or persona_judge):
+            raise ValueError
+    except ValueError:
+        raise ProbeError(
+            "validation", "故障评测需要专用本地评测库；不能混用生产/评审路径"
+        ) from None
+    phase2 = evaluation is not None and evaluation.get("suite") == "v3"
+    v3_evaluation = (
+        evaluation is not None
+        and evaluation.get("suite") == "v3"
+        and not real_data
+        and not persona_judge
+        and workflow is None
+    )
+    try:
+        if skill_config is not None:
+            skill_config.authorize(evaluation=v3_evaluation, dsn=database_dsn or "")
+            if skill_config.variant != "full":
+                evaluation_variant = skill_config.variant
         validate_variant(
             evaluation_variant,
             database=database_dsn is not None,
@@ -128,9 +184,19 @@ def run_live(
         or type(persona_judge) is not bool
     ):
         raise ProbeError("validation", f"对照需数据库工具；请求上限须为1至{current().max_attempts}")
+    local_evaluation = provider == "ollama"
+    if not local_evaluation and current() is A7_LONG:
+        raise ProbeError("blocked", "A7 长档仅用于 Ollama v3 评测")
+    if local_evaluation and (
+        not v3_evaluation or trace_cloud or not is_eval_database(database_dsn or "")
+    ):
+        raise ProbeError("blocked", "Ollama 仅允许无云跟踪、专用本地库的 v3 评测")
     exporter = cloud_exporter(os.environ) if trace_cloud else None
-    settings = load_runtime_settings(
-        {**os.environ, "LLM_PROVIDER": provider} if provider is not None else os.environ
+    model_env = {**os.environ, "LLM_PROVIDER": provider} if provider is not None else os.environ
+    settings = (
+        load_runtime_settings(model_env, local_evaluation=True)
+        if local_evaluation
+        else load_runtime_settings(model_env)
     )
     if persona_judge and settings.provider != "deepseek":
         raise ProbeError("blocked", "语气评审仅核验了DeepSeek固定温度线路")
@@ -153,10 +219,10 @@ def run_live(
     )
     if real_data:
         definitions = live_definitions(definitions)
-    budget = runtime_budget(root, settings)
+    budget = runtime_budget(root, settings, phase2=phase2)
     budget.check_authorization()
     cli = find_cli(os.environ)
-    with exclusive(cache / "model-budget" / "active.lock"):
+    with exclusive(budget.path.parent / "active.lock"):
         if event_path.exists():
             raise ProbeError("conflict", "此run已有执行记录，不能自动重复付费执行")
         _, before_charge = budget.totals()
@@ -201,8 +267,13 @@ def run_live(
                     "persona_judge": persona_judge,
                     "judge_kind": judge_kind,
                     "evaluation_variant": evaluation_variant,
+                    "v3_skill_evaluation": v3_evaluation,
+                    "skill_config": skill_config.model_dump(mode="json") if skill_config else {},
                     "real_data": real_data,
                     "evaluation_fault": evaluation_fault,
+                    "evaluation_world": evaluation_world.model_dump(mode="json")
+                    if evaluation_world
+                    else None,
                     "prompt_snapshot": snapshot_enabled,
                 },
                 cancelled=cancelled,

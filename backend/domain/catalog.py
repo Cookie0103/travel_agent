@@ -35,6 +35,7 @@ class Place(BaseModel):
     coordinate_kind: Literal["node", "bounding_box_center"]
     category: str
     indoor: bool | None = None
+    reservation_required: bool = Field(default=False, exclude_if=lambda value: not value)
     opening_hours: str | None = None
     source: Source
     field_sources: dict[str, str]
@@ -50,6 +51,9 @@ class Article(BaseModel):
     category: str = "guide"
     mentioned_places: tuple[str, ...] = ()
     source: Source
+
+
+TRANSIT_STOPS = frozenset({"station", "train_station", "subway_station", "bus_station", "airport"})
 
 
 SIGHTSEEING_CATEGORIES = {
@@ -149,6 +153,30 @@ NON_SIGHTSEEING_CATEGORIES = {
     "parking",
     "taxi_stand",
 }
+
+
+# 2026-11-28。项目按 data/snapshots/osm.json 中的明确类型，以及 Google Places
+# 的地点类型分类取交集；混合型（城堡、寺庙、景区、主题乐园）保留未知。
+INDOOR_CATEGORIES = frozenset({"museum", "art_gallery", "gallery", "aquarium", "shopping_mall"})
+OUTDOOR_CATEGORIES = frozenset(
+    {
+        "viewpoint",
+        "park",
+        "garden",
+        "national_park",
+        "scenic_spot",
+        "natural_feature",
+        "ruins",
+        "zoo",
+    }
+)
+
+
+def inferred_indoor(category: str) -> bool | None:
+    normalized = category.strip().casefold()
+    if normalized in INDOOR_CATEGORIES:
+        return True
+    return False if normalized in OUTDOOR_CATEGORIES else None
 
 
 def place_category(categories: list[str]) -> str:

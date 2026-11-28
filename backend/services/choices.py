@@ -39,7 +39,8 @@ from backend.services.common import ServiceError, transaction
 from backend.services.memory import MemoryService, erase, has_draft
 from backend.services.travel import TravelService, request_from_row, require_revision
 
-# 记忆合并确认卡(docs/plans/2026-10-19-memory-flow.md)：草稿暂存之后，由tools.travel的暂存分支调用
+# 记忆合并确认卡(archive/phase1/docs/plans/2026-10-19-memory-flow.md)：
+# 草稿暂存之后，由tools.travel的暂存分支调用
 # ChoiceService.merge_memory_cards，把本会话新增/变更的可长期偏好合成“一组”memory_confirm卡
 # (默认记住，页面一次确认，沿用ChoiceSelection.also)。run后异步抽取的逐条memory_confirm路径不变。
 MEMORY_MERGE_EXTENSION_POINT = "after_draft_staged"

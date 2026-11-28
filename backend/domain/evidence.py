@@ -66,21 +66,27 @@ class EvidenceRecord(BaseModel):
         )
 
 
+HOTEL_OFFER_FIELDS = frozenset(
+    {
+        "city",
+        "start_date",
+        "end_date",
+        "adults",
+        "child_ages",
+        "rooms",
+        "currency",
+        "hotel_search_location",
+    }
+)
+
+
 def evidence_conditions(request: TravelRequest, kind: EvidenceKind) -> dict[str, JsonValue]:
     fields = {
-        "hotel_offer": {
-            "city",
-            "start_date",
-            "end_date",
-            "adults",
-            "child_ages",
-            "rooms",
-            "currency",
-        },
+        "hotel_offer": set(HOTEL_OFFER_FIELDS),
         "route": {"city", "start_date", "end_date", "transport", "departure_time"},
         "place": {"city"},
         "article": {"city"},
     }[kind]
-    if kind == "hotel_offer" and request.hotel_search_location is not None:
-        fields.add("hotel_search_location")
+    if kind == "hotel_offer" and request.hotel_search_location is None:
+        fields.discard("hotel_search_location")
     return request.model_dump(mode="json", include=fields)

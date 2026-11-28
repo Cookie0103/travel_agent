@@ -49,12 +49,12 @@
 
 ```bash
 uv run python scripts/dev.py stack-up      # 启动 API / 模拟供应商 / PostgreSQL / 前端
-uv run python -m scripts.smoke_demo        # 端到端烟测
+uv run python -m scripts.demo.smoke_demo        # 端到端烟测
 # 打开 http://127.0.0.1:3100
 uv run python scripts/dev.py stack-down
 ```
 
-真实模型、API key 和预算配置见[开发与运行手册](docs/guides/development.md)。
+真实模型、API key 和预算配置见[开发与运行手册](docs/handbook/guides/development.md)。
 
 ## 架构
 
@@ -154,6 +154,12 @@ flowchart LR
 | 一个本应离线的测试发起了真实付费调用 | pytest 环境下一律拒绝 `--live` |
 | 模型偶发调用不存在的工具 | 守卫直接终止本轮，不放宽安全边界 |
 
+### 第二阶段评测
+
+第二阶段把确定性规则关卡、商业期望分和版本化 Skill 用于同一套旅行任务。
+多轮题库共 201 道，反思、验证、留出分开。小样本基线与两版自进化均为题库修复前的运行记录，不作为结论。两个候选均留在隔离目录。
+真实酒店快照只用于本机回放，外部模型评测使用合成供应商数据。[第二阶段入口](docs/phase2/README.md) · [小样本对照](docs/phase2/evidence/evolution-comparison-small-v1.md)
+
 ## 运维
 
 | 方面 | 做法 |
@@ -183,5 +189,5 @@ flowchart LR
 
 ## 延伸阅读
 
-- [架构与效果复盘](docs/review/architecture-retrospective.md) · [评测报告](docs/proposals/eval-redesign/results-2026-10-20.md) · [代码架构地图](ARCHITECTURE.md)
-- [系统白话讲解](docs/guides/system-walkthrough.md) · [架构决策记录](docs/adr/) · [安全](docs/SECURITY.md) · [可靠性](docs/RELIABILITY.md)
+- [架构与效果复盘](archive/phase1/docs/review/architecture-retrospective.md) · [评测报告](archive/phase1/docs/proposals/eval-redesign/results-2026-10-20.md) · [代码架构地图](ARCHITECTURE.md)
+- [系统白话讲解](docs/handbook/guides/system-walkthrough.md) · [架构决策记录](docs/handbook/adr/) · [安全](docs/handbook/SECURITY.md) · [可靠性](docs/handbook/RELIABILITY.md)

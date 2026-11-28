@@ -1,8 +1,10 @@
 """SDK供应商显式选择；配置日预算不等于获得真实调用授权。"""
 
 from collections.abc import Mapping
+from decimal import Decimal
 
 from backend.limits import (
+    LOCAL_MODEL,
     ProbeError,
     Provider,
     Settings,
@@ -20,6 +22,8 @@ def provider_name(environment: Mapping[str, str]) -> Provider:
 
 
 def model_name(environment: Mapping[str, str], provider: Provider) -> str:
+    if provider == "ollama":
+        return LOCAL_MODEL
     key = "DEEPSEEK_MODEL" if provider == "deepseek" else "ANTHROPIC_MODEL"
     return environment.get(key, "").strip() or "unconfigured"
 
@@ -37,7 +41,11 @@ def anthropic_host(environment: Mapping[str, str]) -> str:
     return host
 
 
-def load_runtime_settings(environment: Mapping[str, str]) -> Settings:
+def load_runtime_settings(
+    environment: Mapping[str, str], *, local_evaluation: bool = False
+) -> Settings:
+    if local_evaluation:
+        return Settings("", LOCAL_MODEL, Decimal(0), Decimal(0), "ollama")
     provider = provider_name(environment)
     if provider == "deepseek":
         return load_settings(environment)

@@ -51,9 +51,15 @@ class CatalogService:
             if not google:
                 raise ServiceError(503, "unavailable", "未配置 GOOGLE_MAPS_API_KEY")
             try:
+                assert isinstance(arguments, PlaceSearchInput)
                 places = await google.search_places(
-                    arguments.city, arguments.query, arguments.limit
+                    arguments.city,
+                    arguments.query,
+                    8 if arguments.indoor is not None else arguments.limit,
                 )
+                if arguments.indoor is not None:
+                    places = tuple(place for place in places if place.indoor == arguments.indoor)
+                places = places[: arguments.limit]
                 rows = [place.model_dump(mode="json") for place in places]
                 result = await self._publish(context, current, collection, rows)
                 point = google.points.get(arguments.city)

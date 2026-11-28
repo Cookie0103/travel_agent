@@ -1,15 +1,15 @@
 """工作台输出契约；复用领域对象，只描述服务端补齐的卡片，不计算业务规则。"""
 
 from datetime import date
-from typing import Literal
+from typing import Literal, Self
 from uuid import UUID
 
-from pydantic import AwareDatetime, BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
 
 from backend.domain.external_data import DataMode
 from backend.domain.hotel_details import HotelDisplayDetails
 from backend.domain.hotel_recovery import HotelSearchDiagnostics
-from backend.domain.hotels import QuoteFields
+from backend.domain.hotels import PARTNER_LABEL, QuoteFields
 from backend.domain.itinerary import HotelStay, ValidationReport
 from backend.domain.plans import ItemDiff, PlanItem
 from backend.domain.travel_request import (
@@ -40,6 +40,8 @@ class RequestView(TravelRequest):
 class HotelCard(QuoteFields, HotelDisplayDetails):
     model_config = ConfigDict(json_schema_serialization_defaults_required=False)
     offer_id: UUID
+    partner: bool = False
+    partner_label: Literal["合作酒店"] | None = None
     room_tags: tuple[str, ...] = ()
     qualification_unknown: bool = False
     room_preference_mismatch: bool = False
@@ -58,6 +60,12 @@ class HotelCard(QuoteFields, HotelDisplayDetails):
     budget_excess_percent: str | None = Field(
         default_factory=lambda: None, exclude_if=lambda value: value is None
     )
+
+    @model_validator(mode="after")
+    def require_partner_label(self) -> Self:
+        if self.partner != (self.partner_label == PARTNER_LABEL):
+            raise ValueError("合作状态与酒店标注不一致")
+        return self
 
 
 class ValidationFeedback(ValidationReport):

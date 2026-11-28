@@ -33,11 +33,15 @@ class Basic(BaseModel):
     latitude: float | None = Field(default=None, ge=-90, le=90)
     longitude: float | None = Field(default=None, ge=-180, le=180)
     reviewCount: int | None = Field(default=None, ge=0)
+    evaluationPartner: bool = False
 
 
 class Detail(BaseModel):
     middleClassCode: str | None = None
     smallClassCode: str | None = None
+    checkinTime: str | None = None
+    lastCheckinTime: str | None = None
+    checkoutTime: str | None = None
 
 
 class Room(BaseModel):
@@ -46,12 +50,15 @@ class Room(BaseModel):
     planId: int | str | None = None
     reserveUrl: str | None = None
     withBreakfastFlag: int | None = None
+    evaluationMaxGuests: int | None = Field(default=None, ge=1)
 
 
 class Charge(BaseModel):
     stayDate: date
     rakutenCharge: Money
     chargeFlag: int = Field(ge=0, le=1)
+    evaluationChildCharge: Money | None = None
+    evaluationFixedPerRoom: bool = False
 
 
 # 判断题：低于该每人每晚价格的套餐视为促销/测试价（实测出现过¥1、¥500），不当真实价格；
@@ -276,6 +283,7 @@ class Rakuten:
             by_plan=by_plan,
             sort="+roomCharge" if _price_sorted else "standard",
         )
+        first = tuple(item for item in first if self._evaluation_room_fits(item, request))
         diagnosis = diagnosis if diagnosis is not None else HotelSearchDiagnostics()
         diagnosis.upstream_count = found
         diagnosis.dropped_room = sum(
@@ -318,14 +326,24 @@ class Rakuten:
         reason = (
             "儿童计价未知"
             if request.child_ages
+            and (
+                self.data_mode != "synthetic"
+                or any(
+                    not item.charge or item.charge.evaluationChildCharge is None
+                    for item in selected
+                )
+            )
             else "超过7晚，不核算总价"
             if nights > 7
             else "成人无法平均分配到每间房"
-            if request.adults % request.rooms
+            if request.adults % rooms
+            and not (selected and all(self._evaluation_fixed_room_price(item) for item in selected))
             else None
         )
         totals: dict[str, Decimal | None] = {
-            item.key: self.price(item, request, request.start_date) if not reason else None
+            item.key: self.stay_nightly_price(item, request, request.start_date)
+            if not reason
+            else None
             for item in selected
         }
         if selected and not reason:
@@ -356,7 +374,7 @@ class Rakuten:
                 for item in selected:
                     # 后几晚同样不接受促销价，否则会把总价低估。
                     value = (
-                        self.price(nightly[item.key], request, day)
+                        self.stay_nightly_price(nightly[item.key], request, day)
                         if item.key in nightly
                         and not self.price_unreliable(nightly[item.key], request)
                         else None
@@ -397,6 +415,9 @@ class Rakuten:
                 or item.hotel.planListUrl
                 or item.hotel.hotelInformationUrl,
                 display_details=StoredHotelDetails(
+                    checkin_time=item.detail.checkinTime if item.detail else None,
+                    latest_checkin_time=item.detail.lastCheckinTime if item.detail else None,
+                    checkout_time=item.detail.checkoutTime if item.detail else None,
                     hotel_info_url=item.hotel.hotelInformationUrl,
                     plan_list_url=item.hotel.planListUrl,
                     reservation_url=item.room.reserveUrl,
@@ -405,6 +426,11 @@ class Rakuten:
                     longitude=item.hotel.longitude,
                     review_count=item.hotel.reviewCount,
                     price_basis=None if by_plan else SHOWN_PLAN_LABEL,
+                    partner=(
+                        True
+                        if self.data_mode == "synthetic" and item.hotel.evaluationPartner
+                        else None
+                    ),
                     search_total_found=None if by_plan else found,
                     more_url=more_url,
                     more_url_scope="destination" if more_url else None,
@@ -520,6 +546,40 @@ class Rakuten:
         return (
             f"https://{DESTINATION_HOST}/yado/{detail.middleClassCode}/{detail.smallClassCode}.html"
         )
+
+    def _evaluation_room_fits(self, item: Candidate, request: TravelRequest) -> bool:
+        capacity = item.room.evaluationMaxGuests
+        if self.data_mode != "synthetic" or capacity is None:
+            return True
+        assert request.adults and request.rooms
+        return request.adults + len(request.child_ages or ()) <= request.rooms * capacity
+
+    def _evaluation_fixed_room_price(self, item: Candidate) -> bool:
+        charge = item.charge
+        return bool(
+            self.data_mode == "synthetic"
+            and charge
+            and charge.chargeFlag == 1
+            and charge.evaluationFixedPerRoom
+        )
+
+    def stay_nightly_price(
+        self, item: Candidate, request: TravelRequest, day: date
+    ) -> Decimal | None:
+        assert request.adults and request.rooms
+        if (
+            not self._evaluation_room_fits(item, request)
+            or request.adults % request.rooms
+            and not self._evaluation_fixed_room_price(item)
+        ):
+            return None
+        base = self.price(item, request, day)
+        if base is None or not request.child_ages:
+            return base
+        charge = item.charge
+        if self.data_mode != "synthetic" or not charge or charge.evaluationChildCharge is None:
+            return None
+        return base + charge.evaluationChildCharge * len(request.child_ages)
 
     @staticmethod
     def price(item: Candidate, request: TravelRequest, day: date) -> Decimal | None:

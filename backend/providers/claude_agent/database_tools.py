@@ -11,6 +11,7 @@ from uuid import UUID
 from sqlalchemy import make_url
 
 from backend.adapters.evaluation_faults import EvaluationFault, evaluation_data
+from backend.adapters.evaluation_world import EvaluationWorld
 from backend.adapters.live_data import LiveData
 from backend.adapters.supplier import SupplierClient
 from backend.domain.conversation import Task
@@ -63,6 +64,7 @@ class DatabaseTools:
         *,
         real_data: bool = False,
         evaluation_fault: EvaluationFault | None = None,
+        evaluation_world: EvaluationWorld | None = None,
     ) -> None:
         self.loop = loop
         self.supplier_url = supplier_url
@@ -72,6 +74,7 @@ class DatabaseTools:
                 evaluation_fault,
                 database,
                 database.engine.url.render_as_string(hide_password=False),
+                evaluation_world,
             )
             if evaluation_fault
             else LiveData.from_environment(os.environ, database)
@@ -222,6 +225,7 @@ async def database_tools(
     *,
     real_data: bool = False,
     evaluation_fault: EvaluationFault | None = None,
+    evaluation_world: EvaluationWorld | None = None,
 ) -> AsyncIterator[DatabaseTools]:
     loop = asyncio.SelectorEventLoop()
     thread = Thread(target=loop.run_forever, name="travel-database", daemon=True)
@@ -229,7 +233,12 @@ async def database_tools(
     thread.start()
     try:
         tools = DatabaseTools(
-            loop, database, supplier_url, real_data=real_data, evaluation_fault=evaluation_fault
+            loop,
+            database,
+            supplier_url,
+            real_data=real_data,
+            evaluation_fault=evaluation_fault,
+            evaluation_world=evaluation_world,
         )
         try:
             yield tools

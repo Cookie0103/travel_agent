@@ -86,6 +86,8 @@ class Guard:
                 if self.max_attempts is not None and self.attempts >= self.max_attempts:
                     self.stop_reason = "request_limit"
                     raise ProbeError("blocked", "本轮模型请求次数已达上限")
+                if http_retried:
+                    time.sleep(retry_delay)
                 try:
                     request_id = self.budget.reserve(request.charge, datetime.now(UTC), self.run)
                 except ProbeError:
@@ -93,7 +95,6 @@ class Guard:
                     raise
                 self.attempts += 1
                 if http_retried:
-                    time.sleep(retry_delay)
                     self.http_retries += 1
                     self.last_http_retries = 1
                 trace(
@@ -114,6 +115,7 @@ class Guard:
                 }
                 self.http_requests.append(http_request)
                 try:
+                    requested_at = datetime.now(UTC)
                     status, content = self.forward(request.body)
                     http_request["status"] = status
                     if (status == 429 or 500 <= status <= 599) and not retries and not http_retried:
@@ -157,7 +159,13 @@ class Guard:
             if status != 200:
                 self.upstream_status = status
                 raise ProbeError("provider_error", f"上游 HTTP {status}")
-            observation = summarize(content, request, self.settings.model, self.settings.currency)
+            observation = summarize(
+                content,
+                request,
+                self.settings.model,
+                self.settings.currency,
+                requested_at=requested_at,
+            )
             http_request.update(
                 {
                     key: observation[key]
@@ -186,7 +194,11 @@ class Guard:
                 stop_reason=observation.get("stop_reason"),
                 tools=observation.get("tool_names"),
             )
-            self.budget.settle(request_id, Decimal(str(observation["usage_cost_upper"])))
+            self.budget.settle(
+                request_id,
+                Decimal(str(observation["usage_cost_upper"])),
+                requested_at=requested_at,
+            )
             self.observations.append(observation)
             # 已发生的费用照实结算；违规工具响应不能交给 CLI 继续发请求。
             names = observation["tool_names"]

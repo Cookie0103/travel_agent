@@ -76,3 +76,18 @@ test("day anchors ignore malformed historical cards while retaining valid indice
   const mixed = [{ start: "bad" }, { start: "2026-11-04T09:00:00" }, ...cards];
   assert.deepEqual(checkTargets("day:2026-11-04", mixed), [2, 3]);
 });
+
+test("verified reservation and rain alternatives remain visible as travel notes", () => {
+  const groups = validationGroups([
+    entry("opening_hours", "item:0", "verified"),
+    entry("reservation_required", "item:1", "verified"),
+    entry("rain_plan", "item:2", "verified"),
+  ]);
+  assert.deepEqual(
+    groups.map((group) => [group.label, group.status]),
+    [
+      ["预约提示", "verified"],
+      ["雨天安排", "verified"],
+    ],
+  );
+});

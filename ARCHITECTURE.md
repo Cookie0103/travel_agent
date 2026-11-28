@@ -1,9 +1,9 @@
 # 代码架构地图
 
-业务设计唯一来源：[design/02](docs/design/02-architecture.md)、[领域与工具](docs/design/03-data-tools.md)。
-当前实施/缺口看[当前批次](docs/plans/2026-10-19-session-log.md)。此处只帮助定位代码，不另定义业务。
+业务设计唯一来源：[design/02](docs/handbook/design/02-architecture.md)、[领域与工具](docs/handbook/design/03-data-tools.md)。
+当前实施/缺口看[当前开发计划](docs/phase2/plans/2026-11-27-judge-evolution.md)（第一阶段最后一批见[归档](archive/phase1/docs/plans/2026-10-19-session-log.md)）。此处只帮助定位代码，不另定义业务。
 
-不熟悉术语时先看[架构白话讲解与逐表字段](docs/guides/system-walkthrough.md)：区分执行、进度和用户确认三条链。
+不熟悉术语时先看[架构白话讲解与逐表字段](docs/handbook/guides/system-walkthrough.md)：区分执行、进度和用户确认三条链。
 
 | 目录 | 职责与入口 |
 | --- | --- |
@@ -26,11 +26,11 @@
 事件链：worker私有进度 → 父进程验证 → RunService事务保存 → SSE读取；重连不触发执行。
 确认链：页面确认API → 业务事务。模型没有正式保存/下单工具，后续实现仍保持此边界。
 
-本批入口：`services/choices.py`负责服务器选择卡；`services/memory.py`负责确认事实、遗忘边界及SDK续接裁决；`services/user_profile.py`负责有引用的派生画像。画像显式生成仍走`providers/claude_agent/structured.py`的同一SDK无工具路径。`eval/simulator.py`复用应用服务执行合成用户动作，`eval/report.py`分别汇总交付、约束与成本。
+本批入口：`services/choices.py`负责服务器选择卡；`services/memory.py`负责确认事实、遗忘边界及SDK续接裁决；`services/user_profile.py`负责有引用的派生画像。画像显式生成仍走`providers/claude_agent/structured.py`的同一SDK无工具路径。`eval/simulator/run.py`复用应用服务执行合成用户动作，`eval/core/report.py`分别汇总交付、约束与成本。
 
 三个状态源：SDK私有会话用于模型上下文；应用事件用于展示；数据库领域对象用于业务判断。
-SDK文件与数据库事务不是同一原子操作；恢复验收见[可靠性](docs/RELIABILITY.md)。
+SDK文件与数据库事务不是同一原子操作；恢复验收见[可靠性](docs/handbook/RELIABILITY.md)。
 
-分层由`dev check`中的11条import-linter契约保护（只管直接导入）；已有违规逐条登记在[分层债务](docs/execution/layering-debt.md)，各包依赖方向见其中“backend 模块地图”，新增违规会让检查变红；类型/规则依据见[工程标准](docs/execution/standards.md)。
+分层由`dev check`中的11条import-linter契约保护（只管直接导入）；已有违规逐条登记在[分层债务](docs/handbook/execution/layering-debt.md)，各包依赖方向见其中“backend 模块地图”，新增违规会让检查变红；类型/规则依据见[工程标准](docs/handbook/execution/standards.md)。
 数据库用例的事务/归属测试在tests/integration，默认真实本地PostgreSQL；模型默认离线。
-跨层或新依赖变更先查已有入口和[ADR](docs/adr/)，避免复制第二套运行机制。
+跨层或新依赖变更先查已有入口和[ADR](docs/handbook/adr/)，避免复制第二套运行机制。

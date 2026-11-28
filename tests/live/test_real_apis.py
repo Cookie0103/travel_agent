@@ -16,7 +16,7 @@ from backend.domain.travel_request import TravelRequest
 from backend.persistence.database import Database, configuration, database_url
 from data.import_catalog import load_snapshot
 from scripts.dev import ROOT
-from tests.runner import selector_runner
+from tests.support.runner import selector_runner
 
 pytestmark = pytest.mark.live
 

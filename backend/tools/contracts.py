@@ -8,6 +8,7 @@ from pydantic import ValidationError
 
 from backend.domain.execution import ErrorCode, RunContext
 from backend.domain.external_data import DataMode, ExternalAttempt
+from backend.domain.tool_facts import SkillUse
 
 RESULT_LIMIT = 8000
 # present_travel_result的整个展示就是工具结果：5-6张带停留条件/链接/地址/坐标/证据的酒店卡
@@ -69,8 +70,12 @@ class ToolResult:
     suggestion: str = ""
     detail: tuple[str, ...] = ()  # 仅供TRACE的脱敏诊断标签，不进入payload/模型
     external: ExternalAttempt | None = None
+    repair_round: int | None = None
+    attached_skills: tuple[tuple[SkillUse, str], ...] = ()
+    segmented: bool = False
+    external_skill_needed: bool = False
 
-    def payload(self) -> dict[str, object]:
+    def payload(self, *, include_skills: bool = True) -> dict[str, object]:
         """正文状态是工具契约的一部分，兼容忽略 MCP is_error 的模型。"""
         payload: dict[str, object] = {
             "status": "error" if self.code else "empty" if self.empty else "ok",
@@ -82,6 +87,11 @@ class ToolResult:
         }
         if self.data_mode == "synthetic":
             payload["source_label"] = "合成评测数据"
+        if include_skills and self.attached_skills:
+            payload["skill_instructions"] = [
+                {**usage.model_dump(mode="json"), "instructions": text}
+                for usage, text in self.attached_skills
+            ]
         if self.external is not None:
             payload["external"] = self.external.model_dump(mode="json")
         return payload

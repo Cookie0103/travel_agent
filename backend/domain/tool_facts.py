@@ -1,16 +1,37 @@
 """供评测诊断的封闭参数事实；不记录自由文本、引用或业务ID。"""
 
 from datetime import date
-from typing import Literal
+from typing import Literal, get_args
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
 from backend.domain.choices import ChoiceKind
 from backend.domain.memory import MemoryKey, MemoryScope
 
+SkillName = Literal[
+    "hotel-comparison",
+    "itinerary-revision",
+    "multi-city",
+    "budget-relaxation",
+    "external-errors",
+    "repair-limit",
+]
+
+ExperimentSkillName = Literal[
+    "evolution-candidate", "evolution-candidate-2", "evolution-candidate-3"
+]
+EvaluationSkillName = SkillName | ExperimentSkillName
+EXPERIMENTAL_SKILLS: tuple[ExperimentSkillName, ...] = get_args(ExperimentSkillName)
+
 ChoiceOptionId = Literal[
     "standard", "intensive", "relaxed", "accept", "keep", "remember", "trip", "reject", "confirm"
 ]
+
+
+class SkillUse(BaseModel):
+    model_config = ConfigDict(extra="forbid", frozen=True)
+    name: EvaluationSkillName
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
 
 
 class MemoryArguments(BaseModel):
@@ -27,6 +48,7 @@ class ToolArgumentFacts(BaseModel):
     kind: ChoiceKind | None = None
     segment_arrive: date | None = None
     option_id: ChoiceOptionId | None = None
+    skill_name: EvaluationSkillName | None = None
 
 
 def _fields(
@@ -52,6 +74,10 @@ def argument_facts(name: str, arguments: dict[str, object]) -> ToolArgumentFacts
             MemoryArguments.model_validate(_fields(MemoryArguments, op, ("key", "scope", "op")))
             for op in ops[:5]
             if isinstance(op, dict)
+        )
+    if name == "load_skill":
+        data.update(
+            _fields(ToolArgumentFacts, {"skill_name": arguments.get("name")}, ("skill_name",))
         )
     if name == "present_travel_result":
         data.update(_fields(ToolArgumentFacts, arguments, ("component", "kind")))

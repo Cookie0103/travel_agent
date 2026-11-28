@@ -15,8 +15,9 @@ from uuid import UUID
 
 from backend.domain.catalog import VISIT_DURATION_RANGES, Place
 from backend.domain.itinerary import RouteEstimate, ValidationCheck, ValidationReport
-from backend.domain.opening_hours import TOKYO, opening_state
+from backend.domain.opening_hours import TOKYO
 from backend.domain.plans import PlanContent, PlanItem
+from backend.domain.regional_rules import place_opening_state
 
 STALE = {"route_unexpected", "route_scope", "route_departure"}  # 重建路线即可消除
 MAX_OPS = 12
@@ -122,9 +123,7 @@ def shifts(
             (s for s in slots if low <= s and s + length <= high and s != item.start),
             key=lambda s: abs(s - item.start),
         )
-        found = next(
-            (s for s in fits if opening_state(place.opening_hours, s, s + length) == "open"), None
-        )
+        found = next((s for s in fits if place_opening_state(place, s, s + length) == "open"), None)
         if found is not None:
             yield (
                 replaced(items, i, start=found, end=found + length),
@@ -189,7 +188,7 @@ def moves(
             start = max(same) + timedelta(minutes=30) if same else at(day, time(9))
             if (
                 start + length <= at(day, DAY_END)
-                and opening_state(place.opening_hours, start, start + length) == "open"
+                and place_opening_state(place, start, start + length) == "open"
             ):
                 moved = item.model_copy(
                     update={"start": start, "end": start + length, "route_evidence_id": None}

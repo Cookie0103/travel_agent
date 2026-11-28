@@ -2,7 +2,7 @@
 
 import os
 from collections.abc import Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 
 
 @dataclass(frozen=True)
@@ -31,12 +31,12 @@ class Limits:
 
 DEFAULT = Limits(
     16, 12, 12, 90, 210, 220, 240.0, 2048,
-    {"geocode": 2, "places": 3, "routes": 30, "rakuten": 8, "weather": 1},
+    {"geocode": 2, "places": 3, "routes": 30, "rakuten": 8, "weather": 2},
     {"geocode": 50, "places": 25, "routes": 150, "rakuten": 150, "weather": 200},
 )  # fmt: skip
 RELAXED = Limits(
     40, 30, 30, 120, 280, 290, 300.0, 4096,
-    {"geocode": 5, "places": 15, "routes": 40, "rakuten": 20, "weather": 2},
+    {"geocode": 5, "places": 15, "routes": 40, "rakuten": 20, "weather": 5},
     {"geocode": 100, "places": 150, "routes": 400, "rakuten": 300, "weather": 300},
 )  # fmt: skip
 HUMAN = Limits(
@@ -46,12 +46,28 @@ HUMAN = Limits(
     first_byte_timeout=25.0, upstream_retries=2, daily_cny_cap=False,
     evidence_ttl_minutes=30, max_validations=4,
 )  # fmt: skip
+A7_LONG_PROFILE = "a7-long"
+LOCAL_EVAL_PROFILE_ENV = "TRAVEL_LOCAL_EVAL_PROFILE"
+A7_LONG = replace(
+    RELAXED,
+    first_byte_timeout=600,
+    upstream_timeout=880,
+    worker_timeout=900,
+    process_timeout=910,
+    run_timeout=920,
+)
 PROFILES = {"relaxed": RELAXED, "human": HUMAN}  # 人工手测用human；机器/评测保持default
 
 
 def current(env: Mapping[str, str] = os.environ) -> Limits:
-    return PROFILES.get(env.get("TRAVEL_PROFILE", ""), DEFAULT)
+    name = env.get("TRAVEL_PROFILE", "")
+    if name == A7_LONG_PROFILE and env.get(LOCAL_EVAL_PROFILE_ENV) == "1":
+        return A7_LONG
+    return PROFILES.get(name, DEFAULT)
 
 
 def profile_name(env: Mapping[str, str] = os.environ) -> str:
-    return next((name for name, limits in PROFILES.items() if limits is current(env)), "default")
+    selected = current(env)
+    if selected is A7_LONG:
+        return A7_LONG_PROFILE
+    return next((name for name, limits in PROFILES.items() if limits is selected), "default")

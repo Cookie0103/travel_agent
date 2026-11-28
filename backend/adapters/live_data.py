@@ -2,6 +2,7 @@
 
 from collections.abc import Mapping
 from dataclasses import dataclass
+from datetime import date
 from uuid import UUID
 
 import httpx
@@ -22,6 +23,9 @@ class LiveData:
     http: httpx.AsyncClient
     evidence: dict[UUID, EvidenceRecord]
     data_mode: ProviderDataMode = "live"
+    evaluation_today: date | None = None
+    evaluation_weather_calendar: bool = False
+    evaluation_place_names: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
     @classmethod
     def from_environment(

@@ -49,12 +49,12 @@ You need [uv](https://docs.astral.sh/uv/) and Docker. The offline demo needs **n
 
 ```bash
 uv run python scripts/dev.py stack-up      # API, mock supplier, PostgreSQL, web
-uv run python -m scripts.smoke_demo        # end-to-end smoke test
+uv run python -m scripts.demo.smoke_demo        # end-to-end smoke test
 # open http://127.0.0.1:3100
 uv run python scripts/dev.py stack-down
 ```
 
-Live models, API keys and budgets: [development guide](docs/guides/development.md).
+Live models, API keys and budgets: [development guide](docs/handbook/guides/development.md).
 
 ## Architecture
 
@@ -154,6 +154,12 @@ Every incident became a permanent guardrail:
 | A supposedly offline test made a real paid call | `--live` is refused outright inside pytest |
 | The model occasionally called a tool that does not exist | The guard terminates the turn instead of loosening the boundary |
 
+### Phase 2 evaluation
+
+Phase 2 adds deterministic rule gates, a commercial expected-value score, and versioned Skill evaluations.
+The frozen 201-case suite separates reflection, validation, and holdout. The pilot predates the test-suite fixes. Its pass counts and Skill comparison remain historical records and are unsuitable for drawing performance conclusions. Both candidates stayed in isolated directories.
+Private hotel snapshots support local replay. External model trials use synthetic supplier data. [Phase 2 guide](docs/phase2/README.md) · [Pilot comparison](docs/phase2/evidence/evolution-comparison-small-v1.md)
+
 ## Operations
 
 | Area | Implementation |
@@ -183,7 +189,7 @@ Every incident became a permanent guardrail:
 
 ## Further reading
 
-- [Architecture retrospective](docs/review/architecture-retrospective.md) · [Eval report](docs/proposals/eval-redesign/results-2026-10-20.md) · [Code map](ARCHITECTURE.md)
-- [System walkthrough](docs/guides/system-walkthrough.md) · [ADRs](docs/adr/) · [Security](docs/SECURITY.md) · [Reliability](docs/RELIABILITY.md)
+- [Architecture retrospective](archive/phase1/docs/review/architecture-retrospective.md) · [Eval report](archive/phase1/docs/proposals/eval-redesign/results-2026-10-20.md) · [Code map](ARCHITECTURE.md)
+- [System walkthrough](docs/handbook/guides/system-walkthrough.md) · [ADRs](docs/handbook/adr/) · [Security](docs/handbook/SECURITY.md) · [Reliability](docs/handbook/RELIABILITY.md)
 
 <sub>Most design docs are written in Chinese.</sub>

@@ -130,10 +130,10 @@ def db_up() -> int:
 
 def eval_dev(*, live: bool, suite: str = "legacy", case_ids: Sequence[str] = ()) -> int:
     """评测入口缺失时明确拒绝，不伪造结果；冻结集只跑dev划分且必须走数据库。"""
-    if not (ROOT / "eval" / "run.py").is_file():
-        print("unavailable: 缺少 eval/run.py，无法运行评测。", file=sys.stderr)
+    if not (ROOT / "eval" / "v1v2" / "run.py").is_file():
+        print("unavailable: 缺少 eval/v1v2/run.py，无法运行评测。", file=sys.stderr)
         return 1
-    command = [sys.executable, "-m", "eval.run", "--split", "dev"]
+    command = [sys.executable, "-m", "eval.v1v2.run", "--split", "dev"]
     if suite == "frozen":
         command.extend(["--suite", "frozen", "--database"])
     if live:
@@ -150,7 +150,7 @@ def web(command: str, *, webpack: bool = False) -> int:
         print("unavailable: 需要Node24+和pnpm11，见apps/web/README.md", file=sys.stderr)
         return 1
     if command == "web-generate":
-        result = run_command([sys.executable, "-m", "scripts.export_web_schema"])
+        result = run_command([sys.executable, "-m", "scripts.devtools.export_web_schema"])
         if result:
             return result
     actions = {
@@ -229,18 +229,38 @@ def main(argv: Sequence[str] | None = None) -> int:
     simulator.add_argument("--trace-cloud", action="store_true")
     simulator.add_argument("--repeat", type=int, choices=range(1, 4), default=3)
     simulator.add_argument("--case-id", action="append", default=[])
+    rules = commands.add_parser("eval-rules")
+    rules.add_argument("--out", type=Path)
+    capture_hotels = commands.add_parser("capture-phase2-hotels")
+    capture_mode = capture_hotels.add_mutually_exclusive_group(required=True)
+    capture_mode.add_argument("--live", action="store_true")
+    capture_mode.add_argument("--assemble", action="store_true")
+    for demand in ("weekday", "weekend", "event"):
+        capture_hotels.add_argument(f"--{demand}")
     v3 = commands.add_parser("eval-v3")
-    v3.add_argument("--live", action="store_true")
+    v3_modes = v3.add_mutually_exclusive_group()
+    v3_modes.add_argument("--live", action="store_true")
+    v3_modes.add_argument("--local-model", action="store_true")
     v3.add_argument("--trace-cloud", action="store_true")
     v3.add_argument("--repeat", type=int, choices=range(1, 4), default=1)
     v3.add_argument("--case-id", action="append", default=[])
     v3.add_argument("--cases", type=Path)
-    v3.add_argument("--profile", choices=("human", "default", "relaxed"), default="human")
+    v3.add_argument("--split", choices=("reflection", "validation"))
+    v3.add_argument("--private-world", type=Path)
+    v3.add_argument(
+        "--profile", choices=("human", "default", "relaxed", "a7-long"), default="human"
+    )
     v3.add_argument("--max-cny", type=float)
     v3.add_argument("--resume", type=Path)
     v3.add_argument("--resume-force", action="store_true")
     v3.add_argument("--no-judge", action="store_true")
     v3.add_argument("--judge-check", action="store_true")
+    v3.add_argument("--variant", choices=("full", "no_skills"), default="full")
+    v3.add_argument("--disable-skill")
+    v3.add_argument("--candidate-skills", type=Path)
+    evolution = commands.add_parser("eval-evolve", help="生成、重跑并审核两版 Skill 候选")
+    evolution.add_argument("version", choices=("first", "guarded"))
+    evolution.add_argument("arguments", nargs=argparse.REMAINDER)
     calibration = commands.add_parser("eval-calibration")
     calibration.add_argument("results", type=Path, nargs="+")
     calibration.add_argument("--live", action="store_true")
@@ -267,7 +287,7 @@ def main(argv: Sequence[str] | None = None) -> int:
                         for platform in ("win32", "linux", "darwin")
                     ],
                     ["lint-imports"],
-                    [python, "scripts/check_docs.py"],
+                    [python, "scripts/devtools/check_docs.py"],
                 ]
             )
         case "format":
@@ -295,7 +315,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.trace_cloud and not args.live:
                 return 2
             if not args.live:
-                from eval.suites import load_suite
+                from eval.core.suites import load_suite
 
                 cases, _ = load_suite(ROOT, "v2-memory", "dev")
                 print(f"prepared: {len(cases)}记忆案例；未发模型调用，确定性不变量由专项测试验证")
@@ -303,7 +323,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             command = [
                 python,
                 "-m",
-                "eval.run",
+                "eval.v1v2.run",
                 "--suite",
                 "v2-memory",
                 "--database",
@@ -321,7 +341,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         case "eval-simulator":
             if args.trace_cloud and not args.live:
                 return 2
-            command = [python, "-m", "eval.simulator", "--repeat", str(args.repeat)]
+            command = [python, "-m", "eval.simulator.run", "--repeat", str(args.repeat)]
             if args.live:
                 command.append("--live")
             if args.trace_cloud:
@@ -329,13 +349,25 @@ def main(argv: Sequence[str] | None = None) -> int:
             for case_id in args.case_id:
                 command.extend(["--case-id", case_id])
             return run_command(command, timeout=14400)
+        case "eval-rules":
+            command = [python, "-m", "eval.rules.report"]
+            if args.out:
+                command.extend(["--out", str(args.out)])
+            return run_command(command, timeout=60)
+        case "capture-phase2-hotels":
+            command = [python, "-m", "scripts.live.capture_phase2_hotels"]
+            command.append("--assemble" if args.assemble else "--live")
+            for demand in ("weekday", "weekend", "event"):
+                if day := getattr(args, demand):
+                    command.extend([f"--{demand}", day])
+            return run_command(command)
         case "eval-v3":
             if (args.trace_cloud and not args.live) or (args.judge_check and not args.live):
                 return 2
             command = [
                 python,
                 "-m",
-                "eval.v3_run",
+                "eval.v3.run",
                 "--repeat",
                 str(args.repeat),
                 "--profile",
@@ -343,10 +375,22 @@ def main(argv: Sequence[str] | None = None) -> int:
             ]
             if args.live:
                 command.append("--live")
+            if args.local_model:
+                command.append("--local-model")
             if args.trace_cloud:
                 command.append("--trace-cloud")
             if args.cases:
                 command.extend(["--cases", str(args.cases)])
+            if args.split:
+                command.extend(["--split", args.split])
+            if args.private_world:
+                command.extend(["--private-world", str(args.private_world)])
+            if args.variant != "full":
+                command.extend(["--variant", args.variant])
+            if args.disable_skill:
+                command.extend(["--disable-skill", args.disable_skill])
+            if args.candidate_skills:
+                command.extend(["--candidate-skills", str(args.candidate_skills)])
             if args.max_cny is not None:
                 command.extend(["--max-cny", str(args.max_cny)])
             if args.resume:
@@ -360,11 +404,16 @@ def main(argv: Sequence[str] | None = None) -> int:
             for case_id in args.case_id:
                 command.extend(["--case-id", case_id])
             return run_command(command, timeout=14400)
+        case "eval-evolve":
+            return run_command(
+                [python, "-m", "eval.evolve.cli", args.version, *args.arguments],
+                timeout=14400,
+            )
         case "eval-calibration":
             command = [
                 python,
                 "-m",
-                "eval.calibration",
+                "eval.judging.calibration",
                 *[str(p) for p in args.results],
                 "--threshold",
                 str(args.threshold),
@@ -373,13 +422,20 @@ def main(argv: Sequence[str] | None = None) -> int:
                 command.append("--live")
             return run_command(command, timeout=7200)
         case "eval-human-sheet":
-            command = [python, "-m", "eval.human_sheet"]
+            command = [python, "-m", "eval.judging.human_sheet"]
             if args.out:
                 command.extend(["--out", str(args.out)])
             return run_command(command)
         case "eval-human-score":
             return run_command(
-                [python, "-m", "eval.calibration", "score", str(args.csv), str(args.references)]
+                [
+                    python,
+                    "-m",
+                    "eval.judging.calibration",
+                    "score",
+                    str(args.csv),
+                    str(args.references),
+                ]
             )
         case "eval-v2":
             if args.trace_cloud and not args.live:
@@ -387,7 +443,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             command = [
                 python,
                 "-m",
-                "eval.run",
+                "eval.v1v2.run",
                 "--suite",
                 "v2",
                 "--database",
@@ -407,13 +463,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             if not args.live:
                 print("需要显式 --live；未发请求。", file=sys.stderr)
                 return 2
-            return run_command([python, "-m", "scripts.probe_hotel_sort", "--live"])
+            return run_command([python, "-m", "scripts.live.probe_hotel_sort", "--live"])
         case "smoke-langfuse-linkage":
             if not (args.live and args.trace_cloud):
                 print("需要显式 --live --trace-cloud；未发请求。", file=sys.stderr)
                 return 2
             return run_command(
-                [python, "-m", "scripts.smoke_langfuse_linkage", "--live", "--trace-cloud"]
+                [python, "-m", "scripts.live.smoke_langfuse_linkage", "--live", "--trace-cloud"]
             )
         case "api":
             command = [python, "-m", "backend.server"]
@@ -423,13 +479,13 @@ def main(argv: Sequence[str] | None = None) -> int:
                 command.append("--trace-cloud")
             return run_command(command, timeout=None)
         case "doctor":
-            return run_command([python, "-m", "scripts.doctor"])
+            return run_command([python, "-m", "scripts.devtools.doctor"])
         case "supplier":
             return run_command([python, "-m", "mock_supplier.server"], timeout=None)
         case "web" | "web-setup" | "web-check" | "web-generate" | "web-format":
             return web(args.command, webpack=getattr(args, "webpack", False))
         case "stack-up" | "stack-status" | "stack-down":
-            return run_command([python, "-m", "scripts.stack", args.command], timeout=None)
+            return run_command([python, "-m", "scripts.demo.stack", args.command], timeout=None)
     return 2
 
 

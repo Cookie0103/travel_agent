@@ -1,12 +1,17 @@
 """京都营业时间的保守子集；校验整段停留，未知语法绝不当作营业。"""
 
 import re
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 from typing import Literal
 
 TOKYO = timezone(timedelta(hours=9), "Asia/Tokyo")
 DAYS = ("Mo", "Tu", "We", "Th", "Fr", "Sa", "Su")
 Window = tuple[int, int]
+MONTHS = ("Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec")
+_MONTH_PATTERN = "|".join(MONTHS)
+_DATE_CLOSURE = re.compile(
+    rf"({_MONTH_PATTERN}) (\d{{1,2}})(?:\s*-\s*({_MONTH_PATTERN}) (\d{{1,2}}))? (?:off|closed)"
+)
 
 
 def _days(value: str | None) -> set[int]:
@@ -54,20 +59,49 @@ def _schedule(raw: str) -> dict[int, list[Window]]:
     return week
 
 
+def _annual_closures(raw: str) -> tuple[str, list[tuple[tuple[int, int], tuple[int, int]]]]:
+    weekly = []
+    closed = []
+    for rule in raw.split(";"):
+        if match := _DATE_CLOSURE.fullmatch(rule.strip()):
+            first_month, first_day, last_month, last_day = match.groups()
+            first = MONTHS.index(first_month) + 1, int(first_day)
+            last = (MONTHS.index(last_month) + 1, int(last_day)) if last_month else first
+            date(2000, *first), date(2000, *last)  # 校验日期，允许闰年的 2 月 29 日。
+            closed.append((first, last))
+        else:
+            weekly.append(rule)
+    return ";".join(weekly).strip(), closed
+
+
 def opening_state(
     raw: str | None, start: datetime, end: datetime
 ) -> Literal["open", "closed", "unknown"]:
-    """仅支持24/7、星期范围/列表、固定时段及off；节假日/季节/注释均unknown。"""
+    """支持固定每周时段及来源明确的固定日期闭馆；其他动态规则保留未知。"""
     if start.utcoffset() is None or end.utcoffset() is None or end <= start:
         raise ValueError("停留时间必须有时区且结束晚于开始")
     start, end = start.astimezone(TOKYO), end.astimezone(TOKYO)
     if not raw or end - start > timedelta(days=1):
         return "unknown"
-    if raw.strip() == "24/7":
-        return "open"
     try:
-        week = _schedule(raw)
+        weekly, closures = _annual_closures(raw)
+        if weekly and weekly != "24/7":
+            week = _schedule(weekly)
+        else:
+            week = {}
     except ValueError:
+        return "unknown"
+    last = end - timedelta(microseconds=1)
+    for day in {start.date(), last.date()}:
+        point = day.month, day.day
+        if any(
+            (first <= point <= final if first <= final else point >= first or point <= final)
+            for first, final in closures
+        ):
+            return "closed"
+    if weekly == "24/7":
+        return "open"
+    if not week:
         return "unknown"
     intervals: list[tuple[datetime, datetime]] = []
     midnight = start.replace(hour=0, minute=0, second=0, microsecond=0)

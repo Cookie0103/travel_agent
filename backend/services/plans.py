@@ -20,6 +20,8 @@ from backend.domain.itinerary import (
     ValidationReport,
 )
 from backend.domain.plans import (
+    DRAFT_TTL,
+    EVALUATION_DRAFT_SCOPE,
     InitialStage,
     PatchItemLocked,
     PlanContent,
@@ -27,6 +29,7 @@ from backend.domain.plans import (
     StageInput,
     apply_plan_patch,
     differences,
+    draft_request_scope,
     initial_content,
     stays_of,
 )
@@ -41,7 +44,12 @@ from backend.persistence.models import PlanRow
 from backend.services.calendar import calendar
 from backend.services.common import ServiceError, transaction
 from backend.services.hotels import cards as hotel_cards
-from backend.services.planning import PlanningService, apply_selected_hotels, validate_proposal
+from backend.services.planning import (
+    PlanningService,
+    apply_selected_hotels,
+    limited_edit_source,
+    validate_proposal,
+)
 from backend.services.travel import (
     TravelService,
     hydrate_records,
@@ -183,7 +191,8 @@ class PlanService:
                 or "hotel_evidence_id" in change.patch.model_fields_set
                 and change.patch.hotel_evidence_id is None
             )
-            operation_key = operations.key(arguments)
+            scope = await limited_edit_source(db, context)
+            operation_key = operations.key(arguments, scope_run_id=scope.id if scope else None)
             cached = await operations.result(db, context.session_id, "stage_plan", operation_key)
             replay = PlanDraft.model_validate(cached) if cached is not None else None
             if replay is not None and datetime.now(UTC) < replay.expires_at:
@@ -268,7 +277,7 @@ class PlanService:
                     )
                 ),
                 validation=report,
-                expires_at=datetime.now(UTC) + timedelta(minutes=10),
+                expires_at=datetime.now(UTC) + DRAFT_TTL,
                 repairs=fixed.disclosed if fixed else (),
             )
             if fixed is None and report.status == "conflict":
@@ -283,6 +292,14 @@ class PlanService:
                 db.add(row)
                 await db.flush()
             await plans.add_draft(db, context, draft)
+            if self.travel.live and self.travel.live.evaluation_today is not None:
+                operations.save(
+                    db,
+                    context.session_id,
+                    EVALUATION_DRAFT_SCOPE,
+                    str(draft.draft_id),
+                    dict(draft_request_scope(request)),
+                )
             payload = draft.model_dump(mode="json")
             if replay is None:
                 operations.save(db, context.session_id, "stage_plan", operation_key, payload)
@@ -323,8 +340,22 @@ class PlanService:
             report = await validate_proposal(
                 db, context, request, draft.content.proposal(request.revision), self.travel.live
             )
-            if report.status == "conflict":
+            scope_checks = tuple(
+                check for check in draft.validation.checks if check.code == "edit_scope"
+            )
+            if report.status == "conflict" or any(
+                check.status == "conflict" for check in scope_checks
+            ):
                 raise ServiceError(409, "conflict", "草稿存在硬冲突，不能保存；请修正后重新确认")
+            if scope_checks:
+                status = (
+                    "partial"
+                    if any(check.status == "unknown" for check in scope_checks)
+                    else report.status
+                )
+                report = report.model_copy(
+                    update={"status": status, "checks": (*report.checks, *scope_checks)}
+                )
             saved = SavedPlan(
                 plan_id=row.id,
                 version=row.current_version + 1,

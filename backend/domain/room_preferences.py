@@ -30,8 +30,16 @@ def room_assessment(name: str, request: TravelRequest | None) -> RoomAssessment:
     private = request is not None and "住宿：独立房间" in recognized_room_choices(
         request.hard_constraints
     )
+    family = bool(re.search(r"家庭房|ファミリー|トリプル", name))
     tags = tuple(
-        tag for found, tag in ((dorm, "宿舍"), (capsule, "舱房"), (restricted, "资格限定")) if found
+        tag
+        for found, tag in (
+            (dorm, "宿舍"),
+            (capsule, "舱房"),
+            (restricted, "资格限定"),
+            (family, "家庭房"),
+        )
+        if found
     )
     return RoomAssessment(
         room_tags=tags + ("仅按房型名称识别", "未核实全部资格"),

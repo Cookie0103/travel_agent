@@ -15,6 +15,7 @@ from backend.providers.claude_agent.guard import Forward, Guard, serve
 from backend.providers.claude_agent.process import invoke_worker, run_process
 from backend.services.travel import TravelService
 from backend.tools.workflow import WorkflowName
+from tests.support.clock import FIXTURE_TODAY_ENV
 
 
 def server_state(request: dict[str, object]) -> str:
@@ -65,7 +66,7 @@ class CompactionHistory:
         self.event_path: Path | None = None
 
     def __call__(self, body: bytes) -> tuple[int, bytes]:
-        from tests.test_sdk_cli_offline import scripted_response
+        from tests.unit.providers.test_sdk_cli_offline import scripted_response
 
         request = json.loads(body)
         self.requests.append(request)
@@ -163,6 +164,7 @@ def run_database_worker(
             guard.token,
             "deepseek-flash",
         )
+        env[FIXTURE_TODAY_ENV] = os.environ[FIXTURE_TODAY_ENV]
         if auto_compact_percent is not None:
             env["CLAUDE_AUTOCOMPACT_PCT_OVERRIDE"] = str(auto_compact_percent)
             env["CLAUDE_CODE_AUTO_COMPACT_WINDOW"] = "100000"
@@ -172,9 +174,7 @@ def run_database_worker(
             cli,
             worker,
             env,
-            module="tests.integration.sdk_context_worker"
-            if auto_compact_percent is not None
-            else "backend.providers.claude_agent.worker",
+            module="tests.integration.sdk_context_worker",
             payload={
                 "prompts": prompts if prompts is not None else [prompt],
                 "user_id": str(context.user_id),

@@ -153,6 +153,10 @@ class TravelService:
         )
         return cls(database, live)
 
+    def travel_today(self) -> date:
+        evaluation_today = self.live.evaluation_today if self.live else None
+        return evaluation_today or self.today()
+
     async def close_data(self) -> None:
         if self.live:
             await self.live.close()
@@ -407,7 +411,7 @@ class TravelService:
                 outcome = "none" if card is None else "issued" if created else "pending"
                 view["trip_ask_card"] = outcome
                 view["message"] = TRIP_ASK_MESSAGES[outcome]
-            return view
+            return {**view, "segmented": bool(current.segments)}
 
     async def complete_conversation_task(
         self, context: RunContext, task: Task, revision: int
@@ -558,7 +562,7 @@ class TravelService:
                 }
             )
         try:
-            updated, changed = apply_request_patch(current, accepted, self.today())
+            updated, changed = apply_request_patch(current, accepted, self.travel_today())
         except RequestConflict as error:
             raise ServiceError(409, "conflict", str(error), "request_conflict") from None
         except RequestLimitError as error:

@@ -2,11 +2,15 @@
 
 import json
 import re
+from datetime import date, timedelta
 from typing import Literal
 
 import httpx
 from sqlalchemy import make_url
 
+from backend.adapters.evaluation_places import city_places
+from backend.adapters.evaluation_world import EvaluationWorld
+from backend.adapters.evaluation_world import serve as serve_world
 from backend.adapters.external_api import ApiUsage
 from backend.adapters.google_maps import GoogleMaps
 from backend.adapters.live_data import LiveData
@@ -23,6 +27,7 @@ type EvaluationFault = Literal[
     "budget-double",
     "budget-none",
     "memory-poison",
+    "phase2-world",
 ]
 SCENARIOS = {
     "429-ok",
@@ -34,6 +39,7 @@ SCENARIOS = {
     "budget-double",
     "budget-none",
     "memory-poison",
+    "phase2-world",
 }
 CITY_CENTERS = {
     "京都": (35.0116, 135.7681),
@@ -67,12 +73,19 @@ def synthetic_places(city: str, scenario: str) -> list[dict[str, object]]:
     ]
 
 
-def evaluation_data(scenario: str, database: Database, database_dsn: str) -> LiveData:
+def evaluation_data(
+    scenario: str,
+    database: Database,
+    database_dsn: str,
+    world: EvaluationWorld | None = None,
+) -> LiveData:
     http = httpx.AsyncClient(
-        transport=fault_transport(scenario, profile="eval", database_dsn=database_dsn)
+        transport=fault_transport(scenario, profile="eval", database_dsn=database_dsn, world=world)
     )
     usage = ApiUsage(
-        database, {"RAKUTEN_MIN_INTERVAL_SECONDS": "0", "GOOGLE_PLACES_DAILY_CAP": "60"}
+        database,
+        {"RAKUTEN_MIN_INTERVAL_SECONDS": "0", "GOOGLE_PLACES_DAILY_CAP": "60"},
+        run_limits=world is None,
     )
     return LiveData(
         GoogleMaps("synthetic", http, usage, data_mode="synthetic"),
@@ -81,6 +94,19 @@ def evaluation_data(scenario: str, database: Database, database_dsn: str) -> Liv
         http,
         {},
         data_mode="synthetic",
+        evaluation_today=world.today if world else None,
+        evaluation_weather_calendar=bool(
+            world and world.source == "synthetic" and world.synthetic_calendar
+        ),
+        evaluation_place_names=(
+            tuple(
+                (city.city, (place.name, *place.aliases))
+                for city in world.cities
+                for place in city_places(city.city, city.latitude, city.longitude)
+            )
+            if world is not None
+            else ()
+        ),
     )
 
 
@@ -94,17 +120,60 @@ def is_eval_database(database_dsn: str) -> bool:
     )
 
 
-def validate_fault(scenario: str, *, profile: str, database_dsn: str) -> None:
+def validate_fault(
+    scenario: str | None,
+    *,
+    profile: str,
+    database_dsn: str,
+    world: EvaluationWorld | None = None,
+) -> None:
+    if scenario is None and world is None:
+        return
     if profile != "eval" or scenario not in SCENARIOS or not is_eval_database(database_dsn):
         raise ValueError("故障注入只允许显式eval与本地随机专用评测库")
+    if scenario == "phase2-world" and world is None:
+        raise ValueError("第二阶段供应商夹具须由专用评测入口传入")
+    if world is not None and scenario not in {"phase2-world", "empty", "429-ok", "timeout-ok"}:
+        raise ValueError("第二阶段供应商夹具不支持此故障")
 
 
-def fault_transport(scenario: str, *, profile: str, database_dsn: str) -> httpx.MockTransport:
-    validate_fault(scenario, profile=profile, database_dsn=database_dsn)
+def fault_transport(
+    scenario: str,
+    *,
+    profile: str,
+    database_dsn: str,
+    world: EvaluationWorld | None = None,
+) -> httpx.MockTransport:
+    validate_fault(scenario, profile=profile, database_dsn=database_dsn, world=world)
     counts: dict[str, int] = {}
 
     def respond(request: httpx.Request) -> httpx.Response:
         host, path = request.url.host, request.url.path
+        kind = (
+            "rakuten"
+            if host in {"openapi.rakuten.co.jp", "app.rakuten.co.jp"}
+            else "places"
+            if host == "places.googleapis.com"
+            else "other"
+        )
+        counts[kind] = counts.get(kind, 0) + 1
+        number = counts[kind]
+        if kind in {"rakuten", "places"}:
+            if scenario == "timeout-ok" and number == 1:
+                raise httpx.ReadTimeout("合成故障", request=request)
+            if (scenario == "429-ok" and number == 1) or scenario == "429-twice":
+                return httpx.Response(
+                    429, headers={"Retry-After": "0"}, json={"error": "too_many_requests"}
+                )
+            if scenario == "400":
+                return httpx.Response(400, json={"error": "wrong_parameter"})
+        if scenario == "empty" and kind == "rakuten":
+            return httpx.Response(404, json={"error": "not_found"})
+        if world is not None:
+            if scenario == "empty" and kind == "places" and request.method == "POST":
+                return httpx.Response(200, json={"places": []})
+            if (provided := serve_world(request, world)) is not None:
+                return provided
         if host == "maps.googleapis.com" and "geocode" in path:
             city = request.url.params.get("address", "京都")
             latitude, longitude = CITY_CENTERS[city_name(city)]
@@ -124,27 +193,35 @@ def fault_transport(scenario: str, *, profile: str, database_dsn: str) -> httpx.
                     ],
                 },
             )
-        kind = (
-            "rakuten"
-            if host in {"openapi.rakuten.co.jp", "app.rakuten.co.jp"}
-            else "places"
-            if host == "places.googleapis.com"
-            else "other"
-        )
-        counts[kind] = counts.get(kind, 0) + 1
-        number = counts[kind]
-        if kind in {"rakuten", "places"}:
-            if scenario == "timeout-ok" and number == 1:
-                raise httpx.ReadTimeout("合成故障", request=request)
-            if (scenario == "429-ok" and number == 1) or scenario == "429-twice":
-                return httpx.Response(
-                    429, headers={"Retry-After": "0"}, json={"error": "too_many_requests"}
-                )
-            if scenario == "400":
-                return httpx.Response(400, json={"error": "wrong_parameter"})
+        if host == "api.open-meteo.com" and path == "/v1/forecast":
+            start = date.fromisoformat(request.url.params["start_date"])
+            end = date.fromisoformat(request.url.params["end_date"])
+            days = [start + timedelta(days=offset) for offset in range((end - start).days + 1)]
+            synthetic_calendar = bool(
+                world and world.source == "synthetic" and world.synthetic_calendar
+            )
+            wet, dry = (85, 10) if synthetic_calendar else (75, 25)
+            default_rain = (
+                dry if synthetic_calendar or float(request.url.params["latitude"]) < 35 else wet
+            )
+            overrides = world.weather_by_date if world is not None else {}
+            rain = [
+                wet if weather == "rain" else dry if weather == "sunny" else default_rain
+                for weather in (overrides.get(day) for day in days)
+            ]
+            return httpx.Response(
+                200,
+                json={
+                    "daily": {
+                        "time": [day.isoformat() for day in days],
+                        "weather_code": [61 if chance >= 60 else 0 for chance in rain],
+                        "temperature_2m_max": [22] * len(days),
+                        "temperature_2m_min": [13] * len(days),
+                        "precipitation_probability_max": rain,
+                    }
+                },
+            )
         if kind == "rakuten":
-            if scenario == "empty":
-                return httpx.Response(404, json={"error": "not_found"})
             sorted_query = request.url.params.get("sort") == "+roomCharge"
             amount = (
                 (

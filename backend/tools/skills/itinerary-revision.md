@@ -1,6 +1,9 @@
-# 局部改程 v1
+# 局部改程 v2
 
-先读取当前旅行条件与正式行程版本，定位用户希望改变的日期和item_id。
+用户要求只换一个项目、改一个时段、保留其余项目或修改现有正式行程时使用。
+
+先读取当前旅行条件并定位用户希望改变的日期和项目。已有正式版本时用get_saved_plan读取item_id再组装PlanPatch。
+只有未确认草稿时，按pending_draft.draft_id用present_travel_result读取旧草稿。保留未改项目的证据、时刻和住宿，仅将用户指定处换入新证据，用stage_plan_change的initial路径重新暂存。
 保留未要求改变的项目与用户锁定项；同一地点可能有多个不同item_id，不能按place_id一并删除。
 提出PlanPatch后校验营业时间、路段、时区和预算；冲突最多修复3轮，未知信息保留警告。
 直接stage_plan_change暂存并读取内置校验报告，无需先独立validate_itinerary；有冲突仅修受影响项目再暂存，未知保留。达到修复上限后用最近的draft_id调用present_travel_result展示并说明问题，conflict仍不能确认。

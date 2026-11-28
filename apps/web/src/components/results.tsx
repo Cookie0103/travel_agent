@@ -139,6 +139,7 @@ function Hotel({
           <p className="hotel-fine">{card.room_tags.join(" · ")}</p>
         )}
         <ul className="hotel-facts">
+          {card.partner_label && <li>{card.partner_label}</li>}
           <li className={card.breakfast ? "is-yes" : undefined}>
             {card.breakfast === null
               ? "早餐未知"
@@ -748,7 +749,8 @@ export function PlanResults({
   const conflictCount = plan.validation.check_counts.conflict ?? 0;
   const unknownCount = plan.validation.check_counts.unknown ?? 0;
   const conflictGroups = groups.filter((group) => group.status === "conflict");
-  const unknownGroups = groups.filter((group) => group.status !== "conflict");
+  const unknownGroups = groups.filter((group) => group.status === "unknown");
+  const noteGroups = groups.filter((group) => group.status === "verified");
   const truncatedNote = (
     <p className="muted small">
       下列分类计数仅含当前明细；其余校验未展开，上方为完整总数。
@@ -757,8 +759,12 @@ export function PlanResults({
   const renderGroup = (group: (typeof groups)[number], index: number) => (
     <div key={index}>
       <p className="check-group small">
-        {group.status === "conflict" ? "冲突" : "未知"} · {group.label} ·{" "}
-        {group.checks.length}条
+        {group.status === "conflict"
+          ? "冲突"
+          : group.status === "unknown"
+            ? "未知"
+            : "备注"}{" "}
+        · {group.label} · {group.checks.length}条
       </p>
       <ul className="small">
         {group.checks.map((check, position) => (
@@ -834,6 +840,9 @@ export function PlanResults({
           {plan.validation.truncated && truncatedNote}
           {unknownGroups.map(renderGroup)}
         </details>
+      )}
+      {!!noteGroups.length && (
+        <div className="checks-fold">{noteGroups.map(renderGroup)}</div>
       )}
       {!!plan.changes?.length && (
         <details>

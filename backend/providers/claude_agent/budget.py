@@ -16,10 +16,21 @@ from backend.trace_log import trace
 GRANT = "2026-10-03-travel-autonomous"
 # 用户新授权只限制每日15CNY；None表示没有累计上限，不用伪造大数。
 DAILY_CNY_AUTHORIZATION = Decimal("15.00")
+PHASE2_REVIEW_AT = Decimal("25")
+PHASE2_CNY_LIMIT = Decimal("30")
+_PHASE2_LEGACY_OFF_PEAK_DAY = "2026-11-28"
 LIMITS: dict[Currency, tuple[Decimal | None, int | None]] = {
     "CNY": (None, None),
     "USD": (Decimal(0), 0),
 }
+
+
+class Phase2ReviewRequired(ProbeError):
+    """阶段账本已到复核线，保留累计便于续跑和报告。"""
+
+    def __init__(self, cumulative: Decimal) -> None:
+        self.cumulative = cumulative
+        super().__init__("blocked", f"第二阶段 DeepSeek 账本累计 {cumulative} 元，达到 25 元复核线")
 
 
 def authorization_limits(
@@ -39,7 +50,7 @@ def check_authorization(currency: Currency, environment: Mapping[str, str] = os.
 
 @dataclass(frozen=True)
 class Entry:
-    """每个请求一条预占、至多一条结算；不保存正文或密钥。"""
+    """每个请求预占一行、至多结算一行。时间戳分别记录预占和上游请求开始。"""
 
     grant: str
     request_id: str
@@ -47,22 +58,38 @@ class Entry:
     day: str
     charge: str
     currency: Currency
+    timestamp: str | None = None
 
 
 class Budget:
     """调用方须持有进程锁，守卫顺序服务请求，避免并发检查余额。"""
 
     def __init__(
-        self, path: Path, legacy: Path, daily: Decimal, currency: Currency = "CNY"
+        self,
+        path: Path,
+        legacy: Path,
+        daily: Decimal,
+        currency: Currency = "CNY",
+        *,
+        phase2: bool = False,
+        local: bool = False,
     ) -> None:
         self.path, self.legacy, self.daily = path, legacy, daily
         self.currency = currency
+        self.phase2 = phase2
+        self.local = local
 
     def check_authorization(self) -> None:
+        if self.local:
+            return
         check_authorization(self.currency)
+        if self.phase2 and (cumulative := self.totals()[1]) >= PHASE2_REVIEW_AT:
+            raise Phase2ReviewRequired(cumulative)
 
     def daily_limit(self) -> Decimal | None:
         """None仅表示获准日期无日限；零配置仍在预占前拒绝。"""
+        if self.phase2:
+            return None
         if self.currency == "CNY":
             if not current().daily_cny_cap:  # HUMAN档：以供应商账户余额为准，不设每日上限
                 return None
@@ -86,10 +113,16 @@ class Budget:
                 if not isinstance(record, dict):
                     raise ValueError
                 # 旧人民币账本只在读取边界归一化，绝不重写、重置或解释成美元。
-                if set(record) == {"grant", "request_id", "kind", "day", "charge_cny"}:
+                if set(record) - {"timestamp"} == {
+                    "grant",
+                    "request_id",
+                    "kind",
+                    "day",
+                    "charge_cny",
+                }:
                     record = {**record, "charge": record["charge_cny"], "currency": "CNY"}
                     del record["charge_cny"]
-                if set(record) != set(Entry.__dataclass_fields__):
+                if set(record) - {"timestamp"} != set(Entry.__dataclass_fields__) - {"timestamp"}:
                     raise ValueError
                 if not all(isinstance(v, str) for v in record.values()):
                     raise ValueError
@@ -103,14 +136,24 @@ class Budget:
                 if not entry.request_id or read_budget(entry.charge) < 0:
                     raise ValueError
                 datetime.strptime(entry.day, "%Y-%m-%d")
+                if entry.timestamp is not None:
+                    stamp = datetime.fromisoformat(entry.timestamp)
+                    if (
+                        stamp.utcoffset() is None
+                        or entry.kind == "attempt"
+                        and stamp.astimezone(UTC).date().isoformat() != entry.day
+                    ):
+                        raise ValueError
                 entries.append(entry)
-            _charges(entries)
+            _charges(entries, local=self.local, phase2=self.phase2)
         except (ValueError, TypeError, ProbeError, UnicodeError):
             raise ProbeError("blocked", "SDK 费用账本损坏；禁止清空重跑") from None
         return entries
 
     def append(self, entry: Entry) -> None:
         raw = asdict(entry)
+        if entry.timestamp is None:
+            raw.pop("timestamp")
         if entry.currency == "CNY":
             raw["charge_cny"] = raw.pop("charge")
             del raw["currency"]
@@ -119,8 +162,18 @@ class Budget:
     def reserve(self, amount: Decimal, now: datetime, run: object = None) -> str:
         self.check_authorization()
         entries = self.entries()
-        charges = _charges(entries)
-        day = now.astimezone(UTC).date().isoformat()
+        charges = _charges(entries, local=self.local, phase2=self.phase2)
+        if now.utcoffset() is None:
+            raise ProbeError("validation", "请求计费时间须包含时区")
+        utc = now.astimezone(UTC)
+        day = utc.date().isoformat()
+        timestamp = utc.isoformat()
+        if self.local:
+            if amount != 0:
+                raise ProbeError("blocked", "本地评测的请求费用必须为零")
+            request_id = str(uuid4())
+            self.append(Entry(GRANT, request_id, "attempt", day, "0", self.currency, timestamp))
+            return request_id
         total = sum((value for _, value in charges.values()), Decimal(0))
         daily = sum((v for d, v in charges.values() if d == day), Decimal(0))
         daily += sum(
@@ -131,7 +184,7 @@ class Budget:
             ),
             Decimal(0),
         )
-        capped = self.currency != "CNY" or current().daily_cny_cap
+        capped = not self.phase2 and (self.currency != "CNY" or current().daily_cny_cap)
         daily_limit = self.daily_limit() if self.daily.is_finite() else None
         numbers = {  # 仅数字/日期，供TRACE判断是哪个额度触发
             "day": day,
@@ -151,11 +204,15 @@ class Budget:
         if (
             not amount.is_finite()
             or amount <= 0
-            or (capped and (not self.daily.is_finite() or self.daily <= 0))
+            or ((capped or self.phase2) and (not self.daily.is_finite() or self.daily <= 0))
         ):
             trace("budget_block", run, cause="invalid", **numbers)
             raise ProbeError("blocked", "日预算非法或已禁用")
         total_limit, request_limit = authorization_limits(self.currency)
+        if self.phase2:
+            total_limit = (
+                min(total_limit, PHASE2_CNY_LIMIT) if total_limit is not None else PHASE2_CNY_LIMIT
+            )
         if (request_limit is not None and len(charges) >= request_limit) or (
             total_limit is not None and total + amount > total_limit
         ):
@@ -166,7 +223,7 @@ class Budget:
             raise ProbeError("blocked", "今日原币种余额不足")
         request_id = str(uuid4())
         # 不变量：先 fsync 才联网；没有结算记录的尝试始终按全部预占计费。
-        self.append(Entry(GRANT, request_id, "attempt", day, str(amount), self.currency))
+        self.append(Entry(GRANT, request_id, "attempt", day, str(amount), self.currency, timestamp))
         trace(
             "budget_reserved",
             run,
@@ -174,37 +231,56 @@ class Budget:
         )
         return request_id
 
-    def settle(self, request_id: str, amount: Decimal) -> None:
+    def settle(
+        self, request_id: str, amount: Decimal, *, requested_at: datetime | None = None
+    ) -> None:
         entries = self.entries()
         attempt = next((e for e in entries if e.request_id == request_id), None)
         if attempt is None:
             raise ProbeError("blocked", "结算必须对应已预占的请求")
-        candidate = Entry(GRANT, request_id, "settled", attempt.day, str(amount), self.currency)
-        _charges([*entries, candidate])
+        if requested_at is not None and requested_at.utcoffset() is None:
+            raise ProbeError("validation", "请求计费时间须包含时区")
+        timestamp = requested_at.astimezone(UTC).isoformat() if requested_at else attempt.timestamp
+        candidate = Entry(
+            GRANT, request_id, "settled", attempt.day, str(amount), self.currency, timestamp
+        )
+        _charges([*entries, candidate], local=self.local, phase2=self.phase2)
         self.append(candidate)
 
     def totals(self) -> tuple[int, Decimal]:
-        charges = _charges(self.entries())
+        charges = _charges(self.entries(), local=self.local, phase2=self.phase2)
         return len(charges), sum((v for _, v in charges.values()), Decimal(0))
 
 
-def _charges(entries: list[Entry]) -> dict[str, tuple[str, Decimal]]:
+def _charges(
+    entries: list[Entry], *, local: bool = False, phase2: bool = False
+) -> dict[str, tuple[str, Decimal]]:
     charges: dict[str, tuple[str, Decimal]] = {}
+    timestamps: dict[str, str | None] = {}
     settled: set[str] = set()
     for entry in entries:
         amount = read_budget(entry.charge)
         previous = charges.get(entry.request_id)
         if entry.kind == "attempt":
-            if previous is not None or amount <= 0:
+            if previous is not None or (amount != 0 if local else amount <= 0):
                 raise ProbeError("blocked", "重复或非法预占")
+            timestamps[entry.request_id] = entry.timestamp
         elif (
             previous is None
             or entry.request_id in settled
             or entry.day != previous[0]
+            or (entry.timestamp is None) != (timestamps[entry.request_id] is None)
+            or entry.timestamp is not None
+            and (reserved := timestamps[entry.request_id]) is not None
+            and datetime.fromisoformat(entry.timestamp) < datetime.fromisoformat(reserved)
             or amount > previous[1]
         ):
             raise ProbeError("blocked", "无效或重复结算")
         else:
             settled.add(entry.request_id)
+            # 历史阶段记录只存 UTC 日期。按 H4 的既定口径重算 11-28 的已结算项。
+            # 日期桶无法恢复单条北京时间，其他日期与未结算的保守预占保留原金额。
+            if phase2 and entry.timestamp is None and entry.day == _PHASE2_LEGACY_OFF_PEAK_DAY:
+                amount /= 2
         charges[entry.request_id] = entry.day, amount
     return charges

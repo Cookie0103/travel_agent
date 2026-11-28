@@ -1,9 +1,12 @@
-"""测试会话配置：默认把 pytest 临时目录放在被 git 忽略的 .cache 下。"""
+"""测试会话配置：隔离临时目录，固定离线测试的旅行日历。"""
 
 import os
+from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+
+from tests.support.clock import FIXTURE_TODAY, FIXTURE_TODAY_ENV, fixture_travel_calendar
 
 
 def pytest_configure() -> None:
@@ -13,6 +16,16 @@ def pytest_configure() -> None:
         root = Path(__file__).resolve().parents[1] / ".cache" / "pytest-tmp"
         root.mkdir(parents=True, exist_ok=True)
         os.environ["PYTEST_DEBUG_TEMPROOT"] = str(root)
+
+
+@pytest.fixture(autouse=True)
+def fixed_today(request: pytest.FixtureRequest, monkeypatch: pytest.MonkeyPatch) -> Iterator[None]:
+    if request.node.get_closest_marker("live") is not None:
+        yield
+        return
+    monkeypatch.setenv(FIXTURE_TODAY_ENV, FIXTURE_TODAY.isoformat())
+    with fixture_travel_calendar():
+        yield
 
 
 @pytest.fixture

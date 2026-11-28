@@ -15,8 +15,9 @@ from backend.domain.travel_request import RequestPatch
 from backend.services.runs import RunService
 from backend.services.sessions import SessionService
 from backend.services.travel import TravelService
-from tests.fakes import FakeRuntime
-from tests.runner import selector_runner
+from tests.support.clock import fixture_travel_calendar
+from tests.support.fakes import FakeRuntime
+from tests.support.runner import selector_runner
 
 
 class InterruptedRuntime(FakeRuntime):
@@ -62,5 +63,5 @@ async def run(payload: dict[str, object]) -> None:
 
 
 if __name__ == "__main__":
-    with selector_runner() as runner:
+    with fixture_travel_calendar(), selector_runner() as runner:
         runner.run(run(json.loads(sys.stdin.readline())))

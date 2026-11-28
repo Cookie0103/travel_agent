@@ -26,7 +26,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: ["python", "-m", "scripts.bootstrap_demo"]
+    command: ["python", "-m", "scripts.demo.bootstrap_demo"]
   api:
     image: travel-agent-demo-backend
     environment: *business-env

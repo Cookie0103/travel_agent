@@ -30,6 +30,7 @@ def key(
     *,
     source: ConditionSource | None = None,
     explicit_fields: tuple[str, ...] = (),
+    scope_run_id: UUID | None = None,
 ) -> str:
     data = arguments.model_dump(mode="python", by_alias=True)
     if isinstance(arguments, RequestPatch):
@@ -61,6 +62,8 @@ def key(
                 else set(),
             ),
         }
+    if scope_run_id is not None:
+        data["scope_run_id"] = scope_run_id
     canonical = json.dumps(
         data,
         sort_keys=True,

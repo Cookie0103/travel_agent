@@ -19,7 +19,7 @@
 | profile.py | 执行档位与限额分级（default/relaxed/human） |
 | trace_log.py | Railway 可见的单行 TRACE 元数据日志 |
 
-完整依赖方向见 [backend 模块地图](../docs/execution/layering-debt.md#backend-模块地图2026-10-19)。
+完整依赖方向见 [backend 模块地图](../docs/handbook/execution/layering-debt.md#backend-模块地图2026-10-19)。
 
 ## 核心阅读顺序（约 12 个文件）
 
@@ -57,4 +57,4 @@ GET /runs/{id}/events (SSE)         (api/events.py)      只读已提交事件�
 - `uv run python scripts/dev.py test`：pytest（`tests/integration` 需要真实 PostgreSQL）
 - `uv run python scripts/dev.py api`：启动 API（`backend/server.py`）
 
-不变量：domain 不依赖其他业务层；SDK/httpx/mcp 只在 providers、adapters、mcp 内；api 只经 services/agent 访问其他层（见 `pyproject.toml` 的 import-linter 契约与 `tests/test_architecture.py`）。
+不变量：domain 不依赖其他业务层；SDK/httpx/mcp 只在 providers、adapters、mcp 内；api 只经 services/agent 访问其他层（见 `pyproject.toml` 的 import-linter 契约与 `tests/unit/repo/test_architecture.py`）。

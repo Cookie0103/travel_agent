@@ -2,10 +2,11 @@
 
 | 文件 | 状态 | 条数 | 谁在用 |
 | --- | --- | --- | --- |
-| `v3.jsonl` | **现行**（v3 测评题库，持续扩充） | 30 | `eval/v3_run.py` 默认加载（`scripts/dev.py eval-v3`）；格式与出题规范见 `docs/proposals/eval-redesign/question-generation-spec.md` |
-| `frozen_v1.jsonl` + `frozen_v1.json` | **冻结**（内容/划分由 sha256 校验，变更须另建版本） | 20 dev + 40 test | `eval/suites.py:load_suite("frozen")`；`frozen_v1.json` 同时绑着下面 legacy 两文件的哈希，改动任一都会触发完整性报错 |
-| `datamind_adapted.jsonl` + `travel_m1.jsonl` | **历史**（legacy 套件，仍是 `eval/run.py` 的默认入口） | 21 + 9 | `eval/suites.py:load_suite("legacy")` 及多个测试；同时被 `frozen_v1.json` 哈希引用，不能单独移动或修改 |
-| `v2_interaction.jsonl` / `v2_memory.jsonl` | **历史**（v2 机制开发集，未冻结） | 8 / 20 | `dev.py eval-v2` / `eval-memory`、`eval/suites.py:load_suite("v2" / "v2-memory")` 及记忆相关测试 |
+| `p2v2/` | **现行冻结** | 61 反思 + 60 验证 | `dev eval-v3` 默认加载反思组，验证组需显式选择 |
+| `v3.jsonl` | **早期冒烟** | 30 | `dev eval-v3 --cases eval/cases/v3.jsonl` |
+| `frozen_v1.jsonl` + `frozen_v1.json` | **冻结**（内容/划分由 sha256 校验，变更须另建版本） | 20 dev + 40 test | `eval/core/suites.py:load_suite("frozen")`；`frozen_v1.json` 同时绑着下面 legacy 两文件的哈希，改动任一都会触发完整性报错 |
+| `datamind_adapted.jsonl` + `travel_m1.jsonl` | **历史**（legacy 套件，仍是 `eval/v1v2/run.py` 的默认入口） | 21 + 9 | `eval/core/suites.py:load_suite("legacy")` 及多个测试；同时被 `frozen_v1.json` 哈希引用，不能单独移动或修改 |
+| `v2_interaction.jsonl` / `v2_memory.jsonl` | **历史**（v2 机制开发集，未冻结） | 8 / 20 | `dev.py eval-v2` / `eval-memory`、`eval/core/suites.py:load_suite("v2" / "v2-memory")` 及记忆相关测试 |
 
 归档约定（2026-10-20 决定）：在 v3 跑通全量并成为默认套件之前，旧文件原地保留、不移动不改名——`suites.py`、冻结哈希和测试都按现路径引用。v3 成为默认后再统一移到 `archive/` 并同步改引用。
 
@@ -19,3 +20,9 @@
 用例包含正式行程/锁、报价过期与条件失效、未知税、偏好墓碑/历史、held/unknown和实际供应商500/429/timeout；通过应用服务setup并事后查验。
 allowed_tools只限制选择，不证明顺序/参数/语义。原规则默认精确非空期待；optional结果仅限显式实际依赖故障（允许合法先读再失败），仍必须通过本轮故障业务断言。
 室内数据缺标注的空查询是合法未知，不编造肯定标签。语义准确性和人工评分仍待校准；本集非双盲，历史seed不是原生SDK压缩实验。
+
+## 第二阶段多轮题
+
+`p2v2/p2v2-reflection.jsonl` 和 `p2v2/p2v2-validation.jsonl` 分别保存 61 道反思题和 60 道验证题。`p2v2/split-manifest.json` 用交接时的原文件名登记三份的文件与逐题哈希、题号和种子身份，包含 80 道留出的元数据。加载指定分区时只打开该分区文件和清单，分别核对原始文件哈希。
+
+原第二阶段题已移入 [v1 归档](archive/phase2-v1/README.md)。其已保存的运行证据可用自进化入口显式复核。

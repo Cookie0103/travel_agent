@@ -1,0 +1,9 @@
+{
+  "live_calls": 0,
+  "seed": 20261127,
+  "sha256": {
+    "synthetic-commission-v1.json": "880c198b09c63433d3a1296567744b04b9ea9a7394a88241422898f8268971de",
+    "synthetic-hotels-v1.json": "55c7abd07c820a9a5c6f4c3137eeac5b8db39441dccd3b7ea3b0dd25fe9030fe"
+  },
+  "source": "synthetic"
+}

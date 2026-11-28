@@ -10,7 +10,7 @@ from uuid import UUID, uuid4
 from pydantic import Field
 
 from backend.domain.external_data import DataMode, ExternalAttempt
-from backend.domain.tool_facts import ToolArgumentFacts
+from backend.domain.tool_facts import SkillUse, ToolArgumentFacts
 
 type ErrorCode = Literal[
     "validation",
@@ -231,6 +231,9 @@ class RuntimeEvent:
     choice_card: Literal["shown", "none", "declined"] | None = None
     data_mode: DataMode | None = None
     arguments: ToolArgumentFacts | None = None
+    skill_hash: str | None = None
+    attached_skills: tuple[SkillUse, ...] = ()
+    repair_round: int | None = None
 
 
 @dataclass(frozen=True)

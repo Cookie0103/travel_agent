@@ -41,6 +41,9 @@ class HotelRate(BaseModel):
     available_until: date
 
 
+PARTNER_LABEL = "合作酒店"
+
+
 class QuoteFields(BaseModel):
     model_config = ConfigDict(
         extra="forbid", frozen=True, json_schema_serialization_defaults_required=True
@@ -81,6 +84,10 @@ class HotelOffer(QuoteFields):
         return self
 
     @property
+    def partner(self) -> bool:
+        return bool(self.display_details and self.display_details.partner)
+
+    @property
     def total(self) -> Decimal | None:
         if self.data_mode in {"live", "synthetic"}:
             return self.included_total
@@ -111,6 +118,7 @@ class HotelOffer(QuoteFields):
         relation = lodging_budget_relation(scoped)
         return {
             **self.model_dump(mode="json", exclude={"request"}),
+            **({"partner": True, "partner_label": PARTNER_LABEL} if self.partner else {}),
             "stay": evidence_conditions(self.request, "hotel_offer"),
             "request_revision": self.request.revision,
             "total": str(total) if total is not None else None,

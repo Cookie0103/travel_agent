@@ -1,7 +1,7 @@
 """choice_cards.kind的CHECK加入hotel_assign(聊天选酒店的归段确认卡)；只放宽约束，不改数据。
 
 取值是写迁移时从domain.choices.ChoiceKind冻结的快照；
-tests/integration/test_schema_constraints.py 断言CHECK与当前代码枚举一致。
+tests/integration/schema/test_schema_constraints.py 断言CHECK与当前代码枚举一致。
 降级：旧集合没有hotel_assign，行不能删（会丢用户数据）也不能原样留下。所以把它们改成
 旧代码能读的“已失效”form卡——kind=form、content.superseded=true、清空已答选项，原归段信息
 (content.assign等)保留在content里，不丢数据；再收紧CHECK。升级后这些行仍是失效的form卡。

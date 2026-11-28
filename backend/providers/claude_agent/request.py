@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Literal
 
-from backend.limits import ProbeError, price_for
+from backend.limits import LOCAL_MODEL, ProbeError, price_for
 from backend.profile import current
 
 MAX_BYTES = 128 * 1024
@@ -100,6 +100,10 @@ def validate_request(
         ):
             raise ProbeError("blocked", "固定温度评审只支持无工具且关闭思考的DeepSeek")
         raw["temperature"] = 0
+    if model == LOCAL_MODEL:
+        raw["thinking"] = {"type": "disabled"}
+        raw.pop("output_config", None)
+        raw.pop("context_management", None)
     if model.startswith("deepseek-"):
         # CLI对未知模型省略disabled且仍传high；落实SDK已选择的非思考模式。
         if "thinking" in raw and raw["thinking"] != {"type": "disabled"}:
@@ -114,7 +118,11 @@ def validate_request(
                 raw["output_config"] = config
             else:
                 raw.pop("output_config", None)
-    if temperature is not None or model.startswith("deepseek-") or model == "claude-haiku-5-5":
+    if (
+        temperature is not None
+        or model.startswith("deepseek-")
+        or model in {LOCAL_MODEL, "claude-haiku-5-5"}
+    ):
         body = json.dumps(raw, ensure_ascii=False).encode("utf-8")
         if len(body) > limit:
             raise RequestTooLarge(len(body), limit, "normalized")

@@ -1,6 +1,8 @@
-"""测试专用：公共SDK生成可压缩历史，再执行原worker的单业务prompt。"""
+"""SDK 集成测试子进程。需要测试压缩时，先生成可压缩的历史再执行业务。"""
 
+import os
 from collections.abc import AsyncIterable
+from contextlib import nullcontext
 from typing import Any
 from unittest.mock import patch
 
@@ -14,6 +16,7 @@ from claude_agent_sdk import (
 
 from backend.providers.claude_agent import runtime, worker
 from backend.providers.claude_agent.runtime import outcome_from_result
+from tests.support.clock import fixture_travel_calendar
 
 
 class HistoryClient(ClaudeSDKClient):
@@ -40,5 +43,10 @@ class HistoryClient(ClaudeSDKClient):
 
 
 if __name__ == "__main__":
-    with patch.object(runtime, "ClaudeSDKClient", HistoryClient):
+    history = (
+        patch.object(runtime, "ClaudeSDKClient", HistoryClient)
+        if "CLAUDE_AUTOCOMPACT_PCT_OVERRIDE" in os.environ
+        else nullcontext()
+    )
+    with fixture_travel_calendar(), history:
         worker.main()

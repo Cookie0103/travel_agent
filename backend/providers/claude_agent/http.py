@@ -10,8 +10,8 @@ import tempfile
 import time
 from pathlib import Path
 
-from backend.limits import ProbeError, Provider, StallError
-from backend.profile import current
+from backend.limits import LOCAL_HOST, LOCAL_PORT, ProbeError, Provider, StallError
+from backend.profile import LOCAL_EVAL_PROFILE_ENV, current
 from backend.providers.claude_agent.process import progress_hook, run_process, spawn_hook
 from backend.providers.claude_agent.response import message_stopped
 from backend.providers.claude_agent.settings import anthropic_host
@@ -102,6 +102,7 @@ def forward_messages(provider: Provider, api_key: str, body: bytes) -> tuple[int
             "SSL_CERT_FILE",
             "SSL_CERT_DIR",
             "TRAVEL_PROFILE",
+            LOCAL_EVAL_PROFILE_ENV,
             "ANTHROPIC_BASE_URL",
         }
     }
@@ -192,14 +193,21 @@ def _direct_request(
     api_key: str, body: bytes, provider: Provider = "deepseek"
 ) -> tuple[int, bytes]:
     """不使用代理环境、不跟随重定向；一次 reserve 对应一次 HTTP 尝试。"""
-    if provider not in {"deepseek", "anthropic"}:
+    if provider not in {"deepseek", "anthropic", "ollama"}:
         raise ProbeError("blocked", "未知供应商；禁止自定义转发地址")
     host, path, authorization = (
         ("api.deepseek.com", "/anthropic/v1/messages", "Authorization")
         if provider == "deepseek"
+        else (LOCAL_HOST, "/v1/messages", "x-api-key")
+        if provider == "ollama"
         else (anthropic_host(os.environ), "/v1/messages", "x-api-key")
     )
-    connection = http.client.HTTPSConnection(host, timeout=current().upstream_timeout - 5)
+    timeout = current().upstream_timeout - 5
+    connection = (
+        http.client.HTTPConnection(host, LOCAL_PORT, timeout=timeout)
+        if provider == "ollama"
+        else http.client.HTTPSConnection(host, timeout=timeout)
+    )
     started, phase = time.monotonic(), "connect"  # 仅用于TRACE：失败发生在哪个阶段
 
     def since() -> int:
@@ -209,7 +217,9 @@ def _direct_request(
         trace("child_connecting", host=host)
         if callable(getattr(connection, "connect", None)):
             # 显式分步：DNS(独立解析一次，系统缓存命中) → TCP+TLS握手；各自留痕以定位停滞处
-            socket.getaddrinfo(host, 443, type=socket.SOCK_STREAM)
+            socket.getaddrinfo(
+                host, LOCAL_PORT if provider == "ollama" else 443, type=socket.SOCK_STREAM
+            )
             trace("child_dns_done", ms=since())
             connection.connect()
             trace("child_connected", ms=since())  # TCP+TLS均已完成
@@ -219,7 +229,13 @@ def _direct_request(
             path,
             body,
             {
-                authorization: f"Bearer {api_key}" if provider == "deepseek" else api_key,
+                authorization: (
+                    f"Bearer {api_key}"
+                    if provider == "deepseek"
+                    else "ollama-local"
+                    if provider == "ollama"
+                    else api_key
+                ),
                 "Content-Type": "application/json",
                 "anthropic-version": "2023-06-01",
             },

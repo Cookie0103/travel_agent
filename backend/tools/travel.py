@@ -6,7 +6,6 @@ import json
 import time
 from dataclasses import replace
 from datetime import date, datetime
-from pathlib import Path
 from typing import Literal, get_args
 from uuid import UUID
 
@@ -15,7 +14,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from backend.adapters.external_api import CALL_OBSERVATIONS, REQUEST_DEADLINE
 from backend.adapters.live_data import LiveData
-from backend.adapters.open_meteo import forecast
+from backend.adapters.open_meteo import city_forecast
 from backend.domain.booking import HoldHotelInput
 from backend.domain.choices import ChoiceKind, FormInput
 from backend.domain.condition_labels import update_message
@@ -27,6 +26,7 @@ from backend.domain.itinerary import ItineraryProposal, RouteInput, ValidationRe
 from backend.domain.opening_hours import TOKYO
 from backend.domain.plans import InitialStage, StageInput
 from backend.domain.room_choices import room_choices_view
+from backend.domain.tool_facts import EvaluationSkillName, SkillName, SkillUse
 from backend.domain.travel_request import (
     HOTEL_FIELD_LABELS,
     ConversationRequestPatch,
@@ -56,6 +56,7 @@ from backend.tools.fencing import fence
 from backend.tools.grounding import grounded_fields
 from backend.tools.search import DEFINITIONS as SEARCH_DEFINITIONS
 from backend.tools.search import ContentSearchInput, PlaceSearchInput
+from backend.tools.skill_config import SkillConfig
 
 
 class EntityInput(BaseModel):
@@ -69,14 +70,12 @@ class EntityInput(BaseModel):
 
 class SkillInput(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
-    name: Literal[
-        "hotel-comparison",
-        "itinerary-revision",
-        "multi-city",
-        "budget-relaxation",
-        "external-errors",
-        "repair-limit",
-    ]
+    name: SkillName
+
+
+class EvaluationSkillInput(BaseModel):
+    model_config = ConfigDict(extra="forbid", strict=True)
+    name: EvaluationSkillName
 
 
 class HotelSearchInput(BaseModel):
@@ -151,7 +150,7 @@ DEFINITIONS = (
     *SEARCH_DEFINITIONS,
     ToolDefinition(
         "get_weather_forecast",
-        "按当前条件的城市与日期查询每日天气；超过16天或未定日期返回unknown。",
+        "按当前行程各城市段查询每日天气。覆盖范围以日本当地当天起16天为限；缺失日期保持未知。",
         WeatherInput.model_json_schema(),
     ),
     ToolDefinition(
@@ -167,13 +166,20 @@ DEFINITIONS = (
     ToolDefinition(
         "update_travel_request",
         "只记录用户明确表达的条件；set/clear，必须检查expected_revision。"
-        "全程budget与lodging_budget原值同时保留；行程住宿仅问每间房每晚日元上限，明确不限写lodging_budget_unlimited并清除金额，有金额则清除不限。单独酒店比较预算可选，不主动追问全程预算/酒店总预算/币种。"
+        "全程budget与lodging_budget原值同时保留，不换汇、拆分或猜房晚。"
+        "完整行程有住宿且missing_fields含lodging_budget才问每间房每晚日元上限；0晚或单独比价不主动追问。"
+        "填金额用basis=per_room_night、currency=JPY并清除lodging_budget_unlimited；明确不限写true并清除金额，null不代表不限。"
+        "只有明确的每日开始时间写departure_time。抵达或返程写日期、时刻及航班/车次角色到hard_constraints；"
+        "仅改航班时保留每日开始值。明确纠正旧误填时clear departure_time并列入explicit_fields。"
         "每轮提取用户说出的目的地/日期/同行者/房间/两预算/节奏，不要求先填右侧。"
         "手填值优先；明确改成新值的字段列入explicit_fields，模糊提取不要列入。"
         "回执skipped_fields未更新，必须追问；实际更新向用户告知回执message。"
         "房型优先用room_preferences严格枚举：lodging=private/dorm/capsule/any，smoking=nonsmoking/any，bed=twin/double/any；无要求用any，未提项省略。"
         "hard_constraints保留未提项，只替换本次房型组；明确删除用remove_hard_constraints列出当前旧文本，并声明explicit_fields=hard_constraints。"
-        "省级目的地需要住宿地点时，set.hotel_search_location记录用户明确地点，保留city；机场起终点不等于住宿地点，不默认选择那霸。"
+        "房型组只有用户明确更改才写；短答“都可以”仅对应当前组。"
+        "原有同组值由服务端替换，保留未提及的房型、其他硬条件及手填值。"
+        "查询或刷新前missing_fields含hotel_search_location时，只追问具体住宿地点或城市。"
+        "set.hotel_search_location记录地点且保留city，机场起终点不能充作住宿地点；不重复询问已知字段。"
         "返回预算冲突时先追问以哪个为准，回答后只改用户指定字段，不比较酒店。",
         ConversationRequestPatch.model_json_schema(),
         kind="state",
@@ -201,6 +207,7 @@ DEFINITIONS = (
         "返回status：selected(已按相同服务端校验记录该住宿段，看all_selected/remaining_segments)；"
         "needs_confirmation(多城市未说城市，已发归段确认卡或填城市卡，等待用户点击)；"
         "need_link(名字对不上已展示候选，请用户贴乐天链接)；not_found(这些日期查不到该酒店)；"
+        "ambiguous(列出candidates请用户指明是哪一家)；selected但remaining_segments非空只提示剩余住宿段并等待；"
         "search_failed；nothing_to_select。",
         SelectHotelInput.model_json_schema(),
         kind="state",
@@ -227,7 +234,10 @@ DEFINITIONS = (
     ),
     ToolDefinition(
         "stage_plan_change",
-        "暂存初始行程或稳定item_id的局部patch，返回差异与校验；不保存正式版本，不接受锁定项改动。",
+        "暂存初始行程或稳定item_id的局部patch，返回差异与校验；不保存正式版本，不接受锁定项改动。"
+        "初稿按每日可用时段排：首日从已确认抵达起，末日结束在车站或机场，"
+        "从返程时间为交通和办理手续留缓冲，飞机至少2小时。抵达/离开时间不确定按全天安排，注明假设且不写入hard_constraints，"
+        "保留已明确的出行方式。只改一处的请求用稳定item_id并保留其他时段。",
         StageInput.model_json_schema(),
         kind="draft",
     ),
@@ -298,6 +308,20 @@ def repair_definitions(
     )
 
 
+def skill_definitions(
+    definitions: tuple[ToolDefinition, ...], skills: SkillConfig
+) -> tuple[ToolDefinition, ...]:
+    names = skills.candidate_names()
+    if not names:
+        return definitions
+    schema = SkillInput.model_json_schema()
+    schema["properties"]["name"]["enum"].extend(names)
+    return tuple(
+        replace(definition, schema=schema) if definition.name == "load_skill" else definition
+        for definition in definitions
+    )
+
+
 def live_definitions(definitions: tuple[ToolDefinition, ...]) -> tuple[ToolDefinition, ...]:
     return tuple(
         replace(definition, timeout_seconds=LIVE_TOOL_TIMEOUT)
@@ -357,6 +381,37 @@ def call_scope(name: str, arguments: dict[str, object]) -> tuple[str, str, str]:
 MAX_VALIDATIONS_CAP = 50  # 有限实验配置的构造上限；人工档用None
 
 
+def external_skill_signal(attempt: ExternalAttempt) -> bool:
+    return (
+        attempt.kind not in {None, "not_found_empty"} or attempt.attempts > 1 or attempt.provisional
+    )
+
+
+def signalled_skills(name: str, result: ToolResult) -> tuple[SkillName, ...]:
+    available: list[SkillName] = []
+    if result.segmented:
+        available.append("multi-city")
+    diagnosis = result.data.get("relaxation")
+    if name == "search_hotel_offers" and (
+        result.data.get("choice_card") in {"shown", "declined"}
+        or isinstance(diagnosis, dict)
+        and (
+            result.empty
+            or diagnosis.get("tier") is not None
+            or bool(diagnosis.get("steps"))
+            or diagnosis.get("skipped") is not None
+        )
+    ):
+        available.append("budget-relaxation")
+    if result.external_skill_needed or (
+        result.external is not None and external_skill_signal(result.external)
+    ):
+        available.append("external-errors")
+    if "repair_limit" in result.detail:
+        available.append("repair-limit")
+    return tuple(available)
+
+
 def hotel_search_facts(result: ToolResult, name: str) -> ToolResult:
     """工具事实由实际卡与HTTP观察决定；模型不能据诊断tier猜卡或累计重试。"""
     if name != "search_hotel_offers":
@@ -409,7 +464,8 @@ class TravelToolExecutor:
         self.last_validation: ItineraryProposal | None = None
         # 冲突最少的已校验候选；修复次数用完或暂存被拒时交出它
         self.best: tuple[ItineraryProposal, ValidationReport] | None = None
-        self.loaded_skills: set[str] = set()
+        self.loaded_skills: set[EvaluationSkillName] = set()
+        self.skill_config = SkillConfig()
         # 状态登记与写工具全程持锁串行；CONCURRENT_READS只在登记/结算时持锁，查询本身在锁外。
         self.lock = asyncio.Lock()
         # 并发纯查询的门：相同调用(修正窗口内同一scope)排队，保证失败缓存和“只修正一次”。
@@ -420,6 +476,11 @@ class TravelToolExecutor:
         self.external_failures: dict[tuple[str, str], ToolResult] = {}
         self.corrections: set[tuple[str, str, str]] = set()
         self.failed_corrections: dict[tuple[str, str, str], ToolResult] = {}
+
+    def configure_skills(self, config: SkillConfig, *, evaluation: bool) -> None:
+        dsn = self.travel.database.engine.url.render_as_string(hide_password=False)
+        config.authorize(evaluation=evaluation, dsn=dsn)
+        self.skill_config = config
 
     async def execute(
         self, context: RunContext, name: str, arguments: dict[str, object]
@@ -434,7 +495,7 @@ class TravelToolExecutor:
             result = self._cached(key, scope)
             if result is None:
                 result = self._record(key, scope, await self._execute(context, name, arguments))
-            return self._settle(name, arguments, result)
+            return self._with_signalled_skills(name, self._settle(name, arguments, result))
 
     async def _execute_concurrent(
         self, context: RunContext, name: str, arguments: dict[str, object]
@@ -460,7 +521,26 @@ class TravelToolExecutor:
             async with self.lock:
                 if attempted:
                     result = self._record(key, scope, result)
-                return self._settle(name, arguments, result)
+                return self._with_signalled_skills(name, self._settle(name, arguments, result))
+
+    def _skill_text(self, name: EvaluationSkillName) -> tuple[SkillUse, str]:
+        text = with_repair_rounds(
+            self.skill_config.path(name).read_text(encoding="utf-8"), self.max_validations
+        )
+        self.loaded_skills.add(name)
+        return SkillUse(name=name, sha256=hashlib.sha256(text.encode()).hexdigest()), text
+
+    def _with_signalled_skills(self, name: str, result: ToolResult) -> ToolResult:
+        if name == "load_skill" or self.skill_config.variant == "no_skills":
+            return result
+        attachments = []
+        for skill in signalled_skills(name, result):
+            if self.skill_config.enabled(skill) and skill not in self.loaded_skills:
+                try:
+                    attachments.append(self._skill_text(skill))
+                except (ValueError, OSError):
+                    continue
+        return replace(result, attached_skills=tuple(attachments)) if attachments else result
 
     def _cached(self, key: tuple[str, str], scope: tuple[str, str, str]) -> ToolResult | None:
         result = self.external_failures.get(key) or self.failed_corrections.get(scope)
@@ -539,7 +619,9 @@ class TravelToolExecutor:
                 f"repair_round:{self.validations}",
                 f"max_validations:{self.max_validations}",
             )
-            result = replace(result, detail=(*result.detail, *rounds))
+            result = replace(
+                result, detail=(*result.detail, *rounds), repair_round=max(0, self.validations - 1)
+            )
         return hotel_search_facts(result, name)
 
     async def _execute(
@@ -593,7 +675,12 @@ class TravelToolExecutor:
         definition: ToolDefinition,
     ) -> ToolResult:
         try:
-            parsed = SCHEMAS[name].model_validate(arguments)
+            schema = (
+                EvaluationSkillInput
+                if name == "load_skill" and self.skill_config.candidate_names()
+                else SCHEMAS[name]
+            )
+            parsed = schema.model_validate(arguments)
             live = self.travel.live
             observed: list[ExternalAttempt] = []
             deadline = REQUEST_DEADLINE.set(time.monotonic() + definition.timeout_seconds)
@@ -604,10 +691,21 @@ class TravelToolExecutor:
                 if live and observed:
                     # 优先保留已恢复的请求，逐晚正常核价不覆盖其重试证据。
                     info = next((o for o in observed if o.recovered_from), observed[-1])
-                    result = replace(result, external=info)
+                    result = replace(
+                        result,
+                        external=info,
+                        external_skill_needed=any(
+                            external_skill_signal(attempt) for attempt in observed
+                        ),
+                    )
             finally:
                 CALL_OBSERVATIONS.reset(own)
                 REQUEST_DEADLINE.reset(deadline)
+            if any(
+                isinstance(items := result.data.get(field), list) and len(items) > 1
+                for field in ("segments", "cities")
+            ):
+                result = replace(result, segmented=True)
             result = hotel_search_facts(result, name)
             result_limit = definition.max_result_chars
             if name == "present_travel_result" and result.data.get("segments"):
@@ -717,7 +815,8 @@ class TravelToolExecutor:
             )
             return ToolResult({"component": "choice", **card.model_dump(mode="json")})
         if isinstance(parsed, ConversationStateInput):
-            return ToolResult(await self.travel.update_conversation_state(context, parsed))
+            flow = await self.travel.update_conversation_state(context, parsed)
+            return ToolResult(flow, segmented=flow.pop("segmented", False) is True)
         if isinstance(parsed, SelectHotelInput):
             outcome = await HotelSelectionService(self.travel).from_chat(
                 context, parsed.expected_revision
@@ -729,12 +828,7 @@ class TravelToolExecutor:
             live = self.travel.live
             if not live:
                 return ToolResult({}, code="unavailable", suggestion="离线模式不提供天气")
-            if not live.google or not request.city:
-                return ToolResult({}, code="validation", suggestion="请先指定城市并配置Google API")
-            point = await live.google.geocode(request.city)
-            return ToolResult(
-                await forecast(live.http, live.usage, point, request), data_mode=live.data_mode
-            )
+            return ToolResult(await city_forecast(live, request), data_mode=live.data_mode)
         if isinstance(parsed, HoldHotelInput):
             if self.travel.live:
                 raise ServiceError(
@@ -838,7 +932,14 @@ class TravelToolExecutor:
                 detail=report_detail(report),
             )
         if isinstance(parsed, HotelSearchInput | RefreshOfferInput | PresentationInput):
-            return await self._hotel_result(context, parsed)
+            hotel_result = await self._hotel_result(context, parsed)
+            if (
+                isinstance(parsed, HotelSearchInput)
+                and parsed.segment_arrive
+                and not hotel_result.code
+            ):
+                return replace(hotel_result, segmented=True)
+            return hotel_result
         if isinstance(parsed, ConversationRequestPatch):
             # explicit_fields由模型自填：新值须在本轮用户原话里有出处，否则按未声明处理。
             grounded = grounded_fields(
@@ -846,7 +947,7 @@ class TravelToolExecutor:
                 parsed.explicit_fields,
                 await self.travel.trusted_user_text(context),
                 await self.travel.read_request(context),
-                today=self.travel.today(),
+                today=self.travel.travel_today(),
             )
             update = await self.travel.patch_request(
                 context, parsed, source="conversation", explicit_fields=grounded
@@ -868,6 +969,7 @@ class TravelToolExecutor:
                         update.request, update.changed_fields, update.skipped_fields, quote=fence
                     ),
                 },
+                segmented=bool(update.request.segments),
                 warnings=(
                     "声明为用户明确修改但新值未出现在本轮用户原话中，按未声明处理，不覆盖手填值："
                     + "、".join(unverified)
@@ -876,21 +978,17 @@ class TravelToolExecutor:
                 if unverified
                 else (),
             )
-        if isinstance(parsed, SkillInput):
+        if isinstance(parsed, SkillInput | EvaluationSkillInput):
             await self.travel.read_request(context)
+            if not self.skill_config.enabled(parsed.name):
+                return ToolResult({}, code="validation", suggestion="当前评测未启用该 Skill")
             if parsed.name in self.loaded_skills:
                 return ToolResult({"name": parsed.name, "already_loaded": True})
-            text = with_repair_rounds(
-                (Path(__file__).resolve().parent / "skills" / (parsed.name + ".md")).read_text(
-                    encoding="utf-8"
-                ),
-                self.max_validations,
-            )
-            self.loaded_skills.add(parsed.name)
+            usage, text = self._skill_text(parsed.name)
             return ToolResult(
                 {
                     "name": parsed.name,
-                    "version": hashlib.sha256(text.encode()).hexdigest(),
+                    "version": usage.sha256,
                     "instructions": text,
                 }
             )
@@ -934,7 +1032,7 @@ class TravelToolExecutor:
                 "立即调用stage_plan_change暂存（服务端会暂存冲突最少的候选并自动局部修复，"
                 "不增加修复次数；已有draft_id则直接用它），再present_travel_result展示。"
                 "回复必须如实写明：服务端自动去掉或调整的项目（草稿repairs）、"
-                "仍存的冲突与未知；不确认保存。尚未加载时先load_skill repair-limit。"
+                "仍存的冲突与未知；不确认保存。"
             )
             raise ServiceError(429, "blocked", message, "repair_limit")
         self.validations += 1

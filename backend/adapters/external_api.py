@@ -232,13 +232,20 @@ async def request_json(
                         "first_failure": first.info.kind if first else error.info.kind,
                     }
                 )
-                if attempt or error.info.kind not in {
-                    "rate_limited",
-                    "timeout",
-                    "network",
-                    "upstream_5xx",
-                    "invalid_json",
-                }:
+                # 默认档的两次天气机会用于不同城市；单次超时保持原有失败行为。
+                no_weather_retry = api == "weather" and usage.default_profile
+                if (
+                    attempt
+                    or no_weather_retry
+                    or error.info.kind
+                    not in {
+                        "rate_limited",
+                        "timeout",
+                        "network",
+                        "upstream_5xx",
+                        "invalid_json",
+                    }
+                ):
                     raise ExternalDataError(
                         str(error), validation=error.validation, info=info
                     ) from None

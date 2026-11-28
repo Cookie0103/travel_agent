@@ -1,12 +1,16 @@
 """读取协议探针配置；在构造 SDK 之前拒绝缺密钥或非法预算。"""
 
 from collections.abc import Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal, InvalidOperation
 from typing import Literal
 
 Currency = Literal["CNY", "USD"]
-Provider = Literal["deepseek", "anthropic"]
+Provider = Literal["deepseek", "anthropic", "ollama"]
+LOCAL_MODEL = "qwen3.8:27b-q4_K_M"
+LOCAL_HOST = "127.0.0.1"
+LOCAL_PORT = 11528
 
 
 class ProbeError(RuntimeError):
@@ -37,7 +41,7 @@ class Settings:
 
     @property
     def currency(self) -> Currency:
-        return "CNY" if self.provider == "deepseek" else "USD"
+        return "USD" if self.provider == "anthropic" else "CNY"
 
     @property
     def daily_limit(self) -> Decimal:
@@ -46,7 +50,7 @@ class Settings:
 
 @dataclass(frozen=True)
 class Price:
-    """2026-10-03官方价表；原币种/百万token，缓存未知时使用保守上界。"""
+    """每百万 token 的原币种单价，预占使用官方高峰价。"""
 
     input_per_million: Decimal
     output_per_million: Decimal
@@ -54,17 +58,33 @@ class Price:
     cache_write_multiplier: Decimal = Decimal(1)
     currency: Currency = "CNY"
 
-    def usage_upper(self, inputs: int, outputs: int) -> Decimal:
-        if inputs < 0 or outputs < 0:
-            raise ProbeError("provider_error", "响应中的 token 数不能为负")
-        return (inputs * self.input_per_million + outputs * self.output_per_million) / 1_000_000
+    cache_read_per_million: Decimal | None = None
+
+    def usage_upper(self, inputs: int, outputs: int, *, cached_inputs: int = 0) -> Decimal:
+        if not 0 <= cached_inputs <= inputs or outputs < 0:
+            raise ProbeError("provider_error", "响应中的 token 数无效")
+        cached_price = (
+            self.cache_read_per_million
+            if self.cache_read_per_million is not None
+            else self.input_per_million
+        )
+        return (
+            (inputs - cached_inputs) * self.input_per_million
+            + cached_inputs * cached_price
+            + outputs * self.output_per_million
+        ) / 1_000_000
 
 
 def price_for(model: str) -> Price:
     """拒绝未知/映射模型名，避免换模型后仍套用原来的单价。"""
     prices = {
-        "deepseek-flash": Price(Decimal("2"), Decimal("8")),
-        "deepseek-v4-pro": Price(Decimal("9"), Decimal("27")),
+        LOCAL_MODEL: Price(Decimal(0), Decimal(0), 32_768),
+        # 2026-11-28 DeepSeek 官方人民币高峰价，保守覆盖空闲时段（半价）。
+        # https://api-docs.deepseek.com/zh-cn/quick_start/pricing/
+        "deepseek-flash": Price(Decimal("2"), Decimal("8"), cache_read_per_million=Decimal("0.04")),
+        "deepseek-v4-pro": Price(
+            Decimal("9"), Decimal("27"), cache_read_per_million=Decimal("0.30")
+        ),
         "claude-haiku-4-5-20251001": Price(Decimal("1"), Decimal("5"), 200_000, Decimal(2), "USD"),
         # 2026-10-14：高于100k输入的最高档；网关折扣不作为费用保护依据。
         "claude-haiku-5-5": Price(Decimal("0.50"), Decimal("2.50"), 1_000_000, Decimal(2), "USD"),
@@ -72,6 +92,26 @@ def price_for(model: str) -> Price:
     if model not in prices:
         raise ProbeError("validation", "DEEPSEEK_MODEL/ANTHROPIC_MODEL缺失或未配置对应计价规则")
     return prices[model]
+
+
+def settlement_price(model: str, requested_at: datetime | None) -> Price:
+    """以请求开始时刻结算，按北京时间的工作日与周末划分，不另算法定节假日。"""
+    price = price_for(model)
+    if requested_at is None or model not in {"deepseek-flash", "deepseek-v4-pro"}:
+        return price
+    if requested_at.utcoffset() is None:
+        raise ProbeError("validation", "请求计费时间须包含时区")
+    beijing = requested_at.astimezone(timezone(timedelta(hours=8)))
+    if beijing.weekday() < 5 and (9 <= beijing.hour < 12 or 14 <= beijing.hour < 18):
+        return price
+    return replace(
+        price,
+        input_per_million=price.input_per_million / 2,
+        output_per_million=price.output_per_million / 2,
+        cache_read_per_million=(
+            price.cache_read_per_million / 2 if price.cache_read_per_million is not None else None
+        ),
+    )
 
 
 def read_budget(value: str) -> Decimal:

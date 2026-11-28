@@ -1,6 +1,6 @@
 # Langfuse Cloud接入与页面验收
 
-当前状态（2026-10-04）：用户配置本地`.env`并授权验证，Japan项目认证200、一次离线查询OTLP上传成功；v2 observations读回200，4个span与本地ID/项目/Trace完全一致。[脱敏证据](../evidence/m05-langfuse-cloud-2026-10-04.json)。0模型请求，无正文/参数值外发，密钥与项目ID仅私有缓存。API/server显式开关的23相关真实PG/本机HTTP回归已通过。
+当前状态（2026-10-04）：用户配置本地`.env`并授权验证，Japan项目认证200、一次离线查询OTLP上传成功；v2 observations读回200，4个span与本地ID/项目/Trace完全一致。[脱敏证据](../../archive/phase1/docs/evidence/m05-langfuse-cloud-2026-10-04.json)。0模型请求，无正文/参数值外发，密钥与项目ID仅私有缓存。API/server显式开关的23相关真实PG/本机HTTP回归已通过。
 
 此前“缺配置”记录为历史。页面验收现已通过：复用用户已登录的Chrome，原Trace和明确chain/agent/tool分类的后续Trace均显示四个节点及completed状态，读回类型也完全匹配。初次匿名in-app会话曾显示访问权限错误/Sign In，作为历史失败保留；API密钥不是网页登录凭据。无账户修改，实际项目/Trace链接仅私有receipt。
 
