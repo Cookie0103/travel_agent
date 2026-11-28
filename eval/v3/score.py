@@ -101,6 +101,7 @@ class Observation:
     before_steps: Mapping[int, Snapshot] = field(default_factory=dict)
     step_requests: tuple[tuple[int, TravelRequest], ...] = ()
     card_payloads: tuple[Mapping[str, object], ...] = ()
+    conditional_reply_predicates: tuple[tuple[str, ...], ...] = ()
 
 
 @dataclass(frozen=True)

@@ -75,6 +75,41 @@ def cache_summary(rows: list[dict[str, object]]) -> dict[str, object]:
     }
 
 
+def conditional_reply_summary(
+    rows: list[dict[str, object]],
+) -> dict[str, dict[str, object]]:
+    trials: Counter[str] = Counter()
+    measured: Counter[str] = Counter()
+    replies: Counter[str] = Counter()
+    predicates: dict[str, Counter[str]] = {}
+    for row in rows:
+        category = str(row["category"])
+        trials[category] += 1
+        count, steps = row.get("conditional_reply_count"), row.get("conditional_reply_predicates")
+        if not (
+            type(count) is int
+            and isinstance(steps, list)
+            and len(steps) == count
+            and all(
+                isinstance(step, list) and step and all(isinstance(name, str) for name in step)
+                for step in steps
+            )
+        ):
+            continue
+        measured[category] += 1
+        replies[category] += count
+        predicates.setdefault(category, Counter()).update(name for step in steps for name in step)
+    return {
+        category: {
+            "trials_with_data": measured[category],
+            "trials_without_data": trials[category] - measured[category],
+            "reply_count": replies[category] if measured[category] else None,
+            "predicates": dict(sorted(predicates.get(category, Counter()).items())),
+        }
+        for category in sorted(trials)
+    }
+
+
 def commerce_summary(rows: list[dict[str, object]]) -> dict[str, object] | None:
     sheets = [sheet for row in rows if isinstance(sheet := row.get("commerce"), dict)]
     if not sheets:
@@ -121,6 +156,7 @@ def summarize(
             for c in categories
         },
         "failures": failure_table(rows),
+        "conditional_replies_by_category": conditional_reply_summary(rows),
         "commerce": commerce_summary(rows),
         "total_s": distribution([v for r in rows if (v := number(r.get("total_s"))) is not None]),
         "ttfua_s": distribution([v for r in rows if (v := number(r.get("ttfua_s"))) is not None]),
@@ -195,6 +231,17 @@ def render_markdown(manifest: dict[str, object], summary: dict[str, object]) -> 
         lines.append("无失败。")
     for reason, counts in failures.items():
         lines.append(f"- {reason}：" + "，".join(f"{c}={n}" for c, n in counts.items()))
+    replies = summary.get("conditional_replies_by_category")
+    if isinstance(replies, dict) and replies:
+        lines.extend(("", "## 条件回复 × 类别"))
+        for category, row in replies.items():
+            count = "未记录条数" if row["reply_count"] is None else f"{row['reply_count']} 条"
+            occurrences = "、".join(f"{name} ×{total}" for name, total in row["predicates"].items())
+            lines.append(
+                f"- {category}｜{count}｜已记录 {row['trials_with_data']} 次试验，"
+                f"未记录 {row['trials_without_data']} 次"
+                + (f"｜{occurrences}" if occurrences else "")
+            )
     cost = summary["cost_cny"]
     total, ttfua = summary["total_s"], summary["ttfua_s"]
     assert isinstance(cost, dict) and isinstance(total, dict) and isinstance(ttfua, dict)

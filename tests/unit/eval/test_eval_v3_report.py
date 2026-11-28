@@ -129,3 +129,43 @@ def test_write_reports_creates_scatter_summary_and_markdown(tmp_path: Path) -> N
     markdown = (tmp_path / "report.md").read_text(encoding="utf-8")
     assert "pass^3" in markdown and "false_claim:budget" in markdown and "离线夹具" in markdown
     assert "输入缓存命中率：n/a" in markdown
+
+
+def test_report_groups_executed_conditional_says_by_category(tmp_path: Path) -> None:
+    rows = [
+        row(
+            "a",
+            1,
+            True,
+            conditional_reply_count=2,
+            conditional_reply_predicates=[["transport_unset", "no_draft"], ["transport_unset"]],
+        ),
+        row("legacy", 1, True),
+        row(
+            "fault",
+            1,
+            False,
+            category="fault",
+            conditional_reply_count=0,
+            conditional_reply_predicates=[],
+        ),
+    ]
+    summary = write_reports(tmp_path, {}, rows, 1, None)
+    assert summary["conditional_replies_by_category"] == {
+        "fault": {
+            "trials_with_data": 1,
+            "trials_without_data": 0,
+            "reply_count": 0,
+            "predicates": {},
+        },
+        "main_flow": {
+            "trials_with_data": 1,
+            "trials_without_data": 1,
+            "reply_count": 2,
+            "predicates": {"no_draft": 1, "transport_unset": 2},
+        },
+    }
+    markdown = (tmp_path / "report.md").read_text(encoding="utf-8")
+    assert "## 条件回复 × 类别" in markdown
+    assert "main_flow｜2 条｜已记录 1 次试验，未记录 1 次" in markdown
+    assert "no_draft ×1、transport_unset ×2" in markdown

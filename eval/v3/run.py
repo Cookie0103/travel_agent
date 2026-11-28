@@ -480,6 +480,7 @@ async def collect(
         before_steps=result.before_steps,
         step_requests=tuple(result.step_requests),
         card_payloads=(*result.card_payloads, *picked.recorded.values()),
+        conditional_reply_predicates=tuple(result.conditional_reply_predicates),
         step_unavailable=result.step_unavailable,
         infra_error=result.infra_error,
     )
@@ -571,6 +572,7 @@ async def run_trial(
         )
     started = perf_counter()
     result = ScriptResult()
+    runner: ScriptRunner | None = None
     orders_before = 0
     try:
         context = await create_trial_context(business, case, world)
@@ -590,6 +592,8 @@ async def run_trial(
         result = await runner.run()
     except Exception as error:  # 设施故障：该trial记infra_error，不拖垮整批
         result.infra_error = f"harness:{type(error).__name__}"
+        if runner is not None:
+            result.conditional_reply_predicates = runner.result.conditional_reply_predicates
         if result.context is None:
             result.context = RunContext(uuid4(), uuid4())
     finally:
@@ -602,6 +606,7 @@ async def run_trial(
         observation = Observation(
             turns=tuple(result.turns),
             infra_error=result.infra_error or f"collect:{type(error).__name__}",
+            conditional_reply_predicates=tuple(result.conditional_reply_predicates),
         )
     observation = replace(
         observation, l3_source="prompt_snapshot" if config.live else "service_snapshot"
@@ -725,6 +730,10 @@ def trial_row(
         "selected_hotels": list(observation.selected_hotels),
         "infra_error": score.infra_error,
         "step_unavailable": observation.step_unavailable,
+        "conditional_reply_count": len(observation.conditional_reply_predicates),
+        "conditional_reply_predicates": [
+            list(predicates) for predicates in observation.conditional_reply_predicates
+        ],
         "turns": [
             {
                 "index": t.index,

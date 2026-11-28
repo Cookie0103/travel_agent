@@ -218,14 +218,16 @@ def test_missing_card_is_step_unavailable_unless_skippable(postgres_url: URL) ->
     in_eval_db(postgres_url, body)
 
 
-def test_conditional_transport_reply_unblocks_an_offline_draft(postgres_url: URL) -> None:
+def test_conditional_transport_reply_unblocks_an_offline_draft(
+    postgres_url: URL, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     case = make(
         setup={"request": {**REQUEST, "transport": None}},
         user_script=[
             {"say": "追问本次交通"},
             {
                 "say": "这次步行，继续生成行程。",
-                "when": ["transport_unset"],
+                "when": ["transport_unset", "no_draft"],
             },
             {"say": "不应再补充交通。", "when": ["transport_unset"]},
             {"say": "不应再要求草稿。", "when": ["no_draft"]},
@@ -233,19 +235,32 @@ def test_conditional_transport_reply_unblocks_an_offline_draft(postgres_url: URL
         hard_checks=[{"id": "draft", "type": "db", "assert": "draft_no_conflict"}],
     )
 
+    monkeypatch.setattr(
+        "eval.v3.run.OfflineRuntime", lambda executor, events, _: ScriptedRuntime(executor, events)
+    )
+    trials = tmp_path / "trials.jsonl"
+
+    def write_row(row: dict[str, object]) -> None:
+        with trials.open("a", encoding="utf-8") as output:
+            output.write(json.dumps(row, ensure_ascii=False) + "\n")
+
     async def body(business: DatabaseEvaluation) -> None:
-        result, events, orders = await play(business, case)
-        assert result.step_unavailable is None and result.infra_error is None
-        assert [turn.user_text for turn in result.turns] == [
-            "追问本次交通",
-            "这次步行，继续生成行程。",
-        ]
-        assert "哪种交通方式" in result.turns[0].answer
-        observation = await collect(business, case, result, events, orders)
-        assert observation.db.draft_exists and not observation.db.draft_conflicts
-        assert score_trial(case, observation).success
+        config = TrialConfig(
+            False,
+            False,
+            tmp_path,
+            {"profile": "offline", "git_sha": "smoke", "run_name": "smoke", "trial_group": "smoke"},
+        )
+        assert await run_all(business, [case], 1, config, max_cny=None, on_row=write_row) is None
 
     in_eval_db(postgres_url, body)
+    [line] = trials.read_text(encoding="utf-8").splitlines()
+    row = json.loads(line)
+    assert row["step_unavailable"] is None and row["infra_error"] is None
+    assert row["success"] and len(row["turns"]) == 2
+    assert "哪种交通方式" in row["turns"][0]["answer"]
+    assert row["conditional_reply_count"] == 1
+    assert row["conditional_reply_predicates"] == [["transport_unset", "no_draft"]]
 
 
 def test_confirm_plan_without_draft_is_step_unavailable(postgres_url: URL) -> None:

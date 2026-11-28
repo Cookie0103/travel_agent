@@ -65,6 +65,7 @@ class ScriptResult:
     before_steps: dict[int, Snapshot] = field(default_factory=dict)
     step_requests: list[tuple[int, TravelRequest]] = field(default_factory=list)
     card_payloads: list[dict[str, object]] = field(default_factory=list)
+    conditional_reply_predicates: list[tuple[str, ...]] = field(default_factory=list)
 
 
 class StepUnavailable(Exception):
@@ -238,7 +239,7 @@ class ScriptRunner:
         match action:
             case "say":
                 assert step.say is not None
-                return await self.submit(step.say)
+                return await self.submit(step.say, conditional_predicates=step.when or ())
             case "card":
                 assert step.card is not None
                 return await self.click_card(step.card, step.say, number)
@@ -397,6 +398,7 @@ class ScriptRunner:
         expected_revision: int | None = None,
         rejected_is_step: bool = False,
         note: str = "",
+        conditional_predicates: tuple[str, ...] = (),
     ) -> bool:
         context = self.context
         message = MessageInput(
@@ -413,6 +415,8 @@ class ScriptRunner:
             if rejected_is_step:
                 raise StepUnavailable from error
             raise
+        if conditional_predicates:
+            self.result.conditional_reply_predicates.append(conditional_predicates)
         run_context = RunContext(context.user_id, context.session_id, view.run_id)
         abandoned = await self.wait(run_context)
         # 记忆在轮次结束后异步抽取：等它落库(确认卡挂在本轮)再读本轮卡片和下一步页面。
