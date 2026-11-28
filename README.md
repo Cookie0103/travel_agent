@@ -154,6 +154,13 @@ Every incident became a permanent guardrail:
 | A supposedly offline test made a real paid call | `--live` is refused outright inside pytest |
 | The model occasionally called a tool that does not exist | The guard terminates the turn instead of loosening the boundary |
 
+### Phase 2 evaluation
+
+Phase 2 adds deterministic rule gates, a commercial expected-value score, and versioned Skill evaluations.
+The frozen 201-case suite separates reflection, validation, and holdout. DeepSeek Flash completed the 24-case pilot with 11 business passes.
+Each Skill experiment used 12 candidate trials and six endpoint trials. Both candidates stayed in isolated directories.
+Private hotel snapshots support local replay. External model trials use synthetic supplier data. [Phase 2 guide](docs/phase2/README.md) · [Pilot comparison](docs/phase2/evidence/evolution-comparison-small-v1.md)
+
 ## Operations
 
 | Area | Implementation |

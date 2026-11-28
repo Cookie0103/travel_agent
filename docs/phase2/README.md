@@ -24,6 +24,8 @@ phase2/
 
 后四个目录在第一次需要时创建，并在本页补一行说明里面的文件。
 
+[D9 小样本复核入口](operations/small-experiments.md)记录固定样本和运行方式，[面试案例](cases/2026-11-27-judge-evolution.md)收录已有证据的案例。
+
 ## 五条工作线
 
 | 工作线 | 一句话 | 设计 |
