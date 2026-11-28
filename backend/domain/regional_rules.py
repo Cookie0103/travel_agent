@@ -99,6 +99,16 @@ def context_checks(
                 )
             )
             break
+        else:
+            if place.source.data_mode == "synthetic" and place.reservation_required:
+                results.append(
+                    ValidationCheck(
+                        subject=f"item:{index}",
+                        status="verified",
+                        code="reservation_required",
+                        message="合成评测地点须提前预约指定时段。",
+                    )
+                )
         point = moment.month, moment.day
         for label, start, end, regions in PEAK_PERIODS:
             in_period = start <= point <= end if start <= end else point >= start or point <= end

@@ -1,18 +1,23 @@
 """第二阶段六城的业务链，对既有 v3 多轮入口使用离线夹具。"""
 
 import asyncio
-from datetime import date, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from uuid import UUID
 
 import pytest
 from sqlalchemy import URL
 
+from backend.adapters.evaluation_faults import evaluation_data
+from backend.adapters.evaluation_places import city_places
+from backend.adapters.open_meteo import cached_rain, city_forecast
 from backend.agent.fixture_runtime import FixtureRuntime
 from backend.agent.runtime import EventSink
 from backend.domain.execution import RunContext, RuntimeOutcome
+from backend.domain.itinerary import ItineraryProposal, ProposedItem
 from backend.domain.opening_hours import opening_state
-from backend.domain.travel_request import pace_of
+from backend.domain.regional_rules import context_checks
+from backend.domain.travel_request import TravelRequest, pace_of
 from backend.tools.contracts import ToolResult
 from backend.tools.execution import execute_observed
 from backend.tools.travel import DEFINITIONS, TravelToolExecutor
@@ -191,5 +196,59 @@ def test_world_runs_ask_select_and_stage_in_all_six_cities(
         commerce = summary["commerce"]
         assert isinstance(commerce, dict) and commerce["expected_score_jpy"] > 0
         assert (tmp_path / "report.md").is_file()
+
+    in_eval_db(postgres_url, exercise)
+
+
+def test_v2_weather_tool_and_validation_cache_cover_rain_window_transition(
+    postgres_url: URL,
+) -> None:
+    async def exercise(business: DatabaseEvaluation) -> None:
+        request = TravelRequest.model_validate(
+            {**REQUEST, "start_date": "2026-11-12", "end_date": "2026-11-13"}
+        )
+        database = business.sessions.database
+        world = phase2_world()
+        live = evaluation_data("phase2-world", database, business.dsn(), world)
+        try:
+            forecast = await city_forecast(live, request)
+            assert forecast["status"] == "verified"
+            async with database.sessions() as db:
+                rain = await cached_rain(
+                    db,
+                    request,
+                    datetime.now(UTC),
+                    world.today,
+                    evaluation_calendar=live.evaluation_weather_calendar,
+                )
+            assert rain == {
+                ("京都", date(2026, 11, 12)): 85,
+                ("京都", date(2026, 11, 13)): 10,
+            }
+
+            city = world.cities[0]
+            venue = next(
+                place
+                for place in city_places(city.city, city.latitude, city.longitude)
+                if place.name.startswith("合成") and place.reservation_required
+            )
+            assert live.google is not None
+            known = await live.google.details(f"gplace:{venue.identity}", city.city)
+            proposal = ItineraryProposal(
+                expected_revision=request.revision,
+                items=(
+                    ProposedItem(
+                        place_evidence_id=UUID(int=1),
+                        start=datetime.fromisoformat("2026-11-12T10:00:00+09:00"),
+                        end=datetime.fromisoformat("2026-11-12T11:00:00+09:00"),
+                    ),
+                ),
+            )
+            assert any(
+                check.code == "reservation_required" and check.status == "verified"
+                for check in context_checks(proposal, [known])
+            )
+        finally:
+            await live.close()
 
     in_eval_db(postgres_url, exercise)

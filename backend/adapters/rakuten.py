@@ -50,6 +50,7 @@ class Room(BaseModel):
     planId: int | str | None = None
     reserveUrl: str | None = None
     withBreakfastFlag: int | None = None
+    evaluationMaxGuests: int | None = Field(default=None, ge=1)
 
 
 class Charge(BaseModel):
@@ -57,6 +58,7 @@ class Charge(BaseModel):
     rakutenCharge: Money
     chargeFlag: int = Field(ge=0, le=1)
     evaluationChildCharge: Money | None = None
+    evaluationFixedPerRoom: bool = False
 
 
 # 判断题：低于该每人每晚价格的套餐视为促销/测试价（实测出现过¥1、¥500），不当真实价格；
@@ -281,6 +283,7 @@ class Rakuten:
             by_plan=by_plan,
             sort="+roomCharge" if _price_sorted else "standard",
         )
+        first = tuple(item for item in first if self._evaluation_room_fits(item, request))
         diagnosis = diagnosis if diagnosis is not None else HotelSearchDiagnostics()
         diagnosis.upstream_count = found
         diagnosis.dropped_room = sum(
@@ -333,7 +336,8 @@ class Rakuten:
             else "超过7晚，不核算总价"
             if nights > 7
             else "成人无法平均分配到每间房"
-            if request.adults % request.rooms
+            if request.adults % rooms
+            and not (selected and all(self._evaluation_fixed_room_price(item) for item in selected))
             else None
         )
         totals: dict[str, Decimal | None] = {
@@ -543,9 +547,32 @@ class Rakuten:
             f"https://{DESTINATION_HOST}/yado/{detail.middleClassCode}/{detail.smallClassCode}.html"
         )
 
+    def _evaluation_room_fits(self, item: Candidate, request: TravelRequest) -> bool:
+        capacity = item.room.evaluationMaxGuests
+        if self.data_mode != "synthetic" or capacity is None:
+            return True
+        assert request.adults and request.rooms
+        return request.adults + len(request.child_ages or ()) <= request.rooms * capacity
+
+    def _evaluation_fixed_room_price(self, item: Candidate) -> bool:
+        charge = item.charge
+        return bool(
+            self.data_mode == "synthetic"
+            and charge
+            and charge.chargeFlag == 1
+            and charge.evaluationFixedPerRoom
+        )
+
     def stay_nightly_price(
         self, item: Candidate, request: TravelRequest, day: date
     ) -> Decimal | None:
+        assert request.adults and request.rooms
+        if (
+            not self._evaluation_room_fits(item, request)
+            or request.adults % request.rooms
+            and not self._evaluation_fixed_room_price(item)
+        ):
+            return None
         base = self.price(item, request, day)
         if base is None or not request.child_ages:
             return base

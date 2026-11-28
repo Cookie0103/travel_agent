@@ -71,6 +71,7 @@ class _GooglePlace(BaseModel):
     googleMapsUri: str | None = None
     evaluationIndoor: bool | None = None
     evaluationAliases: tuple[str, ...] = ()
+    evaluationReservationRequired: bool = False
 
 
 class _Places(BaseModel):
@@ -119,6 +120,7 @@ def place_from_response(
             if data_mode == "synthetic" and value.evaluationIndoor is not None
             else inferred_indoor(category)
         ),
+        reservation_required=data_mode == "synthetic" and value.evaluationReservationRequired,
         opening_hours=opening_hours(value.regularOpeningHours),
         field_sources={},
         source=Source(

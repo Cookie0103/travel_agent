@@ -117,5 +117,5 @@ def test_phase2_weather_can_select_rain_and_sun_on_consecutive_days() -> None:
                 "latitude": 35,
             },
         )
-    assert response.json()["daily"]["precipitation_probability_max"] == [75, 25]
+    assert response.json()["daily"]["precipitation_probability_max"] == [85, 10]
     assert response.json()["daily"]["weather_code"] == [61, 0]

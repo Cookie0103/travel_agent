@@ -274,7 +274,13 @@ async def validate_proposal(
             datetime.now(UTC),
             transport_default=default[0] if default else None,
             place_catalog=await _place_catalog(db, request, live),
-            weather=await cached_rain(db, request, now, live.evaluation_today)
+            weather=await cached_rain(
+                db,
+                request,
+                now,
+                live.evaluation_today,
+                evaluation_calendar=live.evaluation_weather_calendar,
+            )
             if live is not None
             else None,
         )

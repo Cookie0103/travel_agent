@@ -51,6 +51,11 @@ def description(code: int | None) -> str:
     return "未知"
 
 
+def _forecast_end(today: date, requested: date, evaluation_calendar: bool) -> date:
+    # 隔离夹具已经拥有完整合成日历；线上及旧快照继续遵守 16 天窗口。
+    return requested if evaluation_calendar else min(requested, today + timedelta(days=15))
+
+
 async def forecast(
     http: httpx.AsyncClient,
     usage: ApiUsage,
@@ -59,21 +64,25 @@ async def forecast(
     *,
     data_mode: ProviderDataMode = "live",
     today: date | None = None,
+    evaluation_calendar: bool = False,
 ) -> dict[str, object]:
     today = today or tokyo_today()
     if not request.start_date or not request.end_date:
         return {"status": "unknown", "reason": "旅行日期尚未确定"}
-    start, end = max(request.start_date, today), min(request.end_date, today + timedelta(days=15))
+    start = max(request.start_date, today)
+    end = _forecast_end(today, request.end_date, evaluation_calendar)
     if end < start:
-        return {"status": "unknown", "reason": "旅行日期超出16天预报范围，临近出行再查询"}
+        reason = (
+            "旅行日期早于合成评测基准日"
+            if evaluation_calendar
+            else "旅行日期超出16天预报范围，临近出行再查询"
+        )
+        return {"status": "unknown", "reason": reason}
     partial = start != request.start_date or end != request.end_date
 
     def cover(payload: dict[str, object]) -> dict[str, object]:
-        return (
-            {**payload, "status": "partial", "reason": "未列日期超出16天预报范围"}
-            if partial
-            else payload
-        )
+        reason = "未列日期早于合成评测基准日" if evaluation_calendar else "未列日期超出16天预报范围"
+        return {**payload, "status": "partial", "reason": reason} if partial else payload
 
     now = datetime.now(UTC)
     city = city_key(request.city or point.name)
@@ -173,8 +182,12 @@ async def city_forecast(live: LiveData, request: TravelRequest) -> dict[str, obj
     failures: list[ExternalDataError] = []
     today = live.evaluation_today or tokyo_today()
     for segment in segments:
-        if segment.depart < today or segment.arrive > today + timedelta(days=15):
-            result: dict[str, object] = {"status": "unknown", "reason": "超出 16 天预报范围"}
+        calendar = live.evaluation_weather_calendar
+        if segment.depart < today or segment.arrive > _forecast_end(
+            today, segment.depart, calendar
+        ):
+            reason = "旅行日期早于合成评测基准日" if calendar else "超出 16 天预报范围"
+            result: dict[str, object] = {"status": "unknown", "reason": reason}
         else:
             try:
                 point = await live.google.geocode(segment.city)
@@ -185,6 +198,7 @@ async def city_forecast(live: LiveData, request: TravelRequest) -> dict[str, obj
                     segment_request(request, segment),
                     data_mode=live.data_mode,
                     today=today,
+                    evaluation_calendar=calendar,
                 )
             except ExternalDataError as error:
                 failures.append(error)
@@ -202,13 +216,18 @@ async def city_forecast(live: LiveData, request: TravelRequest) -> dict[str, obj
 
 
 async def cached_rain(
-    db: AsyncSession, request: TravelRequest, now: datetime, today: date | None = None
+    db: AsyncSession,
+    request: TravelRequest,
+    now: datetime,
+    today: date | None = None,
+    *,
+    evaluation_calendar: bool = False,
 ) -> dict[tuple[str, date], int | None]:
     if request.start_date is None or request.end_date is None:
         return {}
     today = today or tokyo_today()
     start = max(request.start_date, today)
-    end = min(request.end_date, today + timedelta(days=15))
+    end = _forecast_end(today, request.end_date, evaluation_calendar)
     if end < start:
         return {}
     cities = {city_key(segment.city) for segment in trip_segments(request)}

@@ -38,11 +38,22 @@ class NamedPlace:
     name: str
     category: str
     aliases: tuple[str, ...] = ()
+    open_minute: int = 9 * 60
+    close_minute: int = 18 * 60 + 30
+    closed_day: int | None = None
+    reservation_required: bool = False
 
 
 NAMED_PLACES = {
     "京都": (
-        NamedPlace("桂離宮", "garden", ("桂离宫", "Katsura Imperial Villa")),
+        NamedPlace(
+            "桂離宮",
+            "garden",
+            ("桂离宫", "Katsura Imperial Villa"),
+            close_minute=16 * 60,
+            closed_day=1,
+            reservation_required=True,
+        ),
         NamedPlace("清水寺", "temple", ("Kiyomizu-dera",)),
     ),
     "東京": (
@@ -50,8 +61,12 @@ NAMED_PLACES = {
             "三鷹の森ジブリ美術館",
             "museum",
             ("三鹰之森吉卜力美术馆", "吉卜力", "ジブリ", "Ghibli Museum"),
+            open_minute=10 * 60,
+            close_minute=18 * 60,
+            closed_day=2,
+            reservation_required=True,
         ),
-        NamedPlace("上野動物園", "zoo", ("上野动物园", "Ueno Zoo")),
+        NamedPlace("上野動物園", "zoo", ("上野动物园", "Ueno Zoo"), closed_day=1),
     ),
     "大阪": (
         NamedPlace("海遊館", "aquarium", ("海游馆", "Kaiyukan")),
@@ -83,6 +98,7 @@ class FixturePlace:
     close_minute: int
     closed_day: int | None
     aliases: tuple[str, ...] = ()
+    reservation_required: bool = False
 
     def response(self) -> dict[str, object]:
         return {
@@ -92,6 +108,7 @@ class FixturePlace:
             "types": [self.category.code],
             "evaluationIndoor": self.category.indoor,
             "evaluationAliases": self.aliases,
+            **({"evaluationReservationRequired": True} if self.reservation_required else {}),
             "regularOpeningHours": {
                 "periods": [
                     {
@@ -124,17 +141,19 @@ def city_places(city: str, latitude: float, longitude: float) -> tuple[FixturePl
     result = []
     for index, named in enumerate(NAMED_PLACES.get(city, ())):
         point = _location(latitude, longitude, index)
-        reservation = index == 0 and city in {"京都", "東京"}
         result.append(
             FixturePlace(
-                f"phase2-{city}-3" if reservation else f"phase2-{city}-named-{index + 1}",
+                f"phase2-{city}-3"
+                if named.reservation_required
+                else f"phase2-{city}-named-{index + 1}",
                 named.name,
                 CATEGORIES_BY_CODE[named.category],
                 *point,
-                540,
-                960 if reservation else 1110,
-                2 if city == "東京" and reservation else None,
+                named.open_minute,
+                named.close_minute,
+                named.closed_day,
                 named.aliases,
+                named.reservation_required,
             )
         )
     for variant in (0, 1):
@@ -149,6 +168,8 @@ def city_places(city: str, latitude: float, longitude: float) -> tuple[FixturePl
                     480 if variant == 0 else 540,
                     1140 if variant == 0 else 960,
                     None if variant == 0 else 1 + index % 2,
+                    reservation_required=variant == 1
+                    and category.code in {"museum", "art_gallery", "aquarium"},
                 )
             )
     return tuple(result)

@@ -24,6 +24,7 @@ class LiveData:
     evidence: dict[UUID, EvidenceRecord]
     data_mode: ProviderDataMode = "live"
     evaluation_today: date | None = None
+    evaluation_weather_calendar: bool = False
     evaluation_place_names: tuple[tuple[str, tuple[str, ...]], ...] = ()
 
     @classmethod

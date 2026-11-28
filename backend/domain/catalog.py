@@ -35,6 +35,7 @@ class Place(BaseModel):
     coordinate_kind: Literal["node", "bounding_box_center"]
     category: str
     indoor: bool | None = None
+    reservation_required: bool = Field(default=False, exclude_if=lambda value: not value)
     opening_hours: str | None = None
     source: Source
     field_sources: dict[str, str]

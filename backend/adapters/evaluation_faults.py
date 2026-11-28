@@ -95,6 +95,9 @@ def evaluation_data(
         {},
         data_mode="synthetic",
         evaluation_today=world.today if world else None,
+        evaluation_weather_calendar=bool(
+            world and world.source == "synthetic" and world.synthetic_calendar
+        ),
         evaluation_place_names=(
             tuple(
                 (city.city, (place.name, *place.aliases))
@@ -194,10 +197,16 @@ def fault_transport(
             start = date.fromisoformat(request.url.params["start_date"])
             end = date.fromisoformat(request.url.params["end_date"])
             days = [start + timedelta(days=offset) for offset in range((end - start).days + 1)]
-            default_rain = 75 if float(request.url.params["latitude"]) >= 35 else 25
+            synthetic_calendar = bool(
+                world and world.source == "synthetic" and world.synthetic_calendar
+            )
+            wet, dry = (85, 10) if synthetic_calendar else (75, 25)
+            default_rain = (
+                dry if synthetic_calendar or float(request.url.params["latitude"]) < 35 else wet
+            )
             overrides = world.weather_by_date if world is not None else {}
             rain = [
-                75 if weather == "rain" else 25 if weather == "sunny" else default_rain
+                wet if weather == "rain" else dry if weather == "sunny" else default_rain
                 for weather in (overrides.get(day) for day in days)
             ]
             return httpx.Response(

@@ -29,6 +29,8 @@ class EvaluationHotel(BaseModel):
     partner: bool = False
     prices_jpy: dict[Demand, tuple[int | None, int | None]]
     breakfast_by_demand: dict[Demand, tuple[bool | None, bool | None]] | None = None
+    room_type: str = "禁煙ツイン個室"
+    max_guests: int | None = Field(default=None, ge=1, le=4)
 
 
 class EvaluationCity(BaseModel):
@@ -45,6 +47,7 @@ class EvaluationWorld(BaseModel):
     today: date
     cities: tuple[EvaluationCity, ...] = Field(min_length=6, max_length=6)
     weather_by_date: dict[date, EvaluationWeather] = Field(default_factory=dict)
+    synthetic_calendar: bool = False
 
 
 def _city(text: str, world: EvaluationWorld) -> EvaluationCity | None:
@@ -175,9 +178,14 @@ def serve(request: httpx.Request, world: EvaluationWorld) -> httpx.Response | No
                     "roomInfo": [
                         {
                             "roomBasicInfo": {
-                                "roomClass": "twin",
-                                "roomName": "禁煙ツイン個室",
+                                "roomClass": "family" if h.max_guests == 4 else "twin",
+                                "roomName": h.room_type,
                                 "planId": h.number,
+                                **(
+                                    {"evaluationMaxGuests": h.max_guests}
+                                    if world.source == "synthetic" and h.max_guests is not None
+                                    else {}
+                                ),
                                 "withBreakfastFlag": int(
                                     bool(h.breakfast_by_demand[demand][group])
                                     if h.breakfast_by_demand is not None
@@ -190,6 +198,13 @@ def serve(request: httpx.Request, world: EvaluationWorld) -> httpx.Response | No
                                 "stayDate": day.isoformat(),
                                 "rakutenCharge": h.prices_jpy[demand][group],
                                 "chargeFlag": 1,
+                                **(
+                                    {"evaluationFixedPerRoom": True}
+                                    if world.source == "synthetic"
+                                    and h.max_guests is not None
+                                    and h.prices_jpy[demand][0] == h.prices_jpy[demand][1]
+                                    else {}
+                                ),
                                 **(
                                     {"evaluationChildCharge": 2400}
                                     if world.source == "synthetic"

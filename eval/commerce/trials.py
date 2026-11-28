@@ -8,6 +8,7 @@ from functools import cache
 from typing import Any
 
 from backend.domain.evidence import evidence_conditions
+from backend.domain.geo import haversine_m
 from backend.domain.hotels import PARTNER_LABEL
 from backend.domain.travel_request import TravelRequest, city_key, segment_request, trip_segments
 from data.eval_world.world import Commission, Hotel, Station, World, load_world
@@ -71,6 +72,12 @@ def _basket(
             or type(card.get("breakfast")) is not bool
         ):
             raise ValueError("hotel_features_unverified")
+        latitude, longitude = card.get("latitude"), card.get("longitude")
+        station_minutes = (
+            haversine_m(station.latitude, station.longitude, latitude, longitude) / 80
+            if isinstance(latitude, (int, float)) and isinstance(longitude, (int, float))
+            else walking_minutes(hotel, station)
+        )
         candidates.setdefault(
             hotel.hotel_id,
             Candidate(
@@ -79,7 +86,7 @@ def _basket(
                 booking_total_jpy=float(card["total"]),
                 rating=float(card["review_average"]),
                 reviews=int(card["review_count"]),
-                station_minutes=walking_minutes(hotel, station),
+                station_minutes=station_minutes,
                 breakfast=card["breakfast"],
                 partner=commission.partner,
                 commission=commission.basis_points / 10_000,
