@@ -29,6 +29,13 @@ VERIFIED · 2026-11-28。表中实测来自 D5 的 24 道非留出题与触发�
 | repair-limit | 正常暂存 | 是 |
 | repair-limit | 最后一轮修复成功 | 是 |
 
+## PostgreSQL 集成复核
+
+现有 `validate_itinerary` 集成用例经过真实执行器并检查其 `tool_finished` 事件。最后一轮允许的校验无 Skill 附带，
+后一次达到修复上限时只附带 `repair-limit` 并记录 64 字符内容哈希。D5 中该项仍无样本。
+上述集成检查、四项服务器信号的哈希记录检查和跨会话记忆检查合计 3 passed。
+修复上限的服务端触发可就此验收，加载后的业务增益继续由 E5 的对照实验衡量。
+
 ## 用例预期
 
 ### hotel-comparison

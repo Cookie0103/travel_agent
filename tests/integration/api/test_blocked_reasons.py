@@ -50,9 +50,15 @@ def test_validate_blocked_paths_record_closed_reason_codes(
         assert (event.code, event.reason) == ("blocked", "not_found")
         # 路径3：修复轮次用尽。
         limited = TravelToolExecutor(travel, max_validations=1)
-        assert (await observed(limited, context, good)).reason is None
+        final_allowed = await observed(limited, context, good)
+        assert final_allowed.reason is None
+        assert not final_allowed.attached_skills
         event = await observed(limited, context, {**good, "items": good["items"]})
         assert (event.code, event.reason) == ("blocked", "repair_limit")
+        assert len(event.attached_skills) == 1
+        (skill,) = event.attached_skills
+        assert skill.name == "repair-limit"
+        assert len(skill.sha256) == 64
         # 路径4：调用次数上限；路径5：未注册工具由单测覆盖。
         capped = TravelToolExecutor(travel, max_calls=0)
         event = await observed(capped, context, good)
