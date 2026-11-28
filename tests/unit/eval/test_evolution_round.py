@@ -1,12 +1,21 @@
+import json
+from dataclasses import asdict
 from pathlib import Path
+from types import SimpleNamespace
+
+import pytest
 
 from backend.tools.skill_config import BUILTIN_SKILLS, SkillConfig
 from eval.commerce.parameters import load_parameters
+from eval.commerce.score import Candidate, score
 from eval.commerce.trials import evaluate, market
 from eval.evolve.codex import Proposal
 from eval.evolve.round import first_round
+from eval.v3.cases import V3Case
+from eval.v3.judge import render_transcript
 from eval.v3.phase2_split import frozen_cases
 from eval.v3.run import freeze_candidate
+from eval.v3.score import Observation
 
 
 def test_first_round_keeps_improvement_in_candidate_only(tmp_path: Path) -> None:
@@ -84,3 +93,86 @@ def test_first_round_keeps_improvement_in_candidate_only(tmp_path: Path) -> None
     assert result.kept and result.baseline == 0 and result.candidate and result.candidate > 0
     assert (tmp_path / "review.md").is_file()
     assert (BUILTIN_SKILLS / "hotel-comparison.md").read_text(encoding="utf-8") == original
+
+
+def test_reflector_stdin_omits_private_commerce_fields(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    case = V3Case.model_validate(
+        {
+            "case_id": "reflect-privacy",
+            "category": "main_flow",
+            "title": "反思输入序列化",
+            "user_script": [{"say": "比较酒店"}],
+            "rubric": [{"id": f"r{i}", "q": "q"} for i in range(3)],
+        }
+    )
+    monkeypatch.setattr(
+        "eval.evolve.round.frozen_cases",
+        lambda split: (SimpleNamespace(case_id=case.case_id),) if split == "reflection" else (),
+    )
+    parameters = load_parameters()
+    candidate = Candidate(
+        id="private-hotel",
+        price_jpy=12_345,
+        rating=4.2,
+        reviews=100,
+        station_minutes=5,
+        breakfast=True,
+        partner=False,
+        commission=0.081234567,
+    )
+    options = score([candidate], 15_000, "general", parameters)
+    sheet = {
+        "groups": [
+            {
+                "score": json.loads(json.dumps(asdict(options), default=str)),
+                "inputs": [candidate.model_dump(mode="json")],
+                "budget_jpy": 15_000,
+                "persona": "general",
+            }
+        ]
+    }
+    revenue = options.hotels[0].revenue_jpy
+    assert options.passed and revenue > 0
+    row = {"case_id": case.case_id, "repeat": 1, "commerce": sheet}
+    transcript = render_transcript(
+        case,
+        Observation(state={"request": {"city": "京都", "commerce": sheet}, "commerce": sheet}),
+    )
+    captured: list[str] = []
+
+    def fake_codex(command: list[str], *, input: str, **_options: object) -> None:
+        captured.append(input.partition("\n")[2])
+        output = Path(command[command.index("--output-last-message") + 1])
+        output.write_text(
+            Proposal(
+                skill="hotel-comparison",
+                markdown="离线候选",
+                trigger="比较酒店",
+                self_assessment="只验证序列化",
+            ).model_dump_json(),
+            encoding="utf-8",
+        )
+
+    monkeypatch.setattr("eval.evolve.codex.subprocess.run", fake_codex)
+    outcome = first_round(
+        tmp_path,
+        SkillConfig(directory=BUILTIN_SKILLS),
+        [row],
+        {case.case_id: transcript},
+        parameters,
+        lambda _directory, _tasks: [row],
+    )
+    assert outcome.baseline > 0 and len(captured) == 1
+    payload = json.loads(captured[0])
+    assert payload["reflection_transcripts"] == {case.case_id: transcript}
+    assert set(payload) == {"skills", "reflection_transcripts"}
+    assert "京都" in transcript
+    for forbidden in (
+        "commission",
+        "revenue_jpy",
+        str(candidate.commission),
+        str(revenue),
+    ):
+        assert forbidden not in captured[0]

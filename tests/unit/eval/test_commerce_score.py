@@ -4,7 +4,7 @@ from math import log
 
 import pytest
 
-from eval.commerce.parameters import Prior, Registry, load_parameters
+from eval.commerce.parameters import REGISTRY, Prior, Registry, load_parameters
 from eval.commerce.score import Candidate, score
 
 
@@ -81,3 +81,32 @@ def test_rule_and_partner_policy_failures_score_zero() -> None:
     result = score([a], 100, "general", params)
     assert not result.passed and result.total_jpy == 0
     assert result.violations == ("partner_share",)
+
+
+def test_registered_parameters_match_two_hotel_hand_calculation() -> None:
+    parameters = load_parameters(REGISTRY.with_name("parameters-rakuten-v1.json"))
+    a = Candidate(
+        id="A",
+        price_jpy=12_000,
+        rating=4.2,
+        reviews=100,
+        station_minutes=5,
+        breakfast=True,
+        partner=False,
+        commission=0.08,
+    )
+    b = Candidate(
+        id="B",
+        price_jpy=9_000,
+        rating=3.8,
+        reviews=20,
+        station_minutes=10,
+        breakfast=False,
+        partner=True,
+        commission=0.10,
+    )
+    result = score([a, b], 15_000, "general", parameters)
+    assert result.passed and result.trust_discount == 1
+    # A: 12000 × 0.08；B: 9000 × (0.10 + 0.10 × 0.90)。
+    assert [hotel.revenue_jpy for hotel in result.hotels] == pytest.approx([960, 1_710])
+    assert result.total_jpy == pytest.approx(2.345149571120522, abs=1e-12)

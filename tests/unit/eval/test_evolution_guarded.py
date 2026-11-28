@@ -61,6 +61,66 @@ def test_each_gate_rejects_its_own_regression(problem: str) -> None:
     assert not result.passed
 
 
+def test_target_requires_at_least_halving_affected_cases() -> None:
+    original = trials()
+    more_affected = tuple(replace(original[0], case_id=f"more-{i}") for i in range(4))
+    before = (*original, *more_affected)
+    gates = assess(
+        before,
+        (*improved(original), *more_affected),
+        "draft",
+        frozenset(row.case_id for row in (*original[:2], *more_affected)),
+        routing_changed=True,
+    )
+    assert (gates.target_before, gates.target_after) == (6, 4)
+    assert not gates.target
+    assert gates.regression and gates.components and gates.coexistence
+
+
+def test_target_cannot_replace_its_violation_with_a_new_block() -> None:
+    before = trials()
+    candidate = list(improved(before))
+    candidate[0] = replace(candidate[0], blocked=True, violations=frozenset({"new-block"}))
+    gates = assess(before, candidate, "draft", frozenset({"c1", "c2"}), routing_changed=True)
+    assert (gates.target_before, gates.target_after) == (2, 0)
+    assert not gates.target
+    assert gates.regression and gates.components and gates.coexistence
+
+
+def test_regression_requires_a_nonnegative_score_interval_upper_bound() -> None:
+    before = trials()
+    candidate = list(improved(before))
+    candidate[2] = replace(candidate[2], score=3.0)
+    candidate[3] = replace(candidate[3], score=3.0)
+    gates = assess(before, candidate, "draft", frozenset({"c1", "c2"}), routing_changed=True)
+    assert gates.other_pass_rate.high == 0 and gates.other_score.high < 0
+    assert not gates.regression
+    assert gates.target and gates.components and gates.coexistence
+
+
+def test_components_require_all_applicable_soft_observations() -> None:
+    original = trials()
+    before = (*original[:3], replace(original[3], soft=0.05))
+    candidate = list(improved(before))
+    candidate[2] = replace(candidate[2], soft=0.95)
+    candidate[3] = replace(candidate[3], soft=None)
+    gates = assess(before, candidate, "draft", frozenset({"c1", "c2"}), routing_changed=True)
+    assert gates.probability_after > gates.probability_before
+    assert not gates.components
+    assert gates.target and gates.regression and gates.coexistence
+
+
+def test_components_reject_a_probability_loss_even_when_soft_improves() -> None:
+    before = trials()
+    candidate = list(improved(before))
+    candidate[2] = replace(candidate[2], probability=0.35)
+    gates = assess(before, candidate, "draft", frozenset({"c1", "c2"}), routing_changed=True)
+    assert gates.probability_after < gates.probability_before
+    assert gates.soft_after == pytest.approx(0.825) and gates.soft_before == pytest.approx(0.8)
+    assert not gates.components
+    assert gates.target and gates.regression and gates.coexistence
+
+
 def test_comparison_rejects_mismatched_target_seeds() -> None:
     before = trials()
     candidate = list(improved(before))
