@@ -231,6 +231,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     simulator.add_argument("--case-id", action="append", default=[])
     rules = commands.add_parser("eval-rules")
     rules.add_argument("--out", type=Path)
+    capture_hotels = commands.add_parser("capture-phase2-hotels")
+    capture_mode = capture_hotels.add_mutually_exclusive_group(required=True)
+    capture_mode.add_argument("--live", action="store_true")
+    capture_mode.add_argument("--assemble", action="store_true")
+    for demand in ("weekday", "weekend", "event"):
+        capture_hotels.add_argument(f"--{demand}")
     v3 = commands.add_parser("eval-v3")
     v3_modes = v3.add_mutually_exclusive_group()
     v3_modes.add_argument("--live", action="store_true")
@@ -342,6 +348,13 @@ def main(argv: Sequence[str] | None = None) -> int:
             if args.out:
                 command.extend(["--out", str(args.out)])
             return run_command(command, timeout=60)
+        case "capture-phase2-hotels":
+            command = [python, "-m", "scripts.live.capture_phase2_hotels"]
+            command.append("--assemble" if args.assemble else "--live")
+            for demand in ("weekday", "weekend", "event"):
+                if day := getattr(args, demand):
+                    command.extend([f"--{demand}", day])
+            return run_command(command)
         case "eval-v3":
             if (args.trace_cloud and not args.live) or (args.judge_check and not args.live):
                 return 2

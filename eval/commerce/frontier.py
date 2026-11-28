@@ -40,14 +40,17 @@ def samples() -> dict[Split, list[tuple[float, tuple[Candidate, ...]]]]:
         for candidate in example.first:
             hotel = hotels[candidate.id]
             commission = commissions[candidate.id]
+            quote = hotel.weekday_quote()
+            assert quote is not None
+            price, breakfast = quote
             entries.append(
                 Candidate(
                     id=candidate.id,
-                    price_jpy=hotel.prices_jpy["weekday"][0],
+                    price_jpy=price,
                     rating=hotel.rating,
                     reviews=hotel.reviews,
                     station_minutes=walking_minutes(hotel, stations[hotel.city]),
-                    breakfast=hotel.breakfast,
+                    breakfast=breakfast,
                     partner=commission.partner,
                     commission=commission.basis_points / 10_000,
                 )

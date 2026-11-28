@@ -37,7 +37,8 @@ class EvaluationHotel(BaseModel):
     reviews: int = Field(ge=0)
     breakfast: bool
     partner: bool = False
-    prices_jpy: dict[Demand, tuple[int, int]]
+    prices_jpy: dict[Demand, tuple[int | None, int | None]]
+    breakfast_by_demand: dict[Demand, tuple[bool | None, bool | None]] | None = None
 
 
 class EvaluationCity(BaseModel):
@@ -184,7 +185,11 @@ def serve(request: httpx.Request, world: EvaluationWorld) -> httpx.Response | No
                                 "roomClass": "twin",
                                 "roomName": "禁煙ツイン個室",
                                 "planId": h.number,
-                                "withBreakfastFlag": int(h.breakfast),
+                                "withBreakfastFlag": int(
+                                    bool(h.breakfast_by_demand[demand][group])
+                                    if h.breakfast_by_demand is not None
+                                    else h.breakfast
+                                ),
                             }
                         },
                         {
@@ -199,6 +204,7 @@ def serve(request: httpx.Request, world: EvaluationWorld) -> httpx.Response | No
                 },
             ]
             for h in found_hotels
+            if h.prices_jpy[demand][group] is not None
         ]
         return httpx.Response(
             200, json={"pagingInfo": {"recordCount": len(hotels)}, "hotels": hotels}

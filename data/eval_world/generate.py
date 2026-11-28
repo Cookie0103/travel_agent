@@ -7,14 +7,12 @@ from collections.abc import Sequence
 from pathlib import Path
 
 from data.eval_world.world import (
-    COMMISSION_FILE,
-    HOTELS_FILE,
-    MANIFEST_FILE,
     ROOT,
     Commission,
     Hotel,
     Station,
     World,
+    world_files,
 )
 
 SEED = 20261127
@@ -57,6 +55,31 @@ def make_hotels(stations: Sequence[Station]) -> tuple[Hotel, ...]:
     return tuple(hotels)
 
 
+def write_world(world: World, output: Path, *, live_calls: int) -> None:
+    hotels_file, commission_file, manifest_file = world_files(world.source)
+    commissions = {}
+    for index, hotel in enumerate(world.hotels):
+        partner = index % 4 == 0
+        seed = hashlib.sha256(f"{SEED}/{hotel.hotel_id}".encode()).digest()
+        base = 800 + int.from_bytes(seed[:4], "big") % 401
+        commissions[hotel.hotel_id] = Commission(
+            partner=partner, basis_points=base + (300 if partner else 0)
+        )
+    documents = {
+        hotels_file: world.model_dump(mode="json"),
+        commission_file: {key: value.model_dump(mode="json") for key, value in commissions.items()},
+    }
+    versions = {}
+    for name, content in documents.items():
+        data = (json.dumps(content, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
+        (output / name).write_bytes(data)
+        versions[name] = hashlib.sha256(data).hexdigest()
+    manifest = {"seed": SEED, "source": world.source, "live_calls": live_calls, "sha256": versions}
+    (output / manifest_file).write_text(
+        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
+    )
+
+
 def generate(output: Path = ROOT) -> None:
     stations = tuple(
         Station(
@@ -70,27 +93,7 @@ def generate(output: Path = ROOT) -> None:
     )
     hotels = make_hotels(stations)
     world = World(source="synthetic", stations=stations, hotels=hotels)
-    commissions = {}
-    for index, hotel in enumerate(hotels):
-        partner = index % 4 == 0
-        seed = hashlib.sha256(f"{SEED}/{hotel.hotel_id}".encode()).digest()
-        base = 800 + int.from_bytes(seed[:4], "big") % 401
-        commissions[hotel.hotel_id] = Commission(
-            partner=partner, basis_points=base + (300 if partner else 0)
-        )
-    documents = {
-        HOTELS_FILE: world.model_dump(mode="json"),
-        COMMISSION_FILE: {key: value.model_dump(mode="json") for key, value in commissions.items()},
-    }
-    versions = {}
-    for name, content in documents.items():
-        data = (json.dumps(content, ensure_ascii=False, indent=2, sort_keys=True) + "\n").encode()
-        (output / name).write_bytes(data)
-        versions[name] = hashlib.sha256(data).hexdigest()
-    manifest = {"seed": SEED, "source": "synthetic", "live_calls": 0, "sha256": versions}
-    (output / MANIFEST_FILE).write_text(
-        json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8"
-    )
+    write_world(world, output, live_calls=0)
 
 
 if __name__ == "__main__":

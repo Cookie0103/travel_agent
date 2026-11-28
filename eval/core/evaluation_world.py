@@ -26,6 +26,7 @@ def phase2_world() -> EvaluationWorld:
                         breakfast=hotel.breakfast,
                         partner=commission[hotel.hotel_id].partner,
                         prices_jpy=hotel.prices_jpy,
+                        breakfast_by_demand=hotel.breakfast_by_demand,
                     )
                     for hotel_index, hotel in enumerate(
                         (h for h in world.hotels if h.city == station.city), 1

@@ -53,13 +53,16 @@ def walking_minutes(hotel: Hotel, station: Station) -> float:
 
 
 def _candidate(hotel: Hotel, station: Station) -> Candidate:
+    quote = hotel.weekday_quote()
+    assert quote is not None
+    price, breakfast = quote
     return Candidate(
         id=hotel.hotel_id,
-        price_jpy=hotel.prices_jpy["weekday"][0],
+        price_jpy=price,
         rating=hotel.rating,
         reviews=hotel.reviews,
         station_minutes=walking_minutes(hotel, station),
-        breakfast=hotel.breakfast,
+        breakfast=breakfast,
         partner=False,
         commission=0.10,
     )
@@ -161,7 +164,11 @@ def generate(world: World, seed: int = SEED) -> tuple[Comparison, ...]:
     checks: list[Comparison] = []
     for station in world.stations:
         options = sorted(
-            (hotel for hotel in world.hotels if hotel.city == station.city),
+            (
+                hotel
+                for hotel in world.hotels
+                if hotel.city == station.city and hotel.weekday_quote() is not None
+            ),
             key=lambda hotel: hotel.hotel_id,
         )
         rng.shuffle(options)
