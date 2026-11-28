@@ -9,7 +9,7 @@ from pathlib import Path
 from statistics import mean
 
 from data.eval_world.world import load_world
-from eval.commerce.checks import Split, load_cases, walking_minutes
+from eval.commerce.checks import Split, generate, load_cases, walking_minutes
 from eval.commerce.parameters import Policy, Registry, load_parameters
 from eval.commerce.score import Candidate, Scorecard, score
 
@@ -28,12 +28,19 @@ class Point:
         return {**asdict(self), "policy": self.policy.model_dump(mode="json")}
 
 
-def samples() -> dict[Split, list[tuple[float, tuple[Candidate, ...]]]]:
-    world, commissions = load_world()
+def samples(
+    private_world: Path | None = None,
+) -> dict[Split, list[tuple[float, tuple[Candidate, ...]]]]:
+    if private_world:
+        world, commissions = load_world(private_world, source="rakuten")
+        checks = generate(world)
+    else:
+        world, commissions = load_world()
+        checks = load_cases()
     hotels = {hotel.hotel_id: hotel for hotel in world.hotels}
     stations = {station.city: station for station in world.stations}
     groups: dict[Split, list[tuple[float, tuple[Candidate, ...]]]] = {"tune": [], "accept": []}
-    for example in load_cases():
+    for example in checks:
         if example.kind != "group_quality":
             continue
         entries = []
@@ -80,7 +87,7 @@ def evaluate(
     return Point(
         policy,
         mean(card.booking_probability for card in best),
-        mean(card.total_jpy for card in best),
+        mean(card.expected_revenue_jpy for card in best),
         len(best),
     )
 
@@ -118,12 +125,18 @@ def knee(points: list[Point]) -> Point | None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--parameters", type=Path)
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument("--private-world", type=Path)
+    parser.add_argument("--out", type=Path)
     args = parser.parse_args()
     registry = load_parameters(args.parameters) if args.parameters else load_parameters()
+    if args.private_world and registry.state != "frozen-rakuten-taste":
+        parser.error("本机真实快照政策扫描须指定 C4 已冻结的口味参数")
+    output = args.out or (
+        DEFAULT_OUTPUT.with_name("policy-rakuten.json") if args.private_world else DEFAULT_OUTPUT
+    )
     result = {}
     knees = []
-    for split, groups in samples().items():
+    for split, groups in samples(args.private_world).items():
         points = []
         for share, floor, gamma, value in GRID:
             policy = Policy(
@@ -138,20 +151,21 @@ def main() -> int:
         best = knee(tradeoffs)
         knees.append(best.policy if best else None)
         result[split] = {
+            "hotel_groups": len(groups),
             "frontier": [point.report() for point in tradeoffs],
             "knee": best.report() if best else None,
         }
     report = {
-        "status": "provisional-synthetic",
+        "source": "rakuten" if args.private_world else "synthetic",
         "parameters": registry.version,
         "settings": len(GRID),
         "knee_method": "归一化收益增幅减去下单概率损失，取距离端点连线最大的内部点",
         "same_knee": knees[0] is not None and knees[0] == knees[1],
         "splits": result,
     }
-    args.out.parent.mkdir(parents=True, exist_ok=True)
-    args.out.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"政策组合 {len(GRID)} · 同档拐点 {report['same_knee']} · {args.out}")
+    output.parent.mkdir(parents=True, exist_ok=True)
+    output.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"政策组合 {len(GRID)} · 同档拐点 {report['same_knee']} · {output}")
     return 0
 
 
