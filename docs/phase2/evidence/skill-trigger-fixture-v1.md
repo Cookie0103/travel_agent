@@ -1,12 +1,15 @@
 # Skill 触发体检
 
+VERIFIED · 2026-11-28。表中实测来自 D5 的 24 道非留出题与触发清单的交集。
+分母表示实际覆盖的例数。加载增益需同题开关对照，D5 只运行了一种配置。
+
 | Skill | 触发召回 | 误加载率 | 字符数 | 最近评测 | 加载增益 |
 | --- | --- | --- | ---: | --- | --- |
-| hotel-comparison | 待测 | 待测 | 1248 | 待测 | 待 E5 |
-| itinerary-revision | 待测 | 待测 | 515 | 待测 | 待 E5 |
-| multi-city | 待测 | 待测 | 365 | 待测 | 待 E5 |
-| budget-relaxation | 待测 | 待测 | 853 | 待测 | 待 E5 |
-| external-errors | 待测 | 待测 | 259 | 待测 | 待 E5 |
+| hotel-comparison | 1/1 | 0/2 | 1248 | 2026-11-28 | 待 E5 |
+| itinerary-revision | 1/1 | 待测 | 515 | 2026-11-28 | 待 E5 |
+| multi-city | 1/1 | 待测 | 365 | 2026-11-28 | 待 E5 |
+| budget-relaxation | 1/1 | 0/2 | 853 | 2026-11-28 | 待 E5 |
+| external-errors | 1/1 | 待测 | 259 | 2026-11-28 | 待 E5 |
 | repair-limit | 待测 | 待测 | 321 | 待测 | 待 E5 |
 
 ## 服务端信号夹具
